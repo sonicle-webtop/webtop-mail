@@ -48,8 +48,9 @@ public class MailService extends Service {
 	
 	@Override
 	public void initialize(Environment api) {
-		getAdvancedEnv().getSession().test();
 		logger.debug("Mi sono inizializzato: mi chiamo {}", getName(new Locale("it_IT")));
+		logger.debug("Ora provo ad accedere all'env avanzato");
+		getAdvancedEnv().getSession().test();
 	}
 
 	@Override
