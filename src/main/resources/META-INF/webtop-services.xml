@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<services>
+	<service>
+		<id>com.sonicle.webtop.mail</id>
+		<className>com.sonicle.webtop.mail.MailService</className>
+		<publicClassName></publicClassName>
+		<deamonClassName></deamonClassName>
+		<version>1.0.0</version>
+		<buildDate>03/10/2014</buildDate>
+		<company>Sonicle S.r.l.</company>
+		<companyEmail>sonicle@sonicle.com</companyEmail>
+		<companyWebSite>http://www.sonicle.com</companyWebSite>
+		<supportEmail>sonicle@sonicle.com</supportEmail>
+	</service>
+</services>
