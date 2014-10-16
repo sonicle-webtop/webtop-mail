@@ -6,18 +6,25 @@
     <version>1.0</version>
     <packaging>jar</packaging>
 	<name>webtop-mail</name>
-    <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>webtop-core</artifactId>
-            <version>5.0.0-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
-    <properties>
+	<properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
     </properties>
+	<dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>webtop-core</artifactId>
+            <version>5.0.0-SNAPSHOT</version>
+			<scope>provided</scope>
+        </dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>1.7.6</version>
+			<scope>provided</scope>
+		</dependency>
+    </dependencies>
 	<build>
 		<resources>
 			<resource>
@@ -28,5 +35,4 @@
 			</resource>
 		</resources>
 	</build>
-	
 </project>
