@@ -24,7 +24,32 @@
 			<version>1.7.6</version>
 			<scope>provided</scope>
 		</dependency>
-    </dependencies>
+	 <dependency>
+	  <groupId>javax.servlet</groupId>
+	  <artifactId>javax.servlet-api</artifactId>
+	  <version>3.1.0</version>
+	 </dependency>
+	 <dependency>
+	  <groupId>com.sonicle.mail</groupId>
+	  <artifactId>sonicle-mail</artifactId>
+	  <version>1.0</version>
+	 </dependency>
+	 <dependency>
+	  <groupId>com.sonicle.security</groupId>
+	  <artifactId>sonicle-security</artifactId>
+	  <version>1.0</version>
+	 </dependency>
+	 <dependency>
+	  <groupId>${project.groupId}</groupId>
+	  <artifactId>webtop-core-db</artifactId>
+	  <version>${project.version}</version>
+	 </dependency>
+	 <dependency>
+	  <groupId>org.mnode.ical4j</groupId>
+	  <artifactId>ical4j</artifactId>
+	  <version>1.0.5.2</version>
+	 </dependency>
+	</dependencies>
 	<build>
 		<resources>
 			<resource>

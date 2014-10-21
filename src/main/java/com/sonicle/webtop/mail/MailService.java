@@ -33,9 +33,15 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.webtop.core.sdk.Environment;
 import com.sonicle.webtop.core.sdk.Service;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 
 /**
@@ -56,5 +62,47 @@ public class MailService extends Service {
 	@Override
 	public void cleanup() {
 		
+	}
+	
+	public void processGetImapTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+        String pfoldername=request.getParameter("node");
+		ArrayList<JSonFolder> jsfolders=new ArrayList<>();
+		logger.debug("GetImapTree - node={}",pfoldername);
+		switch(pfoldername) {
+			case "root":
+				jsfolders.add(new JSonFolder("folder1","Folder 1",0,false,true,"root"));
+				jsfolders.add(new JSonFolder("folder2","Folder 2",172,false,false,"root"));
+				break;
+				
+			case "folder2":
+				jsfolders.add(new JSonFolder("subfolder1","Subfolder 1",0,false,true,pfoldername));
+				jsfolders.add(new JSonFolder("subfolder2","Subfolder 2",125,false,true,pfoldername));
+				jsfolders.add(new JSonFolder("subfolder3","Subfolder 3",47,false,true,pfoldername));
+				break;
+		}
+			
+		out.println(JsonResult.gson.toJson(jsfolders));
+	}
+	
+	private class JSonFolder {
+		String id;
+		String folder;
+		int unread;
+		boolean hasUnread;
+		boolean leaf;
+		String parentId;
+		
+		String text;
+		
+		JSonFolder(String id,String folder, int unread, boolean hasUnread, boolean leaf, String parentId) {
+			this.id=id;
+			this.folder=folder;
+			this.unread=unread;
+			this.hasUnread=hasUnread;
+			this.leaf=leaf;
+			this.parentId=parentId;
+			
+			this.text=folder;
+		}
 	}
 }
