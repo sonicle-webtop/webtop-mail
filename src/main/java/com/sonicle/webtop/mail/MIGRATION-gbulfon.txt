@@ -1,0 +1,6 @@
+- TODO: users.docmgt -> setting 
+- TODO: users.docmgt2 -> setting 
+- TODO: docmgt folder setting 
+- TODO: users.mailsharedsort -> user setting: sharedsort
+- mail.specialfolders.autocreate => Y -> true
+- webtop.archive -> mail|archive

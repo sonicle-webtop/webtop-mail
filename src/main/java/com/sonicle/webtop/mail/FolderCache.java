@@ -33,18 +33,19 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.OldUtils;
+import com.sonicle.mail.imap.*;
+import com.sonicle.mail.tnef.internet.*;
 import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
+import com.sun.mail.imap.*;
+import java.io.*;
 //import com.sonicle.webtop.util.*;
 import java.util.*;
 import javax.mail.*;
-import javax.mail.internet.*;
-import java.io.*;
-import com.sonicle.mail.tnef.internet.*;
-import com.sun.mail.imap.*;
-import com.sonicle.mail.imap.*;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
+import javax.mail.internet.*;
 import javax.mail.search.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
@@ -65,7 +66,7 @@ public class FolderCache {
     public static final int SORT_BY_STATUS=7;
     public static final int SORT_BY_FLAG=8;
 
-    private Environment environment=null;
+    private BasicEnvironment environment=null;
     //private WebTopDomain wtd=null;
     private MailService ms=null;
     private boolean externalProvider=false;
@@ -161,7 +162,7 @@ public class FolderCache {
     }
 
     //Special constructor for externally provided messages
-    public FolderCache(MailService ms, Environment env) {
+    public FolderCache(MailService ms, BasicEnvironment env) {
         this.ms=ms;
         externalProvider=true;
         environment=env;
@@ -169,7 +170,7 @@ public class FolderCache {
         profile=env.getProfile();
     }
     
-    public FolderCache(Folder folder, MailService ms, Environment env) throws MessagingException {
+    public FolderCache(Folder folder, MailService ms, BasicEnvironment env) throws MessagingException {
         this(ms,env);
         foldername=folder.getFullName();
         this.folder=folder;
@@ -192,7 +193,7 @@ public class FolderCache {
             String subname=foldername.substring(ix+1);
             if (subname.indexOf(ms.getFolderSeparator())<0) {
                 isSharedInbox=true;
-                sharedInboxPrincipal=environment.getPrincipal(environment.getProfile().getDomainId(),subname);
+                sharedInboxPrincipal=ms.getPrincipal(environment.getProfile().getDomainId(),subname);
             }
         }
         if (sharedInboxPrincipal==null) description=ms.getInternationalFolderName(this);
@@ -1275,15 +1276,15 @@ public class FolderCache {
       return-1;
     }
     String language=profile.getLocale().getLanguage().toLowerCase();
-    Hashtable hash=(Hashtable)months.get(language);
+    HashMap<String,Integer> hash=months.get(language);
     if(hash==null) {
-      return-1;
+      return -1;
     }
     Integer imonth=(Integer)hash.get(smonth.substring(0, 3).toLowerCase());
     if(imonth==null) {
       return-1;
     }
-    return imonth.intValue();
+    return imonth;
   }
 
   private Date parseDate(String pattern) {
@@ -1322,20 +1323,20 @@ public class FolderCache {
     }
 
     void addChild(FolderCache fc) {
-        if (children==null) children=new ArrayList<FolderCache>();
+        if (children==null) children=new ArrayList<>();
         children.add(fc);
     }
 
     void removeChild(FolderCache fc) {
         children.remove(fc);
-        if (children.size()==0) children=null;
+        if (children.isEmpty()) children=null;
     }
     
   
     public HTMLMailData getMailData(MimeMessage m) throws MessagingException, IOException {
-        HTMLMailData mailData=null;
+        HTMLMailData mailData;
         synchronized(this) {
-            Integer mid=new Integer(m.getMessageNumber());
+            Integer mid=m.getMessageNumber();
             mailData=dhash.get(mid);
             if (mailData==null) {
                 mailData=prepareHTMLMailData(m);
@@ -1355,23 +1356,23 @@ public class FolderCache {
     }
     
     private ArrayList<String> getHTMLParts(MimeMessage m, int msgnum, String provider, String providerid, boolean forEdit) throws MessagingException, IOException {
-      ArrayList<String> htmlparts=new ArrayList<String>();
-      WebTopApp webtopapp=environment.getWebTopApp();
-      WebTopSession wts=environment.getWebTopSession();
-      UserProfile profile=environment.getUserProfile();
+      ArrayList<String> htmlparts=new ArrayList<>();
+      //WebTopApp webtopapp=environment.getWebTopApp();
+      //Session wts=environment.get();
+      UserProfile profile=environment.getProfile();
       HTMLMailData mailData=getMailData(m);
       int objid=0;
       Part msgPart=null;
-      String msgSubject=null;
-      String msgFrom=null;
-      String msgDate=null;
-      String msgTo=null;
-      String msgCc=null;
+      String msgSubject;
+      String msgFrom;
+      String msgDate;
+      String msgTo;
+      String msgCc;
       Locale locale=profile.getLocale();
       for(int i=0;i<mailData.getDisplayPartCount();++i) {
         Part dispPart=mailData.getDisplayPart(i);
         java.io.InputStream istream=null;
-        String charset=Utils.getCharset(dispPart.getContentType());
+        String charset=OldUtils.getCharset(dispPart.getContentType());
         boolean ischarset=false;
         try { ischarset=java.nio.charset.Charset.isSupported(charset); } catch(Exception exc) {}
         if (!ischarset) charset="ISO-8859-1";
@@ -1401,7 +1402,7 @@ public class FolderCache {
             StringBuffer xhtml=new StringBuffer();
             if (dispPart.isMimeType("text/html")) {
                 Object tlock=new Object();
-                String uri=wts.getUri();
+                String uri=environment.getSessionRefererUri();
                 HTMLMailParserThread parserThread=null;
                 if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msgnum, forEdit);
                 else parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, provider, providerid);
@@ -1460,7 +1461,7 @@ public class FolderCache {
                         if (x>=0) ismail=true;
                       }
                       if (token!=null && x>=0) {
-                        xhtml.append(Utils.htmlescape(line.substring(0,x)));
+                        xhtml.append(OldUtils.htmlescape(line.substring(0,x)));
                         int y=0;
                         if (ismail) {
                           int ats=0;
@@ -1495,10 +1496,10 @@ public class FolderCache {
                     //                  onclick="handleMailClick(\""+token+"\"); return false;";
                     //                }
                         if (href.startsWith("www.")) href="http://"+token;
-                        xhtml.append("<A TARGET=_new HREF=\""+href+"\" onClick='"+onclick+"'>"+Utils.htmlescape(token)+"</A>");
+                        xhtml.append("<A TARGET=_new HREF=\""+href+"\" onClick='"+onclick+"'>"+OldUtils.htmlescape(token)+"</A>");
                         if (line==null) break;
                       } else {
-                        xhtml.append(Utils.htmlescape(line));
+                        xhtml.append(OldUtils.htmlescape(line));
                         break;
                       }
                     }
@@ -1513,7 +1514,7 @@ public class FolderCache {
           Message xmsg=(Message)dispPart.getContent();
           msgSubject=xmsg.getSubject();
           if (msgSubject==null) msgSubject="";
-          msgSubject=Utils.htmlescape(msgSubject);
+          msgSubject=OldUtils.htmlescape(msgSubject);
           Address ad[]=xmsg.getFrom();
           if (ad!=null) msgFrom=ms.getHTMLDecodedAddress(ad[0]);
           else msgFrom="";
@@ -1535,11 +1536,11 @@ public class FolderCache {
 
           xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body>");
           xhtml.append("<font face='Arial, Helvetica, sans-serif' size=2><BR>");
-          xhtml.append("<B>"+ms.lookupResource(profile,MailLocaleKey.MSG_FROMTITLE)+":</B> "+msgFrom+"<BR>");
-          if (msgTo!=null) xhtml.append("<B>"+ms.lookupResource(profile,MailLocaleKey.MSG_TOTITLE)+":</B> "+msgTo+"<BR>");
-          if (msgCc!=null) xhtml.append("<B>"+ms.lookupResource(profile,MailLocaleKey.MSG_CCTITLE)+":</B> "+msgCc+"<BR>");
-          xhtml.append("<B>"+ms.lookupResource(profile,MailLocaleKey.MSG_DATETITLE)+":</B> "+msgDate+"<BR>");
-          xhtml.append("<B>"+ms.lookupResource(profile,MailLocaleKey.MSG_SUBJECTTITLE)+":</B> "+msgSubject+"<BR>");
+          xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_FROMTITLE)+":</B> "+msgFrom+"<BR>");
+          if (msgTo!=null) xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_TOTITLE)+":</B> "+msgTo+"<BR>");
+          if (msgCc!=null) xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_CCTITLE)+":</B> "+msgCc+"<BR>");
+          xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_DATETITLE)+":</B> "+msgDate+"<BR>");
+          xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_SUBJECTTITLE)+":</B> "+msgSubject+"<BR>");
           xhtml.append("</font><br></body></html>");
           htmlparts.add(xhtml.toString());
         }
