@@ -2,5 +2,18 @@
 - TODO: users.docmgt2 -> setting 
 - TODO: docmgt folder setting 
 - TODO: users.mailsharedsort -> user setting: sharedsort
-- mail.specialfolders.autocreate => Y -> true
-- webtop.archive -> mail|archive
+- setting: mail.specialfolders.autocreate => Y -> true
+- setting: webtop.archive -> mail|archive
+- table: mailfilters -> mail.filters
+- table: mailnotes -> mail.notes
+- settings:
+	default.folderprefix -> mail | default.folder.prefix
+	default.scanall -> mail | default.scan.all
+	default.scansecs -> mail | default.scan.seconds
+	default.scancycles -> mail | default.scan.cycles
+	default.mailsent -> mail | default.folder.sent
+	default.maildrafts -> mail | default.folder.drafts
+	default.mailtrash -> mail | default.folder.trash
+	default.mailspam -> mail | default.folder.spam
+	default.replywithoriginal -> mail | default.include.message.in.reply
+	default.maxmsglist -> mail | default.num.message.list

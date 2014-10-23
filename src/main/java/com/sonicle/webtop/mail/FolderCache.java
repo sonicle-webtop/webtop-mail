@@ -467,13 +467,13 @@ public class FolderCache {
         try {
             if (checkUnreads) refreshUnreadMessagesCount();
         } catch(MessagingException exc) {
-            System.out.println("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
+            //System.out.println("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
             //exc.printStackTrace();
         }
         try {
             if (checkRecents) refreshRecentMessagesCount();
         } catch(MessagingException exc) {
-            System.out.println("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
+            //System.out.println("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
             //exc.printStackTrace();
         }
         return (unread>0);

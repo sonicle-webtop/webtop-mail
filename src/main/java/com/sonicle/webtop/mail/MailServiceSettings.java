@@ -49,6 +49,20 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String ARCHIVE = "archive";
 	public static final String FAX_PATTERN = "fax.pattern";
 	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";
+
+	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
+	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
+	public static final String DEFAULT_SCAN_SECONDS = "default.scan.seconds";
+	public static final String DEFAULT_SCAN_CYCLES = "default.scan.cycles";
+	public static final String DEFAULT_FOLDER_SENT = "default.folder.sent";
+	public static final String DEFAULT_FOLDER_DRAFTS = "default.folder.drafts";
+	public static final String DEFAULT_FOLDER_TRASH = "default.folder.trash";
+	public static final String DEFAULT_FOLDER_SPAM = "default.folder.spam";
+	public static final String DEFAULT_INCLUDE_MESSAGE_IN_REPLY = "default.include.message.in.reply";
+	public static final String DEFAULT_NUM_MESSAGE_LIST = "default.num.message.list";
+	public static final String DEFAULT_HOST = "default.host";
+	public static final String DEFAULT_PORT = "default.port";
+	public static final String DEFAULT_PROTOCOL = "default.protocol";
 	
 	private CoreServiceSettings css;
 
@@ -86,4 +100,55 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return css.getTempPath();
 	}
 	
+	public String getDefaultFolderPrefix() {
+		return getServiceSetting(DEFAULT_FOLDER_PEFFIX);
+	}
+	
+	public boolean isDefaultScanAll() {
+		return LangUtils.value(getServiceSetting(DEFAULT_SCAN_ALL),false);
+	}
+	
+	public int getDefaultScanSeconds() {
+		return Integer.parseInt(getServiceSetting(DEFAULT_SCAN_SECONDS));
+	}
+	
+	public int getDefaultScanCycles() {
+		return Integer.parseInt(getServiceSetting(DEFAULT_SCAN_CYCLES));
+	}
+	
+	public String getDefaultFolderSent() {
+		return getServiceSetting(DEFAULT_FOLDER_SENT);
+	}
+	
+	public String getDefaultFolderDrafts() {
+		return getServiceSetting(DEFAULT_FOLDER_DRAFTS);
+	}
+	
+	public String getDefaultFolderTrash() {
+		return getServiceSetting(DEFAULT_FOLDER_TRASH);
+	}
+
+	public String getDefaultFolderSpam() {
+		return getServiceSetting(DEFAULT_FOLDER_SPAM);
+	}
+	
+	public boolean isDefaultIncludeMessageInReply() {
+		return LangUtils.value(getServiceSetting(DEFAULT_INCLUDE_MESSAGE_IN_REPLY), true);
+	}
+	
+	public int getDefaultNumMessageList() {
+		return Integer.parseInt(getServiceSetting(DEFAULT_NUM_MESSAGE_LIST));
+	}
+	
+	public String getDefaultHost() {
+		return getServiceSetting(DEFAULT_HOST);
+	}
+	
+	public int getDefaultPort() {
+		return Integer.parseInt(getServiceSetting(DEFAULT_PORT));
+	}
+	
+	public String getDefaultProtocol() {
+		return getServiceSetting(DEFAULT_PROTOCOL);
+	}
 }

@@ -94,7 +94,7 @@
 							<inputSchema>mail</inputSchema>
 						</database>
 						<target>
-							<packageName>com.sonicle.webtop.core.jooq</packageName>
+							<packageName>com.sonicle.webtop.mail.jooq</packageName>
 							<directory>target/generated-sources/jooq</directory>
 						</target>
 						<generate>

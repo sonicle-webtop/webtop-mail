@@ -50,9 +50,24 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String MESSAGE_LIST_GROUP = "messagelist-group-{0}";
 	public static final String MESSAGE_LIST_SORT = "messagelist-{0}-sort";
 	public static final String COLUMN_SIZE = "column-{0}";
+	public static final String FOLDER_PEFFIX = "{0}.folder.prefix";
+	public static final String SCAN_ALL = "{0}.scan.all";
+	public static final String SCAN_SECONDS = "{0}.scan.seconds";
+	public static final String SCAN_CYCLES = "{0}.scan.cycles";
+	public static final String FOLDER_SENT = "{0}.folder.sent";
+	public static final String FOLDER_DRAFTS = "{0}.folder.drafts";
+	public static final String FOLDER_TRASH = "{0}.folder.trash";
+	public static final String FOLDER_SPAM = "{0}.folder.spam";
+	public static final String REPLY_TO = "{0}.reply.to";
+	public static final String SHARED_SORT = "{0}.shared.sort";
+	public static final String INCLUDE_MESSAGE_IN_REPLY = "{0}.include.message.in.reply";
+	public static final String NUM_MESSAGE_LIST = "{0}.num.message.list";
     
-    public MailUserSettings(String domainId, String userId, String serviceId) {
+	private MailServiceSettings mss;
+	
+    public MailUserSettings(MailServiceSettings mss, String domainId, String userId, String serviceId) {
         super(domainId, userId, serviceId);
+		this.mss=mss;
     }
     
     public boolean isSharedSeen() {
@@ -76,5 +91,53 @@ public class MailUserSettings extends BaseUserSettings {
     
 	public String getMessageListSort(String foldername) {
 		return getUserSetting(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
+	}
+	
+	public String getFolderPrefix(String mailUser) {
+		return getUserSetting(MessageFormat.format(FOLDER_PEFFIX, mailUser), mss.getDefaultFolderPrefix());
+	}
+	
+	public boolean isScanAll(String mailUser) {
+		return getUserSetting(MessageFormat.format(SCAN_ALL, mailUser),mss.isDefaultScanAll());
+	}
+	
+	public int getScanSeconds(String mailUser) {
+		return getUserSetting(MessageFormat.format(SCAN_SECONDS, mailUser),mss.getDefaultScanSeconds());
+	}
+	
+	public int getScanCycles(String mailUser) {
+		return getUserSetting(MessageFormat.format(SCAN_CYCLES, mailUser),mss.getDefaultScanCycles());
+	}
+	
+	public String getFolderSent(String mailUser) {
+		return getUserSetting(MessageFormat.format(FOLDER_SENT, mailUser),mss.getDefaultFolderSent());
+	}
+	
+	public String getFolderDrafts(String mailUser) {
+		return getUserSetting(MessageFormat.format(FOLDER_DRAFTS, mailUser),mss.getDefaultFolderDrafts());
+	}
+	
+	public String getFolderTrash(String mailUser) {
+		return getUserSetting(MessageFormat.format(FOLDER_TRASH, mailUser),mss.getDefaultFolderTrash());
+	}
+
+	public String getFolderSpam(String mailUser) {
+		return getUserSetting(MessageFormat.format(FOLDER_SPAM, mailUser),mss.getDefaultFolderSpam());
+	}
+	
+	public String getReplyTo(String mailUser) {
+		return getUserSetting(MessageFormat.format(REPLY_TO, mailUser));
+	}
+	
+	public String getSharedSort(String mailUser) {
+		return getUserSetting(MessageFormat.format(SHARED_SORT, mailUser),"N");
+	}
+	
+	public boolean isIncludeMessageInReply(String mailUser) {
+		return getUserSetting(MessageFormat.format(INCLUDE_MESSAGE_IN_REPLY, mailUser), mss.isDefaultIncludeMessageInReply());
+	}
+	
+	public int getNumMessageList(String mailUser) {
+		return getUserSetting(MessageFormat.format(NUM_MESSAGE_LIST, mailUser),mss.getDefaultNumMessageList());
 	}
 }

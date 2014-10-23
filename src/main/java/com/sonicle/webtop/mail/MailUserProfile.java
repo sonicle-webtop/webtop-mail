@@ -33,8 +33,21 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.db.DbUtils;
+import com.sonicle.security.AuthenticationDomain;
+import com.sonicle.security.CredentialAlgorithm;
+import com.sonicle.security.Principal;
 import com.sonicle.webtop.core.sdk.BasicEnvironment;
 import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.mail.bol.OIdentity;
+import com.sonicle.webtop.mail.bol.OUserMap;
+import com.sonicle.webtop.mail.dal.IdentityDAO;
+import com.sonicle.webtop.mail.dal.UserMapDAO;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -42,6 +55,8 @@ import com.sonicle.webtop.core.sdk.UserProfile;
  */
 public class MailUserProfile {
     
+	public final static Logger logger = (Logger) LoggerFactory.getLogger(MailUserProfile.class);
+	
     private BasicEnvironment env;
     private String folderPrefix;
     private boolean scanAll;
@@ -62,31 +77,100 @@ public class MailUserProfile {
 	private boolean includeMessageInReply;
 	private int numMessageList;
 
-    public MailUserProfile(BasicEnvironment env) {
+    public MailUserProfile(BasicEnvironment env, MailService ms) {
         this.env=env;
 		UserProfile profile=env.getProfile();
         
-        // TODO: initialize from profile
-        folderPrefix="";
-        scanAll=false;
-        scanSeconds=30;
-        scanCycles=10;
-        folderSent="Sent";
-        folderDrafts="Drafts";
-        folderTrash="Trash";
-        folderSpam="Spam";
-        mailProtocol="imap";
-		mailHost="www.sonicle.com";
-        mailPort=143;
-		mailUsername="gabriele.bulfon@sonicle.com";
-		mailPassword="nrdstg88";
-		replyTo="";
-		identities=new Identity[2];
-		identities[0]=new Identity(profile.getDisplayName(), profile.getEmailAddress(),null);
-		identities[1]=new Identity("Ciccio", "ciccio@sonicle.com",null);
-		sharedSort="N";
-		includeMessageInReply=true;
-		numMessageList=50;
+		Connection con=null;
+		try {
+			con=ms.getConnection();
+			
+			Principal principal=profile.getPrincipal();
+			
+			//Use AD properties if it can provide them
+			AuthenticationDomain ad=principal.getAuthenticationDomain();
+			if (ad!=null && ad.getProperty("mail.protocol",null)!=null) {
+				mailProtocol=ad.getProperty("mail.protocol",null);
+				mailHost=ad.getProperty("mail.host",null);
+				mailPort=ad.getProperty("mail.port",0);
+				mailUsername=ad.getProperty("mail.username",null);
+				mailPassword=ad.getProperty("mail.password",null);
+			} else {
+				OUserMap omap=UserMapDAO.getInstance().selectById(con, profile.getDomainId(), profile.getUserId());
+				if (omap!=null) {
+					mailProtocol=omap.getMailProtocol();
+					mailHost=omap.getMailHost();
+					mailPort=omap.getMailPort();
+					mailUsername=omap.getMailUser();
+					mailPassword=omap.getMailPassword();
+				}
+			}
+			
+
+			//If LDAP overwrite any null value with specific LDAP default values
+			if (ad!=null && ad.getAuthUriProtocol().startsWith("ldap")) {
+				MailServiceSettings mss=ms.getMailServiceSettings();
+				if (mailHost==null) mailHost=mss.getDefaultHost();
+				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
+				if (mailPort==0) mailPort=mss.getDefaultPort();
+				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId()+"@"+ad.getDomain();
+				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=principal.getPassword();
+			}
+			
+			//If still something is invalid, provides defaults
+			if (mailHost==null) mailHost="localhost";
+			if (mailProtocol==null) mailProtocol="imap";
+			if (mailPort==0) {
+				switch(mailProtocol) {
+					case "imap":
+						mailPort=143;
+						break;
+						
+					case "imaps":
+						mailPort=993;
+						break;
+				}
+			}
+			
+			CredentialAlgorithm encpasswordType=principal.getCredentialAlgorithm();
+			String encpassword=principal.getCredential();
+			if (encpasswordType==null) encpassword=principal.getPassword();
+
+			if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
+			if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=principal.getPassword();
+			else {
+				if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
+					mailPassword=env.decipher(mailPassword,encpassword);
+			}
+
+			logger.info("  accessing "+mailProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+mailPort);
+
+			MailUserSettings mus=ms.getMailUserSettings();
+			folderPrefix=mus.getFolderPrefix(mailUsername);
+			scanAll=mus.isScanAll(mailUsername);
+			scanSeconds=mus.getScanSeconds(mailUsername);
+			scanCycles=mus.getScanCycles(mailUsername);
+			folderSent=mus.getFolderSent(mailUsername);
+			folderDrafts=mus.getFolderDrafts(mailUsername);
+			folderTrash=mus.getFolderTrash(mailUsername);
+			folderSpam=mus.getFolderSpam(mailUsername);
+			replyTo=mus.getReplyTo(mailUsername);
+			sharedSort=mus.getSharedSort(mailUsername);
+			includeMessageInReply=mus.isIncludeMessageInReply(mailUsername);
+			numMessageList=mus.getNumMessageList(mailUsername);
+			
+			List<OIdentity> oids=IdentityDAO.getInstance().selectById(con, profile.getDomainId(), profile.getUserId());
+			identities=new Identity[oids.size()];
+			int i=0;
+			for(OIdentity oid: oids) {
+				identities[i++]=new Identity(oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
+			}
+			
+		} catch(Exception exc) {
+			logger.error("Error mapping mail user",exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
     }
     
     public String getFolderPrefix() {

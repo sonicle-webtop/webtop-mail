@@ -35,7 +35,6 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.OldUtils;
-import com.sonicle.webtop.util.*;
 import java.io.*;
 import java.util.*;
 import org.xml.sax.*;
