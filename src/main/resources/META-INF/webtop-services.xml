@@ -2,6 +2,7 @@
 <services>
 	<service>
 		<id>com.sonicle.webtop.mail</id>
+		<xid>wtmail</xid>
 		<version>1.0.0</version>
 		<buildDate>03/10/2014</buildDate>
 		<company>Sonicle S.r.l.</company>
