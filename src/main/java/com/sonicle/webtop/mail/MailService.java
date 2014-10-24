@@ -3368,31 +3368,31 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 			//	if (!level1 || !foldername.equals("INBOX")) leaf=false;
 			//}
 			
-			String iconCls = "iconImapFolder";
+			String iconCls = "wtmail-icon-imap-folder";
 			int unread = 0;
 			boolean hasUnread = false;
 			boolean nounread = false;
 			if (mc.isSharedFolder()) {
-				iconCls = "iconSharedFolder";
+				iconCls = "wtmail-icon-shared-folder";
 				nounread = true;
 			} else if (mc.isInbox()) {
-				iconCls = "iconInboxFolder";
+				iconCls = "wtmail-icon-inbox-folder";
 			} else if (mc.isSent()) {
-				iconCls = "iconSentFolder";
+				iconCls = "wtmail-icon-sent-folder";
 				nounread = true;
 			} else if (mc.isDrafts()) {
-				iconCls = "iconDraftsFolder";
+				iconCls = "wtmail-icon-drafts-folder";
 				nounread = true;
 			} else if (mc.isTrash()) {
-				iconCls = "iconTrashFolder";
+				iconCls = "wtmail-icon-trash-folder";
 				nounread = true;
 			} else if (mc.isSpam()) {
-				iconCls = "iconSpamFolder";
+				iconCls = "wtmail-icon-spam-folder";
 				nounread = true;
 			} else if (mc.isDocMgt()) {
-				iconCls = "iconDocMgtFolder";
+				iconCls = "wtmail-icon-docmgt-folder";
 			} else if (mc.isSharedInbox()) {
-				iconCls = "iconInboxFolder";
+				iconCls = "wtmail-icon-inbox-folder";
 			}
 			if (!nounread) {
 				unread = mc.getUnreadMessagesCount();
