@@ -38,6 +38,7 @@ import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.CredentialAlgorithm;
 import com.sonicle.security.Principal;
 import com.sonicle.webtop.core.sdk.BasicEnvironment;
+import com.sonicle.webtop.core.sdk.Encryption;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.OUserMap;
@@ -140,7 +141,7 @@ public class MailUserProfile {
 			if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=principal.getPassword();
 			else {
 				if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
-					mailPassword=env.decipher(mailPassword,encpassword);
+					mailPassword=Encryption.decipher(mailPassword,encpassword);
 			}
 
 			logger.info("  accessing "+mailProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+mailPort);
