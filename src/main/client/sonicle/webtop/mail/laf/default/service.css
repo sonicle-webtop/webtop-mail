@@ -1,3 +1,4 @@
-.wtmail-ico-s { background-image: url('mail_16.png') !important; }
-.wtmail-ico-m { background-image: url('mail_24.png') !important; }
-.wtmail-ico-l { background-image: url('mail_32.png') !important; }
+.wtmail-icon-service-xs { background-image: url('mail_16.png') !important; }
+.wtmail-icon-service-s { background-image: url('mail_24.png') !important; }
+.wtmail-icon-service-m { background-image: url('mail_32.png') !important; }
+.wtmail-icon-service-l { background-image: url('mail_48.png') !important; }
