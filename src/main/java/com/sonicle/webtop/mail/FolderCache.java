@@ -407,7 +407,14 @@ public class FolderCache {
                 Message umsgs[]=folder.search(unseenSearchTerm);
                 unread=umsgs.length;
             } else unread=folder.getUnreadMessageCount();
-            if (oldunread!=unread) unreadChanged=true;
+            if (oldunread!=unread) {
+				unreadChanged=true;
+				try {
+					this.environment.sendWebSocketMessage("UNREAD folder "+this.foldername+" "+unread);
+				} catch(IOException exc) {
+					exc.printStackTrace();
+				}
+			}
         }
     }
 
