@@ -178,6 +178,9 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 	
 	@Override
 	public void initialize() {
+		
+		logger.debug("MailService.ID={}",getId());
+
 		this.environment = getEnv();
 		
 		UserProfile profile = environment.getProfile();

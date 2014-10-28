@@ -33,7 +33,9 @@
  */
 package com.sonicle.webtop.mail.ws;
 
+import com.sonicle.webtop.core.sdk.Environment;
 import com.sonicle.webtop.core.sdk.WebSocketMessage;
+import com.sonicle.webtop.mail.MailService;
 
 /**
  *
@@ -47,7 +49,7 @@ public class UnreadChangedMessage extends WebSocketMessage {
 	int unread;
 	
 	public UnreadChangedMessage(String foldername, int unread) {
-		this.service="com.sonicle.webtop.mail";
+		this.service=Environment.getServiceId(MailService.class);
 		this.action=ACTION_UNREAD;
 		
 		this.foldername=foldername;
