@@ -38,6 +38,7 @@ import com.sonicle.mail.imap.*;
 import com.sonicle.mail.tnef.internet.*;
 import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
+import com.sonicle.webtop.mail.ws.UnreadChangedMessage;
 import com.sun.mail.imap.*;
 import java.io.*;
 //import com.sonicle.webtop.util.*;
@@ -410,7 +411,9 @@ public class FolderCache {
             if (oldunread!=unread) {
 				unreadChanged=true;
 				try {
-					this.environment.sendWebSocketMessage("UNREAD folder "+this.foldername+" "+unread);
+					this.environment.sendWebSocketMessage(
+							new UnreadChangedMessage(foldername, unread)
+					);
 				} catch(IOException exc) {
 					exc.printStackTrace();
 				}
