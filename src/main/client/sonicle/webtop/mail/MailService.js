@@ -113,96 +113,107 @@ Ext.define('Sonicle.webtop.mail.MailService', {
     
 
 	init: function() {
-            //**LATER**
-            //this.loadSettings();
-            //this.initTreeMenu();
-            //this.initGridMenu();
+		var me=this;
+		//**LATER**
+		//this.loadSettings();
+		//this.initTreeMenu();
+		//this.initGridMenu();
 
-            this.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
-                title: "Email", //this.title,
-                autoScroll: true,
-                
-                //enableDD: true, ???
-                //ddGroup: 'mail', ???
-                //ddScroll: true, ???
-                //containerScroll: true, ???
-                viewConfig: {
-                    plugins: { ptype: 'treeviewdragdrop' }
-                },
-                
-                //
-                //loader: new Ext.tree.TreeLoader({
-                //    dataUrl:'ServiceRequest',
-                //    baseParams: {service: 'mail', action:'GetImapTree'},
-                //    baseAttrs: {uiProvider: WT.ImapTreeNodeUI}
-                //}),
-                store: Ext.create('Ext.data.TreeStore', {
-                    model: 'Sonicle.webtop.mail.ImapTreeModel',
-                    proxy: {
-                        type: 'ajax',
-                        reader: 'json',
-                        url: 'ServiceRequest',
-                        extraParams: {
-                            service: 'com.sonicle.webtop.mail',
-                            action: 'GetImapTree'
-                        }
-                    },
-                    root: {
-                        text: 'Imap Tree',
-                        expanded: true
-                    },
-                    rootVisible: false
-                }),
-                
-                
-                //root: new Ext.tree.AsyncTreeNode({
-                //    text: 'Imap Tree',
-                //    draggable:false,
-                //    id:'imaproot'
-                //}),
+		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
+			title: "Email", //this.title,
+			autoScroll: true,
+
+			//enableDD: true, ???
+			//ddGroup: 'mail', ???
+			//ddScroll: true, ???
+			//containerScroll: true, ???
+			viewConfig: {
+				plugins: { ptype: 'treeviewdragdrop' }
+			},
+
+			//
+			//loader: new Ext.tree.TreeLoader({
+			//    dataUrl:'ServiceRequest',
+			//    baseParams: {service: 'mail', action:'GetImapTree'},
+			//    baseAttrs: {uiProvider: WT.ImapTreeNodeUI}
+			//}),
+			store: Ext.create('Ext.data.TreeStore', {
+				model: 'Sonicle.webtop.mail.ImapTreeModel',
+				proxy: {
+					type: 'ajax',
+					reader: 'json',
+					url: 'ServiceRequest',
+					extraParams: {
+						service: 'com.sonicle.webtop.mail',
+						action: 'GetImapTree'
+					}
+				},
+				root: {
+					text: 'Imap Tree',
+					expanded: true
+				},
+				rootVisible: false
+			}),
+
+
+			//root: new Ext.tree.AsyncTreeNode({
+			//    text: 'Imap Tree',
+			//    draggable:false,
+			//    id:'imaproot'
+			//}),
 
 //                root: {
 //                    text: 'Imap Tree',
 //                },
 
-                columns: {
-                    items: [
-                        {
-                            xtype: 'treecolumn', //this is so we know which column will show the tree
-                            text: 'Folder',
-                            dataIndex: 'folder',
-                            flex: 3,
-                            renderer: function(v,p,r) {
-                                return (r.get('unread')===0?v:'<b>'+v+'</b>');
-                            }
-                        },
-                        {
-                            text: 'Unread', 
-                            dataIndex: 'unread',
-                            align: 'right',
-                            flex: 1,
-                            renderer: function(v,p,r) {
-                                return (v===0?'':'<b>'+v+'</b>');
-                            }
-                        }
-                  ]
-                },
-                
-                useArrows: true,
-                rootVisible: false
-            });
-            
-            var tool = Ext.create({
-                    xtype: 'container',
-                    title: 'Mail Toolbox',
-                    width: 200,
-                    layout: 'fit',
-                    items: [
-                        this.imapTree
-                    ]
-            });
-            this.setToolComponent(tool);
+			columns: {
+				items: [
+					{
+						xtype: 'treecolumn', //this is so we know which column will show the tree
+						text: 'Folder',
+						dataIndex: 'folder',
+						flex: 3,
+						renderer: function(v,p,r) {
+							return (r.get('unread')===0?v:'<b>'+v+'</b>');
+						}
+					},
+					{
+						text: 'Unread', 
+						dataIndex: 'unread',
+						align: 'right',
+						flex: 1,
+						renderer: function(v,p,r) {
+							return (v===0?'':'<b>'+v+'</b>');
+						}
+					}
+			  ]
+			},
 
-            console.log('Sonicle.webtop.mail.MailService initialized!');
+			useArrows: true,
+			rootVisible: false
+		});
+
+		var tool = Ext.create({
+				xtype: 'container',
+				title: 'Mail Toolbox',
+				width: 200,
+				layout: 'fit',
+				items: [
+					me.imapTree
+				]
+		});
+		me.setToolComponent(tool);
+
+		me.addWSAction('unread',me.unreadChanged,this);
+		WT.log('Sonicle.webtop.mail.MailService initialized!');
+	},
+	
+	unreadChanged: function(cfg) {
+		WT.log('unreadChanged on '+cfg.foldername+" ("+cfg.unread+")");
+		var me=this;
+		var node=me.imapTree.getStore().getById(cfg.foldername);
+		WT.log("found node "+node);
+		if (node) node.set('unread',cfg.unread);
 	}
+	
 });
