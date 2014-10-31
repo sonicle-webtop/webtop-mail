@@ -46,6 +46,12 @@ import java.util.*;
 import javax.mail.*;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
+import javax.mail.event.ConnectionEvent;
+import javax.mail.event.ConnectionListener;
+import javax.mail.event.MessageChangedEvent;
+import javax.mail.event.MessageChangedListener;
+import javax.mail.event.MessageCountEvent;
+import javax.mail.event.MessageCountListener;
 import javax.mail.internet.*;
 import javax.mail.search.*;
 import org.xml.sax.*;
@@ -203,7 +209,69 @@ public class FolderCache {
             wtuser=sharedInboxPrincipal.getSubjectId();
         }
         updateScanFlags();
+		if (isInbox) startIdle();
     }
+	
+	boolean goidle=true;
+	class IdleThread extends Thread {
+		@Override
+		public void run() {
+			//MailService.logger.debug("Starting idle thread");
+			try {
+				while(goidle) {
+					IMAPFolder folder=((IMAPFolder)FolderCache.this.getFolder());
+					if (!folder.isOpen()) folder.open(Folder.READ_WRITE);
+					//MailService.logger.debug("Entering idle mode on {}",foldername);
+					folder.idle();
+					//MailService.logger.debug("Exiting idle mode on {}",foldername);
+				}
+			} catch(MessagingException exc) {
+				MailService.logger.debug("Error during idle",exc);
+			}
+		}
+	}
+	
+	public void startIdle() {
+		folder.addMessageChangedListener(
+				new MessageChangedListener() {
+
+					@Override
+					public void messageChanged(MessageChangedEvent mce) {
+						try {
+							MailService.logger.debug("MessageChanged: {}",mce.getMessageChangeType());
+							refreshUnreads();
+						} catch(MessagingException exc) {
+						}
+					}
+					
+				}
+		);
+		folder.addMessageCountListener(
+				new MessageCountListener() {
+
+					@Override
+					public void messagesAdded(MessageCountEvent mce) {
+						try {
+							MailService.logger.debug("MessageAdded: {}",mce.getType());
+							refreshUnreads();
+						} catch(MessagingException exc) {
+						}
+					}
+
+					@Override
+					public void messagesRemoved(MessageCountEvent mce) {
+						try {
+							MailService.logger.debug("MessageRemoved: {}",mce.getType());
+							refreshUnreads();
+						} catch(MessagingException exc) {
+						}
+					}
+					
+				}
+		);
+		IdleThread ithread=new IdleThread();
+		ithread.start();
+	}
     
     protected void setStartupLeaf(boolean b) {
         startupLeaf=b;
@@ -365,7 +433,10 @@ public class FolderCache {
     protected void setHasUnreadChildren(boolean b) {
         boolean oldhuc=hasUnreadChildren;
         hasUnreadChildren=b;
-        if (oldhuc!=b) unreadChanged=true;
+        if (oldhuc!=b) {
+			unreadChanged=true;
+			sendUnreadChangedMessage();
+		}
     }
     
     public int getUnreadMessagesCount() {
@@ -395,6 +466,16 @@ public class FolderCache {
         if (me!=null) msg=me.msg;
         return msg;
     }    
+	
+	private void sendUnreadChangedMessage() {
+		try {
+			this.environment.sendWebSocketMessage(
+					new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
+			);
+		} catch(IOException exc) {
+			MailService.logger.error("Error sending WebSocket message",exc);
+		}
+	}
 
     protected void refreshUnreads() throws MessagingException {
         refreshUnreadMessagesCount();
@@ -410,13 +491,7 @@ public class FolderCache {
             } else unread=folder.getUnreadMessageCount();
             if (oldunread!=unread) {
 				unreadChanged=true;
-				try {
-					this.environment.sendWebSocketMessage(
-							new UnreadChangedMessage(foldername, unread)
-					);
-				} catch(IOException exc) {
-					exc.printStackTrace();
-				}
+				sendUnreadChangedMessage();
 			}
         }
     }
@@ -490,6 +565,7 @@ public class FolderCache {
     }
 
     private void updateUnreads() {
+		boolean oldhuc=hasUnreadChildren;
         if (unread>0) hasUnreadChildren=true;
         else {
             hasUnreadChildren=false;
@@ -499,6 +575,8 @@ public class FolderCache {
                 }
             }
         }
+		if (oldhuc!=hasUnreadChildren)
+			sendUnreadChangedMessage();
         if (hasUnreadChildren) {
             FolderCache fcparent=parent;
             while(fcparent!=null) {
@@ -669,6 +747,7 @@ public class FolderCache {
     }
 
     protected void cleanup() {
+		goidle=false;
         dhash.clear();
 //        hash.clear();
 //        list.clear();

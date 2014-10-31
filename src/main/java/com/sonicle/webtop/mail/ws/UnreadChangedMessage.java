@@ -47,13 +47,15 @@ public class UnreadChangedMessage extends WebSocketMessage {
 	
 	String foldername;
 	int unread;
+	boolean hasUnreadChildren;
 	
-	public UnreadChangedMessage(String foldername, int unread) {
+	public UnreadChangedMessage(String foldername, int unread, boolean hasUnreadChildren) {
 		this.service=Environment.getServiceId(MailService.class);
 		this.action=ACTION_UNREAD;
 		
 		this.foldername=foldername;
 		this.unread=unread;
+		this.hasUnreadChildren=hasUnreadChildren;
 	}
 	
 }

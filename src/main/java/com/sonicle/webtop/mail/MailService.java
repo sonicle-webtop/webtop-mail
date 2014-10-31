@@ -196,6 +196,8 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 		this.props.setProperty("mail.imaps.ssl.trust", "*");
 		this.props.setProperty("mail.imap.folder.class", "com.sonicle.mail.imap.SonicleIMAPFolder");
 		this.props.setProperty("mail.imaps.folder.class", "com.sonicle.mail.imap.SonicleIMAPFolder");
+		//support idle events
+		this.props.setProperty("mail.imap.enableimapevents", "true");
 		
 		folderPrefix = mprofile.getFolderPrefix();
 		String protocol = mprofile.getMailProtocol();

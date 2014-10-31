@@ -174,7 +174,7 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 						dataIndex: 'folder',
 						flex: 3,
 						renderer: function(v,p,r) {
-							return (r.get('unread')===0?v:'<b>'+v+'</b>');
+							return (r.get('unread')!==0||r.get('hasUnread')?'<b>'+v+'</b>':v);
 						}
 					},
 					{
@@ -205,15 +205,18 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 		me.setToolComponent(tool);
 
 		me.addWSAction('unread',me.unreadChanged,this);
-		WT.log('Sonicle.webtop.mail.MailService initialized!');
+		WT.Log.debug('Sonicle.webtop.mail.MailService initialized!');
 	},
 	
 	unreadChanged: function(cfg) {
-		WT.log('unreadChanged on '+cfg.foldername+" ("+cfg.unread+")");
+		WT.Log.debug('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
 		var me=this;
 		var node=me.imapTree.getStore().getById(cfg.foldername);
-		WT.log("found node "+node);
-		if (node) node.set('unread',cfg.unread);
+		WT.Log.debug("found node "+node);
+		if (node) {
+			node.set('hasUnread',cfg.hasUnreadChildren);
+			node.set('unread',cfg.unread);
+		}
 	}
 	
 });

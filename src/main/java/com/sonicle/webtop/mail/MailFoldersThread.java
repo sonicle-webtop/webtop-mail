@@ -85,7 +85,10 @@ public class MailFoldersThread extends Thread {
         failMessage=null;
         sleepCount=0;
         try {
+			//Check inbox only once, then via idle
             FolderCache fcinbox=ms.getFolderCache("INBOX");
+			fcinbox.checkFolder();
+			
             FolderCache fcroot=ms.getRootFolderCache();
             //System.out.println("Entering MFT loop");
             while(!abort) {
@@ -94,7 +97,10 @@ public class MailFoldersThread extends Thread {
                         ms.checkStoreConnected();
                         if (sleepCount>0) {
                             //System.out.println("MailFolderThread: Checking inbox messages");
-                            fcinbox.checkFolder();
+							
+							//Don't check here inbox, it's in idle mode
+                            //fcinbox.checkFolder();
+							
                             FolderCache sfc[]=ms.getSharedFoldersCache();
                             if (sfc!=null) {
                                 for(FolderCache fc: sfc) {
