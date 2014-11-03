@@ -56,6 +56,9 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 
 Ext.define('Sonicle.webtop.mail.MailService', {
 	extend: 'WT.sdk.Service',
+/*	requires: [
+		'Sonicle.webtop.mail.MessagesPanel'
+	],*/
 
         imapTree: null,
         toolbar: null,
@@ -113,6 +116,8 @@ Ext.define('Sonicle.webtop.mail.MailService', {
     
 
 	init: function() {
+		Ext.require('Sonicle.webtop.mail.MessagesPanel');
+		
 		var me=this;
 		//**LATER**
 		//this.loadSettings();
@@ -203,10 +208,63 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 				]
 		});
 		me.setToolComponent(tool);
+		
+
+		//TODO: tree editor
+        //this.treeEditor=new WT.ImapTreeEditor(this.imapTree);
+        //this.treeEditor.on('beforecomplete',this.renamingFolder,this);
+		
+		//TODO: context menu
+        //this.imapTree.on('contextmenu',this.treeContextMenu,this);
+        me.imapTree.on('itemclick',me.folderClicked,me);
+		//TODO: drag&drop
+        //this.imapTree.on('nodedragover',this.draggingOver,this);
+        //this.imapTree.on('beforenodedrop',this.dropping,this);
+		//TODO: tree on load
+/*        this.imapTree.on('load',function(n) {
+            if (n.id=='imaproot') {
+                setTimeout(this.actionCheck.createDelegate(this),1000);
+                WT.addServerEventListener("recents",this);
+                //setTimeout(this.checkFolders.createDelegate(this),1000);
+            }
+        },this);*/
+		//TODO: context menu
+        /*this.imapTree.on('render',function(t) {
+            t.body.on('contextmenu',this.treeBodyContextMenu,this);
+        },this);*/
+		
+		
+		me.messagesPanel=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
+			ms: me
+		});
+		me.setMainComponent(me.messagesPanel);
 
 		me.addWSAction('unread',me.unreadChanged,this);
 		WT.Log.debug('Sonicle.webtop.mail.MailService initialized!');
 	},
+	
+    folderClicked: function(t, r, item, ix) {
+        var mp=this.messagesPanel;
+		//TODO: folder clicked
+        //mp.depressFilterRowButton();
+        //mp.clearGridSelections();
+        //mp.clearMessageView();
+        //var a=n.attributes;
+        var refresh=true; //a.changed?'1':'0';
+        var folderid=r.get("id");
+		//TODO: stop flash title and baloon hide
+        /*if (folderid=='INBOX') {
+            WT.app.stopFlashTitle();
+            if (this.baloon) this.baloon.hide();
+        }*/
+		//TODO: disable spam button
+        //this.aSpam.setDisabled((folderid==this.folderSpam));
+        this.currentFolder=folderid;
+		//TODO: clear filter textfield
+        //mp.filterTextField.setValue('');
+        
+        mp.reloadFolder(folderid,{start:0,limit:this.pageRows,refresh:refresh});
+    },
 	
 	unreadChanged: function(cfg) {
 		WT.Log.debug('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
