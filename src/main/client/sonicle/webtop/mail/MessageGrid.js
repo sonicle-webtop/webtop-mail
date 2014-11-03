@@ -32,6 +32,81 @@
  * the words "Powered by Sonicle WebTop".
  */
 
+Ext.define('Sonicle.webtop.mail.MessageListView', {
+	extend: 'Ext.grid.View',
+    
+    ixAutoSelect: -1,
+    //enableGroupingMenu: false,
+    
+    getRowClass: function(record, index, rowParams, store ) {
+        var unread=record.get('unread');
+        var tdy=record.get('istoday');
+		cls1=unread?'wtmail-row-unread':'';
+		cls2=tdy?'wtmail-row-today':'';
+        /*if (unread) {
+            if (tdy) cls='mailRowUnreadToday';
+            else cls='mailRowUnread';
+        } else {
+            if (tdy) cls='mailRowReadToday';
+            else cls='mailRowRead';
+        }*/
+        //rowParams.bodyStyle="height: 40px";
+        return cls1+' '+cls2;
+    }
+
+//TODO: MessageListView various
+/*    onLoad : function(){
+        var g=this.grid;
+        var ix=this.ixAutoSelect;
+        var c=g.store.getCount();
+        if (c>0 && ix>=0) {
+          if (ix>=c) ix=c-1;
+          g.getSelectionModel().selectRow(ix);
+          this.ixAutoSelect=-1;
+        } else {
+          if (!g.multifolder) this.scrollToTop();
+        }
+    },
+
+    insertRows : function(dm, firstRow, lastRow, isUpdate){
+        try {
+            var last = dm.getCount() - 1;
+            if(!isUpdate && firstRow === 0 && lastRow >= last){
+                this.refresh();
+            }else{
+                if(!isUpdate){
+                    this.fireEvent("beforerowsinserted", this, firstRow, lastRow);
+                }
+                var html = this.renderRows(firstRow, lastRow),
+                    before = this.getRow(firstRow);
+                if(before){
+                    if(firstRow === 0){
+                        Ext.fly(this.getRow(0)).removeClass(this.firstRowCls);
+                    }
+                    Ext.DomHelper.insertHtml('beforeBegin', before, html);
+                }else{
+                    var r = this.getRow(last - 1);
+                    if(r){
+                        Ext.fly(r).removeClass(this.lastRowCls);
+                    }
+                    Ext.DomHelper.insertHtml('beforeEnd', this.mainBody.dom, html);
+                }
+                if(!isUpdate){
+                    this.fireEvent("rowsinserted", this, firstRow, lastRow);
+                    this.processRows(firstRow);
+                }else if(firstRow === 0 || firstRow >= last){
+                    //ensure first/last row is kept after an update.
+                    Ext.fly(this.getRow(firstRow)).addClass(firstRow === 0 ? this.firstRowCls : this.lastRowCls);
+                }
+            }
+            this.syncFocusEl(firstRow);
+        } catch(ex) {
+            
+        }
+    }*/
+
+});
+
 Ext.define('Sonicle.webtop.mail.MessagesModel',{
 	extend: 'Ext.data.Model',
 	fields: []
@@ -41,13 +116,31 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
 
     frame: false,
-    iconCls:'icon-grid',
+    //iconCls:'icon-grid',
 	//TODO: ddGroup
     //ddGroup: 'mail',
     //enableDragDrop: true,
     enableColumnMove: true,
 	//TODO: loadMask
     //loadMask: {msg: WT.res("loading")},
+	viewConfig: {
+		getRowClass: function(record, index, rowParams, store ) {
+			var unread=record.get('unread');
+			var tdy=record.get('istoday');
+			cls1=unread?'wtmail-row-unread':'';
+			cls2=tdy?'wtmail-row-today':'';
+			/*if (unread) {
+				if (tdy) cls='mailRowUnreadToday';
+				else cls='mailRowUnread';
+			} else {
+				if (tdy) cls='mailRowReadToday';
+				else cls='mailRowRead';
+			}*/
+			//rowParams.bodyStyle="height: 40px";
+			return cls1+' '+cls2;
+		}
+	},
+	
     clickTimeoutId: 0,
     clickEvent: null,
 	//TODO: DocMgt
@@ -65,8 +158,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             'deleting',
             'moving'
         );*/
-		//TODO: MessageListView
-        //this.view=new WT.MessageListView();
+		
+        //this.view=Ext.create('Sonicle.webtop.mail.MessageListView',{});
 
         var n=0;
         var fields=new Array();
@@ -247,7 +340,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					//var sdate=record.get("scheddate");
 					//if (sdate) value="scheduled";
-					var imgname=Ext.String.format("status{0}.gif",value);
+					var imgname=Ext.String.format("status{0}.png",value);
 					var imgtag=this.ms.imageTag(imgname,16,16);
 					//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
 					//else tag=imgtag;

@@ -6334,7 +6334,7 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 				funread = mcache.getUnreadMessagesCount();
 				sout += "\n],\n";
 				sout += "metaData: {\n"
-						+ "  root: 'messages', totalProperty: 'totalCount', idProperty: 'idmessage',\n"
+						+ "  root: 'messages', total: 'totalCount', idProperty: 'idmessage',\n"
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
 						+ "  groupField: '" + group + "',\n";
