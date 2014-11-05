@@ -118,7 +118,7 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 		//this.loadSettings();
 		//this.initTreeMenu();
 		//this.initGridMenu();
-
+		
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
 			title: "Email", //this.title,
 			autoScroll: true,
@@ -192,17 +192,8 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 			useArrows: true,
 			rootVisible: false
 		});
-
-		var tool = Ext.create({
-				xtype: 'container',
-				title: 'Mail Toolbox',
-				width: 200,
-				layout: 'fit',
-				items: [
-					me.imapTree
-				]
-		});
-		me.setToolComponent(tool);
+		
+		me.setToolComponent(me.imapTree);
 
 		me.addWSAction('unread',me.unreadChanged,this);
 		WT.Log.debug('Sonicle.webtop.mail.MailService initialized!');
