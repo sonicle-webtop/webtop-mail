@@ -37,23 +37,23 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
     
     ixAutoSelect: -1,
     //enableGroupingMenu: false,
+	
+	initComponent: function() {
+		var me=this;
+		me.navigationModel=Ext.create('Ext.view.NavigationModel',{});
+		me.callParent(arguments);
+	},
     
-    getRowClass: function(record, index, rowParams, store ) {
-        var unread=record.get('unread');
-        var tdy=record.get('istoday');
+	loadMask: { msg: WT.res("loading") },
+	getRowClass: function(record, index, rowParams, store ) {
+		var unread=record.get('unread');
+		var tdy=record.get('istoday');
 		cls1=unread?'wtmail-row-unread':'';
 		cls2=tdy?'wtmail-row-today':'';
-        /*if (unread) {
-            if (tdy) cls='mailRowUnreadToday';
-            else cls='mailRowUnread';
-        } else {
-            if (tdy) cls='mailRowReadToday';
-            else cls='mailRowRead';
-        }*/
-        //rowParams.bodyStyle="height: 40px";
-        return cls1+' '+cls2;
+		return cls1+' '+cls2;
     }
-
+	
+	
 //TODO: MessageListView various
 /*    onLoad : function(){
         var g=this.grid;
@@ -121,25 +121,23 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     //ddGroup: 'mail',
     //enableDragDrop: true,
     enableColumnMove: true,
-	//TODO: loadMask
-    //loadMask: {msg: WT.res("loading")},
-	viewConfig: {
+/*	viewConfig: {
+		loadMask: { msg: WT.res("loading") },
 		getRowClass: function(record, index, rowParams, store ) {
 			var unread=record.get('unread');
 			var tdy=record.get('istoday');
 			cls1=unread?'wtmail-row-unread':'';
 			cls2=tdy?'wtmail-row-today':'';
-			/*if (unread) {
-				if (tdy) cls='mailRowUnreadToday';
-				else cls='mailRowUnread';
-			} else {
-				if (tdy) cls='mailRowReadToday';
-				else cls='mailRowRead';
-			}*/
-			//rowParams.bodyStyle="height: 40px";
 			return cls1+' '+cls2;
 		}
+	},*/
+	
+	selModel: { 
+		mode: 'MULTI'
 	},
+	selType: 'rowmodel',
+	multiColumnSort: true,
+	
 	
     clickTimeoutId: 0,
     clickEvent: null,
@@ -159,7 +157,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             'moving'
         );*/
 		
-        //this.view=Ext.create('Sonicle.webtop.mail.MessageListView',{});
+        this.view=Ext.create('Sonicle.webtop.mail.MessageListView',{});
 
         var n=0;
         var fields=new Array();
