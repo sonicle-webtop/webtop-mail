@@ -6098,7 +6098,7 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 			
 			if (msgs != null) {
 				
-				sout += "totalCount:" + msgs.length + ",\nstart:" + start + ",\nlimit:" + limit + ",\nmessages: [\n";
+				sout += "total:" + msgs.length + ",\nstart:" + start + ",\nlimit:" + limit + ",\nmessages: [\n";
 
 				/*               if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
 				 //mcache.fetch(msgs,FolderCache.flagsFP,0,start);
@@ -6334,7 +6334,7 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 				funread = mcache.getUnreadMessagesCount();
 				sout += "\n],\n";
 				sout += "metaData: {\n"
-						+ "  root: 'messages', totalProperty: 'totalCount', idProperty: 'idmessage',\n"
+						+ "  root: 'messages', total: 'totalCount', idProperty: 'idmessage',\n"
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
 						+ "  groupField: '" + group + "',\n";
@@ -6356,7 +6356,7 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 				sout += "},\n";
 				sout += "unread: " + funread + ", issent: " + issent + ", millis: " + mlt.millis + " }\n";
 			} else {
-				sout += "totalCount:0,\nstart:0,\nlimit:0,\nmessages: [\n";
+				sout += "total:0,\nstart:0,\nlimit:0,\nmessages: [\n";
 				sout += "\n], unread: 0, issent: false }\n";
 			}
 			out.println(sout);
