@@ -33,7 +33,7 @@
  */
 
 Ext.define('Sonicle.webtop.mail.MessagesPanel', {
-	extend: 'Ext.container.Container',
+	extend: 'Ext.panel.Panel',
 	requires: [
 		'Sonicle.webtop.mail.MessageView',
 		'Sonicle.webtop.mail.MessageGrid'

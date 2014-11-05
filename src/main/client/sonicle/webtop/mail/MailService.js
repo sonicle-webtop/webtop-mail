@@ -199,7 +199,7 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 		});
 
 		var tool = Ext.create({
-				xtype: 'container',
+				xtype: 'panel',
 				title: 'Mail Toolbox',
 				width: 200,
 				layout: 'fit',

@@ -33,8 +33,9 @@
  */
 
 Ext.define('Sonicle.webtop.mail.MessageListView', {
-	extend: 'Ext.grid.View',
+	extend: 'Ext.view.Table',
     
+	isTree: false,
     ixAutoSelect: -1,
     //enableGroupingMenu: false,
 	
@@ -121,7 +122,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     //ddGroup: 'mail',
     //enableDragDrop: true,
     enableColumnMove: true,
-/*	viewConfig: {
+	viewConfig: {
+		navigationModel: Ext.create('Ext.view.NavigationModel',{}),
 		loadMask: { msg: WT.res("loading") },
 		getRowClass: function(record, index, rowParams, store ) {
 			var unread=record.get('unread');
@@ -130,7 +132,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			cls2=tdy?'wtmail-row-today':'';
 			return cls1+' '+cls2;
 		}
-	},*/
+	},
 	
 	selModel: { 
 		mode: 'MULTI'
@@ -157,7 +159,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             'moving'
         );*/
 		
-        this.view=Ext.create('Sonicle.webtop.mail.MessageListView',{});
+        /*this.view=Ext.create('Sonicle.webtop.mail.MessageListView',{
+			grid: this
+		});*/
 
         var n=0;
         var fields=new Array();
@@ -316,7 +320,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     //                        autoCreate: {tag: "input", type: "text", size: "1", autocomplete: "off", disabled: 'disabled'},
     //                        triggerConfig: {tag: "img", src: 'webtop/themes/win/minitrigger.gif', cls: "x-form-minitrigger ", width: 5},
                     store: new Ext.data.ArrayStore({
-                      id: 0,
+                      //id: 0,
                       fields: ['value','text','icon'],
                       data: [['','\u00a0',''], ['1',me.res('prihigh'),'iconPriorityHigh']]
                     }),
@@ -355,7 +359,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 //                        autoCreate: {tag: "input", type: "text", size: "8", autocomplete: "off", disabled: 'disabled'},
 //                        triggerConfig: {tag: "img", src: 'webtop/themes/win/minitrigger.gif', cls: "x-form-minitrigger ", width: 5},
                     store: new Ext.data.ArrayStore({
-                      id: 0,
+                      //id: 0,
                       fields: ['value','text','icon'],
                       data: [
                           ['','\u00a0',''],
@@ -478,7 +482,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 //                        autoCreate: {tag: "input", type: "text", size: "8", autocomplete: "off", disabled: 'disabled'},
 //                        triggerConfig: {tag: "img", src: 'webtop/themes/win/minitrigger.gif', cls: "x-form-minitrigger ", width: 5},
                     store: new Ext.data.ArrayStore({
-                      id: 0,
+                      //id: 0,
                       fields: ['value','text','icon'],
                       data: [
                           ['','\u00a0',''],
