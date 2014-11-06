@@ -108,6 +108,68 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
 
 });
 
+Ext.define('Sonicle.webtop.mail.NavigationModel',{
+	extend: 'Ext.grid.NavigationModel',
+	
+	//remove cell focus style
+	focusCls: '',
+	
+    // Home moves the focus to first row.
+    onKeyHome: function(keyEvent) {
+        var me = this,
+            view = keyEvent.view;
+
+//        // ALT+Home - go to first visible record in grid.
+//        if (keyEvent.altKey) {
+            if (view.bufferedRenderer) {
+                // If rendering is buffered, we cannot just increment the row - the row may not be there
+                // We have to ask the BufferedRenderer to navigate to the target.
+                // And that may involve asynchronous I/O, so must postprocess in a callback.
+                me.lastKeyEvent = keyEvent;
+                view.bufferedRenderer.scrollTo(0, false, me.afterBufferedScrollTo, me);
+            } else {
+                // Walk forwards to the first record
+                me.setPosition(view.walkRecs(keyEvent.record, -view.dataSource.indexOf(keyEvent.record)), null, keyEvent);
+            }
+//        }
+//        // Home moves the focus to the First cell in the current row.
+//        else {
+//            me.setPosition(keyEvent.record, 0, keyEvent);
+//        }
+    },
+	
+    // End moves the focus to the last cell in the current row.
+    onKeyEnd: function(keyEvent) {
+        var me = this,
+            view = keyEvent.view;
+
+//        // ALT/End - go to last visible record in grid.
+//        if (keyEvent.altKey) {
+            if (view.bufferedRenderer) {
+                // If rendering is buffered, we cannot just increment the row - the row may not be there
+                // We have to ask the BufferedRenderer to navigate to the target.
+                // And that may involve asynchronous I/O, so must postprocess in a callback.
+                me.lastKeyEvent = keyEvent;
+                view.bufferedRenderer.scrollTo(view.store.getCount() - 1, false, me.afterBufferedScrollTo, me);
+            } else {
+                 // Walk forwards to the end record
+                me.setPosition(view.walkRecs(keyEvent.record, view.dataSource.getCount() - 1 - view.dataSource.indexOf(keyEvent.record)), null, keyEvent);
+            }
+//        }
+//        // End moves the focus to the last cell in the current row.
+//        else {
+//            me.setPosition(keyEvent.record, keyEvent.view.getVisibleColumnManager().getColumns().length - 1, keyEvent);
+//        }
+    },
+	
+    onKeyRight: function(keyEvent) {
+	},
+	
+	onKeyLeft: function(keyEvent) {
+	}
+	
+});
+
 Ext.define('Sonicle.webtop.mail.MessagesModel',{
 	extend: 'Ext.data.Model',
 	fields: []
@@ -123,7 +185,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     //enableDragDrop: true,
     enableColumnMove: true,
 	viewConfig: {
-		navigationModel: Ext.create('Ext.view.NavigationModel',{}),
+		navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
 		loadMask: { msg: WT.res("loading") },
 		getRowClass: function(record, index, rowParams, store ) {
 			var unread=record.get('unread');
