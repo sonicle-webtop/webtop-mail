@@ -48,10 +48,13 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
 	loadMask: { msg: WT.res("loading") },
 	getRowClass: function(record, index, rowParams, store ) {
 		var unread=record.get('unread');
-		var tdy=record.get('istoday');
-		cls1=unread?'wtmail-row-unread':'';
-		cls2=tdy?'wtmail-row-today':'';
-		return cls1+' '+cls2;
+		var cls=unread?'wtmail-row-unread':'';
+		if (!this.grid.getSelectionModel().isSelected(index)) {
+			var tdy=record.get('istoday');
+			cls+=tdy?' wtmail-row-today':'';
+		}
+		
+		return cls;
     }
 	
 	
@@ -196,6 +199,24 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
 	},
 	
+	features: [
+		{
+			ftype:'grouping',
+			groupHeaderTpl: Ext.create('Ext.XTemplate',
+				'{children:this.getHeaderPrefix}',
+				'<div>{children:this.getHeaderString}</div>',
+				{
+					getHeaderPrefix: function(children) {
+						var xdate=children[0].get("xdate");
+						return (xdate.length>0)?xdate+" : ":"";
+					},
+					getHeaderString: function(children) {
+						return children[0].get("gdate");
+					}
+				}
+			)
+		}
+	],
 	selModel: { 
 		mode: 'MULTI'
 	},
@@ -242,6 +263,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         fields[n++]='subject';
         fields[n++]={name:'date', type:'date'};
         fields[n++]='gdate';
+        fields[n++]='sdate';
+        fields[n++]='xdate';
         fields[n++]={name:'unread', type:'boolean'};
         fields[n++]={name:'size', type:'int'};
         fields[n++]='flag';
@@ -259,6 +282,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				id: idx,
 				fields: fields
 			}),
+			groupField: 'sdate',
+			groupDir: 'DESC',
+			/*grouper: Ext.create('Ext.util.Grouper',{
+				property: 'date',
+				direction: 'DESC',
+				groupFn: function(r) {
+					var d1=r.get("date");
+					var d2=new Date(d1.getFullYear(),d1.getMonth(),d1.getDate());
+					return d2;
+				},
+				sorterFn: function(r1,r2) {
+					var a=r1.get("date");
+					var b=r2.get("date");
+					return (a>b)-(a<b);
+				}
+			}),*/
 			
 			//TODO: sort
             /*sortInfo: {field: (this.multifolder?'folderdesc':'date'), direction: (this.multifolder?'ASC':'DESC')},
@@ -480,17 +519,20 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         };
         dcols[n++]={//Date
             header: me.res("column-date"),
-            //width: 80,
-            //sortable: true,
-            /*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-                var tdy=record.get("istoday");
-                var tag;
-                if (tdy) tag="<span ext:qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
-                else tag="<span ext:qtip='"+Ext.util.Format.date(value,'H:i:s')+"'>"+Ext.util.Format.date(value,'d-M-Y')+"</span>";
-                return tag;
-            },*/
             hidden: true,
             dataIndex: 'gdate',
+            filter: {}
+        };
+        dcols[n++]={//Date
+            header: me.res("column-date"),
+            hidden: true,
+            dataIndex: 'sdate',
+            filter: {}
+        };
+        dcols[n++]={//Date
+            header: me.res("column-date"),
+            hidden: true,
+            dataIndex: 'xdate',
             filter: {}
         };
         dcols[n++]={//Dimension

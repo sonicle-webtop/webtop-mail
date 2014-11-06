@@ -125,7 +125,7 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 		//this.initGridMenu();
 
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
-			title: "Email", //this.title,
+			//title: "Email", //this.title,
 			autoScroll: true,
 
 			//enableDD: true, ???

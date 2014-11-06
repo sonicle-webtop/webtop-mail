@@ -6202,21 +6202,24 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 					Calendar cal2 = Calendar.getInstance(locale);
 					boolean isToday = false;
 					String gdate = "";
+					String sdate = "";
+					String xdate = "";
 					if (d != null) {
 						cal1.setTime(today);
 						cal2.setTime(d);
 						
 						gdate = DateFormat.getDateInstance(DateFormat.MEDIUM, locale).format(d);
-						boolean isGdate = group.equals("gdate");
+						sdate=cal2.get(Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(Calendar.DATE));
+						//boolean isGdate = group.equals("gdate");
 						if (cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH) && cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)) {
 							int dx = cal1.get(Calendar.DAY_OF_MONTH) - cal2.get(Calendar.DAY_OF_MONTH);
 							if (dx == 0) {
 								isToday = true;
-								if (isGdate) {
-									gdate = environment.lookupCoreResource(locale, CoreLocaleKey.DATE_TODAY) + "  " + gdate;
-								}
-							} else if (dx == 1 && isGdate) {
-								gdate = environment.lookupCoreResource(locale, CoreLocaleKey.DATE_YESTERDAY) + "  " + gdate;
+								//if (isGdate) {
+									xdate = environment.lookupCoreResource(locale, CoreLocaleKey.DATE_TODAY);
+								//}
+							} else if (dx == 1 /*&& isGdate*/) {
+								xdate = environment.lookupCoreResource(locale, CoreLocaleKey.DATE_YESTERDAY);
 							}
 						}
 					}
@@ -6305,6 +6308,8 @@ public class MailService extends com.sonicle.webtop.core.sdk.Service {
 							+ "subject:'" + subject + "',"
 							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
 							+ "gdate: '" + gdate + "',"
+							+ "sdate: '" + sdate + "',"
+							+ "xdate: '" + xdate + "',"
 							+ "unread: " + unread + ","
 							+ "size:" + msgsize + ","
 							+ "flag:'" + cflag + "'"
