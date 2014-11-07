@@ -5,3 +5,4 @@
 
 .wtmail-row-unread TD DIV { font-weight: bold; }
 .wtmail-row-today { background-color: #F8F8C8; }
+.wtmail-icon-testaction { background-image: url('mail_16.png') !important; }

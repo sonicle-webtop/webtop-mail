@@ -118,6 +118,14 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 	init: function() {
 		//Ext.require('Sonicle.webtop.mail.MessagesPanel');
 		
+		this.addAction('new', 'testaction', {
+			tooltip: null,
+			handler: function(s) {
+				alert(s.text+' clicked');
+			},
+			scope: this
+		});
+		
 		var me=this;
 		//**LATER**
 		//this.loadSettings();
