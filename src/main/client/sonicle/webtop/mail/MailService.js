@@ -133,7 +133,7 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 		//this.initGridMenu();
 		
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
-			title: "Email", //this.title,
+			//title: "Email", //this.title,
 			autoScroll: true,
 
 			//enableDD: true, ???
@@ -205,8 +205,17 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 			useArrows: true,
 			rootVisible: false
 		});
-		
-		me.setToolComponent(me.imapTree);
+
+		var tool = Ext.create({
+				xtype: 'panel',
+				title: 'Mail Toolbox',
+				width: 200,
+				layout: 'fit',
+				items: [
+					me.imapTree
+				]
+		});
+		me.setToolComponent(tool);
 
 		//TODO: tree editor
         //this.treeEditor=new WT.ImapTreeEditor(this.imapTree);
@@ -214,18 +223,22 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 		
 		//TODO: context menu
         //this.imapTree.on('contextmenu',this.treeContextMenu,this);
-        me.imapTree.on('itemclick',me.folderClicked,me);
+        me.imapTree.on('select',me.folderSelected,me);
 		//TODO: drag&drop
         //this.imapTree.on('nodedragover',this.draggingOver,this);
         //this.imapTree.on('beforenodedrop',this.dropping,this);
 		//TODO: tree on load
-/*        this.imapTree.on('load',function(n) {
-            if (n.id=='imaproot') {
-                setTimeout(this.actionCheck.createDelegate(this),1000);
-                WT.addServerEventListener("recents",this);
-                //setTimeout(this.checkFolders.createDelegate(this),1000);
-            }
-        },this);*/
+        this.imapTree.on('load',function(t,r,s,o,n) {
+            //if (n.id=='imaproot') {
+            //    setTimeout(this.actionCheck.createDelegate(this),1000);
+            //    WT.addServerEventListener("recents",this);
+            //    //setTimeout(this.checkFolders.createDelegate(this),1000);
+            //}
+			if (n.id==='root') {
+				//this.selectFolder('INBOX');
+				this.imapTree.getSelectionModel().select(0);
+			}
+        },this);
 		//TODO: context menu
         /*this.imapTree.on('render',function(t) {
             t.body.on('contextmenu',this.treeBodyContextMenu,this);
@@ -241,7 +254,12 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 		WT.Log.debug('Sonicle.webtop.mail.MailService initialized!');
 	},
 	
-    folderClicked: function(t, r, item, ix) {
+    folderSelected: function(t, r, ix) {
+        var folderid=r.get("id");
+		this.showFolder(folderid);
+    },
+	
+	showFolder: function(folderid) {
         var mp=this.messagesPanel;
 		//TODO: folder clicked
         //mp.depressFilterRowButton();
@@ -249,7 +267,6 @@ Ext.define('Sonicle.webtop.mail.MailService', {
         //mp.clearMessageView();
         //var a=n.attributes;
         var refresh=true; //a.changed?'1':'0';
-        var folderid=r.get("id");
 		//TODO: stop flash title and baloon hide
         /*if (folderid=='INBOX') {
             WT.app.stopFlashTitle();
@@ -262,7 +279,7 @@ Ext.define('Sonicle.webtop.mail.MailService', {
         //mp.filterTextField.setValue('');
         
         mp.reloadFolder(folderid,{start:0,limit:this.pageRows,refresh:refresh});
-    },
+	}, 
 	
 	unreadChanged: function(cfg) {
 		WT.Log.debug('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
