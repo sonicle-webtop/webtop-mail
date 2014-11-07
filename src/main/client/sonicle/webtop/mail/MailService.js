@@ -120,8 +120,8 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 		
 		this.addAction('new', 'testaction', {
 			tooltip: null,
-			handler: function(s) {
-				alert(s.text+' clicked');
+			handler: function() {
+				alert('Mail testaction clicked');
 			},
 			scope: this
 		});
