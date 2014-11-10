@@ -117,16 +117,16 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 
 	init: function() {
 		//Ext.require('Sonicle.webtop.mail.MessagesPanel');
+		var me=this;
 		
 		this.addAction('new', 'testaction', {
 			tooltip: null,
 			handler: function() {
 				alert('Mail testaction clicked');
 			},
-			scope: this
+			scope: me
 		});
 		
-		var me=this;
 		//**LATER**
 		//this.loadSettings();
 		//this.initTreeMenu();
@@ -157,7 +157,7 @@ Ext.define('Sonicle.webtop.mail.MailService', {
 					reader: 'json',
 					url: 'ServiceRequest',
 					extraParams: {
-						service: 'com.sonicle.webtop.mail',
+						service: me.ID,
 						action: 'GetImapTree'
 					}
 				},

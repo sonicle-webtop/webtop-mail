@@ -277,7 +277,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 
         //this.store = new Ext.data.Store({
         me.store = Ext.create('Ext.data.JsonStore',{
-            proxy: WT.proxy(me.ms.id, me.reloadAction,'messages'),
+            proxy: WT.proxy(me.ms.ID, me.reloadAction,'messages'),
 			model: Ext.create('Sonicle.webtop.mail.MessagesModel',{
 				id: idx,
 				fields: fields
