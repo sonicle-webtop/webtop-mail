@@ -1,17 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services>
+	<!--
+		<package> -> Java package name.
+			Also used as service identifier/name (ID).
+		<jsPackage> -> Javascript package name.
+			This package will be used to determine classes files path.
+		<shortName> -> Short service name
+			Value must be unique in webtop platform. This name is used as 
+			short service idenfitier (XID) and as prefix for css classes.
+		<serviceClassName> -> Service class name (do not specify package name)
+		<optionsClassName> -> Service options class name (do not specify package name)
+		<publicServiceClassName> -> Public service class name (do not specify package name)
+		<deamonServiceClassName> -> Deamon service class name (do not specify package name)
+	-->
 	<service>
-		<id>com.sonicle.webtop.mail</id>
-		<xid>wtmail</xid>
+		<package>com.sonicle.webtop.mail</package>
+		<jsPackage>Sonicle.webtop.mail</jsPackage>
+		<shortName>wtmail</shortName>
 		<version>1.0.0</version>
-		<buildDate>03/10/2014</buildDate>
+		<buildDate>03/11/2014</buildDate>
+		<serviceClassName>MailService</serviceClassName>
+		<publicServiceClassName></publicServiceClassName>
+		<deamonServiceClassName></deamonServiceClassName>
+		<optionsClassName>MailOptions</optionsClassName>
 		<company>Sonicle S.r.l.</company>
 		<companyEmail>sonicle@sonicle.com</companyEmail>
 		<companyWebSite>http://www.sonicle.com</companyWebSite>
 		<supportEmail>sonicle@sonicle.com</supportEmail>
-		<className>com.sonicle.webtop.mail.MailService</className>
-		<jsClassName>Sonicle.webtop.mail.MailService</jsClassName>
-		<publicClassName></publicClassName>
-		<deamonClassName></deamonClassName>
 	</service>
 </services>
