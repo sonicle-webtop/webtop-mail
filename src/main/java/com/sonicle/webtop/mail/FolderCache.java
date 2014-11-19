@@ -468,6 +468,7 @@ public class FolderCache {
     }    
 	
 	private void sendUnreadChangedMessage() {
+		//MailService.logger.debug("sending unread changed on "+foldername);
 		try {
 			this.environment.sendWebSocketMessage(
 					new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
@@ -483,6 +484,7 @@ public class FolderCache {
     }
 
     protected void refreshUnreadMessagesCount() throws MessagingException {
+		//MailService.logger.debug("refreshing count on "+foldername);
         if ((folder.getType() & Folder.HOLDS_MESSAGES)>0) {
             int oldunread=unread;
             if (folder.isOpen()) {
