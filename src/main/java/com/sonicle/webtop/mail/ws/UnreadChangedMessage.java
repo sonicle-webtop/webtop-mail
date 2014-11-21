@@ -34,14 +34,14 @@
 package com.sonicle.webtop.mail.ws;
 
 import com.sonicle.webtop.core.sdk.Environment;
-import com.sonicle.webtop.core.sdk.WebSocketMessage;
+import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sonicle.webtop.mail.MailService;
 
 /**
  *
  * @author gbulfon
  */
-public class UnreadChangedMessage extends WebSocketMessage {
+public class UnreadChangedMessage extends ServiceMessage {
 	
 	public static final String ACTION_UNREAD="unread";
 	
