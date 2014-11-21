@@ -34,12 +34,9 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.web.json.JsonResult;
-import com.sonicle.webtop.core.sdk.Environment;
 import com.sonicle.webtop.core.sdk.Service;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Locale;
-import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -54,9 +51,7 @@ public class MailServiceTest extends Service {
 	
 	@Override
 	public void initialize() {
-		logger.debug("Mi sono inizializzato: mi chiamo {}", getName(new Locale("it_IT")));
-		logger.debug("Ora provo ad accedere all'env avanzato");
-		getFullEnv().getSession().test();
+		
 	}
 
 	@Override
