@@ -1,5 +1,5 @@
 /*
- * webtop-mail is a WebTop Service developed by Sonicle S.r.l.
+ * webtop-calendar is a WebTop Service developed by Sonicle S.r.l.
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -31,31 +31,12 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.ws;
-
-import com.sonicle.webtop.core.sdk.Environment;
-import com.sonicle.webtop.core.sdk.ServiceMessage;
-import com.sonicle.webtop.mail.Service;
-
-/**
- *
- * @author gbulfon
- */
-public class UnreadChangedMessage extends ServiceMessage {
+Ext.define('Sonicle.webtop.mail.model.UserOptions', {
+	extend: 'WT.sdk.model.UserOptions',
 	
-	public static final String ACTION_UNREAD="unread";
-	
-	String foldername;
-	int unread;
-	boolean hasUnreadChildren;
-	
-	public UnreadChangedMessage(String foldername, int unread, boolean hasUnreadChildren) {
-		this.service=Environment.getServiceId(Service.class);
-		this.action=ACTION_UNREAD;
-		
-		this.foldername=foldername;
-		this.unread=unread;
-		this.hasUnreadChildren=hasUnreadChildren;
-	}
-	
-}
+	proxy: WT.optionsProxy('com.sonicle.webtop.mail'),
+	fields: [
+		'option1',
+		'option2'
+	]
+});

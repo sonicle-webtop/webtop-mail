@@ -50,7 +50,7 @@ public class AdvancedSearchThread extends Thread {
     public static final int FOLDERTYPE_PERSONAL=3;
     public static final int FOLDERTYPE_SHARED=4;
 
-    private MailService ms;
+    private Service ms;
     private int folderType;
     private boolean subfolders;
     private boolean and;
@@ -66,7 +66,7 @@ public class AdvancedSearchThread extends Thread {
     ArrayList<FolderCache> folders=new ArrayList<FolderCache>();
     ArrayList<Message> result=new ArrayList<Message>();
 
-    public AdvancedSearchThread(MailService ms, String folder, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
+    public AdvancedSearchThread(Service ms, String folder, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
         this.ms=ms;
         this.folderType=FOLDERTYPE_SPECIFIC;
         this.subfolders=subfolders;
@@ -78,7 +78,7 @@ public class AdvancedSearchThread extends Thread {
         if (subfolders) addChildren(fc);
     }
 
-    public AdvancedSearchThread(MailService ms, int folderType, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
+    public AdvancedSearchThread(Service ms, int folderType, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
         this.ms=ms;
         this.folderType=folderType;
         this.subfolders=subfolders;

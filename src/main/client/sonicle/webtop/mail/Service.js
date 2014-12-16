@@ -54,7 +54,7 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
         extend: 'Ext.tree.Panel'
 });
 
-Ext.define('Sonicle.webtop.mail.MailService', {
+Ext.define('Sonicle.webtop.mail.Service', {
 	extend: 'WT.sdk.Service',
 	requires: [
 		'Sonicle.webtop.mail.MessagesPanel'

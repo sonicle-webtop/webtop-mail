@@ -1,5 +1,5 @@
 /*
- * webtop-mail is a WebTop Service developed by Sonicle S.r.l.
+ * webtop-calendar is a WebTop Service developed by Sonicle S.r.l.
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -31,14 +31,6 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail;
-
-import com.sonicle.webtop.core.sdk.BaseOptionManager;
-
-/**
- *
- * @author malbinola
- */
-public class MailOptions extends BaseOptionManager {
-	
-}
+Ext.define('Sonicle.webtop.mail.model.ServiceOptions', {
+	extend: 'WT.sdk.model.ServiceOptions'
+});

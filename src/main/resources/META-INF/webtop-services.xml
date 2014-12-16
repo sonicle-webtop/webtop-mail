@@ -1,17 +1,43 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <services>
 	<!--
-		<package> -> Java package name.
+		<package> -> Java package name. REQUIRED
 			Also used as service identifier/name (ID).
-		<jsPackage> -> Javascript package name.
+			
+		<jsPackage> -> Javascript package name. REQUIRED
 			This package will be used to determine classes files path.
-		<shortName> -> Short service name
+			
+		<shortName> -> Short service name. REQUIRED
 			Value must be unique in webtop platform. This name is used as 
 			short service idenfitier (XID) and as prefix for css classes.
-		<serviceClassName> -> Service class name (do not specify package name)
-		<optionsClassName> -> Service options class name (do not specify package name)
-		<publicServiceClassName> -> Public service class name (do not specify package name)
-		<deamonServiceClassName> -> Deamon service class name (do not specify package name)
+			
+		<serviceClassName> -> Service class name (do not specify base package name).
+			If empty, default "Service" value will be used.
+			
+		<serviceJsClassName> -> Service client class name (do not specify base package name).
+			If empty, above serviceClassName value will be used.
+			
+		<publicServiceClassName> -> Public service class name (do not specify base package name).
+			If empty, default "PublicService" value will be used.
+			
+		<deamonServiceClassName> -> Deamon service class name (do not specify base package name).
+			If empty, default "DeamonService" value will be used.
+			
+		<userOptions> -> User options section.
+			If empty, default keys values will be used. See below!
+			
+			Allowed keys:
+			<serviceClassName> -> User options service class name (do not specify base package name).
+				If empty, default "UserOptionsService" value will be used.
+			<viewJsClassName> -> Client view class name.
+				If empty, default "view.UserOptions" value will be used.
+			<modelJsClassName> -> Client model class name.
+				If empty, default "model.UserOptions" value will be used.
+		
+		<company> -> Service's company name.
+		<companyEmail> -> Service's company email.
+		<companyWebSite> -> Service's company website.
+		<supportEmail> -> Service's company support email for feedbacks.
 	-->
 	<service>
 		<package>com.sonicle.webtop.mail</package>
@@ -19,10 +45,9 @@
 		<shortName>wtmail</shortName>
 		<version>1.0.0</version>
 		<buildDate>03/11/2014</buildDate>
-		<serviceClassName>MailService</serviceClassName>
+		<serviceClassName>Service</serviceClassName>
 		<publicServiceClassName></publicServiceClassName>
 		<deamonServiceClassName></deamonServiceClassName>
-		<optionsClassName>MailOptions</optionsClassName>
 		<company>Sonicle S.r.l.</company>
 		<companyEmail>sonicle@sonicle.com</companyEmail>
 		<companyWebSite>http://www.sonicle.com</companyWebSite>

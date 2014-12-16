@@ -34,7 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.web.json.JsonResult;
-import com.sonicle.webtop.core.sdk.Service;
+import com.sonicle.webtop.core.sdk.BaseService;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import javax.servlet.http.HttpServletRequest;
@@ -45,9 +45,9 @@ import org.slf4j.Logger;
  *
  * @author malbinola
  */
-public class MailServiceTest extends Service {
+public class MailServiceTest extends BaseService {
 	
-	public static final Logger logger = Service.getLogger(MailServiceTest.class);
+	public static final Logger logger = BaseService.getLogger(MailServiceTest.class);
 	
 	@Override
 	public void initialize() {

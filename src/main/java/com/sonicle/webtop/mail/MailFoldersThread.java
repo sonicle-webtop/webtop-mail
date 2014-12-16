@@ -43,7 +43,7 @@ import java.util.ArrayList;
 public class MailFoldersThread extends Thread {
     
     private int threadCountMailFolders=1;
-    MailService ms;
+    Service ms;
     boolean abort=false;
     boolean failed=false;
     String failMessage=null;
@@ -54,7 +54,7 @@ public class MailFoldersThread extends Thread {
     int sleepCount=0;
     boolean checkAll=false;
     
-    public MailFoldersThread(MailService ms, BasicEnvironment env) {
+    public MailFoldersThread(Service ms, BasicEnvironment env) {
         super();
         this.setName("MailFoldersThread"+(threadCountMailFolders++)+"-"+env.getProfile().getUserId());
         this.ms=ms;

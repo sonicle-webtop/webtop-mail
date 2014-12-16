@@ -175,8 +175,8 @@ public class MessageComparator implements Comparator<Message> {
           break;
         case SORT_BY_PRIORITY:
           try {
-              int p1=MailService.getPriority(m1);
-              int p2=MailService.getPriority(m2);
+              int p1=Service.getPriority(m1);
+              int p2=Service.getPriority(m2);
               result=p1-p2;
           } catch(MessagingException exc) {
               exc.printStackTrace();
@@ -187,11 +187,11 @@ public class MessageComparator implements Comparator<Message> {
           try {
             Flags fl1=m1.getFlags();
             Flags fl2=m2.getFlags();
-            int len=MailService.flagStrings.length;
+            int len=Service.flagStrings.length;
             int f1=99;
             int f2=99;
             for(int i=0;i<len;++i) {
-                String fs=MailService.flagStrings[i];
+                String fs=Service.flagStrings[i];
                 if (fl1.contains(fs)) f1=i;
                 if (fl2.contains(fs)) f2=i;
             }

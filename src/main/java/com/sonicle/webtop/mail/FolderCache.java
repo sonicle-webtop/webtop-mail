@@ -75,7 +75,7 @@ public class FolderCache {
 
     private BasicEnvironment environment=null;
     //private WebTopDomain wtd=null;
-    private MailService ms=null;
+    private Service ms=null;
     private boolean externalProvider=false;
     
     private String foldername=null;
@@ -169,7 +169,7 @@ public class FolderCache {
     }
 
     //Special constructor for externally provided messages
-    public FolderCache(MailService ms, BasicEnvironment env) {
+    public FolderCache(Service ms, BasicEnvironment env) {
         this.ms=ms;
         externalProvider=true;
         environment=env;
@@ -177,7 +177,7 @@ public class FolderCache {
         profile=env.getProfile();
     }
     
-    public FolderCache(Folder folder, MailService ms, BasicEnvironment env) throws MessagingException {
+    public FolderCache(Folder folder, Service ms, BasicEnvironment env) throws MessagingException {
         this(ms,env);
         foldername=folder.getFullName();
         this.folder=folder;
@@ -226,7 +226,7 @@ public class FolderCache {
 					//MailService.logger.debug("Exiting idle mode on {}",foldername);
 				}
 			} catch(MessagingException exc) {
-				MailService.logger.debug("Error during idle",exc);
+				Service.logger.debug("Error during idle",exc);
 			}
 		}
 	}
@@ -238,7 +238,7 @@ public class FolderCache {
 					@Override
 					public void messageChanged(MessageChangedEvent mce) {
 						try {
-							MailService.logger.debug("MessageChanged: {}",mce.getMessageChangeType());
+							Service.logger.debug("MessageChanged: {}",mce.getMessageChangeType());
 							refreshUnreads();
 						} catch(MessagingException exc) {
 						}
@@ -252,7 +252,7 @@ public class FolderCache {
 					@Override
 					public void messagesAdded(MessageCountEvent mce) {
 						try {
-							MailService.logger.debug("MessageAdded: {}",mce.getType());
+							Service.logger.debug("MessageAdded: {}",mce.getType());
 							refreshUnreads();
 						} catch(MessagingException exc) {
 						}
@@ -261,7 +261,7 @@ public class FolderCache {
 					@Override
 					public void messagesRemoved(MessageCountEvent mce) {
 						try {
-							MailService.logger.debug("MessageRemoved: {}",mce.getType());
+							Service.logger.debug("MessageRemoved: {}",mce.getType());
 							refreshUnreads();
 						} catch(MessagingException exc) {
 						}
@@ -474,7 +474,7 @@ public class FolderCache {
 					new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
 			);
 		} catch(IOException exc) {
-			MailService.logger.error("Error sending WebSocket message",exc);
+			Service.logger.error("Error sending WebSocket message",exc);
 		}
 	}
 
@@ -880,10 +880,10 @@ public class FolderCache {
         Message mmsgs[]=getMessages(ids);
         for(Message fmsg: mmsgs) {
             if (!flag.equals("complete")) {
-                fmsg.setFlags(MailService.flagsAll, false);
-                fmsg.setFlags(MailService.oldFlagsAll, false);
+                fmsg.setFlags(Service.flagsAll, false);
+                fmsg.setFlags(Service.oldFlagsAll, false);
             }
-            fmsg.setFlags(MailService.flagsHash.get(flag), true);
+            fmsg.setFlags(Service.flagsHash.get(flag), true);
             
         }
     }
@@ -892,8 +892,8 @@ public class FolderCache {
 //        open();
         Message mmsgs[]=getMessages(ids);
         for(Message fmsg: mmsgs) {
-            fmsg.setFlags(MailService.flagsAll, false);
-            fmsg.setFlags(MailService.oldFlagsAll, false);
+            fmsg.setFlags(Service.flagsAll, false);
+            fmsg.setFlags(Service.oldFlagsAll, false);
         }
     }
 
@@ -1146,7 +1146,7 @@ public class FolderCache {
               break;
           case SORT_BY_FLAG:
               //<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-              gsort=new FlagSortTerm(MailService.flagStrings, !groupascending);
+              gsort=new FlagSortTerm(Service.flagStrings, !groupascending);
               break;
           case SORT_BY_MSGIDX:
               gsort=new MessageIDSortTerm(!groupascending);
@@ -1179,7 +1179,7 @@ public class FolderCache {
               break;
           case SORT_BY_FLAG:
               //<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-              sort=new FlagSortTerm(MailService.flagStrings, !ascending);
+              sort=new FlagSortTerm(Service.flagStrings, !ascending);
               break;
           case SORT_BY_MSGIDX:
               sort=new MessageIDSortTerm(!ascending);
@@ -1328,7 +1328,7 @@ public class FolderCache {
               break;
           case SORT_BY_FLAG:
               //<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-              sort=new FlagSortTerm(MailService.flagStrings, !ascending);
+              sort=new FlagSortTerm(Service.flagStrings, !ascending);
               break;
           case SORT_BY_MSGIDX:
               sort=new MessageIDSortTerm(!ascending);

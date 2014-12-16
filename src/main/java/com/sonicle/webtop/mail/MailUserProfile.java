@@ -78,7 +78,7 @@ public class MailUserProfile {
 	private boolean includeMessageInReply;
 	private int numMessageList;
 
-    public MailUserProfile(BasicEnvironment env, MailService ms) {
+    public MailUserProfile(BasicEnvironment env, Service ms) {
         this.env=env;
 		UserProfile profile=env.getProfile();
         
