@@ -282,10 +282,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	}, 
 	
 	unreadChanged: function(cfg) {
-		WT.Log.debug('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
+		//WT.Log.debug('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
 		var me=this;
 		var node=me.imapTree.getStore().getById(cfg.foldername);
-		WT.Log.debug("found node "+node);
+		//WT.Log.debug("found node "+node);
 		if (node) {
 			node.set('hasUnread',cfg.hasUnreadChildren);
 			node.set('unread',cfg.unread);

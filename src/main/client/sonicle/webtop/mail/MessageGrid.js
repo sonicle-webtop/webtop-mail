@@ -45,7 +45,6 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
 		me.callParent(arguments);
 	},
     
-	loadMask: { msg: WT.res("loading") },
 	getRowClass: function(record, index, rowParams, store ) {
 		var unread=record.get('unread');
 		var cls=unread?'wtmail-row-unread':'';
@@ -189,7 +188,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     enableColumnMove: true,
 	viewConfig: {
 		navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
-		loadMask: { msg: WT.res("loading") },
+		//loadMask: { msg: WT.res("loading") },
 		getRowClass: function(record, index, rowParams, store ) {
 			var unread=record.get('unread');
 			var tdy=record.get('istoday');
@@ -243,6 +242,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         );*/
 		
         /*this.view=Ext.create('Sonicle.webtop.mail.MessageListView',{
+			loadMask: { msg: WT.res("loading") },
 			grid: this
 		});*/
 

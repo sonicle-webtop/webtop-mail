@@ -73,6 +73,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             
         me.folderList=Ext.create('Sonicle.webtop.mail.MessageGrid',{
             region:'center',
+			viewConfig: {
+				loadMask: { msg: WT.res("loading") }
+			},
             ms: me.ms
         });
 		
