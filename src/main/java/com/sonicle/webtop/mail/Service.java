@@ -5953,9 +5953,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 		if (ppattern != null && ppattern.trim().length() == 0) {
 			ppattern = null;
 		}
-		boolean refresh = (prefresh != null && prefresh.equals("1"));
-		
-		System.out.println("SORT=" + psortfield);
+		boolean refresh = (prefresh != null && prefresh.equals("true"));
 		
 		String group = mus.getMessageListGroup(pfoldername);
 		if (group == null) {

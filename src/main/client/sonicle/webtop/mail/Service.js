@@ -223,7 +223,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		//TODO: context menu
         //this.imapTree.on('contextmenu',this.treeContextMenu,this);
-        me.imapTree.on('select',me.folderSelected,me);
+        //me.imapTree.on('select',me.folderSelected,me);
+		me.imapTree.on('rowclick',me.folderClicked,me);
 		//TODO: drag&drop
         //this.imapTree.on('nodedragover',this.draggingOver,this);
         //this.imapTree.on('beforenodedrop',this.dropping,this);
@@ -237,6 +238,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			if (n.id==='root') {
 				//this.selectFolder('INBOX');
 				this.imapTree.getSelectionModel().select(0);
+				this.showFolder('INBOX');
 			}
         },this);
 		//TODO: context menu
@@ -254,10 +256,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		WT.Log.debug('Sonicle.webtop.mail.MailService initialized!');
 	},
 	
-    folderSelected: function(t, r, ix) {
+    /*folderSelected: function(t, r, ix) {
+        var folderid=r.get("id");
+		console.log("folderSelected: "+folderid);
+		this.showFolder(folderid);
+    },*/
+	
+	folderClicked: function(t, r, tr, ix, e, eopts) {
         var folderid=r.get("id");
 		this.showFolder(folderid);
-    },
+	},
 	
 	showFolder: function(folderid) {
         var mp=this.messagesPanel;

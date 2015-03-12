@@ -47,6 +47,7 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
     
 	getRowClass: function(record, index, rowParams, store ) {
 		var unread=record.get('unread');
+		console.log("index "+index+" unread="+unread);
 		var cls=unread?'wtmail-row-unread':'';
 		if (!this.grid.getSelectionModel().isSelected(index)) {
 			var tdy=record.get('istoday');
@@ -188,7 +189,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     enableColumnMove: true,
 	viewConfig: {
 		navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
-		//loadMask: { msg: WT.res("loading") },
 		getRowClass: function(record, index, rowParams, store ) {
 			var unread=record.get('unread');
 			var tdy=record.get('istoday');
@@ -234,7 +234,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 
     initComponent: function() {
         var me=this;
-		
+
 		//TODO: add events
         /*me.addEvents(
             'deleting',
@@ -245,6 +245,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			loadMask: { msg: WT.res("loading") },
 			grid: this
 		});*/
+		
+		me.viewConfig.loadMask={ msg: WT.res("loading") };
 
         var n=0;
         var fields=new Array();
@@ -554,7 +556,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             dataIndex: 'atts',
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
-					if (value) tag=this.ms.imageTag('attach.gif',16,16,"border=0 style='cursor: pointer'");
+					if (value) tag=this.ms.imageTag('attach.png',16,16,"border=0 style='cursor: pointer'");
 					else tag=WT.globalImageTag('empty.gif',16,16,"border=0");
 					return tag;
 			},
