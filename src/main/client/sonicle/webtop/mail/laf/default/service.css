@@ -3,6 +3,19 @@
 .wtmail-icon-service-m { background-image: url('mail_32.png') !important; }
 .wtmail-icon-service-l { background-image: url('mail_48.png') !important; }
 
+.wtmail-icon-inbox-folder { background-image: url(imap-folder-inbox.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-inbox-folder { background-image: url(imap-folder-inbox-open.png) !important; }
+.wtmail-icon-drafts-folder { background-image: url(imap-folder-drafts.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-drafts-folder { background-image: url(imap-folder-drafts-open.png) !important; }
+.wtmail-icon-sent-folder { background-image: url(imap-folder-sent.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-sent-folder { background-image: url(imap-folder-sent-open.png) !important; }
+.wtmail-icon-spam-folder { background-image: url(imap-folder-spam.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-spam-folder { background-image: url(imap-folder-spam-open.png) !important; }
+.wtmail-icon-trash-folder { background-image: url(imap-folder-trash.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-trash-folder { background-image: url(imap-folder-trash-open.png) !important; }
+.wtmail-icon-shared-folder { background-image: url(imap-folder-shared.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-shared-folder { background-image: url(imap-folder-shared-open.png) !important; }
+
 .wtmail-row-unread TD DIV { font-weight: bold; }
 .wtmail-row-today { background-color: #F8F8C8; }
 .wtmail-icon-testaction { background-image: url('mail_16.png') !important; }
