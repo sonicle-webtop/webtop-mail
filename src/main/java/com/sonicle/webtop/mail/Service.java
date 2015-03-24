@@ -4543,7 +4543,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 					}
 				}
 				sout += "\n ],\n";
-				String surl = "ServiceRequest?service=mail&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
+				String surl = "service-request?service="+getId()+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
 				html = replaceCidUrls(html, maildata, surl);
 			} else {
 				String filename = m.getSubject() + ".eml";
@@ -4727,7 +4727,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 
             //System.out.println("HTML newmsgid="+newmsgid);
 			//System.out.println(html);
-			//String surl="ServiceRequest?service=mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
+			//String surl="service-requests?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
 			//html=replaceCidUrls(html, maildata, surl);
 			sout += " html:'" + OldUtils.jsEscape(html) + "'\n";
 			sout += "\n}";
@@ -4817,7 +4817,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 
 	 //System.out.println("HTML newmsgid="+newmsgid);
 	 //System.out.println(html);
-	 //String surl="ServiceRequest?service=mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
+	 //String surl="service-requests?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
 	 //html=replaceCidUrls(html, maildata, surl);
 
 	 sout+=" html:'"+OldUtils.jsEscape(html)+"'\n";
@@ -5375,14 +5375,14 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 				//String surl="PreviewAttachment?newmsgid="+msgid+"&amp;cid=";
 
 				//CIDs
-				String surl = "ServiceRequest?service=mail&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
+				String surl = "service-request?service="+getId()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
 				content = OldUtils.replace(content, surl, "cid:");
-				surl = "ServiceRequest?service=mail&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
+				surl = "service-request?service="+getId()+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
 				content = OldUtils.replace(content, surl, "cid:");
 				//URLs
-				surl = "ServiceRequest?service=mail&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;url=";
+				surl = "service-request?service="+getId()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;url=";
 				content = OldUtils.replace(content, surl, "");
-				surl = "ServiceRequest?service=mail&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
+				surl = "service-request?service="+getId()+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
 				content = OldUtils.replace(content, surl, "");
 				String textcontent = OldUtils.HtmlToText_convert(OldUtils.htmlunescapesource(content));
 				content = OldUtils.htmlescapefixsource(content);
@@ -5944,6 +5944,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 		String psortdir = request.getParameter("dir");
 		String pstart = request.getParameter("start");
 		String plimit = request.getParameter("limit");
+		String ppage = request.getParameter("page");
 		String psearchfield = request.getParameter("searchfield");
 		String ppattern = request.getParameter("pattern");
 		String prefresh = request.getParameter("refresh");
@@ -6033,12 +6034,20 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 		
 		int start = 0;
 		int limit = mprofile.getNumMsgList();
-		if (pstart != null) {
-			start = Integer.parseInt(pstart);
+		if (ppage==null) {
+			if (pstart != null) {
+				start = Integer.parseInt(pstart);
+			}
+			if (plimit != null) {
+				limit = Integer.parseInt(plimit);
+			}
+		} else {
+			int page=Integer.parseInt(ppage);
+			int nxpage=mprofile.getNumMsgList();
+			start=(page-1)*nxpage;
+			limit=nxpage;
 		}
-		if (plimit != null) {
-			limit = Integer.parseInt(plimit);
-		}
+		
 		String sout = "{\n";
 		Folder folder = null;
 		try {

@@ -180,7 +180,7 @@ Ext.define('Sonicle.webtop.mail.MessagesModel',{
 
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
-
+	
     frame: false,
     //iconCls:'icon-grid',
 	//TODO: ddGroup
@@ -203,11 +203,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			ftype:'grouping',
 			groupHeaderTpl: Ext.create('Ext.XTemplate',
 				'{children:this.getHeaderPrefix}',
-				'<div>{children:this.getHeaderString}</div>',
+				'<span>{children:this.getHeaderString}</span>',
 				{
 					getHeaderPrefix: function(children) {
 						var xdate=children[0].get("xdate");
-						return (xdate.length>0)?xdate+" : ":"";
+						return (xdate.length>0)?xdate+"&nbsp;:&nbsp;":"";
 					},
 					getHeaderString: function(children) {
 						return children[0].get("gdate");
@@ -230,8 +230,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     multifolder: false,
     reloadAction: 'ListMessages',
     firstShow: true,
-    ms: null,
-
+	
     initComponent: function() {
         var me=this;
 
@@ -279,11 +278,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 
         //this.store = new Ext.data.Store({
         me.store = Ext.create('Ext.data.JsonStore',{
-            proxy: WT.proxy(me.ms.ID, me.reloadAction,'messages'),
+            proxy: WT.Util.proxy(me.mys.ID, me.reloadAction,'messages'),
 			model: Ext.create('Sonicle.webtop.mail.MessagesModel',{
 				id: idx,
 				fields: fields
 			}),
+			pageSize: me.pageSize,
 			groupField: 'sdate',
 			groupDir: 'DESC',
 			/*grouper: Ext.create('Ext.util.Grouper',{
@@ -339,8 +339,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                 this.modified = [];
                 this.fireEvent('metachange', this, this.reader.meta);
             },*/
-            grid: me,
-			ms: me.ms
+            //grid: me,
+			//ms: me.ms
         });
 
 		//TODO: FilterRow
@@ -400,7 +400,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         }
         me.priIndex=n;
         dcols[n++]={//Priority
-            header: me.ms.imageTag('headerpriority.gif',7,16),
+            header: WT.Util.imageTag(me.mys.ID,'headerpriority.gif',7,16),
             width: 35,
             sortable: true,
             menuDisabled: true,
@@ -408,8 +408,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
 					var others="border=0"
-					if (value<3) tag=this.ms.imageTag('priorityhigh.gif',others);
-					else tag=WT.globalImageTag('empty.gif',7,16,others);
+					if (value<3) tag=WT.Util.imageTag(me.mys.ID,'priorityhigh.gif',others);
+					else tag=WT.Util.globalImageTag('empty.gif',7,16,others);
 					return tag;
 			},
 			scope: me,
@@ -436,7 +436,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             }
         };
         dcols[n++]={//Status
-            header: me.ms.imageTag('headerstatus.gif',15,16),
+            header: WT.Util.imageTag(me.mys.ID,'headerstatus.gif',15,16),
             width: 30,
             sortable: true,
             menuDisabled: true,
@@ -446,7 +446,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//var sdate=record.get("scheddate");
 					//if (sdate) value="scheduled";
 					var imgname=Ext.String.format("status{0}.png",value);
-					var imgtag=this.ms.imageTag(imgname,16,16);
+					var imgtag=WT.Util.imageTag(me.mys.ID,imgname,16,16);
 					//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
 					//else tag=imgtag;
 					return imgtag;
@@ -549,15 +549,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             filter: {}
         };
         dcols[n++]={//Attachment
-			header: me.ms.imageTag('headerattach.gif',15,16),
+			header: WT.Util.imageTag(me.mys.ID,'headerattach.gif',15,16),
             width: 30,
             sortable: false,
             menuDisabled: true,
             dataIndex: 'atts',
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
-					if (value) tag=this.ms.imageTag('attach.png',16,16,"border=0 style='cursor: pointer'");
-					else tag=WT.globalImageTag('empty.gif',16,16,"border=0");
+					if (value) tag=WT.Util.imageTag(me.mys.ID,'attach.png',16,16,"border=0 style='cursor: pointer'");
+					else tag=WT.Util.globalImageTag('empty.gif',16,16,"border=0");
 					return tag;
 			},
 			scope: me,
@@ -565,7 +565,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             
         };
         dcols[n++]={//Flag
-            header: me.ms.imageTag('headerflag.gif',15,16),
+            header: WT.Util.imageTag(me.mys.ID,'headerflag.gif',15,16),
             width: 30,
             sortable: true,
             menuDisabled: true,
@@ -573,8 +573,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
 					var others="border=0";
-					if (value!=='') tag=this.ms.imageTag("flag"+value+".gif",16,16,others);
-					else tag=WT.globalImageTag('empty.gif',16,16,others);
+					if (value!=='') tag=WT.Util.imageTag(me.mys.ID,"flag"+value+".gif",16,16,others);
+					else tag=WT.Util.globalImageTag('empty.gif',16,16,others);
 					return tag;
 			},
 			scope: me,
@@ -611,15 +611,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             
         };
         dcols[n++]={//Mail note
-			header: me.ms.imageTag('headermailnote.gif',15,16),
+			header: WT.Util.imageTag(me.mys.ID,'headermailnote.gif',15,16),
             width: 30,
             sortable: true,
             menuDisabled: true,
             dataIndex: 'note',
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
-					if (value) tag=this.ms.imageTag('mailnote.gif',16,16,"border=0 style='cursor: pointer'");
-					else tag=WT.globalImageTag('empty.gif',16,16,"border=0");
+					if (value) tag=WT.Util.imageTag(me.mys.ID,'mailnote.gif',16,16,"border=0 style='cursor: pointer'");
+					else tag=WT.Util.globalImageTag('empty.gif',16,16,"border=0");
 					return tag;
 			},
 			scope: me,
@@ -629,7 +629,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         
         if (me.arch) {
             dcols[n++]={//Archived
-				header: me.ms.imageTag('headerdocmgt.png',16,16),
+				header: WT.Util.imageTag(me.mys.ID,'headerdocmgt.png',16,16),
                 width: 30,
                 sortable: true,
                 menuDisabled: true,
@@ -638,8 +638,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                 renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 						var tag;
 						var others="border=0";
-						if (value) tag=this.ms.imageTag("docmgt.png",16,16,others);
-						else tag=WT.globalImageTag('empty.gif',16,16,others);
+						if (value) tag=WT.Util.imageTag(me.mys.ID,"docmgt.png",16,16,others);
+						else tag=WT.Util.globalImageTag('empty.gif',16,16,others);
 						return tag;
 				},
 				scope: me,
@@ -660,6 +660,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	reloadFolder: function(folder_id, config){
+		var me = this,
+			proxy = me.store.getProxy();
+	
 		config=config||{};
 		if(!folder_id) return;
 		Ext.applyIf(config, {
@@ -672,17 +675,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         //this.store.sortInfo=null;
 		//TODO: baseParams??
 		//this.store.baseParams = {service: 'mail', action: 'ListMessages', folder: folder_id};
-		this.store.load({
-			params: {
+		var params={
 				start: config.start, limit: config.limit, refresh: config.refresh, folder: folder_id
-			}
-		});
+			};
+		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), params));
+
+		
+		me.store.load();
 		//this.render();
-		this.currentFolder = folder_id;
+		me.currentFolder = folder_id;
 	},
 	
     res: function(s) {
-        return this.ms.res(s);
+        return this.mys.res(s);
     }
 	
 });

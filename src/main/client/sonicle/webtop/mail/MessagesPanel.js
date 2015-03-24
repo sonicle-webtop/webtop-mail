@@ -38,12 +38,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		'Sonicle.webtop.mail.MessageView',
 		'Sonicle.webtop.mail.MessageGrid'
 	],
+	config: {
+		pageSize: 25
+	},
 	
     layout:'border',
     border: false,
     
-    ms: null,
-    toolbar: null,
     filterTextField: null,
     filterCombo: null,
     groupCombo: null,
@@ -73,45 +74,26 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             
         me.folderList=Ext.create('Sonicle.webtop.mail.MessageGrid',{
             region:'center',
-            ms: me.ms
+			pageSize: me.getPageSize(),
+			mys: me.mys
         });
 		
+        var msgSelModel=me.folderList.getSelectionModel();
+        msgSelModel.on('selectionchange',me.selectionChanged,me);
 		//TODO: grid events
-		/*
-        var msgSelModel=this.folderList.selModel;
-        msgSelModel.on('selectionchange',this.selectionChanged,this);
-        msgSelModel.on('selectiondelete',this.actionDelete,this);
-        this.folderList.on('rowdblclick',this.rowDblClicked,this);
-        this.folderList.on('cellclick',this.cellClicked,this);
-        this.folderList.on('deleting',this.clearMessageView,this);
-        this.folderList.on('moving',this.clearMessageView,this);
-        if (this.saveColumnSizes) this.folderList.on('columnresize',this.columnResized,this);
-		if (this.saveColumnVisibility) this.folderList.getColumnModel().on('hiddenchange', this.columnHiddenChange, this);
-		*/
+        //msgSelModel.on('selectiondelete',me.actionDelete,me);
+        //me.folderList.on('rowdblclick',me.rowDblClicked,me);
+        //me.folderList.on('cellclick',me.cellClicked,me);
+        //me.folderList.on('deleting',me.clearMessageView,me);
+        //me.folderList.on('moving',me.clearMessageView,me);
+        //if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
+		//if (me.saveColumnVisibility) me.folderList.getColumnModel().on('hiddenchange', me.columnHiddenChange, me);
 
-        //TODO: Sonicle.webtop.mail.MessageView
         me.messageView=Ext.create('Sonicle.webtop.mail.MessageView',{
-            region:'south',
-            ms: me.ms
+			mys: me.mys
         });
-        //this.messageView.on('messageviewed',this.messageViewed,this)
+        me.messageView.on('messageviewed',me.messageViewed,me)
         
-        me.toolbar=Ext.create('Ext.toolbar.Paging',{
-            region: "center",
-            store: me.folderList.store,
-            pageSize: me.ms.pageRows,
-            displayInfo: true,
-            displayMsg: me.res("pagemessage"),
-            emptyMsg: me.res("nomessages"),
-            afterPageText: me.res("afterpagetext"),
-            beforePageText: me.res("beforepagetext"),
-            firstText: me.res("firsttext"),
-            lastText: me.res("lasttext"),
-            nextText: me.res("nexttext"),
-            prevText: me.res("prevtext"),
-            refreshText: me.res("refreshtext")
-        });
-
 		//TODO: filter components
 		/*
         this.filterTextField=new WT.SuggestTextField({
@@ -193,13 +175,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		 */
 
         me.messageViewContainer=Ext.create('Ext.container.Container',{
-            region:'south',
-            cls: 'messageViewContainer',
+            region:'east',
+            cls: 'wtmail-mv-container',
             layout: 'fit',
             split: true,
             collapseMode: 'mini',
             collapsible : false,
             height: 300,
+			width: 400,
             bodyBorder: true,
             border: true,
             items: [ me.messageView ]
@@ -272,20 +255,24 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     archiveSelectionWt: function(from,to,selection,context,customer_id) {
         this.folderList.archiveSelectionWt(from,to,selection,context,customer_id);
     },
-    
+    */
+   
+    //TODO verify rawData and getById
     messageViewed: function(idmessage,millis) {
-        var s=this.folderList.store;
+		var me=this,
+			s=me.folderList.store;
         var r=s.getById(idmessage);
-        if (r.get("unread")) {
+        if (r && r.get("unread")) {
             r.set("unread",false);
             r.set("status","read");
-            var o=s.reader.jsonData;
+            var o=s.getProxy().getReader().rawData;
             o.millis=millis;
             o.unread--;
-            this.ms.updateUnreads(this.currentFolder,o,false);
+            me.mys.updateUnreads(me.currentFolder,o,false);
         }
     },
-    
+   
+	/*
     actionFilterRow: function() {
         if (this.bFilterRow.pressed) this.folderList.showFilterRow();
         else this.folderList.hideFilterRow();
@@ -322,24 +309,26 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         this.currentFolder=folderid;
         this.folderList.reloadFolder(folderid,config);
     },
-/*
-    selectionChanged: function(sm,ctrlshift) {
-        var c=sm.getCount();
-        if (c==1&&!ctrlshift) {
-            var r=sm.getSelected();
-            var id=r.get('idmessage');
-            if (id!=this.messageView.idmessage)
-                this.messageView.showMessage(this.currentFolder,id,this);
+
+	//TODO no more ctrlshift?
+    selectionChanged: function(sm,r,eopts) {
+        var me=this,
+			c=sm.getCount();
+        //if (c==1&&!ctrlshift) {
+		if (c===1) {
+            var id=r[0].get('idmessage');
+            if (id!==me.messageView.idmessage)
+                me.messageView.showMessage(me.currentFolder,id);
         } else {
-            this.clearMessageView();
+            me.clearMessageView();
         }
-        this.fireEvent('gridselectionchanged',sm,ctrlshift);
+        me.fireEvent('gridselectionchanged',sm/*,ctrlshift*/);
     },
     
     clearMessageView: function() {
         this.messageView.clear();
     },
-    
+/*    
     actionDelete: function() {
         this.folderList.actionDelete();
     },
@@ -415,8 +404,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     },
     
 	*/
-	
-    res: function(s) {
-        return this.ms.res(s);
-    }
+   
+    getGridStore: function() {
+		return this.folderList.store;
+	}
+   
 });

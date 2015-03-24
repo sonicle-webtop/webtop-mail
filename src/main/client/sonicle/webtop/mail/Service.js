@@ -119,18 +119,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		//Ext.require('Sonicle.webtop.mail.MessagesPanel');
 		var me=this;
 		
-		this.addAction('new', 'testaction', {
-			tooltip: null,
-			handler: function() {
-				alert('Mail testaction clicked');
-			},
-			scope: me
-		});
-		
-		//**LATER**
-		//this.loadSettings();
+		me.initActions();
+		//TODO context menus
+		//me.initCxm();
 		//this.initTreeMenu();
 		//this.initGridMenu();
+		
+		//TODO load settings
+		//this.loadSettings();
 		
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
 			//title: "Email", //this.title,
@@ -247,13 +243,134 @@ Ext.define('Sonicle.webtop.mail.Service', {
         },this);*/
 		
 		
-		me.messagesPanel=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
-			ms: me
+		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
+			pageSize: me.pageRows,
+			mys: me
 		});
+		me.messagesPanel=mp;
 		me.setMainComponent(me.messagesPanel);
+		//TODO grid context menu
+        //mp.setGridContextMenu(this.gridMenu);
+		//TODO old toolbar
+        //this.toolbar=mp.toolbar;
+		//TODO grid events
+        //mp.on('gridrowdblclick',this.rowDblClicked,this);
+        //mp.on('gridcellclick',this.cellClicked,this);
 
 		me.addWSAction('unread',me.unreadChanged,this);
-		WT.Log.debug('Sonicle.webtop.mail.MailService initialized!');
+
+        me.toolbar=Ext.create('Ext.toolbar.Paging',{
+            store: me.messagesPanel.getGridStore(),
+            displayInfo: true,
+            displayMsg: me.res("pagemessage"),
+            emptyMsg: me.res("nomessages"),
+            afterPageText: me.res("afterpagetext"),
+            beforePageText: me.res("beforepagetext"),
+            firstText: me.res("firsttext"),
+            lastText: me.res("lasttext"),
+            nextText: me.res("nexttext"),
+            prevText: me.res("prevtext"),
+            refreshText: me.res("refreshtext")
+        });
+		
+        //var xb1,xb2,xb3,xb4,xb5,xb6,xb7;
+        var xb=new Array();
+        var xx=0;
+        me.toolbar.insert(0,[
+                xb[xx++]=me._TB("print"),
+                xb[xx++]=me._TB("delete"),
+                xb[xx++]=me._TB("spam"),
+                xb[xx++]=me._TB('movetofolder'),
+                "-",
+                xb[xx++]=me._TB("reply"),
+                xb[xx++]=me._TB("replyall"),
+                xb[xx++]=me._TB("forward"),
+                "-",
+                xb[xx++]=me._TB("check"),
+                "-",
+                xb[xx++]=me._TB("markseen"),
+                xb[xx++]=me._TB("markunseen"),
+                "-",
+                xb[xx++]=me._TB("filters")
+            ]
+        );
+		//TODO FAX
+        //if (WT.hasFax) this.toolbar.insertButton(0,xb[xx++]=new Ext.Button(this.getAction('newfax')));
+		//TODO DOCMGT
+        //if (WT.docmgt) this.toolbar.insertButton(4,xb[xx++]=new Ext.Button(this.getAction('docmgt')));
+        //else if (WT.docmgtwt) this.toolbar.insertButton(4,xb[xx++]=new Ext.Button(this.getAction('docmgtwt')));
+		
+		//NOT NEEDED ANYMORE
+        //for(xx=0;xx<xb.length;++xx) xb[xx].setText('');
+
+		
+		me.setToolbar(me.toolbar);
+		
+		console.log("mail service init completed");
+	},
+	
+	_TB: function(actionname) {
+		var bt=Ext.create('Ext.button.Button',this.getAction(actionname));
+		bt.setText('');
+		return bt;
+	},
+	
+	initActions: function() {
+		var me = this;
+	
+        me.addNewAction("newmsg",{ handler: me.actionNew, scope: me});
+		//TODO FAX
+/*        if (WT.hasFax) {
+            this.sna=new Array();
+            this.sna[0]=this.addAction("newfax",this.actionNewFax,this);
+        }*/
+        //this.addAction("open",this.actionOpen,this,'');
+        //this.addAction("opennew",this.actionOpenNew,this,'');
+        
+		me.addAction("print",{ handler: me.actionPrint, scope: me, iconCls: 'wt-icon-print-xs' });
+        me.addAction("reply",{ handler: me.actionReply, scope: me });
+        me.addAction("replyall",{ handler: me.actionReplyAll, scope: me });
+        me.addAction("forward",{ handler: me.actionForward, scope: me });
+        //me.addAction("forwardeml",{ handler: me.actionForwardEml, scope: me });
+        me.addAction("filters", { handler: me.actionFilters, scope: me });
+		
+		/*
+        this.addAction("flagred",this.actionFlagRed,this);
+        this.addAction("flagblue",this.actionFlagBlue,this);
+        this.addAction("flagyellow",this.actionFlagYellow,this);
+        this.addAction("flaggreen",this.actionFlagGreen,this);
+        this.addAction("flagorange",this.actionFlagOrange,this);
+        this.addAction("flagpurple",this.actionFlagPurple,this);
+        this.addAction("flagcomplete",this.actionFlagComplete,this);
+        this.addAction("addnote",this.actionAddNote,this);
+        this.addAction("clear",this.actionClear,this,'');
+		*/
+	   
+        me.addAction("markseen",{ handler: me.actionMarkSeen, scope: me });
+        me.addAction("markunseen",{ handler: me.actionMarkUnseen, scope: me });
+        me.addAction("spam",{ handler: me.actionSpam, scope: me, iconCls: 'wt-icon-block-xs' });
+        me.addAction("delete",{ handler: me.actionDelete, scope: me, iconCls: 'wt-icon-delete-xs' });
+        me.addAction("movetofolder",{ handler: me.actionMoveToFolder, scope: me });
+        me.addAction("check",{ handler: me.actionCheck, scope: me });
+        me.addAction("advsearch", { handler: me.actionAdvancedSearch, scope: me });
+		
+		/*
+        this.addAction("emptyfolder",this.actionEmptyFolder,this);
+        this.addAction("deletefolder",this.actionDeleteFolder,this);
+        this.addAction("renamefolder",this.actionRenameFolder,this);
+        this.addAction("newfolder",this.actionNewFolder,this);
+        this.addAction("newmainfolder",this.actionNewMainFolder,this);
+        this.addAction("movetomain",this.actionMoveToMainFolder,this,'');
+        this.addAction("refresh",this.actionFoldersRefresh,this,'');
+        this.aScan=this.addAction("scanfolder",null,null,'');
+        this.addAction("markseenfolder",this.actionFolderMarkSeen,this,'');
+        this.addAction("savemail",this.actionSaveMail,this,'iconSave');
+        this.addAction("downloadmails",this.actionDownloadMails,this,'iconSave');
+        this.addDependencyAction("viewheaders","webtop/js/mail/ViewSource.js","actionViewHeaders",this);
+        this.addDependencyAction("viewsource","webtop/js/mail/ViewSource.js","actionViewSource",this);
+        if (WT.docmgt) this.aDocMgt=this.addDependencyAction("docmgt","webtop/js/mail/DocMgt.js","actionDocMgt",this,'iconDocMgt');
+        if (WT.docmgtwt) this.aDocMgtwt=this.addDependencyAction("docmgtwt","webtop/js/mail/DocMgt.js","actionDocMgtWt",this,'iconDocMgt');
+		*/
 	},
 	
     /*folderSelected: function(t, r, ix) {
@@ -290,10 +407,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	}, 
 	
 	unreadChanged: function(cfg) {
-		//WT.Log.debug('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
+		console.log('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
 		var me=this;
 		var node=me.imapTree.getStore().getById(cfg.foldername);
-		//WT.Log.debug("found node "+node);
+		console.log("found node "+node);
 		if (node) {
 			node.set('hasUnread',cfg.hasUnreadChildren);
 			node.set('unread',cfg.unread);

@@ -3,6 +3,13 @@
 .wtmail-icon-service-m { background-image: url('mail_32.png') !important; }
 .wtmail-icon-service-l { background-image: url('mail_48.png') !important; }
 
+/* actions */
+.wtmail-icon-newmsg-xs { background-image: url('statusnew.png') !important; }
+.wtmail-icon-reply-xs { background-image: url('statusreplied.png') !important; }
+.wtmail-icon-replyall-xs { background-image: url('replyall.png') !important; }
+.wtmail-icon-forward-xs { background-image: url('statusforwarded.png') !important; }
+
+/* tree */
 .wtmail-icon-inbox-folder { background-image: url(imap-folder-inbox.png) !important; }
 .x-grid-tree-node-expanded .wtmail-icon-inbox-folder { background-image: url(imap-folder-inbox-open.png) !important; }
 .wtmail-icon-drafts-folder { background-image: url(imap-folder-drafts.png) !important; }
@@ -21,3 +28,66 @@
 .wtmail-icon-testaction { background-image: url('mail_16.png') !important; }
 
 table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
+
+/* message view classes */
+.wtmail-mv-container { padding: 0px 0px 0px 0px; background-color: 555555; }
+.wtmail-mv-main {
+    background-color: white;
+/*    border-top: 0px solid black;
+    border-left: 0px solid black;
+    border-right: 0px solid black;
+    border-bottom: 0px solid black;*/
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+}
+.wtmail-mv-table { width: 100%; height: 100%; }
+.wtmail-mv-header { padding: 6px 6px 0px 6px; border: none; }
+.wtmail-mv-hsubject { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: bold; }
+.wtmail-mv-hfromname { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: plain; }
+.wtmail-mv-hfromname A {text-decoration: none; color: black; }
+.wtmail-mv-hfromname A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hlabeldate {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelto {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelattach {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 50px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelattach A {text-decoration: none; color: black; }
+.wtmail-mv-hlabelattach A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hdate { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
+.wtmail-mv-hdate A {text-decoration: none; color: black; }
+.wtmail-mv-hdate A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hto {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
+.wtmail-mv-hto SPAN A {text-decoration: none; color: black; }
+.wtmail-mv-hto SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
+.wtmail-mv-hcc SPAN A {text-decoration: none; color: black; }
+.wtmail-mv-hcc SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hattach {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: black; }
+.wtmail-mv-hattach SPAN A {text-decoration: none; color: black; }
+.wtmail-mv-hattach SPAN A IMG { border: none; vertical-align: middle; }
+.wtmail-mv-hattach SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hline { border-bottom: 1px solid gray; width:100%; height:2px;}
+.wtmail-mv-bodycell { 
+    padding: 0px 6px 6px 6px; border: none; height: 100%;
+}
+
+.wtmail-mv-bodydiv { 
+    border: none;
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+    width:100%;
+    overflow:auto;
+}
+.wtmail-mv-bodyiframe {
+    border: none;
+}
+.wtmail-mv-tablecontents {
+    width: 100%;
+}
+
+.wtmail-element-toclick {
+    cursor: pointer
+}
+
+.wtmail-element-toclick-selected {
+    background-color: #D9E8FB;
+}

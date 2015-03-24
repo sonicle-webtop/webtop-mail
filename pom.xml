@@ -50,6 +50,11 @@
 	  <artifactId>ical4j</artifactId>
 	  <version>1.0.5.2</version>
 	 </dependency>
+	 <dependency>
+	  <groupId>nekohtml</groupId>
+	  <artifactId>nekohtml</artifactId>
+	  <version>1.9.6.2</version>
+	 </dependency>
 	</dependencies>
 	<build>
 		<resources>

@@ -341,7 +341,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
     String cidUrl="";
     if (!forEdit) {
         if (appUrl!=null) cidUrl+=appUrl;
-        cidUrl+="ServiceRequest?service=mail&action=GetAttachment&nowriter=true";
+        cidUrl+="service-request?service=com.sonicle.webtop.mail&action=GetAttachment&nowriter=true";
         if (provider==null) {
             cidUrl+="&folder="+XURLEncoder.encode(mailData.getFolderName())+"&idmessage="+msgnum;
                 
@@ -350,7 +350,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
         }
         cidUrl+="&cid="+XURLEncoder.encode(name);
     } else {
-        cidUrl+="ServiceRequest?service=mail&action=PreviewAttachment&nowriter=true"+
+        cidUrl+="service-request?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
             "&newmsgid="+msgnum+
             "&cid="+XURLEncoder.encode(name);
     }
@@ -380,7 +380,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
     String cidUrl="";
     if (!forEdit) {
         if (appUrl!=null) cidUrl+=appUrl;
-        cidUrl+="ServiceRequest?service=mail&action=GetAttachment&nowriter=true";
+        cidUrl+="service-request?service=com.sonicle.webtop.mail&action=GetAttachment&nowriter=true";
         if (provider==null) {
             cidUrl+="&folder="+XURLEncoder.encode(mailData.getFolderName())+"&idmessage="+msgnum;
         } else {
@@ -388,7 +388,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
         }
         cidUrl+="&url="+XURLEncoder.encode(avalue);
     } else {
-        cidUrl+="ServiceRequest?service=mail&action=PreviewAttachment&nowriter=true"+
+        cidUrl+="service-request?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
             "&newmsgid="+msgnum+
             "&url="+XURLEncoder.encode(avalue);
     }
