@@ -291,7 +291,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 xb[xx++]=me._TB("markseen"),
                 xb[xx++]=me._TB("markunseen"),
                 "-",
-                xb[xx++]=me._TB("filters")
+                xb[xx++]=me._TB("filters"),
+                xb[xx++]=me._TB("advsearch")
             ]
         );
 		//TODO FAX
@@ -332,7 +333,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("replyall",{ handler: me.actionReplyAll, scope: me });
         me.addAction("forward",{ handler: me.actionForward, scope: me });
         //me.addAction("forwardeml",{ handler: me.actionForwardEml, scope: me });
-        me.addAction("filters", { handler: me.actionFilters, scope: me });
+        me.addAction("filters", { handler: me.actionFilters, scope: me, iconCls: 'wt-icon-filter-xs' });
 		
 		/*
         this.addAction("flagred",this.actionFlagRed,this);
@@ -351,7 +352,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("spam",{ handler: me.actionSpam, scope: me, iconCls: 'wt-icon-block-xs' });
         me.addAction("delete",{ handler: me.actionDelete, scope: me, iconCls: 'wt-icon-delete-xs' });
         me.addAction("movetofolder",{ handler: me.actionMoveToFolder, scope: me });
-        me.addAction("check",{ handler: me.actionCheck, scope: me });
+        me.addAction("check",{ handler: me.actionCheck, scope: me, iconCls: 'wt-icon-refresh-xs' });
         me.addAction("advsearch", { handler: me.actionAdvancedSearch, scope: me });
 		
 		/*

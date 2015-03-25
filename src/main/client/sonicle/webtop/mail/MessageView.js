@@ -143,7 +143,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createfilter"), handler: function() {
 			var ae=me.emailMenu.activeElement;
 			me.createFilter(ae.recEmail,ae.recType);
-		}, iconCls: 'wtmail-icon-newfilter-xs'});
+		}, iconCls: 'wt-icon-new-filter-xs'});
 		me.emailMenu=new Ext.menu.Menu({
 			items: actions
 		});
@@ -155,11 +155,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				new Ext.Action({text: me.mys.res("attachmenu.save"),handler:function() {
 					var el=me.attachMenu.activeElement;
 					if (el.linkSave) window.open(el.linkSave);
-				},scope:me}),
+				}, scope:me, iconCls: 'wt-icon-save-xs'}),
 				new Ext.Action({text: me.mys.res("attachmenu.saveall"),handler:function() {
 					var el=me.attachMenu.activeElement;
 					if (el.linkSaveAll) window.open(el.linkSaveAll);
-				},scope:me})
+				}, scope:me, iconCls: 'wt-icon-save-all-xs'})
 			]
 		});
 		

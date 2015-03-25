@@ -8,6 +8,12 @@
 .wtmail-icon-reply-xs { background-image: url('statusreplied.png') !important; }
 .wtmail-icon-replyall-xs { background-image: url('replyall.png') !important; }
 .wtmail-icon-forward-xs { background-image: url('statusforwarded.png') !important; }
+.wtmail-icon-markseen-xs { background-image: url('statusread.png') !important; }
+.wtmail-icon-markunseen-xs { background-image: url('statusunread.png') !important; }
+/*.wtmail-icon-filters-xs { background-image: url('filters.png') !important; }
+.wtmail-icon-newfilter-xs { background-image: url('filters.png') !important; }*/
+.wtmail-icon-advsearch-xs { background-image: url('advsearch.png') !important; }
+.wtmail-icon-movetofolder-xs { background-image: url('movetofolder.png') !important; }
 
 /* tree */
 .wtmail-icon-inbox-folder { background-image: url(imap-folder-inbox.png) !important; }
