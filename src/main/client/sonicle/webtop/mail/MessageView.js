@@ -334,10 +334,28 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				this
 			);*/
 			
-            me.divSubject.update(me.subject);
+			var wticon=(me.mp.getViewRegion()==='east'?'wt-icon-panel-bottom-xs':'wt-icon-panel-right-xs');
+            me.divSubject.update(
+				"<table class='wtmail-mv-subject-table'><tr>"+
+				"<td>"+me.subject+"</td>"+
+				"<td class='"+wticon+"' style='width:24px; padding-right:8px; background-repeat: no-repeat'><a data-qtip='Click me!' data-qtitle='Panel mover' href='javascript:Ext.emptyFn()' panelmover=1>&nbsp;&nbsp;&nbsp;</a></td>"+
+				"</tr></table>"
+			);
+			Ext.each(me.divSubject.query("a[panelmover]"),function(o) { 
+				Ext.get(o).on("click",
+					function(e,t,o) { 
+						me.mp.moveViewPanel(); 
+						e.stopEvent(); 
+						return false;
+					}
+				);
+			});
 			//TODO: update tooltips (necessary???)
             //me.divFromName.set({ 'data-qtitle': me.fromName, 'data-qtip': me.fromEmail })
-            me.divFromName.update("<a data-qtip='"+me.fromEmail+"' data-qtitle='"+me.fromName+"' href='javascript:Ext.emptyFn()'>"+me.fromName+" ["+me.fromEmail+"]</a>");
+            me.divFromName.update(
+				"<a data-qtip='"+me.fromEmail+"' data-qtitle='"+me.fromName+"' href='javascript:Ext.emptyFn()'>"+
+					me.fromName+" ["+me.fromEmail+"]</a>"
+			);
             tdh.insertFirst(me.divLine);
             if (me.attachments) {
                 var names=null,

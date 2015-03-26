@@ -44,6 +44,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	
     layout:'border',
     border: false,
+	
+	viewRegion: 'east',
+	viewWidth: 600,
+	viewHeight: 400,
     
     filterTextField: null,
     filterCombo: null,
@@ -75,7 +79,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.folderList=Ext.create('Sonicle.webtop.mail.MessageGrid',{
             region:'center',
 			pageSize: me.getPageSize(),
-			mys: me.mys
+			mys: me.mys,
+			mp: me
         });
 		
         var msgSelModel=me.folderList.getSelectionModel();
@@ -90,7 +95,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		//if (me.saveColumnVisibility) me.folderList.getColumnModel().on('hiddenchange', me.columnHiddenChange, me);
 
         me.messageView=Ext.create('Sonicle.webtop.mail.MessageView',{
-			mys: me.mys
+			mys: me.mys,
+			mp: me
         });
         me.messageView.on('messageviewed',me.messageViewed,me)
         
@@ -175,14 +181,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		 */
 
         me.messageViewContainer=Ext.create('Ext.container.Container',{
-            region:'east',
+            region: me.viewRegion,
             cls: 'wtmail-mv-container',
             layout: 'fit',
             split: true,
             collapseMode: 'mini',
             collapsible : false,
-            height: 300,
-			width: 400,
+            height: me.viewHeight,
+			width: me.viewWidth,
             bodyBorder: true,
             border: true,
             items: [ me.messageView ]
@@ -204,6 +210,25 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
 
     },
+	
+	getViewRegion: function() {
+		return this.viewRegion;
+	},
+	
+	moveViewPanel: function() {
+		var me=this,
+			mv=me.messageView,
+			mvc=me.messageViewContainer,
+			idm=mv.idmessage,
+			idf=mv.folder;
+		mv.clear();
+		me.viewRegion=(me.viewRegion==='east'?'south':'east');
+		mvc.setRegion(me.viewRegion);
+		mvc.setWidth(me.viewWidth);
+		mvc.setHeight(me.viewHeight);
+		me.updateLayout();
+		mv.showMessage(idf,idm);
+	},
 /*    
     setViewSize: function(hperc) {
         if (this.ownerCt) {

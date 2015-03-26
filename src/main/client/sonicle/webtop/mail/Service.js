@@ -57,7 +57,8 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 Ext.define('Sonicle.webtop.mail.Service', {
 	extend: 'WT.sdk.Service',
 	requires: [
-		'Sonicle.webtop.mail.MessagesPanel'
+		'Sonicle.webtop.mail.MessagesPanel',
+		'Sonicle.webtop.mail.view.MessageEditor'
 	],
 
         imapTree: null,
@@ -416,6 +417,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			node.set('hasUnread',cfg.hasUnreadChildren);
 			node.set('unread',cfg.unread);
 		}
+	},
+	
+	actionNew: function() {
+		var me=this;
+		var v=WT.createView(me.ID,'Sonicle.webtop.mail.view.MessageEditor',{
+			containerCfg: {
+				width: 600,
+				height: 400
+			},
+			viewCfg: {
+			}
+		});
+		v.show(false,function() {
+			console.log("ready, shown");
+		});
 	}
 	
 });

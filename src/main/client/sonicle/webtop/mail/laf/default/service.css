@@ -89,6 +89,8 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 .wtmail-mv-tablecontents {
     width: 100%;
 }
+.wtmail-mv-subject-table { width: 100%; border: none; }
+.wtmail-mv-subject-table TR TD { border: none; padding: 0px; }
 
 .wtmail-element-toclick {
     cursor: pointer
