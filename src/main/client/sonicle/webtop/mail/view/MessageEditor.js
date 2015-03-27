@@ -36,14 +36,12 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	extend: 'WT.sdk.ModelView',
 	requires: [
 		'Sonicle.webtop.mail.model.MessageModel',
-		'Ext.ux.form.TinyMCETextArea'
+		'Sonicle.form.field.HTMLEditor'
 	],
 	
 	title: '@message.tit',
 	iconCls: 'wtmail-icon-newmsg-xs',
 	model: 'Sonicle.webtop.mail.model.MessageModel',
-	
-	tmce: null,
 	
 	initComponent: function() {
 		var me=this;
@@ -56,85 +54,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}));
 		me.add(
 			Ext.create({
-				xtype: 'panel',
-				region: 'center',
-				layout: 'fit',
-				border: 0,
-				tbar:  [
-					{
-						xtype: 'combo', 
-						width: 100,
-						store: Ext.create('Ext.data.Store', {
-							fields: ['fn'],
-							data : [
-								{ fn: "Arial" },
-								{ fn: "Comic Sans MS"},
-								{ fn: "Courier New"}
-							]
-						}),
-						forceSelection: true,
-						autoSelect: true,
-						displayField: 'fn',
-						valueField: 'fn',
-						queryMode: 'local',
-						listeners: {
-							'select': function(c,r,o) {
-								me.execCommand('fontname',false,r.get('fn'));
-							}
-						}
-					},
-					'-',
-					{
-						xtype: 'button', iconCls: 'wtmail-icon-bold-xs' , text: 'B',
-						handler: function() {
-							me.execCommand('bold');
-						}
-					},
-					{
-						xtype: 'button', iconCls: 'wtmail-icon-italic-xs' , text: 'I',
-						handler: function() {
-							me.execCommand('italic');
-						}
-					},
-					{
-						xtype: 'button', iconCls: 'wtmail-icon-underline-xs' , text: 'U',
-						handler: function() {
-							me.execCommand('underline');
-						}
-					}
-					
-				],
-				items: [
-					me.tmce=Ext.create({
-						xtype: 'tinymce_textarea',
-						region: 'center',
-						fieldStyle: 'font-family: Courier New; font-size: 12px;',
-						style: { border: '0' },
-						tinyMCEConfig: {
-							plugins: [
-							"advlist autolink lists link image charmap print preview hr anchor pagebreak",
-							"searchreplace wordcount visualblocks visualchars code fullscreen",
-							"insertdatetime media nonbreaking save table contextmenu directionality",
-							"emoticons template paste textcolor"
-							],
-
-							toolbar: false,
-							//toolbar1: "newdocument fullpage | bold italic underline strikethrough | alignleft aligncenter alignright alignjustify | styleselect formatselect fontselect fontsizeselect",
-							//toolbar2: "cut copy paste | searchreplace | bullist numlist | outdent indent blockquote | undo redo | link unlink anchor image media code | inserttime preview | forecolor backcolor",
-							//toolbar3: "table | hr removeformat | subscript superscript | charmap emoticons | print fullscreen | ltr rtl | spellchecker | visualchars visualblocks nonbreaking template pagebreak restoredraft",
-							menubar: false,
-							toolbar_items_size: 'small'
-						},
-						value: 'This is the WebTop-TinyMCE HTML Editor'
-
-					})
-				]
+				xtype: 'sohtmleditor',
+				region: 'center'
 			})
 		);
-	},
-	
-	execCommand: function(cmd, ui, value, obj) {
-		var ed = tinymce.get(this.tmce.getInputId());
-		ed.execCommand(cmd,ui,value,obj);
 	}
+	
 });
