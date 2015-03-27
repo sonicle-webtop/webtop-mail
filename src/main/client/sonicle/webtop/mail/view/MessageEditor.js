@@ -62,17 +62,47 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				border: 0,
 				tbar:  [
 					{
-						xtype: 'button', iconCls: 'wtmail-icon-movetofolder-xs', 
+						xtype: 'combo', 
+						width: 100,
+						store: Ext.create('Ext.data.Store', {
+							fields: ['fn'],
+							data : [
+								{ fn: "Arial" },
+								{ fn: "Comic Sans MS"},
+								{ fn: "Courier New"}
+							]
+						}),
+						forceSelection: true,
+						autoSelect: true,
+						displayField: 'fn',
+						valueField: 'fn',
+						queryMode: 'local',
+						listeners: {
+							'select': function(c,r,o) {
+								me.execCommand('fontname',false,r.get('fn'));
+							}
+						}
+					},
+					'-',
+					{
+						xtype: 'button', iconCls: 'wtmail-icon-bold-xs' , text: 'B',
 						handler: function() {
-							me.execCommand('mceCodeEditor');
+							me.execCommand('bold');
 						}
 					},
 					{
-						xtype: 'button', iconCls: 'wtmail-icon-advsearch-xs' ,
+						xtype: 'button', iconCls: 'wtmail-icon-italic-xs' , text: 'I',
 						handler: function() {
-							me.execCommand('mceImage');
+							me.execCommand('italic');
+						}
+					},
+					{
+						xtype: 'button', iconCls: 'wtmail-icon-underline-xs' , text: 'U',
+						handler: function() {
+							me.execCommand('underline');
 						}
 					}
+					
 				],
 				items: [
 					me.tmce=Ext.create({
