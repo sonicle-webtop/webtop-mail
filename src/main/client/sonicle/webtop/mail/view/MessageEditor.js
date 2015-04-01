@@ -55,7 +55,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.add(
 			Ext.create({
 				xtype: 'sohtmleditor',
-				region: 'center'
+				region: 'center',
+				enableFont: true,
+				enableFontSize: true,
+				enableFormat: true,
+				enableColors: true,
+				enableAlignments: true,
+				enableLists: true,
+				enableSourceEdit: true
 			})
 		);
 	}

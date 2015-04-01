@@ -484,13 +484,13 @@ public class FolderCache {
     }
 
     protected void refreshUnreadMessagesCount() throws MessagingException {
-		//MailService.logger.debug("refreshing count on "+foldername);
         if ((folder.getType() & Folder.HOLDS_MESSAGES)>0) {
             int oldunread=unread;
             if (folder.isOpen()) {
                 Message umsgs[]=folder.search(unseenSearchTerm);
                 unread=umsgs.length;
             } else unread=folder.getUnreadMessageCount();
+			//System.out.println("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
             if (oldunread!=unread) {
 				unreadChanged=true;
 				sendUnreadChangedMessage();
@@ -532,13 +532,13 @@ public class FolderCache {
 
     protected boolean checkSubfolders(boolean all) throws MessagingException {
         boolean pHasUnread=false;
+		//System.out.println("working on "+getFolderName());
         for(FolderCache fcchild: getChildren()) {
             if (fcchild.isScanForcedOff()) continue;
             boolean hasUnread=false;
             if (all || fcchild.scanNeverDone || fcchild.isScanForcedOn() || fcchild.isScanEnabled()) {
                 fcchild.scanNeverDone=false;
                 hasUnread=fcchild.checkFolder();
-                //System.out.println("checking "+fcchild.getFolderName());
             }
             if (fcchild.children!=null) {
                 hasUnread|=fcchild.checkSubfolders(all);
@@ -554,14 +554,14 @@ public class FolderCache {
         try {
             if (checkUnreads) refreshUnreadMessagesCount();
         } catch(MessagingException exc) {
-            //System.out.println("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            //exc.printStackTrace();
+            System.out.println("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
+            exc.printStackTrace();
         }
         try {
             if (checkRecents) refreshRecentMessagesCount();
         } catch(MessagingException exc) {
-            //System.out.println("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            //exc.printStackTrace();
+            System.out.println("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
+            exc.printStackTrace();
         }
         return (unread>0);
     }
@@ -1204,8 +1204,8 @@ public class FolderCache {
               break;
       }
       
-      System.out.println("gsort="+gsort);
-      System.out.println("sort="+sort);
+      //System.out.println("gsort="+gsort);
+      //System.out.println("sort="+sort);
       
       //Prepend group sorting if present
       if (gsort!=null) {
@@ -1252,7 +1252,7 @@ public class FolderCache {
             int method=entry.getMethod();
             String pattern=entry.getValue();
             boolean negate=(method==AdvancedSearchEntry.METHOD_DOESNOTCONTAIN||method==AdvancedSearchEntry.METHOD_ISNOT);
-            System.out.println("ADVSEARCH: pattern="+pattern+" searchfield="+searchfield);
+            //System.out.println("ADVSEARCH: pattern="+pattern+" searchfield="+searchfield);
             if(searchfield.equals("subject")) {
               term=new SubjectTerm(pattern);
             } else if(searchfield.equals("to")) {
@@ -1763,7 +1763,7 @@ public class FolderCache {
             if(filename.endsWith(">")) {
               filename=filename.substring(0, filename.length()-1);
             }
-            System.out.println("adding CID "+filename);
+            //System.out.println("adding CID "+filename);
             mailData.addCidPart(filename, p);
           }
           //Look for a possible Url copy
