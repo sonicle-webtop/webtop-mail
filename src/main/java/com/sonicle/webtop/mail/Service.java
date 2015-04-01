@@ -43,6 +43,7 @@ import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.sieve.*;
 import com.sonicle.security.Principal;
 import com.sonicle.security.AuthenticationDomain;
+import com.sonicle.webtop.core.WT;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.dal.UserDAO;
 //import com.sonicle.webtop.core.*;
@@ -5454,7 +5455,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 				int ix = filename.lastIndexOf(".");
 				if (ix > 0) {
 					String extension = filename.substring(ix + 1);
-					String xctype = environment.getContentType(extension);
+					String xctype = WT.getContentType(extension);
 					if (xctype != null) {
 						ctype = xctype;
 					}
@@ -5514,7 +5515,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 			ix = filename.lastIndexOf(".");
 			if (ix > 0) {
 				String ext = filename.substring(ix + 1);
-				String xctype = environment.getContentType(ext);
+				String xctype = WT.getContentType(ext);
 				if (xctype != null) {
 					ctype = xctype;
 				}
@@ -6223,10 +6224,10 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 							if (dx == 0) {
 								isToday = true;
 								//if (isGdate) {
-									xdate = environment.lookupCoreResource(locale, CoreLocaleKey.DATE_TODAY);
+									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.DATE_TODAY);
 								//}
 							} else if (dx == 1 /*&& isGdate*/) {
-								xdate = environment.lookupCoreResource(locale, CoreLocaleKey.DATE_YESTERDAY);
+								xdate = WT.lookupCoreResource(locale, CoreLocaleKey.DATE_YESTERDAY);
 							}
 						}
 					}
@@ -6624,7 +6625,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 					if (ix > 0) {
 						fname = ctype.substring(ix + 1);
 					}
-					String ext = environment.getExtension(ctype);
+					String ext = WT.getExtension(ctype);
 					if (ext == null) {
 						pname = fname;
 					} else {
@@ -7122,7 +7123,7 @@ public class Service extends com.sonicle.webtop.core.sdk.BaseService {
 				int ix = name.lastIndexOf(".");
 				if (ix > 0) {
 					String ext = name.substring(ix + 1);
-					String xctype = environment.getContentType(ext);
+					String xctype = WT.getContentType(ext);
 					if (xctype != null) {
 						ctype = xctype;
 					}
