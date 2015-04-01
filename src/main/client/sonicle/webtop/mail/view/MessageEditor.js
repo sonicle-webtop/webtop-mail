@@ -43,6 +43,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	iconCls: 'wtmail-icon-newmsg-xs',
 	model: 'Sonicle.webtop.mail.model.MessageModel',
 	
+	autoToolbar: false,
+	
 	initComponent: function() {
 		var me=this;
 		me.callParent(arguments);
@@ -62,6 +64,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableFormat: true,
 				enableColors: true,
 				enableAlignments: true,
+				enableLinks: true,
 				enableLists: true,
 				enableSourceEdit: true
 			})
