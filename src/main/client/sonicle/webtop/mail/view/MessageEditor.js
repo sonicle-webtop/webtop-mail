@@ -50,6 +50,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.add(Ext.create({
 			xtype: 'panel',
 			region: 'north',
+//			bodyCls: 'wt-theme-bg-2',
 			height: 100
 		}));
 		me.add(
