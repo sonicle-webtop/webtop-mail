@@ -423,8 +423,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this;
 		var v=WT.createView(me.ID,'Sonicle.webtop.mail.view.MessageEditor',{
 			containerCfg: {
-				width: 600,
-				height: 400
+				width: 800,
+				height: 500
 			},
 			viewCfg: {
 			}

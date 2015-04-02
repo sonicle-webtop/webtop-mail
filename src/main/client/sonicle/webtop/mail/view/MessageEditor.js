@@ -36,6 +36,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	extend: 'WT.sdk.ModelView',
 	requires: [
 		'Sonicle.webtop.mail.model.MessageModel',
+		'Sonicle.webtop.core.ux.RecipientsGrid',
+		'Sonicle.webtop.core.ux.SuggestCombo',
 		'Sonicle.form.field.HTMLEditor'
 	],
 	
@@ -49,11 +51,69 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		var me=this;
 		me.callParent(arguments);
 		
+		me.attlist= Ext.create({
+			id: 'attlist',
+			xtype: 'panel',
+			width: 200,
+			autoScroll: true,
+			region: 'east',
+			layout: 'anchor',
+			//baseCls: 'x-plain',
+			border: false,
+			bodyBorder: false
+        });
+		me.recgrid=Ext.create({
+			id: 'recgrid',
+			xtype: 'wtrecipientsgrid',
+			height: 90,
+			region: 'center'
+		});
+		
+		me.subject=Ext.create({
+			id: 'subject',
+			xtype: 'wtsuggestcombo',
+            sid: 'mail',
+            context: 'subject',
+			region: 'south',
+            width: 400, fieldLabel: '&nbsp;'+WT.res('subject')
+        });
+		
+		me.toolbar=Ext.create({
+			id: 'toolbar',
+			xtype: 'toolbar',
+			region: 'north',
+			items: [
+				{ xtype:'button',text:'Send!'}
+			]
+		});
+		
 		me.add(Ext.create({
+			id: 'panel1',
 			xtype: 'panel',
 			region: 'north',
 //			bodyCls: 'wt-theme-bg-2',
-			height: 100
+			labelWidth: 60,
+            border: false,
+            bodyBorder: false,
+			height: 130,
+			layout: 'border',
+			items: [
+				me.toolbar,
+				Ext.create({
+					id: 'panel2',
+					xtype: 'panel',
+					region: 'center',
+                    border: false,
+                    bodyBorder: false,
+                    height: 90,
+                    layout: 'border',
+                    items: [
+                        me.recgrid,
+						me.attlist
+                    ]
+				}),
+				me.subject
+			]
 		}));
 		me.add(
 			Ext.create({
@@ -66,7 +126,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableAlignments: true,
 				enableLinks: true,
 				enableLists: true,
-				enableSourceEdit: true
+				enableSourceEdit: true,
+				enableClean: true
 			})
 		);
 	}
