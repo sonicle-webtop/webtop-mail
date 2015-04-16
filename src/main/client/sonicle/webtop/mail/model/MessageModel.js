@@ -34,8 +34,29 @@
 
 Ext.define('Sonicle.webtop.mail.model.MessageModel', {
     extend: 'WT.model.Base',
-    idProperty: 'id',
     fields: [
-		{ name: "id", type: 'int' }
+		{ name: "messageId", type: 'int' },
+		{ name: "subject", type: 'string' },
+		{ name: "html", type: 'string' }
+	]
+});
+
+Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {
+    extend: 'WT.model.Base',
+    fields: [
+		{ name: "messageId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'recipients' } },
+		{ name: "rtype", type: 'string' },
+		{ name: "email", type: 'string' }
+	]
+});
+
+Ext.define('Sonicle.webtop.mail.model.AttachmentModel', {
+    extend: 'WT.model.Base',
+    fields: [
+		{ name: "messageId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'attachments' } },
+		{ name: "filename", type: 'string' },
+		{ name: "tempname", type: 'string' },
+		{ name: "filesize", type: 'int' },
+		{ name: "servername", type: 'string' }
 	]
 });

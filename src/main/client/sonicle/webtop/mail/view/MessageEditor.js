@@ -52,55 +52,79 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.callParent(arguments);
 		
 		me.attlist= Ext.create({
-			id: 'attlist',
 			xtype: 'panel',
 			width: 200,
 			autoScroll: true,
 			region: 'east',
 			layout: 'anchor',
-			//baseCls: 'x-plain',
 			border: false,
 			bodyBorder: false
         });
 		me.recgrid=Ext.create({
-			id: 'recgrid',
 			xtype: 'wtrecipientsgrid',
 			height: 90,
-			region: 'center'
+			region: 'center',
+			fields: { recipientType: 'rtype', email: 'email' },
+			bind: {
+				store: '{record.recipients}'
+			}
 		});
 		
 		me.subject=Ext.create({
-			id: 'subject',
 			xtype: 'wtsuggestcombo',
-            sid: 'mail',
-            context: 'subject',
-			region: 'south',
-            width: 400, fieldLabel: '&nbsp;'+WT.res('subject')
+            sid: me.mys.ID,
+            suggestionContext: 'subject',
+            width: 600,
+			fieldLabel: WT.res('word.subject'),
+			labelWidth: 60,
+			labelAlign: 'right'/*,
+			bind: '{record.subject}'*/
         });
+		me.xcombo=Ext.create({
+			xtype: 'combo',
+			typeAhead: true,
+			queryMode: 'local',
+			forceSelection: true,
+			selectOnFocus: true,
+			store: Ext.create('Ext.data.Store', {
+				fields: ['id','fs'],
+				data : [
+					{ id: 1, fs: "8" },
+					{ id: 2, fs: "10"},
+					{ id: 3, fs: "12"},
+					{ id: 4, fs: "14"},
+					{ id: 5, fs: "18"},
+					{ id: 6, fs: "24"},
+					{ id: 7, fs: "36"}
+				]
+			}),
+            width: 600,
+			valueField: 'id',
+			displayField: 'fs',
+			fieldLabel: 'Suck!',
+			labelWidth: 60,
+			labelAlign: 'right'
+		});
 		
 		me.toolbar=Ext.create({
-			id: 'toolbar',
 			xtype: 'toolbar',
 			region: 'north',
 			items: [
-				{ xtype:'button',text:'Send!'}
+				{ xtype:'button',text:'Send!', handler: me.sendMail, scope: me }
 			]
 		});
 		
 		me.add(Ext.create({
-			id: 'panel1',
 			xtype: 'panel',
 			region: 'north',
 //			bodyCls: 'wt-theme-bg-2',
-			labelWidth: 60,
             border: false,
             bodyBorder: false,
-			height: 130,
-			layout: 'border',
+			height: 150,
+			layout: 'anchor',
 			items: [
 				me.toolbar,
 				Ext.create({
-					id: 'panel2',
 					xtype: 'panel',
 					region: 'center',
                     border: false,
@@ -112,13 +136,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						me.attlist
                     ]
 				}),
-				me.subject
+				me.subject,
+				me.xcombo
 			]
 		}));
 		me.add(
-			Ext.create({
+			me.htmlEditor=Ext.create({
 				xtype: 'sohtmleditor',
 				region: 'center',
+				bind: '{record.html}',
 				enableFont: true,
 				enableFontSize: true,
 				enableFormat: true,
@@ -130,6 +156,12 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableClean: true
 			})
 		);
+
+		console.log("init");
+	},
+	
+	sendMail: function() {
+		console.log("sendMail");
 	}
 	
 });

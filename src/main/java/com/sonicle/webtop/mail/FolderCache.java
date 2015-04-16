@@ -490,7 +490,7 @@ public class FolderCache {
                 Message umsgs[]=folder.search(unseenSearchTerm);
                 unread=umsgs.length;
             } else unread=folder.getUnreadMessageCount();
-			//System.out.println("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
+			System.out.println("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
             if (oldunread!=unread) {
 				unreadChanged=true;
 				sendUnreadChangedMessage();
@@ -532,7 +532,7 @@ public class FolderCache {
 
     protected boolean checkSubfolders(boolean all) throws MessagingException {
         boolean pHasUnread=false;
-		//System.out.println("working on "+getFolderName());
+		System.out.println("working on "+getFolderName());
         for(FolderCache fcchild: getChildren()) {
             if (fcchild.isScanForcedOff()) continue;
             boolean hasUnread=false;

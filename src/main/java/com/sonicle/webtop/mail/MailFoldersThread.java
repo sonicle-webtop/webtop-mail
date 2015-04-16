@@ -90,13 +90,13 @@ public class MailFoldersThread extends Thread {
 			fcinbox.checkFolder();
 			
             FolderCache fcroot=ms.getRootFolderCache();
-            //System.out.println("Entering MFT loop");
+            System.out.println("Entering MFT loop");
             while(!abort) {
-                //System.out.println("MFT Synchronizing");
+                System.out.println("MFT Synchronizing");
                     synchronized(this) {
                         ms.checkStoreConnected();
                         if (sleepCount>0) {
-                            //System.out.println("MailFolderThread: Checking inbox messages");
+                            System.out.println("MailFolderThread: Checking inbox messages");
 							
 							//Don't check here inbox, it's in idle mode
                             //fcinbox.checkFolder();
@@ -114,7 +114,7 @@ public class MailFoldersThread extends Thread {
                             }
                         }
                         else {
-                            //System.out.println("MailFolderThread: Checking all messages");
+                            System.out.println("MailFolderThread: Checking all messages");
                             try {
                                 fcroot.checkSubfolders(checkAll);
                             } catch(Exception exc) {
@@ -122,7 +122,7 @@ public class MailFoldersThread extends Thread {
                             }
                         }
                     }
-                    //System.out.println("MailFolderThread: Sleeping....");
+                    System.out.println("MailFolderThread: Sleeping....");
                     if (sleepCount<=0) sleepCount=sleepOthers;
                     sleep(1000*sleepInbox);
                     sleepCount-=sleepInbox;

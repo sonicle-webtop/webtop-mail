@@ -430,7 +430,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			}
 		});
 		v.show(false,function() {
-			console.log("ready, shown");
+			v.getComponent(0).beginNew({
+				data: {
+					messageId: 1,
+					subject: 'Default Subject',
+					recipients: [
+						{ rtype: 'to', email: 'matteo.albinola@sonicle.com'},
+						{ rtype: 'to', email: 'cristian@sonicle.com'},
+						{ rtype: 'to', email: 'filippo@sonicle.com'},
+						{ rtype: 'cc', email: 'raffaele.fullone@sonicle.com'},
+						{ rtype: 'bcc', email: 'sergio.decillis@sonicle.com'},
+						{ rtype: 'bcc', email: 'nethesis@sonicle.com'}
+					],
+					html: '<BR><B>Test bind HTML</B><BR><BR><I>Let\'s see if it works!</I><BR><BR>Gabry'
+				}
+			});
 		});
 	}
 	
