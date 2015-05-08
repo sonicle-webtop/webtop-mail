@@ -257,8 +257,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		//TODO grid events
         //mp.on('gridrowdblclick',this.rowDblClicked,this);
         //mp.on('gridcellclick',this.cellClicked,this);
-
-		me.addWSAction('unread',me.unreadChanged,this);
+		
+		me.onMessage('unread', me.unreadChanged, this);
 
         me.toolbar=Ext.create('Ext.toolbar.Paging',{
             store: me.messagesPanel.getGridStore(),

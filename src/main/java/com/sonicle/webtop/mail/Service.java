@@ -92,9 +92,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.slf4j.Logger;
 
-public class Service extends com.sonicle.webtop.core.sdk.BaseService {
+public class Service extends BaseService {
 	
-	public final static Logger logger = getLogger(Service.class);
+	public final static Logger logger = WT.getLogger(Service.class);
 	
 	public static String flagStrings[] = {
 		"red",

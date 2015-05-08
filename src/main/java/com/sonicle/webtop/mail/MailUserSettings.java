@@ -71,73 +71,73 @@ public class MailUserSettings extends BaseUserSettings {
     }
     
     public boolean isSharedSeen() {
-        return getUserSetting(SHARED_SEEN, false);
+        return getBoolean(SHARED_SEEN, false);
     }
 	
 	public String getMessageListGroup(String foldername) {
-		return getUserSetting(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),"");
+		return getString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),"");
 	}
 	
 	public int getColumnSize(String name) {
-		return getUserSetting(MessageFormat.format(COLUMN_SIZE,name),100);
+		return getInteger(MessageFormat.format(COLUMN_SIZE,name),100);
 	}
 	
 	public ColumnVisibilitySetting getColumnVisibilitySetting(String foldername) {
 		return LangUtils.value(
-				getUserSetting(MessageFormat.format(COLUMN_VISIBLE, foldername)),
+				getSetting(MessageFormat.format(COLUMN_VISIBLE, foldername)),
 				new ColumnVisibilitySetting(), ColumnVisibilitySetting.class
 		);
 	}
     
 	public String getMessageListSort(String foldername) {
-		return getUserSetting(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
+		return getString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
 	}
 	
 	public String getFolderPrefix(String mailUser) {
-		return getUserSetting(MessageFormat.format(FOLDER_PEFFIX, mailUser), mss.getDefaultFolderPrefix());
+		return getString(MessageFormat.format(FOLDER_PEFFIX, mailUser), mss.getDefaultFolderPrefix());
 	}
 	
 	public boolean isScanAll(String mailUser) {
-		return getUserSetting(MessageFormat.format(SCAN_ALL, mailUser),mss.isDefaultScanAll());
+		return getBoolean(MessageFormat.format(SCAN_ALL, mailUser),mss.isDefaultScanAll());
 	}
 	
 	public int getScanSeconds(String mailUser) {
-		return getUserSetting(MessageFormat.format(SCAN_SECONDS, mailUser),mss.getDefaultScanSeconds());
+		return getInteger(MessageFormat.format(SCAN_SECONDS, mailUser),mss.getDefaultScanSeconds());
 	}
 	
 	public int getScanCycles(String mailUser) {
-		return getUserSetting(MessageFormat.format(SCAN_CYCLES, mailUser),mss.getDefaultScanCycles());
+		return getInteger(MessageFormat.format(SCAN_CYCLES, mailUser),mss.getDefaultScanCycles());
 	}
 	
 	public String getFolderSent(String mailUser) {
-		return getUserSetting(MessageFormat.format(FOLDER_SENT, mailUser),mss.getDefaultFolderSent());
+		return getString(MessageFormat.format(FOLDER_SENT, mailUser),mss.getDefaultFolderSent());
 	}
 	
 	public String getFolderDrafts(String mailUser) {
-		return getUserSetting(MessageFormat.format(FOLDER_DRAFTS, mailUser),mss.getDefaultFolderDrafts());
+		return getString(MessageFormat.format(FOLDER_DRAFTS, mailUser),mss.getDefaultFolderDrafts());
 	}
 	
 	public String getFolderTrash(String mailUser) {
-		return getUserSetting(MessageFormat.format(FOLDER_TRASH, mailUser),mss.getDefaultFolderTrash());
+		return getString(MessageFormat.format(FOLDER_TRASH, mailUser),mss.getDefaultFolderTrash());
 	}
 
 	public String getFolderSpam(String mailUser) {
-		return getUserSetting(MessageFormat.format(FOLDER_SPAM, mailUser),mss.getDefaultFolderSpam());
+		return getString(MessageFormat.format(FOLDER_SPAM, mailUser),mss.getDefaultFolderSpam());
 	}
 	
 	public String getReplyTo(String mailUser) {
-		return getUserSetting(MessageFormat.format(REPLY_TO, mailUser));
+		return getString(MessageFormat.format(REPLY_TO, mailUser), null);
 	}
 	
 	public String getSharedSort(String mailUser) {
-		return getUserSetting(MessageFormat.format(SHARED_SORT, mailUser),"N");
+		return getString(MessageFormat.format(SHARED_SORT, mailUser),"N");
 	}
 	
 	public boolean isIncludeMessageInReply(String mailUser) {
-		return getUserSetting(MessageFormat.format(INCLUDE_MESSAGE_IN_REPLY, mailUser), mss.isDefaultIncludeMessageInReply());
+		return getBoolean(MessageFormat.format(INCLUDE_MESSAGE_IN_REPLY, mailUser), mss.isDefaultIncludeMessageInReply());
 	}
 	
 	public int getNumMessageList(String mailUser) {
-		return getUserSetting(MessageFormat.format(NUM_MESSAGE_LIST, mailUser),mss.getDefaultNumMessageList());
+		return getInteger(MessageFormat.format(NUM_MESSAGE_LIST, mailUser),mss.getDefaultNumMessageList());
 	}
 }

@@ -470,7 +470,7 @@ public class FolderCache {
 	private void sendUnreadChangedMessage() {
 		//MailService.logger.debug("sending unread changed on "+foldername);
 		try {
-			this.environment.sendWebSocketMessage(
+			this.environment.notify(
 					new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
 			);
 		} catch(IOException exc) {

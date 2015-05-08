@@ -73,27 +73,27 @@ public class MailServiceSettings extends BaseServiceSettings {
     
     
     public String getSmtpHost() {
-        return getServiceSetting(SMTP_HOST);
+        return getSetting(SMTP_HOST);
     }
     
     public String getSmtpPort() {
-        return getServiceSetting(SMTP_PORT);
+        return getSetting(SMTP_PORT);
     }
     
     public boolean isAutocreateSpecialFolders() {
-        return LangUtils.value(getServiceSetting(SPECIALFOLDERS_AUTOCREATE),true);
+        return LangUtils.value(getSetting(SPECIALFOLDERS_AUTOCREATE),true);
     }
 	
 	public String getArchivePath() {
-		return getServiceSetting(ARCHIVE);
+		return getSetting(ARCHIVE);
 	}
 	
 	public String getFaxPattern() {
-		return getServiceSetting(FAX_PATTERN);
+		return getSetting(FAX_PATTERN);
 	}
 	
 	public int getAttachmentMaxSize() {
-		return Integer.parseInt(getServiceSetting(ATTACHMENT_MAXSIZE));
+		return Integer.parseInt(getSetting(ATTACHMENT_MAXSIZE));
 	}
 	
 	public String getAttachDir() {
@@ -101,54 +101,54 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}
 	
 	public String getDefaultFolderPrefix() {
-		return getServiceSetting(DEFAULT_FOLDER_PEFFIX);
+		return getSetting(DEFAULT_FOLDER_PEFFIX);
 	}
 	
 	public boolean isDefaultScanAll() {
-		return LangUtils.value(getServiceSetting(DEFAULT_SCAN_ALL),false);
+		return LangUtils.value(getSetting(DEFAULT_SCAN_ALL),false);
 	}
 	
 	public int getDefaultScanSeconds() {
-		return Integer.parseInt(getServiceSetting(DEFAULT_SCAN_SECONDS));
+		return Integer.parseInt(getSetting(DEFAULT_SCAN_SECONDS));
 	}
 	
 	public int getDefaultScanCycles() {
-		return Integer.parseInt(getServiceSetting(DEFAULT_SCAN_CYCLES));
+		return Integer.parseInt(getSetting(DEFAULT_SCAN_CYCLES));
 	}
 	
 	public String getDefaultFolderSent() {
-		return getServiceSetting(DEFAULT_FOLDER_SENT);
+		return getSetting(DEFAULT_FOLDER_SENT);
 	}
 	
 	public String getDefaultFolderDrafts() {
-		return getServiceSetting(DEFAULT_FOLDER_DRAFTS);
+		return getSetting(DEFAULT_FOLDER_DRAFTS);
 	}
 	
 	public String getDefaultFolderTrash() {
-		return getServiceSetting(DEFAULT_FOLDER_TRASH);
+		return getSetting(DEFAULT_FOLDER_TRASH);
 	}
 
 	public String getDefaultFolderSpam() {
-		return getServiceSetting(DEFAULT_FOLDER_SPAM);
+		return getSetting(DEFAULT_FOLDER_SPAM);
 	}
 	
 	public boolean isDefaultIncludeMessageInReply() {
-		return LangUtils.value(getServiceSetting(DEFAULT_INCLUDE_MESSAGE_IN_REPLY), true);
+		return LangUtils.value(getSetting(DEFAULT_INCLUDE_MESSAGE_IN_REPLY), true);
 	}
 	
 	public int getDefaultNumMessageList() {
-		return Integer.parseInt(getServiceSetting(DEFAULT_NUM_MESSAGE_LIST));
+		return Integer.parseInt(getSetting(DEFAULT_NUM_MESSAGE_LIST));
 	}
 	
 	public String getDefaultHost() {
-		return getServiceSetting(DEFAULT_HOST);
+		return getSetting(DEFAULT_HOST);
 	}
 	
 	public int getDefaultPort() {
-		return Integer.parseInt(getServiceSetting(DEFAULT_PORT));
+		return Integer.parseInt(getSetting(DEFAULT_PORT));
 	}
 	
 	public String getDefaultProtocol() {
-		return getServiceSetting(DEFAULT_PROTOCOL);
+		return getSetting(DEFAULT_PROTOCOL);
 	}
 }
