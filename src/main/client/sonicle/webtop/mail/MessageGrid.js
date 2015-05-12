@@ -278,7 +278,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 
         //this.store = new Ext.data.Store({
         me.store = Ext.create('Ext.data.JsonStore',{
-            proxy: WT.Util.proxy(me.mys.ID, me.reloadAction,'messages'),
+            proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
 			model: Ext.create('Sonicle.webtop.mail.MessagesModel',{
 				id: idx,
 				fields: fields
@@ -400,7 +400,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         }
         me.priIndex=n;
         dcols[n++]={//Priority
-            header: WT.Util.imageTag(me.mys.ID,'headerpriority.gif',7,16),
+            header: WTF.imageTag(me.mys.ID,'headerpriority.gif',7,16),
             width: 35,
             sortable: true,
             menuDisabled: true,
@@ -408,8 +408,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
 					var others="border=0"
-					if (value<3) tag=WT.Util.imageTag(me.mys.ID,'priorityhigh.gif',others);
-					else tag=WT.Util.globalImageTag('empty.gif',7,16,others);
+					if (value<3) tag=WTF.imageTag(me.mys.ID,'priorityhigh.gif',others);
+					else tag=WTF.globalImageTag('empty.gif',7,16,others);
 					return tag;
 			},
 			scope: me,
@@ -436,7 +436,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             }
         };
         dcols[n++]={//Status
-            header: WT.Util.imageTag(me.mys.ID,'headerstatus.gif',15,16),
+            header: WTF.imageTag(me.mys.ID,'headerstatus.gif',15,16),
             width: 30,
             sortable: true,
             menuDisabled: true,
@@ -446,7 +446,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//var sdate=record.get("scheddate");
 					//if (sdate) value="scheduled";
 					var imgname=Ext.String.format("status{0}.png",value);
-					var imgtag=WT.Util.imageTag(me.mys.ID,imgname,16,16);
+					var imgtag=WTF.imageTag(me.mys.ID,imgname,16,16);
 					//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
 					//else tag=imgtag;
 					return imgtag;
@@ -544,20 +544,20 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             dataIndex: 'size',
             hidden: me.multifolder,
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-                return WT.getSizeString(parseInt(value));
+                return WTU.humanReadableSize(parseInt(value));
             },
             filter: {}
         };
         dcols[n++]={//Attachment
-			header: WT.Util.imageTag(me.mys.ID,'headerattach.gif',15,16),
+			header: WTF.imageTag(me.mys.ID,'headerattach.gif',15,16),
             width: 30,
             sortable: false,
             menuDisabled: true,
             dataIndex: 'atts',
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
-					if (value) tag=WT.Util.imageTag(me.mys.ID,'attach.png',16,16,"border=0 style='cursor: pointer'");
-					else tag=WT.Util.globalImageTag('empty.gif',16,16,"border=0");
+					if (value) tag=WTF.imageTag(me.mys.ID,'attach.png',16,16,"border=0 style='cursor: pointer'");
+					else tag=WTF.globalImageTag('empty.gif',16,16,"border=0");
 					return tag;
 			},
 			scope: me,
@@ -565,7 +565,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             
         };
         dcols[n++]={//Flag
-            header: WT.Util.imageTag(me.mys.ID,'headerflag.gif',15,16),
+            header: WTF.imageTag(me.mys.ID,'headerflag.gif',15,16),
             width: 30,
             sortable: true,
             menuDisabled: true,
@@ -573,8 +573,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
 					var others="border=0";
-					if (value!=='') tag=WT.Util.imageTag(me.mys.ID,"flag"+value+".gif",16,16,others);
-					else tag=WT.Util.globalImageTag('empty.gif',16,16,others);
+					if (value!=='') tag=WTF.imageTag(me.mys.ID,"flag"+value+".gif",16,16,others);
+					else tag=WTF.globalImageTag('empty.gif',16,16,others);
 					return tag;
 			},
 			scope: me,
@@ -611,15 +611,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             
         };
         dcols[n++]={//Mail note
-			header: WT.Util.imageTag(me.mys.ID,'headermailnote.gif',15,16),
+			header: WTF.imageTag(me.mys.ID,'headermailnote.gif',15,16),
             width: 30,
             sortable: true,
             menuDisabled: true,
             dataIndex: 'note',
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					var tag;
-					if (value) tag=WT.Util.imageTag(me.mys.ID,'mailnote.gif',16,16,"border=0 style='cursor: pointer'");
-					else tag=WT.Util.globalImageTag('empty.gif',16,16,"border=0");
+					if (value) tag=WTF.imageTag(me.mys.ID,'mailnote.gif',16,16,"border=0 style='cursor: pointer'");
+					else tag=WTF.globalImageTag('empty.gif',16,16,"border=0");
 					return tag;
 			},
 			scope: me,
@@ -629,7 +629,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         
         if (me.arch) {
             dcols[n++]={//Archived
-				header: WT.Util.imageTag(me.mys.ID,'headerdocmgt.png',16,16),
+				header: WTF.imageTag(me.mys.ID,'headerdocmgt.png',16,16),
                 width: 30,
                 sortable: true,
                 menuDisabled: true,
@@ -638,8 +638,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                 renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 						var tag;
 						var others="border=0";
-						if (value) tag=WT.Util.imageTag(me.mys.ID,"docmgt.png",16,16,others);
-						else tag=WT.Util.globalImageTag('empty.gif',16,16,others);
+						if (value) tag=WTF.imageTag(me.mys.ID,"docmgt.png",16,16,others);
+						else tag=WTF.globalImageTag('empty.gif',16,16,others);
 						return tag;
 				},
 				scope: me,
