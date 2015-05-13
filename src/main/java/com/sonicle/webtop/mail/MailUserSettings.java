@@ -43,25 +43,28 @@ import java.text.MessageFormat;
  */
 public class MailUserSettings extends BaseUserSettings {
 
+	public static final String MESSAGE_QUICKPART = "message.quickpart@{0}"; // !IMPORTANT
+	public static final String MESSAGE_LIST_GROUP = "messagelist.group@{0}"; // was : "messagelist-group-{0}"
+	public static final String MESSAGE_LIST_SORT = "messagelist.sort@{0}"; // was : "messagelist-{0}-sort"
+	public static final String COLUMN_SIZE = "column.size@{0}"; //was : "column-{0}"
 	public static final String COLUMN_VISIBLE = "column.visible@{0}";
-	public static final String MESSAGE_QUICKPART = "message.quickpart";
 	public static final String SHARED_SEEN = "sharedseen";
 	public static final String SHARING_RIGHTS = "sharing.rights";
-	public static final String MESSAGE_LIST_GROUP = "messagelist-group-{0}";
-	public static final String MESSAGE_LIST_SORT = "messagelist-{0}-sort";
-	public static final String COLUMN_SIZE = "column-{0}";
-	public static final String FOLDER_PEFFIX = "{0}.folder.prefix";
-	public static final String SCAN_ALL = "{0}.scan.all";
-	public static final String SCAN_SECONDS = "{0}.scan.seconds";
-	public static final String SCAN_CYCLES = "{0}.scan.cycles";
-	public static final String FOLDER_SENT = "{0}.folder.sent";
-	public static final String FOLDER_DRAFTS = "{0}.folder.drafts";
-	public static final String FOLDER_TRASH = "{0}.folder.trash";
-	public static final String FOLDER_SPAM = "{0}.folder.spam";
-	public static final String REPLY_TO = "{0}.reply.to";
-	public static final String SHARED_SORT = "{0}.shared.sort";
-	public static final String INCLUDE_MESSAGE_IN_REPLY = "{0}.include.message.in.reply";
-	public static final String NUM_MESSAGE_LIST = "{0}.num.message.list";
+	public static final String FOLDER_PEFFIX = "folder.prefix";
+	public static final String SCAN_ALL = "scan.all";
+	public static final String SCAN_SECONDS = "scan.seconds";
+	public static final String SCAN_CYCLES = "scan.cycles";
+	public static final String FOLDER_SENT = "folder.sent";
+	public static final String FOLDER_DRAFTS = "folder.drafts";
+	public static final String FOLDER_TRASH = "folder.trash";
+	public static final String FOLDER_SPAM = "folder.spam";
+	public static final String REPLY_TO = "reply.to";
+	public static final String SHARED_SORT = "shared.sort";
+	public static final String INCLUDE_MESSAGE_IN_REPLY = "include.message.in.reply";
+	public static final String PAGE_ROWS = "page.rows";
+	public static final String MESSAGE_VIEW_REGION = "message.view.region";
+	public static final String MESSAGE_VIEW_WIDTH = "message.view.width";
+	public static final String MESSAGE_VIEW_HEIGHT = "message.view.height";
     
 	private MailServiceSettings mss;
 	
@@ -93,51 +96,80 @@ public class MailUserSettings extends BaseUserSettings {
 		return getString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
 	}
 	
-	public String getFolderPrefix(String mailUser) {
-		return getString(MessageFormat.format(FOLDER_PEFFIX, mailUser), mss.getDefaultFolderPrefix());
+	public String getFolderPrefix() {
+		return getString(FOLDER_PEFFIX, mss.getDefaultFolderPrefix());
 	}
 	
-	public boolean isScanAll(String mailUser) {
-		return getBoolean(MessageFormat.format(SCAN_ALL, mailUser),mss.isDefaultScanAll());
+	public boolean isScanAll() {
+		return getBoolean(SCAN_ALL,mss.isDefaultScanAll());
 	}
 	
-	public int getScanSeconds(String mailUser) {
-		return getInteger(MessageFormat.format(SCAN_SECONDS, mailUser),mss.getDefaultScanSeconds());
+	public int getScanSeconds() {
+		return getInteger(SCAN_SECONDS,mss.getDefaultScanSeconds());
 	}
 	
-	public int getScanCycles(String mailUser) {
-		return getInteger(MessageFormat.format(SCAN_CYCLES, mailUser),mss.getDefaultScanCycles());
+	public int getScanCycles() {
+		return getInteger(SCAN_CYCLES,mss.getDefaultScanCycles());
 	}
 	
-	public String getFolderSent(String mailUser) {
-		return getString(MessageFormat.format(FOLDER_SENT, mailUser),mss.getDefaultFolderSent());
+	public String getFolderSent() {
+		return getString(FOLDER_SENT,mss.getDefaultFolderSent());
 	}
 	
-	public String getFolderDrafts(String mailUser) {
-		return getString(MessageFormat.format(FOLDER_DRAFTS, mailUser),mss.getDefaultFolderDrafts());
+	public String getFolderDrafts() {
+		return getString(FOLDER_DRAFTS,mss.getDefaultFolderDrafts());
 	}
 	
-	public String getFolderTrash(String mailUser) {
-		return getString(MessageFormat.format(FOLDER_TRASH, mailUser),mss.getDefaultFolderTrash());
+	public String getFolderTrash() {
+		return getString(FOLDER_TRASH,mss.getDefaultFolderTrash());
 	}
 
-	public String getFolderSpam(String mailUser) {
-		return getString(MessageFormat.format(FOLDER_SPAM, mailUser),mss.getDefaultFolderSpam());
+	public String getFolderSpam() {
+		return getString(FOLDER_SPAM,mss.getDefaultFolderSpam());
 	}
 	
-	public String getReplyTo(String mailUser) {
-		return getString(MessageFormat.format(REPLY_TO, mailUser), null);
+	public String getReplyTo() {
+		return getString(REPLY_TO, null);
 	}
 	
-	public String getSharedSort(String mailUser) {
-		return getString(MessageFormat.format(SHARED_SORT, mailUser),"N");
+	public String getSharedSort() {
+		return getString(SHARED_SORT,"N");
 	}
 	
-	public boolean isIncludeMessageInReply(String mailUser) {
-		return getBoolean(MessageFormat.format(INCLUDE_MESSAGE_IN_REPLY, mailUser), mss.isDefaultIncludeMessageInReply());
+	public boolean isIncludeMessageInReply() {
+		return getBoolean(INCLUDE_MESSAGE_IN_REPLY, mss.isDefaultIncludeMessageInReply());
 	}
 	
-	public int getNumMessageList(String mailUser) {
-		return getInteger(MessageFormat.format(NUM_MESSAGE_LIST, mailUser),mss.getDefaultNumMessageList());
+	public int getPageRows() {
+		return getInteger(PAGE_ROWS,mss.getDefaultPageRows());
 	}
+	
+	public void setPageRows(int rows) {
+		setInteger(PAGE_ROWS, rows);
+	}
+	
+	public String getMessageViewRegion() {
+		return getString(MESSAGE_VIEW_REGION,"south");
+	}
+	
+	public void setMessageViewRegion(String region) {
+		setString(MESSAGE_VIEW_REGION,region);
+	}
+	
+	public int getMessageViewWidth() {
+		return getInteger(MESSAGE_VIEW_WIDTH,640);
+	}
+	
+	public void setMessageViewWidth(int width) {
+		setInteger(MESSAGE_VIEW_WIDTH, width);
+	}
+	
+	public int getMessageViewHeight() {
+		return getInteger(MESSAGE_VIEW_HEIGHT,400);
+	}
+	
+	public void setMessageViewHeight(int height) {
+		setInteger(MESSAGE_VIEW_HEIGHT,height);
+	}
+	
 }

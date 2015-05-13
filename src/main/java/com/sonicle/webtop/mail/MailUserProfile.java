@@ -147,18 +147,18 @@ public class MailUserProfile {
 			logger.info("  accessing "+mailProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+mailPort);
 
 			MailUserSettings mus=ms.getMailUserSettings();
-			folderPrefix=mus.getFolderPrefix(mailUsername);
-			scanAll=mus.isScanAll(mailUsername);
-			scanSeconds=mus.getScanSeconds(mailUsername);
-			scanCycles=mus.getScanCycles(mailUsername);
-			folderSent=mus.getFolderSent(mailUsername);
-			folderDrafts=mus.getFolderDrafts(mailUsername);
-			folderTrash=mus.getFolderTrash(mailUsername);
-			folderSpam=mus.getFolderSpam(mailUsername);
-			replyTo=mus.getReplyTo(mailUsername);
-			sharedSort=mus.getSharedSort(mailUsername);
-			includeMessageInReply=mus.isIncludeMessageInReply(mailUsername);
-			numMessageList=mus.getNumMessageList(mailUsername);
+			folderPrefix=mus.getFolderPrefix();
+			scanAll=mus.isScanAll();
+			scanSeconds=mus.getScanSeconds();
+			scanCycles=mus.getScanCycles();
+			folderSent=mus.getFolderSent();
+			folderDrafts=mus.getFolderDrafts();
+			folderTrash=mus.getFolderTrash();
+			folderSpam=mus.getFolderSpam();
+			replyTo=mus.getReplyTo();
+			sharedSort=mus.getSharedSort();
+			includeMessageInReply=mus.isIncludeMessageInReply();
+			numMessageList=mus.getPageRows();
 			
 			List<OIdentity> oids=IdentityDAO.getInstance().selectById(con, profile.getDomainId(), profile.getUserId());
 			identities=new Identity[oids.size()];

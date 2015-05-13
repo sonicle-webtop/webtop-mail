@@ -195,6 +195,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         });
         me.add(me.folderList);
         me.add(me.messageViewContainer);
+		me.messageViewContainer.on('resize', function(c,w,h) {
+			console.log('resize - movingPanel='+me.movingPanel);
+			if (!me.movingPanel) {
+				if (me.viewRegion==='east') me.viewWidth=w;
+				else me.viewHeight=h;
+				me.saveMessageView();
+			}
+		});
 		
 		//TODO: save pane size
 		/*
@@ -221,14 +229,31 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			mvc=me.messageViewContainer,
 			idm=mv.idmessage,
 			idf=mv.folder;
+		console.log('moveViewPanel');
+		me.movingPanel=true;
 		mv.clear();
 		me.viewRegion=(me.viewRegion==='east'?'south':'east');
 		mvc.setRegion(me.viewRegion);
 		mvc.setWidth(me.viewWidth);
 		mvc.setHeight(me.viewHeight);
 		me.updateLayout();
+		me.saveMessageView();
 		mv.showMessage(idf,idm);
+		me.movingPanel=false;
 	},
+	
+	saveMessageView: function() {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, 'SetMessageView', {
+			params: {
+				region: me.viewRegion,
+				width: me.viewWidth,
+				height: me.viewHeight
+			}
+		});
+		
+	},
+	
 /*    
     setViewSize: function(hperc) {
         if (this.ownerCt) {

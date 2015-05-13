@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	model: 'Sonicle.webtop.mail.model.MessageModel',
 	
 	autoToolbar: false,
+	identityIndex: 0,
 	
 	initComponent: function() {
 		var me=this;
@@ -106,11 +107,23 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			labelAlign: 'right'
 		});
 		
+		var idents=me.mys.getOption("identities");
 		me.toolbar=Ext.create({
 			xtype: 'toolbar',
 			region: 'north',
 			items: [
-				{ xtype:'button',text:'Send!', handler: me.sendMail, scope: me }
+				{ xtype:'button',text:'Send!', handler: me.sendMail, scope: me },
+				{
+					xtype:'combo',
+					queryMode: 'local',
+					displayField: 'displayName',
+					valueField: 'email',
+					store: Ext.create('Ext.data.Store', {
+						fields: ['email', 'displayName'],
+						data : idents
+					}),
+					value: idents[me.identityIndex].email
+				}
 			]
 		});
 		

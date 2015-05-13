@@ -59,7 +59,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String DEFAULT_FOLDER_TRASH = "default.folder.trash";
 	public static final String DEFAULT_FOLDER_SPAM = "default.folder.spam";
 	public static final String DEFAULT_INCLUDE_MESSAGE_IN_REPLY = "default.include.message.in.reply";
-	public static final String DEFAULT_NUM_MESSAGE_LIST = "default.num.message.list";
+	public static final String DEFAULT_PAGE_ROWS = "default.page.rows";
 	public static final String DEFAULT_HOST = "default.host";
 	public static final String DEFAULT_PORT = "default.port";
 	public static final String DEFAULT_PROTOCOL = "default.protocol";
@@ -136,8 +136,8 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return LangUtils.value(getSetting(DEFAULT_INCLUDE_MESSAGE_IN_REPLY), true);
 	}
 	
-	public int getDefaultNumMessageList() {
-		return Integer.parseInt(getSetting(DEFAULT_NUM_MESSAGE_LIST));
+	public int getDefaultPageRows() {
+		return Integer.parseInt(getSetting(DEFAULT_PAGE_ROWS));
 	}
 	
 	public String getDefaultHost() {

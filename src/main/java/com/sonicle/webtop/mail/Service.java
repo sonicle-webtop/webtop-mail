@@ -38,6 +38,7 @@ import java.nio.*;
 import java.nio.channels.*;
 import com.sonicle.commons.OldUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.sieve.*;
@@ -50,6 +51,7 @@ import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
+import com.sonicle.webtop.mail.bol.js.JsIdentity;
 import com.sonicle.webtop.mail.dal.FilterDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
@@ -2737,11 +2739,11 @@ public class Service extends BaseService {
 		}
 		clearAllAttachments();
 		if (fcRoot != null) {
-			fcRoot.cleanup();
+			fcRoot.cleanup(true);
 		}
 		fcRoot = null;
 		for (FolderCache fc : foldersCache.values()) {
-			fc.cleanup();
+			fc.cleanup(true);
 		}
 		foldersCache.clear();
 		validated = false;
@@ -3254,7 +3256,7 @@ public class Service extends BaseService {
 		if (fcp != null) {
 			fcp.removeChild(fc);
 		}
-		fc.cleanup();
+		fc.cleanup(true);
 		try {
 			fc.close();
 		} catch (Exception exc) {
@@ -3266,7 +3268,7 @@ public class Service extends BaseService {
 	protected void poolOpened(FolderCache fc) {
 		if (opened.size() >= 5) {
 			FolderCache rfc = opened.remove(0);
-			rfc.cleanup();
+			rfc.cleanup(false);
 			rfc.close();
 			rfc.setForceRefresh();
 		}
@@ -8600,5 +8602,40 @@ public class Service extends BaseService {
 			dest.write(buffer);
 		}
 	}
+	
+	
+	@Override
+	public HashMap<String, Object> returnClientOptions() {
+		UserProfile profile = environment.getProfile();
+		HashMap<String, Object> hm = new HashMap<>();
+		ArrayList<JsIdentity> identities=new ArrayList<>();
+		identities.add(new JsIdentity("gbulfon@sonicle.com","Gabriele Bulfon","gbulfon"));
+		identities.add(new JsIdentity("sonicle@sonicle.com","Sonicle","users/sonicle"));
+		hm.put("pageRows", mus.getPageRows());
+		hm.put("identities", identities);
+		hm.put("messageViewRegion",mus.getMessageViewRegion());
+		hm.put("messageViewWidth",mus.getMessageViewWidth());
+		hm.put("messageViewHeight",mus.getMessageViewHeight());
+		return hm;
+	}
+	
+	
+	public void processSetMessageView(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String region = ServletUtils.getStringParameter(request, "region", true);
+			Integer width = ServletUtils.getIntParameter(request, "width", true);
+			Integer height = ServletUtils.getIntParameter(request, "height", true);
+			
+			mus.setMessageViewRegion(region);
+			mus.setMessageViewWidth(width);
+			mus.setMessageViewHeight(height);
+			
+			new JsonResult().printTo(out);
+			
+		} catch (Exception ex) {
+			logger.error("Error executing action SetToolComponentWidth", ex);
+			new JsonResult(false, "Unable to save with").printTo(out);
+		}
+	}	
 	
 }

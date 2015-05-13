@@ -31,6 +31,14 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.mail.model.ServiceOptions', {
-	extend: 'WT.sdk.model.ServiceOptions'
+Ext.define('Sonicle.webtop.mail.model.ClientOptions', {
+	extend: 'WT.sdk.model.ClientOptions',
+	
+	fields: [
+		{ name: 'pageRows', type: 'int' },
+		{ name: 'identities' }, // array of identities
+		{ name: 'messageViewRegion' },
+		{ name: 'messageViewWidth', type: 'int' },
+		{ name: 'messageViewHeight', type: 'int' }
+	]
 });

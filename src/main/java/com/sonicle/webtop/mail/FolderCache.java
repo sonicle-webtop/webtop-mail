@@ -221,10 +221,11 @@ public class FolderCache {
 				while(goidle) {
 					IMAPFolder folder=((IMAPFolder)FolderCache.this.getFolder());
 					if (!folder.isOpen()) folder.open(Folder.READ_WRITE);
-					//MailService.logger.debug("Entering idle mode on {}",foldername);
+					Service.logger.debug("Entering idle mode on {}",foldername);
 					folder.idle();
-					//MailService.logger.debug("Exiting idle mode on {}",foldername);
+					Service.logger.debug("Exiting idle mode on {}",foldername);
 				}
+				Service.logger.debug("Exiting idle loop: goidle is {}",goidle);
 			} catch(MessagingException exc) {
 				Service.logger.debug("Error during idle",exc);
 			}
@@ -599,7 +600,7 @@ public class FolderCache {
     }
     
     public void refresh() throws MessagingException {
-        cleanup();
+        cleanup(false);
         msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending);
         open();
         //add(msgs);
@@ -748,8 +749,8 @@ public class FolderCache {
         return xmsgs;
     }
 
-    protected void cleanup() {
-		goidle=false;
+    protected void cleanup(boolean stopIdleThread) {
+		if (stopIdleThread) goidle=false;
         dhash.clear();
 //        hash.clear();
 //        list.clear();

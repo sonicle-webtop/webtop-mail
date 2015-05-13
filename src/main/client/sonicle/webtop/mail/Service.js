@@ -104,7 +104,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         folderDrafts: null,
         uncheckedFolders: {},
         specialFolders: {},
-        pageRows: 50,
+        //pageRows: 50,
         identities: null,
         separator: '.',
         askreceipt: false,
@@ -138,7 +138,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//ddScroll: true, ???
 			//containerScroll: true, ???
 			viewConfig: {
-				plugins: { ptype: 'treeviewdragdrop' }
+				plugins: { ptype: 'treeviewdragdrop' },
+				markDirty: false
 			},
 
 			//
@@ -184,7 +185,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						dataIndex: 'folder',
 						flex: 3,
 						renderer: function(v,p,r) {
-							return (r.get('unread')!==0||r.get('hasUnread')?'<b>'+v+'</b>':v);
+							var unr=r.get('unread'),
+								hunr=r.get('hasUnread');
+							return (unr!==0||hunr?'<b>'+v+'</b>':v);
 						}
 					},
 					{
@@ -245,7 +248,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		
 		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
-			pageSize: me.pageRows,
+			pageSize: me.getOption('pageRows'),
+			viewRegion: me.getOption('messageViewRegion'),
+			viewWidth: me.getOption('messageViewWidth'),
+			viewHeight: me.getOption('messageViewHeight'),
 			mys: me
 		});
 		me.messagesPanel=mp;
@@ -412,10 +418,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		console.log('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
 		var me=this;
 		var node=me.imapTree.getStore().getById(cfg.foldername);
-		console.log("found node "+node);
 		if (node) {
+			var folder=node.get("folder");
 			node.set('hasUnread',cfg.hasUnreadChildren);
 			node.set('unread',cfg.unread);
+			node.set('folder','');
+			node.set('folder',folder);
 		}
 	},
 	
