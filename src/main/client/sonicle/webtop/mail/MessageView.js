@@ -381,7 +381,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     var att=atts[i];
                     var name=att.name;
                     var imgname=att.imgname;
-                    if (!imgname) imgname=WT.Util.imageUrl(WT.ID,"/filetypes/"+WT.Util.normalizeFileType(name)+"_16.gif");
+                    if (!imgname) imgname=WTF.resourceUrl(WT.ID,"/filetypes/"+WT.Util.normalizeFileType(name)+"_16.gif");
                     var aparams;
                     if (!provider) {
                         aparams={
@@ -399,7 +399,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     vparams[i]=aparams;
                     ids[ids.length]=att.id;
                     var ssize=WT.Util.humanReadableSize(att.size);
-					var href=WT.Util.serviceRequestBinaryUrl(me.mys.ID,"GetAttachment",aparams);
+					var href=WTF.serviceRequestBinaryUrl(me.mys.ID,"GetAttachment",aparams);
                     if (Ext.isIE) href+="&saveas=1";
                     var ics=null;
                     if (name.toLowerCase().endsWith(".ics")) ics=" ics='"+Ext.Object.toQueryString(aparams)+"'";
@@ -408,7 +408,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     var html="<a href='"+href+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+"><img src='"+imgname+"' width=16 height=16>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
-				var allhref=WT.Util.serviceRequestBinaryUrl(me.mys.ID,"GetAttachments",allparams);
+				var allhref=WTF.serviceRequestBinaryUrl(me.mys.ID,"GetAttachments",allparams);
                 me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+WT.res('saveall-desc')+"' data-qtitle='"+WT.res('saveall')+"' href='"+allhref+"'>"+me.mys.res('attachments')+"</a>:&nbsp;</span>"+names);
                 tdh.insertFirst(me.divAttach);
                 if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
