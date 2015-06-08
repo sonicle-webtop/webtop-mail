@@ -175,7 +175,55 @@ Ext.define('Sonicle.webtop.mail.NavigationModel',{
 
 Ext.define('Sonicle.webtop.mail.MessagesModel',{
 	extend: 'Ext.data.Model',
-	fields: []
+	idProperty: 'idmessage',
+	fields: [
+        { name: 'idmessage' },
+        { name: 'priority', type: 'int' },
+        { name: 'status' },
+        { name: 'from' },
+        { name: 'to' },
+        { name: 'subject' },
+        {name:'date', type:'date' },
+        { name: 'gdate' },
+        { name: 'sdate' },
+        { name: 'xdate' },
+        {name:'unread', type:'boolean' },
+        {name:'size', type:'int' },
+        { name: 'flag' },
+        { name: 'note' },
+        {name:'istoday', type:'boolean' },
+        {name:'arch', type:'boolean' },
+        {name:'atts', type:'boolean' },
+        {name:'scheddate', type:'date' }
+	]
+});
+
+Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
+	extend: 'Ext.data.Model',
+	idProperty: 'idmandfolder',
+	fields: [
+		{ name: 'folder' },
+		{ name: 'folderdesc' },
+		{ name: 'idmandfolder' },
+        { name: 'idmessage' },
+        { name: 'priority', type: 'int' },
+        { name: 'status' },
+        { name: 'from' },
+        { name: 'to' },
+        { name: 'subject' },
+        {name:'date', type:'date' },
+        { name: 'gdate' },
+        { name: 'sdate' },
+        { name: 'xdate' },
+        {name:'unread', type:'boolean' },
+        {name:'size', type:'int' },
+        { name: 'flag' },
+        { name: 'note' },
+        {name:'istoday', type:'boolean' },
+        {name:'arch', type:'boolean' },
+        {name:'atts', type:'boolean' },
+        {name:'scheddate', type:'date' }
+	]
 });
 
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
@@ -247,16 +295,18 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
 		me.viewConfig.loadMask={ msg: WT.res("loading") };
 
-        var n=0;
+/*        var n=0;
         var fields=new Array();
-        var idx='idmessage';
+        var idx='idmessage';*/
+		var smodel='Sonicle.webtop.mail.MessagesModel';
         if (this.multifolder) {
-            fields[n++]='folder';
+/*            fields[n++]='folder';
             fields[n++]='folderdesc';
             idx='idmandfolder';
-            fields[n++]=idx;
+            fields[n++]=idx;*/
+			smodel='Sonicle.webtop.mail.MultiFolderMessagesModel';
         }
-        fields[n++]='idmessage';
+/*        fields[n++]='idmessage';
         fields[n++]={name:'priority',type:'int'};
         fields[n++]='status';
         fields[n++]='from';
@@ -273,16 +323,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         fields[n++]={name:'istoday', type:'boolean'};
         if (me.arch) fields[n++]={name:'arch', type:'boolean'};
         fields[n++]={name:'atts', type:'boolean'};
-        fields[n++]={name:'scheddate', type:'date'};
+        fields[n++]={name:'scheddate', type:'date'};*/
 
 
-        //this.store = new Ext.data.Store({
         me.store = Ext.create('Ext.data.JsonStore',{
             proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
-			model: Ext.create('Sonicle.webtop.mail.MessagesModel',{
-				id: idx,
-				fields: fields
-			}),
+			model: smodel,
 			pageSize: me.pageSize,
 			groupField: 'sdate',
 			groupDir: 'DESC',

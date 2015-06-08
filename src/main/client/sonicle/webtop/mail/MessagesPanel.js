@@ -310,16 +310,20 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     //TODO verify rawData and getById
     messageViewed: function(idmessage,millis) {
 		var me=this,
-			s=me.folderList.store;
-        var r=s.getById(idmessage);
-        if (r && r.get("unread")) {
-            r.set("unread",false);
-            r.set("status","read");
-            var o=s.getProxy().getReader().rawData;
-            o.millis=millis;
-            o.unread--;
-            me.mys.updateUnreads(me.currentFolder,o,false);
-        }
+			s=me.folderList.store,
+			ix=s.findExact('idmessage',idmessage);
+        
+		if (ix>=0) {
+			var r=s.getAt(ix);
+			if (r.get("unread")) {
+				r.set("unread",false);
+				r.set("status","read");
+				var o=s.getProxy().getReader().rawData;
+				o.millis=millis;
+				o.unread--;
+				me.mys.updateUnreads(me.currentFolder,o,false);
+			}
+		}
     },
    
 	/*

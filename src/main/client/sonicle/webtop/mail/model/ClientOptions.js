@@ -36,9 +36,24 @@ Ext.define('Sonicle.webtop.mail.model.ClientOptions', {
 	
 	fields: [
 		{ name: 'pageRows', type: 'int' },
-		{ name: 'identities' }, // array of identities
 		{ name: 'messageViewRegion' },
 		{ name: 'messageViewWidth', type: 'int' },
 		{ name: 'messageViewHeight', type: 'int' }
+	],
+	hasMany: [{
+		name: 'identities',
+		model: 'Sonicle.webtop.mail.model.Identity'
+	}]
+});
+
+Ext.define('Sonicle.webtop.mail.model.Identity', {
+    extend: 'WT.model.Base',
+    fields: [
+		{ name: "email" },
+		{ name: "displayName" },
+		{ name: "mainFolder" },
+		WTF.calcField("description","string",["email","displayName"], function(v,r) {
+			return r.get("displayName")+" - "+r.get("email");
+		})
 	]
 });

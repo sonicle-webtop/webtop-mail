@@ -49,10 +49,12 @@ import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.dal.UserDAO;
 //import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
+import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsIdentity;
 import com.sonicle.webtop.mail.dal.FilterDAO;
+import com.sonicle.webtop.mail.dal.IdentityDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
@@ -8606,16 +8608,29 @@ public class Service extends BaseService {
 	
 	@Override
 	public HashMap<String, Object> returnClientOptions() {
-		UserProfile profile = environment.getProfile();
+		UserProfile profile=environment.getProfile();
+		Connection con = null;
 		HashMap<String, Object> hm = new HashMap<>();
-		ArrayList<JsIdentity> identities=new ArrayList<>();
-		identities.add(new JsIdentity("gbulfon@sonicle.com","Gabriele Bulfon","gbulfon"));
-		identities.add(new JsIdentity("sonicle@sonicle.com","Sonicle","users/sonicle"));
-		hm.put("pageRows", mus.getPageRows());
-		hm.put("identities", identities);
-		hm.put("messageViewRegion",mus.getMessageViewRegion());
-		hm.put("messageViewWidth",mus.getMessageViewWidth());
-		hm.put("messageViewHeight",mus.getMessageViewHeight());
+		try {
+			con = getConnection();
+			IdentityDAO idao=IdentityDAO.getInstance();
+			List<OIdentity> items=idao.selectById(con, profile.getDomainId(),profile.getUserId());
+			ArrayList<JsIdentity> identities=new ArrayList<>();
+			identities.add(new JsIdentity(profile.getEmailAddress(),profile.getDisplayName(),null));
+			for(OIdentity item: items) {
+				identities.add(new JsIdentity(item));
+			}
+			hm.put("pageRows", mus.getPageRows());
+			hm.put("identities", identities);
+			hm.put("messageViewRegion",mus.getMessageViewRegion());
+			hm.put("messageViewWidth",mus.getMessageViewWidth());
+			hm.put("messageViewHeight",mus.getMessageViewHeight());
+		} catch(Exception ex) {
+			logger.error("Error executing action ManageCalendarsTree", ex);
+			
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
 		return hm;
 	}
 	

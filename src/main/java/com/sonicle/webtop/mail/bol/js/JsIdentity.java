@@ -33,6 +33,8 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
+import com.sonicle.webtop.mail.bol.OIdentity;
+
 /**
  *
  * @author gabriele.bulfon
@@ -47,5 +49,11 @@ public class JsIdentity {
 		this.email=email;
 		this.displayName=displayName;
 		this.mainFolder=mainFolder;
+	}
+	
+	public JsIdentity(OIdentity i) {
+		this.email=i.getEmail();
+		this.displayName=i.getDisplayName();
+		this.mainFolder=i.getMainFolder();
 	}
 }

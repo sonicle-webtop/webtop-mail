@@ -116,10 +116,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				{
 					xtype:'combo',
 					queryMode: 'local',
-					displayField: 'displayName',
+					displayField: 'description',
 					valueField: 'email',
+					width:200,
+					matchFieldWidth: false,
+					listConfig: {
+						width: 300
+					},
 					store: Ext.create('Ext.data.Store', {
-						fields: ['email', 'displayName'],
+						model: 'Sonicle.webtop.mail.model.Identity',
 						data : idents
 					}),
 					value: idents[me.identityIndex].email
