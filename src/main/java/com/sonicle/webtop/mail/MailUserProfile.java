@@ -38,7 +38,7 @@ import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.CredentialAlgorithm;
 import com.sonicle.security.Principal;
 import com.sonicle.webtop.core.sdk.BasicEnvironment;
-import com.sonicle.webtop.core.sdk.Encryption;
+import com.sonicle.webtop.core.util.Encryption;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.OUserMap;

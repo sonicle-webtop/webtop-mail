@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.webtop.core.CoreLocaleKey;
 import com.sonicle.commons.LangUtils;
 import java.nio.*;
 import java.nio.channels.*;
