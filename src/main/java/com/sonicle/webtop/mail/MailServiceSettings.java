@@ -34,6 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
+import com.sonicle.webtop.core.CoreManifest;
 import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
 
@@ -43,6 +44,10 @@ import com.sonicle.webtop.core.sdk.BaseServiceSettings;
  */
 public class MailServiceSettings extends BaseServiceSettings {
     
+	public MailServiceSettings(String domainId, String serviceId) {
+        super(domainId, serviceId);
+    }
+	
 	public static final String SMTP_HOST = "smtp.host";
 	public static final String SMTP_PORT = "smtp.port";
     public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
@@ -63,14 +68,6 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String DEFAULT_HOST = "default.host";
 	public static final String DEFAULT_PORT = "default.port";
 	public static final String DEFAULT_PROTOCOL = "default.protocol";
-	
-	private CoreServiceSettings css;
-
-    public MailServiceSettings(CoreServiceSettings css, String domainId, String serviceId) {
-        super(domainId, serviceId);
-		this.css=css;
-    }
-    
     
     public String getSmtpHost() {
         return getSetting(SMTP_HOST);
@@ -97,7 +94,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}
 	
 	public String getAttachDir() {
-		return css.getTempPath();
+		return new CoreServiceSettings(domainId, CoreManifest.ID).getTempPath();
 	}
 	
 	public String getDefaultFolderPrefix() {

@@ -36,7 +36,6 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.OldUtils;
 import com.sonicle.mail.imap.*;
 import com.sonicle.mail.tnef.internet.*;
-import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.mail.ws.UnreadChangedMessage;
 import com.sun.mail.imap.*;
@@ -46,8 +45,6 @@ import java.util.*;
 import javax.mail.*;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
-import javax.mail.event.ConnectionEvent;
-import javax.mail.event.ConnectionListener;
 import javax.mail.event.MessageChangedEvent;
 import javax.mail.event.MessageChangedListener;
 import javax.mail.event.MessageCountEvent;
@@ -73,7 +70,7 @@ public class FolderCache {
     public static final int SORT_BY_STATUS=7;
     public static final int SORT_BY_FLAG=8;
 
-    private BasicEnvironment environment=null;
+    private Environment environment=null;
     //private WebTopDomain wtd=null;
     private Service ms=null;
     private boolean externalProvider=false;
@@ -169,7 +166,7 @@ public class FolderCache {
     }
 
     //Special constructor for externally provided messages
-    public FolderCache(Service ms, BasicEnvironment env) {
+    public FolderCache(Service ms, Environment env) {
         this.ms=ms;
         externalProvider=true;
         environment=env;
@@ -177,7 +174,7 @@ public class FolderCache {
         profile=env.getProfile();
     }
     
-    public FolderCache(Folder folder, Service ms, BasicEnvironment env) throws MessagingException {
+    public FolderCache(Folder folder, Service ms, Environment env) throws MessagingException {
         this(ms,env);
         foldername=folder.getFullName();
         this.folder=folder;
@@ -470,13 +467,9 @@ public class FolderCache {
 	
 	private void sendUnreadChangedMessage() {
 		//MailService.logger.debug("sending unread changed on "+foldername);
-		try {
-			this.environment.notify(
-					new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
-			);
-		} catch(IOException exc) {
-			Service.logger.error("Error sending WebSocket message",exc);
-		}
+		this.environment.notify(
+				new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
+		);
 	}
 
     protected void refreshUnreads() throws MessagingException {

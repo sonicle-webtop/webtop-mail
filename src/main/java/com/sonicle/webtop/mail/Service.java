@@ -45,6 +45,9 @@ import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.sieve.*;
 import com.sonicle.security.Principal;
 import com.sonicle.security.AuthenticationDomain;
+import com.sonicle.webtop.core.CoreManifest;
+import com.sonicle.webtop.core.CoreServiceSettings;
+import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.WT;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.dal.UserDAO;
@@ -148,10 +151,10 @@ public class Service extends BaseService {
 	private char folderSeparator = 0;
 	private String folderPrefix = null;
 	
-	private BasicEnvironment environment = null;
+	private Environment environment = null;
 	private MailUserProfile mprofile;
-	private MailServiceSettings mss = null;
-	private MailUserSettings mus = null;
+	private MailServiceSettings ss = null;
+	private MailUserSettings us = null;
 	private boolean validated = false;
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
@@ -189,15 +192,15 @@ public class Service extends BaseService {
 
 		this.environment = getEnv();
 		
-		UserProfile profile = environment.getProfile();
-		this.mss = new MailServiceSettings(environment.getCoreServiceSettings(), profile.getDomainId(), getManifest().getId());
-		this.mus = new MailUserSettings(mss, profile.getDomainId(), profile.getUserId(), getManifest().getId());
+		UserProfile profile = getEnv().getProfile();
+		ss = new MailServiceSettings(getEnv().getProfile().getDomainId(), getId());
+		us = new MailUserSettings(ss, profile.getDomainId(), profile.getUserId(), getManifest().getId());
 		mprofile = new MailUserProfile(environment,this);
 		fcProvided = new FolderCache(this, environment);
 		this.props = System.getProperties();
 		//this.props.setProperty("mail.imap.parse.debug", "true");
-		this.props.setProperty("mail.smtp.host", mss.getSmtpHost());
-		this.props.setProperty("mail.smtp.port", mss.getSmtpPort());
+		this.props.setProperty("mail.smtp.host", ss.getSmtpHost());
+		this.props.setProperty("mail.smtp.port", ss.getSmtpPort());
 		//this.props.setProperty("mail.socket.debug", "true");
 		this.props.setProperty("mail.imaps.ssl.trust", "*");
 		this.props.setProperty("mail.imap.folder.class", "com.sonicle.mail.imap.SonicleIMAPFolder");
@@ -235,7 +238,7 @@ public class Service extends BaseService {
 			checkStoreConnected();
 
 			//prepare special folders if not existant
-			if (mss.isAutocreateSpecialFolders()) {
+			if (ss.isAutocreateSpecialFolders()) {
 				checkCreateFolder(mprofile.getFolderSent());
 				checkCreateFolder(mprofile.getFolderDrafts());
 				checkCreateFolder(mprofile.getFolderTrash());
@@ -285,18 +288,18 @@ public class Service extends BaseService {
 			});
 			t.start();
 			
-			setSharedSeen(mus.isSharedSeen());
+			setSharedSeen(us.isSharedSeen());
 		} catch (Exception exc) {
 			exc.printStackTrace();
 		}
 	}
 	
 	public MailServiceSettings getMailServiceSettings() {
-		return this.mss;
+		return this.ss;
 	}
 	
 	public MailUserSettings getMailUserSettings() {
-		return this.mus;	
+		return this.us;	
 	}
 	
 	public Session getMailSession() {
@@ -795,7 +798,7 @@ public class Service extends BaseService {
 	
 	public void archiveMessages(FolderCache from, int nids[], String idcategory, String idsubcategory) throws MessagingException, FileNotFoundException, IOException {
 		UserProfile profile = environment.getProfile();
-		String archiveto = mss.getArchivePath();
+		String archiveto = ss.getArchivePath();
 		for (int nid : nids) {
 			Message msg = from.getMessage(nid);
 			
@@ -855,7 +858,7 @@ public class Service extends BaseService {
 	
 	public void archiveMessagesWt(FolderCache from, int nids[], String idcategory, String idsubcategory, String customer_id) throws MessagingException, FileNotFoundException, IOException {
 		UserProfile profile = environment.getProfile();
-		String archiveto = mss.getArchivePath();
+		String archiveto = ss.getArchivePath();
 		for (int nid : nids) {
 			Message msg = from.getMessage(nid);
 			
@@ -3770,7 +3773,7 @@ public class Service extends BaseService {
 		}
 		boolean ascending = psortdir.equals("ASC");
 		
-		String group = mus.getMessageListGroup(mcache.getFolderName());
+		String group = us.getMessageListGroup(mcache.getFolderName());
 		if (group == null) {
 			group = "";
 		}
@@ -4485,6 +4488,7 @@ public class Service extends BaseService {
 	
 	public void processGetForwardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
+		CoreServiceSettings css = new CoreServiceSettings(getEnv().getProfile().getDomainId(), CoreManifest.ID);
 		String pfoldername = request.getParameter("folder");
 		String pidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
@@ -4533,7 +4537,7 @@ public class Service extends BaseService {
 						if (cids != null && cids[0] != null) {
 							cid = cids[0];
 						}
-						File tempFile = File.createTempFile("strts", null, new File(environment.getCoreServiceSettings().getTempPath()));
+						File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
 						createFile(part.getInputStream(), tempFile);
 						boolean inline = false;
 						if (part.getDisposition() != null) {
@@ -4553,7 +4557,7 @@ public class Service extends BaseService {
 				html = replaceCidUrls(html, maildata, surl);
 			} else {
 				String filename = m.getSubject() + ".eml";
-				File tempFile = File.createTempFile("strts", null, new File(environment.getCoreServiceSettings().getTempPath()));
+				File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
 				m.writeTo(new FileOutputStream(tempFile));
 				//wta.createFile(m.getInputStream(), tempFile);
 				attachFile(newmsgid, tempFile, filename, "message/rfc822", null, false);
@@ -4573,6 +4577,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		CoreServiceSettings css = new CoreServiceSettings(getEnv().getProfile().getDomainId(), CoreManifest.ID);
 		String pfoldername = request.getParameter("folder");
 		String pidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
@@ -4714,7 +4719,7 @@ public class Service extends BaseService {
 							cid = cid.substring(0, cid.length() - 1);
 						}
 					}
-					File tempFile = File.createTempFile("strts", null, new File(environment.getCoreServiceSettings().getTempPath()));
+					File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
 					createFile(part.getInputStream(), tempFile);
 					boolean inline = false;
 					if (part.getDisposition() != null) {
@@ -5141,7 +5146,7 @@ public class Service extends BaseService {
 	 out.println(sout);
 	 }*/
 	private SimpleMessage prepareMessage(HttpServletRequest request) throws Exception {
-		BasicEnvironment env = environment;
+		Environment env = environment;
 		//WebTopApp webtopapp=env.getWebTopApp();
 		UserProfile profile = env.getProfile();
         //HttpSession session=request.getSession();
@@ -5199,7 +5204,7 @@ public class Service extends BaseService {
 			boolean listdone = false;
 			if (email.indexOf('@') < 0) {
 				if (isFax && OldUtils.isNumeric(email)) {
-					String faxpattern = mss.getFaxPattern();
+					String faxpattern = ss.getFaxPattern();
 					String faxemail = faxpattern.replace("{number}", email).replace("{username}", profile.getUserId());
 					email = faxemail;
 				} else {
@@ -5431,7 +5436,7 @@ public class Service extends BaseService {
 		try {
 			checkStoreConnected();
 			//WebTopApp webtopapp=environment.getWebTopApp();
-			MultipartIterator iterator = new MultipartIterator(request, 64 * 1024, mss.getAttachmentMaxSize(), mss.getAttachDir());
+			MultipartIterator iterator = new MultipartIterator(request, 64 * 1024, ss.getAttachmentMaxSize(), ss.getAttachDir());
 			MultipartElement element = null;
 			ArrayList<MultipartElement> elements = new ArrayList<MultipartElement>();
 			int msgid = 0;
@@ -5486,6 +5491,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processAttachFromMail(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		CoreServiceSettings css = new CoreServiceSettings(getEnv().getProfile().getDomainId(), CoreManifest.ID);
 		String sout = null;
 		try {
 			checkStoreConnected();
@@ -5526,7 +5532,7 @@ public class Service extends BaseService {
 				}
 			}
 			
-			File file = File.createTempFile("strts", null, new File(environment.getCoreServiceSettings().getTempPath()));
+			File file = File.createTempFile("strts", null, new File(css.getTempPath()));
 			long size = file.length();
 			createFile(part.getInputStream(), file);
 			Attachment attachment = attachFile(msgid, file, filename, ctype, null, false);
@@ -5962,7 +5968,7 @@ public class Service extends BaseService {
 		}
 		boolean refresh = (prefresh != null && prefresh.equals("true"));
 		
-		String group = mus.getMessageListGroup(pfoldername);
+		String group = us.getMessageListGroup(pfoldername);
 		if (group == null) {
 			group = "";
 		}
@@ -5970,7 +5976,7 @@ public class Service extends BaseService {
 		//System.out.println("psortfield="+psortfield+" group="+group);
 		if (psortfield == null) {
 			if (group.equals("")) {
-				String s = mus.getMessageListSort(pfoldername);
+				String s = us.getMessageListSort(pfoldername);
 				int ix = s.indexOf("|");
 				psortfield = s.substring(0, ix);
 				psortdir = s.substring(ix + 1);
@@ -6229,10 +6235,10 @@ public class Service extends BaseService {
 							if (dx == 0) {
 								isToday = true;
 								//if (isGdate) {
-									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.DATE_TODAY);
+									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY);
 								//}
 							} else if (dx == 1 /*&& isGdate*/) {
-								xdate = WT.lookupCoreResource(locale, CoreLocaleKey.DATE_YESTERDAY);
+								xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY);
 							}
 						}
 					}
@@ -6357,7 +6363,7 @@ public class Service extends BaseService {
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
 						+ "  groupField: '" + group + "',\n";
 				
-				ColumnVisibilitySetting cvs = mus.getColumnVisibilitySetting(pfoldername);
+				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
 				// Apply grid defaults
 				ColumnVisibilitySetting.applyDefaults(mcache.isSent(), cvs);
 
@@ -6490,6 +6496,7 @@ public class Service extends BaseService {
 	DateFormat df = null;
 	
 	public void processGetMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		CoreUserSettings cus = new CoreUserSettings(getEnv().getProfileId());
 		String pfoldername = request.getParameter("folder");
 		String pidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
@@ -6620,7 +6627,7 @@ public class Service extends BaseService {
 				
 				String imgname = null;
 				if (ctype.equalsIgnoreCase("text/calendar")) {
-					imgname = "resources/" + getManifest().getId().replaceAll(".", "/") + "/laf/" + environment.getCoreUserSettings().getLookAndFeel() + "/service-small.gif";
+					imgname = "resources/" + getManifest().getId().replaceAll(".", "/") + "/laf/" + cus.getLookAndFeel() + "/service-small.gif";
 				}
 				
 				String pname = getPartName(p);
@@ -8621,11 +8628,11 @@ public class Service extends BaseService {
 			for(OIdentity item: items) {
 				identities.add(new JsIdentity(item));
 			}
-			hm.put("pageRows", mus.getPageRows());
+			hm.put("pageRows", us.getPageRows());
 			hm.put("identities", identities);
-			hm.put("messageViewRegion",mus.getMessageViewRegion());
-			hm.put("messageViewWidth",mus.getMessageViewWidth());
-			hm.put("messageViewHeight",mus.getMessageViewHeight());
+			hm.put("messageViewRegion",us.getMessageViewRegion());
+			hm.put("messageViewWidth",us.getMessageViewWidth());
+			hm.put("messageViewHeight",us.getMessageViewHeight());
 		} catch(Exception ex) {
 			logger.error("Error executing action ManageCalendarsTree", ex);
 			
@@ -8642,9 +8649,9 @@ public class Service extends BaseService {
 			Integer width = ServletUtils.getIntParameter(request, "width", true);
 			Integer height = ServletUtils.getIntParameter(request, "height", true);
 			
-			mus.setMessageViewRegion(region);
-			mus.setMessageViewWidth(width);
-			mus.setMessageViewHeight(height);
+			us.setMessageViewRegion(region);
+			us.setMessageViewWidth(width);
+			us.setMessageViewHeight(height);
 			
 			new JsonResult().printTo(out);
 			
