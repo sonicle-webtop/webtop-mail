@@ -45,6 +45,7 @@ import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.sieve.*;
 import com.sonicle.security.Principal;
 import com.sonicle.security.AuthenticationDomain;
+import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreManifest;
 import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.CoreUserSettings;
@@ -216,7 +217,7 @@ public class Service extends BaseService {
 		FP.add(FetchProfile.Item.CONTENT_INFO);
 		FP.add("Message-ID");
 		FP.add("X-Priority");
-		if (profile.hasDocumentManagement()) {
+		if (hasDocumentArchiving()) {
 			FP.add("X-WT-Archived");
 		}
 		
@@ -2894,9 +2895,15 @@ public class Service extends BaseService {
 		return b;
 	}
 	
+	private boolean hasDocumentArchiving() {
+		return WT.isPermitted(getId(), "DOCUMENT_ARCHIVING");
+	}
+	
 	public boolean isDocMgtFolder(String foldername) {
+		CoreManager core = WT.getCoreManager(getRunContext());
+		
 		UserProfile profile = environment.getProfile();
-		if (!profile.hasDocumentManagement()) {
+		if (!hasDocumentArchiving()) {
 			return false;
 		}
 		boolean b = false;
@@ -5948,6 +5955,7 @@ public class Service extends BaseService {
 	 new JsonResult(true,"").printTo(out);
 	 }*/
 	public void processListMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		CoreManager core = WT.getCoreManager(getRunContext());
 		UserProfile profile = environment.getProfile();
 		Locale locale = profile.getLocale();
 		Calendar cal = Calendar.getInstance(locale);
@@ -6316,7 +6324,7 @@ public class Service extends BaseService {
 						sout += ",\n";
 					}
 					boolean archived = false;
-					if (profile.hasDocumentManagement()) {
+					if (hasDocumentArchiving()) {
 						archived = m.getHeader("X-WT-Archived") != null;
 					}
 					sout += "{idmessage:'" + nid + "',"
@@ -8121,6 +8129,8 @@ public class Service extends BaseService {
 	}
 	
 	public void processPollAdvancedSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		CoreManager core = WT.getCoreManager(getRunContext());
+		
 		try {
 			String sstart = request.getParameter("start");
 			int start = 0;
@@ -8261,7 +8271,7 @@ public class Service extends BaseService {
 						sout += ",\n";
 					}
 					boolean archived = false;
-					if (profile.hasDocumentManagement()) {
+					if (hasDocumentArchiving()) {
 						archived = m.getHeader("X-WT-Archived") != null;
 					}
 					sout += "{folder:'" + folder + "', folderdesc:'" + foldername + "',idmandfolder:'" + folder + "|" + nid + "',idmessage:'" + nid + "',priority:" + priority + ",status:'" + status + "',to:'" + to + "',from:'" + from + "',subject:'" + subject + "',date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),unread: " + unread + ",size:" + msgsize + ",flag:'" + cflag + "'" + (archived ? ",arch:true" : "") + (isToday ? ",istoday:true" : "") + "}";

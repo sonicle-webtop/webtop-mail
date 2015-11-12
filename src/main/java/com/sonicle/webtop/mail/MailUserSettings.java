@@ -35,6 +35,7 @@ package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
+import com.sonicle.webtop.core.sdk.UserProfile;
 import java.text.MessageFormat;
 
 /**
@@ -66,12 +67,46 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String MESSAGE_VIEW_WIDTH = "message.view.width";
 	public static final String MESSAGE_VIEW_HEIGHT = "message.view.height";
     
-	private MailServiceSettings mss;
+	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
-    public MailUserSettings(MailServiceSettings mss, String domainId, String userId, String serviceId) {
-        super(domainId, userId, serviceId);
-		this.mss=mss;
-    }
+	public MailUserSettings(UserProfile.Id profileId) {
+		super(profileId, "com.sonicle.webtop.mail");
+	}
+	
+	public MailUserSettings(String domainId, String userId) {
+		super(domainId, userId, "com.sonicle.webtop.mail");
+	}
+
+	public MailUserSettings(String domainId, String userId, String serviceId) {
+		super(domainId, userId, serviceId);
+	}
+	
+	public MailUserSettings(MailServiceSettings mss, String domainId, String userId, String serviceId) {
+		super(domainId, userId, serviceId);
+		this.mss = mss;
+	}
+	
+	/**
+	 * [string]
+	 * Archiving operative method. One of: simple, structured, webtop.
+	 * A null value indicated no method.
+	 */
+	public static final String ARCHIVING_MODE = "archiving.method";
+	
+	/**
+	 * [string]
+	 * IMAP folder to be monitored by the archiving process
+	 */
+	public static final String ARCHIVING_FOLDER = "archiving.folder";
+	
+	public String getArchivingFolder() {
+		return getString(ARCHIVING_FOLDER, null);
+	}
+	
+	public boolean setArchivingFolder(String value) {
+		return setString(ARCHIVING_FOLDER, value);
+	}
+	
     
     public boolean isSharedSeen() {
         return getBoolean(SHARED_SEEN, false);
