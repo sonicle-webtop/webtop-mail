@@ -34,7 +34,7 @@
 
 package com.sonicle.webtop.mail;
 
-import com.sonicle.commons.OldUtils;
+import com.sonicle.commons.MailUtils;
 import java.io.*;
 import java.util.*;
 import org.xml.sax.*;
@@ -248,7 +248,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
 
     if(justBody) {
       if(isbody) {
-        pwriter.print(OldUtils.htmlescape(chars, start, len));
+        pwriter.print(MailUtils.htmlescape(chars, start, len));
         return;
       }
     }
@@ -281,7 +281,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
     } else if(isscript) {
       pwriter.write(chars, start, len);
     } else {
-      pwriter.print(OldUtils.htmlescape(chars, start, len));
+      pwriter.print(MailUtils.htmlescape(chars, start, len));
     }
   }
 

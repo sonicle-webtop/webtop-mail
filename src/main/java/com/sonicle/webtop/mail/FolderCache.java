@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sonicle.commons.OldUtils;
+import com.sonicle.commons.MailUtils;
 import com.sonicle.mail.imap.*;
 import com.sonicle.mail.tnef.internet.*;
 import com.sonicle.webtop.core.sdk.*;
@@ -1463,7 +1463,7 @@ public class FolderCache {
       for(int i=0;i<mailData.getDisplayPartCount();++i) {
         Part dispPart=mailData.getDisplayPart(i);
         java.io.InputStream istream=null;
-        String charset=OldUtils.getCharset(dispPart.getContentType());
+        String charset=MailUtils.getCharset(dispPart.getContentType());
         boolean ischarset=false;
         try { ischarset=java.nio.charset.Charset.isSupported(charset); } catch(Exception exc) {}
         if (!ischarset) charset="ISO-8859-1";
@@ -1572,7 +1572,7 @@ public class FolderCache {
                         if (x>=0) ismail=true;
                       }
                       if (token!=null && x>=0) {
-                        xhtml.append(OldUtils.htmlescape(line.substring(0,x)));
+                        xhtml.append(MailUtils.htmlescape(line.substring(0,x)));
                         int y=0;
                         if (ismail) {
                           int ats=0;
@@ -1607,10 +1607,10 @@ public class FolderCache {
                     //                  onclick="handleMailClick(\""+token+"\"); return false;";
                     //                }
                         if (href.startsWith("www.")) href="http://"+token;
-                        xhtml.append("<A TARGET=_new HREF=\""+href+"\" onClick='"+onclick+"'>"+OldUtils.htmlescape(token)+"</A>");
+                        xhtml.append("<A TARGET=_new HREF=\""+href+"\" onClick='"+onclick+"'>"+MailUtils.htmlescape(token)+"</A>");
                         if (line==null) break;
                       } else {
-                        xhtml.append(OldUtils.htmlescape(line));
+                        xhtml.append(MailUtils.htmlescape(line));
                         break;
                       }
                     }
@@ -1625,7 +1625,7 @@ public class FolderCache {
           Message xmsg=(Message)dispPart.getContent();
           msgSubject=xmsg.getSubject();
           if (msgSubject==null) msgSubject="";
-          msgSubject=OldUtils.htmlescape(msgSubject);
+          msgSubject=MailUtils.htmlescape(msgSubject);
           Address ad[]=xmsg.getFrom();
           if (ad!=null) msgFrom=ms.getHTMLDecodedAddress(ad[0]);
           else msgFrom="";
@@ -1788,6 +1788,11 @@ public class FolderCache {
               filename=filename.substring(0, filename.length()-1);
             }
             //System.out.println("adding CID "+filename);
+			try {
+				
+				filename=MailUtils.decodeQString(filename);
+			} catch(Exception exc) {
+			}
             mailData.addCidPart(filename, p);
           }
           //Look for a possible Url copy

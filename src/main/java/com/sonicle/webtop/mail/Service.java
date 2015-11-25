@@ -37,7 +37,7 @@ import com.sonicle.webtop.core.CoreLocaleKey;
 import com.sonicle.commons.LangUtils;
 import java.nio.*;
 import java.nio.channels.*;
-import com.sonicle.commons.OldUtils;
+import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
@@ -87,6 +87,7 @@ import com.sun.mail.util.PropUtil;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.*;
@@ -124,6 +125,7 @@ public class Service extends BaseService {
 	public static Flags flagNote = new Flags("mailnote");
 	
 	private FetchProfile FP = new FetchProfile();
+	private FetchProfile draftsFP=new FetchProfile();
 	
 	static {
 		
@@ -139,13 +141,15 @@ public class Service extends BaseService {
 			oldFlagsHash.put(fs, flags);
 		}
 	}
+
+	public static final String HEADER_SONICLE_FROM_DRAFTER="Sonicle-from-drafter";	
 	
 	static String startpre = "<PRE>";
 	static String endpre = "</PRE>";
-	private static String webtopTextMessage
-			= "This email has been sent through Sonicle WebMail system [ http://www.sonicle.com ]";
-	private static String webtopHTMLMessage = "This email has been sent through Sonicle WebMail system [ <A HREF='http://www.sonicle.com'>http://www.sonicle.com</A> ]";
-	private static String unwantedTags[] = {"style"};
+//	private static String webtopTextMessage
+//			= "This email has been sent through Sonicle WebMail system [ http://www.sonicle.com ]";
+//	private static String webtopHTMLMessage = "This email has been sent through Sonicle WebMail system [ <A HREF='http://www.sonicle.com'>http://www.sonicle.com</A> ]";
+//	private static String unwantedTags[] = {"style"};
 	
 	private Session session;
 	private Properties props;
@@ -220,8 +224,15 @@ public class Service extends BaseService {
 		FP.add(FetchProfile.Item.CONTENT_INFO);
 		FP.add("Message-ID");
 		FP.add("X-Priority");
+		draftsFP.add(FetchProfile.Item.ENVELOPE);
+		draftsFP.add(FetchProfile.Item.FLAGS);
+		draftsFP.add(FetchProfile.Item.CONTENT_INFO);
+		draftsFP.add("Message-ID");
+		draftsFP.add("X-Priority");
+		draftsFP.add(HEADER_SONICLE_FROM_DRAFTER);
 		if (hasDocumentArchiving()) {
 			FP.add("X-WT-Archived");
+			draftsFP.add("X-WT-Archived");
 		}
 		
 		session = Session.getDefaultInstance(props, null);
@@ -708,18 +719,21 @@ public class Service extends BaseService {
 	 String bf[]=null;
 	 String ty[]=null;
 	 String fx[]=null;
+	 String my[]=null;
 	 if(params.get("idents-email") instanceof String[]) {
-	 dn=(String[])params.get("idents-displayname");
-	 em=(String[])params.get("idents-email");
-	 bf=(String[])params.get("idents-basefolder");
-	 ty=(String[])params.get("idents-type");
-	 fx=(String[])params.get("idents-isfax");
+	  dn=(String[])params.get("idents-displayname");
+	  em=(String[])params.get("idents-email");
+	  bf=(String[])params.get("idents-basefolder");
+	  ty=(String[])params.get("idents-type");
+	  fx=(String[])params.get("idents-isfax");
+	  my=(String[])params.get("idents-usemypersonalinfos");
 	 } else {
-	 dn=new String[]{(String)params.get("idents-displayname")};
-	 em=new String[]{(String)params.get("idents-email")};
-	 bf=new String[]{(String)params.get("idents-basefolder")};
-	 ty=new String[]{(String)params.get("idents-type")};
-	 fx=new String[]{(String)params.get("idents-isfax")};
+	  dn=new String[]{(String)params.get("idents-displayname")};
+	  em=new String[]{(String)params.get("idents-email")};
+	  bf=new String[]{(String)params.get("idents-basefolder")};
+	  ty=new String[]{(String)params.get("idents-type")};
+	  fx=new String[]{(String)params.get("idents-isfax")};
+	  my=new String[]{(String)params.get("idents-usemypersonalinfos")};
 	 }
 		  
 	 PreparedStatement stmt1 = null;
@@ -742,16 +756,16 @@ public class Service extends BaseService {
 	 logger.warn("Unable to use [{}] as new identity. Address already shared.", em[i]);
 	 continue;
 	 }
-	 stmt.executeUpdate(
-	 "insert into identities (iddomain,login,email,displayname,mainfolder,isfax) values ("+
-	 "'"+wtd.getLocalIDDomain()+"',"+
-	 "'"+login+"',"+
-	 "'"+Utils.getSQLString(em[i])+"',"+
-	 "'"+Utils.getSQLString(dn[i])+"',"+
-     "'"+Utils.getSQLString(bf[i])+"',"+
-     "'"+Utils.getSQLString(fx[i])+"'"+
-	 ")"
-	 );
+	 sql="insert into identities (iddomain,login,email,displayname,mainfolder,isfax,usemypersonalinfos) values ("+
+	  "'"+wtd.getLocalIDDomain()+"',"+
+	  "'"+login+"',"+
+	  "'"+Utils.getSQLString(em[i])+"',"+
+	  "'"+Utils.getSQLString(dn[i])+"',"+
+      "'"+Utils.getSQLString(bf[i])+"',"+
+      ""+Utils.getSQLString(fx[i])+","+
+      ""+Utils.getSQLString(my[i])+""+
+      ")";
+     stmt.executeUpdate(sql);
 	 //profile.addIdentity(Identity.TYPE_USER, dn[i], em[i], bf[i]);
 	 }
 	 profile.buildIdentities(con);
@@ -2123,7 +2137,7 @@ public class Service extends BaseService {
 		if (msgSubject == null) {
 			msgSubject = "";
 		}
-		msgSubject = OldUtils.htmlescape(msgSubject);
+		msgSubject = MailUtils.htmlescape(msgSubject);
 		Address ad[] = msg.getFrom();
 		String msgFrom = "";
 		if (ad != null) {
@@ -2209,7 +2223,7 @@ public class Service extends BaseService {
 						if (format == SimpleMessage.FORMAT_TEXT) {
 							sb.append("> ");
 						}
-						sb.append(OldUtils.htmlescape(token));
+						sb.append(MailUtils.htmlescape(token));
 					}
 				}
 				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
@@ -2441,7 +2455,7 @@ public class Service extends BaseService {
 		if (msgSubject == null) {
 			msgSubject = "";
 		}
-		msgSubject = OldUtils.htmlescape(msgSubject);
+		msgSubject = MailUtils.htmlescape(msgSubject);
 		Address ad[] = msg.getFrom();
 		String msgFrom = "";
 		if (ad != null) {
@@ -2543,7 +2557,7 @@ public class Service extends BaseService {
 						if (format == SimpleMessage.FORMAT_TEXT) {
 							sb.append("> ");
 						}
-						sb.append(OldUtils.htmlescape(token));
+						sb.append(MailUtils.htmlescape(token));
 					}
 				}
 				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
@@ -2654,7 +2668,7 @@ public class Service extends BaseService {
 	
 	private String getTextPlainContentAsString(Part p) throws IOException, MessagingException {
 		java.io.InputStream istream = null;
-		String charset = OldUtils.getCharset(p.getContentType());
+		String charset = MailUtils.getCharset(p.getContentType());
 		if (!java.nio.charset.Charset.isSupported(charset)) {
 			charset = "ISO-8859-1";
 		}
@@ -2699,13 +2713,13 @@ public class Service extends BaseService {
 			return false;
 		}
 		if (p.isMimeType("text/html")) {
-			textsb.append(OldUtils.htmlToText(OldUtils.htmlunescapesource((String) p.getContent())));
-			htmlsb.append(OldUtils.htmlescapefixsource((String) p.getContent()));
+			textsb.append(MailUtils.htmlToText(MailUtils.htmlunescapesource((String) p.getContent())));
+			htmlsb.append(MailUtils.htmlescapefixsource((String) p.getContent()));
 			isHtml = true;
 		} else if (p.isMimeType("text/plain")) {
 			String content = getTextPlainContentAsString(p);
 			textsb.append(content);
-			htmlsb.append(startpre + OldUtils.htmlescape(content) + endpre);
+			htmlsb.append(startpre + MailUtils.htmlescape(content) + endpre);
 			isHtml = false;
 		} else if (p.isMimeType("message/delivery-status") || p.isMimeType("message/disposition-notification")) {
 			InputStream is = (InputStream) p.getContent();
@@ -2719,7 +2733,7 @@ public class Service extends BaseService {
 						cbuf[i] = (char) bbuf[i];
 					}
 					textsb.append(cbuf);
-					htmlsb.append(OldUtils.htmlescape(new String(cbuf)));
+					htmlsb.append(MailUtils.htmlescape(new String(cbuf)));
 				}
 			}
 			htmlsb.append(endpre);
@@ -3010,7 +3024,7 @@ public class Service extends BaseService {
 	
 	public String getHTMLDecodedAddress(Address a) {
 		String s = getDecodedAddress(a);
-		return OldUtils.htmlescape(s);
+		return MailUtils.htmlescape(s);
 	}
 	
 	public String getInternationalFolderName(FolderCache fc) {
@@ -3192,7 +3206,7 @@ public class Service extends BaseService {
 		for (String cidname : maildata.getCidNames()) {
 			//Part part=maildata.getCidPart(cidname);
 			String surl = preurl + cidname;
-			html = OldUtils.replace(html, "cid:" + cidname, surl, false);
+			html = StringUtils.replace(html, "cid:" + cidname, surl);
 		}
 		return html;
 	}
@@ -3493,9 +3507,9 @@ public class Service extends BaseService {
 				hasUnread = mc.hasUnreadChildren();
 			}
 			String text = mc.getDescription();
-			String ss = "{id:'" + OldUtils.jsEscape(foldername)
-					+ "',text:'" + OldUtils.jsEscape(text)
-					+ "',folder:'" + OldUtils.jsEscape(text)
+			String ss = "{id:'" + StringEscapeUtils.escapeEcmaScript(foldername)
+					+ "',text:'" + StringEscapeUtils.escapeEcmaScript(text)
+					+ "',folder:'" + StringEscapeUtils.escapeEcmaScript(text)
 					+ "',leaf:" + leaf
 					+ ",iconCls: '" + iconCls
 					+ "',unread:" + unread
@@ -3600,8 +3614,8 @@ public class Service extends BaseService {
 					}
 					String idcategory = rs.getString("idcategory");
 					String description = rs.getString("description");
-					ss += "{id:'" + OldUtils.jsEscape(idcategory)
-							+ "',text:'" + OldUtils.jsEscape(description)
+					ss += "{id:'" + StringEscapeUtils.escapeEcmaScript(idcategory)
+							+ "',text:'" + StringEscapeUtils.escapeEcmaScript(description)
 							+ "',leaf:false,iconCls: 'iconImapFolder'}";
 					first = false;
 				}
@@ -3617,8 +3631,8 @@ public class Service extends BaseService {
 					}
 					String idsubcategory = rs.getString("idsubcategory");
 					String description = rs.getString("description");
-					ss += "{id:'" + OldUtils.jsEscape(idcategory) + "|" + OldUtils.jsEscape(idsubcategory)
-							+ "',text:'" + OldUtils.jsEscape(description)
+					ss += "{id:'" + StringEscapeUtils.escapeEcmaScript(idcategory) + "|" + StringEscapeUtils.escapeEcmaScript(idsubcategory)
+							+ "',text:'" + StringEscapeUtils.escapeEcmaScript(description)
 							+ "',leaf:true,iconCls: 'iconImapFolder'}";
 					first = false;
 				}
@@ -3688,7 +3702,7 @@ public class Service extends BaseService {
 			}
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -3732,7 +3746,7 @@ public class Service extends BaseService {
 			}
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -3768,7 +3782,7 @@ public class Service extends BaseService {
 			sout = "{\nresult: true, millis: " + millis + "\n}";
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -3809,7 +3823,7 @@ public class Service extends BaseService {
 			sout = "{\nresult: true, millis: " + millis + "\n}";
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -3923,7 +3937,7 @@ public class Service extends BaseService {
 			sout = "{\nresult: true\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -3962,7 +3976,7 @@ public class Service extends BaseService {
 			sout = "{\nresult: true\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -3993,7 +4007,7 @@ public class Service extends BaseService {
 			sout = "{\nresult: true, millis: " + millis + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4024,7 +4038,7 @@ public class Service extends BaseService {
 			sout = "{\nresult: true, millis: " + millis + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4052,7 +4066,7 @@ public class Service extends BaseService {
 			sout = "{\nresult: true\n}";
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		} finally {
 			if (stmt != null) {
 				try {
@@ -4075,10 +4089,10 @@ public class Service extends BaseService {
 		String login = profile.getUserId();
 		String folder = fc.getFolderName();
 		if (value) {
-			stmt.executeUpdate("insert into mailscan values ('" + login + "','" + OldUtils.getSQLString(folder) + "','" + profile.getDomainId() + "')");
+			stmt.executeUpdate("insert into mailscan values ('" + login + "','" + DbUtils.getSQLString(folder) + "','" + profile.getDomainId() + "')");
 			fc.setScanEnabled(true);
 		} else {
-			stmt.executeUpdate("delete from mailscan where iddomain='" + profile.getDomainId() + "' and login='" + login + "' and foldername='" + OldUtils.getSQLString(folder) + "'");
+			stmt.executeUpdate("delete from mailscan where iddomain='" + profile.getDomainId() + "' and login='" + login + "' and foldername='" + DbUtils.getSQLString(folder) + "'");
 			fc.setScanEnabled(false);
 		}
 		if (recursive) {
@@ -4110,7 +4124,7 @@ public class Service extends BaseService {
 			sout += "result: " + result + ", millis: " + millis + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, oldid: '" + folder + "', oldname: '" + (mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, oldid: '" + folder + "', oldname: '" + (mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4133,7 +4147,7 @@ public class Service extends BaseService {
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, oldid: '" + folder + "', oldname: '" + (mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, oldid: '" + folder + "', oldname: '" + (mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4182,7 +4196,7 @@ public class Service extends BaseService {
 			}
 		}
 		try {
-			pname = OldUtils.decodeQString(pname, "iso-8859-1");
+			pname = MailUtils.decodeQString(pname, "iso-8859-1");
 		} catch (Exception exc) {
 			exc.printStackTrace();
 		}
@@ -4250,17 +4264,17 @@ public class Service extends BaseService {
 				result = false;
 			} else {
 				if (mcache != fcRoot) {
-					sout += "parent: '" + OldUtils.jsEscape(mcache.getFolderName()) + "',\n";
+					sout += "parent: '" + StringEscapeUtils.escapeEcmaScript(mcache.getFolderName()) + "',\n";
 				} else {
 					sout += "parent: null,\n";
 				}
-				sout += "name: '" + OldUtils.jsEscape(newfolder.getName()) + "',\n";
-				sout += "fullname: '" + OldUtils.jsEscape(newfolder.getFullName()) + "',\n";
+				sout += "name: '" + StringEscapeUtils.escapeEcmaScript(newfolder.getName()) + "',\n";
+				sout += "fullname: '" + StringEscapeUtils.escapeEcmaScript(newfolder.getFullName()) + "',\n";
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, oldid: '" + OldUtils.jsEscape(folder) + "', oldname: '" + OldUtils.jsEscape(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4277,13 +4291,13 @@ public class Service extends BaseService {
 			mcache = getFolderCache(folder);
 			name = normalizeName(name);
 			String newid = renameFolder(folder, name);
-			sout += "oldid: '" + OldUtils.jsEscape(folder) + "',\n";
-			sout += "newid: '" + OldUtils.jsEscape(newid) + "',\n";
-			sout += "newname: '" + OldUtils.jsEscape(name) + "',\n";
+			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
+			sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newid) + "',\n";
+			sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(name) + "',\n";
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, oldid: '" + OldUtils.jsEscape(folder) + "', oldname: '" + OldUtils.jsEscape(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4310,13 +4324,13 @@ public class Service extends BaseService {
 			} else {
 				result = deleteFolder(folder);
 				if (result) {
-					sout += "oldid: '" + OldUtils.jsEscape(folder) + "',\n";
+					sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 				}
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, oldid: '" + OldUtils.jsEscape(folder) + "', oldname: '" + OldUtils.jsEscape(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4335,15 +4349,15 @@ public class Service extends BaseService {
 			} else {
 				FolderCache newfc = trashFolder(folder);
 				Folder newf = newfc.getFolder();
-				sout += "oldid: '" + OldUtils.jsEscape(folder) + "',\n";
-				sout += "newid: '" + OldUtils.jsEscape(newf.getFullName()) + "',\n";
-				sout += "newname: '" + OldUtils.jsEscape(newf.getName()) + "',\n";
+				sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
+				sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newf.getFullName()) + "',\n";
+				sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(newf.getName()) + "',\n";
 				result = true;
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, oldid: '" + OldUtils.jsEscape(folder) + "', oldname: '" + OldUtils.jsEscape(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4363,18 +4377,18 @@ public class Service extends BaseService {
 			} else {
 				FolderCache newfc = moveFolder(folder, to);
 				Folder newf = newfc.getFolder();
-				sout += "oldid: '" + OldUtils.jsEscape(folder) + "',\n";
-				sout += "newid: '" + OldUtils.jsEscape(newf.getFullName()) + "',\n";
-				sout += "newname: '" + OldUtils.jsEscape(newf.getName()) + "',\n";
+				sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
+				sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newf.getFullName()) + "',\n";
+				sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(newf.getName()) + "',\n";
 				if (to != null) {
-					sout += "parent: '" + OldUtils.jsEscape(newf.getParent().getFullName()) + "',\n";
+					sout += "parent: '" + StringEscapeUtils.escapeEcmaScript(newf.getParent().getFullName()) + "',\n";
 				}
 				result = true;
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, oldid: '" + OldUtils.jsEscape(folder) + "', oldname: '" + OldUtils.jsEscape(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4388,11 +4402,11 @@ public class Service extends BaseService {
 			sout = "{\n";
 			mcache = getFolderCache(folder);
 			emptyFolder(folder);
-			sout += "oldid: '" + OldUtils.jsEscape(folder) + "',\n";
+			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 			sout += "result: true\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, oldid: '" + OldUtils.jsEscape(folder) + "', oldname: '" + OldUtils.jsEscape(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4411,20 +4425,20 @@ public class Service extends BaseService {
 			//Folder folder=msg.getFolder();
 			for (Enumeration e = msg.getAllHeaders(); e.hasMoreElements();) {
 				Header header = (Header) e.nextElement();
-				sb.append(OldUtils.htmlescape(header.getName()) + ": " + OldUtils.htmlescape(header.getValue()) + "\n");
+				sb.append(MailUtils.htmlescape(header.getName()) + ": " + MailUtils.htmlescape(header.getValue()) + "\n");
 			}
 			if (!headers) {
 				BufferedReader br = new BufferedReader(new InputStreamReader(msg.getInputStream()));
 				String line = null;
 				while ((line = br.readLine()) != null) {
-					sb.append(OldUtils.htmlescape(line) + "\n");
+					sb.append(MailUtils.htmlescape(line) + "\n");
 				}
 			}
 			sb.append("</pre>");
-			sout = "{\nresult: true, source: '" + OldUtils.jsEscape(sb.toString()) + "'\n}";
+			sout = "{\nresult: true, source: '" + StringEscapeUtils.escapeEcmaScript(sb.toString()) + "'\n}";
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -4477,7 +4491,7 @@ public class Service extends BaseService {
 					date = new java.util.Date();
 				}
 				
-				String fname = OldUtils.zerofill(i + 1, digits) + " - " + subject + ".eml";
+				String fname = LangUtils.zerofill(i + 1, digits) + " - " + subject + ".eml";
 				JarEntry je = new JarEntry(fname);
 				je.setTime(date.getTime());
 				jos.putNextEntry(je);
@@ -4523,18 +4537,18 @@ public class Service extends BaseService {
 			String inreplyto = smsg.getInReplyTo();
 			String references[] = smsg.getReferences();
 			if (inreplyto != null) {
-				sout += " replyfolder: '" + OldUtils.jsEscape(pfoldername) + "',";
-				sout += " inreplyto: '" + OldUtils.jsEscape(inreplyto) + "',";
+				sout += " replyfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
+				sout += " inreplyto: '" + StringEscapeUtils.escapeEcmaScript(inreplyto) + "',";
 			}
 			if (references != null) {
 				String refs = "";
 				for (String s : references) {
-					refs += OldUtils.jsEscape(s) + " ";
+					refs += StringEscapeUtils.escapeEcmaScript(s) + " ";
 				}
 				sout += " references: '" + refs.trim() + "',";
 			}
 			String subject = smsg.getSubject();
-			sout += " subject: '" + OldUtils.jsEscape(subject) + "',\n";
+			sout += " subject: '" + StringEscapeUtils.escapeEcmaScript(subject) + "',\n";
 			sout += " recipients: [\n";
 			String tos[] = smsg.getTo().split(";");
 			boolean first = true;
@@ -4542,7 +4556,7 @@ public class Service extends BaseService {
 				if (!first) {
 					sout += ",\n";
 				}
-				sout += "   {rtype:'to',email:'" + OldUtils.jsEscape(to) + "'}";
+				sout += "   {rtype:'to',email:'" + StringEscapeUtils.escapeEcmaScript(to) + "'}";
 				first = false;
 			}
 			String ccs[] = smsg.getCc().split(";");
@@ -4550,16 +4564,16 @@ public class Service extends BaseService {
 				if (!first) {
 					sout += ",\n";
 				}
-				sout += "   {rtype:'cc',email:'" + OldUtils.jsEscape(cc) + "'}";
+				sout += "   {rtype:'cc',email:'" + StringEscapeUtils.escapeEcmaScript(cc) + "'}";
 				first = false;
 			}
 			sout += "\n ],\n";
 			String html = smsg.getContent();
-			sout += " html:'" + OldUtils.jsEscape(html) + "'\n";
+			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
 			sout += "\n}";
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		if (sout != null) {
 			out.println(sout);
@@ -4596,11 +4610,11 @@ public class Service extends BaseService {
 			sout = "{\n result: true,";
 			String forwardedfrom = smsg.getForwardedFrom();
 			if (forwardedfrom != null) {
-				sout += " forwardedfolder: '" + OldUtils.jsEscape(pfoldername) + "',";
-				sout += " forwardedfrom: '" + OldUtils.jsEscape(forwardedfrom) + "',";
+				sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
+				sout += " forwardedfrom: '" + StringEscapeUtils.escapeEcmaScript(forwardedfrom) + "',";
 			}
 			String subject = smsg.getSubject();
-			sout += " subject: '" + OldUtils.jsEscape(subject) + "',\n";
+			sout += " subject: '" + StringEscapeUtils.escapeEcmaScript(subject) + "',\n";
 			
 			String html = smsg.getContent();
 			if (!attached) {
@@ -4628,7 +4642,7 @@ public class Service extends BaseService {
 						if (!first) {
 							sout += ",\n";
 						}
-						sout += "{ name: '" + OldUtils.jsEscape(filename) + "', tempname: '" + OldUtils.jsEscape(tempname) + "' }";
+						sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
 						first = false;
 					}
 				}
@@ -4643,16 +4657,16 @@ public class Service extends BaseService {
 				attachFile(newmsgid, tempFile, filename, "message/rfc822", null, false);
 				String tempname = tempFile.getName();
 				sout += " attachments: [\n";
-				sout += "{ name: '" + OldUtils.jsEscape(filename) + "', tempname: '" + OldUtils.jsEscape(tempname) + "' }";
+				sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
 				sout += "\n ],\n";
 			}
 			
-			sout += " html:'" + OldUtils.jsEscape(html) + "'\n";
+			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
 			sout += "\n}";
 			out.println(sout);
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 	}
 	
@@ -4684,7 +4698,7 @@ public class Service extends BaseService {
 			if (subject == null) {
 				subject = "";
 			}
-			sout += " subject: '" + OldUtils.jsEscape(subject) + "',\n";
+			sout += " subject: '" + StringEscapeUtils.escapeEcmaScript(subject) + "',\n";
 			
 			String inreplyto = null;
 			String references[] = null;
@@ -4700,14 +4714,14 @@ public class Service extends BaseService {
 					replyfolder = vs[0];
 				}
 				if (replyfolder != null) {
-					sout += " replyfolder: '" + OldUtils.jsEscape(replyfolder) + "',";
+					sout += " replyfolder: '" + StringEscapeUtils.escapeEcmaScript(replyfolder) + "',";
 				}
-				sout += " inreplyto: '" + OldUtils.jsEscape(inreplyto) + "',";
+				sout += " inreplyto: '" + StringEscapeUtils.escapeEcmaScript(inreplyto) + "',";
 			}
 			if (references != null) {
 				String refs = "";
 				for (String s : references) {
-					refs += OldUtils.jsEscape(s) + " ";
+					refs += StringEscapeUtils.escapeEcmaScript(s) + " ";
 				}
 				sout += " references: '" + refs.trim() + "',";
 			}
@@ -4724,13 +4738,23 @@ public class Service extends BaseService {
 					forwardedfolder = vs[0];
 				}
 				if (forwardedfolder != null) {
-					sout += " forwardedfolder: '" + OldUtils.jsEscape(forwardedfolder) + "',";
+					sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(forwardedfolder) + "',";
 				}
-				sout += " forwardedfrom: '" + OldUtils.jsEscape(forwardedfrom) + "',";
+				sout += " forwardedfrom: '" + StringEscapeUtils.escapeEcmaScript(forwardedfrom) + "',";
 			}
 			
 			sout += " receipt: " + receipt + ",\n";
 			sout += " priority: " + (priority >= 3 ? false : true) + ",\n";
+			
+			Address from[]=m.getFrom();
+			if (from!=null && from.length>0) {
+				InternetAddress ia=(InternetAddress)from[0];
+				String email=ia.getAddress();
+				String displayname=ia.getPersonal();
+				if (displayname==null) displayname=email;
+				sout+=" from: { email: '"+StringEscapeUtils.escapeEcmaScript(email)+"', displayname: '"+StringEscapeUtils.escapeEcmaScript(displayname)+"' },\n";
+			}
+			
 			sout += " recipients: [\n";
 			if (recipients) {
 				Address tos[] = m.getRecipients(RecipientType.TO);
@@ -4742,7 +4766,7 @@ public class Service extends BaseService {
 						}
 						srec += "   { "
 								+ "type: 'to', "
-								+ "address: '" + OldUtils.jsEscape(getDecodedAddress(to)) + "'"
+								+ "address: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(to)) + "'"
 								+ " }";
 					}
 				}
@@ -4754,7 +4778,7 @@ public class Service extends BaseService {
 						}
 						srec += "   { "
 								+ "type: 'cc', "
-								+ "address: '" + OldUtils.jsEscape(getDecodedAddress(cc)) + "'"
+								+ "address: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(cc)) + "'"
 								+ " }";
 					}
 				}
@@ -4766,7 +4790,7 @@ public class Service extends BaseService {
 						}
 						srec += "   { "
 								+ "type: 'bcc', "
-								+ "address: '" + OldUtils.jsEscape(getDecodedAddress(bcc)) + "'"
+								+ "address: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(bcc)) + "'"
 								+ " }";
 					}
 				}
@@ -4810,7 +4834,7 @@ public class Service extends BaseService {
 					if (!first) {
 						sout += ",\n";
 					}
-					sout += "{ name: '" + OldUtils.jsEscape(filename) + "', tempname: '" + OldUtils.jsEscape(tempname) + "' }";
+					sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
 					first = false;
 				}
 			}
@@ -4820,12 +4844,12 @@ public class Service extends BaseService {
 			//System.out.println(html);
 			//String surl="service-requests?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
 			//html=replaceCidUrls(html, maildata, surl);
-			sout += " html:'" + OldUtils.jsEscape(html) + "'\n";
+			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
 			sout += "\n}";
 			out.println(sout);
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 	}
 
@@ -4951,17 +4975,26 @@ public class Service extends BaseService {
 			String emails[]=request.getParameterValues("recipients");
 			
 			if (isFax) {
+				int faxmaxtos=ss.getFaxMaxRecipients();
+				
 				//check for valid fax recipients
-				String faxpattern=ss.getSetting(MailServiceSettings.FAX_PATTERN);
+				String faxpattern=ss.getFaxPattern();
 				String regex="^"+faxpattern.replace("{number}", "(\\d+)").replace("{username}", "(\\w+)")+"$";
 				Pattern pattern=Pattern.compile(regex);
+				int nemails=0;
 				for(String email: emails) {
 					if (StringUtils.isEmpty(email)) continue;
+					++nemails;
+					if (StringUtils.isNumeric(email)) continue;
 					Matcher pm=pattern.matcher(email);
 					if (!pm.matches()) {
 						throw new Exception(lookupResource(MailLocaleKey.FAX_ADDRESS_ERROR));
 					}
 				}
+				if (faxmaxtos>0 && nemails>faxmaxtos) {
+					throw new WTException(lookupResource(MailLocaleKey.FAX_MAXADDRESS_ERROR), faxmaxtos);
+				}
+
 			}
 			
 			//TODO save used recipients
@@ -5024,19 +5057,19 @@ public class Service extends BaseService {
 				
 				sout = "{\nresult: true,";
 				if (foundfolder != null) {
-					sout += " foundfolder: '" + OldUtils.jsEscape(foundfolder) + "',";
+					sout += " foundfolder: '" + StringEscapeUtils.escapeEcmaScript(foundfolder) + "',";
 				}
 				sout += " saved: false\n}";
 			} else {
 				Throwable cause = exc.getCause();
 				String msgstr = cause != null ? cause.getMessage() : exc.getMessage();
-				sout = "{\nresult: false, text:'" + OldUtils.jsEscape(msgstr) + "'\n}";
+				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(msgstr) + "'\n}";
 			}
 		} catch (Exception exc) {
 			exc.printStackTrace();
 			Throwable cause = exc.getCause();
 			String msg = cause != null ? cause.getMessage() : exc.getMessage();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(msg) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(msg) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -5155,11 +5188,11 @@ public class Service extends BaseService {
 				fc.setForceRefresh();
 				sout = "{\nresult: true, saved: true\n}";
 			} else {
-				sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 			}
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -5194,11 +5227,11 @@ public class Service extends BaseService {
 				fc.setForceRefresh();
 				sout = "{\nresult: true, saved: true\n}";
 			} else {
-				sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 			}
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -5302,7 +5335,7 @@ public class Service extends BaseService {
 			boolean checkemail = true;
 			boolean listdone = false;
 			if (email.indexOf('@') < 0) {
-				if (isFax && OldUtils.isNumeric(email)) {
+				if (isFax && StringUtils.isNumeric(email)) {
 					String faxpattern = ss.getFaxPattern();
 					String faxemail = faxpattern.replace("{number}", email).replace("{username}", profile.getUserId());
 					email = faxemail;
@@ -5486,16 +5519,16 @@ public class Service extends BaseService {
 
 				//CIDs
 				String surl = "service-request?service="+getId()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
-				content = OldUtils.replace(content, surl, "cid:");
+				content = StringUtils.replace(content, surl, "cid:");
 				surl = "service-request?service="+getId()+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
-				content = OldUtils.replace(content, surl, "cid:");
+				content = StringUtils.replace(content, surl, "cid:");
 				//URLs
 				surl = "service-request?service="+getId()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;url=";
-				content = OldUtils.replace(content, surl, "");
+				content = StringUtils.replace(content, surl, "");
 				surl = "service-request?service="+getId()+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
-				content = OldUtils.replace(content, surl, "");
-				String textcontent = OldUtils.HtmlToText_convert(OldUtils.htmlunescapesource(content));
-				content = OldUtils.htmlescapefixsource(content);
+				content = StringUtils.replace(content, surl, "");
+				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
+				content = MailUtils.htmlescapefixsource(content);
 				msg.setContent(content, textcontent, mime);
 			} else {
 				msg.setContent(content, null, mime);
@@ -5579,7 +5612,7 @@ public class Service extends BaseService {
 				if (!first) {
 					sout += ",\n";
 				}
-				sout += "{ name: '" + OldUtils.jsEscape(filename) + "', tempname: '" + OldUtils.jsEscape(tempname) + "' }";
+				sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
 				first = false;
 			}
 			sout += "], result: null, id: 'id', jsonrpc: '2.0' }";
@@ -5618,7 +5651,7 @@ public class Service extends BaseService {
 				filename = "";
 			}
 			try {
-				filename = OldUtils.decodeQString(filename);
+				filename = MailUtils.decodeQString(filename);
 			} catch (Exception exc) {
 			}
 			
@@ -5636,7 +5669,7 @@ public class Service extends BaseService {
 			createFile(part.getInputStream(), file);
 			Attachment attachment = attachFile(msgid, file, filename, ctype, null, false);
 			String tempname = attachment.getFile().getName();
-			sout = "{ result:true, name: '" + OldUtils.jsEscape(filename) + "', tempname: '" + OldUtils.jsEscape(tempname) + "', size: '" + size + "' }";
+			sout = "{ result:true, name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "', size: '" + size + "' }";
 		} catch (Exception exc) {
 			exc.printStackTrace();
 			sout = "{ result:false }";
@@ -5742,11 +5775,11 @@ public class Service extends BaseService {
 				sout = "{\nresult: true\n}";
 			} else {
 				exc.printStackTrace();
-				sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 			}
 		} catch (MessagingException exc) {
 			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}
@@ -5894,21 +5927,25 @@ public class Service extends BaseService {
 	 return up.getPersonalInfo();
 				
 	 } else if(identity.type.equals(Identity.TYPE_USER)) {
-	 // Within USER type, we have to look for a user using his email
-	 // address (that in identity list). If more than one user is
-	 // found we return back current profile info.
-	 ArrayList<OUser> uss = WebTopDb.selectUserByDomainEmail(con, up.getIDDomain(), identity.email);
-	 if(uss.size() == 1) {
-	 OUser us = uss.get(0);
-	 logger.debug("User found! Applying [{}] personal info.", us.login);
-	 ProfileDataProviderBase pdp = wta.getProfileDataProvider(up.getIDDomain());
-	 return pdp.getPersonalInfo(us.login);
-	 } else if(uss.size() > 1) {
-	 logger.debug("Many users found! Returning my profile info.");
-	 } else {
-	 logger.debug("Returning my profile info.");
-	 }
-	 return up.getPersonalInfo();
+	  if (identity.usemypersonalinfos) {
+	   logger.debug("Returning my profile info.");
+	  } else {
+		// Within USER type, we have to look for a user using his email
+		// address (that in identity list). If more than one user is
+		// found we return back current profile info.
+		ArrayList<OUser> uss = WebTopDb.selectUserByDomainEmail(con, up.getIDDomain(), identity.email);
+		if(uss.size() == 1) {
+			OUser us = uss.get(0);
+			logger.debug("User found! Applying [{}] personal info.", us.login);
+			ProfileDataProviderBase pdp = wta.getProfileDataProvider(up.getIDDomain());
+			return pdp.getPersonalInfo(us.login);
+		} else if(uss.size() > 1) {
+			logger.debug("Many users found! Returning my profile info.");
+		} else {
+			logger.debug("Returning my profile info.");
+		}
+	  }
+	  return up.getPersonalInfo();
 				
 	 } else {
 	 return null;
@@ -5987,6 +6024,8 @@ public class Service extends BaseService {
 		sout+=" mailcard: '"+OldUtils.jsEscape(mc.html)+"',";
 	 }
 	 if (i.isfax) faxident=true;
+	 sout+=" isfax: "+i.isfax+",";
+	 sout+=" usemypersonalinfos: "+i.usemypersonalinfos+",";
 	 sout+=" folder: "+(i.mainfolder==null?"null":"'"+OldUtils.jsEscape(i.mainfolder)+"'")+
 	 "    }";
 	 }
@@ -6135,6 +6174,11 @@ public class Service extends BaseService {
 		}
 		boolean refresh = (prefresh != null && prefresh.equals("true"));
 		
+		if (isSpecialFolder(pfoldername) || isSharedFolder(pfoldername)) {
+			logger.debug("folder is special or shared, refresh forced");
+			refresh=true;
+		}
+
 		String group = us.getMessageListGroup(pfoldername);
 		if (group == null) {
 			group = "";
@@ -6300,8 +6344,9 @@ public class Service extends BaseService {
 				if (max > msgs.length) {
 					max = msgs.length;
 				}
+				ArrayList<Integer> autoeditList=new ArrayList<Integer>();
 				//Fetch others for these messages
-				mcache.fetch(msgs, FP, start, max);
+				mcache.fetch(msgs,(isdrafts?draftsFP:FP), start, max);
 				for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 					int ix = start + i;
 					int nx = start + ni;
@@ -6352,7 +6397,7 @@ public class Service extends BaseService {
 							from = iafrom.getAddress();
 						}
 					}
-					from = (from == null ? "" : OldUtils.jsEscape(OldUtils.htmlescape(from)));
+					from = (from == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from)));
 					//To
 					String to = "";
 					ia = m.getRecipients(Message.RecipientType.TO);
@@ -6363,18 +6408,18 @@ public class Service extends BaseService {
 							to = iato.getAddress();
 						}
 					}
-					to = (to == null ? "" : OldUtils.jsEscape(OldUtils.htmlescape(to)));
+					to = (to == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
 					//Subject
 					String subject = m.getSubject();
 					if (subject != null) {
 						try {
-							subject = OldUtils.decodeQString(subject);
+							subject = MailUtils.decodeQString(subject);
 						} catch (Exception exc) {
 							
 						}
 					}
 					boolean hasAttachments = hasAttachements(m);
-					subject = (subject == null ? "" : OldUtils.jsEscape(OldUtils.htmlescape(subject)));
+					subject = (subject == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject)));
 					//Unread
 					boolean unread = !m.isSet(Flags.Flag.SEEN);
 					if (ppattern == null && unread) {
@@ -6455,6 +6500,8 @@ public class Service extends BaseService {
 					}
 					boolean hasNote = flags.contains("mailnote");
 					
+					boolean autoedit=false;
+					
 					boolean issched = false;
 					int syyyy = 0;
 					int smm = 0;
@@ -6475,6 +6522,11 @@ public class Service extends BaseService {
 							issched = true;
 							status = "scheduled";
 						}						
+						
+                        h=getSingleHeaderValue(m,HEADER_SONICLE_FROM_DRAFTER);
+                        if (h!=null && h.equals("true")) {
+							autoedit=true;
+						}
 					}
 
                     //idmessage=idmessage.replaceAll("\\\\", "\\\\");
@@ -6505,6 +6557,10 @@ public class Service extends BaseService {
 							+ (hasAttachments ? ",atts:true" : "")
 							+ (issched ? ",scheddate: new Date(" + syyyy + "," + smm + "," + sdd + "," + shhh + "," + smmm + "," + ssss + ")" : "")
 							+ "}";
+					if (autoedit) {
+						autoeditList.add(nid);
+					}
+					
 					//                sout+="{messageid:'"+m.getMessageID()+"',from:'"+from+"',subject:'"+subject+"',date: new Date("+yyyy+","+mm+","+dd+"),unread: "+unread+"},\n";
 				}
 				/*                if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
@@ -6535,6 +6591,15 @@ public class Service extends BaseService {
 				//ColumnVisibilitySetting.applyDefaults(mcache.isSent(), cvs);
 				ColumnVisibilitySetting.applyDefaults(issent, cvs);
 
+				if (autoeditList.size()>0) {
+					sout+="autoedit: [";
+					for(int mid: autoeditList) {
+						sout+=mid+",";
+					}
+					if(StringUtils.right(sout, 1).equals(",")) sout = StringUtils.left(sout, sout.length()-1);
+					sout+="],\n";
+				}
+				
 				// Fills columnsInfo object for client rendering
 				sout += "colsInfo2: [";
 				for (String dataIndex : cvs.keySet()) {
@@ -6715,7 +6780,7 @@ public class Service extends BaseService {
 				subject = "";
 			} else {
 				try {
-					subject = OldUtils.decodeQString(subject);
+					subject = MailUtils.decodeQString(subject);
 				} catch (Exception exc) {
 					
 				}
@@ -6739,7 +6804,7 @@ public class Service extends BaseService {
 					fromName = fromEmail;
 				}
 			}
-			sout += "{iddata:'from',value1:'" + OldUtils.jsEscape(OldUtils.htmlescape(fromName)) + "',value2:'" + OldUtils.jsEscape(fromEmail) + "',value3:0},\n";
+			sout += "{iddata:'from',value1:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(fromName)) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(fromEmail) + "',value3:0},\n";
 			recs += 2;
 			Address tos[] = m.getRecipients(RecipientType.TO);
 			if (tos != null) {
@@ -6750,7 +6815,7 @@ public class Service extends BaseService {
 					if (toName == null) {
 						toName = toEmail;
 					}
-					sout += "{iddata:'to',value1:'" + OldUtils.jsEscape(OldUtils.htmlescape(toName)) + "',value2:'" + OldUtils.jsEscape(toEmail) + "',value3:0},\n";
+					sout += "{iddata:'to',value1:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(toName)) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(toEmail) + "',value3:0},\n";
 					++recs;
 				}
 			}
@@ -6763,7 +6828,7 @@ public class Service extends BaseService {
 					if (ccName == null) {
 						ccName = ccEmail;
 					}
-					sout += "{iddata:'cc',value1:'" + OldUtils.jsEscape(ccName) + "',value2:'" + OldUtils.jsEscape(ccEmail) + "',value3:0},\n";
+					sout += "{iddata:'cc',value1:'" + StringEscapeUtils.escapeEcmaScript(ccName) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(ccEmail) + "',value3:0},\n";
 					++recs;
 				}
 			}
@@ -6792,7 +6857,7 @@ public class Service extends BaseService {
 				String cidname=null;
 				if (cidname!=null && cidnames.length>0) cidname=cidnames[0];
 				boolean isInlineable = isInlineableMime(ctype);
-                boolean inline=(p.getHeader("Content-Location")!=null)||(cidname!=null)&&isInlineable;
+				boolean inline=((p.getHeader("Content-Location")!=null)||(cidname!=null))&&isInlineable;
 				if (inline && cidname!=null) inline=mailData.isReferencedCid(cidname);
 				if (p.getDisposition() != null && p.getDisposition().equalsIgnoreCase(Part.INLINE) && inline) {
 					continue;
@@ -6804,6 +6869,7 @@ public class Service extends BaseService {
 				}
 				
 				String pname = getPartName(p);
+				try { pname=MailUtils.decodeQString(pname); } catch(Exception exc) {}
 				if (pname == null) {
 					ix = ctype.indexOf("/");
 					String fname = ctype;
@@ -6822,11 +6888,11 @@ public class Service extends BaseService {
 				int rsize = size - (lines * 2);//(p.getSize()/4)*3;
 				String iddata = ctype.equalsIgnoreCase("message/rfc822") ? "eml" : (inline ? "inlineattach" : "attach");
 				
-				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + OldUtils.jsEscape(OldUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + OldUtils.jsEscape(imgname) + "'") + "},\n";
+				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + "},\n";
 			}
 			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash()) {
 				if (vheader != null && vheader[0] != null && !isseen) {
-					sout += "{iddata:'receipt',value1:'" + OldUtils.jsEscape(vheader[0]) + "',value2:'',value3:0},\n";
+					sout += "{iddata:'receipt',value1:'" + StringEscapeUtils.escapeEcmaScript(vheader[0]) + "',value2:'',value3:0},\n";
 				}
 			}
 			
@@ -6835,12 +6901,12 @@ public class Service extends BaseService {
 				Calendar scal = parseScheduleHeader(getSingleHeaderValue(m, "Sonicle-send-date"), getSingleHeaderValue(m, "Sonicle-send-time"));
 				java.util.Date sd = scal.getTime();
 				String sdate = df.format(sd).replaceAll("\\.", ":");
-				sout += "{iddata:'scheddate',value1:'" + OldUtils.jsEscape(sdate) + "',value2:'',value3:0},\n";
+				sout += "{iddata:'scheddate',value1:'" + StringEscapeUtils.escapeEcmaScript(sdate) + "',value2:'',value3:0},\n";
 			}			
 			
-			sout += "{iddata:'date',value1:'" + OldUtils.jsEscape(date) + "',value2:'',value3:0},\n";
-			sout += "{iddata:'subject',value1:'" + OldUtils.jsEscape(OldUtils.htmlescape(subject)) + "',value2:'',value3:0},\n";
-			sout += "{iddata:'messageid',value1:'"+OldUtils.jsEscape(messageid)+"',value2:'',value3:0}\n";
+			sout += "{iddata:'date',value1:'" + StringEscapeUtils.escapeEcmaScript(date) + "',value2:'',value3:0},\n";
+			sout += "{iddata:'subject',value1:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject)) + "',value2:'',value3:0},\n";
+			sout += "{iddata:'messageid',value1:'"+StringEscapeUtils.escapeEcmaScript(messageid)+"',value2:'',value3:0}\n";
 			
 			if (providername == null && !mcache.isSpecial()) {
 				mcache.refreshUnreads();
@@ -6870,7 +6936,7 @@ public class Service extends BaseService {
 			String id = getMessageID(mcache.getMessage(msgnum));
 			con = getConnection();
 			stmt = con.createStatement();
-			rs = stmt.executeQuery("select text from mailnotes where iddomain='" + profile.getDomainId() + "' and messageid='" + OldUtils.getSQLString(id) + "'");
+			rs = stmt.executeQuery("select text from mailnotes where iddomain='" + profile.getDomainId() + "' and messageid='" + DbUtils.getSQLString(id) + "'");
 			if (rs.next()) {
 				text = rs.getString("text");
 			}
@@ -7301,7 +7367,7 @@ public class Service extends BaseService {
 				name = "";
 			}
 			try {
-				name = OldUtils.decodeQString(name);
+				name = MailUtils.decodeQString(name);
 			} catch (Exception exc) {
 			}
 			
@@ -7369,7 +7435,7 @@ public class Service extends BaseService {
 				name = "attachments";
 			}
 			try {
-				name = OldUtils.decodeQString(name);
+				name = MailUtils.decodeQString(name);
 			} catch (Exception exc) {
 			}
 			name += ".zip";
@@ -7384,7 +7450,7 @@ public class Service extends BaseService {
 					pname = "unknown";
 				}
 				try {
-					pname = OldUtils.decodeQString(pname, "iso-8859-1");
+					pname = MailUtils.decodeQString(pname, "iso-8859-1");
 				} catch (Exception exc) {
 				}
 				JarEntry je = new JarEntry(pname);
@@ -8290,7 +8356,7 @@ public class Service extends BaseService {
 			out.println("{\nresult: true\n}");
 		} catch (Exception exc) {
 			exc.printStackTrace();
-			out.println("{\nresult: false, text:'" + OldUtils.jsEscape(exc.getMessage()) + "'\n}");
+			out.println("{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}");
 		}
 	}
 	
@@ -8337,8 +8403,8 @@ public class Service extends BaseService {
 					int sss = cal.get(Calendar.SECOND);
 					String xfolder = xm.getFolder().getFullName();
 					FolderCache fc = getFolderCache(xfolder);
-					String folder = OldUtils.jsEscape(OldUtils.htmlescape(xfolder));
-					String foldername = OldUtils.jsEscape(OldUtils.htmlescape(getInternationalFolderName(fc)));
+					String folder = StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(xfolder));
+					String foldername = StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(getInternationalFolderName(fc)));
 					//From
 					String from = "";
 					Address ia[] = m.getFrom();
@@ -8349,7 +8415,7 @@ public class Service extends BaseService {
 							from = iafrom.getAddress();
 						}
 					}
-					from = (from == null ? "" : OldUtils.jsEscape(OldUtils.htmlescape(from)));
+					from = (from == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from)));
 					//To
 					String to = "";
 					ia = m.getRecipients(Message.RecipientType.TO);
@@ -8360,17 +8426,17 @@ public class Service extends BaseService {
 							to = iato.getAddress();
 						}
 					}
-					to = (to == null ? "" : OldUtils.jsEscape(OldUtils.htmlescape(to)));
+					to = (to == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
 					//Subject
 					String subject = m.getSubject();
 					if (subject != null) {
 						try {
-							subject = OldUtils.decodeQString(subject);
+							subject = MailUtils.decodeQString(subject);
 						} catch (Exception exc) {
 							
 						}
 					}
-					subject = (subject == null ? "" : OldUtils.jsEscape(OldUtils.htmlescape(subject)));
+					subject = (subject == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject)));
 					//Unread
 					boolean unread = !m.isSet(Flags.Flag.SEEN);
                     //if (ppattern==null && unread) ++funread;
@@ -8443,7 +8509,7 @@ public class Service extends BaseService {
 					sout += "{folder:'" + folder + "', folderdesc:'" + foldername + "',idmandfolder:'" + folder + "|" + nid + "',idmessage:'" + nid + "',priority:" + priority + ",status:'" + status + "',to:'" + to + "',from:'" + from + "',subject:'" + subject + "',date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),unread: " + unread + ",size:" + msgsize + ",flag:'" + cflag + "'" + (archived ? ",arch:true" : "") + (isToday ? ",istoday:true" : "") + "}";
 					first = false;
 				}
-				sout += "\n]\n, progress: " + ast.getProgress() + ", curfoldername: '" + OldUtils.jsEscape(getInternationalFolderName(ast.getCurrentFolder())) + "', "
+				sout += "\n]\n, progress: " + ast.getProgress() + ", curfoldername: '" + StringEscapeUtils.escapeEcmaScript(getInternationalFolderName(ast.getCurrentFolder())) + "', "
 						+ "max: " + ast.isMoreThanMax() + ", finished: " + (ast.isFinished() || ast.isCanceled() || !ast.isRunning()) + " }\n";
 			} else {
 				sout += "totalCount:0,\nstart:0,\nlimit:0,\nmessages: [\n";

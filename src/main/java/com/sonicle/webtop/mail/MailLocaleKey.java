@@ -72,6 +72,7 @@ public class MailLocaleKey {
     public static final String FILTERS_FIELD="filters.field";
     public static final String ADDRESS_ERROR="address.error";
 	public static final String FAX_ADDRESS_ERROR="fax.address.error";
+	public static final String FAX_MAXADDRESS_ERROR="fax.maxaddress.error";
     public static final String ICAL_ATTENDEES="ical.attendees";
     public static final String RECIPIENTS_SOURCE_AUTO="recipients.source.auto";
     public static final String SCHEDULED_SENT_SUBJECT="scheduled.sent.subject";

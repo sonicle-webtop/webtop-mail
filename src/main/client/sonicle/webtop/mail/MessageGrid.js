@@ -194,7 +194,8 @@ Ext.define('Sonicle.webtop.mail.MessagesModel',{
         {name:'istoday', type:'boolean' },
         {name:'arch', type:'boolean' },
         {name:'atts', type:'boolean' },
-        {name:'scheddate', type:'date' }
+        {name:'scheddate', type:'date' },
+		{name:'autoedit', type:'boolean' }
 	]
 });
 
@@ -222,7 +223,8 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
         {name:'istoday', type:'boolean' },
         {name:'arch', type:'boolean' },
         {name:'atts', type:'boolean' },
-        {name:'scheddate', type:'date' }
+        {name:'scheddate', type:'date' },
+		{name:'autoedit', type:'boolean' }
 	]
 });
 

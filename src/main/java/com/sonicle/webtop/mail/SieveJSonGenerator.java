@@ -34,12 +34,13 @@
 
 package com.sonicle.webtop.mail;
 
-import com.sonicle.commons.OldUtils;
+import com.sonicle.commons.MailUtils;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Locale;
 
 import com.sonicle.mail.sieve.*;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 /**
  *
@@ -96,9 +97,9 @@ public class SieveJSonGenerator implements MailFiltersParserListener {
                 }
                 if (vsize>1) condition+=")";
             }
-            condition=OldUtils.jsEscape(condition);
+            condition=StringEscapeUtils.escapeEcmaScript(condition);
 
-            String saction=OldUtils.jsEscape(ms.lookupResource(locale, MailLocaleKey.FILTERS_ACTION(action.toLowerCase())));
+            String saction=StringEscapeUtils.escapeEcmaScript(ms.lookupResource(locale, MailLocaleKey.FILTERS_ACTION(action.toLowerCase())));
             String sactionvalue=" ";
             if (actionvalue!=null && actionvalue.trim().length()>0) {
                 if (action.equals("FILE")) {
@@ -107,7 +108,7 @@ public class SieveJSonGenerator implements MailFiltersParserListener {
                     sactionvalue=actionvalue;
                 }
             }
-            sactionvalue=OldUtils.jsEscape(sactionvalue);
+            sactionvalue=StringEscapeUtils.escapeEcmaScript(sactionvalue);
 
             json.append("    { idfilter: "+idfilter+", row: "+(row+1)+", active: "+enabled+", description: '"+condition+"', action: '"+saction+"', value: '"+sactionvalue+"'}");
         }

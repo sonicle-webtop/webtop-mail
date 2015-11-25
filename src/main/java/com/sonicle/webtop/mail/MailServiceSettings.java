@@ -52,6 +52,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String SMTP_PORT = "smtp.port";
     public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
 	public static final String ARCHIVE = "archive";
+	public static final String FAX_MAX_RECIPIENTS = "fax.max.recipients";
 	public static final String FAX_PATTERN = "fax.pattern";
 	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";
 	public static final String ATTACHMENT_DIR = "attachment.dir";
@@ -90,6 +91,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public String getFaxPattern() {
 		return getString(FAX_PATTERN,null);
+	}
+	
+	public int getFaxMaxRecipients() {
+		return getInteger(FAX_MAX_RECIPIENTS,1);
 	}
 	
 	public int getAttachmentMaxSize() {
