@@ -88,6 +88,13 @@ public class MailUserProfile {
 			
 			Principal principal=profile.getPrincipal();
 			
+			MailUserSettings mus=ms.getMailUserSettings();
+			mailProtocol=mus.getProtocol();
+			mailHost=mus.getHost();
+			mailPort=mus.getPort();
+			mailUsername=mus.getUsername();
+			mailPassword=mus.getPassword();
+			
 			//Use AD properties if it can provide them
 			AuthenticationDomain ad=principal.getAuthenticationDomain();
 			if (ad!=null && ad.getProperty("mail.protocol",null)!=null) {
@@ -146,7 +153,6 @@ public class MailUserProfile {
 
 			logger.info("  accessing "+mailProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+mailPort);
 
-			MailUserSettings mus=ms.getMailUserSettings();
 			folderPrefix=mus.getFolderPrefix();
 			scanAll=mus.isScanAll();
 			scanSeconds=mus.getScanSeconds();

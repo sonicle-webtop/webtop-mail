@@ -129,6 +129,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		//TODO load settings
 		//this.loadSettings();
 		
+		me.viewmaxtos=me.getOption('messageViewMaxTos');
+		me.viewmaxccs=me.getOption('messageViewMaxCcs');
+		
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
 			//title: "Email", //this.title,
 			autoScroll: true,
@@ -150,7 +153,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//}),
 			store: Ext.create('Ext.data.TreeStore', {
 				model: 'Sonicle.webtop.mail.ImapTreeModel',
-				proxy: {
+				proxy: WTF.proxy(me.ID,'GetImapTree'),
+/*				proxy: {
 					type: 'ajax',
 					reader: 'json',
 					url: 'ServiceRequest',
@@ -158,7 +162,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						service: me.ID,
 						action: 'GetImapTree'
 					}
-				},
+				},*/
 				root: {
 					text: 'Imap Tree',
 					expanded: true
@@ -246,12 +250,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
             t.body.on('contextmenu',this.treeBodyContextMenu,this);
         },this);*/
 		
-		
 		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
 			pageSize: me.getOption('pageRows'),
-			viewRegion: me.getOption('messageViewRegion'),
-			viewWidth: me.getOption('messageViewWidth'),
-			viewHeight: me.getOption('messageViewHeight'),
+			viewRegion: me.getOption('messageViewRegion','east'),
+			viewWidth: me.getOption('messageViewWidth',600),
+			viewHeight: me.getOption('messageViewHeight',400),
 			mys: me
 		});
 		me.messagesPanel=mp;
@@ -415,7 +418,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	}, 
 	
 	unreadChanged: function(cfg) {
-		console.log('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
+		//console.log('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
 		var me=this;
 		var node=me.imapTree.getStore().getById(cfg.foldername);
 		if (node) {
@@ -429,14 +432,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionNew: function() {
 		var me=this;
-		var v=WT.createView(me.ID,'Sonicle.webtop.mail.view.MessageEditor',{
-			containerCfg: {
-				width: 800,
-				height: 500
-			},
-			viewCfg: {
-			}
-		});
+		var v=WT.createView(me.ID,'view.MessageEditor');
 		v.show(false,function() {
 			v.getComponent(0).beginNew({
 				data: {

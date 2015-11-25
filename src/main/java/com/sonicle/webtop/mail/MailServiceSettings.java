@@ -44,8 +44,8 @@ import com.sonicle.webtop.core.sdk.BaseServiceSettings;
  */
 public class MailServiceSettings extends BaseServiceSettings {
     
-	public MailServiceSettings(String domainId, String serviceId) {
-        super(domainId, serviceId);
+	public MailServiceSettings(String serviceId, String domainId) {
+        super(serviceId, domainId);
     }
 	
 	public static final String SMTP_HOST = "smtp.host";
@@ -54,8 +54,11 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String ARCHIVE = "archive";
 	public static final String FAX_PATTERN = "fax.pattern";
 	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";
+	public static final String ATTACHMENT_DIR = "attachment.dir";
+	public static final String MESSAGE_VIEW_MAX_TOS = "message.view.max.tos";
+	public static final String MESSAGE_VIEW_MAX_CCS = "message.view.max.ccs";
 
-	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
+/*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
 	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
 	public static final String DEFAULT_SCAN_SECONDS = "default.scan.seconds";
 	public static final String DEFAULT_SCAN_CYCLES = "default.scan.cycles";
@@ -67,85 +70,110 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String DEFAULT_PAGE_ROWS = "default.page.rows";
 	public static final String DEFAULT_HOST = "default.host";
 	public static final String DEFAULT_PORT = "default.port";
-	public static final String DEFAULT_PROTOCOL = "default.protocol";
-    
+	public static final String DEFAULT_PROTOCOL = "default.protocol";*/
+	
     public String getSmtpHost() {
-        return getSetting(SMTP_HOST);
+        return getString(SMTP_HOST,"localhost");
     }
     
-    public String getSmtpPort() {
-        return getSetting(SMTP_PORT);
+    public int getSmtpPort() {
+        return getInteger(SMTP_PORT,25);
     }
     
     public boolean isAutocreateSpecialFolders() {
-        return LangUtils.value(getSetting(SPECIALFOLDERS_AUTOCREATE),true);
+        return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);
     }
 	
 	public String getArchivePath() {
-		return getSetting(ARCHIVE);
+		return getString(ARCHIVE,null);
 	}
 	
 	public String getFaxPattern() {
-		return getSetting(FAX_PATTERN);
+		return getString(FAX_PATTERN,null);
 	}
 	
 	public int getAttachmentMaxSize() {
-		return Integer.parseInt(getSetting(ATTACHMENT_MAXSIZE));
+		return getInteger(ATTACHMENT_MAXSIZE,10*1024*1024);
 	}
 	
 	public String getAttachDir() {
-		return new CoreServiceSettings(domainId, CoreManifest.ID).getTempPath();
+		String adir=getString(ATTACHMENT_DIR,null);
+		if (adir==null) adir=new CoreServiceSettings(CoreManifest.ID, domainId).getTempPath();
+		return adir;
 	}
 	
+	public int getMessageViewMaxTos() {
+		return getInteger(MESSAGE_VIEW_MAX_TOS,20);
+	}
+	
+	public void setMessageViewMaxTos(int maxtos) {
+		setInteger(MESSAGE_VIEW_MAX_TOS,maxtos);
+	}
+	
+	public int getMessageViewMaxCcs() {
+		return getInteger(MESSAGE_VIEW_MAX_CCS,20);
+	}
+	
+	public void setMessageViewMaxCcs(int maxccs) {
+		setInteger(MESSAGE_VIEW_MAX_CCS,maxccs);
+	}
+	
+	
+	//DEFAULTS
+	
 	public String getDefaultFolderPrefix() {
-		return getSetting(DEFAULT_FOLDER_PEFFIX);
+		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_PEFFIX,null);
 	}
 	
 	public boolean isDefaultScanAll() {
-		return LangUtils.value(getSetting(DEFAULT_SCAN_ALL),false);
+		return getBoolean(DEFAULT_PREFIX+MailUserSettings.SCAN_ALL,false);
 	}
 	
 	public int getDefaultScanSeconds() {
-		return Integer.parseInt(getSetting(DEFAULT_SCAN_SECONDS));
+		return getInteger(DEFAULT_PREFIX+MailUserSettings.SCAN_SECONDS,30);
 	}
 	
 	public int getDefaultScanCycles() {
-		return Integer.parseInt(getSetting(DEFAULT_SCAN_CYCLES));
+		return getInteger(DEFAULT_PREFIX+MailUserSettings.SCAN_CYCLES,10);
 	}
 	
 	public String getDefaultFolderSent() {
-		return getSetting(DEFAULT_FOLDER_SENT);
+		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_SENT,null);
 	}
 	
 	public String getDefaultFolderDrafts() {
-		return getSetting(DEFAULT_FOLDER_DRAFTS);
+		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_DRAFTS,null);
 	}
 	
 	public String getDefaultFolderTrash() {
-		return getSetting(DEFAULT_FOLDER_TRASH);
+		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_TRASH,null);
 	}
 
 	public String getDefaultFolderSpam() {
-		return getSetting(DEFAULT_FOLDER_SPAM);
+		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_SPAM,null);
 	}
 	
 	public boolean isDefaultIncludeMessageInReply() {
-		return LangUtils.value(getSetting(DEFAULT_INCLUDE_MESSAGE_IN_REPLY), true);
+		return getBoolean(DEFAULT_PREFIX+MailUserSettings.INCLUDE_MESSAGE_IN_REPLY,true);
 	}
 	
 	public int getDefaultPageRows() {
-		return Integer.parseInt(getSetting(DEFAULT_PAGE_ROWS));
+		return getInteger(DEFAULT_PREFIX+MailUserSettings.PAGE_ROWS,50);
 	}
 	
 	public String getDefaultHost() {
-		return getSetting(DEFAULT_HOST);
+		return getString(DEFAULT_PREFIX+MailUserSettings.HOST,"localhost");
 	}
 	
 	public int getDefaultPort() {
-		return Integer.parseInt(getSetting(DEFAULT_PORT));
+		return getInteger(DEFAULT_PREFIX+MailUserSettings.PORT,25);
 	}
 	
 	public String getDefaultProtocol() {
-		return getSetting(DEFAULT_PROTOCOL);
+		return getString(DEFAULT_PREFIX+MailUserSettings.PROTOCOL,"imap");
 	}
+	
+	
+	
+	
 }

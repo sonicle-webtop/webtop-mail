@@ -63,6 +63,11 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String SHARED_SORT = "shared.sort";
 	public static final String INCLUDE_MESSAGE_IN_REPLY = "include.message.in.reply";
 	public static final String PAGE_ROWS = "page.rows";
+	public static final String HOST="host";
+	public static final String PORT="port";
+	public static final String USERNAME="username";
+	public static final String PASSWORD="password";
+	public static final String PROTOCOL="protocol";
 	public static final String MESSAGE_VIEW_REGION = "message.view.region";
 	public static final String MESSAGE_VIEW_WIDTH = "message.view.width";
 	public static final String MESSAGE_VIEW_HEIGHT = "message.view.height";
@@ -70,20 +75,12 @@ public class MailUserSettings extends BaseUserSettings {
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
 	public MailUserSettings(UserProfile.Id profileId) {
-		super(profileId, "com.sonicle.webtop.mail");
+		super("com.sonicle.webtop.mail",profileId);
 	}
 	
-	public MailUserSettings(String domainId, String userId) {
-		super(domainId, userId, "com.sonicle.webtop.mail");
-	}
-
-	public MailUserSettings(String domainId, String userId, String serviceId) {
-		super(domainId, userId, serviceId);
-	}
-	
-	public MailUserSettings(MailServiceSettings mss, String domainId, String userId, String serviceId) {
-		super(domainId, userId, serviceId);
-		this.mss = mss;
+	public MailUserSettings(UserProfile.Id profileId, MailServiceSettings mss) {
+		super("com.sonicle.webtop.mail",profileId);
+		this.mss=mss;
 	}
 	
 	/**
@@ -91,20 +88,33 @@ public class MailUserSettings extends BaseUserSettings {
 	 * Archiving operative method. One of: simple, structured, webtop.
 	 * A null value indicated no method.
 	 */
-	public static final String ARCHIVING_MODE = "archiving.method";
+	public static final String ARCHIVING_METHOD = "archiving.method";
+	
+	public static final String ARCHIVING_METHOD_NONE = "none";
+	public static final String ARCHIVING_METHOD_SIMPLE = "simple";
+	public static final String ARCHIVING_METHOD_STRUCTURED = "structured";
+	public static final String ARCHIVING_METHOD_WEBTOP = "webtop";
 	
 	/**
 	 * [string]
 	 * IMAP folder to be monitored by the archiving process
 	 */
-	public static final String ARCHIVING_FOLDER = "archiving.folder";
+	public static final String SIMPLE_ARCHIVING_MAIL_FOLDER = "archiving.simple.mailfolder";
 	
-	public String getArchivingFolder() {
-		return getString(ARCHIVING_FOLDER, null);
+	public String getSimpleArchivingMailFolder() {
+		return getString(SIMPLE_ARCHIVING_MAIL_FOLDER, null);
 	}
 	
-	public boolean setArchivingFolder(String value) {
-		return setString(ARCHIVING_FOLDER, value);
+	public boolean setSimpleArchivingMailFolder(String value) {
+		return setString(SIMPLE_ARCHIVING_MAIL_FOLDER, value);
+	}
+	
+	public String getArchivingMethod() {
+		return getString(ARCHIVING_METHOD, "none");
+	}
+	
+	public boolean setArchivingMethod(String value) {
+		return setString(ARCHIVING_METHOD, value);
 	}
 	
     
@@ -181,6 +191,46 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public void setPageRows(int rows) {
 		setInteger(PAGE_ROWS, rows);
+	}
+	
+	public String getHost() {
+		return getString(HOST,null);
+	}
+	
+	public void setHost(String host) {
+		setString(HOST, host);
+	}
+	
+	public int getPort() {
+		return getInteger(PORT,0);
+	}
+	
+	public void setPort(int port) {
+		setInteger(PORT, port);
+	}
+	
+	public String getUsername() {
+		return getString(USERNAME,null);
+	}
+	
+	public void setUsername(String username) {
+		setString(USERNAME, username);
+	}
+	
+	public String getPassword() {
+		return getString(PASSWORD,null);
+	}
+	
+	public void setPassword(String password) {
+		setString(PASSWORD, password);
+	}
+	
+	public String getProtocol() {
+		return getString(PROTOCOL,null);
+	}
+	
+	public void setProtocol(String protocol) {
+		setString(PROTOCOL, protocol);
 	}
 	
 	public String getMessageViewRegion() {

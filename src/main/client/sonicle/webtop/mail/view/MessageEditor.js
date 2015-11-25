@@ -41,16 +41,35 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.form.field.HTMLEditor'
 	],
 	
-	title: '@message.tit',
-	iconCls: 'wtmail-icon-newmsg-xs',
-	model: 'Sonicle.webtop.mail.model.MessageModel',
+	dockableConfig: {
+		title: '{message.tit}',
+		iconCls: 'wtmail-icon-newmsg-xs',
+		width: 640,
+		height: 480
+	},
+	modelName: 'Sonicle.webtop.mail.model.MessageModel',
 	
 	autoToolbar: false,
 	identityIndex: 0,
 	
+    showSave: true,
+    showAddressBook: true,
+    showReceipt: true,
+    showPriority: true,
+    showAttach: true,
+    showIdentities: true,
+    showEditToolbar: true,
+    showSourceEdit: true,
+    showCloud: true,
+	
+	fax: false,
+	faxident: null,
+	
 	initComponent: function() {
 		var me=this;
 		me.callParent(arguments);
+		
+		me.identities=me.mys.getOption("identities");
 		
 		me.attlist= Ext.create({
 			xtype: 'panel',
@@ -107,13 +126,33 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			labelAlign: 'right'
 		});
 		
-		var idents=me.mys.getOption("identities");
-		me.toolbar=Ext.create({
-			xtype: 'toolbar',
-			region: 'north',
-			items: [
-				{ xtype:'button',text:'Send!', handler: me.sendMail, scope: me },
-				{
+		var tbitems=new Array(),
+			tbx=0;
+		
+		tbitems[tbx++]={ xtype:'button',text:'Send!', handler: me.sendMail, scope: me };
+		
+		if (this.showIdentities) {
+            var idents=new Array(),
+				selident=null;
+            if (me.identities) {
+				var x=0;
+                for(var i=0;i<me.identities.length;++i) {
+                    var id=me.identities[i];
+					if (me.fax) {
+						if (me.faxident && !id.fax) continue;
+					} else {
+						if (id.fax) continue;
+					}
+                    //var a=new Array();
+                    //a[0]=i;
+                    //a[1]=id.displayname+" - "+id.email;
+                    idents[x]=id;
+					if (me.identityIndex===i) selident=id;
+					++x;
+                }
+				if (!selident) selident=idents[0];
+				
+				tbitems[tbx++]={
 					xtype:'combo',
 					queryMode: 'local',
 					displayField: 'description',
@@ -127,9 +166,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						model: 'Sonicle.webtop.mail.model.Identity',
 						data : idents
 					}),
-					value: idents[me.identityIndex].email
-				}
-			]
+					value: selident.email
+				};
+
+            }
+		}
+		me.toolbar=Ext.create({
+			xtype: 'toolbar',
+			region: 'north',
+			items: tbitems
 		});
 		
 		me.add(Ext.create({

@@ -44,16 +44,22 @@ public class JsIdentity {
 	public String email;
 	public String displayName;
 	public String mainFolder;
+	public boolean fax;
+	public boolean useMyPersonalInfos;
 
-	public JsIdentity(String email, String displayName, String mainFolder) {
+	public JsIdentity(String email, String displayName, String mainFolder, boolean fax, boolean useMyPersonalInfos) {
 		this.email=email;
 		this.displayName=displayName;
 		this.mainFolder=mainFolder;
+		this.fax=fax;
+		this.useMyPersonalInfos=useMyPersonalInfos;
 	}
 	
 	public JsIdentity(OIdentity i) {
 		this.email=i.getEmail();
 		this.displayName=i.getDisplayName();
 		this.mainFolder=i.getMainFolder();
+		this.fax=i.getFax();
+		this.useMyPersonalInfos=i.getUseMyPersonalInfos();
 	}
 }

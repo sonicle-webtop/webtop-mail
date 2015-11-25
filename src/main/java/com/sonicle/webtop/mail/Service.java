@@ -90,6 +90,8 @@ import java.text.DateFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.activation.*;
 import javax.mail.*;
 import javax.mail.Message.RecipientType;
@@ -97,6 +99,7 @@ import javax.mail.internet.*;
 import javax.mail.search.MessageIDTerm;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.slf4j.Logger;
@@ -194,14 +197,14 @@ public class Service extends BaseService {
 		this.environment = getEnv();
 		
 		UserProfile profile = getEnv().getProfile();
-		ss = new MailServiceSettings(getEnv().getProfile().getDomainId(), getId());
-		us = new MailUserSettings(ss, profile.getDomainId(), profile.getUserId(), getManifest().getId());
+		ss = new MailServiceSettings(getId(),getEnv().getProfile().getDomainId());
+		us = new MailUserSettings(profile.getId(),ss);
 		mprofile = new MailUserProfile(environment,this);
 		fcProvided = new FolderCache(this, environment);
 		this.props = System.getProperties();
 		//this.props.setProperty("mail.imap.parse.debug", "true");
 		this.props.setProperty("mail.smtp.host", ss.getSmtpHost());
-		this.props.setProperty("mail.smtp.port", ss.getSmtpPort());
+		this.props.setProperty("mail.smtp.port", ""+ss.getSmtpPort());
 		//this.props.setProperty("mail.socket.debug", "true");
 		this.props.setProperty("mail.imaps.ssl.trust", "*");
 		this.props.setProperty("mail.imap.folder.class", "com.sonicle.mail.imap.SonicleIMAPFolder");
@@ -230,6 +233,11 @@ public class Service extends BaseService {
 			logger.error("Cannot create mail store for {}", profile.getUserId(), exc);
 		}
 		
+		//TODO initialize user for first time use
+		//SettingsManager sm = wta.getSettingsManager();
+		//boolean initUser = LangUtils.value(sm.getUserSetting(profile, "mail", com.sonicle.webtop.Settings.INITIALIZE), false);
+		//if(initUser) initializeUser(profile);
+
 		mft = new MailFoldersThread(this, environment);
 		mft.setCheckAll(mprofile.isScanAll());
 		mft.setSleepInbox(mprofile.getScanSeconds());
@@ -302,6 +310,51 @@ public class Service extends BaseService {
 	public MailUserSettings getMailUserSettings() {
 		return this.us;	
 	}
+	
+/****
+	*	TODO initialize filters with spam
+	*/
+/*	private void initializeUser(UserProfile userProfile) {
+		SettingsManager sm = wta.getSettingsManager();
+		Connection con=null;
+		Statement stmt=null;
+
+		logger.debug("Initializing user [{}]", userProfile.getUser());
+
+		try {
+			con=wta.getMainConnection();
+			String subject = sm.getServiceSettingByPriority("mail", Settings.MAILFILTER_SPAM_SUBJECT);
+			String sql="insert into mailfilters ("+
+				"iddomain,login,idfilter,status,continue,keepcopy,condition,"+
+				"fromvalue,tovalue,subjectvalue,"+
+				"action,actionvalue"+
+				") values ("+
+				"'"+userProfile.getIDDomain()+"',"+
+				"'"+userProfile.getUser()+"',"+
+				"1,"+
+				"'E','N','N',"+
+				"'ANY',"+
+				"'',"+
+				"'',"+
+				"'"+subject+"',"+
+				"'FILE',"+
+				"'Spam'"+
+				")";
+
+			stmt=con.createStatement();
+			stmt.executeUpdate(sql);
+			getSieve().saveScript(con, userProfile.getPrincipal(), true);
+
+		} catch(Exception ex) {
+			logger.error("Error during user initialization [{}]", userProfile.getUser(), ex);
+		} finally {
+			if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
+			if (con!=null) try { con.close(); } catch(Exception exc) {}
+		}
+
+		sm.deleteUserSetting(userProfile, "mail", com.sonicle.webtop.Settings.INITIALIZE);
+	}*/
+	
 	
 	public Session getMailSession() {
 		return this.session;
@@ -654,16 +707,19 @@ public class Service extends BaseService {
 	 String em[]=null;
 	 String bf[]=null;
 	 String ty[]=null;
+	 String fx[]=null;
 	 if(params.get("idents-email") instanceof String[]) {
 	 dn=(String[])params.get("idents-displayname");
 	 em=(String[])params.get("idents-email");
 	 bf=(String[])params.get("idents-basefolder");
 	 ty=(String[])params.get("idents-type");
+	 fx=(String[])params.get("idents-isfax");
 	 } else {
 	 dn=new String[]{(String)params.get("idents-displayname")};
 	 em=new String[]{(String)params.get("idents-email")};
 	 bf=new String[]{(String)params.get("idents-basefolder")};
 	 ty=new String[]{(String)params.get("idents-type")};
+	 fx=new String[]{(String)params.get("idents-isfax")};
 	 }
 		  
 	 PreparedStatement stmt1 = null;
@@ -687,12 +743,13 @@ public class Service extends BaseService {
 	 continue;
 	 }
 	 stmt.executeUpdate(
-	 "insert into identities (iddomain,login,email,displayname,mainfolder) values ("+
+	 "insert into identities (iddomain,login,email,displayname,mainfolder,isfax) values ("+
 	 "'"+wtd.getLocalIDDomain()+"',"+
 	 "'"+login+"',"+
 	 "'"+Utils.getSQLString(em[i])+"',"+
 	 "'"+Utils.getSQLString(dn[i])+"',"+
-	 "'"+Utils.getSQLString(bf[i])+"'"+
+     "'"+Utils.getSQLString(bf[i])+"',"+
+     "'"+Utils.getSQLString(fx[i])+"'"+
 	 ")"
 	 );
 	 //profile.addIdentity(Identity.TYPE_USER, dn[i], em[i], bf[i]);
@@ -2895,8 +2952,24 @@ public class Service extends BaseService {
 		return b;
 	}
 	
-	private boolean hasDocumentArchiving() {
-		return WT.isPermitted(getId(), "DOCUMENT_ARCHIVING");
+	public boolean hasDocumentArchiving() {
+		return WT.isPermitted(environment.getProfile().getId(),getId(), "DOCUMENT_ARCHIVING");
+	}
+	
+	public String getSimpleArchivingMailFolder() {
+		return us.getSimpleArchivingMailFolder();
+	}
+	
+	public boolean isSimpleArchiving() {
+		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_SIMPLE);
+	}
+
+	public boolean isStructuredArchiving() {
+		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_STRUCTURED);
+	}
+	
+	public boolean isWebtopArchiving() {
+		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_WEBTOP);
 	}
 	
 	public boolean isDocMgtFolder(String foldername) {
@@ -2907,7 +2980,7 @@ public class Service extends BaseService {
 			return false;
 		}
 		boolean b = false;
-		String df = profile.getDocumentManagementFolder();
+		String df = us.getSimpleArchivingMailFolder();
 		if (df != null && df.trim().length() > 0) {
 			String lfn = getLastFolderName(foldername);
 			String dfn = getLastFolderName(df);
@@ -3291,7 +3364,7 @@ public class Service extends BaseService {
 	//Client service requests
 	public void processGetImapTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String pfoldername = request.getParameter("node");
-		out.print("[");
+		out.print("{ data:[");
 		Folder folder = null;
 		try {
 			checkStoreConnected();
@@ -3304,7 +3377,7 @@ public class Service extends BaseService {
 			String fprefix = mprofile.getFolderPrefix();
 			boolean level1 = (fprefix != null && fprefix.equals("INBOX."));
 			outputFolders(folder, folders, level1, out);
-			out.println("]");
+			out.println("], message: '' }");
 			
 		} catch (Exception exc) {
 			exc.printStackTrace();
@@ -4495,7 +4568,7 @@ public class Service extends BaseService {
 	
 	public void processGetForwardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
-		CoreServiceSettings css = new CoreServiceSettings(getEnv().getProfile().getDomainId(), CoreManifest.ID);
+		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String pfoldername = request.getParameter("folder");
 		String pidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
@@ -4584,7 +4657,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreServiceSettings css = new CoreServiceSettings(getEnv().getProfile().getDomainId(), CoreManifest.ID);
+		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String pfoldername = request.getParameter("folder");
 		String pidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
@@ -4873,15 +4946,34 @@ public class Service extends BaseService {
 		 }
 		 }
 		 }*/
-        // TODO: Save used recipients
-/*        String emails[]=request.getParameterValues("recipients");
-		 for(String email: emails) {
-		 if (email!=null && email.trim().length()>0) wts.setServiceStoreEntry(getName(), "recipients", email.toUpperCase(),email);
-		 }*/
-        // TODO: Save used subject
-/*        String subject=request.getParameter("subject");
-		 if (subject!=null && subject.trim().length()>0) wts.setServiceStoreEntry(getName(), "subject", subject.toUpperCase(),subject);*/
 		try {
+			boolean isFax=request.getParameter("fax")!=null;
+			String emails[]=request.getParameterValues("recipients");
+			
+			if (isFax) {
+				//check for valid fax recipients
+				String faxpattern=ss.getSetting(MailServiceSettings.FAX_PATTERN);
+				String regex="^"+faxpattern.replace("{number}", "(\\d+)").replace("{username}", "(\\w+)")+"$";
+				Pattern pattern=Pattern.compile(regex);
+				for(String email: emails) {
+					if (StringUtils.isEmpty(email)) continue;
+					Matcher pm=pattern.matcher(email);
+					if (!pm.matches()) {
+						throw new Exception(lookupResource(MailLocaleKey.FAX_ADDRESS_ERROR));
+					}
+				}
+			}
+			
+			//TODO save used recipients
+			//Save used recipients
+			/*for(String email: emails) {
+					if (email!=null && email.trim().length()>0) wts.setServiceStoreEntry(getName(), "recipients", email.toUpperCase(),email);
+			}*/
+			//TODO save used subject
+			//Save used subject
+			/*String subject=request.getParameter("subject");
+			if (subject!=null && subject.trim().length()>0) wts.setServiceStoreEntry(getName(), "subject", subject.toUpperCase(),subject);*/
+        
 			checkStoreConnected();
 			String attachments[] = request.getParameterValues("attachments");
 			if (attachments == null) {
@@ -5498,7 +5590,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processAttachFromMail(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreServiceSettings css = new CoreServiceSettings(getEnv().getProfile().getDomainId(), CoreManifest.ID);
+		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String sout = null;
 		try {
 			checkStoreConnected();
@@ -5835,12 +5927,13 @@ public class Service extends BaseService {
 	 SettingsManager sm = wta.getSettingsManager();
 	 String authprot=ad.getAuthUriProtocol();
 	 Mailcard mc = null;
+	 char sep='.';
+	 try { sep=getFolderSeparator(); } catch(Exception exc) {}
 
 	 String sout="{\n";
 	 mc = wtd.getEmailDomainMailcard(profile);
 	 sout += " mailcardsource: '"+mc.source+"',";
 	 sout += " mailcard: '"+OldUtils.jsEscape(mc.html)+"',";
-	 ArrayList<Identity> identities=profile.getIdentities();
 	 mc = wtd.getMailcard(profile);
 	 mc.substitutePlaceholders(profile.getPersonalInfo());
 	 sout+=" identities: [ \n";
@@ -5852,6 +5945,8 @@ public class Service extends BaseService {
 	 " mailcard: '"+OldUtils.jsEscape(mc.html)+"',"+
 	 " folder: null"+
 	 "    }";
+	 boolean faxident=false;
+	 ArrayList<Identity> identities=profile.getIdentities();
 	 for(Identity i: identities) {
 	 sout+=",\n    { "+
 	 " type: '"+i.type+"',"+
@@ -5859,17 +5954,46 @@ public class Service extends BaseService {
 	 " email: '"+OldUtils.jsEscape(i.email)+"',";
 	 mc=wtd.getMailcard(i);
 	 if (mc!=null) {
-	 mc.substitutePlaceholders(getPersonalInfo(i));
-	 sout+=" mailcardsource: '"+mc.source+"',";
-	 sout+=" mailcard: '"+OldUtils.jsEscape(mc.html)+"',";
+		if(i.type.equals(Identity.TYPE_AUTO)) {
+			// In case of auto identities we need to build real mainfolder
+			try {
+				String mailUser = wtd.getMailUsername(i.fromLogin);
+				String mainfolder = getSharedFolderName(mailUser, i.mainfolder);
+				i.mainfolder = mainfolder;
+				if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, i.mainfolder));
+				
+			} catch (Exception ex) {
+				logger.error("Unable to get auto identity foldername [{}]", i.email, ex);
+			}
+			
+			// Avoids default mailcard display for automatic identities
+			if(mc.source.equals(Mailcard.TYPE_DEFAULT) && !StringUtils.isEmpty(i.mainfolder)) {
+				mc = wtd.getMailcard(profile);
+			}
+		}
+			
+		//// Avoids default mailcard display for automatic identities
+		//if(mc.source.equals(Mailcard.TYPE_DEFAULT) 
+		//		&& !StringUtils.isEmpty(i.mainfolder) 
+		//		&& !i.type.equals(Identity.TYPE_AUTO)) {
+		//	mc = wtd.getMailcard(profile);
+		//}
+	
+		mc.substitutePlaceholders(getPersonalInfo(i));
+		sout+=" mailcardsource: '"+mc.source+"',";
+		// Clears any new-line chars in order to avoid html substistution
+		// problems at client-side
+		mc.html = LangUtils.stripLineBreaks(mc.html);
+		sout+=" mailcard: '"+OldUtils.jsEscape(mc.html)+"',";
 	 }
+	 if (i.isfax) faxident=true;
 	 sout+=" folder: "+(i.mainfolder==null?"null":"'"+OldUtils.jsEscape(i.mainfolder)+"'")+
 	 "    }";
 	 }
-	 char sep='.';
-	 try { sep=getFolderSeparator(); } catch(Exception exc) {}
 	 sout+=" ],\n";
         
+	 sout+=" faxident: "+faxident+",\n";
+	
 	 sout+=" columnsize: {\n";
 	 sout+="    folder: "+wts.getServiceSetting("mail", "column-folder", "100")+",\n";
 	 sout+="    folderdesc: "+wts.getServiceSetting("mail", "column-folderdesc", "100")+",\n";
@@ -5912,7 +6036,13 @@ public class Service extends BaseService {
 	 String imapPassFake="";
 	 if (imapPassword!=null) for(int i=0;i<imapPassword.length();++i) imapPassFake+="x";
         
+	String viewMaxTos=sm.getServiceSettingByPriority(profile.getIDDomain(), "mail","view-max-tos");
+	String viewMaxCcs=sm.getServiceSettingByPriority(profile.getIDDomain(), "mail","view-max-ccs");
+	if (viewMaxTos==null || viewMaxTos.trim().length()==0) viewMaxTos="20";
+	if (viewMaxCcs==null || viewMaxCcs.trim().length()==0) viewMaxCcs="20";
         
+	String faxsubject=wtd.getSetting("fax.subject");
+		
 	 sout+="  vactive: "+(vactive.equals("Y")?"true":"false")+",\n";
 	 sout+="  vmessage: '"+OldUtils.jsEscape(vmessage)+"',\n";
 	 sout+="  vaddresses: '"+OldUtils.jsEscape(vaddresses)+"',\n";
@@ -5939,10 +6069,39 @@ public class Service extends BaseService {
 	 sout+="  optimap: "+(profile.isAdministrator()||(!profile.isAutoMailSettings()))+",\n";
 	 sout+="  optimap2: "+(profile.isAdministrator()||(!authprot.equals("webtop")))+",\n";
 	 sout+="  pageRows: "+profile.getNumMsgList()+",\n";
+     sout+="  viewMaxTos: "+viewMaxTos+",\n";        
+     sout+="  viewMaxCcs: "+viewMaxCcs+",\n";        
 	 sout+="  viewHPerc: "+wts.getServiceSetting("mail", "pane-hperc", "60");        
+     if (StringUtils.isNotEmpty(faxsubject)) sout+="  faxsubject: '"+faxsubject+"',\n";
 	 sout+="}";
 	 out.println(sout);
 	 }*/
+	
+	private String getSharedFolderName(String mailUser, String folder) throws MessagingException {
+		FolderCache folderCache = null;
+		String sharedFolderName = null;
+		String folderName = null;
+		
+		// Clear mailUser removing any domain info (ldap auth contains 
+		// domain suffix), we don't want it!
+		String user = StringUtils.split(mailUser, "@")[0];
+		
+		// INBOX is a fake name, it's equals to user's direct folder
+		String name = (folder.equals("INBOX")) ? user : folder;
+		
+		FolderCache[] sharedCache = getSharedFoldersCache();
+		for(FolderCache sharedFolder : sharedCache) {
+			sharedFolderName = sharedFolder.getFolderName();
+			folderCache = getFolderCache(sharedFolderName);
+			for(Folder fo : folderCache.getFolder().list()) {
+				folderName = fo.getFullName(); 
+				char sep=fo.getSeparator();
+				if(folderName.equals(sharedFolderName + sep + name)) return folderName;
+			}
+		}
+		return null;
+	}
+	
 	HashMap<String, MessageListThread> mlThreads = new HashMap<String, MessageListThread>();
 
 	// TODO: groupChanged !!!!
@@ -6373,7 +6532,8 @@ public class Service extends BaseService {
 				
 				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
 				// Apply grid defaults
-				ColumnVisibilitySetting.applyDefaults(mcache.isSent(), cvs);
+				//ColumnVisibilitySetting.applyDefaults(mcache.isSent(), cvs);
+				ColumnVisibilitySetting.applyDefaults(issent, cvs);
 
 				// Fills columnsInfo object for client rendering
 				sout += "colsInfo2: [";
@@ -6549,6 +6709,7 @@ public class Service extends BaseService {
 				 mcache=fcProvided;
 				 mcache.addProvidedMessage(providername, providerid, m);*/
 			}
+			String messageid=getMessageID(m);
 			String subject = m.getSubject();
 			if (subject == null) {
 				subject = "";
@@ -6613,7 +6774,8 @@ public class Service extends BaseService {
 				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid);
 			}
 			for (String html : htmlparts) {
-				sout += "{iddata:'html',value1:'" + OldUtils.jsEscape(html) + "',value2:'',value3:0},\n";
+				//sout += "{iddata:'html',value1:'" + OldUtils.jsEscape(html) + "',value2:'',value3:0},\n";
+				sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(html) + "',value2:'',value3:0},\n";
 				++recs;
 			}
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
@@ -6626,12 +6788,15 @@ public class Service extends BaseService {
 				if (ix > 0) {
 					ctype = ctype.substring(0, ix);
 				}
+				String cidnames[]=p.getHeader("Content-ID");
+				String cidname=null;
+				if (cidname!=null && cidnames.length>0) cidname=cidnames[0];
 				boolean isInlineable = isInlineableMime(ctype);
-				boolean inline = (p.getHeader("Content-Location") != null) || (p.getHeader("Content-ID") != null) && isInlineable;
+                boolean inline=(p.getHeader("Content-Location")!=null)||(cidname!=null)&&isInlineable;
+				if (inline && cidname!=null) inline=mailData.isReferencedCid(cidname);
 				if (p.getDisposition() != null && p.getDisposition().equalsIgnoreCase(Part.INLINE) && inline) {
 					continue;
 				}
-				System.out.println("attachment is not inline");
 				
 				String imgname = null;
 				if (ctype.equalsIgnoreCase("text/calendar")) {
@@ -6674,13 +6839,14 @@ public class Service extends BaseService {
 			}			
 			
 			sout += "{iddata:'date',value1:'" + OldUtils.jsEscape(date) + "',value2:'',value3:0},\n";
-			sout += "{iddata:'subject',value1:'" + OldUtils.jsEscape(OldUtils.htmlescape(subject)) + "',value2:'',value3:0}\n";
+			sout += "{iddata:'subject',value1:'" + OldUtils.jsEscape(OldUtils.htmlescape(subject)) + "',value2:'',value3:0},\n";
+			sout += "{iddata:'messageid',value1:'"+OldUtils.jsEscape(messageid)+"',value2:'',value3:0}\n";
 			
 			if (providername == null && !mcache.isSpecial()) {
 				mcache.refreshUnreads();
 			}
 			long millis = System.currentTimeMillis();
-			sout += "\n],\ntotalRecords:" + recs + ",\nmillis:" + millis + "\n}\n";
+			sout += "\n],\ntotal:" + recs + ",\nmillis:" + millis + "\n}\n";
 			out.println(sout);
 //            if (!wasopen) folder.close(false);
 		} catch (Exception exc) {
@@ -7884,7 +8050,7 @@ public class Service extends BaseService {
 	 es.copyBackTempTable(con, "mailfilters");
 	 es.copyBackTempTable(con, "mailsentfilters");
 	 con.commit();
-	 } catch(SQLException ex1) {
+	 } catch(Exception ex1) {
 	 con.rollback();
 	 throw ex1;
 	 }
@@ -7949,7 +8115,7 @@ public class Service extends BaseService {
 	 SentMailFiltersDb.copyToTemp(con, tt2.tableName, profile.getIDDomain(), profile.getUser());
 	 con.commit();
 	 new JsonResult(es.id).printTo(out);
-	 } catch(SQLException ex1) {
+	 } catch(Exception ex1) {
 	 con.rollback();
 	 wts.unregisterEditing(es);
 	 throw ex1;
@@ -7968,7 +8134,7 @@ public class Service extends BaseService {
 	 es.copyBackTempTable(con, "mailsentfilters");
 	 con.commit();
 	 new JsonResult().printTo(out);
-	 } catch(SQLException ex1) {
+	 } catch(Exception ex1) {
 	 con.rollback();
 	 throw ex1;
 	 }
@@ -7984,7 +8150,7 @@ public class Service extends BaseService {
 	 con.commit();
 	 wts.unregisterEditing(es);
 	 new JsonResult().printTo(out);
-	 } catch(SQLException ex1) {
+	 } catch(Exception ex1) {
 	 con.rollback();
 	 throw ex1;
 	 }
@@ -8450,32 +8616,46 @@ public class Service extends BaseService {
 		xfolder.setAnnotation("/vendor/cmu/cyrus-imapd/sharedseen", true, b ? "true" : "false");
 	}
 
-	// TODO: set folder sharing!
-/*	public void setFolderSharing(String targetUser, String resource, String params) throws MessagingException {
-	 String acluser=wtd.getMailUsername(targetUser);
-	 if (acluser==null) return;
-		
-	 FolderCache fc=null;
-	 if (!resource.equals("INBOX")) {
-	 fc=getFolderCache(resource);
-	 if (fc==null) return;
-	 }
-		
-	 ACL acl=new ACL(acluser,new Rights(params));
-	 if (fc!=null) {
-	 IMAPFolder folder=(IMAPFolder)fc.getFolder();
-	 _setFolderSharing(folder,acl);
-	 }
-	 else {
-	 Folder folder=getDefaultFolder();
-	 Folder children[]=folder.list();
-	 for(Folder child: children)
-	 _setFolderSharing((IMAPFolder)child,acl);
-	 }
-		
-	 }
+	private boolean isSharedFolderContainer(IMAPFolder folder) {
+		// If passed folder matches a shared prefix, we have taken shared 
+		// folders' container folder 
+		for(String prefix : sharedPrefixes) {
+			if(folder.getFullName().equals(prefix)) return true;
+		}
+		return false;
+	}
 	
-	 private void _setFolderSharing(IMAPFolder folder, ACL acl) throws MessagingException {
+	
+	// TODO: set folder sharing!
+	
+/*	public void setFolderSharing(String targetUser, String resource, String params) throws MessagingException {
+	 IMAPFolder imapf = null;
+	 String acluser = wtd.getMailUsername(targetUser);
+	 if(acluser == null) return;
+		
+	 FolderCache fc = null;
+	 if(!resource.equals("INBOX")) {
+		fc = getFolderCache(resource);
+		if(fc == null) return;
+	 }
+		
+	 ACL acl = new ACL(acluser, new Rights(params));
+	 if(fc != null) {
+		imapf = (IMAPFolder)fc.getFolder();
+		_setFolderSharing(imapf, acl);
+	 } else {
+		Folder folder = getDefaultFolder();
+		Folder children[] = folder.list();
+		for(Folder child: children) {
+			imapf = (IMAPFolder)child;
+			if(isSharedFolderContainer(imapf)) continue; // Skip shared folder container
+			_setFolderSharing(imapf, acl);
+		}
+	 }
+		
+	}
+	
+	private void _setFolderSharing(IMAPFolder folder, ACL acl) throws MessagingException {
 	 if (!isLeaf(folder)) {
 	 Folder children[]=folder.list();
 	 for(Folder child: children)
@@ -8488,29 +8668,32 @@ public class Service extends BaseService {
 	
 	 public void removeFolderSharing(String targetUser, String resource) throws MessagingException {
 	 logger.debug("removeFolderSharing({},{})",targetUser,resource);
-	 String acluser=wtd.getMailUsername(targetUser);
-	 if (acluser==null) return;
+	 IMAPFolder imapf = null;
+	 String acluser = wtd.getMailUsername(targetUser);
+	 if (acluser == null) return;
 		
-	 FolderCache fc=null;
-	 if (!resource.equals("INBOX")) {
-	 fc=getFolderCache(resource);
-	 if (fc==null) return;
+	 FolderCache fc = null;
+	 if(!resource.equals("INBOX")) {
+		fc = getFolderCache(resource);
+		if(fc == null) return;
 	 }
 		
-	 if (fc!=null) {
-	 IMAPFolder folder=(IMAPFolder)fc.getFolder();
-	 _removeFolderSharing(folder,acluser);
-	 }
-	 else {
-	 Folder folder=getDefaultFolder();
-	 Folder children[]=folder.list();
-	 for(Folder child: children)
-	 _removeFolderSharing((IMAPFolder)child,acluser);
+	 if(fc != null) {
+		imapf = (IMAPFolder)fc.getFolder();
+		_removeFolderSharing(imapf, acluser);
+	 } else {
+		Folder folder = getDefaultFolder();
+		Folder children[] = folder.list();
+		for(Folder child: children) {
+			imapf = (IMAPFolder)child;
+			if(isSharedFolderContainer(imapf)) continue; // Skip shared folder container
+			_removeFolderSharing(imapf, acluser);
+		}
 	 }
 				
-	 }
+	}
 	
-	 private void _removeFolderSharing(IMAPFolder folder, String acluser) throws MessagingException {
+	private void _removeFolderSharing(IMAPFolder folder, String acluser) throws MessagingException {
 	 if (!isLeaf(folder)) {
 	 Folder children[]=folder.list();
 	 for(Folder child: children)
@@ -8567,7 +8750,7 @@ public class Service extends BaseService {
 			}
 			
 			if (ouser!=null) {
-				String desc=LangUtils.value(ouser.getFirstName(),"")+" "+LangUtils.value(ouser.getLastName(),"");
+				String desc=LangUtils.value(ouser.getDisplayName(),"");
 				desc=desc.trim();
 				logger.debug("webtop user found, desc={}",desc);
 				p = new Principal(mailUserId, AuthenticationDomain.getInstance(con, domainId), desc);
@@ -8634,7 +8817,7 @@ public class Service extends BaseService {
 			IdentityDAO idao=IdentityDAO.getInstance();
 			List<OIdentity> items=idao.selectById(con, profile.getDomainId(),profile.getUserId());
 			ArrayList<JsIdentity> identities=new ArrayList<>();
-			identities.add(new JsIdentity(profile.getEmailAddress(),profile.getDisplayName(),null));
+			identities.add(new JsIdentity(profile.getEmailAddress(),profile.getDisplayName(),null,false,false));
 			for(OIdentity item: items) {
 				identities.add(new JsIdentity(item));
 			}
@@ -8643,6 +8826,8 @@ public class Service extends BaseService {
 			hm.put("messageViewRegion",us.getMessageViewRegion());
 			hm.put("messageViewWidth",us.getMessageViewWidth());
 			hm.put("messageViewHeight",us.getMessageViewHeight());
+			hm.put("messageViewMaxTos",ss.getMessageViewMaxTos());
+			hm.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
 		} catch(Exception ex) {
 			logger.error("Error executing action ManageCalendarsTree", ex);
 			

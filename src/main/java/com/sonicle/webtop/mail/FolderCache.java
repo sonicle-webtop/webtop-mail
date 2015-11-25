@@ -51,6 +51,9 @@ import javax.mail.event.MessageCountEvent;
 import javax.mail.event.MessageCountListener;
 import javax.mail.internet.*;
 import javax.mail.search.*;
+import net.fortuna.ical4j.data.CalendarBuilder;
+import net.fortuna.ical4j.data.ParserException;
+import net.fortuna.ical4j.model.ComponentList;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 
@@ -119,6 +122,8 @@ public class FolderCache {
     
     private boolean startupLeaf=true;
 
+	private CalendarBuilder calbuilder=new CalendarBuilder();
+	
     static final Flags seenFlags=new Flags(Flag.SEEN);
     static final Flags recentFlags=new Flags(Flag.RECENT);
     static final Flags repliedFlags=new Flags(Flag.ANSWERED);
@@ -807,10 +812,11 @@ public class FolderCache {
     }
 
     public void copyMessages(int ids[], FolderCache to) throws MessagingException {
-        if (profile.hasDocumentManagement() &&
-                !profile.hasStructuredArchiving() &&
-                profile.getDocumentManagementFolder()!=null &&
-                profile.getDocumentManagementFolder().equals(to.foldername)) {
+		
+        if (ms.hasDocumentArchiving() &&
+                ms.isSimpleArchiving() &&
+                ms.getSimpleArchivingMailFolder()!=null &&
+                ms.getSimpleArchivingMailFolder().equals(to.foldername)) {
             archiveMessages(ids, to);
         } else {
             Message mmsgs[]=getMessages(ids);
@@ -1461,7 +1467,7 @@ public class FolderCache {
         boolean ischarset=false;
         try { ischarset=java.nio.charset.Charset.isSupported(charset); } catch(Exception exc) {}
         if (!ischarset) charset="ISO-8859-1";
-        if (dispPart.isMimeType("text/plain")||dispPart.isMimeType("text/html")||dispPart.isMimeType("message/delivery-status")||dispPart.isMimeType("message/disposition-notification")) {
+		if (dispPart.isMimeType("text/plain")||dispPart.isMimeType("text/html")||dispPart.isMimeType("message/delivery-status")||dispPart.isMimeType("message/disposition-notification")||dispPart.isMimeType("text/calendar")) {
             try {
               if (dispPart instanceof javax.mail.internet.MimeMessage) {
                 javax.mail.internet.MimeMessage mm=(javax.mail.internet.MimeMessage)dispPart;
@@ -1508,6 +1514,26 @@ public class FolderCache {
                 htmlparts.add(xhtml.toString());
                 //String key="htmlpart"+objid;
                 //controller.putTempData(key,html);
+			} else if (dispPart.isMimeType("text/calendar")) {
+				xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body><tt>");
+				
+				try {
+					net.fortuna.ical4j.model.Calendar ical=calbuilder.build(istream);
+					for (Iterator iterator = ical.getComponents().iterator(); iterator.hasNext();) {
+						net.fortuna.ical4j.model.Component component = (net.fortuna.ical4j.model.Component) iterator.next();
+						xhtml.append("<b>"+component.getName()+"</b><br>");
+
+						for (Iterator j = component.getProperties().iterator(); j.hasNext();) {
+							net.fortuna.ical4j.model.Property property = (net.fortuna.ical4j.model.Property) j.next();
+							xhtml.append("&nbsp;&nbsp;&nbsp;&nbsp;<b>"+property.getName()+"&nbsp;:&nbsp;</b>"+property.getValue()+"<br>");
+						}
+					}					
+				} catch(ParserException exc) {
+					exc.printStackTrace();
+				}
+
+                xhtml.append("</tt><HR></body></html>");
+                htmlparts.add(xhtml.toString());
             } else {
                 xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body><tt>");
                 String line=null;
@@ -1647,6 +1673,8 @@ public class FolderCache {
       if (msg.getDisposition()==null || msg.getDisposition().equalsIgnoreCase(Part.INLINE))
         mailData.addDisplayPart(msg);
       else mailData.addAttachmentPart(msg);
+    } else if(msg.isMimeType("text/calendar")) {
+		mailData.addDisplayPart(msg);
     } else if(msg.isMimeType("message/rfc822")) {
       mailData.addDisplayPart(msg);
       prepareHTMLMailData((Message)msg.getContent(), mailData);
@@ -1692,7 +1720,7 @@ public class FolderCache {
         if(p.isMimeType("multipart/alternative")) {
           Part ap=getAlternativePart((Multipart)p.getContent(),mailData);
           if(ap!=null) {
-            if (ap.getDisposition()==null || ap.getDisposition().equalsIgnoreCase(Part.INLINE))
+            if (ap.isMimeType("text/calendar") || ap.getDisposition()==null || ap.getDisposition().equalsIgnoreCase(Part.INLINE))
                 mailData.addDisplayPart(ap);
             else mailData.addAttachmentPart(ap);
           }
@@ -1706,6 +1734,8 @@ public class FolderCache {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
             mailData.addDisplayPart(p);
           else mailData.addAttachmentPart(p);
+		} else if(p.isMimeType("text/calendar")) {
+			mailData.addDisplayPart(p);
         } else if(p.isMimeType("message/delivery-status")||p.isMimeType("message/disposition-notification")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE)) 
               mailData.addDisplayPart(p);
@@ -1801,8 +1831,10 @@ public class FolderCache {
           status.textfound=true;
         }
       } else if(ap.isMimeType("text/calendar")) {
-          mailData.addUnknownPart(ap);
+          dispPart=ap;
+          //mailData.addUnknownPart(ap);
           mailData.addAttachmentPart(ap);
+		  break;
       }
     }
     return dispPart;
@@ -1822,7 +1854,7 @@ public class FolderCache {
         this.istream=istream;
         this.charset=charset;
         this.appUrl=appUrl;
-        this.saxHTMLMailParser=new SaxHTMLMailParser(forEdit,msgnum);
+        this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),forEdit,msgnum);
     }
     
     HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, String provider, String providerid) {
@@ -1830,7 +1862,7 @@ public class FolderCache {
         this.istream=istream;
         this.charset=charset;
         this.appUrl=appUrl;
-        this.saxHTMLMailParser=new SaxHTMLMailParser(provider,providerid);
+        this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),provider,providerid);
     }
     
     public void initialize(HTMLMailData mailData, boolean justBody) throws SAXException {

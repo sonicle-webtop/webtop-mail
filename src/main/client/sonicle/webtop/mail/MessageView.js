@@ -97,16 +97,19 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		var me=this;
 		
 		me.callParent(arguments);
-
-        me.proxy=Ext.create("Ext.data.proxy.Ajax",{
-            url:'service-request',
+		me.proxy=Ext.create(
+				"Ext.data.proxy.Ajax",
+				WTF.proxyReader(me.mys.ID,'GetMessage','message',{ model: 'Sonicle.webtop.mail.MessageViewModel' })
+		);
+        /*me.proxy=Ext.create("Ext.data.proxy.Ajax",{
+            url:WTF.requestBaseUrl(),
 			model: 'Sonicle.webtop.mail.MessageViewModel',
 			reader: {
 				type: 'json',
 				rootProperty: 'message',
 				totalProperty: 'totalRecords'
 			}
-        });
+        });*/
         
         var t=document.createElement("table");
         t.className="wtmail-mv-table";
@@ -204,19 +207,21 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     },
 	
     showMessage: function(folder, id) {
-		var me=this,
+		var me=this;/*,
 			idmessage=id,
-			params={service: me.mys.ID, action: 'GetMessage', folder: folder, idmessage: idmessage };
+			params={service: me.mys.ID, action: 'GetMessage', folder: folder, idmessage: idmessage };*/
 	
         //if (this.folder==folder && this.idmessage==idmessage) return;
         me.clear();
-        me.idmessage=idmessage;
+        me.idmessage=id;
         me.folder=folder;
-        me.latestId=idmessage;
+        me.latestId=id;
 		me.proxy.abort();
+		WTU.applyExtraParams(me.proxy,{ folder: folder, idmessage: id });
 		me.proxy.doRequest(
 			me.proxy.createOperation('read',{
-				params: params,
+				url: WTF.requestBaseUrl(),
+				//params: params,
 				callback: me.messageRead,
 				scope: me
 			})
@@ -226,7 +231,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     messageRead: function(r, op, success) {
 		var me=this;
         if (op && success) {
-			var params=op.getParams(),
+			var params=op.getProxy().getExtraParams(),
 				provider=params.provider,
 				providerid=params.providerid;
             if (!provider) {
@@ -399,7 +404,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     vparams[i]=aparams;
                     ids[ids.length]=att.id;
                     var ssize=WT.Util.humanReadableSize(att.size);
-					var href=WTF.serviceRequestBinaryUrl(me.mys.ID,"GetAttachment",aparams);
+					var href=WTF.processBinUrl(me.mys.ID,"GetAttachment",aparams);
                     if (Ext.isIE) href+="&saveas=1";
                     var ics=null;
                     if (name.toLowerCase().endsWith(".ics")) ics=" ics='"+Ext.Object.toQueryString(aparams)+"'";
@@ -408,7 +413,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     var html="<a href='"+href+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+"><img src='"+imgname+"' width=16 height=16>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
-				var allhref=WTF.serviceRequestBinaryUrl(me.mys.ID,"GetAttachments",allparams);
+				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
                 me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+WT.res('saveall-desc')+"' data-qtitle='"+WT.res('saveall')+"' href='"+allhref+"'>"+me.mys.res('attachments')+"</a>:&nbsp;</span>"+names);
                 tdh.insertFirst(me.divAttach);
                 if (WT.getApp().getService('com.sonicle.webtop.calendar')) {

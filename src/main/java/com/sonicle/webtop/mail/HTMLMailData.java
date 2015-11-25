@@ -45,6 +45,7 @@ public class HTMLMailData {
   private final HashMap<String,Part> urlParts=new HashMap<>();
   private final ArrayList<Part> unknownParts=new ArrayList<> ();
   private final ArrayList<Part> attachmentParts=new ArrayList<> ();
+  private ArrayList<String> referencedCids=new ArrayList<String>();
 
   private MimeMessage message=null;
   private Folder folder=null;
@@ -91,7 +92,11 @@ public class HTMLMailData {
   public void addUrlPart(String url, Part part) {
     if (!urlParts.containsKey(url)) urlParts.put(url, part);
   }
-
+  
+  public void addReferencedCid(String name) {
+	  referencedCids.add(name);
+  }
+  
   public int getDisplayPartCount() {
     return dispParts.size();
   }
@@ -134,6 +139,10 @@ public class HTMLMailData {
 
   public Set<String> getCidNames() {
     return cidParts.keySet();
+  }
+
+  public boolean isReferencedCid(String name) {
+	  return referencedCids.contains(name);
   }
 
   public boolean conatinsUrlPart(String url) {
