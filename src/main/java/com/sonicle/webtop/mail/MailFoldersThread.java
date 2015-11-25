@@ -85,12 +85,13 @@ public class MailFoldersThread extends Thread {
         failMessage=null;
         sleepCount=0;
         try {
-			//Check inbox only once, then via idle
-            FolderCache fcinbox=ms.getFolderCache("INBOX");
-			fcinbox.checkFolder();
-			
             FolderCache fcroot=ms.getRootFolderCache();
             System.out.println("Entering MFT loop");
+            FolderCache fcinbox=null;
+			if (ms.hasDifferentDefaultFolder()) fcinbox=fcroot;
+			else fcinbox=ms.getFolderCache("INBOX");
+			//Check inbox only once, then via idle
+			fcinbox.checkFolder();
             while(!abort) {
                 System.out.println("MFT Synchronizing");
                     synchronized(this) {

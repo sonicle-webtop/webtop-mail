@@ -88,6 +88,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         aReplayAll: null,
         aForward: null,
         aForwardEml: null,
+		aSeen: null,
+		aUnseen: null,
         aDocMgt: null,
         aDocMgtwt: null,
         newmsgid: 0,
@@ -98,6 +100,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         maxattachsize: null,
         fontface: null,
         fontsize: null,
+		differentDefaultFolder: null,
+		folderInbox: 'INBOX',
         folderTrash: null,
         folderSpam: null,
         folderSent: null,
@@ -240,9 +244,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
             //    //setTimeout(this.checkFolders.createDelegate(this),1000);
             //}
 			if (n.id==='root') {
-				//this.selectFolder('INBOX');
 				this.imapTree.getSelectionModel().select(0);
-				this.showFolder('INBOX');
+				this.showFolder(this.folderInbox);
 			}
         },this);
 		//TODO: context menu
@@ -404,7 +407,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         //var a=n.attributes;
         var refresh=true; //a.changed?'1':'0';
 		//TODO: stop flash title and baloon hide
-        /*if (folderid=='INBOX') {
+        /*if (folderid==this.folderInbox) {
             WT.app.stopFlashTitle();
             if (this.baloon) this.baloon.hide();
         }*/

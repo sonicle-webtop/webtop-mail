@@ -47,6 +47,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String MESSAGE_QUICKPART = "message.quickpart@{0}"; // !IMPORTANT
 	public static final String MESSAGE_LIST_GROUP = "messagelist.group@{0}"; // was : "messagelist-group-{0}"
 	public static final String MESSAGE_LIST_SORT = "messagelist.sort@{0}"; // was : "messagelist-{0}-sort"
+	public static final String MESSAGE_LIST_THREADED = "messagelist.threaded@{0}"; // was : "list-threaded-{0}"
 	public static final String COLUMN_SIZE = "column.size@{0}"; //was : "column-{0}"
 	public static final String COLUMN_VISIBLE = "column.visible@{0}";
 	public static final String SHARED_SEEN = "sharedseen";
@@ -59,6 +60,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String FOLDER_DRAFTS = "folder.drafts";
 	public static final String FOLDER_TRASH = "folder.trash";
 	public static final String FOLDER_SPAM = "folder.spam";
+	public static final String DEFAULT_FOLDER = "defaultfolder";
 	public static final String REPLY_TO = "reply.to";
 	public static final String SHARED_SORT = "shared.sort";
 	public static final String INCLUDE_MESSAGE_IN_REPLY = "include.message.in.reply";
@@ -139,6 +141,14 @@ public class MailUserSettings extends BaseUserSettings {
     
 	public String getMessageListSort(String foldername) {
 		return getString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
+	}
+	
+	public boolean isMessageListThreaded(String foldername) {
+		return getBoolean(MessageFormat.format(MESSAGE_LIST_THREADED, foldername),false);
+	}
+	
+	public void setMessageListThreaded(String foldername, boolean threaded) {
+		setBoolean(MessageFormat.format(MESSAGE_LIST_THREADED, foldername),threaded);
 	}
 	
 	public String getFolderPrefix() {
@@ -255,6 +265,10 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public void setMessageViewHeight(int height) {
 		setInteger(MESSAGE_VIEW_HEIGHT,height);
+	}
+	
+	public String getDefaultFolder() {
+		return getString(DEFAULT_FOLDER,null);
 	}
 	
 }

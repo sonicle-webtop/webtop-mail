@@ -114,11 +114,13 @@ public class FolderCache {
     private boolean ascending=true;
     private int sort_group=0;
     private boolean groupascending=true;
+	private boolean threaded=false;
     private MessageComparator comparator=new MessageComparator();
     private UserProfile profile;
     
     private FolderCache parent=null;
     private ArrayList<FolderCache> children=null;
+	private HashMap<String,FolderCache> childrenMap=null;
     
     private boolean startupLeaf=true;
 
@@ -197,13 +199,29 @@ public class FolderCache {
         }
 
         isSharedInbox=false;
-        if (ms.isUnderSharedFolder(foldername)) {
-            int ix=foldername.indexOf(ms.getFolderSeparator());
+		if (ms.hasDifferentDefaultFolder() && ms.isDefaultFolder(foldername)) {
+			
+		}
+		else if (ms.isUnderSharedFolder(foldername)) {
+			char sep=ms.getFolderSeparator();
+            int ix=foldername.indexOf(sep);
             String subname=foldername.substring(ix+1);
-            if (subname.indexOf(ms.getFolderSeparator())<0) {
+			int isep=subname.indexOf(sep);
+            if (isep<0) {
                 isSharedInbox=true;
                 sharedInboxPrincipal=ms.getPrincipal(environment.getProfile().getDomainId(),subname);
-            }
+				//Cyrus has shared/user = inbox
+				//Dovecot has shared/user no messages, then INBOX under
+				if ((folder.getType()&IMAPFolder.HOLDS_MESSAGES)==0) {
+					isSharedInbox=false;
+					isSharedFolder=true;
+				}
+            } else { //look for a possible INBOX under a shared folder
+				FolderCache fcparent=ms.getFolderCache(folder.getParent().getFullName());
+				String fname=folder.getName();
+				if (fcparent.isSharedFolder && fname.equals("INBOX"))
+					isSharedInbox=true;
+			}
         }
         if (sharedInboxPrincipal==null) description=ms.getInternationalFolderName(this);
         else {
@@ -489,7 +507,7 @@ public class FolderCache {
                 Message umsgs[]=folder.search(unseenSearchTerm);
                 unread=umsgs.length;
             } else unread=folder.getUnreadMessageCount();
-			System.out.println("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
+			//System.out.println("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
             if (oldunread!=unread) {
 				unreadChanged=true;
 				sendUnreadChangedMessage();
@@ -599,7 +617,10 @@ public class FolderCache {
     
     public void refresh() throws MessagingException {
         cleanup(false);
-        msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending);
+		if (!threaded)
+			msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending);
+		else
+			msgs=_getThreadedMessages("", "");
         open();
         //add(msgs);
         modified=false;
@@ -671,6 +692,15 @@ public class FolderCache {
         folder.fetch(fmsgs, fp);
     }
 
+/*    public void fetchThreaded(ThreadMessage fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
+        int n=fmsgs.length;
+        if (length>(n-start)) length=n-start;
+        Message xmsgs[]=new Message[length];
+		for(int i=0;i<length;++i) xmsgs[i]=fmsgs[i].getMessage();
+        open();
+        folder.fetch(xmsgs, fp);
+    }*/
+	
     public void fetch(Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
         int n=fmsgs.length;
         if (length>(n-start)) length=n-start;
@@ -680,7 +710,7 @@ public class FolderCache {
         folder.fetch(xmsgs, fp);
     }
     
-    public Message[] getMessages(String pattern, String searchfield, int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending) throws MessagingException {
+	public Message[] getMessages(String pattern, String searchfield, int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) throws MessagingException {
         boolean rebuilt=false;
         boolean sortchanged=false;
         if (pattern==null) pattern="";
@@ -691,19 +721,20 @@ public class FolderCache {
         //MessageComparator mcomp=null;
         
         if (pattern.length()>0) {
-            String skey=pattern+"."+searchfield;
+            String skey=pattern+"."+searchfield+"."+threaded;
             msr=msrs.get(skey);
             if (msr==null) {
-                msr=new MessageSearchResult(pattern,searchfield,sort_by,ascending,sort_group,groupascending);
+				msr=new MessageSearchResult(pattern,searchfield,sort_by,ascending,sort_group,groupascending,threaded);
                 msr.refresh();
                 msrs.put(skey, msr);
                 rebuilt=true;
             } else {
-                if (msr.sort_by!=sort_by || msr.ascending!=ascending || msr.sort_group!=sort_group || msr.groupascending!=groupascending) {
+				if (msr.sort_by!=sort_by || msr.ascending!=ascending || msr.sort_group!=sort_group || msr.groupascending!=groupascending || msr.threaded!=threaded) {
                     msr.sort_by=sort_by;
                     msr.ascending=ascending;
                     msr.sort_group=sort_group;
                     msr.groupascending=groupascending;
+					msr.threaded=threaded;
                     sortchanged=true;
                 }
                 if (refresh || modified || sortchanged) {
@@ -715,11 +746,12 @@ public class FolderCache {
             xmsgs=msr.msgs;
             //mcomp=msr.comparator;
         } else {
-            if (this.sort_by!=sort_by || this.ascending!=ascending || this.sort_group!=sort_group || this.groupascending!=groupascending) {
+			if (this.sort_by!=sort_by || this.ascending!=ascending || this.sort_group!=sort_group || this.groupascending!=groupascending || this.threaded!=threaded) {
                 this.sort_by=sort_by;
                 this.ascending=ascending;
                 this.sort_group=sort_group;
                 this.groupascending=groupascending;
+				this.threaded=threaded;
                 sortchanged=true;
             }
             if (refresh || forceRefresh || sortchanged) {
@@ -747,6 +779,56 @@ public class FolderCache {
         return xmsgs;
     }
 
+/*	
+    public ThreadMessage[] getThreadMessages(String pattern, String searchfield, boolean refresh) throws MessagingException {
+        boolean rebuilt=false;
+        boolean sortchanged=false;
+        if (pattern==null) pattern="";
+        if (searchfield==null) searchfield="";
+        //ArrayList<MimeMessage> xlist=null;
+        SonicleIMAPMessage xmsgs[]=null;
+        MessageSearchResult msr=null;
+        //MessageComparator mcomp=null;
+        
+        if (pattern.length()>0) {
+            String skey=pattern+"."+searchfield+".threaded";
+            msr=msrs.get(skey);
+            if (msr==null) {
+                msr=new MessageSearchResult(pattern,searchfield,0,false,0,false,true);
+                msr.refresh();
+                msrs.put(skey, msr);
+                rebuilt=true;
+            } else {
+                if (refresh || modified || sortchanged) {
+                    msr.refresh();
+                    rebuilt=true;
+                }
+            }
+            //xlist=msr.mylist;
+            xmsgs=msr.tmsgs;
+            //mcomp=msr.comparator;
+        } else {
+            if (!this.threaded) {
+				this.threaded=true;
+                sortchanged=true;
+            }
+            if (refresh || forceRefresh || sortchanged) {
+                refresh();
+                rebuilt=true;
+            }
+//            if (msgs==null || modified) {
+//                msgs=new Message[list.size()];
+//                list.toArray(msgs);
+//                rebuilt=true;
+//            }
+            xmsgs=tmsgs;
+            //mcomp=this.comparator;
+        }
+        
+        modified=false;
+        return xmsgs;
+    }*/
+	
     protected void cleanup(boolean stopIdleThread) {
 		if (stopIdleThread) goidle=false;
         dhash.clear();
@@ -836,8 +918,16 @@ public class FolderCache {
 
     public void markArchivedMessages(int ids[]) throws MessagingException {
         MimeMessage newmmsgs[]=getArchivedCopy(ids);
-        deleteMessages(ids);
-        folder.appendMessages(newmmsgs);
+        try {
+			deleteMessages(ids);
+			folder.appendMessages(newmmsgs);
+		} catch(MessagingException exc) {
+			//can't delete, try with flag
+			Message msgs[]=getMessages(ids);
+			for(Message m: msgs) 
+				m.setFlags(Service.flagArchived,true);
+		}
+        
         refresh();
     }
 
@@ -973,270 +1063,304 @@ public class FolderCache {
         else newfolder=null;
         return newfolder;
     }
+	
+	private SearchTerm _prepareSearchTerm(String patterns, String searchfields) {
+		Locale locale=profile.getLocale();
+		SearchTerm term=null;
+		if(patterns!=null) {
+		  ArrayList<SearchTerm> terms=new ArrayList<SearchTerm>();
+		  int ixp=0;
+		  int ixs=0;
+		  while(ixp>=0 && ixs>=0) {
+			  int ixp2=patterns.indexOf('|',ixp);
+			  int ixs2=searchfields.indexOf('|',ixs);
+			  String pattern;
+			  String searchfield;
+			  if (ixp2>=0 && ixs2>=0) {
+				  pattern=patterns.substring(ixp,ixp2);
+				  searchfield=searchfields.substring(ixs,ixs2);
+			  } else {
+				  pattern=patterns.substring(ixp);
+				  searchfield=searchfields.substring(ixs);
+			  }
+			  ixp=ixp2;
+			  ixs=ixs2;
+			  if (ixp>=0 && ixs>=0) { ++ixp; ++ixs; }
+			  if(searchfield.equals("subject")) {
+				terms.add(new SubjectTerm(pattern));
+			  } else if(searchfield.equals("to")) {
+				terms.add(new RecipientStringTerm(Message.RecipientType.TO, pattern));
+			  } else if(searchfield.equals("cc")) {
+				terms.add(new RecipientStringTerm(Message.RecipientType.CC, pattern));
+			  } else if(searchfield.equals("bcc")) {
+				terms.add(new RecipientStringTerm(Message.RecipientType.BCC, pattern));
+			  } else if(searchfield.equals("from")) {
+				terms.add(new FromStringTerm(pattern));
+			  } else if(searchfield.equals("body")) {
+				terms.add(new BodyTerm(pattern));
+			  } else if (searchfield.equals("flag")) {
+				  terms.add(new FlagTerm(new Flags(pattern),true));
+			  } else if (searchfield.equals("status")) {
+				  if (pattern.equals("unread")) {
+					  terms.add(unseenSearchTerm);
+				  } else if (pattern.equals("new")) {
+					  terms.add(recentSearchTerm);
+				  } else if (pattern.equals("replied")) {
+					  terms.add(repliedSearchTerm);
+				  } else if (pattern.equals("forwarded")) {
+					  terms.add(forwardedSearchTerm);
+				  } else if (pattern.equals("read")) {
+					  terms.add(seenSearchTerm);
+				  }
+			  } else if (searchfield.equals("priority")) {
+				HeaderTerm p1=new HeaderTerm("X-Priority", "1");
+				HeaderTerm p2=new HeaderTerm("X-Priority", "2");
+				terms.add(new OrTerm(p1,p2));
+			  } else if(searchfield.equals("date")||searchfield.equals("recvdate")||searchfield.equals("sentdate")) {
+				pattern=pattern.trim();
+				if (searchfield.equals("date")) {
+					if (isSent) searchfield="sentdate";
+					else searchfield="recvdate";
+				}
+				if(pattern.length()>0) {
+				  int ix=pattern.indexOf(" - ");
+				  if(ix<0) { //No range
+					Date date=parseDate(pattern);
+					if(date!=null) {
+					  if(searchfield.equals("recvdate")) {
+						terms.add(new ReceivedDateTerm(DateTerm.EQ, date));
+					  } else {
+						terms.add(new SentDateTerm(DateTerm.EQ, date));
+					  }
+					} else { //Check for "month year"
+					  ix=pattern.indexOf(" ");
+					  int month=-1;
+					  int year=-1;
+					  if(ix>0) {
+						String smonth=pattern.substring(0, ix).toLowerCase();
+						month=getMonth(smonth);
+						year=Integer.parseInt(pattern.substring(ix+1));
+					  } else {
+						month=getMonth(pattern);
+						if(month==-1) {
+						  try {
+							year=Integer.parseInt(pattern);
+						  } catch(RuntimeException exc) {
+							exc.printStackTrace();
+						  }
+						}
+					  }
+					  if(year==-1) {
+						Calendar c=Calendar.getInstance();
+						c.setTime(new Date());
+						year=c.get(Calendar.YEAR);
+					  }
 
-  private Message[] _getMessages(String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending) throws MessagingException {
+					  Calendar c1=Calendar.getInstance(locale);
+					  Calendar c2=Calendar.getInstance(locale);
+					  if(month==-1) {
+						c1.set(year, 0, 1, 0, 0, 0);
+						c2.set(year, 11, 31, 23, 59, 59);
+					  } else {
+						c1.set(year, month-1, 1, 0, 0, 0);
+						c2.set(year, month-1, 1, 23, 59, 59);
+						int lastday=c2.getActualMaximum(Calendar.DAY_OF_MONTH);
+						c2.set(Calendar.DAY_OF_MONTH, lastday);
+					  }
+					  Date date1=c1.getTime();
+					  Date date2=c2.getTime();
+					  DateTerm dt1=null;
+					  DateTerm dt2=null;
+					  if(searchfield.equals("recvdate")) {
+						dt1=new ReceivedDateTerm(DateTerm.GE, date1);
+					  } else {
+						dt1=new SentDateTerm(DateTerm.GE, date1);
+					  }
+					  if(searchfield.equals("recvdate")) {
+						dt2=new ReceivedDateTerm(DateTerm.LE, date2);
+					  } else {
+						dt2=new SentDateTerm(DateTerm.LE, date2);
+					  }
+					  terms.add(new AndTerm(dt1, dt2));
+					}
+				  } else { //range
+					String p1=pattern.substring(0, ix).trim();
+					String p2=pattern.substring(ix+3).trim();
+					Date date1=parseDate(p1);
+					Date date2=parseDate(p2);
+					if(date1!=null&&date2!=null) {
+					  if(date1.after(date2)) { //Swap if wrong
+						Date xdate=date1;
+						date1=date2;
+						date2=xdate;
+					  }
+					  DateTerm dt1=null;
+					  DateTerm dt2=null;
+					  if(searchfield.equals("recvdate")) {
+						dt1=new ReceivedDateTerm(DateTerm.GE, date1);
+					  } else {
+						dt1=new SentDateTerm(DateTerm.GE, date1);
+					  }
+					  if(searchfield.equals("recvdate")) {
+						dt2=new ReceivedDateTerm(DateTerm.LE, date2);
+					  } else {
+						dt2=new SentDateTerm(DateTerm.LE, date2);
+					  }
+					  terms.add(new AndTerm(dt1, dt2));
+					}
 
-    Locale locale=profile.getLocale();
-    Message[] xmsgs=null;
-    open();
-
-    if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
-      SearchTerm term=null;
-      if(patterns!=null) {
-        ArrayList<SearchTerm> terms=new ArrayList<SearchTerm>();
-        int ixp=0;
-        int ixs=0;
-        while(ixp>=0 && ixs>=0) {
-            int ixp2=patterns.indexOf('|',ixp);
-            int ixs2=searchfields.indexOf('|',ixs);
-            String pattern;
-            String searchfield;
-            if (ixp2>=0 && ixs2>=0) {
-                pattern=patterns.substring(ixp,ixp2);
-                searchfield=searchfields.substring(ixs,ixs2);
-            } else {
-                pattern=patterns.substring(ixp);
-                searchfield=searchfields.substring(ixs);
-            }
-            ixp=ixp2;
-            ixs=ixs2;
-            if (ixp>=0 && ixs>=0) { ++ixp; ++ixs; }
-            if(searchfield.equals("subject")) {
-              terms.add(new SubjectTerm(pattern));
-            } else if(searchfield.equals("to")) {
-              terms.add(new RecipientStringTerm(Message.RecipientType.TO, pattern));
-            } else if(searchfield.equals("cc")) {
-              terms.add(new RecipientStringTerm(Message.RecipientType.CC, pattern));
-            } else if(searchfield.equals("bcc")) {
-              terms.add(new RecipientStringTerm(Message.RecipientType.BCC, pattern));
-            } else if(searchfield.equals("from")) {
-              terms.add(new FromStringTerm(pattern));
-            } else if(searchfield.equals("body")) {
-              terms.add(new BodyTerm(pattern));
-            } else if (searchfield.equals("flag")) {
-                terms.add(new FlagTerm(new Flags(pattern),true));
-            } else if (searchfield.equals("status")) {
-                if (pattern.equals("unread")) {
-                    terms.add(unseenSearchTerm);
-                } else if (pattern.equals("new")) {
-                    terms.add(recentSearchTerm);
-                } else if (pattern.equals("replied")) {
-                    terms.add(repliedSearchTerm);
-                } else if (pattern.equals("forwarded")) {
-                    terms.add(forwardedSearchTerm);
-                } else if (pattern.equals("read")) {
-                    terms.add(seenSearchTerm);
-                }
-            } else if (searchfield.equals("priority")) {
-              HeaderTerm p1=new HeaderTerm("X-Priority", "1");
-              HeaderTerm p2=new HeaderTerm("X-Priority", "2");
-              terms.add(new OrTerm(p1,p2));
-            } else if(searchfield.equals("date")||searchfield.equals("recvdate")||searchfield.equals("sentdate")) {
-              pattern=pattern.trim();
-              if (searchfield.equals("date")) {
-                  if (isSent) searchfield="sentdate";
-                  else searchfield="recvdate";
-              }
-              if(pattern.length()>0) {
-                int ix=pattern.indexOf(" - ");
-                if(ix<0) { //No range
-                  Date date=parseDate(pattern);
-                  if(date!=null) {
-                    if(searchfield.equals("recvdate")) {
-                      terms.add(new ReceivedDateTerm(DateTerm.EQ, date));
-                    } else {
-                      terms.add(new SentDateTerm(DateTerm.EQ, date));
-                    }
-                  } else { //Check for "month year"
-                    ix=pattern.indexOf(" ");
-                    int month=-1;
-                    int year=-1;
-                    if(ix>0) {
-                      String smonth=pattern.substring(0, ix).toLowerCase();
-                      month=getMonth(smonth);
-                      year=Integer.parseInt(pattern.substring(ix+1));
-                    } else {
-                      month=getMonth(pattern);
-                      if(month==-1) {
-                        try {
-                          year=Integer.parseInt(pattern);
-                        } catch(RuntimeException exc) {
-                          exc.printStackTrace();
-                        }
-                      }
-                    }
-                    if(year==-1) {
-                      Calendar c=Calendar.getInstance();
-                      c.setTime(new Date());
-                      year=c.get(Calendar.YEAR);
-                    }
-
-                    Calendar c1=Calendar.getInstance(locale);
-                    Calendar c2=Calendar.getInstance(locale);
-                    if(month==-1) {
-                      c1.set(year, 0, 1, 0, 0, 0);
-                      c2.set(year, 11, 31, 23, 59, 59);
-                    } else {
-                      c1.set(year, month-1, 1, 0, 0, 0);
-                      c2.set(year, month-1, 1, 23, 59, 59);
-                      int lastday=c2.getActualMaximum(Calendar.DAY_OF_MONTH);
-                      c2.set(Calendar.DAY_OF_MONTH, lastday);
-                    }
-                    Date date1=c1.getTime();
-                    Date date2=c2.getTime();
-                    DateTerm dt1=null;
-                    DateTerm dt2=null;
-                    if(searchfield.equals("recvdate")) {
-                      dt1=new ReceivedDateTerm(DateTerm.GE, date1);
-                    } else {
-                      dt1=new SentDateTerm(DateTerm.GE, date1);
-                    }
-                    if(searchfield.equals("recvdate")) {
-                      dt2=new ReceivedDateTerm(DateTerm.LE, date2);
-                    } else {
-                      dt2=new SentDateTerm(DateTerm.LE, date2);
-                    }
-                    terms.add(new AndTerm(dt1, dt2));
-                  }
-                } else { //range
-                  String p1=pattern.substring(0, ix).trim();
-                  String p2=pattern.substring(ix+3).trim();
-                  Date date1=parseDate(p1);
-                  Date date2=parseDate(p2);
-                  if(date1!=null&&date2!=null) {
-                    if(date1.after(date2)) { //Swap if wrong
-                      Date xdate=date1;
-                      date1=date2;
-                      date2=xdate;
-                    }
-                    DateTerm dt1=null;
-                    DateTerm dt2=null;
-                    if(searchfield.equals("recvdate")) {
-                      dt1=new ReceivedDateTerm(DateTerm.GE, date1);
-                    } else {
-                      dt1=new SentDateTerm(DateTerm.GE, date1);
-                    }
-                    if(searchfield.equals("recvdate")) {
-                      dt2=new ReceivedDateTerm(DateTerm.LE, date2);
-                    } else {
-                      dt2=new SentDateTerm(DateTerm.LE, date2);
-                    }
-                    terms.add(new AndTerm(dt1, dt2));
-                  }
-
-                }
-              }
-            }
-        }
-        int n=terms.size();
-        if (n==1) {
-            term=terms.get(0);
-        }
-        else if (n>1) {
-            SearchTerm vterms[]=new SearchTerm[n];
-            terms.toArray(vterms);
-            term=new AndTerm(vterms);
-        }
-      }
+				  }
+				}
+			  }
+		  }
+		  int n=terms.size();
+		  if (n==1) {
+			  term=terms.get(0);
+		  }
+		  else if (n>1) {
+			  SearchTerm vterms[]=new SearchTerm[n];
+			  terms.toArray(vterms);
+			  term=new AndTerm(vterms);
+		  }
+		}
+		return term;
+	}
+	
+	private SonicleSortTerm _prepareSortTerm(int sort_by, boolean ascending, int sort_group, boolean groupascending) {
+		SonicleSortTerm gsort=null;
       
-      SonicleSortTerm gsort=null;
-      switch(sort_group) {
-          case SORT_BY_DATE:
-              gsort=new DateSortTerm(!groupascending);
-              break;
-          case SORT_BY_FLAG:
-              //<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-              gsort=new FlagSortTerm(Service.flagStrings, !groupascending);
-              break;
-          case SORT_BY_MSGIDX:
-              gsort=new MessageIDSortTerm(!groupascending);
-              break;
-          case SORT_BY_PRIORITY:
-              gsort=new PrioritySortTerm(!groupascending);
-              break;
-          case SORT_BY_RCPT:
-              gsort=new ToSortTerm(!groupascending);
-              break;
-          case SORT_BY_SENDER:
-              gsort=new FromSortTerm(!groupascending);
-              break;
-          case SORT_BY_SIZE:
-              gsort=new SizeSortTerm(!groupascending);
-              break;
-          case SORT_BY_STATUS:
-              gsort=new StatusSortTerm(!groupascending);
-              break;
-          case SORT_BY_SUBJECT:
-              gsort=new SubjectSortTerm(!groupascending);
-              break;
-      }
-      
-      SonicleSortTerm sort=null;
-      
-      switch(sort_by) {
-          case SORT_BY_DATE:
-              sort=new DateSortTerm(!ascending);
-              break;
-          case SORT_BY_FLAG:
-              //<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-              sort=new FlagSortTerm(Service.flagStrings, !ascending);
-              break;
-          case SORT_BY_MSGIDX:
-              sort=new MessageIDSortTerm(!ascending);
-              break;
-          case SORT_BY_PRIORITY:
-              sort=new PrioritySortTerm(!ascending);
-              break;
-          case SORT_BY_RCPT:
-              sort=new ToSortTerm(!ascending);
-              break;
-          case SORT_BY_SENDER:
-              sort=new FromSortTerm(!ascending);
-              break;
-          case SORT_BY_SIZE:
-              sort=new SizeSortTerm(!ascending);
-              break;
-          case SORT_BY_STATUS:
-              sort=new StatusSortTerm(!ascending);
-              break;
-          case SORT_BY_SUBJECT:
-              sort=new SubjectSortTerm(!ascending);
-              break;
-      }
-      
-      //System.out.println("gsort="+gsort);
-      //System.out.println("sort="+sort);
-      
-      //Prepend group sorting if present
-      if (gsort!=null) {
-          if (sort!=null) {
-              gsort.append(sort);
-          }
-          sort=gsort;
-      }
-      
-      open();
-      //<SonicleMail>xmsgs=((IMAPFolder)folder).sort(sort, term);</SonicleMail>
-      try {
-        xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
-      } catch(Exception exc) {
-          System.out.println("**************Retrying sort*********************");
-          close();
-          open();
-          xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
-      }
-    }
+		switch(sort_group) {
+			case SORT_BY_DATE:
+				gsort=new DateSortTerm(!groupascending);
+				break;
+			case SORT_BY_FLAG:
+				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
+				gsort=new FlagSortTerm(Service.flagStrings, !groupascending);
+				break;
+			case SORT_BY_MSGIDX:
+				gsort=new MessageIDSortTerm(!groupascending);
+				break;
+			case SORT_BY_PRIORITY:
+				gsort=new PrioritySortTerm(!groupascending);
+				break;
+			case SORT_BY_RCPT:
+				gsort=new ToSortTerm(!groupascending);
+				break;
+			case SORT_BY_SENDER:
+				gsort=new FromSortTerm(!groupascending);
+				break;
+			case SORT_BY_SIZE:
+				gsort=new SizeSortTerm(!groupascending);
+				break;
+			case SORT_BY_STATUS:
+				gsort=new StatusSortTerm(!groupascending);
+				break;
+			case SORT_BY_SUBJECT:
+				gsort=new SubjectSortTerm(!groupascending);
+				break;
+		}
 
-    return xmsgs;
-  }
+		SonicleSortTerm sort=null;
 
-  public Message[] getMessagesByMessageId(String id) throws MessagingException {
-    boolean wasOpen=folder.isOpen();
-    if (!wasOpen) folder.open(Folder.READ_WRITE);
-    Message msgs[]=folder.search(new HeaderTerm("Message-ID", id));
-    if (!wasOpen) folder.close(false);
-    return msgs;
-  }
+		switch(sort_by) {
+			case SORT_BY_DATE:
+				sort=new DateSortTerm(!ascending);
+				break;
+			case SORT_BY_FLAG:
+				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
+				sort=new FlagSortTerm(Service.flagStrings, !ascending);
+				break;
+			case SORT_BY_MSGIDX:
+				sort=new MessageIDSortTerm(!ascending);
+				break;
+			case SORT_BY_PRIORITY:
+				sort=new PrioritySortTerm(!ascending);
+				break;
+			case SORT_BY_RCPT:
+				sort=new ToSortTerm(!ascending);
+				break;
+			case SORT_BY_SENDER:
+				sort=new FromSortTerm(!ascending);
+				break;
+			case SORT_BY_SIZE:
+				sort=new SizeSortTerm(!ascending);
+				break;
+			case SORT_BY_STATUS:
+				sort=new StatusSortTerm(!ascending);
+				break;
+			case SORT_BY_SUBJECT:
+				sort=new SubjectSortTerm(!ascending);
+				break;
+		}
+
+		//System.out.println("gsort="+gsort);
+		//System.out.println("sort="+sort);
+
+		//Prepend group sorting if present
+		if (gsort!=null) {
+			if (sort!=null) {
+				gsort.append(sort);
+			}
+			sort=gsort;
+		}
+		
+		return sort;
+	}
+	
+	private Message[] _getMessages(String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending) throws MessagingException {
+
+		Message[] xmsgs=null;
+		open();
+
+		if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
+			SearchTerm term=_prepareSearchTerm(patterns,searchfields);
+			SonicleSortTerm sort=_prepareSortTerm(sort_by,ascending,sort_group,groupascending);
+			open();
+
+			//<SonicleMail>xmsgs=((IMAPFolder)folder).sort(sort, term);</SonicleMail>
+			try {
+				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+			} catch(Exception exc) {
+				System.out.println("**************Retrying sort*********************");
+				close();
+				open();
+				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+			}
+		}
+
+		return xmsgs;
+	}
+	
+	private SonicleIMAPMessage[] _getThreadedMessages(String patterns, String searchfields) throws MessagingException {
+		SonicleIMAPMessage[] tmsgs=null;
+		open();
+
+		if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
+
+			SearchTerm term=_prepareSearchTerm(patterns,searchfields);
+			
+			open();
+			
+			try {
+				tmsgs=((SonicleIMAPFolder)folder).thread("REFERENCES",term);
+			} catch(Exception exc) {
+				System.out.println("**************Retrying thread*********************");
+				close();
+				open();
+				tmsgs=((SonicleIMAPFolder)folder).thread("REFERENCES",term);
+			}
+		}
+		
+		return tmsgs;
+	}
+
+	public Message[] getMessagesByMessageId(String id) throws MessagingException {
+		boolean wasOpen=folder.isOpen();
+		if (!wasOpen) folder.open(Folder.READ_WRITE);
+		Message msgs[]=folder.search(new HeaderTerm("Message-ID", id));
+		if (!wasOpen) folder.close(false);
+		return msgs;
+	}
 
   protected Message[] advancedSearchMessages(AdvancedSearchEntry entries[], boolean and, int sort_by, boolean ascending) throws MessagingException {
 
@@ -1415,15 +1539,22 @@ public class FolderCache {
 
     void addChild(FolderCache fc) {
         if (children==null) children=new ArrayList<>();
+		if (childrenMap==null) childrenMap=new HashMap<String,FolderCache>();
         children.add(fc);
+		childrenMap.put(fc.foldername, fc);
     }
 
     void removeChild(FolderCache fc) {
         children.remove(fc);
+		childrenMap.remove(fc.foldername);
         if (children.isEmpty()) children=null;
     }
     
-  
+	public boolean hasChild(String name) {
+		if (childrenMap==null) return false;
+		return childrenMap.containsKey(name);
+	}
+
     public HTMLMailData getMailData(MimeMessage m) throws MessagingException, IOException {
         HTMLMailData mailData;
         synchronized(this) {
@@ -1543,6 +1674,7 @@ public class FolderCache {
                       String token=null;
                       boolean ismail=false;
                       int x=line.indexOf((token="http://"));
+					  if (x==-1) x=line.indexOf((token="https://"));
                       if (x==-1) x=line.indexOf((token="ftp://"));
                       if (x==-1) {
                           x=line.indexOf((token="www."));
@@ -1923,24 +2055,30 @@ public class FolderCache {
       String searchfield;
 //      ArrayList<MimeMessage> mylist=new ArrayList<MimeMessage>();
       Message msgs[]=null;
+	  //SonicleIMAPMessage tmsgs[]=null;
       int sort_by=0;
       boolean ascending=true;
       int sort_group=0;
       boolean groupascending=true;
+	  boolean threaded=false;
       MessageComparator comparator=new MessageComparator();
       
-      MessageSearchResult(String pattern, String searchfield, int sort_by, boolean ascending, int sort_group, boolean groupascending) {
+	  MessageSearchResult(String pattern, String searchfield, int sort_by, boolean ascending, int sort_group, boolean groupascending, boolean threaded) {
           this.sort_by=sort_by;
           this.ascending=ascending;
           this.pattern=pattern;
           this.searchfield=searchfield;
           this.sort_group=sort_group;
           this.groupascending=groupascending;
+		  this.threaded=threaded;
       }
       
       void refresh() throws MessagingException {
           this.cleanup();
-          this.msgs=_getMessages(pattern, searchfield, sort_by, ascending,sort_group,groupascending);
+		  if (!threaded)
+			this.msgs=_getMessages(pattern, searchfield, sort_by, ascending,sort_group,groupascending);
+		  else
+			this.msgs=_getThreadedMessages(pattern, searchfield);
 //          for(Message m: msgs) {
 //              String mid=m.getHeader("Message-ID")[0];
 //              if (hash.containsKey(mid)) mylist.add(hash.get(mid));

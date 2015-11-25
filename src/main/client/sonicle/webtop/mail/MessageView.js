@@ -175,7 +175,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		el.destroy();
     },
     
-    clear: function() {
+    _clear: function() {
 		var me=this;
 		
         if (!me.cleared) {
@@ -206,13 +206,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
 	
-    showMessage: function(folder, id) {
+    _showMessage: function(folder, id) {
 		var me=this;/*,
 			idmessage=id,
 			params={service: me.mys.ID, action: 'GetMessage', folder: folder, idmessage: idmessage };*/
 	
         //if (this.folder==folder && this.idmessage==idmessage) return;
-        me.clear();
+        me._clear();
         me.idmessage=id;
         me.folder=folder;
         me.latestId=id;
@@ -417,11 +417,18 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+WT.res('saveall-desc')+"' data-qtitle='"+WT.res('saveall')+"' href='"+allhref+"'>"+me.mys.res('attachments')+"</a>:&nbsp;</span>"+names);
                 tdh.insertFirst(me.divAttach);
                 if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
-                    Ext.each(me.divAttach.query("a[ics]"),function(o) { Ext.get(o).on("click",function(e,t,o) { me.importCalendarEvent(t,t.getAttribute("ics")); e.stopEvent(); return false;},me );},me);
+                    Ext.each(me.divAttach.query("a[ics]"),function(o) { 
+						Ext.get(o).on("click",function(e,t,o) { 
+							var xel=t; //sometimes returns SPAN or IMG instead of A
+							if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
+							me.importCalendarEvent(xel,xel.getAttribute("ics")); 
+							e.stopEvent(); 
+							return false;
+						},me );
+					},me);
                 }
                 Ext.each(me.divAttach.query("a[eml]"),function(o) { 
 					Ext.get(o).on("click",function(e,t,o) { 
-						//WT.debugObject(t); 
 						var xel=t; //sometimes returns SPAN or IMG instead of A
 						if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
 						me.showEml(xel,xel.getAttribute("eml")); 
@@ -971,7 +978,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	/*
     loadEml: function(folder,idmessage,idattach) {
 		var me=this;
-        me.clear();
+        me._clear();
         me.idmessage=idmessage;
         me.folder=folder;
         me.idattach=idattach;
@@ -990,7 +997,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     
     loadProviderEml: function(provider,providerid) {
         WT.debug("loadProviderEml: "+provider+" - "+providerid);
-        this.clear();
+        this._clear();
         this.idmessage=-1;
         this.folder=null;
         this.idattach=null;

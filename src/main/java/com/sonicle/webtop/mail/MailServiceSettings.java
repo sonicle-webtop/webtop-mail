@@ -58,6 +58,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String ATTACHMENT_DIR = "attachment.dir";
 	public static final String MESSAGE_VIEW_MAX_TOS = "message.view.max.tos";
 	public static final String MESSAGE_VIEW_MAX_CCS = "message.view.max.ccs";
+	public static final String SORT_FOLDERS = "sort.folders";
 
 /*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
 	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
@@ -123,6 +124,9 @@ public class MailServiceSettings extends BaseServiceSettings {
 		setInteger(MESSAGE_VIEW_MAX_CCS,maxccs);
 	}
 	
+	public boolean isSortFolder() {
+		return getBoolean(SORT_FOLDERS,false);
+	}
 	
 	//DEFAULTS
 	

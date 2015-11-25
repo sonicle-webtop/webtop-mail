@@ -180,7 +180,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         );
 		 */
 
-        me.messageViewContainer=Ext.create('Ext.container.Container',{
+        me.messageViewContainer=Ext.create('Ext.panel.Panel',{
             region: me.viewRegion,
             cls: 'wtmail-mv-container',
             layout: 'fit',
@@ -191,6 +191,16 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			width: me.viewWidth,
             bodyBorder: true,
             border: true,
+			tbar: [
+				me.getAction("delete"),
+				'-',
+				me.getAction("reply"),
+				me.getAction("replyall"),
+				me.getAction("forward"),
+				'-',
+				me.getAction("markseen"),
+				me.getAction("markunseen")
+			],
             items: [ me.messageView ]
         });
         me.add(me.folderList);
@@ -219,6 +229,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
     },
 	
+	getAction: function(name) {
+		return this.mys.getAction(name);
+	},
+	
 	getViewRegion: function() {
 		return this.viewRegion;
 	},
@@ -231,14 +245,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			idf=mv.folder;
 		console.log('moveViewPanel');
 		me.movingPanel=true;
-		mv.clear();
+		me.clearMessageView();
 		me.viewRegion=(me.viewRegion==='east'?'south':'east');
 		mvc.setRegion(me.viewRegion);
 		mvc.setWidth(me.viewWidth);
 		mvc.setHeight(me.viewHeight);
 		me.updateLayout();
 		me.saveMessageView();
-		mv.showMessage(idf,idm);
+		me.showMessage(idf,idm);
 		me.movingPanel=false;
 	},
 	
@@ -371,16 +385,30 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         //if (c==1&&!ctrlshift) {
 		if (c===1) {
             var id=r[0].get('idmessage');
+			var fldr=r[0].get('fromfolder');
+			if (!fldr) fldr=this.currentFolder;
             if (id!==me.messageView.idmessage)
-                me.messageView.showMessage(me.currentFolder,id);
+                me.showMessage(fldr,id);
         } else {
             me.clearMessageView();
         }
         me.fireEvent('gridselectionchanged',sm/*,ctrlshift*/);
     },
     
+	showMessage: function(folder,id) {
+		var me=this,
+		    tbar=me.messageViewContainer.tbar;
+		tbar.show();
+		tbar.setHeight(24);
+		me.messageView._showMessage(folder,id);
+	},
+
     clearMessageView: function() {
-        this.messageView.clear();
+		var me=this,
+			tbar=me.messageViewContainer.tbar;
+		tbar.hide();
+		tbar.setHeight(0);
+        me.messageView._clear();
     },
 /*    
     actionDelete: function() {

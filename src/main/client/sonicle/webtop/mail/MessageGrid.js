@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
 	},
     
 	getRowClass: function(record, index, rowParams, store ) {
+		//TODO : manage threading state
 		var unread=record.get('unread');
 		console.log("index "+index+" unread="+unread);
 		var cls=unread?'wtmail-row-unread':'';
@@ -183,19 +184,21 @@ Ext.define('Sonicle.webtop.mail.MessagesModel',{
         { name: 'from' },
         { name: 'to' },
         { name: 'subject' },
-        {name:'date', type:'date' },
+        { name: 'date', type:'date' },
+		{ name: 'fmtd', type:'boolean'},
+		{ name: 'fromfolder' },
         { name: 'gdate' },
         { name: 'sdate' },
         { name: 'xdate' },
-        {name:'unread', type:'boolean' },
-        {name:'size', type:'int' },
+        { name: 'unread', type:'boolean' },
+        { name: 'size', type:'int' },
         { name: 'flag' },
         { name: 'note' },
-        {name:'istoday', type:'boolean' },
-        {name:'arch', type:'boolean' },
-        {name:'atts', type:'boolean' },
-        {name:'scheddate', type:'date' },
-		{name:'autoedit', type:'boolean' }
+        { name: 'istoday', type:'boolean' },
+        { name: 'arch', type:'boolean' },
+        { name: 'atts', type:'boolean' },
+        { name: 'scheddate', type:'date' },
+		{ name: 'autoedit', type:'boolean' }
 	]
 });
 
@@ -212,19 +215,21 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
         { name: 'from' },
         { name: 'to' },
         { name: 'subject' },
-        {name:'date', type:'date' },
+        { name: 'date', type:'date' },
+		{ name: 'fmtd', type:'boolean'},
+		{ name: 'fromfolder' },
         { name: 'gdate' },
         { name: 'sdate' },
         { name: 'xdate' },
-        {name:'unread', type:'boolean' },
-        {name:'size', type:'int' },
+        { name: 'unread', type:'boolean' },
+        { name: 'size', type:'int' },
         { name: 'flag' },
         { name: 'note' },
-        {name:'istoday', type:'boolean' },
-        {name:'arch', type:'boolean' },
-        {name:'atts', type:'boolean' },
-        {name:'scheddate', type:'date' },
-		{name:'autoedit', type:'boolean' }
+        { name: 'istoday', type:'boolean' },
+        { name: 'arch', type:'boolean' },
+        { name: 'atts', type:'boolean' },
+        { name: 'scheddate', type:'date' },
+		{ name: 'autoedit', type:'boolean' }
 	]
 });
 
@@ -558,9 +563,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             width: 80,
             sortable: true,
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-                var tdy=record.get("istoday");
-                var tag;
-                if (tdy || store.groupField=='gdate') tag="<span ext:qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
+                var tdy=record.get("istoday"),
+					fmtd=record.get("fmtd"),
+					tag;
+                if (!fmtd && (tdy || store.groupField=='gdate')) tag="<span ext:qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
                 else tag="<span ext:qtip='"+Ext.util.Format.date(value,'H:i:s')+"'>"+Ext.util.Format.date(value,'d-M-Y')+"</span>";
                 return tag;
             },
@@ -719,12 +725,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			refresh: 1
 		});
 
-		//TODO: sort info
+		//TODO: sort info && threaded
+		//if (!Ext.isDefined(config.threaded)) config.threaded=2;
         //this.store.sortInfo=null;
 		//TODO: baseParams??
 		//this.store.baseParams = {service: 'mail', action: 'ListMessages', folder: folder_id};
 		var params={
-				start: config.start, limit: config.limit, refresh: config.refresh, folder: folder_id
+				start: config.start, limit: config.limit, refresh: config.refresh, folder: folder_id, threaded: config.threaded
 			};
 		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), params));
 

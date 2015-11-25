@@ -216,23 +216,33 @@ public class SaxHTMLMailParser extends DefaultHandler {
       String aqname=attributes.getQName(i);
       String avalue=attributes.getValue(i);
       String laqname=aqname.toLowerCase();
-      String lavalue=avalue.toLowerCase();
-      if(laqname.endsWith("src")||laqname.equals("background")) {
-        //clear any source calling /
-        if (avalue.startsWith("#")) avalue="";
-        else if(avalue.toLowerCase().startsWith("cid:")) {
-          avalue=evaluateCid(avalue);
-        } else {
-          avalue=evaluateUrl(avalue);
-        }
-      } else if(laqname.equals("target")) {
-        avalue="_new";
-        changedTarget=true;
-      } else if(laqname.equals("href")&&lavalue.startsWith("mailto:")) {
-        address=lavalue.substring(7);
-        avalue="#";
-        ismailto=true;
-      }
+	  boolean isdataimg=
+			  laqname.equals("src")
+				&&
+			  (
+				avalue.startsWith("data:")
+					||
+				avalue.startsWith("DATA:")
+			  );
+	  if (!isdataimg) {
+		String lavalue=avalue.toLowerCase();
+		if(laqname.endsWith("src")||laqname.equals("background")) {
+		  //clear any source calling /
+		  if (avalue.startsWith("#")) avalue="";
+		  else if(avalue.toLowerCase().startsWith("cid:")) {
+			avalue=evaluateCid(avalue);
+		  } else {
+			avalue=evaluateUrl(avalue);
+		  }
+		} else if(laqname.equals("target")) {
+		  avalue="_new";
+		  changedTarget=true;
+		} else if(laqname.equals("href")&&lavalue.startsWith("mailto:")) {
+		  address=lavalue.substring(7);
+		  avalue="#";
+		  ismailto=true;
+		}
+	  }
       pwriter.print(" "+aqname+"='"+avalue+"'");
     }
     if(ismailto) {
@@ -241,6 +251,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
       pwriter.print(" target=_new");
     }
     pwriter.print(">");
+	pwriter.flush();
   }
 
   public void characters(char[] chars, int start, int len) throws org.xml.sax.SAXException {

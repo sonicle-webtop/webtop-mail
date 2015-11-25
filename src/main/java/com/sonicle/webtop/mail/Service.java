@@ -42,6 +42,7 @@ import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
+import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.sieve.*;
 import com.sonicle.security.Principal;
 import com.sonicle.security.AuthenticationDomain;
@@ -87,7 +88,7 @@ import com.sun.mail.util.PropUtil;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
-import java.text.MessageFormat;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.*;
@@ -122,10 +123,17 @@ public class Service extends BaseService {
 	public static Flags oldFlagsAll = new Flags();
 	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
 	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
-	public static Flags flagNote = new Flags("mailnote");
+	private static String sflagNote="mailnote";
+	private static String sflagArchived="$Archived";
+	public static Flags flagNote=new Flags(sflagNote);
+	public static Flags flagArchived=new Flags(sflagArchived);
 	
 	private FetchProfile FP = new FetchProfile();
 	private FetchProfile draftsFP=new FetchProfile();
+	
+	private boolean sortfolders=false;
+	
+	private boolean hasDifferentDefaultFolder=false;
 	
 	static {
 		
@@ -235,7 +243,12 @@ public class Service extends BaseService {
 			draftsFP.add("X-WT-Archived");
 		}
 		
-		session = Session.getDefaultInstance(props, null);
+		sortfolders=ss.isSortFolder();
+		
+		hasDifferentDefaultFolder=us.getDefaultFolder()!=null;
+		
+		session=Session.getInstance(props, null);
+		//session=Session.getDefaultInstance(props, null);
 		//session.setDebug(true);
 
 		try {
@@ -321,6 +334,11 @@ public class Service extends BaseService {
 	public MailUserSettings getMailUserSettings() {
 		return this.us;	
 	}
+	
+	public boolean hasDifferentDefaultFolder() {
+		return hasDifferentDefaultFolder;
+	}
+	
 	
 /****
 	*	TODO initialize filters with spam
@@ -508,6 +526,7 @@ public class Service extends BaseService {
 	 String docmgt2=null;
 	 String docmgtFolder=null;
 	 String scanall=null;
+	 String altroot=null;
 	 String sharedseen=null;
 	 String docmgtwt=null;
 	 String sharedsort=(String)params.get("sharedsort");
@@ -531,6 +550,7 @@ public class Service extends BaseService {
 	 docmgtFolder=(String)params.get("docmgtfolder");
 	 docmgtwt=(String)params.get("docmgtwt");
 	 scanall=(String)params.get("scanall");
+	 altroot=(String)params.get("altroot");
 	 }
 	 sharedseen=(String)params.get("sharedseen");
 	 String scansecs=(String)params.get("scansecs");
@@ -689,6 +709,13 @@ public class Service extends BaseService {
 	 mft.setSleepCycles(sc);
 	 }
       
+	  
+	  if (altroot!=null) {
+		  altroot=altroot.trim();
+		  if (altroot.length()>0) sm.setUserSetting(profile, "mail", "defaultfolder", altroot);
+		  else sm.deleteUserSetting(profile, "mail", "defaultfolder");
+	  }
+	
 	 if (docmgtwt!=null){
 	 wtd.setServiceSetting("mail", this.environment.getUserProfile(), "docmgtwt", docmgtwt);
 	 }
@@ -928,98 +955,98 @@ public class Service extends BaseService {
 		from.markArchivedMessages(nids);
 	}
 	
-	public void archiveMessagesWt(FolderCache from, int nids[], String idcategory, String idsubcategory, String customer_id) throws MessagingException, FileNotFoundException, IOException {
-		UserProfile profile = environment.getProfile();
-		String archiveto = ss.getArchivePath();
-		for (int nid : nids) {
-			Message msg = from.getMessage(nid);
-			
-			String id = getMessageID(msg);
-			if (id.startsWith("<")) {
-				id = id.substring(1, id.length() - 1);
-			}
-			id = id.replaceAll("\\\\", "_");
-			id = id.replaceAll("/", "_");
-			String filename = id + ".eml";
-			String path = archiveto + "/" + filename;
-			File file = new File(path);
-			//Only if spool file does not exists
-			if (!file.exists()) {
-				FileOutputStream fos = new FileOutputStream(file);
-				msg.writeTo(fos);
-				fos.close();
-			}
-			String subject = msg.getSubject();
-			String emailfrom = "nomail@nodomain.it";
-			Address a[] = msg.getFrom();
-			if (a != null && a.length > 0) {
-				InternetAddress sender = ((InternetAddress) a[0]);
-				emailfrom = sender.getAddress();
-			}
-			String name = subject;
-			//String request_id = saveMailInRequestsDrm(idcategory,customer_id);
-			String category = idcategory;
-			if (idsubcategory != null && !idsubcategory.equals("")) {
-				category += "/" + idsubcategory;
-			}
-			String request_id = saveMailInRequestsDrm("", "", category, "", customer_id, "", "", "", "", "", "");
-			name = name + ".eml";
-			String generic_id = saveMailInGenericDocuments(category, customer_id, subject);
-			saveMailInDocumentsDrm(path, name, request_id, generic_id);
-			saveTrackingHistoryDrm(request_id);
-		}
-		from.markArchivedMessages(nids);
-	}
+  public void archiveMessagesWt(FolderCache from, int nids[], String idcategory, String idsubcategory,String customer_id,String causal_id) throws MessagingException, FileNotFoundException, IOException {
+    UserProfile profile=environment.getProfile();
+    String archiveto=ss.getArchivePath();
+    for(int nid: nids) {
+        Message msg=from.getMessage(nid);
+
+        String id=getMessageID(msg);
+        if (id.startsWith("<")) id=id.substring(1,id.length()-1);
+        id=id.replaceAll("\\\\","_");
+        id=id.replaceAll("/","_");
+        String filename=id+".eml";
+        String path=archiveto+"/"+filename;
+        File file=new File(path);
+        //Only if spool file does not exists
+        if (!file.exists()) {
+            FileOutputStream fos=new FileOutputStream(file);
+            msg.writeTo(fos);
+            fos.close();
+        }
+        String subject=msg.getSubject();
+        String emailfrom="nomail@nodomain.it";
+        String namefrom="";
+        Address a[]=msg.getFrom();
+            if (a!=null && a.length>0) {
+                    InternetAddress sender=((InternetAddress)a[0]);
+                    emailfrom=sender.getAddress();
+                    namefrom=sender.getPersonal();
+        }
+        String name=subject;
+        //String request_id = saveMailInRequestsDrm(idcategory,customer_id);
+        String category=idcategory;
+        if (idsubcategory!=null && !idsubcategory.equals("")) category+="/"+idsubcategory;
+        String contact_id=existContact(namefrom,emailfrom);
+        String request_id = saveMailInRequestsDrm("","",category,"",customer_id,"","","","","",contact_id,causal_id);
+        name=name+".eml";
+        String generic_id=saveMailInGenericDocuments(category,customer_id,subject,contact_id,causal_id);
+        saveMailInDocumentsDrm(path, name,request_id,generic_id);
+        saveTrackingHistoryDrm(request_id);
+    }
+    from.markArchivedMessages(nids);
+  }
 	
-	public String saveMailInGenericDocuments(String category_id, String customer_id, String subject) {
-		String generic_document_id = "";
-		Connection con = null;
-		Statement stmt = null;
-		try {
-			con = getConnection();
-			stmt = con.createStatement();
-			System.out.println("category_id=" + category_id);
-			Category cat = getCategory(category_id);
-			if (cat != null) {
-				category_id = cat.category_id;
-			}
-			generic_document_id = getDrmGenericDocumentsId(con);
-			String sql = " insert into drm_generic_documents ("
-					+ "generic_document_id,"
-					+ "senderrecipient,"
-					+ "iddomain,"
-					+ "request_date,"
-					+ "login,"
-					+ "category_id,";
-			if (customer_id != null && !customer_id.equals("")) {
-				sql += "customer_id,";
-			}
-			sql += "severity,";
-			sql += "description,";
-			sql += "status,";
-			sql += "type_document  ";
-			sql += ") values (";
-			sql += generic_document_id + ",";
-			sql += "'" + environment.getProfile().getUserId() + "',";
-			sql += "'" + environment.getProfile().getDomainId() + "',";
-			sql += "now(),";
-			sql += "'" + environment.getProfile().getUserId() + "',";
-			sql += category_id + ",";
-			if (customer_id != null && !customer_id.equals("")) {
-				sql += "'" + customer_id + "',";
-			}
-			sql += "'S',";
-			sql += "'" + subject + "',";
-			sql += "'O',";
-			sql += "'I'";			
-			sql += ")";
-			System.out.println("generic=" + sql);
-			stmt.executeUpdate(sql);			
-		} catch (Exception ex) {
-			ex.printStackTrace(System.out);
-		}
-		return generic_document_id;
-	}
+  public String saveMailInGenericDocuments(String category_id,String customer_id,String subject,String contact_id,String causal_id){
+         String generic_document_id="";
+         Connection con = null;
+         Statement stmt = null;
+         try{
+             con=getConnection();
+             stmt = con.createStatement();
+			 logger.debug("category_id={}", category_id);
+             Category cat=getCategory(category_id);
+             if (cat!=null) category_id=cat.category_id;
+             generic_document_id=getDrmGenericDocumentsId(con);
+             String sql=" insert into drm_generic_documents ("
+                     + "generic_document_id,"
+                      +"senderrecipient,"
+                      +"iddomain,"
+                      +"request_date,"
+                      +"login,"
+                      +"category_id,";
+                      if (customer_id!=null && !customer_id.equals("")) sql+="customer_id,";
+                      sql+="severity,";
+                      sql+="description,";
+                      sql+="status,";
+                      sql+="type_document,  ";
+                      sql+="date_create,  ";
+                      sql+="causal_id  ";
+                      if (contact_id!=null && !contact_id.equals("")) sql+=",contact_id";
+                      sql+=") values (";
+                      sql+=generic_document_id+",";
+                      sql+="'"+environment.getProfile().getUserId()+"',";
+                      sql+="'"+environment.getProfile().getDomainId()+"',";
+                      sql+="now(),";
+                      sql+="'"+environment.getProfile().getUserId()+"',";
+                      sql+=category_id+",";
+                      if (customer_id!=null && !customer_id.equals("")) sql+="'"+customer_id+"',";
+                      sql+="'S',";
+                      sql+="'"+subject+"',";
+                      sql+="'O',";
+                      sql+="'I',";  
+                      sql+="'now()',";
+                      if (causal_id==null || causal_id.equals("")) causal_id=null;
+                      sql+=""+causal_id+"";
+                      if (contact_id!=null && !contact_id.equals("")) sql+=","+contact_id;
+                      sql+= ")";
+			logger.trace("generic={}", sql);
+             stmt.executeUpdate(sql);   
+         }catch(Exception ex){
+			 logger.error("Error", ex);
+         }
+         return generic_document_id;
+  }
 	
 	String getDrmGenericDocumentsId(Connection con) throws SQLException {
 		String document_id = "";
@@ -1062,6 +1089,7 @@ public class Service extends BaseService {
 			con = getConnection();
 			String id = getDrmTrackingDocumentsId(con);
 			stmt = con.createStatement();
+			filename=DbUtils.getSQLString(filename);
 			String sql = "INSERT INTO DRM_DOCUMENTS (DOCUMENT_ID,REQUEST_ID,FILENAME,FILE,REVISION,FROMGENERICDOCUMENTS,DATE_DOCUMENT) values (" + id + "," + request_id + ",'" + filename + "',lo_import('" + path + "'),NOW()," + generic_id + ",NOW())";
 			System.out.println("saveDocmail=" + sql);
 			stmt.executeUpdate(sql);
@@ -1155,6 +1183,125 @@ public class Service extends BaseService {
 		}
 		return success;
 	}
+	
+    public String saveMailInRequestsDrm(
+             String request_by,
+             String assign_to,
+             String category_id,
+             String severity,
+             String customer_id,
+             String statistic_id,
+             String description,
+             String fulldescription,
+             String status,
+             String mov_type,
+             String contact_id,
+             String causal_id){
+        Connection con = null;
+        Statement stmt = null;
+        String requests_id="";
+        
+        try{    
+            con = getConnection();
+            requests_id=getDrmRequestsId(con);
+            stmt = con.createStatement();
+            Category cat=getCategory(category_id);
+            String document_id=requests_id;
+            Calendar date=Calendar.getInstance();
+            String year=date.get(Calendar.YEAR)+"";
+            if (cat!=null){
+                if (cat.year_sequence.equals("true")){
+                    document_id=cat.sequence_id;
+                    year=cat.year;
+                    updateCategorySequence(cat.sequence_id, cat.year, cat.category_id);
+                }
+                category_id="'"+cat.category_id+"'";
+				logger.debug("category_id={}", category_id);
+            }
+            String query="insert into drm_requests (";
+            query+=" request_id,";
+            query+=" request_by,";
+            query+=" assign_to,";
+            query+=" request_date,";
+            query+=" login,";
+            query+=" category_id,";
+            query+=" severity,";
+            query+=" customer_id,";
+            query+=" statistic_id,";
+            query+=" description,";
+            query+=" fulldescription,";
+            query+=" status,";
+            query+=" mov_type,";
+            query+=" contact_id,";
+            query+=" n_document,";
+            query+=" year_document,";
+            query+=" iddomain,";
+            query+=" causal_id";
+            query+=" ) values ( ";
+            query+=requests_id+",";
+            if (request_by==null || request_by.equals("")) request_by=environment.getProfile().getUserId();
+            query+="'"+request_by+"',";
+            if (assign_to==null || assign_to.equals("")) 
+                query+="(select assign_to from drm_profiles where type='M'),";
+            else 
+                query+="'"+assign_to+"',";
+            query+="now(),";
+            query+="'"+environment.getProfile().getUserId()+"',";
+            if (category_id==null || category_id.equals("")) 
+                query+="(select category_id from drm_profiles where type='M'),";
+            else 
+                query+=category_id+",";
+            if (severity==null || severity.equals("")) 
+                query+="(select severity from drm_profiles where type='M'),";
+            else 
+                query+="'"+severity+"',";
+            if (customer_id==null || customer_id.equals("")) 
+                query+="(select customer_id from drm_profiles where type='M'),";
+            else 
+                query+=customer_id+",";
+            if (statistic_id==null || statistic_id.equals("")) 
+                query+="(select statistic_id from drm_profiles where type='M'),";
+            else 
+                query+=statistic_id+",";
+            if (description==null || description.equals("")) 
+                query+="(select case description when '' then 'Email' else description end  from drm_profiles where type='M'),";
+            else 
+                query+="'"+description+"',";
+            if (fulldescription==null || fulldescription.equals("")) 
+                query+="(select fulldescription from drm_profiles where type='M'),";
+            else 
+                query+="'"+fulldescription+"',";
+            if (status==null || status.equals("")) 
+                query+="(select status from drm_profiles where type='M'),";
+            else 
+                query+="'"+status+"',";
+            if (mov_type==null || mov_type.equals("")) 
+                query+="(select mov_type from drm_profiles where type='M'),";
+            else 
+                query+="'"+mov_type+"',";
+            if (contact_id==null || contact_id.equals("")) 
+                query+="(select contact_id from drm_profiles where type='M'),";
+            else 
+                query+=contact_id+",";
+            query+="'"+document_id+"',";
+            query+="'"+year+"',";
+            query+="'"+environment.getProfile().getDomainId()+"', ";
+            if (causal_id==null || causal_id.equals("")) causal_id=null;
+            query+=""+causal_id+" ";
+            query+=")";
+			logger.trace("mail={}", query);
+            
+                        
+                        stmt.executeUpdate(query);
+            
+        } catch(SQLException exc) {
+            logger.error("Exception",exc);
+        } finally {
+            if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
+            if (con!=null) try { con.close(); } catch(Exception exc) {}
+        }
+        return requests_id;
+   }
 	
 	class Category {
 
@@ -2936,12 +3083,26 @@ public class Service extends BaseService {
 	}
 	
 	public boolean isInboxFolder(String foldername) {
-		if (foldername.equals("INBOX")) {
-			return true;
+		if (!hasDifferentDefaultFolder) {
+			String lname=getLastFolderName(foldername);
+			if (lname.equals("INBOX")) return true;
+		} else {
+			return isDefaultFolder(foldername);
 		}
 		return false;
 	}
 	
+	public boolean isDefaultFolder(String foldername) {
+		Folder df=null;
+		try {
+			df=getDefaultFolder();
+		} catch(MessagingException exc) {
+			logger.error("Error getting default folder",exc);
+		}
+		if (df!=null) return df.getFullName().equals(foldername);
+		return false;
+	} 
+  
 	public boolean isUnderSharedFolder(String foldername) {
 		boolean b = false;
 		String str = null;
@@ -3033,10 +3194,10 @@ public class Service extends BaseService {
 		String fullname = folder.getFullName();
 		//WebTopApp webtopapp=environment.getWebTopApp();
 		Locale locale = environment.getProfile().getLocale();
-		if (fc.isSharedFolder()) {
-			desc = lookupResource(MailLocaleKey.FOLDERS_SHARED);
-		} else if (fc.isInbox()) {
+		if (fc.isInbox()) {
 			desc = lookupResource(MailLocaleKey.FOLDERS_INBOX);
+		} else if (fc.isSharedFolder()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_SHARED);
 		} else if (fc.isDrafts()) {
 			desc = lookupResource(MailLocaleKey.FOLDERS_DRAFTS);
 		} else if (fc.isTrash()) {
@@ -3062,9 +3223,22 @@ public class Service extends BaseService {
 	}
 	
 	protected Folder getDefaultFolder() throws MessagingException {
-		return store.getDefaultFolder();
+		String df=us.getDefaultFolder();
+		Folder f=null;
+		if (df!=null) f=store.getFolder(df);
+		else f=store.getDefaultFolder();
+		return f;
 	}
 	
+	protected String getInboxFolderFullName() {
+		String inboxFolder="INBOX";
+		try {
+			if (hasDifferentDefaultFolder()) inboxFolder=getDefaultFolder().getFullName();
+		} catch(MessagingException exc) {
+		}
+		return inboxFolder;
+	}
+  
 	protected Folder getFolder(String foldername) throws MessagingException {
 		return store.getFolder(foldername);
 	}
@@ -3236,15 +3410,28 @@ public class Service extends BaseService {
 	}
 	
 	private void loadFoldersCache() throws MessagingException {
-		Folder f = getDefaultFolder();
-		fcRoot = createFolderCache(f);
+        Folder froot=getDefaultFolder();
+        fcRoot=createFolderCache(froot);
 		fcRoot.setIsRoot(true);
 		Folder children[] = fcRoot.getFolder().list();
 		final ArrayList<FolderCache> rootParents = new ArrayList<FolderCache>();
 		for (Folder child : children) {
-			FolderCache fcc = addSingleFoldersCache(fcRoot, child);
-			if (!fcc.isStartupLeaf()) {
-				rootParents.add(fcc);
+			if (!fcRoot.hasChild(child.getName())) {
+				FolderCache fcc=addSingleFoldersCache(fcRoot,child);
+				if (!fcc.isStartupLeaf()) rootParents.add(fcc);
+			}
+		}
+		
+		if (hasDifferentDefaultFolder) {
+			//check for other shared folders to be added
+			Folder rfolders[]=store.getDefaultFolder().list();
+			for(int i=0;i<sharedPrefixes.length;++i) {
+				for(int j=0;j<rfolders.length;++j) {
+					if (rfolders[j].getFullName().equals(sharedPrefixes[i])) {
+						FolderCache fcc=addSingleFoldersCache(fcRoot,rfolders[j]);
+						rootParents.add(fcc);
+					}
+				}
 			}
 		}
 		
@@ -3268,8 +3455,11 @@ public class Service extends BaseService {
 	
 	private void _loadFoldersCache(FolderCache fc) throws MessagingException {
 		Folder f = fc.getFolder();
+		String fname=f.getFullName();
 		Folder children[] = f.list();
 		for (Folder child : children) {
+			String cname=child.getFullName();
+			if (hasDifferentDefaultFolder && cname.equals(fcRoot.getFolderName())) continue;
 			FolderCache fcc = addFoldersCache(fc, child);
 		}
 		//If shared folders, check for same descriptions and in case add login
@@ -3382,14 +3572,32 @@ public class Service extends BaseService {
 		Folder folder = null;
 		try {
 			checkStoreConnected();
-			if (pfoldername.equals("root")) {
-				folder = getDefaultFolder();
-			} else {
-				folder = getFolder(pfoldername);
-			}
+			boolean isroot=pfoldername.equals("root");
+            if (isroot) folder=getDefaultFolder();
+			else folder = getFolder(pfoldername);
+			
 			Folder folders[] = folder.list();
 			String fprefix = mprofile.getFolderPrefix();
 			boolean level1 = (fprefix != null && fprefix.equals("INBOX."));
+			if (isroot && hasDifferentDefaultFolder) {
+				Folder fcs[]=new Folder[0];
+				//check for other shared folders to be added
+				Folder rfolders[]=store.getDefaultFolder().list();
+				ArrayList<Folder> afcs=new ArrayList<Folder>();
+				for(int i=0;i<sharedPrefixes.length;++i) {
+					for(int j=0;j<rfolders.length;++j) {
+						if (rfolders[j].getFullName().equals(sharedPrefixes[i]))
+							afcs.add(rfolders[j]);
+					}
+				}
+				if (afcs.size()>0) fcs=afcs.toArray(fcs);
+				
+				Folder xfolders[]=new Folder[1+folders.length+fcs.length];
+				xfolders[0]=folder;
+				System.arraycopy(folders, 0, xfolders, 1, folders.length);
+				if (fcs.length>0) System.arraycopy(fcs,0,xfolders,1+folders.length,fcs.length);
+				folders=xfolders;
+			}
 			outputFolders(folder, folders, level1, out);
 			out.println("], message: '' }");
 			
@@ -3448,6 +3656,9 @@ public class Service extends BaseService {
 		
 		for (Folder f : afolders) {
 			String foldername = f.getFullName();
+			//in case of moved root, check not to duplicate root elsewhere
+			if (hasDifferentDefaultFolder && isSharedFolder(parent.getFullName()) && foldername.equals(getInboxFolderFullName())) continue;
+			
 			FolderCache mc = getFolderCache(foldername);
 			if (mc == null) {
 				//logger.debug("outputFolders mc is null: foldername={}",foldername);
@@ -3458,17 +3669,16 @@ public class Service extends BaseService {
 			String atts[] = imapf.getAttributes();
 			boolean leaf = true;
 			boolean noinferiors = false;
-			for (String att : atts) {
-				if (att.equals("\\HasChildren")) {
-					if (!level1 || !foldername.equals("INBOX")) {
-						leaf = false;
+			if (hasDifferentDefaultFolder && isDefaultFolder(foldername)) {
+				
+			} else {
+				for(String att: atts) {
+					if (att.equals("\\HasChildren")) {
+						if (!level1 || !foldername.equals("INBOX")) leaf=false;
 					}
-				} else if (att.equals("\\Noinferiors")) {
-					noinferiors = true;
+					else if (att.equals("\\Noinferiors")) noinferiors=true;
 				}
-			}
-			if (noinferiors) {
-				leaf = true;
+				if (noinferiors) leaf=true;
 			}
 			//boolean leaf=isLeaf((IMAPFolder)f);
 			//logger.debug("folder {} isleaf={}, level1={}",f.getFullName(),leaf,level1);
@@ -3546,6 +3756,8 @@ public class Service extends BaseService {
 	
 	private ArrayList<Folder> sortFolders(Folder folders[]) {
 		ArrayList<Folder> afolders = new ArrayList<Folder>();
+		ArrayList<Folder> sfolders=new ArrayList<Folder>();
+		HashMap<String,Folder> mfolders=new HashMap<String,Folder>();
 		//add all non special fo the array and map special ones for later insert
 		Folder inbox = null;
 		Folder sent = null;
@@ -3555,20 +3767,33 @@ public class Service extends BaseService {
 		for (Folder f : folders) {
 			String foldername = f.getFullName();
 			String shortfoldername = getShortFolderName(foldername);
-			if (isInboxFolder(shortfoldername)) {
-				inbox = f;
-			} else if (isSentFolder(shortfoldername)) {
-				sent = f;
-			} else if (isDraftsFolder(shortfoldername)) {
-				drafts = f;
-			} else if (isTrashFolder(shortfoldername)) {
-				trash = f;
-			} else if (isSpamFolder(shortfoldername)) {
-				spam = f;
-			} else {
-				afolders.add(f);
+			if (!mfolders.containsKey(shortfoldername)) {
+				mfolders.put(shortfoldername, f);
+				if (isInboxFolder(shortfoldername)) inbox=f;
+				else if (isSentFolder(shortfoldername)) sent=f;
+				else if (isDraftsFolder(shortfoldername)) drafts=f;
+				else if (isTrashFolder(shortfoldername)) trash=f;
+				else if (isSpamFolder(shortfoldername)) spam=f;
+				else if (isSharedFolder(foldername)) sfolders.add(f);
+				else afolders.add(f);
 			}
 		}
+		
+		if (sortfolders) {
+			Collections.sort(afolders,new Comparator<Folder>() {
+				@Override
+				public int compare(Folder f1, Folder f2) {
+					return f1.getFullName().toLowerCase().compareTo(f2.getFullName().toLowerCase());
+				}		
+			});
+			Collections.sort(sfolders,new Comparator<Folder>() {
+				@Override
+				public int compare(Folder f1, Folder f2) {
+					return f1.getFullName().toLowerCase().compareTo(f2.getFullName().toLowerCase());
+				}		
+			});
+		}
+		
 		//add any mapped special folder in order on top
 		if (trash != null) {
 			afolders.add(0, trash);
@@ -3585,6 +3810,9 @@ public class Service extends BaseService {
 		if (inbox != null) {
 			afolders.add(0, inbox);
 		}
+		//add shared folders at the end
+		afolders.addAll(sfolders);
+		
 		return afolders;
 	}
 	
@@ -3787,52 +4015,97 @@ public class Service extends BaseService {
 		out.println(sout);
 	}
 	
-	public void processArchiveMessagesWt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String fromfolder = request.getParameter("fromfolder");
-		String tofolder = request.getParameter("tofolder");
-		String customer_id = request.getParameter("customer_id");
-		int ix = tofolder.indexOf("/");
-		String idcategory = tofolder;
-		String idsubcategory = "";
-		if (ix > 0) {
-			idcategory = tofolder.substring(0, ix);
-			idsubcategory = tofolder.substring(ix + 1);
-		}
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
-		String ids[] = null;
-		String sout = null;
-		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
-			ids = request.getParameterValues("ids");
-			if (!mf) {
-				archiveMessagesWt(mcache, toInts(ids), idcategory, idsubcategory, customer_id);
-			} else {
-				int iids[] = new int[1];
-				for (String id : ids) {
-					ix = id.indexOf("/");
-					fromfolder = id.substring(0, ix);
-					id = id.substring(ix + 1);
-					mcache = getFolderCache(fromfolder);
-					iids[0] = Integer.parseInt(id);
-					archiveMessagesWt(mcache, iids, idcategory, idsubcategory, customer_id);
-				}
-			}
-			long millis = System.currentTimeMillis();
-			sout = "{\nresult: true, millis: " + millis + "\n}";
-		} catch (Exception exc) {
-			exc.printStackTrace();
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
-		}
-		out.println(sout);
-	}
+    public String existContact(String fromName,String fromEmail){
+        Connection con=null;
+        Statement stmt=null;
+        ResultSet rs=null;
+        String contact_id="";
+        try{
+            con=getConnection();
+            stmt=con.createStatement();
+            rs=stmt.executeQuery("select idcontact from contacts where (hemail='"+fromEmail+"' or cemail='"+fromEmail+"') and iddomain='"+environment.getProfile().getDomainId()+"' and login='"+environment.getProfile().getUserId()+"'");
+            if (rs.next()) {
+                contact_id=rs.getString("idcontact");
+            }
+            if (contact_id.equals("")){
+                String id=getSeqContactsId(con);
+                contact_id=id;
+                String query="insert into contacts (idcontact,firstname,lastname,cemail,iddomain,login,revision,category) values ("+id+",'"+fromName+"','','"+fromEmail+"','"+environment.getProfile().getDomainId()+"','"+environment.getProfile().getUserId()+"',now(),'WebTop')";
+                stmt.executeUpdate(query);
+            }
+        }catch(Exception ex){
+            logger.error("Exception",ex);
+        }finally {
+            if (rs!=null) try { rs.close(); } catch(Exception exc) {}
+            if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
+            if (con!=null) try { con.close(); } catch(Exception exc) {}
+        }
+        return contact_id;
+    }
+	
+    public static String getSeqContactsId(Connection con) throws SQLException {
+        String id = "";
+        Statement stmt = con.createStatement();
+        ResultSet rset = null;
+        if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("oracle")) {
+            rset = stmt.executeQuery("SELECT seq_contacts.nextval as id FROM DUAL");
+        } else if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("postgresql")) {
+            rset = stmt.executeQuery ("SELECT nextval('seq_contacts') as id FROM DUAL");
+        }
+        rset.next();
+        id = rset.getString("id");
+        rset.close();
+        stmt.close();
+        return id;
+    }
+	
+    public void processArchiveMessagesWt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+        String fromfolder=request.getParameter("fromfolder");
+        String tofolder=request.getParameter("tofolder");
+        String customer_id=request.getParameter("customer_id");
+        String causal_id=request.getParameter("causal_id");
+        int ix=tofolder.indexOf("/");
+        String idcategory=tofolder;
+        String idsubcategory="";
+        if (ix>0){
+            idcategory=tofolder.substring(0,ix);
+            idsubcategory=tofolder.substring(ix+1);
+        }
+        String multifolder=request.getParameter("multifolder");
+        boolean mf=multifolder!=null && multifolder.equals("true");
+        String ids[]=null;
+        String sout=null;
+        try {
+            
+            checkStoreConnected();
+            FolderCache mcache=getFolderCache(fromfolder);
+            ids=request.getParameterValues("ids");
+            if (!mf) {
+                archiveMessagesWt(mcache, toInts(ids), idcategory, idsubcategory,customer_id,causal_id);
+            }else {
+                int iids[]=new int[1];
+                for(String id: ids) {
+                    ix=id.indexOf("/");
+                    fromfolder=id.substring(0,ix);
+                    id=id.substring(ix+1);
+                    archiveMessagesWt(mcache, iids, idcategory, idsubcategory,customer_id,causal_id);
+                }
+            }
+            long millis=System.currentTimeMillis();
+            sout="{\nresult: true, millis: "+millis+"\n}";
+        } catch(Exception exc) {
+            logger.error("Exception",exc);
+            sout="{\nresult: false, text:'"+StringEscapeUtils.escapeEcmaScript(exc.getMessage())+"'\n}";
+        }
+        out.println(sout);
+    }
 	
 	String[] getMessageIds(FolderCache mcache, HttpServletRequest request) throws MessagingException {
 		String psortfield = request.getParameter("sort");
 		String psortdir = request.getParameter("dir");
 		String psearchfield = request.getParameter("searchfield");
 		String ppattern = request.getParameter("pattern");
+		String pthreaded=request.getParameter("threaded");
 		if (psearchfield != null && psearchfield.trim().length() == 0) {
 			psearchfield = null;
 		}
@@ -3845,6 +4118,7 @@ public class Service extends BaseService {
 		if (psortdir == null) {
 			psortdir = "DESC";
 		}
+		boolean threaded=(pthreaded!=null && pthreaded.equals("1"));
 		int sortby = 0;
 		if (psortfield.equals("messageid")) {
 			sortby = MessageComparator.SORT_BY_MSGIDX;
@@ -3895,7 +4169,7 @@ public class Service extends BaseService {
 			sort_group = MessageComparator.SORT_BY_FLAG;
 		}
 		
-		Message msgs[] = mcache.getMessages(ppattern, psearchfield, sortby, ascending, false, sort_group, groupascending);
+		Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,false,sort_group,groupascending,threaded);
 		ArrayList<String> aids = new ArrayList<String>();
 		for (Message m : msgs) {
 			aids.add("" + m.getMessageNumber());
@@ -4477,7 +4751,12 @@ public class Service extends BaseService {
 			OutputStream out = response.getOutputStream();
 			
 			JarOutputStream jos = new java.util.jar.JarOutputStream(out);
-			int digits = (msgs.length > 0 ? (int) Math.log10(msgs.length) + 1 : 1);
+			outputJarMailFolder(null, msgs, jos);
+			
+			int cut=foldername.length()+1;
+			cycleMailFolder(mcache.getFolder(), cut, jos);
+			
+/*            int digits=(msgs.length>0?(int)Math.log10(msgs.length)+1:1);
 			for (int i = 0; i < msgs.length; ++i) {
 				Message msg = msgs[i];
 				String subject = msg.getSubject();
@@ -4496,9 +4775,10 @@ public class Service extends BaseService {
 				je.setTime(date.getTime());
 				jos.putNextEntry(je);
 				msg.writeTo(jos);
+				jos.closeEntry();
+
 			}
-			jos.closeEntry();
-			jos.flush();
+			jos.flush();*/
 			jos.close();
 			
 		} catch (Exception exc) {
@@ -4506,6 +4786,45 @@ public class Service extends BaseService {
 		}
 	}
 	
+	private void cycleMailFolder(Folder folder, int cut, JarOutputStream jos) throws Exception {
+		for(Folder child: folder.list()) {
+			String fullname=child.getFullName();
+			String relname=fullname.substring(cut).replace(folder.getSeparator(), '/');
+			
+			jos.putNextEntry(new JarEntry(relname+"/"));
+			jos.closeEntry();
+			
+			cycleMailFolder(child,cut,jos);
+			
+			FolderCache mcache=getFolderCache(fullname);
+			Message msgs[]=mcache.getAllMessages();
+			if (msgs.length>0) outputJarMailFolder(relname, msgs, jos);
+		}
+	}
+	
+	private void outputJarMailFolder(String foldername, Message msgs[], JarOutputStream jos) throws Exception {
+		int digits=(msgs.length>0?(int)Math.log10(msgs.length)+1:1);
+		for(int i=0; i<msgs.length;++i) {
+			Message msg=msgs[i];
+			String subject=msg.getSubject();
+			if (subject!=null) subject=subject.replace('/', '_').replace('\\', '_').replace(':','-');
+			else subject="";
+			java.util.Date date=msg.getReceivedDate();
+			if (date==null) date=new java.util.Date();
+
+			String fname=LangUtils.zerofill(i+1, digits)+" - "+subject+".eml";
+			String fullname=null;
+			if (foldername!=null && !foldername.isEmpty()) fullname=foldername+"/"+fname;
+			else fullname=fname;
+			JarEntry je=new JarEntry(fullname);
+			je.setTime(date.getTime());
+			jos.putNextEntry(je);
+			msg.writeTo(jos);
+			jos.closeEntry();
+		}
+		jos.flush();
+	}
+
 	public void processGetReplyMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
 		//WebTopApp webtopapp=environment.getWebTopApp();
@@ -6088,6 +6407,8 @@ public class Service extends BaseService {
 	 sout+="  maxattachsize: '"+wtd.getMaxAttachmentSize()+"',\n";
 	 sout+="  fontface: '"+OldUtils.jsEscape(profile.getFontFace())+"',\n";
 	 sout+="  fontsize: '"+OldUtils.jsEscape(profile.getFontSize())+"',\n";
+     sout+="  differentDefaultFolder: "+hasDifferentDefaultFolder+",\n";
+     sout+="  folderInbox: '"+Utils.jsEscape(getInboxFolderFullName())+"',\n";
 	 sout+="  folderSent: '"+OldUtils.jsEscape(profile.getFolderSent())+"',\n";
 	 sout+="  folderTrash: '"+OldUtils.jsEscape(profile.getFolderTrash())+"',\n";
 	 sout+="  folderSpam: '"+OldUtils.jsEscape(profile.getFolderSpam())+"',\n";
@@ -6105,7 +6426,8 @@ public class Service extends BaseService {
 	 sout+="  sharedseen: "+sm.getUserSetting(profile, "mail", Settings.SHARED_SEEN)+",\n";
 	 sout+="  scansecs: "+profile.getScanSeconds()+",\n";
 	 sout+="  scancycles: "+profile.getScanCycles()+",\n";
-	 sout+="  optimap: "+(profile.isAdministrator()||(!profile.isAutoMailSettings()))+",\n";
+     //sout+="  optimap: "+(profile.isAdministrator()||(!profile.isAutoMailSettings()))+",\n";
+	 sout+="  optimap: "+wts.isAdministrator()+",\n";
 	 sout+="  optimap2: "+(profile.isAdministrator()||(!authprot.equals("webtop")))+",\n";
 	 sout+="  pageRows: "+profile.getNumMsgList()+",\n";
      sout+="  viewMaxTos: "+viewMaxTos+",\n";        
@@ -6166,6 +6488,7 @@ public class Service extends BaseService {
 		String psearchfield = request.getParameter("searchfield");
 		String ppattern = request.getParameter("pattern");
 		String prefresh = request.getParameter("refresh");
+        String pthreaded=request.getParameter("threaded");
 		if (psearchfield != null && psearchfield.trim().length() == 0) {
 			psearchfield = null;
 		}
@@ -6173,6 +6496,14 @@ public class Service extends BaseService {
 			ppattern = null;
 		}
 		boolean refresh = (prefresh != null && prefresh.equals("true"));
+		boolean threaded=(pthreaded!=null && pthreaded.equals("1"));
+		
+		String threadedSetting="list-threaded-"+pfoldername;
+		if (pthreaded==null || pthreaded.equals("2")) {
+			threaded=us.isMessageListThreaded(pfoldername);
+		} else {
+			us.setMessageListThreaded(pfoldername, true);
+		}
 		
 		if (isSpecialFolder(pfoldername) || isSharedFolder(pfoldername)) {
 			logger.debug("folder is special or shared, refresh forced");
@@ -6302,7 +6633,7 @@ public class Service extends BaseService {
 			}
 			MessageListThread mlt = mlThreads.get(key);
 			if (mlt == null) {
-				mlThreads.put(key, mlt = new MessageListThread(mcache, ppattern, psearchfield, sortby, ascending, refresh, sort_group, groupascending));
+                mlThreads.put(key, mlt = new MessageListThread(mcache, ppattern, psearchfield, sortby, ascending, refresh, sort_group, groupascending, threaded));
 			}
 			String tname = Thread.currentThread().getName();			
 			long millis = System.currentTimeMillis();
@@ -6321,14 +6652,14 @@ public class Service extends BaseService {
 					mlThreads.remove(key);
 				}
 			}
-			Message msgs[] = null;
-			if (mlt.lastRequest == millis) {
-				msgs = mlt.msgs;
+            Message xmsgs[]=null;
+            if (mlt.lastRequest==millis) {
+				xmsgs=mlt.msgs;
 			}
 			
-			if (msgs != null) {
-				
-				sout += "total:" + msgs.length + ",\nstart:" + start + ",\nlimit:" + limit + ",\nmessages: [\n";
+            if (xmsgs!=null) {
+                int totalCount=xmsgs.length;
+                sout+="totalCount:"+totalCount+",\nstart:"+start+",\nlimit:"+limit+",\nmessages: [\n";
 
 				/*               if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
 				 //mcache.fetch(msgs,FolderCache.flagsFP,0,start);
@@ -6341,22 +6672,20 @@ public class Service extends BaseService {
 				 }
 				 }*/
 				int max = start + limit;
-				if (max > msgs.length) {
-					max = msgs.length;
-				}
+                if (max>totalCount) max=totalCount;
 				ArrayList<Integer> autoeditList=new ArrayList<Integer>();
+				
+				Folder fsent=getFolder(mprofile.getFolderSent());
+				boolean openedsent=false;
 				//Fetch others for these messages
-				mcache.fetch(msgs,(isdrafts?draftsFP:FP), start, max);
+				mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
 				for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 					int ix = start + i;
 					int nx = start + ni;
-					if (nx >= msgs.length) {
-						break;
-					}
-					if (ix >= max) {
-						break;
-					}
-					Message xm = msgs[nx];
+                    if (nx>=totalCount) break;
+					if (ix >= max) break;
+
+					SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];
 					if (xm.isExpunged()) {
 						--i;
 						continue;
@@ -6370,195 +6699,228 @@ public class Service extends BaseService {
 					 }
 					 if (ids==null || ids.length==0) { --i; continue; }
 					 String idmessage=ids[0];*/
-					int nid = xm.getMessageNumber();
-					IMAPMessage m = (IMAPMessage) xm;
-					//Date
-					java.util.Date d = m.getSentDate();
-					if (d == null) {
-						d = m.getReceivedDate();
-					}
-					if (d == null) {
-						d = new java.util.Date(0);
-					}
-					cal.setTime(d);
-					int yyyy = cal.get(Calendar.YEAR);
-					int mm = cal.get(Calendar.MONTH);
-					int dd = cal.get(Calendar.DAY_OF_MONTH);
-					int hhh = cal.get(Calendar.HOUR_OF_DAY);
-					int mmm = cal.get(Calendar.MINUTE);
-					int sss = cal.get(Calendar.SECOND);
-					//From
-					String from = "";
-					Address ia[] = m.getFrom();
-					if (ia != null) {
-						InternetAddress iafrom = (InternetAddress) ia[0];
-						from = iafrom.getPersonal();
-						if (from == null) {
-							from = iafrom.getAddress();
-						}
-					}
-					from = (from == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from)));
-					//To
-					String to = "";
-					ia = m.getRecipients(Message.RecipientType.TO);
-					if (ia != null) {
-						InternetAddress iato = (InternetAddress) ia[0];
-						to = iato.getPersonal();
-						if (to == null) {
-							to = iato.getAddress();
-						}
-					}
-					to = (to == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
-					//Subject
-					String subject = m.getSubject();
-					if (subject != null) {
-						try {
-							subject = MailUtils.decodeQString(subject);
-						} catch (Exception exc) {
-							
-						}
-					}
-					boolean hasAttachments = hasAttachements(m);
-					subject = (subject == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject)));
-					//Unread
-					boolean unread = !m.isSet(Flags.Flag.SEEN);
-					if (ppattern == null && unread) {
-						++funread;
-					}
-					//Priority
-					int priority = getPriority(m);
-					//Status
-					java.util.Date today = new java.util.Date();
-					Calendar cal1 = Calendar.getInstance(locale);
-					Calendar cal2 = Calendar.getInstance(locale);
-					boolean isToday = false;
-					String gdate = "";
-					String sdate = "";
-					String xdate = "";
-					if (d != null) {
-						cal1.setTime(today);
-						cal2.setTime(d);
-						
-						gdate = DateFormat.getDateInstance(DateFormat.MEDIUM, locale).format(d);
-						sdate=cal2.get(Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(Calendar.DATE));
-						//boolean isGdate = group.equals("gdate");
-						if (cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH) && cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)) {
-							int dx = cal1.get(Calendar.DAY_OF_MONTH) - cal2.get(Calendar.DAY_OF_MONTH);
-							if (dx == 0) {
-								isToday = true;
-								//if (isGdate) {
-									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY);
-								//}
-							} else if (dx == 1 /*&& isGdate*/) {
-								xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY);
-							}
-						}
-					}
 					
-					Flags flags = m.getFlags();
-					String status = "read";
-					if (flags != null) {
-						if (flags.contains(Flags.Flag.ANSWERED)) {
-							if (flags.contains("$Forwarded")) {
-								status = "repfwd";
-							} else {
-								status = "replied";
-							}
-						} else if (flags.contains("$Forwarded")) {
-							status = "forwarded";
-						} else if (flags.contains(Flags.Flag.SEEN)) {
-							status = "read";
-						} else if (isToday) {
-							status = "new";
-						} else {
-							status = "unread";
-						}
-						//                    if (flags.contains(Flags.Flag.USER)) flagImage=webtopapp.getUri()+"/images/themes/"+profile.getTheme()+"/mail/flag.gif";
-					}
-					//Size
-					int msgsize = 0;
-					msgsize = (m.getSize() * 3) / 4;// /1024 + 1;
-					//User flags
-					String cflag = "";
-					for (String flagstring : Service.flagStrings) {
-						if (!flagstring.equals("complete")) {
-							String oldflagstring = "flag" + flagstring;
-							if (flags.contains(flagstring)) {
-								cflag = flagstring;
-							} else if (flags.contains(oldflagstring)) { // vecchio modo
-								cflag = flagstring;
-							}
-						}
-					}
-					boolean flagComplete = flags.contains("complete");
-					if (flagComplete) {
-						if (cflag.length() > 0) {
-							cflag += "-complete";
-						} else {
-							cflag = "complete";
-						}
-					}
-					boolean hasNote = flags.contains("mailnote");
-					
-					boolean autoedit=false;
-					
-					boolean issched = false;
-					int syyyy = 0;
-					int smm = 0;
-					int sdd = 0;
-					int shhh = 0;
-					int smmm = 0;
-					int ssss = 0;
-					if (isdrafts) {
-						String h = getSingleHeaderValue(m, "Sonicle-send-scheduled");
-						if (h != null && h.equals("true")) {
-							Calendar scal = parseScheduleHeader(getSingleHeaderValue(m, "Sonicle-send-date"), getSingleHeaderValue(m, "Sonicle-send-time"));
-							syyyy = scal.get(Calendar.YEAR);
-							smm = scal.get(Calendar.MONTH);
-							sdd = scal.get(Calendar.DAY_OF_MONTH);
-							shhh = scal.get(Calendar.HOUR_OF_DAY);
-							smmm = scal.get(Calendar.MINUTE);
-							ssss = scal.get(Calendar.SECOND);
-							issched = true;
-							status = "scheduled";
-						}						
-						
-                        h=getSingleHeaderValue(m,HEADER_SONICLE_FROM_DRAFTER);
-                        if (h!=null && h.equals("true")) {
-							autoedit=true;
-						}
-					}
+					Flags flags=xm.getFlags();
+					Message amsgs[]=null;
 
-                    //idmessage=idmessage.replaceAll("\\\\", "\\\\");
-					//idmessage=OldUtils.jsEscape(idmessage);
-					if (i > 0) {
-						sout += ",\n";
-					}
-					boolean archived = false;
-					if (hasDocumentArchiving()) {
-						archived = m.getHeader("X-WT-Archived") != null;
-					}
-					sout += "{idmessage:'" + nid + "',"
-							+ "priority:" + priority + ","
-							+ "status:'" + status + "',"
-							+ "to:'" + to + "',"
-							+ "from:'" + from + "',"
-							+ "subject:'" + subject + "',"
-							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
-							+ "gdate: '" + gdate + "',"
-							+ "sdate: '" + sdate + "',"
-							+ "xdate: '" + xdate + "',"
-							+ "unread: " + unread + ","
-							+ "size:" + msgsize + ","
-							+ "flag:'" + cflag + "'"
-							+ (hasNote ? ",note:true" : "")
-							+ (archived ? ",arch:true" : "")
-							+ (isToday ? ",istoday:true" : "")
-							+ (hasAttachments ? ",atts:true" : "")
-							+ (issched ? ",scheddate: new Date(" + syyyy + "," + smm + "," + sdd + "," + shhh + "," + smmm + "," + ssss + ")" : "")
-							+ "}";
-					if (autoedit) {
-						autoeditList.add(nid);
+/*					if (threaded && !issent && flags.contains(Flags.Flag.ANSWERED)) {
+						if (!fsent.isOpen()) {
+							openedsent=true;
+							fsent.open(Folder.READ_WRITE);
+						}
+						javax.mail.search.HeaderTerm hterm=new javax.mail.search.HeaderTerm("In-Reply-To",xm.getMessageID());
+						Message smsgs[]=fsent.search(hterm);
+						if (smsgs.length>0) {
+							amsgs=new Message[smsgs.length+1];
+							System.arraycopy(smsgs, 0, amsgs, 0, smsgs.length);
+							SonicleIMAPMessage amsg0=(SonicleIMAPMessage)amsgs[0];
+							int tsize=xm.getThreadSize();
+							if (tsize==0) tsize=1;
+							tsize+=smsgs.length;
+							java.util.Date mrtd=amsg0._getDate();
+							amsg0.setThreadSize(tsize);
+							amsg0.setMostRecentInThread(true);
+							amsg0.setMostRecentThreadDate(mrtd);
+							
+							amsgs[smsgs.length]=xm;
+							for(int s=1;s<amsgs.length;++s) {
+								SonicleIMAPMessage amsg=(SonicleIMAPMessage)amsgs[s];
+								amsg.setThreadSize(tsize);
+								amsg.setMostRecentInThread(false);
+								amsg.setMostRecentThreadDate(mrtd);
+ 							}
+						} else {
+							amsgs=new Message[1];
+							amsgs[0]=xm;
+							}
+						}
+					} else {*/
+						amsgs=new Message[1];
+						amsgs[0]=xm;
+					//}
+					
+					for(int k=0;k<amsgs.length;++k) {
+							
+						xm=(SonicleIMAPMessage)amsgs[k];
+	                    int nid=xm.getMessageNumber();
+						flags=xm.getFlags();
+						
+						//Date
+						java.util.Date d=xm.getSentDate();
+						if (d==null) d=xm.getReceivedDate();
+						if (d==null) d=new java.util.Date(0);
+						cal.setTime(d);
+						int yyyy=cal.get(Calendar.YEAR);
+						int mm=cal.get(Calendar.MONTH);
+						int dd=cal.get(Calendar.DAY_OF_MONTH);
+						int hhh=cal.get(Calendar.HOUR_OF_DAY);
+						int mmm=cal.get(Calendar.MINUTE);
+						int sss=cal.get(Calendar.SECOND);
+						//From
+						String from="";
+						Address ia[]=xm.getFrom();
+						if (ia!=null) {
+							InternetAddress iafrom=(InternetAddress)ia[0];
+							from=iafrom.getPersonal();
+							if (from==null) from=iafrom.getAddress();
+						}
+						if (from==null) from="";
+
+						//To
+						String to="";
+						ia=xm.getRecipients(Message.RecipientType.TO);
+						if (ia!=null) {
+							InternetAddress iato=(InternetAddress)ia[0];
+							to=iato.getPersonal();
+							if (to==null) to=iato.getAddress();
+						}
+						to=(to==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
+						//Subject
+						String subject=xm.getSubject();
+						if (subject!=null) {
+							try {
+								subject=MailUtils.decodeQString(subject);
+							} catch(Exception exc) {
+
+							}
+						}
+						else subject="";
+
+						boolean hasAttachments=hasAttachements(xm);
+
+						from=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from));
+						subject=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject));
+
+						//Unread
+						boolean unread=!xm.isSet(Flags.Flag.SEEN);
+						if (ppattern==null && unread) ++funread;
+						//Priority
+						int priority=getPriority(xm);
+						//Status
+						java.util.Date today=new java.util.Date();
+						Calendar cal1=Calendar.getInstance(locale);
+						Calendar cal2=Calendar.getInstance(locale);
+						boolean isToday=false;
+						String gdate="";
+						if (d!=null) {
+							java.util.Date gd=threaded?xm.getMostRecentThreadDate():d;
+
+							cal1.setTime(today);
+							cal2.setTime(gd);
+
+							gdate=DateFormat.getDateInstance(DateFormat.MEDIUM,locale).format(gd);
+							boolean isGdate=group.equals("gdate");
+							if (cal1.get(Calendar.MONTH)==cal2.get(Calendar.MONTH) && cal1.get(Calendar.YEAR)==cal2.get(Calendar.YEAR)) {
+								int dx=cal1.get(Calendar.DAY_OF_MONTH)-cal2.get(Calendar.DAY_OF_MONTH);
+								if (dx==0) {
+									isToday=true;
+									if (isGdate) gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY)+"  "+gdate;
+								}
+								else if (dx==1 && isGdate) gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY)+"  "+gdate;
+							}
+						}
+
+						String status="read";
+						if (flags!=null) {
+							if (flags.contains(Flags.Flag.ANSWERED)) {
+								if (flags.contains("$Forwarded")) status = "repfwd";
+								else status = "replied";
+							} else if (flags.contains("$Forwarded")) {
+								status="forwarded";
+							} else if (flags.contains(Flags.Flag.SEEN)) {
+								status="read";
+							} else if (isToday) {
+								status="new";
+							} else {
+								status="unread";
+							}
+		//                    if (flags.contains(Flags.Flag.USER)) flagImage=webtopapp.getUri()+"/images/themes/"+profile.getTheme()+"/mail/flag.gif";
+						}
+						//Size
+						int msgsize=0;
+						msgsize=(xm.getSize()*3)/4;// /1024 + 1;
+						//User flags
+						String cflag="";
+						for (String flagstring: Service.flagStrings) {
+							if (!flagstring.equals("complete")) {
+								String oldflagstring="flag"+flagstring;
+								if (flags.contains(flagstring)) cflag=flagstring;
+								else if (flags.contains(oldflagstring)) { // vecchio modo
+									cflag=flagstring;
+								}
+							}
+						}
+						boolean flagComplete=flags.contains("complete");
+						if (flagComplete) {
+							if (cflag.length()>0) cflag+="-complete";
+							else cflag="complete";
+						}
+						boolean hasNote=flags.contains(sflagNote);
+
+						boolean autoedit=false;
+
+						boolean issched=false;
+						int syyyy=0;
+						int smm=0;
+						int sdd=0;
+						int shhh=0;
+						int smmm=0;
+						int ssss=0;
+						if (isdrafts) {
+							String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
+							if (h!=null && h.equals("true")) {
+								Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
+								syyyy=scal.get(Calendar.YEAR);
+								smm=scal.get(Calendar.MONTH);
+								sdd=scal.get(Calendar.DAY_OF_MONTH);
+								shhh=scal.get(Calendar.HOUR_OF_DAY);
+								smmm=scal.get(Calendar.MINUTE);
+								ssss=scal.get(Calendar.SECOND);
+								issched=true;
+								status="scheduled";
+							} 
+
+							h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
+							if (h!=null && h.equals("true")) {
+								autoedit=true;
+							}
+						}
+						
+						String xmfoldername=xm.getFolder().getFullName();
+
+						//idmessage=idmessage.replaceAll("\\\\", "\\\\");
+						//idmessage=Utils.jsEscape(idmessage);
+						if (i>0) sout+=",\n";
+						boolean archived=false;
+						if (hasDocumentArchiving()) {
+							archived=xm.getHeader("X-WT-Archived")!=null;
+							if (!archived) {
+								archived=flags.contains(sflagArchived);
+							}
+						}
+						sout+="{idmessage:'"+nid+"',"+
+								"priority:"+priority+","+
+								"status:'"+status+"',"+
+								"to:'"+to+"',"+
+								"from:'"+from+"',"+
+								"subject:'"+subject+"',"+
+								"date: new Date("+yyyy+","+mm+","+dd+","+hhh+","+mmm+","+sss+"),"+
+								"gdate: '"+gdate+"',"+
+								"unread: "+unread+","+
+								"size:"+msgsize+","+
+								"flag:'"+cflag+"'"+
+								(hasNote?",note:true":"")+
+								(archived?",arch:true":"")+
+								(isToday?",istoday:true":"")+
+								(hasAttachments?",atts:true":"")+
+								(issched?",scheddate: new Date("+syyyy+","+smm+","+sdd+","+shhh+","+smmm+","+ssss+")":"")+
+								(threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")+
+								(threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")+
+								"}";
+
+						if (autoedit) {
+							autoeditList.add(nid);
+						}
 					}
 					
 					//                sout+="{messageid:'"+m.getMessageID()+"',from:'"+from+"',subject:'"+subject+"',date: new Date("+yyyy+","+mm+","+dd+"),unread: "+unread+"},\n";
@@ -6582,7 +6944,7 @@ public class Service extends BaseService {
 				sout += "\n],\n";
 				sout += "metaData: {\n"
 						+ "  root: 'messages', total: 'totalCount', idProperty: 'idmessage',\n"
-						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate'],\n"
+						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
 						+ "  groupField: '" + group + "',\n";
 				
@@ -6611,7 +6973,10 @@ public class Service extends BaseService {
 				sout += "]\n";
 				
 				sout += "},\n";
+				sout += "threaded: "+(threaded?"1":"0")+",\n";
 				sout += "unread: " + funread + ", issent: " + issent + ", millis: " + mlt.millis + " }\n";
+				
+				if (openedsent) fsent.close(false);
 			} else {
 				sout += "total:0,\nstart:0,\nlimit:0,\nmessages: [\n";
 				sout += "\n], unread: 0, issent: false }\n";
@@ -6693,13 +7058,15 @@ public class Service extends BaseService {
 		boolean refresh;
 		long millis;
 		
+		boolean threaded=false;
+		
 		Message msgs[] = null;
 		boolean started = false;
 		boolean finished = false;
 		final Object lock = new Object();
 		long lastRequest = 0;
 		
-		MessageListThread(FolderCache fc, String pattern, String searchfield, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending) {
+		MessageListThread(FolderCache fc, String pattern, String searchfield, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) {
 			this.fc = fc;
 			this.pattern = pattern;
 			this.searchfield = searchfield;
@@ -6708,6 +7075,7 @@ public class Service extends BaseService {
 			this.refresh = refresh;
 			this.sort_group = sort_group;
 			this.groupascending = groupascending;
+			this.threaded=threaded;
 		}
 		
 		public void run() {
@@ -6716,7 +7084,7 @@ public class Service extends BaseService {
 			synchronized (lock) {
 				try {
 					this.millis = System.currentTimeMillis();
-					msgs = fc.getMessages(pattern, searchfield, sortby, ascending, refresh, sort_group, groupascending);
+					msgs=fc.getMessages(pattern,searchfield,sortby,ascending,refresh, sort_group, groupascending,threaded);
 				} catch (Exception exc) {
 					exc.printStackTrace();
 				}
@@ -8504,7 +8872,10 @@ public class Service extends BaseService {
 					}
 					boolean archived = false;
 					if (hasDocumentArchiving()) {
-						archived = m.getHeader("X-WT-Archived") != null;
+						archived=m.getHeader("X-WT-Archived")!=null;
+						if (!archived) {
+							archived=flags.contains(sflagArchived);
+						}
 					}
 					sout += "{folder:'" + folder + "', folderdesc:'" + foldername + "',idmandfolder:'" + folder + "|" + nid + "',idmessage:'" + nid + "',priority:" + priority + ",status:'" + status + "',to:'" + to + "',from:'" + from + "',subject:'" + subject + "',date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),unread: " + unread + ",size:" + msgsize + ",flag:'" + cflag + "'" + (archived ? ",arch:true" : "") + (isToday ? ",istoday:true" : "") + "}";
 					first = false;
