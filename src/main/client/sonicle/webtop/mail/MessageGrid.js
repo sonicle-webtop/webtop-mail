@@ -396,6 +396,31 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//ms: me.ms
         });
 
+/*		if (me.createPagingToolbar) {
+			me.ptoolbar=new Ext.PagingToolbar({
+				region: "center",
+				store: me.store,
+				pageSize: me.pageSize,
+				displayInfo: true,
+				displayMsg: me.res("pagemessage"),
+				emptyMsg: me.res("nomessages"),
+				afterPageText: me.res("afterpagetext"),
+				beforePageText: me.res("beforepagetext"),
+				firstText: me.res("firsttext"),
+				lastText: me.res("lasttext"),
+				nextText: me.res("nexttext"),
+				prevText: me.res("prevtext"),
+				refreshText: me.res("refreshtext")
+			});
+			me.ptoolbar.remove(me.ptoolbar.displayItem);
+			me.ptoolbar.add(me.ptoolbar.displayItem=Ext.create('Ext.Button',{
+				tooltip: me.res("changepagerows"),
+				handler: me.changePageRows,
+				scope: me
+			}));
+			me.tbar=me.ptoolbar;
+		}*/
+
 		//TODO: FilterRow
 /*        if (!Ext.isIE) {
             var filterRow = new WT.GridFilterRow({
