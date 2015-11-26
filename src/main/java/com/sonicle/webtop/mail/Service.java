@@ -6802,6 +6802,8 @@ public class Service extends BaseService {
 						Calendar cal2=Calendar.getInstance(locale);
 						boolean isToday=false;
 						String gdate="";
+						String sdate = "";
+						String xdate = "";
 						if (d!=null) {
 							java.util.Date gd=threaded?xm.getMostRecentThreadDate():d;
 
@@ -6809,15 +6811,19 @@ public class Service extends BaseService {
 							cal2.setTime(gd);
 
 							gdate=DateFormat.getDateInstance(DateFormat.MEDIUM,locale).format(gd);
-							boolean isGdate=group.equals("gdate");
+							sdate=cal2.get(Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(Calendar.DATE));
+							//boolean isGdate=group.equals("gdate");
 							if (cal1.get(Calendar.MONTH)==cal2.get(Calendar.MONTH) && cal1.get(Calendar.YEAR)==cal2.get(Calendar.YEAR)) {
 								int dx=cal1.get(Calendar.DAY_OF_MONTH)-cal2.get(Calendar.DAY_OF_MONTH);
 								if (dx==0) {
 									isToday=true;
-									if (isGdate) gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY)+"  "+gdate;
-								}
-								else if (dx==1 && isGdate) gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY)+"  "+gdate;
-							}
+									//if (isGdate) {
+									//	gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY)+"  "+gdate;
+									//}
+									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY);
+								} else if (dx == 1 /*&& isGdate*/) {
+									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY);
+								}							}
 						}
 
 						String status="read";
@@ -6898,25 +6904,27 @@ public class Service extends BaseService {
 								archived=flags.contains(sflagArchived);
 							}
 						}
-						sout+="{idmessage:'"+nid+"',"+
-								"priority:"+priority+","+
-								"status:'"+status+"',"+
-								"to:'"+to+"',"+
-								"from:'"+from+"',"+
-								"subject:'"+subject+"',"+
-								"date: new Date("+yyyy+","+mm+","+dd+","+hhh+","+mmm+","+sss+"),"+
-								"gdate: '"+gdate+"',"+
-								"unread: "+unread+","+
-								"size:"+msgsize+","+
-								"flag:'"+cflag+"'"+
-								(hasNote?",note:true":"")+
-								(archived?",arch:true":"")+
-								(isToday?",istoday:true":"")+
-								(hasAttachments?",atts:true":"")+
-								(issched?",scheddate: new Date("+syyyy+","+smm+","+sdd+","+shhh+","+smmm+","+ssss+")":"")+
-								(threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")+
-								(threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")+
-								"}";
+					sout += "{idmessage:'" + nid + "',"
+							+ "priority:" + priority + ","
+							+ "status:'" + status + "',"
+							+ "to:'" + to + "',"
+							+ "from:'" + from + "',"
+							+ "subject:'" + subject + "',"
+							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
+							+ "gdate: '" + gdate + "',"
+							+ "sdate: '" + sdate + "',"
+							+ "xdate: '" + xdate + "',"
+							+ "unread: " + unread + ","
+							+ "size:" + msgsize + ","
+							+ "flag:'" + cflag + "'"
+							+ (hasNote ? ",note:true" : "")
+							+ (archived ? ",arch:true" : "")
+							+ (isToday ? ",istoday:true" : "")
+							+ (hasAttachments ? ",atts:true" : "")
+							+ (issched ? ",scheddate: new Date(" + syyyy + "," + smm + "," + sdd + "," + shhh + "," + smmm + "," + ssss + ")" : "")
+							+ (threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")
+							+ (threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")
+							+ "}";
 
 						if (autoedit) {
 							autoeditList.add(nid);
