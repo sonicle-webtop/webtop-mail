@@ -34,7 +34,6 @@
 package com.sonicle.webtop.mail.ws;
 
 import com.sonicle.webtop.core.WT;
-import com.sonicle.webtop.core.sdk.Environment;
 import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sonicle.webtop.mail.Service;
 
@@ -51,8 +50,7 @@ public class UnreadChangedMessage extends ServiceMessage {
 	boolean hasUnreadChildren;
 	
 	public UnreadChangedMessage(String foldername, int unread, boolean hasUnreadChildren) {
-		this.service=WT.getServiceId(Service.class);
-		this.action=ACTION_UNREAD;
+		super(WT.findServiceId(Service.class),ACTION_UNREAD);
 		
 		this.foldername=foldername;
 		this.unread=unread;

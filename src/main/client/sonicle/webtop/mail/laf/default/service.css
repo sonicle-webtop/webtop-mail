@@ -4,20 +4,21 @@
 .wtmail-icon-service-l { background-image: url('mail_48.png') !important; }
 
 /* actions */
-.wtmail-icon-newmsg-xs { background-image: url('statusnew.png') !important; }
-.wtmail-icon-reply-xs { background-image: url('statusreplied.png') !important; }
-.wtmail-icon-replyall-xs { background-image: url('replyall.png') !important; }
-.wtmail-icon-forward-xs { background-image: url('statusforwarded.png') !important; }
-.wtmail-icon-markseen-xs { background-image: url('statusread.png') !important; }
-.wtmail-icon-markunseen-xs { background-image: url('statusunread.png') !important; }
+.wtmail-icon-newmsg-xs { background-image: url('statusnew_16.png') !important; }
+.wtmail-icon-reply-xs { background-image: url('statusreplied_16.png') !important; }
+.wtmail-icon-replyall-xs { background-image: url('replyall_16.png') !important; }
+.wtmail-icon-forward-xs { background-image: url('statusforwarded_16.png') !important; }
+.wtmail-icon-markseen-xs { background-image: url('statusread_16.png') !important; }
+.wtmail-icon-markunseen-xs { background-image: url('statusunread_16.png') !important; }
 /*.wtmail-icon-filters-xs { background-image: url('filters.png') !important; }
 .wtmail-icon-newfilter-xs { background-image: url('filters.png') !important; }*/
-.wtmail-icon-advsearch-xs { background-image: url('advsearch.png') !important; }
-.wtmail-icon-discussions-xs { background-image: url('discussions.png') !important; }
-.wtmail-icon-movetofolder-xs { background-image: url('movetofolder.png') !important; }
-.wtmail-icon-mailcardedit { background-image: url('mailcard_edit_16.png') !important; }
-.wtmail-icon-mailcardremove { background-image: url('mailcard_remove_16.png') !important; }
-.wtmail-icon-htmleditor-template { background-image: url('htmleditor_template_16.png') !important; }
+.wtmail-icon-advsearch-xs { background-image: url('advsearch_16.png') !important; }
+.wtmail-icon-discussions-xs { background-image: url('discussions_16.png') !important; }
+.wtmail-icon-movetofolder-xs { background-image: url('movetofolder_16.png') !important; }
+.wtmail-icon-mailcardedit-xs { background-image: url('mailcard_edit_16.png') !important; }
+.wtmail-icon-mailcardremove-xs { background-image: url('mailcard_remove_16.png') !important; }
+.wtmail-icon-htmleditor-template-xs { background-image: url('htmleditor_template_16.png') !important; }
+.wtmail-icon-attachment-xs { background-image: url('attachment_16.png') !important; }
 
 /* tree */
 .wtmail-icon-inbox-folder { background-image: url(imap-folder-inbox.png) !important; }
@@ -32,6 +33,8 @@
 .x-grid-tree-node-expanded .wtmail-icon-trash-folder { background-image: url(imap-folder-trash-open.png) !important; }
 .wtmail-icon-shared-folder { background-image: url(imap-folder-shared.png) !important; }
 .x-grid-tree-node-expanded .wtmail-icon-shared-folder { background-image: url(imap-folder-shared-open.png) !important; }
+
+.wtmail-icon-htmleditor-template { background-image: url('htmleditor_template_16.png') !important; }
 
 .wtmail-row-unread TD DIV { font-weight: bold; }
 .wtmail-row-today { background-color: #F8F8C8; }

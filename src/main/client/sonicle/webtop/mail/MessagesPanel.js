@@ -180,7 +180,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         );
 		 */
 
-        me.messageViewContainer=Ext.create('Ext.panel.Panel',{
+        me.messageViewContainer=Ext.create('WT.ux.Panel',{
             region: me.viewRegion,
             cls: 'wtmail-mv-container',
             layout: 'fit',
@@ -191,16 +191,19 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			width: me.viewWidth,
             bodyBorder: true,
             border: true,
-			tbar: [
-				me.getAction("delete"),
-				'-',
-				me.getAction("reply"),
-				me.getAction("replyall"),
-				me.getAction("forward"),
-				'-',
-				me.getAction("markseen"),
-				me.getAction("markunseen")
-			],
+			tbar: Ext.create('Ext.toolbar.Toolbar',{
+				hidden: true,
+				items: [
+					me.getAction("delete"),
+					'-',
+					me.getAction("reply"),
+					me.getAction("replyall"),
+					me.getAction("forward"),
+					'-',
+					me.getAction("markseen"),
+					me.getAction("markunseen")
+				]
+			}),
             items: [ me.messageView ]
         });
         me.add(me.folderList);
@@ -397,17 +400,17 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
 	showMessage: function(folder,id) {
 		var me=this,
-		    tbar=me.messageViewContainer.tbar;
+		    tbar=me.messageViewContainer.getTopBar();
 		tbar.show();
-		tbar.setHeight(24);
+		//tbar.setHeight(24);
 		me.messageView._showMessage(folder,id);
 	},
 
     clearMessageView: function() {
 		var me=this,
-			tbar=me.messageViewContainer.tbar;
+			tbar=me.messageViewContainer.getTopBar();
 		tbar.hide();
-		tbar.setHeight(0);
+		//tbar.setHeight(0);
         me.messageView._clear();
     },
 /*    

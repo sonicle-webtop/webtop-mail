@@ -204,12 +204,12 @@ public class Service extends BaseService {
 	@Override
 	public void initialize() {
 		
-		logger.debug("MailService.ID={}",getId());
+		logger.debug("MailService.ID={}",SERVICE_ID);
 
 		this.environment = getEnv();
 		
 		UserProfile profile = getEnv().getProfile();
-		ss = new MailServiceSettings(getId(),getEnv().getProfile().getDomainId());
+		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
 		us = new MailUserSettings(profile.getId(),ss);
 		mprofile = new MailUserProfile(environment,this);
 		fcProvided = new FolderCache(this, environment);
@@ -3128,7 +3128,7 @@ public class Service extends BaseService {
 	}
 	
 	public boolean hasDocumentArchiving() {
-		return WT.isPermitted(environment.getProfile().getId(),getId(), "DOCUMENT_ARCHIVING");
+		return WT.isPermitted(environment.getProfile().getId(),SERVICE_ID, "DOCUMENT_ARCHIVING");
 	}
 	
 	public String getSimpleArchivingMailFolder() {
@@ -4966,7 +4966,7 @@ public class Service extends BaseService {
 					}
 				}
 				sout += "\n ],\n";
-				String surl = "service-request?service="+getId()+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
+				String surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
 				html = replaceCidUrls(html, maildata, surl);
 			} else {
 				String filename = m.getSubject() + ".eml";
@@ -5837,14 +5837,14 @@ public class Service extends BaseService {
 				//String surl="PreviewAttachment?newmsgid="+msgid+"&amp;cid=";
 
 				//CIDs
-				String surl = "service-request?service="+getId()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
+				String surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
 				content = StringUtils.replace(content, surl, "cid:");
-				surl = "service-request?service="+getId()+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
+				surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
 				content = StringUtils.replace(content, surl, "cid:");
 				//URLs
-				surl = "service-request?service="+getId()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;url=";
+				surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;url=";
 				content = StringUtils.replace(content, surl, "");
-				surl = "service-request?service="+getId()+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
+				surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
 				content = StringUtils.replace(content, surl, "");
 				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
 				content = MailUtils.htmlescapefixsource(content);
@@ -7211,6 +7211,9 @@ public class Service extends BaseService {
 				sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(html) + "',value2:'',value3:0},\n";
 				++recs;
 			}
+			//if no html part, flag seen is not set
+			if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
+			
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			int acount = mailData.getAttachmentPartCount();
 			for (int i = 0; i < acount; ++i) {

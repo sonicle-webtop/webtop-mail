@@ -498,7 +498,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					//var sdate=record.get("scheddate");
 					//if (sdate) value="scheduled";
-					var imgname=Ext.String.format("status{0}.png",value);
+					var imgname=Ext.String.format("status{0}_16.png",value);
 					var imgtag=WTF.imageTag(me.mys.ID,imgname,16,16);
 					//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
 					//else tag=imgtag;
@@ -608,12 +608,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             sortable: false,
             menuDisabled: true,
             dataIndex: 'atts',
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-					var tag;
-					if (value) tag=WTF.imageTag(me.mys.ID,'attach.png',16,16,"border=0 style='cursor: pointer'");
-					else tag=WTF.globalImageTag('empty.gif',16,16,"border=0");
-					return tag;
+			xtype: 'soiconcolumn',
+			iconField: function(value,rec) {
+				return Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'attachment', 'xs');
 			},
+			iconSize: WTU.imgSizeToPx('xs'),
 			scope: me,
             filter: {}
             
