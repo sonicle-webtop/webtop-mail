@@ -399,11 +399,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     },
     
 	showMessage: function(folder,id) {
-		var me=this,
-		    tbar=me.messageViewContainer.getTopBar();
-		tbar.show();
-		//tbar.setHeight(24);
-		me.messageView._showMessage(folder,id);
+		if (folder && id) {
+			var me=this,
+				tbar=me.messageViewContainer.getTopBar();
+			tbar.show();
+			//tbar.setHeight(24);
+			me.messageView._showMessage(folder,id);
+		}
 	},
 
     clearMessageView: function() {
