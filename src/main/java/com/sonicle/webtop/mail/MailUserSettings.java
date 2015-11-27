@@ -37,6 +37,7 @@ import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import java.text.MessageFormat;
+import java.util.HashMap;
 
 /**
  *
@@ -48,7 +49,8 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String MESSAGE_LIST_GROUP = "messagelist.group@{0}"; // was : "messagelist-group-{0}"
 	public static final String MESSAGE_LIST_SORT = "messagelist.sort@{0}"; // was : "messagelist-{0}-sort"
 	public static final String MESSAGE_LIST_THREADED = "messagelist.threaded@{0}"; // was : "list-threaded-{0}"
-	public static final String COLUMN_SIZE = "column.size@{0}"; //was : "column-{0}"
+	public static final String COLUMN_SIZE_PREFIX = "column.size@"; //was : "column-{0}"
+	public static final String COLUMN_SIZE = COLUMN_SIZE_PREFIX+"{0}"; //was : "column-{0}"
 	public static final String COLUMN_VISIBLE = "column.visible@{0}";
 	public static final String SHARED_SEEN = "sharedseen";
 	public static final String SHARING_RIGHTS = "sharing.rights";
@@ -132,13 +134,25 @@ public class MailUserSettings extends BaseUserSettings {
 		return getInteger(MessageFormat.format(COLUMN_SIZE,name),100);
 	}
 	
+	public void setColumnSize(String name, int size) {
+		setInteger(MessageFormat.format(COLUMN_SIZE,name),size);
+	}
+	
 	public ColumnVisibilitySetting getColumnVisibilitySetting(String foldername) {
 		return LangUtils.value(
 				getSetting(MessageFormat.format(COLUMN_VISIBLE, foldername)),
 				new ColumnVisibilitySetting(), ColumnVisibilitySetting.class
 		);
 	}
+	
+	public void setColumnVisibilitySetting(String foldername, ColumnVisibilitySetting cvs) {
+		setObject(MessageFormat.format(COLUMN_VISIBLE, foldername),cvs,ColumnVisibilitySetting.class);
+	}
     
+	public void clearColumnVisibilitySetting(String foldername) {
+		clear(MessageFormat.format(COLUMN_VISIBLE, foldername));
+	}
+	
 	public String getMessageListSort(String foldername) {
 		return getString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
 	}
@@ -269,6 +283,10 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public String getDefaultFolder() {
 		return getString(DEFAULT_FOLDER,null);
+	}
+	
+	public HashMap<String,Integer> getColumnSizes() {
+		return getIntegers(COLUMN_SIZE_PREFIX);
 	}
 	
 }

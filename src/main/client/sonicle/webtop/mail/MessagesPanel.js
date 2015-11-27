@@ -91,15 +91,40 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         //me.folderList.on('cellclick',me.cellClicked,me);
         //me.folderList.on('deleting',me.clearMessageView,me);
         //me.folderList.on('moving',me.clearMessageView,me);
-        //if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
-		//if (me.saveColumnVisibility) me.folderList.getColumnModel().on('hiddenchange', me.columnHiddenChange, me);
+        if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
+		if (me.saveColumnVisibility) {
+			me.folderList.on('columnhide', function(ct,col) { me.columnHiddenChange(ct,col,true); });
+			me.folderList.on('columnshow', function(ct,col) { me.columnHiddenChange(ct,col,false); });
+		}
 
         me.messageView=Ext.create('Sonicle.webtop.mail.MessageView',{
 			mys: me.mys,
 			mp: me
         });
-        me.messageView.on('messageviewed',me.messageViewed,me)
-        
+        me.messageView.on('messageviewed',me.messageViewed,me);
+
+		var tb=me.toolbar=Ext.create('Ext.toolbar.Paging',{
+            store: me.getGridStore(),
+            displayInfo: true,
+            displayMsg: me.res("pagemessage"),
+            emptyMsg: me.res("nomessages"),
+            afterPageText: me.res("afterpagetext"),
+            beforePageText: me.res("beforepagetext"),
+            firstText: me.res("firsttext"),
+            lastText: me.res("lasttext"),
+            nextText: me.res("nexttext"),
+            prevText: me.res("prevtext"),
+            refreshText: me.res("refreshtext")
+        });
+		tb.remove(tb.getComponent('displayItem'));
+		tb.add(Ext.create('Ext.button.Button',{
+			itemId: "displayItem",
+			tooltip: me.res("changepagesize"),
+			handler: me.changePageSize,
+			scope: me
+		}));
+		
+		
 		//TODO: filter components
 		/*
         this.filterTextField=new WT.SuggestTextField({
@@ -209,7 +234,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.add(me.folderList);
         me.add(me.messageViewContainer);
 		me.messageViewContainer.on('resize', function(c,w,h) {
-			console.log('resize - movingPanel='+me.movingPanel);
 			if (!me.movingPanel) {
 				if (me.viewRegion==='east') me.viewWidth=w;
 				else me.viewHeight=h;
@@ -231,6 +255,34 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
 
     },
+	
+	changePageSize: function() {
+		var me=this;
+		WT.prompt(me.res("changepagesizetext"),{
+			title: me.res("changepagesizetitle"),
+			fn: function(btn,text) {
+				if (btn=='ok') {
+					var n=parseInt(text);
+					if (isNaN(n)) {
+						WT.error(me.res("changepagesizenan"));
+					} else {
+						me.setPageSize(n);
+						me.toolbar.pageSize=n;
+						me.folderList.store.reload({
+						  params: {start:0,limit:n}
+						});
+						WT.ajaxReq(me.mys.ID, 'SavePageRows', {
+							params: {
+								pagerows: n
+							}
+						});					
+					}
+				}
+			},
+			scope: me,
+			value: me.getPageSize()
+		});
+	},
 	
 	getAction: function(name) {
 		return this.mys.getAction(name);
@@ -259,8 +311,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.movingPanel=false;
 	},
 	
-	saveMessageView: function() {
+	saveMessageView: function(sb,newsize) {
 		var me=this;
+		if (newsize) {
+			if (me.viewRegion==="south") me.viewHeight=newsize;
+			else me.viewWidth=newsize;
+		}
 		WT.ajaxReq(me.mys.ID, 'SetMessageView', {
 			params: {
 				region: me.viewRegion,
@@ -335,10 +391,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			if (r.get("unread")) {
 				r.set("unread",false);
 				r.set("status","read");
-				var o=s.getProxy().getReader().rawData;
-				o.millis=millis;
-				o.unread--;
-				me.mys.updateUnreads(me.currentFolder,o,false);
+				//TODO: not needed with websocket?
+				//var o=s.getProxy().getReader().rawData;
+				//o.millis=millis;
+				//o.unread--;
+				//me.mys.updateUnreads(me.currentFolder,o,false);
 			}
 		}
     },
@@ -431,44 +488,29 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     cellClicked: function(grid, rowIndex, colIndex, e) {
         this.fireEvent('gridcellclick',grid,rowIndex,colIndex, e);
     },
-    
-    columnResized: function(i,s) {
-        var di=this.folderList.getColumnModel().getDataIndex(i);
-        WT.JsonAjaxRequest({
-            url: "ServiceRequest",
-            params: {
-                service: 'mail',
-                action: 'SaveColumnSize',
-                name: di,
-                size: s
-            },
-            method: "POST",
-            callback: function(o,options) {
-
-            },
-            scope: this
-        });
+    */
+   
+    columnResized: function(ct, col, w) {
+		WT.ajaxReq(this.mys.ID, 'SaveColumnSize', {
+			params: {
+                name: col.dataIndex,
+                size: w
+			}
+		});					
         
     },
-    
-	columnHiddenChange: function(s,i,h) {
-		WT.JsonAjaxRequest({
-			url: "ServiceRequest",
+	
+	columnHiddenChange: function(ct,col,h) {
+		WT.ajaxReq(this.mys.ID, 'SaveColumnVisibility', {
 			params: {
-				service: 'mail',
-				action: 'SaveColumnVisibility',
 				folder: this.currentFolder,
-				name: s.getDataIndex(i),
+				name: col.dataIndex,
 				visible: !h
 			},
-			method: "POST",
-			callback: function(o,options) {
-				
-			},
-			scope: this
 		});
 	},
-    
+
+	/*
     messageViewResized: function() {
         var ah=this.messageViewContainer.getHeight();
         if (ah==this.lastHView) return;
@@ -492,6 +534,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
 	*/
    
+    res: function(name) {
+		return this.mys.res(name);
+	},
+	
     getGridStore: function() {
 		return this.folderList.store;
 	}

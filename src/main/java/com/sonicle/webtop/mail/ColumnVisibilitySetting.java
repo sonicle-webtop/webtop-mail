@@ -68,4 +68,8 @@ public class ColumnVisibilitySetting extends HashMap<String, Boolean> {
 			return new ColumnVisibilitySetting();
 		}
 	}
+	
+	public static String toJson(ColumnVisibilitySetting cvs) {
+		return JsonResult.gsonWoNulls.toJson(cvs);
+	}
 }

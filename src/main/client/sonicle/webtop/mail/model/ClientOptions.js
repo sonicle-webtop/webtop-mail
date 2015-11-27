@@ -38,7 +38,8 @@ Ext.define('Sonicle.webtop.mail.model.ClientOptions', {
 		{ name: 'pageRows', type: 'int' },
 		{ name: 'messageViewRegion', type: 'string' },
 		{ name: 'messageViewWidth', type: 'int' },
-		{ name: 'messageViewHeight', type: 'int' }
+		{ name: 'messageViewHeight', type: 'int' },
+		{ name: 'columnSizes', type: 'string' }
 	],
 	hasMany: [{
 		name: 'identities',

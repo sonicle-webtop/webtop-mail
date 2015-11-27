@@ -265,4 +265,8 @@ public class MailUserProfile {
 		return numMessageList;
 	}
 	
+	public void setNumMsgList(int n) {
+		numMessageList=n;
+	}
+	
 }

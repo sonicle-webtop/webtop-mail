@@ -302,36 +302,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
 		me.viewConfig.loadMask={ msg: WT.res("loading") };
 
-/*        var n=0;
-        var fields=new Array();
-        var idx='idmessage';*/
 		var smodel='Sonicle.webtop.mail.MessagesModel';
         if (this.multifolder) {
-/*            fields[n++]='folder';
-            fields[n++]='folderdesc';
-            idx='idmandfolder';
-            fields[n++]=idx;*/
 			smodel='Sonicle.webtop.mail.MultiFolderMessagesModel';
         }
-/*        fields[n++]='idmessage';
-        fields[n++]={name:'priority',type:'int'};
-        fields[n++]='status';
-        fields[n++]='from';
-        fields[n++]='to';
-        fields[n++]='subject';
-        fields[n++]={name:'date', type:'date'};
-        fields[n++]='gdate';
-        fields[n++]='sdate';
-        fields[n++]='xdate';
-        fields[n++]={name:'unread', type:'boolean'};
-        fields[n++]={name:'size', type:'int'};
-        fields[n++]='flag';
-        fields[n++]='note';
-        fields[n++]={name:'istoday', type:'boolean'};
-        if (me.arch) fields[n++]={name:'arch', type:'boolean'};
-        fields[n++]={name:'atts', type:'boolean'};
-        fields[n++]={name:'scheddate', type:'date'};*/
-
 
         me.store = Ext.create('Ext.data.JsonStore',{
             proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
@@ -339,20 +313,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			pageSize: me.pageSize,
 			groupField: 'sdate',
 			groupDir: 'DESC',
-			/*grouper: Ext.create('Ext.util.Grouper',{
-				property: 'date',
-				direction: 'DESC',
-				groupFn: function(r) {
-					var d1=r.get("date");
-					var d2=new Date(d1.getFullYear(),d1.getMonth(),d1.getDate());
-					return d2;
-				},
-				sorterFn: function(r1,r2) {
-					var a=r1.get("date");
-					var b=r2.get("date");
-					return (a>b)-(a<b);
-				}
-			}),*/
 			
 			//TODO: sort
             /*sortInfo: {field: (this.multifolder?'folderdesc':'date'), direction: (this.multifolder?'ASC':'DESC')},
@@ -395,31 +355,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             //grid: me,
 			//ms: me.ms
         });
-
-/*		if (me.createPagingToolbar) {
-			me.ptoolbar=new Ext.PagingToolbar({
-				region: "center",
-				store: me.store,
-				pageSize: me.pageSize,
-				displayInfo: true,
-				displayMsg: me.res("pagemessage"),
-				emptyMsg: me.res("nomessages"),
-				afterPageText: me.res("afterpagetext"),
-				beforePageText: me.res("beforepagetext"),
-				firstText: me.res("firsttext"),
-				lastText: me.res("lasttext"),
-				nextText: me.res("nexttext"),
-				prevText: me.res("prevtext"),
-				refreshText: me.res("refreshtext")
-			});
-			me.ptoolbar.remove(me.ptoolbar.displayItem);
-			me.ptoolbar.add(me.ptoolbar.displayItem=Ext.create('Ext.Button',{
-				tooltip: me.res("changepagerows"),
-				handler: me.changePageRows,
-				scope: me
-			}));
-			me.tbar=me.ptoolbar;
-		}*/
 
 		//TODO: FilterRow
 /*        if (!Ext.isIE) {

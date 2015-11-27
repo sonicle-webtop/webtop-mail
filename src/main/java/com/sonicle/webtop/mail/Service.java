@@ -1694,7 +1694,18 @@ public class Service extends BaseService {
 	}
 	
 	private InternetAddress getInternetAddress(String email) throws UnsupportedEncodingException, AddressException {
-		String address = null;
+	  email=email.trim();
+	  if (!email.startsWith("\"")) {
+		  int ix=email.indexOf("<");
+		  if (ix>=0) {
+			  String personal=email.substring(0,ix).trim();
+			  String address=email.substring(ix).trim();
+			  email="\""+personal+"\" "+address;
+		  }
+	  }
+	  InternetAddress ia[]=InternetAddress.parse(email, false);
+	  return ia[0];
+/*      String address=null;
 		String personal = null;
 		int ix = email.indexOf('<');
 		if (ix >= 0) {
@@ -1703,7 +1714,7 @@ public class Service extends BaseService {
 			address = email.substring(ix + 1, ix2);
 			return new InternetAddress(address, personal, "UTF-8");
 		}
-		return new InternetAddress(email);
+		return new InternetAddress(email);*/
 	}
 	
 	public Exception sendReceipt(String from, String to, String subject, String body) {
@@ -4477,40 +4488,39 @@ public class Service extends BaseService {
 		return pname;
 	}
 
-	// TODO: save column size!!!
-/*    public void processSaveColumnSize(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String name=request.getParameter("name");
-	 String size=request.getParameter("size");
-	 wts.setServiceSetting("mail", "column-"+name, size);
-	 out.println("{ result: true }");
-	 }*/
-	// TODO: save column visibility
-/*	public void processSaveColumnVisibility(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		
-	 try {
-	 String folder = ServletUtils.getStringParameter(request, "folder", true);
-	 String name = ServletUtils.getStringParameter(request, "name", true);
-	 Boolean visible = ServletUtils.getBooleanParameter(request, "visible", false);
-			
-	 ColumnVisibilitySetting cvs = mus.getColumnVisibilitySetting(folder);
-	 FolderCache fc = getFolderCache(folder);
-			
-	 cvs.put(name, visible);
-	 // Handle default cases...avoid data waste!
-	 if(ColumnVisibilitySetting.isDefault(fc.isSent(), name, cvs.get(name))) cvs.remove(name);
-			
-	 if(cvs.isEmpty()) {
-	 wtd.deleteServiceSetting("mail", environment.getUserProfile(), key);
-	 } else {
-	 wtd.setServiceSetting("mail", environment.getUserProfile(), key, JsonResult.gsonWoNulls.toJson(cvs));
-	 }
-	 new JsonResult().printTo(out);
-			
-	 } catch(Exception ex) {
-	 logger.error("Error saving column visibility.", ex);
-	 new JsonResult(false).printTo(out);
-	 }
-	 }*/
+    public void processSaveColumnSize(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String name=request.getParameter("name");
+		String size=request.getParameter("size");
+		us.setColumnSize(name,Integer.parseInt(size));
+		out.println("{ result: true }");
+	}
+	
+	public void processSaveColumnVisibility(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String folder = ServletUtils.getStringParameter(request, "folder", true);
+			String name = ServletUtils.getStringParameter(request, "name", true);
+			Boolean visible = ServletUtils.getBooleanParameter(request, "visible", false);
+
+			ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(folder);
+			FolderCache fc = getFolderCache(folder);
+
+			cvs.put(name, visible);
+			// Handle default cases...avoid data waste!
+			if(ColumnVisibilitySetting.isDefault(fc.isSent(), name, cvs.get(name))) cvs.remove(name);
+
+			if(cvs.isEmpty()) {
+				us.clearColumnVisibilitySetting(folder);
+			} else {
+				us.setColumnVisibilitySetting(folder, cvs);
+			}
+			new JsonResult().printTo(out);
+
+		} catch(Exception ex) {
+			logger.error("Error saving column visibility.", ex);
+			new JsonResult(false).printTo(out);
+		}
+	}
+	
 	// TODO: save pane size
 /*    public void processSavePaneSize(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 String hperc=request.getParameter("hperc");
@@ -5740,7 +5750,8 @@ public class Service extends BaseService {
 			if (checkemail) {
 				try {
 					checkEmail(email);
-					InternetAddress.parse(email.replace(',', ' '), false);
+					//InternetAddress.parse(email.replace(',', ' '), false);
+					getInternetAddress(email);
 				} catch (AddressException exc) {
 					exc.printStackTrace();
 					throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR) + " : " + email);
@@ -6273,7 +6284,7 @@ public class Service extends BaseService {
 	 logger.error("Unable to determine profile's personal info.", ex);
 	 return null;
 	 } finally {
-			
+		DbUtils.closeQuietly(con);
 	 }
 	 }*/
 	// TODO: get settings!!!!!!!!!!!
@@ -6474,6 +6485,16 @@ public class Service extends BaseService {
 	 if (!group.equals("")) wts.setServiceSetting("mail", "messagelist-"+folder+"-sort", "date|DESC");
 	 new JsonResult(true,"").printTo(out);
 	 }*/
+	
+	
+    public void processSavePageRows(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String spagerows=request.getParameter("pagerows");
+		int pagerows=Integer.parseInt(spagerows);
+		us.setPageRows(pagerows);
+		mprofile.setNumMsgList(pagerows);
+		new JsonResult(true,"").printTo(out);
+	}	
+ 	
 	public void processListMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		CoreManager core = WT.getCoreManager(getRunContext());
 		UserProfile profile = environment.getProfile();
@@ -7615,7 +7636,7 @@ public class Service extends BaseService {
 	 String fnfield=dm.getFirstNameField();
 	 String lnfield=dm.getLastNameField();
 	 Locale locale=wts.getEnvironment().getUserProfile().getLocale();
-	 DirectoryResult dr=dm.lookup(searchFields,patterns,locale,false,false,false);
+	 DirectoryResult dr=dm.lookup(searchFields,patterns,locale,false,false,false,null);
 	 int n=dr.getElementsCount();
 	 ArrayList<String> emails=new ArrayList<String>();
 	 for(int i=0;i<n;++i) {
@@ -7651,7 +7672,7 @@ public class Service extends BaseService {
 	 String lnfield=dm.getLastNameField();
 
 	 Locale locale=wts.getEnvironment().getUserProfile().getLocale();
-	 DirectoryResult dr=dm.lookup(searchFields,patterns,locale,false,false,false);
+	 DirectoryResult dr=dm.lookup(searchFields,patterns,locale,false,false,false,null);
 	 int n=dr.getElementsCount();
 	 ArrayList<String> emails=new ArrayList<String>();
 	 for(int i=0;i<n;++i) {
@@ -9269,6 +9290,7 @@ public class Service extends BaseService {
 			for(OIdentity item: items) {
 				identities.add(new JsIdentity(item));
 			}
+			
 			hm.put("pageRows", us.getPageRows());
 			hm.put("identities", identities);
 			hm.put("messageViewRegion",us.getMessageViewRegion());
@@ -9276,6 +9298,8 @@ public class Service extends BaseService {
 			hm.put("messageViewHeight",us.getMessageViewHeight());
 			hm.put("messageViewMaxTos",ss.getMessageViewMaxTos());
 			hm.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
+			hm.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes())); //json obj
+			
 		} catch(Exception ex) {
 			logger.error("Error executing action ManageCalendarsTree", ex);
 			
