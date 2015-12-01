@@ -664,7 +664,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		//TODO: selection and events
 		/*
         me.selModel=new WT.GridSelectionModel({singleSelect:false});
-        me.store.on('load',me.loaded,this);
+		*/
+        me.store.on('load',me.loaded,me);
+		/*
         me.on('afterrender',function() {
             //this.filterRow.hideFilterRow();
         }, me);*/
@@ -700,6 +702,54 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.currentFolder = folder_id;
 	},
 	
+    loaded: function(s,r,o) {
+		var me=this,
+			meta=me.store.proxy.reader.metaData,
+			ci2=meta.colsInfo2;
+        if (ci2) {
+			me.updatingColumns = true;
+			me.suspendEvents(false);
+            for(var i=0; i<ci2.length; i++) {
+				var col2=ci2[i],
+					cm=me.columnManager,
+					ix=cm.getHeaderByDataIndex(col2.dataIndex).getIndex(),
+					col=cm.columns[ix];
+                if(ix && ix>=0) {
+					var ix2=col2.index;
+					col.setHidden(col2.hidden);
+					if(ix2 && ix2!==-1 && ix!==ix2 && col.isVisible()) me.headerCt.move(ix, ix2);
+				}
+            }
+			me.updatingColumns = false;
+			me.resumeEvents();
+        }
+		//TODO: autoedit
+		/*
+        var ae=meta.autoedit;
+		if (ae) {
+            for(var i=0; i<ae.length; i++) {
+				var r=s.getById(ae[i]);
+				this.ms.editMessage(r,true);
+			}
+		}*/
+		
+		//TODO: discussions
+		/*
+		if (s.reader.jsonData.threaded===1) {
+			this.ms.messagesPanel.pressDiscussionsButton();
+		} else {
+			this.ms.messagesPanel.depressDiscussionsButton();
+		}*/
+        /*
+        if (!this.multifolder) {
+            var b=s.reader.jsonData.issent;
+            var cm=this.getColumnModel();
+            cm.setHidden(2,b);
+            cm.setHidden(3,!b);
+        }
+		*/
+    },
+
     res: function(s) {
         return this.mys.res(s);
     }

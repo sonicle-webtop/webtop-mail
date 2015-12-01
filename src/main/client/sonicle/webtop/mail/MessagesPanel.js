@@ -96,6 +96,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			me.folderList.on('columnhide', function(ct,col) { me.columnHiddenChange(ct,col,true); });
 			me.folderList.on('columnshow', function(ct,col) { me.columnHiddenChange(ct,col,false); });
 		}
+		if (me.saveColumnOrder) me.folderList.on('columnmove', me.columnMoved, me);
 
         me.messageView=Ext.create('Sonicle.webtop.mail.MessageView',{
 			mys: me.mys,
@@ -509,7 +510,20 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			},
 		});
 	},
-
+	
+	columnMoved: function(ct,col,oi,ni) {
+		if(this.folderList.updatingColumns) return;
+		var arr = [], i, cols=this.folderList.getColumns();
+		for(i=0; i<cols.length; i++) {
+			arr.push(cols[i].dataIndex);
+		}
+		WT.ajaxReq(this.mys.ID, 'SaveColumnsOrder', {
+			params: {
+				orderInfo: Ext.JSON.encode(arr)
+			}
+		});
+	},
+	
 	/*
     messageViewResized: function() {
         var ah=this.messageViewContainer.getHeight();

@@ -259,6 +259,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			viewHeight: me.getOption('messageViewHeight',400),
 			saveColumnSizes: true,
 			saveColumnVisibility: true,
+			saveColumnOrder: true,
 			savePaneSize: true,
 			mys: me
 		});

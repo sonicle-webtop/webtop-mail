@@ -52,6 +52,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String COLUMN_SIZE_PREFIX = "column.size@"; //was : "column-{0}"
 	public static final String COLUMN_SIZE = COLUMN_SIZE_PREFIX+"{0}"; //was : "column-{0}"
 	public static final String COLUMN_VISIBLE = "column.visible@{0}";
+	public static final String COLUMNS_ORDER = "columns.order";
 	public static final String SHARED_SEEN = "sharedseen";
 	public static final String SHARING_RIGHTS = "sharing.rights";
 	public static final String FOLDER_PEFFIX = "folder.prefix";
@@ -136,6 +137,18 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public void setColumnSize(String name, int size) {
 		setInteger(MessageFormat.format(COLUMN_SIZE,name),size);
+	}
+	
+	public ColumnsOrderSetting getColumnsOrderSetting() {
+		return LangUtils.value(getSetting(COLUMNS_ORDER),new ColumnsOrderSetting(), ColumnsOrderSetting.class);
+	}
+	
+	public void setColumnsOrderSetting(ColumnsOrderSetting cos) {
+		setObject(COLUMNS_ORDER,cos,ColumnsOrderSetting.class);
+	}
+    
+	public void clearColumnsOrderSetting() {
+		clear(COLUMNS_ORDER);
 	}
 	
 	public ColumnVisibilitySetting getColumnVisibilitySetting(String foldername) {

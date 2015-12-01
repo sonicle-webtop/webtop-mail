@@ -4495,6 +4495,23 @@ public class Service extends BaseService {
 		out.println("{ result: true }");
 	}
 	
+	public void processSaveColumnsOrder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String orderInfo = ServletUtils.getStringParameter(request, "orderInfo", true);
+			ColumnsOrderSetting cos = ColumnsOrderSetting.fromJson(orderInfo);
+			if(cos == null) {
+				us.clearColumnsOrderSetting();
+			} else {
+				us.setColumnsOrderSetting(cos);
+			}
+			new JsonResult().printTo(out);
+			
+		} catch(Exception ex) {
+			logger.error("Error saving columns order.", ex);
+			new JsonResult(false).printTo(out);
+		}
+	}
+		
 	public void processSaveColumnVisibility(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			String folder = ServletUtils.getStringParameter(request, "folder", true);
@@ -6978,6 +6995,7 @@ public class Service extends BaseService {
 						+ "  groupField: '" + group + "',\n";
 				
 				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
+				ColumnsOrderSetting cos = us.getColumnsOrderSetting();
 				// Apply grid defaults
 				//ColumnVisibilitySetting.applyDefaults(mcache.isSent(), cvs);
 				ColumnVisibilitySetting.applyDefaults(issent, cvs);
@@ -6994,7 +7012,7 @@ public class Service extends BaseService {
 				// Fills columnsInfo object for client rendering
 				sout += "colsInfo2: [";
 				for (String dataIndex : cvs.keySet()) {
-					sout += "{dataIndex:'" + dataIndex + "',hidden:" + String.valueOf(!cvs.get(dataIndex)) + "},";
+					sout += "{dataIndex:'" + dataIndex + "',hidden:" + String.valueOf(!cvs.get(dataIndex)) + ",index:"+cos.indexOf(dataIndex)+"},";
 				}
 				if (StringUtils.right(sout, 1).equals(",")) {
 					sout = StringUtils.left(sout, sout.length() - 1);
