@@ -1645,7 +1645,11 @@ public class Service extends BaseService {
 	}
 	
 	public FolderCache trashFolder(String fullname) throws MessagingException {
-		return moveFolder(fullname, mprofile.getFolderTrash());
+      if (!isUnderTrashFolder(fullname)) return moveFolder(fullname,mprofile.getFolderTrash());
+	  else {
+		  deleteFolder(fullname);
+		  return null;
+	  }
 	}
 	
 	public FolderCache moveFolder(String source, String dest) throws MessagingException {
@@ -2455,7 +2459,7 @@ public class Service extends BaseService {
 	}
 
 	//CLONE OF ImapMessage.reply() that does not set the ANSWERED Flag
-	public Message reply(MimeMessage orig, boolean replyToAll) throws MessagingException {
+    public Message reply(MimeMessage orig, boolean replyToAll, boolean fromSent) throws MessagingException {
 		MimeMessage reply = new MimeMessage(session);
 		/*
 		 * Have to manipulate the raw Subject header so that we don't lose
@@ -2471,7 +2475,15 @@ public class Service extends BaseService {
 			}
 			reply.setHeader("Subject", subject);
 		}
-		Address a[] = orig.getReplyTo();
+		Address a[] = null;
+		if (!fromSent) a=orig.getReplyTo();
+		else {
+			Address ax[]=orig.getRecipients(RecipientType.TO);
+			if (ax!=null) {
+				a=new Address[1];
+				a[0]=ax[0];
+			}
+		}
 		reply.setRecipients(Message.RecipientType.TO, a);
 		if (replyToAll) {
 			Vector v = new Vector();
@@ -2565,9 +2577,9 @@ public class Service extends BaseService {
 	// used above in reply()
 	private static final Flags answeredFlag = new Flags(Flags.Flag.ANSWERED);
 	
-	private SimpleMessage getReplyMsg(int id, Message msg, boolean replyAll, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle) {
+	private SimpleMessage getReplyMsg(int id, Message msg, boolean replyAll, boolean fromSent, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle) {	
 		try {
-			Message reply = reply((MimeMessage) msg, replyAll);
+			Message reply=reply((MimeMessage)msg,replyAll,fromSent);
 			
 			removeDestination(reply, myemail);
 			for (Identity ident : mprofile.getIdentities()) {
@@ -3114,6 +3126,11 @@ public class Service extends BaseService {
 		return false;
 	} 
   
+	public boolean isUnderTrashFolder(String foldername) {
+		String str=mprofile.getFolderTrash()+folderSeparator;
+		return foldername.startsWith(str);
+	}
+	
 	public boolean isUnderSharedFolder(String foldername) {
 		boolean b = false;
 		String str = null;
@@ -4649,10 +4666,12 @@ public class Service extends BaseService {
 				result = false;
 			} else {
 				FolderCache newfc = trashFolder(folder);
-				Folder newf = newfc.getFolder();
-				sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
-				sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newf.getFullName()) + "',\n";
-				sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(newf.getName()) + "',\n";
+				sout+="oldid: '"+StringEscapeUtils.escapeEcmaScript(folder)+"',\n";
+				if (newfc!=null) { 
+					Folder newf=newfc.getFolder();
+					sout+="newid: '"+StringEscapeUtils.escapeEcmaScript(newf.getFullName())+"',\n";
+					sout+="newname: '"+StringEscapeUtils.escapeEcmaScript(newf.getName())+"',\n";
+				}
 				result = true;
 			}
 			sout += "result: " + result + "\n}";
@@ -4871,7 +4890,7 @@ public class Service extends BaseService {
 				throw new MessagingException("Message " + pidmessage + " expunged");
 			}
 			SimpleMessage smsg = getReplyMsg(
-					getNewMessageID(), m, replyAll, true,
+					getNewMessageID(), m, replyAll, isSentFolder(pfoldername), true,
 					profile.getEmailAddress(), mprofile.isIncludeMessageInReply(),
 					lookupResource(MailLocaleKey.MSG_FROMTITLE),
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
