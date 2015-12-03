@@ -110,23 +110,59 @@ public class Service extends BaseService {
 	
 	public final static Logger logger = WT.getLogger(Service.class);
 	
-	public static String flagStrings[] = {
-		"red",
-		"blue",
-		"yellow",
-		"green",
-		"orange",
-		"purple",
-		"complete"
+	class WebtopFlag {
+		String label;
+		String tbLabel;
+		
+		WebtopFlag(String label, String tbLabel) {
+			this.label=label;
+			this.tbLabel=tbLabel;
+		}
+		
+	}
+	
+    public WebtopFlag[] webtopFlags={
+        new WebtopFlag("red","$label1"),
+        new WebtopFlag("blue","$label4"),
+        new WebtopFlag("yellow",null),
+        new WebtopFlag("green","$label3"),
+        new WebtopFlag("orange","$label2"),
+        new WebtopFlag("purple","$label5"),
+        new WebtopFlag("complete",null)
 	};
+	
+	public String allFlagStrings[];
+	
+	class ThunderbirdFlag {
+		String label;
+		int colorindex;
+		
+		ThunderbirdFlag(String label, int colorindex) {
+			this.label=label;
+			this.colorindex=colorindex;
+		}
+	}
+	
+/*    public ThunderbirdFlag tbFlagStrings[]={
+        new ThunderbirdFlag("$label1",0),	//red
+        new ThunderbirdFlag("$label2",4),	//orange
+        new ThunderbirdFlag("$label3",3),	//green
+        new ThunderbirdFlag("$label4",1),	//blue
+        new ThunderbirdFlag("$label5",5)	//purple
+		
+    };*/
+	
 	public static Flags flagsAll = new Flags();
 	public static Flags oldFlagsAll = new Flags();
+	public static Flags tbFlagsAll=new Flags();
 	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
 	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
+	public static HashMap<String,Flags> tbFlagsHash=new HashMap<String,Flags>();
 	private static String sflagNote="mailnote";
 	private static String sflagArchived="$Archived";
 	public static Flags flagNote=new Flags(sflagNote);
 	public static Flags flagArchived=new Flags(sflagArchived);
+	public static Flags flagFlagged=new Flags(Flags.Flag.FLAGGED);
 	
 	private FetchProfile FP = new FetchProfile();
 	private FetchProfile draftsFP=new FetchProfile();
@@ -135,21 +171,6 @@ public class Service extends BaseService {
 	
 	private boolean hasDifferentDefaultFolder=false;
 	
-	static {
-		
-		for (String fs : Service.flagStrings) {
-			String oldfs = "flag" + fs;
-			flagsAll.add(fs);
-			oldFlagsAll.add(oldfs);
-			Flags flags = new Flags();
-			flags.add(fs);
-			flagsHash.put(fs, flags);
-			flags = new Flags();
-			flags.add(oldfs);
-			oldFlagsHash.put(fs, flags);
-		}
-	}
-
 	public static final String HEADER_SONICLE_FROM_DRAFTER="Sonicle-from-drafter";	
 	
 	static String startpre = "<PRE>";
@@ -204,7 +225,33 @@ public class Service extends BaseService {
 	@Override
 	public void initialize() {
 		
-		logger.debug("MailService.ID={}",SERVICE_ID);
+		ArrayList<String> allFlagsArray=new ArrayList<String>();
+		for(WebtopFlag fs: webtopFlags) {
+			allFlagsArray.add(fs.label);
+			String oldfs="flag"+fs.label;
+			flagsAll.add(fs.label);
+			if (fs.tbLabel!=null) tbFlagsAll.add(fs.tbLabel);
+			oldFlagsAll.add(oldfs);
+			Flags flags=new Flags();
+			flags.add(fs.label);
+			flagsHash.put(fs.label, flags);
+			flags=new Flags();
+			flags.add(oldfs);
+			oldFlagsHash.put(fs.label, flags);
+			if (fs.tbLabel!=null) {
+				Flags tbFlags=new Flags();
+				tbFlags.add(fs.tbLabel);
+				tbFlagsHash.put(fs.label, tbFlags);
+			}
+		}
+		for(WebtopFlag fs: webtopFlags) {
+			if (fs.tbLabel!=null) allFlagsArray.add(fs.tbLabel);
+		}	  
+		for(WebtopFlag fs: webtopFlags) {
+			allFlagsArray.add("flag"+fs.label);
+		}	  
+		allFlagStrings=new String[allFlagsArray.size()];
+		allFlagsArray.toArray(allFlagStrings);
 
 		this.environment = getEnv();
 		
@@ -3723,31 +3770,31 @@ public class Service extends BaseService {
 			//	if (!level1 || !foldername.equals("INBOX")) leaf=false;
 			//}
 			
-			String iconCls = "wtmail-icon-imap-folder";
+			String iconCls = "wtmail-icon-imap-folder-xs";
 			int unread = 0;
 			boolean hasUnread = false;
 			boolean nounread = false;
 			if (mc.isSharedFolder()) {
-				iconCls = "wtmail-icon-shared-folder";
+				iconCls = "wtmail-icon-shared-folder-xs";
 				nounread = true;
 			} else if (mc.isInbox()) {
-				iconCls = "wtmail-icon-inbox-folder";
+				iconCls = "wtmail-icon-inbox-folder-xs";
 			} else if (mc.isSent()) {
-				iconCls = "wtmail-icon-sent-folder";
+				iconCls = "wtmail-icon-sent-folder-xs";
 				nounread = true;
 			} else if (mc.isDrafts()) {
-				iconCls = "wtmail-icon-drafts-folder";
+				iconCls = "wtmail-icon-drafts-folder-xs";
 				nounread = true;
 			} else if (mc.isTrash()) {
-				iconCls = "wtmail-icon-trash-folder";
+				iconCls = "wtmail-icon-trash-folder-xs";
 				nounread = true;
 			} else if (mc.isSpam()) {
-				iconCls = "wtmail-icon-spam-folder";
+				iconCls = "wtmail-icon-spam-folder-xs";
 				nounread = true;
 			} else if (mc.isDocMgt()) {
-				iconCls = "wtmail-icon-docmgt-folder";
+				iconCls = "wtmail-icon-docmgt-folder-xs";
 			} else if (mc.isSharedInbox()) {
-				iconCls = "wtmail-icon-inbox-folder";
+				iconCls = "wtmail-icon-inbox-folder-xs";
 			}
 			if (!nounread) {
 				unread = mc.getUnreadMessagesCount();
@@ -4140,9 +4187,11 @@ public class Service extends BaseService {
 	String[] getMessageIds(FolderCache mcache, HttpServletRequest request) throws MessagingException {
 		String psortfield = request.getParameter("sort");
 		String psortdir = request.getParameter("dir");
+		String pquickfilter=request.getParameter("quickfilter");
 		String psearchfield = request.getParameter("searchfield");
 		String ppattern = request.getParameter("pattern");
 		String pthreaded=request.getParameter("threaded");
+		if (pquickfilter!=null && pquickfilter.trim().length()==0) pquickfilter=null;
 		if (psearchfield != null && psearchfield.trim().length() == 0) {
 			psearchfield = null;
 		}
@@ -4206,7 +4255,7 @@ public class Service extends BaseService {
 			sort_group = MessageComparator.SORT_BY_FLAG;
 		}
 		
-		Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,false,sort_group,groupascending,threaded);
+		Message msgs[]=mcache.getMessages(pquickfilter,ppattern,psearchfield,sortby,ascending,false,sort_group,groupascending,threaded);
 		ArrayList<String> aids = new ArrayList<String>();
 		for (Message m : msgs) {
 			aids.add("" + m.getMessageNumber());
@@ -6579,6 +6628,7 @@ public class Service extends BaseService {
 		String ppage = request.getParameter("page");
 		String psearchfield = request.getParameter("searchfield");
 		String ppattern = request.getParameter("pattern");
+		String pquickfilter=request.getParameter("quickfilter");
 		String prefresh = request.getParameter("refresh");
         String pthreaded=request.getParameter("threaded");
 		if (psearchfield != null && psearchfield.trim().length() == 0) {
@@ -6587,6 +6637,7 @@ public class Service extends BaseService {
 		if (ppattern != null && ppattern.trim().length() == 0) {
 			ppattern = null;
 		}
+		if (pquickfilter!=null && pquickfilter.trim().length()==0) pquickfilter=null;
 		boolean refresh = (prefresh != null && prefresh.equals("true"));
 		boolean threaded=(pthreaded!=null && pthreaded.equals("1"));
 		
@@ -6725,7 +6776,7 @@ public class Service extends BaseService {
 			}
 			MessageListThread mlt = mlThreads.get(key);
 			if (mlt == null) {
-                mlThreads.put(key, mlt = new MessageListThread(mcache, ppattern, psearchfield, sortby, ascending, refresh, sort_group, groupascending, threaded));
+				mlThreads.put(key, mlt = new MessageListThread(mcache,pquickfilter,ppattern,psearchfield,sortby,ascending,refresh,sort_group,groupascending,threaded));
 			}
 			String tname = Thread.currentThread().getName();			
 			long millis = System.currentTimeMillis();
@@ -6939,11 +6990,15 @@ public class Service extends BaseService {
 						msgsize=(xm.getSize()*3)/4;// /1024 + 1;
 						//User flags
 						String cflag="";
-						for (String flagstring: Service.flagStrings) {
+						for (WebtopFlag webtopFlag: webtopFlags) {
+							String flagstring=webtopFlag.label;
+							String tbflagstring=webtopFlag.tbLabel;
 							if (!flagstring.equals("complete")) {
 								String oldflagstring="flag"+flagstring;
-								if (flags.contains(flagstring)) cflag=flagstring;
-								else if (flags.contains(oldflagstring)) { // vecchio modo
+								if (flags.contains(flagstring)
+										||flags.contains(oldflagstring)
+										|| (tbflagstring!=null && flags.contains(tbflagstring))
+								) {
 									cflag=flagstring;
 								}
 							}
@@ -6953,6 +7008,9 @@ public class Service extends BaseService {
 							if (cflag.length()>0) cflag+="-complete";
 							else cflag="complete";
 						}
+						
+						if (cflag.length()==0 && flags.contains(Flags.Flag.FLAGGED)) cflag="special";
+						
 						boolean hasNote=flags.contains(sflagNote);
 
 						boolean autoedit=false;
@@ -7150,6 +7208,7 @@ public class Service extends BaseService {
 	class MessageListThread implements Runnable {
 		
 		FolderCache fc;
+		String quickfilter;
 		String pattern;
 		String searchfield;
 		int sortby;
@@ -7167,7 +7226,7 @@ public class Service extends BaseService {
 		final Object lock = new Object();
 		long lastRequest = 0;
 		
-		MessageListThread(FolderCache fc, String pattern, String searchfield, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) {
+		MessageListThread(FolderCache fc, String quickfilter, String pattern, String searchfield, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) {
 			this.fc = fc;
 			this.pattern = pattern;
 			this.searchfield = searchfield;
@@ -7185,7 +7244,7 @@ public class Service extends BaseService {
 			synchronized (lock) {
 				try {
 					this.millis = System.currentTimeMillis();
-					msgs=fc.getMessages(pattern,searchfield,sortby,ascending,refresh, sort_group, groupascending,threaded);
+					msgs=fc.getMessages(quickfilter,pattern,searchfield,sortby,ascending,refresh, sort_group, groupascending,threaded);
 				} catch (Exception exc) {
 					exc.printStackTrace();
 				}
@@ -8933,14 +8992,17 @@ public class Service extends BaseService {
 					int msgsize = 0;
 					msgsize = (m.getSize() * 3) / 4;// /1024 + 1;
 					//User flags
-					String cflag = "";
-					for (String flagstring : Service.flagStrings) {
+					String cflag="";
+					for (WebtopFlag webtopFlag: webtopFlags) {
+						String flagstring=webtopFlag.label;
+						String tbflagstring=webtopFlag.tbLabel;
 						if (!flagstring.equals("complete")) {
-							String oldflagstring = "flag" + flagstring;
-							if (flags.contains(flagstring)) {
-								cflag = flagstring;
-							} else if (flags.contains(oldflagstring)) { // vecchio modo
-								cflag = flagstring;
+							String oldflagstring="flag"+flagstring;
+							if (flags.contains(flagstring)
+									||flags.contains(oldflagstring)
+									|| (tbflagstring!=null && flags.contains(tbflagstring))
+							) {
+								cflag=flagstring;
 							}
 						}
 					}

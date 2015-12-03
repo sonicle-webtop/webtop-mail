@@ -8,10 +8,11 @@
 .wtmail-icon-reply-xs { background-image: url('statusreplied_16.png') !important; }
 .wtmail-icon-replyall-xs { background-image: url('replyall_16.png') !important; }
 .wtmail-icon-forward-xs { background-image: url('statusforwarded_16.png') !important; }
+.wtmail-icon-special-xs { background-image: url('flagspecial.gif') !important; }
 .wtmail-icon-markseen-xs { background-image: url('statusread_16.png') !important; }
 .wtmail-icon-markunseen-xs { background-image: url('statusunread_16.png') !important; }
-/*.wtmail-icon-filters-xs { background-image: url('filters.png') !important; }
-.wtmail-icon-newfilter-xs { background-image: url('filters.png') !important; }*/
+/*.wtmail-icon-filters-xs { background-image: url('filters_16.png') !important; }
+.wtmail-icon-newfilter-xs { background-image: url('filters_16.png') !important; }*/
 .wtmail-icon-advsearch-xs { background-image: url('advsearch_16.png') !important; }
 .wtmail-icon-discussions-xs { background-image: url('discussions_16.png') !important; }
 .wtmail-icon-movetofolder-xs { background-image: url('movetofolder_16.png') !important; }
@@ -21,24 +22,24 @@
 .wtmail-icon-attachment-xs { background-image: url('attachment_16.png') !important; }
 
 /* tree */
-.wtmail-icon-inbox-folder { background-image: url(imap-folder-inbox.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-inbox-folder { background-image: url(imap-folder-inbox-open.png) !important; }
-.wtmail-icon-drafts-folder { background-image: url(imap-folder-drafts.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-drafts-folder { background-image: url(imap-folder-drafts-open.png) !important; }
-.wtmail-icon-sent-folder { background-image: url(imap-folder-sent.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-sent-folder { background-image: url(imap-folder-sent-open.png) !important; }
-.wtmail-icon-spam-folder { background-image: url(imap-folder-spam.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-spam-folder { background-image: url(imap-folder-spam-open.png) !important; }
-.wtmail-icon-trash-folder { background-image: url(imap-folder-trash.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-trash-folder { background-image: url(imap-folder-trash-open.png) !important; }
-.wtmail-icon-shared-folder { background-image: url(imap-folder-shared.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-shared-folder { background-image: url(imap-folder-shared-open.png) !important; }
+.wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox_16.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox-open_16.png) !important; }
+.wtmail-icon-drafts-folder-xs { background-image: url(imap-folder-drafts_16.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-drafts-folder-xs { background-image: url(imap-folder-drafts-open_16.png) !important; }
+.wtmail-icon-sent-folder-xs { background-image: url(imap-folder-sent_16.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-sent-folder-xs { background-image: url(imap-folder-sent-open_16.png) !important; }
+.wtmail-icon-spam-folder-xs { background-image: url(imap-folder-spam_16.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-spam-folder-xs { background-image: url(imap-folder-spam-open_16.png) !important; }
+.wtmail-icon-trash-folder-xs { background-image: url(imap-folder-trash_16.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-trash-folder-xs { background-image: url(imap-folder-trash-open_16.png) !important; }
+.wtmail-icon-shared-folder-xs { background-image: url(imap-folder-shared_16.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-shared-folder-xs { background-image: url(imap-folder-shared-open_16.png) !important; }
 
-.wtmail-icon-htmleditor-template { background-image: url('htmleditor_template_16.png') !important; }
+.wtmail-icon-htmleditor-template-xs { background-image: url('htmleditor_template_16.png') !important; }
 
 .wtmail-row-unread TD DIV { font-weight: bold; }
 .wtmail-row-today { background-color: #F8F8C8; }
-.wtmail-icon-testaction { background-image: url('mail_16.png') !important; }
+/* .wtmail-icon-testaction { background-image: url('mail_16.png') !important; }*/
 
 table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 

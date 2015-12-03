@@ -429,6 +429,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         this.currentFolder=folderid;
 		//TODO: clear filter textfield
         //mp.filterTextField.setValue('');
+		//mp.quickFilterCombo.setValue('any');
         
         mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh});
 	}, 

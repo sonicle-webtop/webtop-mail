@@ -57,6 +57,12 @@ public class MessageComparator implements Comparator<Message> {
   private int sort_by=SORT_BY_MSGIDX;
   boolean ascending=true;
 
+  private Service ms=null;
+  
+  public MessageComparator(Service ms) {
+	  this.ms=ms;
+  }
+  
   public void setSortBy(int by) {
     sort_by=by;
   }
@@ -187,11 +193,11 @@ public class MessageComparator implements Comparator<Message> {
           try {
             Flags fl1=m1.getFlags();
             Flags fl2=m2.getFlags();
-            int len=Service.flagStrings.length;
+            int len=ms.allFlagStrings.length;
             int f1=99;
             int f2=99;
             for(int i=0;i<len;++i) {
-                String fs=Service.flagStrings[i];
+                String fs=ms.allFlagStrings[i];
                 if (fl1.contains(fs)) f1=i;
                 if (fl2.contains(fs)) f2=i;
             }

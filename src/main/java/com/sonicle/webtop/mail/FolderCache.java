@@ -115,7 +115,7 @@ public class FolderCache {
     private int sort_group=0;
     private boolean groupascending=true;
 	private boolean threaded=false;
-    private MessageComparator comparator=new MessageComparator();
+    private MessageComparator comparator;
     private UserProfile profile;
     
     private FolderCache parent=null;
@@ -175,6 +175,7 @@ public class FolderCache {
     //Special constructor for externally provided messages
     public FolderCache(Service ms, Environment env) {
         this.ms=ms;
+		comparator=new MessageComparator(ms);
         externalProvider=true;
         environment=env;
 //        wtd=environment.getWebTopDomain();
@@ -618,9 +619,9 @@ public class FolderCache {
     public void refresh() throws MessagingException {
         cleanup(false);
 		if (!threaded)
-			msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending);
+			msgs=_getMessages("", "", "",sort_by,ascending,sort_group,groupascending);
 		else
-			msgs=_getThreadedMessages("", "");
+			msgs=_getThreadedMessages("", "", "");
         open();
         //add(msgs);
         modified=false;
@@ -710,26 +711,28 @@ public class FolderCache {
         folder.fetch(xmsgs, fp);
     }
     
-	public Message[] getMessages(String pattern, String searchfield, int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) throws MessagingException {
+	public Message[] getMessages(String quickfilter, String pattern, String searchfield, int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) throws MessagingException {
         boolean rebuilt=false;
         boolean sortchanged=false;
         if (pattern==null) pattern="";
         if (searchfield==null) searchfield="";
+		if (quickfilter==null) quickfilter="";
         //ArrayList<MimeMessage> xlist=null;
         Message xmsgs[]=null;
         MessageSearchResult msr=null;
         //MessageComparator mcomp=null;
         
-        if (pattern.length()>0) {
-            String skey=pattern+"."+searchfield+"."+threaded;
+        if (!quickfilter.equals("any") || pattern.length()>0) {
+            String skey=quickfilter+"."+pattern+"."+searchfield+"."+threaded;
             msr=msrs.get(skey);
             if (msr==null) {
-				msr=new MessageSearchResult(pattern,searchfield,sort_by,ascending,sort_group,groupascending,threaded);
+				msr=new MessageSearchResult(quickfilter, pattern,searchfield,sort_by,ascending,sort_group,groupascending,threaded);
                 msr.refresh();
                 msrs.put(skey, msr);
                 rebuilt=true;
             } else {
-				if (msr.sort_by!=sort_by || msr.ascending!=ascending || msr.sort_group!=sort_group || msr.groupascending!=groupascending || msr.threaded!=threaded) {
+                if (msr.quickfilter!=quickfilter || msr.sort_by!=sort_by || msr.ascending!=ascending || msr.sort_group!=sort_group || msr.groupascending!=groupascending || msr.threaded!=threaded) {
+					msr.quickfilter=quickfilter;
                     msr.sort_by=sort_by;
                     msr.ascending=ascending;
                     msr.sort_group=sort_group;
@@ -977,11 +980,19 @@ public class FolderCache {
 //        open();
         Message mmsgs[]=getMessages(ids);
         for(Message fmsg: mmsgs) {
-            if (!flag.equals("complete")) {
-                fmsg.setFlags(Service.flagsAll, false);
-                fmsg.setFlags(Service.oldFlagsAll, false);
-            }
-            fmsg.setFlags(Service.flagsHash.get(flag), true);
+			if (flag.equals("special")) {
+				boolean wasspecial=fmsg.getFlags().contains(Service.flagFlagged);
+				fmsg.setFlags(Service.flagFlagged,!wasspecial);
+			}
+			else {
+				if (!flag.equals("complete")) {
+					fmsg.setFlags(Service.flagsAll, false);
+					fmsg.setFlags(Service.oldFlagsAll, false);
+					fmsg.setFlags(Service.tbFlagsAll, false);
+				}
+				fmsg.setFlags(Service.flagsHash.get(flag), true);
+				fmsg.setFlags(Service.tbFlagsHash.get(flag), true);
+			}
             
         }
     }
@@ -992,6 +1003,8 @@ public class FolderCache {
         for(Message fmsg: mmsgs) {
             fmsg.setFlags(Service.flagsAll, false);
             fmsg.setFlags(Service.oldFlagsAll, false);
+            fmsg.setFlags(Service.tbFlagsAll, false);
+			//fmsg.setFlags(Service.flagFlagged,false);
         }
     }
 
@@ -1072,11 +1085,11 @@ public class FolderCache {
         return newfolder;
     }
 	
-	private SearchTerm _prepareSearchTerm(String patterns, String searchfields) {
+	private SearchTerm _prepareSearchTerm(String quickfilter, String patterns, String searchfields) {
 		Locale locale=profile.getLocale();
 		SearchTerm term=null;
-		if(patterns!=null) {
-		  ArrayList<SearchTerm> terms=new ArrayList<SearchTerm>();
+		ArrayList<SearchTerm> terms=new ArrayList<SearchTerm>();
+		if(patterns!=null && patterns.trim().length()>0) {
 		  int ixp=0;
 		  int ixs=0;
 		  while(ixp>=0 && ixs>=0) {
@@ -1094,6 +1107,7 @@ public class FolderCache {
 			  ixp=ixp2;
 			  ixs=ixs2;
 			  if (ixp>=0 && ixs>=0) { ++ixp; ++ixs; }
+			  if (pattern.trim().length()==0) continue;
 			  if (searchfield.equals("any")) {
 				SearchTerm anyterms[]=new SearchTerm[6];
 				anyterms[0]=new SubjectTerm(pattern);
@@ -1230,15 +1244,36 @@ public class FolderCache {
 				}
 			  }
 		  }
-		  int n=terms.size();
-		  if (n==1) {
-			  term=terms.get(0);
-		  }
-		  else if (n>1) {
-			  SearchTerm vterms[]=new SearchTerm[n];
-			  terms.toArray(vterms);
-			  term=new AndTerm(vterms);
-		  }
+		}
+		if (quickfilter!=null) {
+			if (quickfilter.equals("unread")) {
+			  terms.add(new FlagTerm(new Flags(Flag.SEEN),false));
+			} 
+			else if (quickfilter.equals("flagged")) {
+				FlagTerm fts[]=new FlagTerm[ms.allFlagStrings.length+1];
+				fts[0]=new FlagTerm(new Flags(Flag.FLAGGED),true);
+				for(int i=0;i<ms.allFlagStrings.length;++i)
+					fts[i+1]=new FlagTerm(new Flags(ms.allFlagStrings[i]),true);
+				terms.add(new OrTerm(fts));
+			}
+			else if (quickfilter.equals("unanswered")) {
+			  terms.add(new FlagTerm(new Flags(Flag.ANSWERED),false));
+			}
+			else if (quickfilter.equals("priority")) {
+			  HeaderTerm p1=new HeaderTerm("X-Priority", "1");
+			  HeaderTerm p2=new HeaderTerm("X-Priority", "2");
+			  terms.add(new OrTerm(p1,p2));
+			}
+		}
+
+		int n=terms.size();
+		if (n==1) {
+			term=terms.get(0);
+		}
+		else if (n>1) {
+			SearchTerm vterms[]=new SearchTerm[n];
+			terms.toArray(vterms);
+			term=new AndTerm(vterms);
 		}
 		return term;
 	}
@@ -1252,7 +1287,7 @@ public class FolderCache {
 				break;
 			case SORT_BY_FLAG:
 				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-				gsort=new FlagSortTerm(Service.flagStrings, !groupascending);
+				gsort=new FlagSortTerm(ms.allFlagStrings, !groupascending);
 				break;
 			case SORT_BY_MSGIDX:
 				gsort=new MessageIDSortTerm(!groupascending);
@@ -1285,7 +1320,7 @@ public class FolderCache {
 				break;
 			case SORT_BY_FLAG:
 				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-				sort=new FlagSortTerm(Service.flagStrings, !ascending);
+				sort=new FlagSortTerm(ms.allFlagStrings, !ascending);
 				break;
 			case SORT_BY_MSGIDX:
 				sort=new MessageIDSortTerm(!ascending);
@@ -1324,13 +1359,13 @@ public class FolderCache {
 		return sort;
 	}
 	
-	private Message[] _getMessages(String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending) throws MessagingException {
+	private Message[] _getMessages(String quickfilter, String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending) throws MessagingException {
 
 		Message[] xmsgs=null;
 		open();
 
 		if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
-			SearchTerm term=_prepareSearchTerm(patterns,searchfields);
+			SearchTerm term=_prepareSearchTerm(quickfilter, patterns,searchfields);
 			SonicleSortTerm sort=_prepareSortTerm(sort_by,ascending,sort_group,groupascending);
 			open();
 
@@ -1348,13 +1383,13 @@ public class FolderCache {
 		return xmsgs;
 	}
 	
-	private SonicleIMAPMessage[] _getThreadedMessages(String patterns, String searchfields) throws MessagingException {
+	private SonicleIMAPMessage[] _getThreadedMessages(String quickfilter, String patterns, String searchfields) throws MessagingException {
 		SonicleIMAPMessage[] tmsgs=null;
 		open();
 
 		if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
 
-			SearchTerm term=_prepareSearchTerm(patterns,searchfields);
+			SearchTerm term=_prepareSearchTerm(quickfilter, patterns,searchfields);
 			
 			open();
 			
@@ -1469,7 +1504,7 @@ public class FolderCache {
               break;
           case SORT_BY_FLAG:
               //<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-              sort=new FlagSortTerm(Service.flagStrings, !ascending);
+			  sort=new FlagSortTerm(ms.allFlagStrings, !ascending);
               break;
           case SORT_BY_MSGIDX:
               sort=new MessageIDSortTerm(!ascending);
@@ -2068,6 +2103,7 @@ public class FolderCache {
   }
   
   class MessageSearchResult {
+	  String quickfilter;
       String pattern;
       String searchfield;
 //      ArrayList<MimeMessage> mylist=new ArrayList<MimeMessage>();
@@ -2078,9 +2114,10 @@ public class FolderCache {
       int sort_group=0;
       boolean groupascending=true;
 	  boolean threaded=false;
-      MessageComparator comparator=new MessageComparator();
+      MessageComparator comparator=new MessageComparator(FolderCache.this.ms);
       
-	  MessageSearchResult(String pattern, String searchfield, int sort_by, boolean ascending, int sort_group, boolean groupascending, boolean threaded) {
+	  MessageSearchResult(String quickfilter, String pattern, String searchfield, int sort_by, boolean ascending, int sort_group, boolean groupascending, boolean threaded) {
+		  this.quickfilter=quickfilter;
           this.sort_by=sort_by;
           this.ascending=ascending;
           this.pattern=pattern;
@@ -2093,9 +2130,9 @@ public class FolderCache {
       void refresh() throws MessagingException {
           this.cleanup();
 		  if (!threaded)
-			this.msgs=_getMessages(pattern, searchfield, sort_by, ascending,sort_group,groupascending);
+			this.msgs=_getMessages(quickfilter, pattern, searchfield, sort_by, ascending,sort_group,groupascending);
 		  else
-			this.msgs=_getThreadedMessages(pattern, searchfield);
+			this.msgs=_getThreadedMessages(quickfilter, pattern, searchfield);
 //          for(Message m: msgs) {
 //              String mid=m.getHeader("Message-ID")[0];
 //              if (hash.containsKey(mid)) mylist.add(hash.get(mid));

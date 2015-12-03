@@ -128,6 +128,33 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		
 		//TODO: filter components
 		/*
+        this.quickFilterCombo=new Ext.form.ComboBox({
+            forceSelection: true,
+            mode: 'local',
+            displayField: 'desc',
+            triggerAction: 'all',
+            selectOnFocus: true,
+            width: 80,
+			listWidth: 120,
+            editable: false,
+            store: new Ext.data.SimpleStore({
+                fields: ['id','desc'],
+                data: [
+                    ['any',this.res('quickany')],
+                    ['unread',this.res('quickunread')],
+                    ['flagged',this.res('quickflagged')],
+                    ['unanswered',this.res('quickunanswered')],
+                    ['attachment',this.res('quickattachment')],
+                    ['priority',this.res('quickpriority')]
+                ]
+            }),
+            value: 'any',
+            valueField: 'id'
+        });
+        this.quickFilterCombo.on('select',function(cb,r,ix) {
+            this.quickFilterChanged(r.get("id"));
+        },this);		
+		
         this.filterTextField=new WT.SuggestTextField({
             lookupService: 'mail',
             lookupContext: 'filtersubject',
@@ -198,7 +225,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         this.toolbar.insertButton(0,[
                 this.bFilterRow,
                 "-",
-                this.filterCombo,
+				this.quickFilterCombo,
+                "-",
+				this.filterCombo,
                 this.filterTextField,
                 "-",
                 this.res("groupby")+":",
@@ -453,18 +482,30 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
     filterKeyDown: function(tf,e) {
       if (e.getKey()==Ext.EventObject.ENTER) {
-        this.depressFilterRowButton();
         var pattern=tf.getValue();
         var field=this.filterCombo.getValue();
-        this.folderList.store.baseParams={service: 'mail', action: 'ListMessages', folder: this.currentFolder, searchfield: field, pattern: pattern, refresh:1};
+		var quickfilter=this.quickFilterCombo.getValue();
+		this.reloadFiltered(quickfilter,field,pattern);
+      }
+    },
+	
+	reloadFiltered: function(quickfilter,field,pattern) {
+        this.depressFilterRowButton();
+        this.folderList.store.baseParams={service: 'mail', action: 'ListMessages', folder: this.currentFolder, quickfilter: quickfilter, searchfield: field, pattern: pattern, refresh:1};
         this.folderList.store.reload({
           params: {start:0,limit:this.ms.pageRows}
         });
         this.folderList.store.baseParams.refresh=0;
       }
-    },
-    
-    
+	},
+     
+    quickFilterChanged: function(nv) {
+        var pattern=this.filterTextField.getValue();
+        var field=this.filterCombo.getValue();
+		var quickfilter=this.quickFilterCombo.getValue();
+		this.reloadFiltered(quickfilter,field,pattern);
+	},
+	    
     depressFilterRowButton: function() {
         if (this.bFilterRow.pressed) {
             this.bFilterRow.toggle();
