@@ -1621,7 +1621,7 @@ public class Service extends BaseService {
 		from.moveMessages(ids, to);
 	}
 	
-	public void copyMessages(FolderCache from, FolderCache to, int ids[]) throws MessagingException {
+	public void copyMessages(FolderCache from, FolderCache to, int ids[]) throws MessagingException, IOException {
 		from.copyMessages(ids, to);
 	}
 	
@@ -4012,7 +4012,7 @@ public class Service extends BaseService {
 				long millis = System.currentTimeMillis();
 				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + "\n}";
 			}
-		} catch (MessagingException exc) {
+		} catch(Exception exc) {
 			exc.printStackTrace();
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
@@ -4056,7 +4056,7 @@ public class Service extends BaseService {
 				long millis = System.currentTimeMillis();
 				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + "\n}";
 			}
-		} catch (MessagingException exc) {
+        } catch(Exception exc) {
 			exc.printStackTrace();
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
@@ -4184,7 +4184,7 @@ public class Service extends BaseService {
         out.println(sout);
     }
 	
-	String[] getMessageIds(FolderCache mcache, HttpServletRequest request) throws MessagingException {
+	String[] getMessageIds(FolderCache mcache,HttpServletRequest request) throws MessagingException, IOException {
 		String psortfield = request.getParameter("sort");
 		String psortdir = request.getParameter("dir");
 		String pquickfilter=request.getParameter("quickfilter");

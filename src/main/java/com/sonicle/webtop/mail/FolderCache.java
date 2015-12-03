@@ -616,7 +616,7 @@ public class FolderCache {
         this.forceRefresh=true;
     }
     
-    public void refresh() throws MessagingException {
+    public void refresh() throws MessagingException, IOException {
         cleanup(false);
 		if (!threaded)
 			msgs=_getMessages("", "", "",sort_by,ascending,sort_group,groupascending);
@@ -711,7 +711,7 @@ public class FolderCache {
         folder.fetch(xmsgs, fp);
     }
     
-	public Message[] getMessages(String quickfilter, String pattern, String searchfield, int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) throws MessagingException {
+	public Message[] getMessages(String quickfilter, String pattern, String searchfield, int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) throws MessagingException, IOException {
         boolean rebuilt=false;
         boolean sortchanged=false;
         if (pattern==null) pattern="";
@@ -896,7 +896,7 @@ public class FolderCache {
         to.modified=true;
     }
 
-    public void copyMessages(int ids[], FolderCache to) throws MessagingException {
+    public void copyMessages(int ids[], FolderCache to) throws MessagingException, IOException {
 		
         if (ms.hasDocumentArchiving() &&
                 ms.isSimpleArchiving() &&
@@ -911,7 +911,7 @@ public class FolderCache {
         }
     }
 
-    public void archiveMessages(int ids[], FolderCache to) throws MessagingException {
+    public void archiveMessages(int ids[], FolderCache to) throws MessagingException, IOException {
         Message mmsgs[]=getMessages(ids);
         MimeMessage newmmsgs[]=getArchivedCopy(mmsgs);
         moveMessages(ids,to);
@@ -919,7 +919,7 @@ public class FolderCache {
         refresh();
     }
 
-    public void markArchivedMessages(int ids[]) throws MessagingException {
+    public void markArchivedMessages(int ids[]) throws MessagingException, IOException {
         MimeMessage newmmsgs[]=getArchivedCopy(ids);
         try {
 			deleteMessages(ids);
@@ -1359,7 +1359,7 @@ public class FolderCache {
 		return sort;
 	}
 	
-	private Message[] _getMessages(String quickfilter, String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending) throws MessagingException {
+	private Message[] _getMessages(String quickfilter, String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending) throws MessagingException, IOException {
 
 		Message[] xmsgs=null;
 		open();
@@ -1378,6 +1378,14 @@ public class FolderCache {
 				open();
 				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
 			}
+		}
+		if (quickfilter!=null && quickfilter.equals("attachment")) {
+			ArrayList<Message> amsgs=new ArrayList<Message>();
+			for(Message m: xmsgs) {
+				if (hasAttachements(m)) amsgs.add(m);
+			}
+			xmsgs=new Message[amsgs.size()];
+			amsgs.toArray(xmsgs);
 		}
 
 		return xmsgs;
@@ -1405,6 +1413,33 @@ public class FolderCache {
 		
 		return tmsgs;
 	}
+
+	private boolean isAttachment(Part part) throws MessagingException {
+		return Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) 
+				|| Part.INLINE.equalsIgnoreCase(part.getDisposition()) 
+				|| (part.getDisposition() == null && part.getFileName() != null);
+	}
+    
+    private boolean hasAttachements(Part p) throws MessagingException, IOException {
+        boolean retval=false;
+        
+        //String disp=p.getDisposition();
+		if (isAttachment(p)) retval=true;
+		//if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT)) retval=true;
+        else if(p.isMimeType("multipart/*")) {
+            Multipart mp=(Multipart)p.getContent();
+            int parts=mp.getCount();
+            for(int i=0;i<parts;++i) {
+                Part bp=mp.getBodyPart(i);
+                if (hasAttachements(bp)) {
+                    retval=true;
+                    break;
+                }
+            }
+        }
+        
+        return retval;
+    }
 
 	public Message[] getMessagesByMessageId(String id) throws MessagingException {
 		boolean wasOpen=folder.isOpen();
@@ -2127,7 +2162,7 @@ public class FolderCache {
 		  this.threaded=threaded;
       }
       
-      void refresh() throws MessagingException {
+      void refresh() throws MessagingException, IOException {
           this.cleanup();
 		  if (!threaded)
 			this.msgs=_getMessages(quickfilter, pattern, searchfield, sort_by, ascending,sort_group,groupascending);
