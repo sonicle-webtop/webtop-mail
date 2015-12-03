@@ -6191,6 +6191,32 @@ public class Service extends BaseService {
 	 new JsonResult(false, "Error managing quickparts").printTo(out);
 	 }
 	 }*/
+	
+/*	public void processListPublicImages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		SettingsManager sm = wta.getSettingsManager();
+		ArrayList<JsonHashMap> items = null;
+		JsonHashMap item = null;
+		
+		try {
+			items = new ArrayList<JsonHashMap>();
+			String publicArea = sm.getSetting("webtop.public");
+			File pubimgDir = new File(publicArea + "/main/images/");
+			if(pubimgDir.isDirectory() && pubimgDir.exists()) {
+				File[] files = pubimgDir.listFiles();
+				for(File file : files) {
+					String url = "webtop/public/images/"+file.getName();
+					item = new JsonHashMap(url, file.getName());
+					items.add(item);
+				}
+			}
+			new JsonResult(items).printTo(out);
+			
+		} catch (Exception ex) {
+			logger.error("Error ListPublicImages", ex);
+			new JsonResult(false, "Error ListPublicImages").printTo(out);
+		}
+	}	*/
+	
 	// TODO: manage mailcard !!!!
 /*	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 UserProfile profile = environment.getProfile();

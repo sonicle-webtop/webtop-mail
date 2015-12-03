@@ -1094,7 +1094,16 @@ public class FolderCache {
 			  ixp=ixp2;
 			  ixs=ixs2;
 			  if (ixp>=0 && ixs>=0) { ++ixp; ++ixs; }
-			  if(searchfield.equals("subject")) {
+			  if (searchfield.equals("any")) {
+				SearchTerm anyterms[]=new SearchTerm[6];
+				anyterms[0]=new SubjectTerm(pattern);
+				anyterms[1]=new RecipientStringTerm(Message.RecipientType.TO, pattern);
+				anyterms[2]=new RecipientStringTerm(Message.RecipientType.CC, pattern);
+				anyterms[3]=new RecipientStringTerm(Message.RecipientType.BCC, pattern);
+				anyterms[4]=new FromStringTerm(pattern);
+				anyterms[5]=new BodyTerm(pattern);
+				terms.add(new OrTerm(anyterms));
+			  } else if(searchfield.equals("subject")) {
 				terms.add(new SubjectTerm(pattern));
 			  } else if(searchfield.equals("to")) {
 				terms.add(new RecipientStringTerm(Message.RecipientType.TO, pattern));

@@ -145,6 +145,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             store: new Ext.data.SimpleStore({
                 fields: ['id','desc'],
                 data: [
+					['any',this.res('anyfield')],
                     ['subject',this.res('subject')],
                     ['from',this.res('sender')],
                     ['body',this.res('message')],
