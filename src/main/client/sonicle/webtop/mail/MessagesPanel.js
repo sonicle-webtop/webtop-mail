@@ -242,6 +242,18 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				me.saveMessageView(me.viewRegion==='east'?w:h);
 			}
 		});
+		me.messageViewContainer.on("expand",function() {
+			var sel=me.folderList.getSelection();
+			if (sel.length==1) {
+				var r=sel[0],
+					id=r.get('idmessage'),
+					fldr=r.get('fromfolder');
+				if (!fldr) fldr=me.currentFolder;
+				me.showMessage(fldr,id);
+			} else {
+				me.clearMessageView();
+			}
+		});
 		
 		//TODO: save pane size
 		/*
@@ -472,16 +484,18 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     selectionChanged: function(sm,r,eopts) {
         var me=this,
 			c=sm.getCount();
-        //if (c==1&&!ctrlshift) {
-		if (c===1) {
-            var id=r[0].get('idmessage');
-			var fldr=r[0].get('fromfolder');
-			if (!fldr) fldr=this.currentFolder;
-            if (id!==me.messageView.idmessage)
-                me.showMessage(fldr,id);
-        } else {
-            me.clearMessageView();
-        }
+		if (!me.viewCollapsed) {
+			//if (c==1&&!ctrlshift) {
+			if (c===1) {
+				var id=r[0].get('idmessage');
+				var fldr=r[0].get('fromfolder');
+				if (!fldr) fldr=this.currentFolder;
+				if (id!==me.messageView.idmessage)
+					me.showMessage(fldr,id);
+			} else {
+				me.clearMessageView();
+			}
+		}
         me.fireEvent('gridselectionchanged',sm/*,ctrlshift*/);
     },
     

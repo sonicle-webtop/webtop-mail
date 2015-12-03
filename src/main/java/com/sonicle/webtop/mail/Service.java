@@ -3489,7 +3489,6 @@ public class Service extends BaseService {
 	
 	private void _loadFoldersCache(FolderCache fc) throws MessagingException {
 		Folder f = fc.getFolder();
-		String fname=f.getFullName();
 		Folder children[] = f.list();
 		for (Folder child : children) {
 			String cname=child.getFullName();
@@ -3525,13 +3524,15 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private FolderCache addSingleFoldersCache(FolderCache parent, Folder child) throws MessagingException {
-		//logger.debug("adding {} to {}",child.getName(),parent.getFolderName());
+	private synchronized FolderCache addSingleFoldersCache(FolderCache parent, Folder child) throws MessagingException {
 		String cname = child.getFullName();
-		FolderCache fcChild = createFolderCache(child);
-		fcChild.setParent(parent);
-		parent.addChild(fcChild);
-		fcChild.setStartupLeaf(isLeaf((IMAPFolder) child));
+		FolderCache fcChild=foldersCache.get(cname);
+		if (fcChild==null) {
+			fcChild=createFolderCache(child);
+			fcChild.setParent(parent);
+			parent.addChild(fcChild);
+			fcChild.setStartupLeaf(isLeaf((IMAPFolder)child));
+		}
 		
 		return fcChild;
 	}
@@ -3695,8 +3696,10 @@ public class Service extends BaseService {
 			
 			FolderCache mc = getFolderCache(foldername);
 			if (mc == null) {
-				//logger.debug("outputFolders mc is null: foldername={}",foldername);
-				continue;
+				//continue;
+				FolderCache fcparent=getFolderCache(parent.getFullName());
+				//System.out.println("==folder not ready, adding now==");
+				mc=addSingleFoldersCache(fcparent, f);
 			}
 			//String shortfoldername=getShortFolderName(foldername);
 			IMAPFolder imapf = (IMAPFolder) f;
