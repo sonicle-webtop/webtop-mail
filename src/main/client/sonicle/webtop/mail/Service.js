@@ -348,6 +348,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
         this.addAction("flaggreen",this.actionFlagGreen,this);
         this.addAction("flagorange",this.actionFlagOrange,this);
         this.addAction("flagpurple",this.actionFlagPurple,this);
+        this.addAction("flagblack",this.actionFlagBlack,this);
+        this.addAction("flaggray",this.actionFlagGray,this);
+        this.addAction("flagwhite",this.actionFlagWhite,this);
+        this.addAction("flagbrown",this.actionFlagBrown,this);
+        this.addAction("flagazure",this.actionFlagAzure,this);
+        this.addAction("flagpink",this.actionFlagPink,this);
         this.addAction("flagcomplete",this.actionFlagComplete,this);
         this.addAction("addnote",this.actionAddNote,this);
         this.addAction("clear",this.actionClear,this,'');

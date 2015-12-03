@@ -991,7 +991,8 @@ public class FolderCache {
 					fmsg.setFlags(Service.tbFlagsAll, false);
 				}
 				fmsg.setFlags(Service.flagsHash.get(flag), true);
-				fmsg.setFlags(Service.tbFlagsHash.get(flag), true);
+				Flags tbFlags=Service.tbFlagsHash.get(flag);
+				if (tbFlags!=null) fmsg.setFlags(tbFlags, true);
 			}
             
         }
@@ -1647,6 +1648,10 @@ public class FolderCache {
         synchronized(this) {
             Integer mid=m.getMessageNumber();
             mailData=dhash.get(mid);
+			if (mailData!=null && mailData.getMessage()!=m) {
+				Service.logger.debug("found wrong cached message, refreshing");
+				mailData=null;
+			}
             if (mailData==null) {
                 mailData=prepareHTMLMailData(m);
                 if (mid>0) dhash.put(mid, mailData);

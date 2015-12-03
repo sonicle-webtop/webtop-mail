@@ -611,7 +611,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                           ['green',me.res('flaggreen'),'iconFlagGreen'],
                           ['orange',me.res('flagorange'),'iconFlagOrange'],
                           ['purple',me.res('flagpurple'),'iconFlagPurple'],
-                          ['complete',me.res('flagcomplete'),'iconFlagComplete']
+                          ['black',me.res('flagblack'),'iconFlagBlack'],
+                          ['gray',me.res('flaggray'),'iconFlagGray'],
+                          ['white',me.res('flagwhite'),'iconFlagWhite'],
+                          ['brown',me.res('flagbrown'),'iconFlagBrown'],
+                          ['azure',me.res('flagazure'),'iconFlagAzure'],
+                          ['pink',me.res('flagpink'),'iconFlagPink']
                       ]
                     }),
                     valueField: 'value',

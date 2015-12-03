@@ -128,6 +128,12 @@ public class Service extends BaseService {
         new WebtopFlag("green","$label3"),
         new WebtopFlag("orange","$label2"),
         new WebtopFlag("purple","$label5"),
+        new WebtopFlag("black",null),
+        new WebtopFlag("gray",null),
+        new WebtopFlag("white",null),
+        new WebtopFlag("brown",null),
+        new WebtopFlag("azure",null),
+        new WebtopFlag("pink",null),
         new WebtopFlag("complete",null)
 	};
 	
