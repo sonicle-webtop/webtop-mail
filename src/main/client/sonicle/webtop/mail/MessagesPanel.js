@@ -212,7 +212,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             layout: 'fit',
             split: true,
             collapseMode: 'mini',
-            collapsible : false,
+            collapsible : true,
+			collapsed: me.viewCollapsed,
             height: me.viewHeight,
 			width: me.viewWidth,
             bodyBorder: true,
@@ -236,9 +237,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.add(me.messageViewContainer);
 		me.messageViewContainer.on('resize', function(c,w,h) {
 			if (!me.movingPanel) {
-				if (me.viewRegion==='east') me.viewWidth=w;
-				else me.viewHeight=h;
-				me.saveMessageView();
+				//if (me.viewRegion==='east') me.viewWidth=w;
+				//else me.viewHeight=h;
+				me.saveMessageView(me.viewRegion==='east'?w:h);
 			}
 		});
 		
@@ -293,28 +294,55 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		return this.viewRegion;
 	},
 	
-	moveViewPanel: function() {
+	switchViewPanel: function() {
+		var me=this,
+			r=(me.viewRegion==='east'?'south':'east'),
+			w=me.viewWidth,
+			h=me.viewHeight;
+	
+		me.moveViewPanel(r,w,h,true);
+	},
+	
+	moveViewPanel: function(r,w,h,save,collapsed) {
 		var me=this,
 			mv=me.messageView,
 			mvc=me.messageViewContainer,
 			idm=mv.idmessage,
 			idf=mv.folder;
-		console.log('moveViewPanel');
+	
+		//TODO: necessary???
+		////trick for switched user forced as south standard, no save
+		//if (WT.loginusername!=WT.username) {
+		//	r=null;
+		//	save=false;
+		//}
+		
 		me.movingPanel=true;
 		me.clearMessageView();
-		me.viewRegion=(me.viewRegion==='east'?'south':'east');
+		if (!r) {
+			r="south";
+			w=640;
+			h=400;
+		}
+		me.viewRegion=r;
+		me.viewWidth=w;
+		me.viewHeight=h;
+		me.viewCollapsed=collapsed;
 		mvc.setRegion(me.viewRegion);
 		mvc.setWidth(me.viewWidth);
 		mvc.setHeight(me.viewHeight);
 		me.updateLayout();
-		me.saveMessageView();
+		if (me.viewCollapsed) mvc.collapse();
+		if (save) me.saveMessageView();
 		me.showMessage(idf,idm);
 		me.movingPanel=false;
 	},
 	
-	saveMessageView: function(sb,newsize) {
+	saveMessageView: function(newsize) {
 		var me=this;
-		if (newsize) {
+		//collapsed has value string right/... or false
+		me.viewCollapsed=me.messageViewContainer.collapsed!==false;
+		if (!me.viewCollapsed && newsize) {
 			if (me.viewRegion==="south") me.viewHeight=newsize;
 			else me.viewWidth=newsize;
 		}
@@ -322,7 +350,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			params: {
 				region: me.viewRegion,
 				width: me.viewWidth,
-				height: me.viewHeight
+				height: me.viewHeight,
+				collapsed: me.viewCollapsed
 			}
 		});
 		

@@ -257,6 +257,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			viewRegion: me.getOption('messageViewRegion','east'),
 			viewWidth: me.getOption('messageViewWidth',600),
 			viewHeight: me.getOption('messageViewHeight',400),
+			viewCollapsed: me.getOption('messageViewCollapsed',false),
 			saveColumnSizes: true,
 			saveColumnVisibility: true,
 			saveColumnOrder: true,

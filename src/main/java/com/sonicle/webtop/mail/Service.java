@@ -1622,6 +1622,7 @@ public class Service extends BaseService {
 		for (Folder subfolder : folder.list()) {
 			deleteFolder(subfolder);
 		}
+		try { folder.close(false); } catch(Throwable exc) {}
 		boolean retval = folder.delete(true);
 		if (retval) {
 			destroyFolderCache(getFolderCache(folder.getFullName()));
@@ -1631,7 +1632,12 @@ public class Service extends BaseService {
 	
 	public boolean emptyFolder(String fullname) throws MessagingException {
 		FolderCache fc = getFolderCache(fullname);
-		FolderCache parent = fc.getParent();
+		for (Folder child: fc.getFolder().list()) {
+			deleteFolder(child);
+		}
+		fc.deleteAllMessages();
+	  
+      /*FolderCache parent=fc.getParent();
 		if (deleteFolder(fullname)) {
 			destroyFolderCache(fc);
 			Folder f = getFolder(fullname);
@@ -1640,8 +1646,8 @@ public class Service extends BaseService {
 			if (fc != null) {
 				return true;
 			}
-		}
-		return false;
+      }*/
+      return true;
 	}
 	
 	public FolderCache trashFolder(String fullname) throws MessagingException {
@@ -9333,6 +9339,7 @@ public class Service extends BaseService {
 			hm.put("messageViewRegion",us.getMessageViewRegion());
 			hm.put("messageViewWidth",us.getMessageViewWidth());
 			hm.put("messageViewHeight",us.getMessageViewHeight());
+			hm.put("messageViewCollapsed",us.getMessageViewCollapsed());
 			hm.put("messageViewMaxTos",ss.getMessageViewMaxTos());
 			hm.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
 			hm.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes())); //json obj
@@ -9352,10 +9359,12 @@ public class Service extends BaseService {
 			String region = ServletUtils.getStringParameter(request, "region", true);
 			Integer width = ServletUtils.getIntParameter(request, "width", true);
 			Integer height = ServletUtils.getIntParameter(request, "height", true);
+			Boolean collapsed = ServletUtils.getBooleanParameter(request, "collapsed", false);
 			
 			us.setMessageViewRegion(region);
 			us.setMessageViewWidth(width);
 			us.setMessageViewHeight(height);
+			us.setMessageViewCollapsed(collapsed);
 			
 			new JsonResult().printTo(out);
 			

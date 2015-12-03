@@ -350,7 +350,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				Ext.each(me.divSubject.query("a[panelmover]"),function(o) { 
 					Ext.get(o).on("click",
 						function(e,t,o) { 
-							me.mp.moveViewPanel(); 
+							me.mp.switchViewPanel(); 
 							e.stopEvent(); 
 							return false;
 						}

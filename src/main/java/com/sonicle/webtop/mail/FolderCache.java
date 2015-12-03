@@ -954,12 +954,20 @@ public class FolderCache {
         return newmmsgs;
     }
 
+    public void deleteAllMessages() throws MessagingException {
+		_deleteMessages(getAllMessages());
+	}
+	
     public void deleteMessages(int ids[]) throws MessagingException {
         Message mmsgs[]=getMessages(ids);
+		_deleteMessages(mmsgs);
+        removeDHash(ids);
+    }
+	
+	private void _deleteMessages(Message mmsgs[]) throws MessagingException {
         for(Message dmsg: mmsgs) {
           dmsg.setFlag(Flags.Flag.DELETED, true);
         }
-        removeDHash(ids);
         folder.expunge();
         setForceRefresh();
         modified=true;
@@ -1545,9 +1553,9 @@ public class FolderCache {
     }
 
     void removeChild(FolderCache fc) {
-        children.remove(fc);
-		childrenMap.remove(fc.foldername);
-        if (children.isEmpty()) children=null;
+        if (children!=null) children.remove(fc);
+		if (childrenMap!=null) childrenMap.remove(fc.foldername);
+        if (children!=null && children.size()==0) children=null;
     }
     
 	public boolean hasChild(String name) {

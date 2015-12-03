@@ -76,6 +76,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String MESSAGE_VIEW_REGION = "message.view.region";
 	public static final String MESSAGE_VIEW_WIDTH = "message.view.width";
 	public static final String MESSAGE_VIEW_HEIGHT = "message.view.height";
+	public static final String MESSAGE_VIEW_COLLAPSED = "message.view.collapsed";
     
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
@@ -292,6 +293,14 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public void setMessageViewHeight(int height) {
 		setInteger(MESSAGE_VIEW_HEIGHT,height);
+	}
+	
+	public boolean getMessageViewCollapsed() {
+		return getBoolean(MESSAGE_VIEW_COLLAPSED,false);
+	}
+	
+	public void setMessageViewCollapsed(boolean collapsed) {
+		setBoolean(MESSAGE_VIEW_COLLAPSED,collapsed);
 	}
 	
 	public String getDefaultFolder() {
