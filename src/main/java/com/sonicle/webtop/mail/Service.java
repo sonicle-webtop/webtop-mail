@@ -7799,58 +7799,38 @@ public class Service extends BaseService {
 				part = mailData.getUnknownPart(Integer.parseInt(punknown));
 			}
 
-			//String ctype="application/octet-stream";
-			String ctype = "binary/octet-stream";
-			if (psaveas == null) {
-				ctype = part.getContentType();
-				int ix = ctype.indexOf(";");
-				if (ix > 0) {
-					ctype = ctype.substring(0, ix);
+			if (part!=null) {
+				String ctype="binary/octet-stream";
+				if (psaveas==null) {
+					ctype=part.getContentType();
+					int ix=ctype.indexOf(";");
+					if (ix>0) ctype=ctype.substring(0,ix);
 				}
-			}
-			String name = part.getFileName();
-			if (name == null) {
-				name = "";
-			}
-			try {
-				name = MailUtils.decodeQString(name);
-			} catch (Exception exc) {
-			}
-			
-			if (psaveas == null) {
-				int ix = name.lastIndexOf(".");
-				if (ix > 0) {
-					String ext = name.substring(ix + 1);
-					String xctype = WT.getContentType(ext);
-					if (xctype != null) {
-						ctype = xctype;
+				String name=part.getFileName();
+				if (name==null) name="";
+				try {
+					name=MailUtils.decodeQString(name);
+				} catch(Exception exc) {
+				}
+ 
+				if (psaveas==null) {
+					int ix=name.lastIndexOf(".");
+					if (ix>0) {
+						String ext=name.substring(ix+1);
+						String xctype=WT.getContentType(ext);
+						if (xctype!=null) ctype=xctype;
 					}
 				}
-			}
-			response.setContentType(ctype);
-			response.setHeader("Content-Disposition", "inline; filename=\"" + name + "\"");
-			if (providername == null) {
-				Folder folder = mailData.getFolder();
-				if (!folder.isOpen()) {
-					folder.open(Folder.READ_ONLY);
+				response.setContentType(ctype);
+				response.setHeader("Content-Disposition", "inline; filename=\"" + name + "\"");
+				if (providername==null) {
+					Folder folder=mailData.getFolder();
+					if (!folder.isOpen()) folder.open(Folder.READ_ONLY);
 				}
-			}
-			InputStream is = part.getInputStream();
-			OutputStream out = response.getOutputStream();
-			fastStreamCopy(is, out);
-			/*            byte[] b = new byte[64 * 1024];
-			 int len = 0;
-
-			 try {
-			 while ((len = is.read(b)) != -1)
-			 out.write(b, 0, len);
-			 } catch(Exception exc) {
-			 exc.printStackTrace();
-			 }
-			 out.flush();
-			 out.close();
-			 is.close();*/
-			
+				InputStream is = part.getInputStream();
+				OutputStream out = response.getOutputStream();
+				fastStreamCopy(is, out);
+			}			
 		} catch (Exception exc) {
 			exc.printStackTrace();
 		}
