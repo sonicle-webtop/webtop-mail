@@ -129,63 +129,52 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		
         me.quickFilterCombo=Ext.create(WTF.localCombo('id', 'desc', {
             width: 80,
+			matchFieldWidth: false,
 			listConfig: { width: 120 },
 			store: Ext.create('Sonicle.webtop.mail.store.QuickFilter', {
 				autoLoad: true
 			}),
             value: 'any',
+			tooltip: me.res('quickfilter.tip'),
+			plugins: [ 'sofieldtooltip' ],
 			listeners: {
 				select: function(cb,r,eopts) {
 					me.quickFilterChanged(r.get("id"));
-				},
-				afterrender: function(cb,eopts) {
-					Ext.QuickTips.register({ target: cb.getEl(), text: me.res('quickfilter.tip') });
 				}
 			}
         }));
+        me.filterCombo=Ext.create(WTF.localCombo('id', 'desc', {
+            width: 80,
+			matchFieldWidth: false,
+			listConfig: { width: 120 },
+			store: Ext.create('Sonicle.webtop.mail.store.Filter', {
+				autoLoad: true
+			}),
+            value: 'subject',
+			tooltip: me.res('filter.tip'),
+			plugins: [ 'sofieldtooltip' ],
+			listeners: {
+				change: function(cb,nv,ov) {
+					me.filterTextField.setSuggestionContext("filter"+nv);
+				}
+			}
+        }));
+        me.filterTextField=Ext.create({
+			xtype: 'wtsuggestcombo',
+			sid: me.mys.ID,
+			suggestionContext: 'filtersubject',
+            width: 150,
+			tooltip: me.res('filtertext.tip'),
+			listeners: {
+				enterkey: function(tf,e) {
+					me.filterAction(tf,e);
+				}
+			}
+			
+        });
 		//TODO: filter components
 		
 		/*
-        this.filterTextField=new WT.SuggestTextField({
-            lookupService: 'mail',
-            lookupContext: 'filtersubject',
-            width: 150
-        });
-		this.filterTextField.on('afterrender', function(combo){
-			Ext.QuickTips.register({ target: combo.getEl(), text: this.res('filtertexttip') });
-		},this);
-        this.filterTextField.on('specialkey',this.filterKeyDown,this);
-        this.filterCombo=new Ext.form.ComboBox({
-            forceSelection: true,
-            mode: 'local',
-            displayField: 'desc',
-            triggerAction: 'all',
-            selectOnFocus: true,
-            width: 80,
-            editable: false,
-            store: new Ext.data.SimpleStore({
-                fields: ['id','desc'],
-                data: [
-					['any',this.res('anyfield')],
-                    ['subject',this.res('subject')],
-                    ['from',this.res('sender')],
-                    ['body',this.res('message')],
-                    ['sentdate',this.res('sentdate')],
-                    ['recvdate',this.res('recvdate')],
-                    ['to',this.res('to')],
-                    ['cc',this.res('cc')],
-                    ['bcc',this.res('bcc')]
-                ]
-            }),
-            value: 'subject',
-            valueField: 'id'
-        });
-		this.filterCombo.on('afterrender', function(combo){
-			Ext.QuickTips.register({ target: combo.getEl(), text: this.res('filtertip') });
-		},this);
-        this.filterCombo.on('change',function(cb,nv,ov) {
-            this.filterTextField.setLookupContext("filter"+nv);
-        },this);
         var txt=this.res('action-filterrow');
         var action=new Ext.Action({text: '', handler: this.actionFilterRow, scope: this, iconCls: 'icon-mail-action-filterrow', tooltip: txt, enableToggle: true});
         
@@ -220,13 +209,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         },this);
         
 		 */
-        tb.insertButton(0,[
+        tb.insert(0,[
 /*                this.bFilterRow,
                 "-",*/
-				this.quickFilterCombo/*,
+				me.quickFilterCombo,
                 "-",
-				this.filterCombo,
-                this.filterTextField,
+				me.filterCombo,
+                me.filterTextField/*,
                 "-",
                 this.res("groupby")+":",
                 this.groupCombo*/
@@ -469,6 +458,42 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		}
     },
    
+    filterAction: function(tf,e) {
+        var me=this;
+		me.reloadFiltered(me.quickFilterCombo.getValue(),me.filterCombo.getValue(),tf.getValue());
+    },
+	
+    quickFilterChanged: function(nv) {
+		var me=this;
+		me.reloadFiltered(me.quickFilterCombo.getValue(),me.filterCombo.getValue(),me.filterTextField.getValue());
+	},
+	    
+	reloadFiltered: function(quickfilter,field,pattern) {
+		var me=this;
+        me.depressFilterRowButton();
+//        me.folderList.store.baseParams={service: 'mail', action: 'ListMessages', folder: this.currentFolder, quickfilter: quickfilter, searchfield: field, pattern: pattern, refresh:1};
+//        me.folderList.store.reload({
+//          params: {start:0,limit:me.ms.pageRows}
+//        });
+//        me.folderList.store.baseParams.refresh=0;      
+		me.reloadCurrentFolder({
+			start:0,
+			limit: me.getPageSize(),
+			quickfilter: quickfilter,
+			searchfield: field,
+			pattern: pattern,
+			refresh: 1
+		});
+	},
+     
+    depressFilterRowButton: function() {
+		var me=this;
+        if (me.bFilterRow && me.bFilterRow.pressed) {
+            me.bFilterRow.toggle();
+            me.folderList.hideFilterRow();
+        }
+    },
+    
 	/*
     actionFilterRow: function() {
         if (this.bFilterRow.pressed) this.folderList.showFilterRow();
@@ -476,39 +501,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     },
 
     
-    
-    filterKeyDown: function(tf,e) {
-      if (e.getKey()==Ext.EventObject.ENTER) {
-        var pattern=tf.getValue();
-        var field=this.filterCombo.getValue();
-		var quickfilter=this.quickFilterCombo.getValue();
-		this.reloadFiltered(quickfilter,field,pattern);
-      }
-    },
-	
-	reloadFiltered: function(quickfilter,field,pattern) {
-        this.depressFilterRowButton();
-        this.folderList.store.baseParams={service: 'mail', action: 'ListMessages', folder: this.currentFolder, quickfilter: quickfilter, searchfield: field, pattern: pattern, refresh:1};
-        this.folderList.store.reload({
-          params: {start:0,limit:this.ms.pageRows}
-        });
-        this.folderList.store.baseParams.refresh=0;
-      }
-	},
-     
-    quickFilterChanged: function(nv) {
-        var pattern=this.filterTextField.getValue();
-        var field=this.filterCombo.getValue();
-		var quickfilter=this.quickFilterCombo.getValue();
-		this.reloadFiltered(quickfilter,field,pattern);
-	},
-	    
-    depressFilterRowButton: function() {
-        if (this.bFilterRow.pressed) {
-            this.bFilterRow.toggle();
-            this.folderList.hideFilterRow();
-        }
-    },
     
     clearGridSelections: function() {
         this.folderList.getSelectionModel().clearSelections(true);
@@ -519,6 +511,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         this.folderList.reloadFolder(folderid,config);
     },
 
+    reloadCurrentFolder: function(config) {
+        this.folderList.reloadFolder(this.currentFolder,config);
+    },
+	
 	//TODO no more ctrlshift?
     selectionChanged: function(sm,r,eopts) {
         var me=this,

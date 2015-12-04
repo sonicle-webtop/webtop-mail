@@ -32,20 +32,23 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.store.QuickFilter', {
+Ext.define('Sonicle.webtop.mail.store.Filter', {
 	extend: 'WT.ux.data.ArrayStore',
 	
 	sid: 'com.sonicle.webtop.mail', 
-	resKeyPrefix: 'store.quickfilter.',
+	resKeyPrefix: 'store.filter.',
 	
 	model: 'WT.ux.data.SimpleModel',
 	data: [
 		['any'],
-		['unread'],
-		['flagged'],
-		['unanswered'],
-		['attachment'],
-		['priority']
+		['subject'],
+		['from'],
+		['body'],
+		['sentdate'],
+		['recvdate'],
+		['to'],
+		['cc'],
+		['bcc']
 	]
 	
 });

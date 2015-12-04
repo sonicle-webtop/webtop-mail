@@ -688,7 +688,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		Ext.applyIf(config, {
 			start: 0,
 			limit: 50,
-			refresh: 1
+			refresh: 1,
+			folder: folder_id
 		});
 
 		//TODO: sort info && threaded
@@ -696,10 +697,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         //this.store.sortInfo=null;
 		//TODO: baseParams??
 		//this.store.baseParams = {service: 'mail', action: 'ListMessages', folder: folder_id};
-		var params={
-				start: config.start, limit: config.limit, refresh: config.refresh, folder: folder_id, threaded: config.threaded
-			};
-		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), params));
+		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), config));
 
 		
 		me.store.load();

@@ -7234,6 +7234,7 @@ public class Service extends BaseService {
 		
 		MessageListThread(FolderCache fc, String quickfilter, String pattern, String searchfield, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) {
 			this.fc = fc;
+			this.quickfilter=quickfilter;
 			this.pattern = pattern;
 			this.searchfield = searchfield;
 			this.sortby = sortby;
@@ -9397,10 +9398,10 @@ public class Service extends BaseService {
 	
 	
 	@Override
-	public HashMap<String, Object> returnClientOptions() {
+	public ClientOptions returnClientOptions() {
 		UserProfile profile=environment.getProfile();
 		Connection con = null;
-		HashMap<String, Object> hm = new HashMap<>();
+		ClientOptions co = new ClientOptions();
 		try {
 			con = getConnection();
 			IdentityDAO idao=IdentityDAO.getInstance();
@@ -9411,15 +9412,15 @@ public class Service extends BaseService {
 				identities.add(new JsIdentity(item));
 			}
 			
-			hm.put("pageRows", us.getPageRows());
-			hm.put("identities", identities);
-			hm.put("messageViewRegion",us.getMessageViewRegion());
-			hm.put("messageViewWidth",us.getMessageViewWidth());
-			hm.put("messageViewHeight",us.getMessageViewHeight());
-			hm.put("messageViewCollapsed",us.getMessageViewCollapsed());
-			hm.put("messageViewMaxTos",ss.getMessageViewMaxTos());
-			hm.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
-			hm.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes())); //json obj
+			co.put("pageRows", us.getPageRows());
+			co.put("identities", identities);
+			co.put("messageViewRegion",us.getMessageViewRegion());
+			co.put("messageViewWidth",us.getMessageViewWidth());
+			co.put("messageViewHeight",us.getMessageViewHeight());
+			co.put("messageViewCollapsed",us.getMessageViewCollapsed());
+			co.put("messageViewMaxTos",ss.getMessageViewMaxTos());
+			co.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
+			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes())); //json obj
 			
 		} catch(Exception ex) {
 			logger.error("Error executing action ManageCalendarsTree", ex);
@@ -9427,7 +9428,7 @@ public class Service extends BaseService {
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
-		return hm;
+		return co;
 	}
 	
 	
