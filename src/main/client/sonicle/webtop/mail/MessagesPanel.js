@@ -36,7 +36,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	extend: 'Ext.panel.Panel',
 	requires: [
 		'Sonicle.webtop.mail.MessageView',
-		'Sonicle.webtop.mail.MessageGrid'
+		'Sonicle.webtop.mail.MessageGrid',
+		'Sonicle.webtop.mail.store.QuickFilter'
 	],
 	config: {
 		pageSize: 25
@@ -126,40 +127,33 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		}));
 		
 		
-		//TODO: filter components
-		/*
-        this.quickFilterCombo=new Ext.form.ComboBox({
-            forceSelection: true,
-            mode: 'local',
-            displayField: 'desc',
-            triggerAction: 'all',
-            selectOnFocus: true,
+        me.quickFilterCombo=Ext.create(WTF.localCombo('id', 'desc', {
             width: 80,
-			listWidth: 120,
-            editable: false,
-            store: new Ext.data.SimpleStore({
-                fields: ['id','desc'],
-                data: [
-                    ['any',this.res('quickany')],
-                    ['unread',this.res('quickunread')],
-                    ['flagged',this.res('quickflagged')],
-                    ['unanswered',this.res('quickunanswered')],
-                    ['attachment',this.res('quickattachment')],
-                    ['priority',this.res('quickpriority')]
-                ]
-            }),
+			listConfig: { width: 120 },
+			store: Ext.create('Sonicle.webtop.mail.store.QuickFilter', {
+				autoLoad: true
+			}),
             value: 'any',
-            valueField: 'id'
-        });
-        this.quickFilterCombo.on('select',function(cb,r,ix) {
-            this.quickFilterChanged(r.get("id"));
-        },this);		
+			listeners: {
+				select: function(cb,r,eopts) {
+					me.quickFilterChanged(r.get("id"));
+				},
+				afterrender: function(cb,eopts) {
+					Ext.QuickTips.register({ target: cb.getEl(), text: me.res('quickfilter.tip') });
+				}
+			}
+        }));
+		//TODO: filter components
 		
+		/*
         this.filterTextField=new WT.SuggestTextField({
             lookupService: 'mail',
             lookupContext: 'filtersubject',
             width: 150
         });
+		this.filterTextField.on('afterrender', function(combo){
+			Ext.QuickTips.register({ target: combo.getEl(), text: this.res('filtertexttip') });
+		},this);
         this.filterTextField.on('specialkey',this.filterKeyDown,this);
         this.filterCombo=new Ext.form.ComboBox({
             forceSelection: true,
@@ -186,6 +180,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             value: 'subject',
             valueField: 'id'
         });
+		this.filterCombo.on('afterrender', function(combo){
+			Ext.QuickTips.register({ target: combo.getEl(), text: this.res('filtertip') });
+		},this);
         this.filterCombo.on('change',function(cb,nv,ov) {
             this.filterTextField.setLookupContext("filter"+nv);
         },this);
@@ -222,19 +219,19 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             this.groupCombo.setValue(gg);
         },this);
         
-        this.toolbar.insertButton(0,[
-                this.bFilterRow,
-                "-",
-				this.quickFilterCombo,
+		 */
+        tb.insertButton(0,[
+/*                this.bFilterRow,
+                "-",*/
+				this.quickFilterCombo/*,
                 "-",
 				this.filterCombo,
                 this.filterTextField,
                 "-",
                 this.res("groupby")+":",
-                this.groupCombo
+                this.groupCombo*/
             ]
         );
-		 */
 
         me.messageViewContainer=Ext.create('WT.ux.Panel',{
             region: me.viewRegion,
