@@ -33,12 +33,62 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.web.Crud;
+import com.sonicle.commons.web.ServletUtils;
+import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.webtop.core.WT;
 import com.sonicle.webtop.core.sdk.BaseUserOptionsService;
+import java.io.PrintWriter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.slf4j.Logger;
 
 /**
  *
  * @author malbinola
  */
 public class UserOptionsService extends BaseUserOptionsService {
+	public static final Logger logger = WT.getLogger(UserOptionsService.class);
 	
+	@Override
+	public void processUserOptions(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
+		//Connection con = null;
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			
+			/*
+			MailUserSettings mus = new MailUserSettings(getServiceId(), getTargetProfileId());
+			
+			if(crud.equals(Crud.READ)) {
+				JsUserOptions jso = new JsUserOptions(getTargetProfileId().toString());
+				
+				// Main
+				jso.view = cus.getCalendarView();
+				jso.workdayStart = hmf.print(cus.getWorkdayStart());
+				jso.workdayEnd = hmf.print(cus.getWorkdayEnd());
+				jso.eventReminderDelivery = cus.getEventReminderDelivery();
+				
+				new JsonResult(jso).printTo(out);
+				
+			} else if(crud.equals(Crud.UPDATE)) {
+				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(payload, JsUserOptions.class);
+				
+				// Main
+				if(pl.map.has("view")) cus.setCalendarView(pl.data.view);
+				if(pl.map.has("workdayStart")) cus.setWorkdayStart(hmf.parseLocalTime(pl.data.workdayStart));
+				if(pl.map.has("workdayEnd")) cus.setWorkdayEnd(hmf.parseLocalTime(pl.data.workdayEnd));
+				if(pl.map.has("eventReminderDelivery")) cus.setEventReminderDelivery(pl.data.eventReminderDelivery);
+				
+				new JsonResult().printTo(out);
+			}
+			*/
+			
+		} catch (Exception ex) {
+			logger.error("Error executing UserOptions", ex);
+			new JsonResult(false).printTo(out);
+		} finally {
+			//DbUtils.closeQuietly(con);
+		}
+	}
 }
