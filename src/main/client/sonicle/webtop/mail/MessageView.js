@@ -519,13 +519,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
             var h,w;
             if (!me.windowed) {
-                h=me.ownerCt.getEl().getHeight()-2; //??getComputedHeight
-                w=me.ownerCt.getEl().getWidth(); //??getComputedWidth
+				var ct=me.ownerCt;
+				//was -2, changed to -26 to keep space for h scrollbar
+                h=ct.getEl().getHeight()-26;
+                w=ct.getEl().getWidth();
                 me.viewResized(me,w,h,w,h);
-            } else {
-//                h=this.ownerCt.getEl().getComputedHeight()-40;
-//                w=this.ownerCt.getEl().getComputedWidth()-10;
-//                this.viewResized(this,w,h,w,h);
             }
             
             me.cleared=false;
@@ -805,6 +803,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             task.delay(200, me.adjustIframe, me, [xifname,task]);
             return;
         }
+
+		var xstyle=doc.createElement('style');
+		xstyle.type='text/css';
+		xstyle.appendChild(doc.createTextNode('pre { white-space: pre-wrap !important; } body { font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif; }'));
+		doc.head.appendChild(xstyle);
+		
         var thebody=doc.body;
         thebody.style.padding="0px 0px 0px 0px";
         thebody.style.margin="0px 0px 0px 0px";
