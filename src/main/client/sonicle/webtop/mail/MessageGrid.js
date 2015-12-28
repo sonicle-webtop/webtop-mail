@@ -285,6 +285,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     multifolder: false,
     reloadAction: 'ListMessages',
     firstShow: true,
+	key2flag: ['clear','red','orange','green','blue','purple','yellow','black','gray','white'],
+	
+	listeners: {
+		render: function(g,opts) {
+			var me=this,
+				map = new Ext.util.KeyMap({
+					target: me.getEl(),
+					key: "0123456789",
+					fn: function(key,ev) {
+						me.setFlag(me.key2flag[key-48]);
+					},
+					scope: me
+				});		
+		}
+	},
 	
     initComponent: function() {
         var me=this;
@@ -676,6 +691,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             //this.filterRow.hideFilterRow();
         }, me);*/
 		
+		
         me.callParent(arguments);
     },
 	
@@ -753,6 +769,84 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		*/
     },
 
+    setFlag: function(flagstring) {
+        var g=this,
+			selection=g.getSelection(),
+			folder=g.currentFolder,
+			data=g.sel2ids(selection),
+			ids=data.ids,
+			params={
+                flag: flagstring,
+                fromfolder: folder,
+                ids: ids,
+                multifolder: data.multifolder
+			};
+			
+        if (data.folders) params.folders=data.folders;
+		
+		WT.ajaxReq(g.mys.ID, 'FlagMessages', {
+			params: params,
+			callback: function(success,json) {
+              if (json.result) {
+                  var dorel=false,
+					  fl=g.mys.messagesPanel.folderList,
+					  fs=flagstring;
+			  
+                  if (fs==='clear') fs="";
+                  
+                  Ext.each(
+                    selection,
+                    function(r,index,allItems) {
+                      if (g!==fl) {
+                        var ff=(g.multifolder?r.get("folder"):g.currentFolder);
+                        if (ff===fl.currentFolder) dorel=true;
+                      }
+					  if (fs==="special") {
+						  if (r.get("flag")==="special") r.set("flag","");
+						  else r.set("flag",fs);
+					  } else if (fs!=="complete") {
+                          r.set("flag",fs);
+                      } else {
+                          var xflag=r.get("flag");
+                          if (xflag==='') {
+                              r.set("flag",'complete');
+                          } 
+                          else if (!xflag.endsWith("complete")) {
+                              r.set("flag",xflag+"-"+fs);
+                          }
+                      }
+                      
+                    },this
+                  );
+                  if (dorel) this.mys.reloadFolderList();
+
+              } else {
+                  WT.error(json.text);
+              }
+			}
+		});					
+		
+    },
+
+    sel2ids: function(selection) {
+        var me=this,
+			ids=[],
+			seen=[],
+			mf=me.multifolder;
+	
+        Ext.each(
+          selection,
+          function(r,index,allItems) {
+              var id=r.get("idmessage");
+              if (mf) id=r.get("folder")+"|"+id;
+              ids[index]=id;
+              seen[index]=(r.get("unread")?false:true);
+              
+          }
+        );
+        return {ids: ids, seen: seen, multifolder: mf};
+    },
+    
     res: function(s) {
         return this.mys.res(s);
     }

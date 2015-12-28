@@ -551,13 +551,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		//tbar.setHeight(0);
         me.messageView._clear();
     },
+	
+    reloadGrid: function() {
+        this.folderList.store.reload();
+    },
+    
 /*    
     actionDelete: function() {
         this.folderList.actionDelete();
-    },
-    
-    reloadGrid: function() {
-        this.folderList.store.reload();
     },
     
     rowDblClicked: function(grid, rowIndex, e) {

@@ -8670,7 +8670,7 @@ public class Service extends BaseService {
 	 sout="{\nresult: true, scf:["+scf+"]\n}";
 	 } catch(Exception exc) {
 	 exc.printStackTrace();
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
+	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage().replaceAll("\n","<BR>"))+"'\n}";
 	 } finally {
 	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
 	 if (con!=null) try { con.close(); } catch(Exception e) {}

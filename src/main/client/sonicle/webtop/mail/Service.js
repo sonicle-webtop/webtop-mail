@@ -473,6 +473,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			});
 		});
-	}
+	},
+	
+    reloadFolderList: function() {
+        this.messagesPanel.reloadGrid();
+    }
 	
 });
