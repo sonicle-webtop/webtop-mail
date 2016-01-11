@@ -50,6 +50,9 @@ public class HTMLMailData {
   private MimeMessage message=null;
   private Folder folder=null;
   private int nid=0;
+  
+  private ICalendarRequest icalRequest=null;
+  private boolean hasICalAttachment=false;
 
   public HTMLMailData(MimeMessage msg, Folder folder) throws MessagingException {
     this.message=msg;
@@ -72,7 +75,23 @@ public class HTMLMailData {
   public MimeMessage getMessage() {
     return message;
   }
+  
+  public ICalendarRequest getICalRequest() {
+	  return icalRequest;
+  }
+  
+  public void setICalRequest(ICalendarRequest ir) {
+	  icalRequest=ir;
+  }  
 
+  public void setHasICalAttachment(boolean b) {
+	  hasICalAttachment=b;
+  }
+  
+  public boolean hasICalAttachment() {
+	  return hasICalAttachment;
+  }
+  
   public void addDisplayPart(Part part) {
     if (!dispParts.contains(part)) dispParts.add(part);
   }
@@ -82,7 +101,17 @@ public class HTMLMailData {
   }
 
   public void addAttachmentPart(Part part) {
-    if (!attachmentParts.contains(part)) attachmentParts.add(part);
+    if (!attachmentParts.contains(part)) {
+		boolean addPart=true;
+		try {
+			if (part.isMimeType("application/ics") || part.isMimeType("text/calendar")) {
+				if (!hasICalAttachment) hasICalAttachment=true;
+				else addPart=false;
+			}
+		} catch(MessagingException exc) {
+		}
+		if (addPart) attachmentParts.add(part);
+	}
   }
 
   public void addCidPart(String name, Part part) {

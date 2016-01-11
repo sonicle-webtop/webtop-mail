@@ -51,11 +51,13 @@ import javax.mail.event.MessageCountEvent;
 import javax.mail.event.MessageCountListener;
 import javax.mail.internet.*;
 import javax.mail.search.*;
-import net.fortuna.ical4j.data.CalendarBuilder;
-import net.fortuna.ical4j.data.ParserException;
-import net.fortuna.ical4j.model.ComponentList;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
+import net.fortuna.ical4j.data.*;
+import net.fortuna.ical4j.model.*;
+import net.fortuna.ical4j.model.component.*;
+import net.fortuna.ical4j.model.property.*;
+
 
 /**
  *
@@ -516,14 +518,14 @@ public class FolderCache {
         }
     }
 
-    private Calendar cal=Calendar.getInstance();
+    private java.util.Calendar cal=java.util.Calendar.getInstance();
     protected void refreshRecentMessagesCount() throws MessagingException {
         if (folder.exists() && (folder.getType() & Folder.HOLDS_MESSAGES)>0) {
             int oldrecent=recent;
             boolean wasOpen=folder.isOpen();
             if (!wasOpen) folder.open(Folder.READ_ONLY);
-            cal.setTime(new Date());
-            cal.add(Calendar.HOUR, -24);
+            cal.setTime(new java.util.Date());
+            cal.add(java.util.Calendar.HOUR, -24);
             ReceivedDateTerm dterm=new ReceivedDateTerm(ComparisonTerm.GT, cal.getTime());
             FlagTerm sterm=new FlagTerm(seenFlags, false);
             AndTerm term=new AndTerm(new SearchTerm[] {sterm, dterm});
@@ -1157,7 +1159,7 @@ public class FolderCache {
 				if(pattern.length()>0) {
 				  int ix=pattern.indexOf(" - ");
 				  if(ix<0) { //No range
-					Date date=parseDate(pattern);
+					java.util.Date date=parseDate(pattern);
 					if(date!=null) {
 					  if(searchfield.equals("recvdate")) {
 						terms.add(new ReceivedDateTerm(DateTerm.EQ, date));
@@ -1183,24 +1185,24 @@ public class FolderCache {
 						}
 					  }
 					  if(year==-1) {
-						Calendar c=Calendar.getInstance();
-						c.setTime(new Date());
-						year=c.get(Calendar.YEAR);
+						java.util.Calendar c=java.util.Calendar.getInstance();
+						c.setTime(new java.util.Date());
+						year=c.get(java.util.Calendar.YEAR);
 					  }
 
-					  Calendar c1=Calendar.getInstance(locale);
-					  Calendar c2=Calendar.getInstance(locale);
+					  java.util.Calendar c1=java.util.Calendar.getInstance(locale);
+					  java.util.Calendar c2=java.util.Calendar.getInstance(locale);
 					  if(month==-1) {
 						c1.set(year, 0, 1, 0, 0, 0);
 						c2.set(year, 11, 31, 23, 59, 59);
 					  } else {
 						c1.set(year, month-1, 1, 0, 0, 0);
 						c2.set(year, month-1, 1, 23, 59, 59);
-						int lastday=c2.getActualMaximum(Calendar.DAY_OF_MONTH);
-						c2.set(Calendar.DAY_OF_MONTH, lastday);
+						int lastday=c2.getActualMaximum(java.util.Calendar.DAY_OF_MONTH);
+						c2.set(java.util.Calendar.DAY_OF_MONTH, lastday);
 					  }
-					  Date date1=c1.getTime();
-					  Date date2=c2.getTime();
+					  java.util.Date date1=c1.getTime();
+					  java.util.Date date2=c2.getTime();
 					  DateTerm dt1=null;
 					  DateTerm dt2=null;
 					  if(searchfield.equals("recvdate")) {
@@ -1218,11 +1220,11 @@ public class FolderCache {
 				  } else { //range
 					String p1=pattern.substring(0, ix).trim();
 					String p2=pattern.substring(ix+3).trim();
-					Date date1=parseDate(p1);
-					Date date2=parseDate(p2);
+					java.util.Date date1=parseDate(p1);
+					java.util.Date date2=parseDate(p2);
 					if(date1!=null&&date2!=null) {
 					  if(date1.after(date2)) { //Swap if wrong
-						Date xdate=date1;
+						java.util.Date xdate=date1;
 						date1=date2;
 						date2=xdate;
 					  }
@@ -1510,7 +1512,7 @@ public class FolderCache {
               int yyyy=Integer.parseInt(pattern.substring(0,4));
               int mm=Integer.parseInt(pattern.substring(4,6));
               int dd=Integer.parseInt(pattern.substring(6,8));
-              Calendar c=Calendar.getInstance();
+              java.util.Calendar c=java.util.Calendar.getInstance();
               c.set(yyyy, mm-1, dd);
               int comparison=(method==AdvancedSearchEntry.METHOD_UPTO)?DateTerm.LE:
                   (method==AdvancedSearchEntry.METHOD_SINCE)?DateTerm.GE:
@@ -1590,9 +1592,9 @@ public class FolderCache {
     return imonth;
   }
 
-  private Date parseDate(String pattern) {
+  private java.util.Date parseDate(String pattern) {
     pattern=pattern.replace('-', '/');
-    Date date=null;
+    java.util.Date date=null;
     try {
       date=java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT, profile.getLocale()).parse(pattern);
     } catch(Exception exc) {}
@@ -1683,6 +1685,7 @@ public class FolderCache {
       String msgTo;
       String msgCc;
       Locale locale=profile.getLocale();
+	  boolean icalhtmlview=false;
       for(int i=0;i<mailData.getDisplayPartCount();++i) {
         Part dispPart=mailData.getDisplayPart(i);
         java.io.InputStream istream=null;
@@ -1690,7 +1693,7 @@ public class FolderCache {
         boolean ischarset=false;
         try { ischarset=java.nio.charset.Charset.isSupported(charset); } catch(Exception exc) {}
         if (!ischarset) charset="ISO-8859-1";
-		if (dispPart.isMimeType("text/plain")||dispPart.isMimeType("text/html")||dispPart.isMimeType("message/delivery-status")||dispPart.isMimeType("message/disposition-notification")||dispPart.isMimeType("text/calendar")) {
+		if (dispPart.isMimeType("text/plain")||dispPart.isMimeType("text/html")||dispPart.isMimeType("message/delivery-status")||dispPart.isMimeType("message/disposition-notification")||dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
             try {
               if (dispPart instanceof javax.mail.internet.MimeMessage) {
                 javax.mail.internet.MimeMessage mm=(javax.mail.internet.MimeMessage)dispPart;
@@ -1737,26 +1740,25 @@ public class FolderCache {
                 htmlparts.add(xhtml.toString());
                 //String key="htmlpart"+objid;
                 //controller.putTempData(key,html);
-			} else if (dispPart.isMimeType("text/calendar")) {
-				xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body><tt>");
-				
-				try {
-					net.fortuna.ical4j.model.Calendar ical=calbuilder.build(istream);
-					for (Iterator iterator = ical.getComponents().iterator(); iterator.hasNext();) {
-						net.fortuna.ical4j.model.Component component = (net.fortuna.ical4j.model.Component) iterator.next();
-						xhtml.append("<b>"+component.getName()+"</b><br>");
-
-						for (Iterator j = component.getProperties().iterator(); j.hasNext();) {
-							net.fortuna.ical4j.model.Property property = (net.fortuna.ical4j.model.Property) j.next();
-							xhtml.append("&nbsp;&nbsp;&nbsp;&nbsp;<b>"+property.getName()+"&nbsp;:&nbsp;</b>"+property.getValue()+"<br>");
+			} else if (dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
+				if (dispPart.getContentType().contains("method=")) {
+					try {
+						String laf="default"; //TODO: get it from user setting
+						ICalendarRequest ir=new ICalendarRequest(istream);
+						mailData.setICalRequest(ir);
+						if (!icalhtmlview) {
+							String irhtml=ir.getHtmlView(locale,laf,java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
+							htmlparts.add(0,irhtml);
+							icalhtmlview=true;
 						}
-					}					
-				} catch(ParserException exc) {
-					exc.printStackTrace();
+						if (!mailData.hasICalAttachment()) mailData.addAttachmentPart(dispPart);
+					} catch(ParserException exc) {
+						mailData.addAttachmentPart(dispPart);
+						//MailService.logger.error("Error parsing calendar part",exc);
+					}
+				} else {
+					mailData.addAttachmentPart(dispPart);
 				}
-
-                xhtml.append("</tt><HR></body></html>");
-                htmlparts.add(xhtml.toString());
             } else {
                 xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body><tt>");
                 String line=null;
@@ -1897,7 +1899,7 @@ public class FolderCache {
       if (msg.getDisposition()==null || msg.getDisposition().equalsIgnoreCase(Part.INLINE))
         mailData.addDisplayPart(msg);
       else mailData.addAttachmentPart(msg);
-    } else if(msg.isMimeType("text/calendar")) {
+    } else if(msg.isMimeType("text/calendar")||msg.isMimeType("application/ics")) {
 		mailData.addDisplayPart(msg);
     } else if(msg.isMimeType("message/rfc822")) {
       mailData.addDisplayPart(msg);
@@ -1944,7 +1946,7 @@ public class FolderCache {
         if(p.isMimeType("multipart/alternative")) {
           Part ap=getAlternativePart((Multipart)p.getContent(),mailData);
           if(ap!=null) {
-            if (ap.isMimeType("text/calendar") || ap.getDisposition()==null || ap.getDisposition().equalsIgnoreCase(Part.INLINE))
+			if (ap.isMimeType("text/calendar") || ap.isMimeType("application/ics")|| ap.getDisposition()==null || ap.getDisposition().equalsIgnoreCase(Part.INLINE))
                 mailData.addDisplayPart(ap);
             else mailData.addAttachmentPart(ap);
           }
@@ -1958,7 +1960,7 @@ public class FolderCache {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
             mailData.addDisplayPart(p);
           else mailData.addAttachmentPart(p);
-		} else if(p.isMimeType("text/calendar")) {
+		} else if(p.isMimeType("text/calendar")||p.isMimeType("application/ics")) {
 			mailData.addDisplayPart(p);
         } else if(p.isMimeType("message/delivery-status")||p.isMimeType("message/disposition-notification")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE)) 

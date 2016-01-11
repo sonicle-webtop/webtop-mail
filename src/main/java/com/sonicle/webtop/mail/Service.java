@@ -88,7 +88,6 @@ import com.sun.mail.util.PropUtil;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.*;
@@ -981,11 +980,11 @@ public class Service extends BaseService {
 				}
 				String subject = msg.getSubject();
 				java.util.Date date = msg.getReceivedDate();
-				Calendar cal = Calendar.getInstance();
+				java.util.Calendar cal = java.util.Calendar.getInstance();
 				cal.setTime(date);
-				int dd = cal.get(Calendar.DAY_OF_MONTH);
-				int mm = cal.get(Calendar.MONTH) + 1;
-				int yyyy = cal.get(Calendar.YEAR);
+				int dd = cal.get(java.util.Calendar.DAY_OF_MONTH);
+				int mm = cal.get(java.util.Calendar.MONTH) + 1;
+				int yyyy = cal.get(java.util.Calendar.YEAR);
 				String sdd = dd < 10 ? "0" + dd : "" + dd;
 				String smm = mm < 10 ? "0" + mm : "" + mm;
 				String syyyy = "" + yyyy;
@@ -1260,8 +1259,8 @@ public class Service extends BaseService {
             stmt = con.createStatement();
             Category cat=getCategory(category_id);
             String document_id=requests_id;
-            Calendar date=Calendar.getInstance();
-            String year=date.get(Calendar.YEAR)+"";
+            java.util.Calendar date=java.util.Calendar.getInstance();
+            String year=date.get(java.util.Calendar.YEAR)+"";
             if (cat!=null){
                 if (cat.year_sequence.equals("true")){
                     document_id=cat.sequence_id;
@@ -1412,8 +1411,8 @@ public class Service extends BaseService {
 			stmt = con.createStatement();
 			Category cat = getCategory(category_id);
 			String document_id = requests_id;
-			Calendar date = Calendar.getInstance();
-			String year = date.get(Calendar.YEAR) + "";
+			java.util.Calendar date = java.util.Calendar.getInstance();
+			String year = date.get(java.util.Calendar.YEAR) + "";
 			if (cat != null) {
 				if (cat.year_sequence.equals("true")) {
 					document_id = cat.sequence_id;
@@ -1585,8 +1584,8 @@ public class Service extends BaseService {
 				}
 				
 				if (cat != null) {
-					Calendar date = Calendar.getInstance();
-					String year = date.get(Calendar.YEAR) + "";
+					java.util.Calendar date = java.util.Calendar.getInstance();
+					String year = date.get(java.util.Calendar.YEAR) + "";
 					if (cat.year_sequence.equals("true")) {
 						if (cat.year.equals(year)) {
 							cat.sequence_id = (Integer.parseInt(cat.sequence_id)) + 1 + "";
@@ -6171,9 +6170,9 @@ public class Service extends BaseService {
 	 VFSService vfs=(VFSService)wts.getServiceByName("vfs");
 	 FileObject rfo=vfs.getUploadsCloudFolder();
 	 java.util.Date now=new java.util.Date();
-	 Calendar cal=Calendar.getInstance();
+	 java.util.Calendar cal=java.util.Calendar.getInstance();
 	 cal.setTime(now);
-	 String dirname=cal.get(Calendar.YEAR)+"-"+(cal.get(Calendar.MONTH)+1)+"-"+cal.get(Calendar.DAY_OF_MONTH)+" "+cal.get(Calendar.HOUR)+":"+cal.get(Calendar.MINUTE)+":"+cal.get(Calendar.SECOND)+" - "+subject;
+	 String dirname=cal.get(java.util.Calendar.YEAR)+"-"+(cal.get(java.util.Calendar.MONTH)+1)+"-"+cal.get(java.util.Calendar.DAY_OF_MONTH)+" "+cal.get(java.util.Calendar.HOUR)+":"+cal.get(java.util.Calendar.MINUTE)+":"+cal.get(java.util.alendar.SECOND)+" - "+subject;
 	 FileObject nfo=rfo.resolveFile(dirname);
 	 nfo.createFolder();
 	 String vfsuri="0,"+vfs.getUploadsCloudFolderName()+"/"+dirname;
@@ -6625,7 +6624,7 @@ public class Service extends BaseService {
 		CoreManager core = WT.getCoreManager(getRunContext());
 		UserProfile profile = environment.getProfile();
 		Locale locale = profile.getLocale();
-		Calendar cal = Calendar.getInstance(locale);
+		java.util.Calendar cal = java.util.Calendar.getInstance(locale);
 		String pfoldername = request.getParameter("folder");
 		String psortfield = request.getParameter("sort");
 		String psortdir = request.getParameter("dir");
@@ -6763,6 +6762,7 @@ public class Service extends BaseService {
 			}
 			boolean issent = isSentFolder(folder.getFullName());
 			boolean isdrafts = isDraftsFolder(folder.getFullName());
+			boolean isundershared=isUnderSharedFolder(pfoldername);
 			if (!issent) {
 				String names[] = folder.getFullName().split("\\" + getFolderSeparator());
 				for (String pname : names) {
@@ -6899,12 +6899,12 @@ public class Service extends BaseService {
 						if (d==null) d=xm.getReceivedDate();
 						if (d==null) d=new java.util.Date(0);
 						cal.setTime(d);
-						int yyyy=cal.get(Calendar.YEAR);
-						int mm=cal.get(Calendar.MONTH);
-						int dd=cal.get(Calendar.DAY_OF_MONTH);
-						int hhh=cal.get(Calendar.HOUR_OF_DAY);
-						int mmm=cal.get(Calendar.MINUTE);
-						int sss=cal.get(Calendar.SECOND);
+						int yyyy=cal.get(java.util.Calendar.YEAR);
+						int mm=cal.get(java.util.Calendar.MONTH);
+						int dd=cal.get(java.util.Calendar.DAY_OF_MONTH);
+						int hhh=cal.get(java.util.Calendar.HOUR_OF_DAY);
+						int mmm=cal.get(java.util.Calendar.MINUTE);
+						int sss=cal.get(java.util.Calendar.SECOND);
 						//From
 						String from="";
 						Address ia[]=xm.getFrom();
@@ -6918,8 +6918,18 @@ public class Service extends BaseService {
 						//To
 						String to="";
 						ia=xm.getRecipients(Message.RecipientType.TO);
+						//if not sent and not shared, show me first if in TO
 						if (ia!=null) {
 							InternetAddress iato=(InternetAddress)ia[0];
+							if (!issent && !isundershared) {
+								for(Address ax: ia) {
+									InternetAddress iax=(InternetAddress)ax;
+									if (iax.getAddress().equals(profile.getEmailAddress())) {
+										iato=iax;
+										break;
+									}
+								}
+							}
 							to=iato.getPersonal();
 							if (to==null) to=iato.getAddress();
 						}
@@ -6947,8 +6957,8 @@ public class Service extends BaseService {
 						int priority=getPriority(xm);
 						//Status
 						java.util.Date today=new java.util.Date();
-						Calendar cal1=Calendar.getInstance(locale);
-						Calendar cal2=Calendar.getInstance(locale);
+						java.util.Calendar cal1=java.util.Calendar.getInstance(locale);
+						java.util.Calendar cal2=java.util.Calendar.getInstance(locale);
 						boolean isToday=false;
 						String gdate="";
 						String sdate = "";
@@ -6960,10 +6970,10 @@ public class Service extends BaseService {
 							cal2.setTime(gd);
 
 							gdate=DateFormat.getDateInstance(DateFormat.MEDIUM,locale).format(gd);
-							sdate=cal2.get(Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(Calendar.DATE));
+							sdate=cal2.get(java.util.Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(java.util.Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(java.util.Calendar.DATE));
 							//boolean isGdate=group.equals("gdate");
-							if (cal1.get(Calendar.MONTH)==cal2.get(Calendar.MONTH) && cal1.get(Calendar.YEAR)==cal2.get(Calendar.YEAR)) {
-								int dx=cal1.get(Calendar.DAY_OF_MONTH)-cal2.get(Calendar.DAY_OF_MONTH);
+							if (cal1.get(java.util.Calendar.MONTH)==cal2.get(java.util.Calendar.MONTH) && cal1.get(java.util.Calendar.YEAR)==cal2.get(java.util.Calendar.YEAR)) {
+								int dx=cal1.get(java.util.Calendar.DAY_OF_MONTH)-cal2.get(java.util.Calendar.DAY_OF_MONTH);
 								if (dx==0) {
 									isToday=true;
 									//if (isGdate) {
@@ -7031,13 +7041,13 @@ public class Service extends BaseService {
 						if (isdrafts) {
 							String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
 							if (h!=null && h.equals("true")) {
-								Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
-								syyyy=scal.get(Calendar.YEAR);
-								smm=scal.get(Calendar.MONTH);
-								sdd=scal.get(Calendar.DAY_OF_MONTH);
-								shhh=scal.get(Calendar.HOUR_OF_DAY);
-								smmm=scal.get(Calendar.MINUTE);
-								ssss=scal.get(Calendar.SECOND);
+								java.util.Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
+								syyyy=scal.get(java.util.Calendar.YEAR);
+								smm=scal.get(java.util.Calendar.MONTH);
+								sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
+								shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
+								smmm=scal.get(java.util.Calendar.MINUTE);
+								ssss=scal.get(java.util.Calendar.SECOND);
 								issched=true;
 								status="scheduled";
 							} 
@@ -7161,7 +7171,7 @@ public class Service extends BaseService {
 		return sv;
 	}
 	
-	private Calendar parseScheduleHeader(String senddate, String sendtime) {
+	private java.util.Calendar parseScheduleHeader(String senddate, String sendtime) {
 		String sdp[] = senddate.split("/");
 		String sdt[] = sendtime.split(":");
 		String sschedday = sdp[0];
@@ -7174,12 +7184,12 @@ public class Service extends BaseService {
 		int schedyear = Integer.parseInt(sschedyear);
 		int schedhour = Integer.parseInt(sschedhour);
 		int schedmins = Integer.parseInt(sschedmins);
-		Calendar cal = Calendar.getInstance();
-		cal.set(Calendar.YEAR, schedyear);
-		cal.set(Calendar.MONTH, schedmonth - 1);
-		cal.set(Calendar.DATE, schedday);
-		cal.set(Calendar.HOUR_OF_DAY, schedhour);
-		cal.set(Calendar.MINUTE, schedmins);
+		java.util.Calendar cal = java.util.Calendar.getInstance();
+		cal.set(java.util.Calendar.YEAR, schedyear);
+		cal.set(java.util.Calendar.MONTH, schedmonth - 1);
+		cal.set(java.util.Calendar.DATE, schedday);
+		cal.set(java.util.Calendar.HOUR_OF_DAY, schedhour);
+		cal.set(java.util.Calendar.MINUTE, schedmins);
 		return cal;
 	}
 	
@@ -7436,11 +7446,21 @@ public class Service extends BaseService {
 			
 			String h = getSingleHeaderValue(m, "Sonicle-send-scheduled");
 			if (h != null && h.equals("true")) {
-				Calendar scal = parseScheduleHeader(getSingleHeaderValue(m, "Sonicle-send-date"), getSingleHeaderValue(m, "Sonicle-send-time"));
+				java.util.Calendar scal = parseScheduleHeader(getSingleHeaderValue(m, "Sonicle-send-date"), getSingleHeaderValue(m, "Sonicle-send-time"));
 				java.util.Date sd = scal.getTime();
 				String sdate = df.format(sd).replaceAll("\\.", ":");
 				sout += "{iddata:'scheddate',value1:'" + StringEscapeUtils.escapeEcmaScript(sdate) + "',value2:'',value3:0},\n";
 			}			
+			
+			ICalendarRequest ir=mailData.getICalRequest();
+			if (ir!=null) {
+				//TODO: Calendar integration
+				//CalendarService cs=(CalendarService)wts.getServiceByName("calendar");
+				//if (cs!=null) {
+				//	int eid=cs.getEventIDFromPlanningUID(ir.getUID(), ir.getLastModified());
+					sout+="{iddata:'ical',value1:'"+ir.getMethod()+"',value2:'"+ir.getUID()+"',value3:'"+0/*TODO : eid*/+"'},\n";
+				//}
+			}
 			
 			sout += "{iddata:'date',value1:'" + StringEscapeUtils.escapeEcmaScript(date) + "',value2:'',value3:0},\n";
 			sout += "{iddata:'subject',value1:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject)) + "',value2:'',value3:0},\n";
@@ -8031,13 +8051,13 @@ public class Service extends BaseService {
 		}
 	}
 	
-	public Calendar convertTimeZone(String year, String month, String day, String hour, String min, String timezonefrom, String timezoneto) {
-		TimeZone timeZone1 = TimeZone.getTimeZone(timezonefrom);
-		TimeZone timeZone2 = TimeZone.getTimeZone(timezoneto);
-		Calendar calendar = new GregorianCalendar();
+	public java.util.Calendar convertTimeZone(String year, String month, String day, String hour, String min, String timezonefrom, String timezoneto) {
+		java.util.TimeZone timeZone1 = java.util.TimeZone.getTimeZone(timezonefrom);
+		java.util.TimeZone timeZone2 = java.util.TimeZone.getTimeZone(timezoneto);
+		java.util.Calendar calendar = new GregorianCalendar();
 		calendar.setTimeZone(timeZone1);
 		calendar.set(Integer.parseInt(year), Integer.parseInt(month), Integer.parseInt(day), Integer.parseInt(hour), Integer.parseInt(min));
-		Calendar calendarout = new GregorianCalendar();
+		java.util.Calendar calendarout = new GregorianCalendar();
 		calendarout.setTimeZone(timeZone2);
 		calendarout.setTimeInMillis(calendar.getTimeInMillis());
 		return calendarout;
@@ -8891,7 +8911,7 @@ public class Service extends BaseService {
 			if (ast != null) {
 				UserProfile profile = environment.getProfile();
 				Locale locale = profile.getLocale();
-				Calendar cal = Calendar.getInstance(locale);
+				java.util.Calendar cal = java.util.Calendar.getInstance(locale);
 				ArrayList<Message> msgs = ast.getResult();
 				int totalrows = msgs.size();
 				int newrows = totalrows - start;
@@ -8913,12 +8933,12 @@ public class Service extends BaseService {
 						d = new java.util.Date(0);
 					}
 					cal.setTime(d);
-					int yyyy = cal.get(Calendar.YEAR);
-					int mm = cal.get(Calendar.MONTH);
-					int dd = cal.get(Calendar.DAY_OF_MONTH);
-					int hhh = cal.get(Calendar.HOUR_OF_DAY);
-					int mmm = cal.get(Calendar.MINUTE);
-					int sss = cal.get(Calendar.SECOND);
+					int yyyy = cal.get(java.util.Calendar.YEAR);
+					int mm = cal.get(java.util.Calendar.MONTH);
+					int dd = cal.get(java.util.Calendar.DAY_OF_MONTH);
+					int hhh = cal.get(java.util.Calendar.HOUR_OF_DAY);
+					int mmm = cal.get(java.util.Calendar.MINUTE);
+					int sss = cal.get(java.util.Calendar.SECOND);
 					String xfolder = xm.getFolder().getFullName();
 					FolderCache fc = getFolderCache(xfolder);
 					String folder = StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(xfolder));
@@ -8962,15 +8982,15 @@ public class Service extends BaseService {
 					int priority = getPriority(m);
 					//Status
 					java.util.Date today = new java.util.Date();
-					Calendar cal1 = Calendar.getInstance(locale);
-					Calendar cal2 = Calendar.getInstance(locale);
+					java.util.Calendar cal1 = java.util.Calendar.getInstance(locale);
+					java.util.Calendar cal2 = java.util.Calendar.getInstance(locale);
 					boolean isToday = false;
 					if (d != null) {
 						cal1.setTime(today);
 						cal2.setTime(d);
-						if (cal1.get(Calendar.DAY_OF_MONTH) == cal2.get(Calendar.DAY_OF_MONTH)
-								&& cal1.get(Calendar.MONTH) == cal2.get(Calendar.MONTH)
-								&& cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)) {
+						if (cal1.get(java.util.Calendar.DAY_OF_MONTH) == cal2.get(java.util.Calendar.DAY_OF_MONTH)
+								&& cal1.get(java.util.Calendar.MONTH) == cal2.get(java.util.Calendar.MONTH)
+								&& cal1.get(java.util.Calendar.YEAR) == cal2.get(java.util.Calendar.YEAR)) {
 							isToday = true;
 						}
 					}

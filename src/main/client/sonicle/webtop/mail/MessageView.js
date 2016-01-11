@@ -62,6 +62,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     divTos: null,
     divCcs: null,
     divAttach: null,
+	divICal: null,
     divLine: null,
     tdBody: null,
     divBody: null,
@@ -188,6 +189,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.removeElement(me.divTos);
             me.removeElement(me.divCcs);
             me.removeElement(me.divAttach);
+			me.removeElement(me.divICal);
             me.removeElement(me.divLine);
             var bd=me.divBody.dom;
             if ( bd.hasChildNodes() ) {
@@ -202,6 +204,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.htmlparts=null;
             me.cleared=true;
             me.idmessage=null;
+			me.icalmethod=null;
+			me.icaluid=null;
+			me.icalwebtopid=0;
             me.iframes=new Array();
         }
     },
@@ -272,7 +277,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
 			me.divAttach=Ext.get(document.createElement("div"));
 			me.divAttach.addCls("wtmail-mv-hattach");
-
+			
+			me.divICal=Ext.get(document.createElement("div"));
+			me.divICal.addClass("wtmail-mv-hical")
+		
 			div=document.createElement("div");
 			div.className="wtmail-mv-hline";
 			me.divLine=Ext.get(div);
@@ -370,6 +378,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					me.fromName+" ["+me.fromEmail+"]</a>"
 			);
             tdh.insertFirst(me.divLine);
+			
             if (me.attachments) {
                 var names=null,
 					atts=me.attachments,
@@ -423,9 +432,70 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
                 me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+WT.res('saveall-desc')+"' data-qtitle='"+WT.res('saveall')+"' href='"+allhref+"'>"+me.mys.res('attachments')+"</a>:&nbsp;</span>"+names);
-                tdh.insertFirst(me.divAttach);
-                if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
-                    Ext.each(me.divAttach.query("a[ics]"),function(o) { 
+
+				if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
+					
+					var aics=me.divAttach.query("a[ics]");
+					
+					if (me.icalmethod) {
+						var icalhtml=null,
+							txtaction=me.res("ical.action"),
+							txtaccept=me.res("ical.accept"),
+							txtdecline=me.res("ical.decline"),
+							//txtconfirm=ms.res("ical-confirm"),
+							txtcancel=me.res("ical.cancel"),
+							txtupdate=me.res("ical.update");
+						if (me.icalmethod==="REQUEST") {
+							if (me.icalwebtopid<0) {
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.invite.topmessage")+".&nbsp;&nbsp;&nbsp;"+
+										"<a ext:qtip='"+txtaccept+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='accept'>&nbsp;"+txtaccept+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
+										"<a ext:qtip='"+txtdecline+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='decline'>&nbsp;"+txtdecline+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
+										//"<a ext:qtip='"+txtconfirm+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='later'>&nbsp;"+txtconfirm+"&nbsp;</a>"+
+										"</DIV>";
+							} else if (me.icalwebtopid===0) {
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.modified.topmessage")+".&nbsp;&nbsp;&nbsp;"+
+										"<a ext:qtip='"+txtupdate+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='update'>&nbsp;"+txtupdate+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
+										"</DIV>";
+							} else {
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.processed.topmessage")+"."+
+										"</DIV>";
+							}
+						} else if (me.icalmethod==="REPLY") {
+							icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.reply.topmessage")+".&nbsp;&nbsp;&nbsp;"+
+									"<a ext:qtip='"+txtupdate+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='update'>&nbsp;"+txtupdate+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
+									"</DIV>";
+						} else if (me.icalmethod==="CANCEL") {
+							if (me.icalwebtopid>=0) {
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.cancel.top.message")+".&nbsp;&nbsp;&nbsp;"+
+										"<a ext:qtip='"+txtcancel+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='cancel'>&nbsp;"+txtcancel+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
+										"</DIV>";
+							} else {
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.processed.top.message")+"."+
+										"</DIV>";
+							}
+						}
+
+						if (icalhtml) {
+							me.divICal.update(icalhtml);
+							tdh.insertFirst(me.divICal);
+
+							var xel=aics[0];
+							Ext.each(me.divICal.query("a[ical]"),function(o) { 
+								Ext.get(o).on("click",function(e,t,o) { 
+									var act=t.getAttribute('ical');
+									//WT.debug('action='+act+" ics="+xel.getAttribute("ics"));
+									me.actionCalendarEvent(act,xel,xel.getAttribute("ics")); 
+									e.stopEvent(); 
+									return false;
+								},me );
+							},me);
+
+						}
+					}
+
+					
+					/*
+                    Ext.each(aics,function(o) { 
 						Ext.get(o).on("click",function(e,t,o) { 
 							var xel=t; //sometimes returns SPAN or IMG instead of A
 							if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
@@ -433,8 +503,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 							e.stopEvent(); 
 							return false;
 						},me );
-					},me);
+					},me);*/
                 }
+
+				
+                tdh.insertFirst(me.divAttach);
+				
+				
                 Ext.each(me.divAttach.query("a[eml]"),function(o) { 
 					Ext.get(o).on("click",function(e,t,o) { 
 						var xel=t; //sometimes returns SPAN or IMG instead of A
@@ -526,6 +601,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 me.viewResized(me,w,h,w,h);
             }
             
+            if (me.icalmethod) console.log("ical - method: "+me.icalmethod+" , uid: "+me.icaluid+" , webtopid: "+me.icalwebtopid);
+			
             me.cleared=false;
             if (!provider) me.fireEvent('messageviewed',params.idmessage,me.proxy.getReader().rawData.millis,me.workflow);
         }
@@ -880,6 +957,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         else if (iddata=='receipt') {
             me.receipt=item.get('value1');
 		}
+        else if (iddata=='ical') {
+            me.icalmethod=item.get('value1');
+            me.icaluid=item.get('value2');
+			me.icalwebtopid=item.get('value3');
+		}
 		else if (iddata=='workflow1') {
 			me.workflow=true;
 			me.wkfsubject=item.get('value1');
@@ -1026,57 +1108,6 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         );
     },*/
     
-	//TODO importCalendarEvent
-	/*
-    importCalendarEvent: function(t,params) {
-        Ext.Msg.show({
-           title:this.ms.res('importcaltitle'),
-           msg: this.ms.res('importcalquestion'),
-           buttons: Ext.Msg.YESNO,
-           fn: this._importCalendarEvent,
-           scope: this,
-           icon: Ext.MessageBox.QUESTION,
-           options: {
-               t: t,
-               params: params
-           }
-        });
-    },
-    
-    _importCalendarEvent: function(b,t,o) {
-        if (b=='yes') {
-            WT.JsonAjaxRequest({
-                url: "ServiceRequest?service=mail&action=GetCalendarEvent&"+o.options.params,
-            options: {
-            },
-            method: "POST",
-            callback: function(o,options) {
-              if (o.result) {
-                var ev=o.event;
-                if (ev.event_id!=undefined && ev.event_id==""){
-                    WT.app.getServiceByName('calendar').actionNewByAttachment(
-                        ev,
-                        o.planninggrid
-                        
-                    );
-                  }else{
-                      if (ev.method=="CANCEL"){
-                          WT.app.getServiceByName('calendar').actionDeleteByAttachment(ev.event_id);
-                      }else{
-                          WT.app.getServiceByName('calendar').actionEditEventByAttachment(ev.event_id,ev,o.planninggrid);
-                          
-                          
-                      }
-                  }
-              }
-            },
-            scope: this
-            });
-     } else {
-            window.open(o.options.t.href);
-        }
-    }*/
-    
    /* as from original main.js */
     setEmailElement: function(e,desc,email,type) {
 		var me=this;
@@ -1152,6 +1183,79 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
               if (callback && scope) el.params={callback: callback, scope: scope};
             },comp);
         }
-    }
+    },
    
+    actionCalendarEvent: function(act,t,qsparams) {
+		var me=this,
+			params=Ext.Object.fromQueryString(qsparams);
+		WT.confirm(me.res('ical.'+act+'.message'),function(bid) {
+			if (bid==='yes') {				   
+				if (act==='accept'||act==='update'||act==='cancel') me._importCalendarEvent(act, params);
+				else if (act==='updatereply') me._updateCalendarReply(params);
+				else if (act==='decline') me._declineCalendarEvent(params);
+			}
+		},me);
+    },
+    
+    _importCalendarEvent: function(act, params) {
+		var me=this;
+		WT.ajaxReq(g.mys.ID, 'GetCalendarEvent', {
+			params: params,
+			callback: function(success,json) {
+				if (json.result) {
+					var ev=json.event,
+						pg=json.planninggrid,
+						scal=WT.getApp().getService('com.sonicle.webtop.calendar');
+					ev.ical_action=act;
+					if (ev.event_id!==undefined && ev.event_id===""){
+						scal.actionNewByAttachment(ev,pg);
+					} else {
+						if (ev.method==="CANCEL"){
+							scal.actionDeleteByAttachment(ev.event_id);
+						} else {
+							scal.actionEditEventByAttachment(ev.event_id,ev,pg);
+						}
+					}
+					if (me.divICal) me.removeElement(me.divICal);
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+    },
+	
+    _updateCalendarReply: function(params) {
+		var me=this;
+		WT.ajaxReq(g.mys.ID, 'UpdateCalendarReply', {
+			params: params,
+			callback: function(success,json) {
+				if (json.result) {
+					WT.getApp().getService('com.sonicle.webtop.calendar').scheduler.editEvent(json.event_id);
+					if (me.divICal) me.removeElement(me.divICal);
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+    },
+	
+    _declineCalendarEvent: function(params) {
+		var me=this;
+		WT.ajaxReq(g.mys.ID, 'DeclineInvitation', {
+			params: params,
+			callback: function(success,json) {
+				if (json.result) {
+					if (me.divICal) me.removeElement(me.divICal);
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+    },
+	
+    res: function(s) {
+        return this.mys.res(s);
+    }
+	
+	
 });

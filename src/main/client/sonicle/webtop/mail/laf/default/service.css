@@ -79,6 +79,13 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 .wtmail-mv-hattach SPAN A {text-decoration: none; color: black; }
 .wtmail-mv-hattach SPAN A IMG { border: none; vertical-align: middle; }
 .wtmail-mv-hattach SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hicalmessage { 
+	border-top: 1px solid gray; width:100%; height:22px; background-color: #99ccFF;
+	font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 14px; font-weight: plain; 
+	padding-top: 4px;
+}
+.wtmail-mv-hicalmessage A {text-decoration: none; color: black; }
+.wtmail-mv-hicalmessage A:hover {text-decoration: none; color: white; background-color: #5588FF; }
 .wtmail-mv-hline { border-bottom: 1px solid gray; width:100%; height:2px;}
 .wtmail-mv-bodycell { 
     padding: 0px 6px 6px 6px; border: none; height: 100%;
@@ -107,3 +114,13 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 .wtmail-element-toclick-selected {
     background-color: #D9E8FB;
 }
+
+.wtmail-ical-tabletitle { font-family: 'Arial'; border-collapse:collapse; table-layout:fixed; width: 800px; border: 2px solid black; border-bottom: none }
+.wtmail-ical-tabledata { font-family: 'Arial'; border-collapse:collapse; table-layout:fixed; width: 800px; border: 2px solid black }
+.wtmail-ical-title { background-color: #77AAFF; color: white; text-align: center; font-weight: bold }
+.wtmail-ical-label { background-color: #cccccc; width: 150px; vertical-align: top }
+.wtmail-ical-data { word-wrap: break-word }
+.wtmail-ical-accepted-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-accepted_16.png') !important; }
+.wtmail-ical-declined-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-declined_16.png') !important; }
+.wtmail-ical-needaction-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-needaction_16.png') !important; }
+.wtmail-ical-tentative-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-tentative_16.png') !important; }

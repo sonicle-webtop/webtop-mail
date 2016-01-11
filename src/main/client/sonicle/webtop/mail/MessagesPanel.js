@@ -397,7 +397,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			var r=s.getAt(ix);
 			if (r.get("unread")) {
 				r.set("unread",false);
-				r.set("status","read");
+				var st=r.get("status");
+				if (st==="unread"||st==="new") r.set("status","read");
 				//TODO: not needed with websocket?
 				//var o=s.getProxy().getReader().rawData;
 				//o.millis=millis;

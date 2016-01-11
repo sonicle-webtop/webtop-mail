@@ -77,6 +77,11 @@ public class MailLocaleKey {
     public static final String RECIPIENTS_SOURCE_AUTO="recipients.source.auto";
     public static final String SCHEDULED_SENT_SUBJECT="scheduled.sent.subject";
     public static final String SCHEDULED_SENT_HTML="scheduled.sent.html";
+	public static final String ICAL_INVITED_BY="ical.invited.by";
+	public static final String ICAL_INVITED_TO="ical.invited.to";
+	public static final String ICAL_ACCEPTED="ical.accpeted";
+	public static final String ICAL_DECLINED="ical.declined";
+	public static final String ICAL_CANCELED="ical.canceled";
 
     public static String FILTERS_OPERATOR(String operator) {
         return "filters."+operator;
