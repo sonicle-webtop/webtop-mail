@@ -236,6 +236,7 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
 	
+	pageSize: 25,	
     frame: false,
     //iconCls:'icon-grid',
 	//TODO: ddGroup
@@ -286,6 +287,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     reloadAction: 'ListMessages',
     firstShow: true,
 	key2flag: ['clear','red','orange','green','blue','purple','yellow','black','gray','white'],
+	createPagingToolbar: false,
 	
 	listeners: {
 		render: function(g,opts) {
@@ -371,6 +373,30 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//ms: me.ms
         });
 
+		if (me.createPagingToolbar) {
+			var tb=me.ptoolbar=Ext.create('Ext.toolbar.Paging',{
+				store: me.store,
+				displayInfo: true,
+				displayMsg: me.res("pagemessage"),
+				emptyMsg: me.res("nomessages"),
+				afterPageText: me.res("afterpagetext"),
+				beforePageText: me.res("beforepagetext"),
+				firstText: me.res("firsttext"),
+				lastText: me.res("lasttext"),
+				nextText: me.res("nexttext"),
+				prevText: me.res("prevtext"),
+				refreshText: me.res("refreshtext")
+			});
+			tb.remove(tb.getComponent('displayItem'));
+			tb.add(Ext.create('Ext.button.Button',{
+				itemId: "displayItem",
+				tooltip: me.res("changepagesize"),
+				handler: me.changePageSize,
+				scope: me
+			}));
+			me.tbar=me.ptoolbar;
+		}
+		
 		//TODO: FilterRow
 /*        if (!Ext.isIE) {
             var filterRow = new WT.GridFilterRow({
@@ -395,7 +421,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                         var cf=s.baseParams.folder;
                         s.baseParams={service: 'mail', action: this.grid.reloadAction, folder: cf, searchfield: fields, pattern: patterns, refresh:1};
                         s.reload({
-                          params: {start:0,limit:50}
+                          params: {start:0,limit:me.pageSize}
                         });
                         s.baseParams.refresh=0;
                         //this.grid.store.load({params: data});
@@ -694,6 +720,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
         me.callParent(arguments);
     },
+
+	setPageSize: function(size) {
+		var me=this;
+		me.pageSize=size;
+		if (me.store) me.store.setPageSize(size);
+	},
+	
+	getPageSize: function() {
+		return this.pageSize;
+	},
 	
 	reloadFolder: function(folder_id, config){
 		var me = this,
@@ -701,9 +737,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 		config=config||{};
 		if(!folder_id) return;
+		//me.setPageSize(this.ms.pageRows);
+		//console.log("reloadFolder "+folder_id+" pageSize="+this.ptoolbar.pageSize);
 		Ext.applyIf(config, {
 			start: 0,
-			limit: 50,
+			limit: me.pageSize,
 			refresh: 1,
 			folder: folder_id
 		});
@@ -769,6 +807,33 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		*/
     },
 
+	changePageSize: function() {
+		var me=this;
+		WT.prompt(me.res("changepagesizetext"),{
+			title: me.res("changepagesizetitle"),
+			fn: function(btn,text) {
+				if (btn=='ok') {
+					var n=parseInt(text);
+					if (isNaN(n)) {
+						WT.error(me.res("changepagesizenan"));
+					} else {
+						me.setPageSize(n);
+						me.store.reload({
+						  params: {start:0,limit:n}
+						});
+						WT.ajaxReq(me.mys.ID, 'SavePageRows', {
+							params: {
+								pagerows: n
+							}
+						});					
+					}
+				}
+			},
+			scope: me,
+			value: me.getPageSize()
+		});
+	},
+	
     setFlag: function(flagstring) {
         var g=this,
 			selection=g.getSelection(),

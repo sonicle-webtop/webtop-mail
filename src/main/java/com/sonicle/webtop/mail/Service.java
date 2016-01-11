@@ -6808,7 +6808,7 @@ public class Service extends BaseService {
 			
             if (xmsgs!=null) {
                 int totalCount=xmsgs.length;
-                sout+="totalCount:"+totalCount+",\nstart:"+start+",\nlimit:"+limit+",\nmessages: [\n";
+                sout+="total:"+totalCount+",\nstart:"+start+",\nlimit:"+limit+",\nmessages: [\n";
 
 				/*               if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
 				 //mcache.fetch(msgs,FolderCache.flagsFP,0,start);
@@ -7107,7 +7107,7 @@ public class Service extends BaseService {
 				funread = mcache.getUnreadMessagesCount();
 				sout += "\n],\n";
 				sout += "metaData: {\n"
-						+ "  root: 'messages', total: 'totalCount', idProperty: 'idmessage',\n"
+						+ "  root: 'messages', total: 'total', idProperty: 'idmessage',\n"
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
 						+ "  groupField: '" + group + "',\n";
@@ -8895,7 +8895,7 @@ public class Service extends BaseService {
 				ArrayList<Message> msgs = ast.getResult();
 				int totalrows = msgs.size();
 				int newrows = totalrows - start;
-				sout += "totalCount:" + totalrows + ",\nstart:" + start + ",\nlimit:" + newrows + ",\nmessages: [\n";
+				sout += "total:" + totalrows + ",\nstart:" + start + ",\nlimit:" + newrows + ",\nmessages: [\n";
 				boolean first = true;
 				for (int i = start; i < msgs.size(); ++i) {
 					Message xm = msgs.get(i);
@@ -9036,7 +9036,7 @@ public class Service extends BaseService {
 				sout += "\n]\n, progress: " + ast.getProgress() + ", curfoldername: '" + StringEscapeUtils.escapeEcmaScript(getInternationalFolderName(ast.getCurrentFolder())) + "', "
 						+ "max: " + ast.isMoreThanMax() + ", finished: " + (ast.isFinished() || ast.isCanceled() || !ast.isRunning()) + " }\n";
 			} else {
-				sout += "totalCount:0,\nstart:0,\nlimit:0,\nmessages: [\n";
+				sout += "total:0,\nstart:0,\nlimit:0,\nmessages: [\n";
 				sout += "\n] }\n";
 			}
 			out.println(sout);
