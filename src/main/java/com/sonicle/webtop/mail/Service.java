@@ -3994,6 +3994,16 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			FolderCache tomcache = getFolderCache(tofolder);
+			
+			//check if tofolder is my Spam, and there is spamadm, move there
+			if (tofolder.equals(mprofile.getFolderSpam())) {
+				String spamadmSpam=ss.getSpamadmSpam();
+				if (spamadmSpam!=null) {
+					FolderCache fc=getFolderCache(spamadmSpam);
+					if (fc!=null) tomcache=fc;
+				}
+			}
+			
 			if (allfiltered == null) {
 				ids = request.getParameterValues("ids");
 				if (!mf) {

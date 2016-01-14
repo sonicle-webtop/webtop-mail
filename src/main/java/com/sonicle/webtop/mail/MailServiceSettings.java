@@ -59,6 +59,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String MESSAGE_VIEW_MAX_TOS = "message.view.max.tos";
 	public static final String MESSAGE_VIEW_MAX_CCS = "message.view.max.ccs";
 	public static final String SORT_FOLDERS = "sort.folders";
+	public static final String SPAMADM_SPAM = "spamadm.spam";
 
 /*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
 	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
@@ -126,6 +127,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public boolean isSortFolder() {
 		return getBoolean(SORT_FOLDERS,false);
+	}
+	
+	public String getSpamadmSpam() {
+		return getString(SPAMADM_SPAM,null);
 	}
 	
 	//DEFAULTS
