@@ -6960,6 +6960,15 @@ public class Service extends BaseService {
 						}
 						else subject="";
 
+						if (threaded) {
+							int n=xm.getThreadIndent();
+							if (n>0) {
+								StringBuffer sb=new StringBuffer();
+								for(int w=0;w<n;++w) sb.append('-');
+								subject=sb+subject;
+							}
+						}
+						
 						boolean hasAttachments=hasAttachements(xm);
 
 						from=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from));

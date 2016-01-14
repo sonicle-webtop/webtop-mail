@@ -1410,6 +1410,7 @@ public class FolderCache {
 			System.out.println("THREAD: using method "+method+" simplified="+simplified);
 			*/
 			String method="REFERENCES";
+			//String method="REFS";
 			try {
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,term);
 			} catch(Exception exc) {
