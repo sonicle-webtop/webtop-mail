@@ -322,6 +322,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return bt;
 	},
 	
+	nextNewMsgId: function() {
+		return ++this.newmsgid;
+	},
+	
+	
 	initActions: function() {
 		var me = this;
 	
