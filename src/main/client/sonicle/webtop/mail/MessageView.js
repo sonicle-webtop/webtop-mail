@@ -279,7 +279,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.divAttach.addCls("wtmail-mv-hattach");
 			
 			me.divICal=Ext.get(document.createElement("div"));
-			me.divICal.addClass("wtmail-mv-hical")
+			me.divICal.addCls("wtmail-mv-hical")
 		
 			div=document.createElement("div");
 			div.className="wtmail-mv-hline";

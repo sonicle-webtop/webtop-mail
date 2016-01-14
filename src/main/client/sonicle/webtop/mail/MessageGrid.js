@@ -294,11 +294,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			var me=this,
 				map = new Ext.util.KeyMap({
 					target: me.getEl(),
-					key: "0123456789",
-					fn: function(key,ev) {
-						me.setFlag(me.key2flag[key-48]);
-					},
-					scope: me
+					binding: [
+						{
+							key: "0123456789",
+							shift: false,
+							fn: function(key,ev) {
+								me.setFlag(me.key2flag[key-48]);
+							}
+						},
+						{
+							key: 45, //INS
+							shift: false,
+							fn: function(key,ev) {
+								me.setFlag("complete");
+							}
+						}
+					]
 				});		
 		}
 	},
