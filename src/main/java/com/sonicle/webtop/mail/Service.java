@@ -5073,6 +5073,8 @@ public class Service extends BaseService {
 						//String cid=filename;
 						if (cids != null && cids[0] != null) {
 							cid = cids[0];
+							if (cid.startsWith("<")) cid=cid.substring(1);
+							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
 						}
 						File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
 						createFile(part.getInputStream(), tempFile);
