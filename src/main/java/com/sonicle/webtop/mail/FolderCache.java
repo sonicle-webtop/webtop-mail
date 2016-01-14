@@ -2013,18 +2013,7 @@ public class FolderCache {
             if(id!=null) {
               filename=id[0];
             }
-            if(filename.startsWith("<")) {
-              filename=filename.substring(1);
-            }
-            if(filename.endsWith(">")) {
-              filename=filename.substring(0, filename.length()-1);
-            }
-            //System.out.println("adding CID "+filename);
-			try {
-				
-				filename=MailUtils.decodeQString(filename);
-			} catch(Exception exc) {
-			}
+			filename=normalizeCidFileName(filename);
             mailData.addCidPart(filename, p);
           }
           //Look for a possible Url copy
@@ -2046,6 +2035,20 @@ public class FolderCache {
     }
   }
 
+  protected String normalizeCidFileName(String filename) {
+	if(filename.startsWith("<")) {
+	  filename=filename.substring(1);
+	}
+	if(filename.endsWith(">")) {
+	  filename=filename.substring(0, filename.length()-1);
+	}
+	try {
+		filename=MailUtils.decodeQString(filename);
+	} catch(Exception exc) {
+
+	}
+	return filename;
+  }
   class PrepareStatus {
     boolean htmlfound=false;
     boolean textfound=false;
