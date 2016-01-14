@@ -109,6 +109,7 @@ import org.slf4j.Logger;
 
 public class Service extends BaseService {
 	
+	boolean imapDebug=false;
 	public final static Logger logger = WT.getLogger(Service.class);
 	
 	class WebtopFlag {
@@ -303,7 +304,7 @@ public class Service extends BaseService {
 		
 		session=Session.getInstance(props, null);
 		//session=Session.getDefaultInstance(props, null);
-		//session.setDebug(true);
+		session.setDebug(imapDebug);
 
 		try {
 			store = session.getStore(protocol);
@@ -344,7 +345,7 @@ public class Service extends BaseService {
 			};
 			
 			loadFoldersCache();
-			mft.start();
+			if (!imapDebug) mft.start();
 
 			//check sieve script
 			Thread t = new Thread(new Runnable() {
