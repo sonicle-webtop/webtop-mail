@@ -4637,11 +4637,14 @@ public class Service extends BaseService {
 			boolean result = true;
 			sout = "{\n";
 			name = normalizeName(name);
-			if (folder == null) {
-				mcache = fcRoot;
-			} else {
-				mcache = getFolderCache(folder);
-			}
+            if (
+					folder==null ||
+					(hasDifferentDefaultFolder && folder.trim().length()==0)
+				)
+				mcache=fcRoot;
+            else
+				mcache=getFolderCache(folder);
+			
 			newfolder = mcache.createFolder(name);
 			if (newfolder == null) {
 				result = false;

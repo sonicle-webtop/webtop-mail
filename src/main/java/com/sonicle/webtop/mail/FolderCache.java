@@ -1074,7 +1074,7 @@ public class FolderCache {
 
     public Folder createFolder(String name) throws MessagingException {
         Folder newfolder=null;
-        if (isRoot) {
+        if (!ms.hasDifferentDefaultFolder() && isRoot) {
             String prefix=ms.getFolderPrefix();
             if (prefix!=null) name=prefix+name;
             newfolder=ms.getFolder(name);
