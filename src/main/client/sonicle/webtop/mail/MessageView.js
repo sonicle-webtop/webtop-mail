@@ -461,9 +461,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 										"</DIV>";
 							}
 						} else if (me.icalmethod==="REPLY") {
-							icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.reply.topmessage")+".&nbsp;&nbsp;&nbsp;"+
-									"<a ext:qtip='"+txtupdate+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='update'>&nbsp;"+txtupdate+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
-									"</DIV>";
+							if (this.icalwebtopid==0) {
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.reply.topmessage")+".&nbsp;&nbsp;&nbsp;"+
+										"<a ext:qtip='"+txtupdate+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='updatereply'>&nbsp;"+txtupdate+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
+										"</DIV>";
+							} else if (this.icalwebtopid>0) {
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.reply.topmessage")+"."+
+										"</DIV>";
+							}
 						} else if (me.icalmethod==="CANCEL") {
 							if (me.icalwebtopid>=0) {
 								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.cancel.top.message")+".&nbsp;&nbsp;&nbsp;"+

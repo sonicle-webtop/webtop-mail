@@ -8345,6 +8345,35 @@ public class Service extends BaseService {
         
 	 out.println(sout);
 	 }*/
+	
+    public void processUpdateCalendarReply(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+        String pfoldername=request.getParameter("folder");
+        String pidmessage=request.getParameter("idmessage");
+        String pidattach=request.getParameter("idattach");
+        //UserProfile profile=environment.getUserProfile();
+        try {
+            checkStoreConnected();
+            FolderCache mcache=getFolderCache(pfoldername);
+            int newmsgid=Integer.parseInt(pidmessage);
+            Message m=mcache.getMessage(newmsgid);
+            HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
+            Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
+            
+            ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
+			String event_id=null;
+			//TODO: String event_id=((CalendarService)wts.getServiceByName("calendar")).updateFromReply(ir);
+			if (event_id!=null) {
+				new JsonResult(event_id).printTo(out);
+			} else {
+				throw new Exception("Event not found");
+			}
+        } catch(Exception exc) {
+            //sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
+			new JsonResult(false, exc.getMessage()).printTo(out);
+			logger.error("Error getting calendar events", exc);
+        }
+	}
+	
 	// TODO: list filters!!!
 /*    public void processListFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 UserProfile profile=environment.getProfile();
