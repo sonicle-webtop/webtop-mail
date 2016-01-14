@@ -9047,7 +9047,7 @@ public class Service extends BaseService {
 					int sss = cal.get(java.util.Calendar.SECOND);
 					String xfolder = xm.getFolder().getFullName();
 					FolderCache fc = getFolderCache(xfolder);
-					String folder = StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(xfolder));
+					String folder = StringEscapeUtils.escapeEcmaScript(xfolder);
 					String foldername = StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(getInternationalFolderName(fc)));
 					//From
 					String from = "";
