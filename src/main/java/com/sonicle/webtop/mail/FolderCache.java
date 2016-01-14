@@ -1897,6 +1897,11 @@ public class FolderCache {
     HTMLMailData mailData=new HTMLMailData(msg,folder);
 
     prepareHTMLMailData(msg, mailData);
+	if (mailData.getDisplayPartCount()==0 && mailData.getAttachmentPartCount()>0) {
+		Part part=mailData.getAttachmentPart(0);
+		if (part.isMimeType("text/plain")||part.isMimeType("text/html")||part.isMimeType("message/delivery-status"))
+			mailData.addDisplayPart(part);
+	}
     return mailData;
 
   }

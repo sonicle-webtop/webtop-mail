@@ -712,6 +712,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.selModel=new WT.GridSelectionModel({singleSelect:false});
 		*/
         me.store.on('load',me.loaded,me);
+        me.store.on('beforeload',function() {
+			me.storeLoading=true;
+		});
+        me.store.on('load',function(s,r,o) {
+			me.storeLoading=false;
+			me.loaded(s,r,o);
+		});
 		/*
         me.on('afterrender',function() {
             //this.filterRow.hideFilterRow();
