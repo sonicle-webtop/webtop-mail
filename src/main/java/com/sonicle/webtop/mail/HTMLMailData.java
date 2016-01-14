@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.mail.imap.SonicleIMAPMessage;
 import java.util.*;
 import java.io.*;
 import javax.mail.*;
@@ -49,7 +50,7 @@ public class HTMLMailData {
 
   private MimeMessage message=null;
   private Folder folder=null;
-  private int nid=0;
+  private long nuid=0;
   
   private ICalendarRequest icalRequest=null;
   private boolean hasICalAttachment=false;
@@ -57,7 +58,7 @@ public class HTMLMailData {
   public HTMLMailData(MimeMessage msg, Folder folder) throws MessagingException {
     this.message=msg;
     this.folder=folder;
-    this.nid=msg.getMessageNumber();
+    this.nuid=((SonicleIMAPMessage)msg).getUID();
   }
 
   public Folder getFolder() {
@@ -68,8 +69,8 @@ public class HTMLMailData {
     return folder.getFullName();
   }
 
-  public int getMessageNumber() {
-    return nid;
+  public long getUID() {
+    return nuid;
   }
 
   public MimeMessage getMessage() {

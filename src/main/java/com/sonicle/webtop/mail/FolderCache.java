@@ -82,7 +82,7 @@ public class FolderCache {
     
     private String foldername=null;
     private Folder folder=null;
-    private final HashMap<Integer, HTMLMailData> dhash=new HashMap<>();
+    private HashMap<Long, HTMLMailData> dhash=new HashMap<Long, HTMLMailData>();
     private final HashMap<String, MessageSearchResult> msrs=new HashMap<>();
     private Message msgs[]=null;
     private boolean modified=false;
@@ -696,7 +696,7 @@ public class FolderCache {
     
     public void fetch(Message fmsgs[], FetchProfile fp) throws MessagingException {
         open();
-        folder.fetch(fmsgs, fp);
+        ((SonicleIMAPFolder)folder).uid_fetch(fmsgs, fp);
     }
 
 /*    public void fetchThreaded(ThreadMessage fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
@@ -705,7 +705,7 @@ public class FolderCache {
         Message xmsgs[]=new Message[length];
 		for(int i=0;i<length;++i) xmsgs[i]=fmsgs[i].getMessage();
         open();
-        folder.fetch(xmsgs, fp);
+        ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
     }*/
 	
     public void fetch(Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
@@ -714,7 +714,7 @@ public class FolderCache {
         Message xmsgs[]=new Message[length];
         System.arraycopy(fmsgs, start, xmsgs, 0, length);
         open();
-        folder.fetch(xmsgs, fp);
+        ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
     }
     
 	public Message[] getMessages(String quickfilter, String pattern, String searchfield, int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) throws MessagingException, IOException {
@@ -1372,13 +1372,13 @@ public class FolderCache {
 
 			//<SonicleMail>xmsgs=((IMAPFolder)folder).sort(sort, term);</SonicleMail>
 			try {
-				//xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
-				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+				xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
+				//xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
 			} catch(Exception exc) {
 				close();
 				open();
-				//xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
-				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+				xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
+				//xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
 			}
 		}
 		if (quickfilter!=null && quickfilter.equals("attachment")) {
@@ -1654,15 +1654,15 @@ public class FolderCache {
     public HTMLMailData getMailData(MimeMessage m) throws MessagingException, IOException {
         HTMLMailData mailData;
         synchronized(this) {
-            Integer mid=m.getMessageNumber();
-            mailData=dhash.get(mid);
+            Long muid=new Long(((SonicleIMAPMessage)m).getUID());
+            mailData=dhash.get(muid);
 			if (mailData!=null && mailData.getMessage()!=m) {
 				Service.logger.debug("found wrong cached message, refreshing");
 				mailData=null;
 			}
             if (mailData==null) {
                 mailData=prepareHTMLMailData(m);
-                if (mid>0) dhash.put(mid, mailData);
+                if (muid>0) dhash.put(muid, mailData);
             } else {
             }
         }

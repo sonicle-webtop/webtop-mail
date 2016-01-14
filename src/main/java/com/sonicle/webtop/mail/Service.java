@@ -307,7 +307,9 @@ public class Service extends BaseService {
 		session.setDebug(imapDebug);
 
 		try {
-			store = session.getStore(protocol);
+			session.setProvider(new Provider(Provider.Type.STORE,"imap","com.sonicle.mail.imap.SonicleIMAPStore","Sonicle","1.0"));
+			session.setProvider(new Provider(Provider.Type.STORE,"imaps","com.sonicle.mail.imap.SonicleIMAPSSLStore","Sonicle","1.0"));
+			store=session.getStore(protocol);
 		} catch (NoSuchProviderException exc) {
 			logger.error("Cannot create mail store for {}", profile.getUserId(), exc);
 		}

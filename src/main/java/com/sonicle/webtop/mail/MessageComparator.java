@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sun.mail.imap.IMAPMessage;
+import com.sonicle.mail.imap.SonicleIMAPMessage;
 import java.util.Comparator;
 import javax.mail.Message;
 import javax.mail.Address;
@@ -77,11 +77,13 @@ public class MessageComparator implements Comparator<Message> {
 
   public int compare(Message m1, Message m2) {
       int result=0;
-      IMAPMessage im=(IMAPMessage) m1;
+      SonicleIMAPMessage im=(SonicleIMAPMessage) m1;
       if (m1.isExpunged() || m2.isExpunged()) return 0;
       switch(sort_by) {
         case SORT_BY_MSGIDX:
           result=m1.getMessageNumber()-m2.getMessageNumber();
+          long lresult=((SonicleIMAPMessage)m1).getUID()-((SonicleIMAPMessage)m2).getUID();
+		  result=(lresult>0?1:result<0?-1:0);
           break;
         case SORT_BY_SENDER:
           String sender1="";
