@@ -1404,13 +1404,19 @@ public class FolderCache {
 			
 			open();
 			
+			/*boolean hasrefs=((IMAPStore)folder.getStore()).hasCapability("THREAD=REFS");
+			String method=hasrefs?"REFS":"REFERENCES";
+			boolean simplified=!hasrefs;
+			System.out.println("THREAD: using method "+method+" simplified="+simplified);
+			*/
+			String method="REFERENCES";
 			try {
-				tmsgs=((SonicleIMAPFolder)folder).thread("REFERENCES",term);
+				tmsgs=((SonicleIMAPFolder)folder).thread(method,term);
 			} catch(Exception exc) {
 				System.out.println("**************Retrying thread*********************");
 				close();
 				open();
-				tmsgs=((SonicleIMAPFolder)folder).thread("REFERENCES",term);
+				tmsgs=((SonicleIMAPFolder)folder).thread(method,term);
 			}
 		}
 		
