@@ -55,6 +55,7 @@ import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.dal.UserDAO;
 //import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
+import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
@@ -100,6 +101,7 @@ import javax.mail.internet.*;
 import javax.mail.search.MessageIDTerm;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import net.fortuna.ical4j.model.parameter.PartStat;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
@@ -8065,286 +8067,337 @@ public class Service extends BaseService {
 
     // TODO: get calendar event!!!
 /*    public void processGetCalendarEvent(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String pfoldername=request.getParameter("folder");
-	 String pidmessage=request.getParameter("idmessage");
-	 String pidattach=request.getParameter("idattach");
-	 UserProfile profile=environment.getProfile();
-	 JsonObject sout=new JsonObject();
-	 JsonArray partecipant=new JsonArray();
-	 //String sout;
-	 Connection con = null;
-	 Statement stmt = null;
-	 ResultSet rset = null;
-	 String event_id="";
-	 try {
-	 checkStoreConnected();
-	 FolderCache mcache=getFolderCache(pfoldername);
-	 int newmsgid=Integer.parseInt(pidmessage);
-	 Message m=mcache.getMessage(newmsgid);
-	 HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
-	 Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
+        String pfoldername=request.getParameter("folder");
+        String puidmessage=request.getParameter("idmessage");
+        String pidattach=request.getParameter("idattach");
+        UserProfile profile=environment.getUserProfile();
+        JsonObject sout=new JsonObject();
+        JsonArray partecipant=new JsonArray();
+        //String sout;
+        Connection con = null;
+        Statement stmt = null;
+        ResultSet rset = null;
+        String event_id="";
+        try {
+            checkStoreConnected();
+            FolderCache mcache=getFolderCache(pfoldername);
+            long newmsguid=Long.parseLong(puidmessage);
+            Message m=mcache.getMessage(newmsguid);
+            HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
+            Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
             
-	 System.setProperty("ical4j.unfolding.relaxed", "true");
-	 System.setProperty("ical4j.parsing.relaxed", "true");
-	 net.fortuna.ical4j.data.CalendarBuilder cb=new net.fortuna.ical4j.data.CalendarBuilder();
-	 net.fortuna.ical4j.model.Calendar cal=cb.build(part.getInputStream());
-	 net.fortuna.ical4j.model.component.VEvent vevent=null;
-	 for (Iterator xi = cal.getComponents().iterator(); xi.hasNext();) {
-                
-	 net.fortuna.ical4j.model.Component component = (net.fortuna.ical4j.model.Component) xi.next();
-	 if (component instanceof net.fortuna.ical4j.model.component.VEvent) {
-	 vevent=(net.fortuna.ical4j.model.component.VEvent)component;
-	 break;
-	 }
-	 }
-            
-	 if (vevent==null){
-	 //sout="{\nresult: false, text:'Event not found!'\n}";
-	 sout.addProperty("result", false);
-	 sout.addProperty("text", "Event not found!");
-                
-	 }
-	 else {
-	 String event=vevent.getSummary().getValue();
-	 String description=vevent.getDescription()==null?"":vevent.getDescription().getValue();
-	 String location=vevent.getLocation()==null?"":vevent.getLocation().getValue();
-	 String uid=vevent.getUid().getValue();
-	 Method method=cal.getMethod();
-	 con = getConnection();
-	 stmt = con.createStatement();
-	 System.out.println(
-	 "SELECT EVENT_ID "+
-	 "FROM EVENTS "+
-	 "WHERE UID_PLANNING='"+uid+"' AND STATUS!='D' AND IDDOMAIN='"+profile.getDomainId()+"' AND EVENT_BY='"+profile.getUserId()+"'"
-	 );
-	 rset = stmt.executeQuery(
-	 "SELECT EVENT_ID "+
-	 "FROM EVENTS "+
-	 "WHERE UID_PLANNING='"+uid+"' AND STATUS!='D' AND IDDOMAIN='"+profile.getDomainId()+"' AND EVENT_BY='"+profile.getUserId()+"'"
-	 );
-	 if (rset.next()) {
-	 event_id = rset.getString("event_id");
-	 }
-                
-                
-	 java.util.Date starts=vevent.getStartDate().getDate();
-                
+			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
+			String event=ir.getSummary();
+			String description=ir.getDescription();
+			String location=ir.getLocation();
+			String uid=ir.getUID();
+			String method=ir.getMethod();
+			con = wtd.getConnection();
+			stmt = con.createStatement();
+			logger.trace(
+				"SELECT EVENT_ID "+
+				"FROM EVENTS "+
+				"WHERE UID_PLANNING='"+uid+"' AND STATUS!='D' AND IDDOMAIN='"+wtd.getDataIDDomain()+"' AND EVENT_BY='"+environment.getUserProfile().getUser()+"'"
+				);
+			rset = stmt.executeQuery(
+				"SELECT EVENT_ID "+
+				"FROM EVENTS "+
+				"WHERE UID_PLANNING='"+uid+"' AND STATUS!='D' AND IDDOMAIN='"+wtd.getDataIDDomain()+"' AND EVENT_BY='"+environment.getUserProfile().getUser()+"'"
+			);
+			if (rset.next()) {
+			 event_id = rset.getString("event_id");
+			}
 
-	 java.util.Date ends=vevent.getEndDate().getDate();
-	 if (ends==null || ends.before(starts)) ends=starts;
-	 Calendar xcal=Calendar.getInstance();
-	 xcal.setTime(starts);
-                
-	 //ricorrenza
-	 boolean recurrence=false;
-	 String recurr_type="";
-	 String until_date_dd="";
-	 String until_date_mm="";
-	 String until_date_yyyy="";
-	 String dayly_freq="";
-	 String weekly_freq="";
-	 String weekly_day1="false";
-	 String weekly_day2="false"; 
-	 String weekly_day3="false";
-	 String weekly_day4="false";
-	 String weekly_day5="false";
-	 String weekly_day6="false";
-	 String weekly_day7="false";
-	 String monthly_month="";
-	 String monthly_day="";
-	 String yearly_day="";
-	 String yearly_month="";
-	 String repeat="0";
-	 String permanent="";
-	 RRule rrule = (RRule) vevent.getProperties().getProperty(Property.RRULE);
-	 if (rrule!=null){
-	 recurrence=true;
-	 recurr_type=rrule.getRecur().getFrequency();    //frequenza
-                    
-	 java.util.Date until =rrule.getRecur().getUntil();  //data di fine
-	 if (until!=null){
-	 Calendar u=Calendar.getInstance();
-	 u.setTime(until);
-	 until_date_dd=u.get(Calendar.DAY_OF_MONTH)+"";
-	 until_date_mm=u.get(Calendar.MONTH)+1+"";
-	 until_date_yyyy=u.get(Calendar.YEAR)+"";
-	 }else{
-	 permanent="true";
-	 }   
-	 if (recurr_type.equals("DAILY")){
-	 WeekDayList dayList = rrule.getRecur().getDayList();
-	 System.out.println("daylylist="+dayList);
-	 if (!dayList.isEmpty()){ //ricorrenza giornaliera feriale
-	 recurr_type="F";
-	 }else{
-	 recurr_type="D"; //ricorrenza giornaliera con intervallo   
-	 dayly_freq=String.valueOf(rrule.getRecur().getInterval());
-	 if (dayly_freq.equals("-1")) dayly_freq="1";
-	 }
-	 }else if (recurr_type.equals("WEEKLY")){
-	 recurr_type="W";
-	 weekly_freq=String.valueOf(rrule.getRecur().getInterval());
-	 if (weekly_freq.equals("-1")) weekly_freq="1";
-	 WeekDayList dayList = rrule.getRecur().getDayList();
-	 if (!dayList.isEmpty()){
-	 for (Object o:dayList){
-	 WeekDay weekday=(WeekDay)o;
-	 if (weekday.getDay().equals("MO")) weekly_day1="true";
-	 if (weekday.getDay().equals("TU")) weekly_day2="true"; 
-	 if (weekday.getDay().equals("WE")) weekly_day3="true";
-	 if (weekday.getDay().equals("TH")) weekly_day4="true";
-	 if (weekday.getDay().equals("FR")) weekly_day5="true";
-	 if (weekday.getDay().equals("SA")) weekly_day6="true";
-	 if (weekday.getDay().equals("SU")) weekly_day7="true";
-	 }
-	 }
-                        
-	 }else if (recurr_type.equals("MONTHLY")){
-	 recurr_type="M";
-	 monthly_month=String.valueOf(rrule.getRecur().getInterval());
-	 NumberList monthDayList = rrule.getRecur().getMonthDayList();
-	 for (Object o:monthDayList){
-	 monthly_day=String.valueOf((Integer)o);
-	 }
-	 }else if (recurr_type.equals("YEARLY")){
-	 recurr_type="Y";
-	 NumberList monthList = rrule.getRecur().getMonthList();
-	 for (Object o:monthList){
-	 yearly_month=String.valueOf((Integer)o);
-	 }
-	 NumberList monthDayList = rrule.getRecur().getMonthDayList();
-	 for (Object o:monthDayList){
-	 yearly_day=String.valueOf((Integer)o);
-	 }
-	 }
-                    
-	 if (rrule.getRecur().getCount()!=-1)
-	 repeat=String.valueOf(rrule.getRecur().getCount());
-                   
-                   
-	 }
-	 //fine ricorrenza
-                
-	 PropertyList pl=vevent.getProperties("ATTENDEE");
-	 boolean attendees=false;
-	 description=description.trim();
-	 if (pl!=null) {
-	 for(Object op: pl) {
-	 Property p=(Property)op;
-	 Parameter pcn=p.getParameter("CN");
-	 if (pcn!=null) {
-	 String cn=pcn.getValue();
-	 String vcn[]=cn.split(":");
-	 if (vcn.length>0) {
-	 if (!attendees) {
-	 if (description.length()>0) {
-	 if (!description.endsWith("\n")) description+="\n";
-	 description+="\n";
-	 }
-	 //description+=lookupResource(profile, MailLocaleKey.ICAL_ATTENDEES)+":\n";
-	 }
-                                
-	 //description+="- "+vcn[0]+"\n";
-	 attendees=true;
-                                
-	 JsonObject mail=new JsonObject();
-	 mail.addProperty("invitation","false");
-	 mail.addProperty("name",vcn[0]);
-	 mail.addProperty("partecipant","N");
-	 mail.addProperty("response","none");
-                                
-                                
-	 partecipant.add(mail);
-	 }
-	 }
-	 }
-	 }
-	 if (description.length()>1024) description=description.substring(0,1024);
-                
-	 String sgeo="";
-	 Geo geo=vevent.getGeographicPos();
-	 if (geo!=null) sgeo=geo.getValue();
-	 String defaulttimezone = wts.getServiceSetting("calendar", "defaulttimezone", null);
-	 if (defaulttimezone==null){
-	 defaulttimezone="Europe/Rome";
-	 }
-	 int syyyy=xcal.get(Calendar.YEAR);
-	 int smm=xcal.get(Calendar.MONTH);
-	 int sdd=xcal.get(Calendar.DAY_OF_MONTH);
-	 int shhh=xcal.get(Calendar.HOUR_OF_DAY);
-	 int smmm=xcal.get(Calendar.MINUTE);
-	 int ssss=xcal.get(Calendar.SECOND);
-	 xcal.setTime(ends);
-	 int eyyyy=xcal.get(Calendar.YEAR);
-	 int emm=xcal.get(Calendar.MONTH);
-	 int edd=xcal.get(Calendar.DAY_OF_MONTH);
-	 int ehhh=xcal.get(Calendar.HOUR_OF_DAY);
-	 int emmm=xcal.get(Calendar.MINUTE);
-	 int esss=xcal.get(Calendar.SECOND);
-                
-                
-	 String organizer=vevent.getOrganizer()==null?"":vevent.getOrganizer().getParameter("CN").getValue();
-	 JsonObject eventsout=new JsonObject();
-	 sout.addProperty("result", OldUtils.jsEscape(event));
-	 eventsout.addProperty("description", description);
-	 eventsout.addProperty("summary", OldUtils.jsEscape(event));
-	 eventsout.addProperty("location", OldUtils.jsEscape(location));
-	 eventsout.addProperty("startyyyy",syyyy);
-	 eventsout.addProperty("startmm",smm);
-	 eventsout.addProperty("startdd",sdd);
-	 eventsout.addProperty("starthh",shhh);
-	 eventsout.addProperty("startmmm",smmm);
-	 eventsout.addProperty("startssss",ssss);
-	 eventsout.addProperty("endyyyy",eyyyy);
-	 eventsout.addProperty("endmm",emm);
-	 eventsout.addProperty("enddd",edd);
-	 eventsout.addProperty("endhh",ehhh);
-	 eventsout.addProperty("endmmm",emmm);
-	 eventsout.addProperty("endssss",esss);
-	 eventsout.addProperty("organizer", OldUtils.jsEscape(organizer));
-	 eventsout.addProperty("geo", sgeo);
-	 eventsout.addProperty("method",method.getValue());
-	 eventsout.addProperty("uid", uid);
-	 eventsout.addProperty("event_id",event_id);
-	 eventsout.addProperty("recurrence",recurrence);
-	 eventsout.addProperty("recurr_type",recurr_type);
-	 eventsout.addProperty("until_date_dd",until_date_dd);
-	 eventsout.addProperty("until_date_mm",until_date_mm);
-	 eventsout.addProperty("until_date_yyyy",until_date_yyyy);
-	 eventsout.addProperty("dayly_freq",dayly_freq);
-	 eventsout.addProperty("weekly_freq",weekly_freq);
-	 eventsout.addProperty("weekly_day1",weekly_day1);
-	 eventsout.addProperty("weekly_day2",weekly_day2); 
-	 eventsout.addProperty("weekly_day3",weekly_day3);
-	 eventsout.addProperty("weekly_day4",weekly_day4);
-	 eventsout.addProperty("weekly_day5",weekly_day5);
-	 eventsout.addProperty("weekly_day6",weekly_day6);
-	 eventsout.addProperty("weekly_day7",weekly_day7);
-	 eventsout.addProperty("monthly_month",monthly_month);
-	 eventsout.addProperty("monthly_day",monthly_day);
-	 eventsout.addProperty("yearly_month",yearly_month);
-	 eventsout.addProperty("yearly_day",yearly_day);
-	 eventsout.addProperty("repeat",repeat);
-	 eventsout.addProperty("permanent",permanent);
-	 sout.add("event", eventsout);
-	 JsonObject planninggrid=new JsonObject();
-	 planninggrid.add("planning",partecipant);
-	 sout.add("planninggrid",planninggrid);
-	 }
-	 } catch(Exception exc) {
-	 sout.addProperty("nresult", false);
-	 sout.addProperty("text", OldUtils.jsEscape(exc.getMessage()));
-	 exc.printStackTrace(System.out);
-	 }
-	 finally {
-	 if (rset!=null) try { rset.close(); } catch(Exception exc) {}
-	 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-	 if (con!=null) try { con.close(); } catch(Exception exc) {}
-	 }
+			Calendar xcal=Calendar.getInstance();
+			java.util.Date uid_lm=ir.getLastModified();
+			xcal.setTime(uid_lm);
+			int uid_lm_yyyy=xcal.get(Calendar.YEAR);
+			int uid_lm_mm=xcal.get(Calendar.MONTH)+1;
+			int uid_lm_dd=xcal.get(Calendar.DAY_OF_MONTH);
+			int uid_lm_hhh=xcal.get(Calendar.HOUR_OF_DAY);
+			int uid_lm_mmm=xcal.get(Calendar.MINUTE);
+			int uid_lm_sss=xcal.get(Calendar.SECOND);
+
+			java.util.Date starts=ir.getStartDate();
+
+
+			java.util.Date ends=ir.getEndDate();
+			if (ends==null || ends.before(starts)) ends=starts;
+			xcal.setTime(starts);
+
+			//ricorrenza
+			boolean recurrence=false;
+			String recurr_type="";
+			String until_date_dd="";
+			String until_date_mm="";
+			String until_date_yyyy="";
+			String dayly_freq="";
+			String weekly_freq="";
+			String weekly_day1="false";
+			String weekly_day2="false"; 
+			String weekly_day3="false";
+			String weekly_day4="false";
+			String weekly_day5="false";
+			String weekly_day6="false";
+			String weekly_day7="false";
+			String monthly_month="";
+			String monthly_day="";
+			String yearly_day="";
+			String yearly_month="";
+			String repeat="0";
+			String permanent="";
+			RRule rrule = (RRule) ir.getVEvent().getProperties().getProperty(Property.RRULE);
+			if (rrule!=null){
+				recurrence=true;
+				recurr_type=rrule.getRecur().getFrequency();    //frequenza
+
+				java.util.Date until =rrule.getRecur().getUntil();  //data di fine
+				if (until!=null){
+					Calendar u=Calendar.getInstance();
+					u.setTime(until);
+					until_date_dd=u.get(Calendar.DAY_OF_MONTH)+"";
+					until_date_mm=u.get(Calendar.MONTH)+1+"";
+					until_date_yyyy=u.get(Calendar.YEAR)+"";
+				}else{
+					permanent="true";
+				}   
+				if (recurr_type.equals("DAILY")){
+					WeekDayList dayList = rrule.getRecur().getDayList();
+					logger.debug("daylylist={}", dayList);
+					if (!dayList.isEmpty()){ //ricorrenza giornaliera feriale
+						recurr_type="F";
+					}else{
+						recurr_type="D"; //ricorrenza giornaliera con intervallo   
+						dayly_freq=String.valueOf(rrule.getRecur().getInterval());
+						if (dayly_freq.equals("-1")) dayly_freq="1";
+					}
+				}else if (recurr_type.equals("WEEKLY")){
+					recurr_type="W";
+					weekly_freq=String.valueOf(rrule.getRecur().getInterval());
+					if (weekly_freq.equals("-1")) weekly_freq="1";
+					WeekDayList dayList = rrule.getRecur().getDayList();
+					if (!dayList.isEmpty()){
+						for (Object o:dayList){
+							WeekDay weekday=(WeekDay)o;
+							if (weekday.getDay().equals("MO")) weekly_day1="true";
+							if (weekday.getDay().equals("TU")) weekly_day2="true"; 
+							if (weekday.getDay().equals("WE")) weekly_day3="true";
+							if (weekday.getDay().equals("TH")) weekly_day4="true";
+							if (weekday.getDay().equals("FR")) weekly_day5="true";
+							if (weekday.getDay().equals("SA")) weekly_day6="true";
+							if (weekday.getDay().equals("SU")) weekly_day7="true";
+						}
+					}
+
+				}else if (recurr_type.equals("MONTHLY")){
+					recurr_type="M";
+					monthly_month=String.valueOf(rrule.getRecur().getInterval());
+					NumberList monthDayList = rrule.getRecur().getMonthDayList();
+					for (Object o:monthDayList){
+						monthly_day=String.valueOf((Integer)o);
+					}
+				}else if (recurr_type.equals("YEARLY")){
+					recurr_type="Y";
+					NumberList monthList = rrule.getRecur().getMonthList();
+					for (Object o:monthList){
+						yearly_month=String.valueOf((Integer)o);
+					}
+					NumberList monthDayList = rrule.getRecur().getMonthDayList();
+					for (Object o:monthDayList){
+						yearly_day=String.valueOf((Integer)o);
+					}
+				}
+
+				if (rrule.getRecur().getCount()!=-1)
+					repeat=String.valueOf(rrule.getRecur().getCount());
+
+
+			}
+			//fine ricorrenza
+
+			PropertyList pl=ir.getVEvent().getProperties("ATTENDEE");
+			boolean attendees=false;
+			description=description.trim();
+			if (pl!=null) {
+				for(Object op: pl) {
+					Property p=(Property)op;
+					Parameter pcn=p.getParameter("CN");
+					if (pcn!=null) {
+						String cn=pcn.getValue();
+						String vcn[]=cn.split(":");
+						if (vcn.length>0) {
+							if (!attendees) {
+								if (description.length()>0) {
+									if (!description.endsWith("\n")) description+="\n";
+									description+="\n";
+								}
+								//description+=lookupResource(profile, MailLocaleKey.ICAL_ATTENDEES)+":\n";
+							}
+
+							//description+="- "+vcn[0]+"\n";
+							attendees=true;
+
+							JsonObject mail=new JsonObject();
+							mail.addProperty("invitation","false");
+							mail.addProperty("name",vcn[0]);
+							mail.addProperty("partecipant","N");
+							mail.addProperty("response","none");
+
+
+							partecipant.add(mail);
+						}
+					}
+				}
+			}
+			if (description.length()>1024) description=description.substring(0,1024);
+
+			String sgeo="";
+			Geo geo=ir.getVEvent().getGeographicPos();
+			if (geo!=null) sgeo=geo.getValue();
+			String defaulttimezone = wts.getServiceSetting("calendar", "defaulttimezone", null);
+			if (defaulttimezone==null){
+				defaulttimezone="Europe/Rome";
+			}
+			int syyyy=xcal.get(Calendar.YEAR);
+			int smm=xcal.get(Calendar.MONTH);
+			int sdd=xcal.get(Calendar.DAY_OF_MONTH);
+			int shhh=xcal.get(Calendar.HOUR_OF_DAY);
+			int smmm=xcal.get(Calendar.MINUTE);
+			int ssss=xcal.get(Calendar.SECOND);
+			xcal.setTime(ends);
+			int eyyyy=xcal.get(Calendar.YEAR);
+			int emm=xcal.get(Calendar.MONTH);
+			int edd=xcal.get(Calendar.DAY_OF_MONTH);
+			int ehhh=xcal.get(Calendar.HOUR_OF_DAY);
+			int emmm=xcal.get(Calendar.MINUTE);
+			int esss=xcal.get(Calendar.SECOND);
+
+
+			String organizer=ir.getOrganizerAddress();
+			JsonObject eventsout=new JsonObject();
+			sout.addProperty("result", event);
+			eventsout.addProperty("description", description);
+			eventsout.addProperty("summary", event);
+			eventsout.addProperty("location", location);
+			eventsout.addProperty("startyyyy",syyyy);
+			eventsout.addProperty("startmm",smm);
+			eventsout.addProperty("startdd",sdd);
+			eventsout.addProperty("starthh",shhh);
+			eventsout.addProperty("startmmm",smmm);
+			eventsout.addProperty("startssss",ssss);
+			eventsout.addProperty("endyyyy",eyyyy);
+			eventsout.addProperty("endmm",emm);
+			eventsout.addProperty("enddd",edd);
+			eventsout.addProperty("endhh",ehhh);
+			eventsout.addProperty("endmmm",emmm);
+			eventsout.addProperty("endssss",esss);
+			eventsout.addProperty("organizer", organizer);
+			eventsout.addProperty("geo", sgeo);
+			eventsout.addProperty("method",method);
+			eventsout.addProperty("uid", uid);
+			eventsout.addProperty("uid_lm_yyyy", uid_lm_yyyy);
+			eventsout.addProperty("uid_lm_mm", uid_lm_mm);
+			eventsout.addProperty("uid_lm_dd", uid_lm_dd);
+			eventsout.addProperty("uid_lm_hhh", uid_lm_hhh);
+			eventsout.addProperty("uid_lm_mmm", uid_lm_mmm);
+			eventsout.addProperty("uid_lm_sss", uid_lm_sss);
+			eventsout.addProperty("event_id",event_id);
+			eventsout.addProperty("recurrence",recurrence);
+			eventsout.addProperty("recurr_type",recurr_type);
+			eventsout.addProperty("until_date_dd",until_date_dd);
+			eventsout.addProperty("until_date_mm",until_date_mm);
+			eventsout.addProperty("until_date_yyyy",until_date_yyyy);
+			eventsout.addProperty("dayly_freq",dayly_freq);
+			eventsout.addProperty("weekly_freq",weekly_freq);
+			eventsout.addProperty("weekly_day1",weekly_day1);
+			eventsout.addProperty("weekly_day2",weekly_day2); 
+			eventsout.addProperty("weekly_day3",weekly_day3);
+			eventsout.addProperty("weekly_day4",weekly_day4);
+			eventsout.addProperty("weekly_day5",weekly_day5);
+			eventsout.addProperty("weekly_day6",weekly_day6);
+			eventsout.addProperty("weekly_day7",weekly_day7);
+			eventsout.addProperty("monthly_month",monthly_month);
+			eventsout.addProperty("monthly_day",monthly_day);
+			eventsout.addProperty("yearly_month",yearly_month);
+			eventsout.addProperty("yearly_day",yearly_day);
+			eventsout.addProperty("repeat",repeat);
+			eventsout.addProperty("permanent",permanent);
+			sout.add("event", eventsout);
+			JsonObject planninggrid=new JsonObject();
+			planninggrid.add("planning",partecipant);
+			sout.add("planninggrid",planninggrid);
+			
+			sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).getAddress(), PartStat.ACCEPTED, ir);
+        } catch(Exception exc) {
+            //sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
+            sout.addProperty("result", false);
+            sout.addProperty("text", Utils.jsEscape(exc.getMessage()));
+            
+			logger.error("Error getting calendar events", exc);
+        }
+        finally {
+            if (rset!=null) try { rset.close(); } catch(Exception exc) {}
+            if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
+            if (con!=null) try { con.close(); } catch(Exception exc) {}
+        }
         
         
-	 out.println(sout);
-	 }*/
+        out.println(sout);
+    }
+	*/
+	
+    public void processDeclineInvitation(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+        String pfoldername=request.getParameter("folder");
+        String pidmessage=request.getParameter("idmessage");
+        String pidattach=request.getParameter("idattach");
+        try {
+            checkStoreConnected();
+            FolderCache mcache=getFolderCache(pfoldername);
+            int newmsgid=Integer.parseInt(pidmessage);
+            Message m=mcache.getMessage(newmsgid);
+            HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
+            Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
+            
+			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
+			sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).getAddress(), PartStat.DECLINED, ir);
+			new JsonResult().printTo(out);
+        } catch(Exception exc) {
+            new JsonResult(false,exc.getMessage()).printTo(out);
+			logger.error("Error sending decline", exc);
+        }        
+        
+	}
+	
+	private void sendICalendarReply(String forAddress, PartStat response, ICalendarRequest ir) throws Exception {
+		UserProfile profile=environment.getProfile();
+		Locale locale=profile.getLocale();
+		String action_string=response.equals(PartStat.ACCEPTED)?
+				lookupResource(locale, MailLocaleKey.ICAL_REPLY_ACCEPTED):
+				lookupResource(locale, MailLocaleKey.ICAL_REPLY_DECLINED);
+		SimpleMessage smsg = new SimpleMessage(999999);
+		
+		String subject = action_string + " " + ir.getSummary();
+        smsg.setSubject(subject);
+        smsg.setTo(ir.getOrganizerAddress());
+		smsg.setContent("");
+
+		net.fortuna.ical4j.model.Calendar reply=ICalendarUtils.buildInvitationReply(ir.getCalendar(), forAddress, response);
+		String content=reply.toString();
+		
+		javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
+		part1.setText(content, "UTF8", "application/ics");
+		part1.setHeader("Content-type", "application/ics");
+		part1.setFileName("webtop-reply.ics");
+		javax.mail.internet.MimeBodyPart part2 = new javax.mail.internet.MimeBodyPart();
+		part2.setText(content, "UTF8", "text/calendar");
+		part2.setHeader("Content-type", "text/calendar; charset=UTF-8; method=REPLY");
+		part2.setFileName("webtop-reply.ics");
+
+		smsg.setAttachments(new javax.mail.Part[]{part1,part2});
+
+		sendMsg(profile.getEmailAddress(), smsg, null);
+		
+	}
 	
     public void processUpdateCalendarReply(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         String pfoldername=request.getParameter("folder");
