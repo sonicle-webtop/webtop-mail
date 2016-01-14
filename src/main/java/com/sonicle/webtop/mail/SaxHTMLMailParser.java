@@ -57,7 +57,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
   private String baseUrl=null;
   private String appUrl="";
   private String securityToken;
-  private int msgnum=-1;
+  private long msguid=-1;
   private boolean forEdit=false;
   private String provider=null;
   private String providerid=null;
@@ -74,9 +74,9 @@ public class SaxHTMLMailParser extends DefaultHandler {
     unenclosedTags.addElement("BASE");
   }
   
-  public SaxHTMLMailParser(String securityToken, boolean forEdit, int msgnum) {
+  public SaxHTMLMailParser(String securityToken, boolean forEdit, long msguid) {
 	  this.securityToken = securityToken;
-      this.msgnum=msgnum;
+      this.msguid=msguid;
       this.forEdit=forEdit;
   }
 
@@ -357,7 +357,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
         if (appUrl!=null) cidUrl+=appUrl;
         cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=GetAttachment&nowriter=true";
         if (provider==null) {
-            cidUrl+="&folder="+XURLEncoder.encode(mailData.getFolderName())+"&idmessage="+msgnum;
+            cidUrl+="&folder="+XURLEncoder.encode(mailData.getFolderName())+"&idmessage="+msguid;
                 
         } else {
             cidUrl+="&provider="+provider+"&providerid="+XURLEncoder.encode(providerid);
@@ -365,7 +365,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
         cidUrl+="&cid="+XURLEncoder.encode(name);
     } else {
         cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
-            "&newmsgid="+msgnum+
+            "&newmsgid="+msguid+
             "&cid="+XURLEncoder.encode(name);
     }
 	mailData.addReferencedCid(name);
@@ -397,14 +397,14 @@ public class SaxHTMLMailParser extends DefaultHandler {
         if (appUrl!=null) cidUrl+=appUrl;
         cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=GetAttachment&nowriter=true";
         if (provider==null) {
-            cidUrl+="&folder="+XURLEncoder.encode(mailData.getFolderName())+"&idmessage="+msgnum;
+            cidUrl+="&folder="+XURLEncoder.encode(mailData.getFolderName())+"&idmessage="+msguid;
         } else {
             cidUrl+="&provider="+provider+"&providerid="+XURLEncoder.encode(providerid);
         }
         cidUrl+="&url="+XURLEncoder.encode(avalue);
     } else {
         cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
-            "&newmsgid="+msgnum+
+            "&newmsgid="+msguid+
             "&url="+XURLEncoder.encode(avalue);
     }
     return cidUrl;

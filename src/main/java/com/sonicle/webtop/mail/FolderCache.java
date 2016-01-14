@@ -675,15 +675,19 @@ public class FolderCache {
         for(String id: ids) remove(id);
     }*/
 
-    public void removeDHash(int ids[]) {
-        for(int id: ids) {
-            dhash.remove(new Integer(id));
-        }
-    }
+    public void removeDHash(long uids[]) {
+        for(long uid: uids) {
+            dhash.remove(new Long(uid));
+         }
+     }
+	
+	public long getUID(Message m) throws MessagingException {
+		return ((UIDFolder)folder).getUID(m);
+	}
     
-    public Message getMessage(int id) throws MessagingException {
+    public Message getMessage(long uid) throws MessagingException {
         open();
-        return folder.getMessage(id);
+		return ((UIDFolder)folder).getMessageByUID(uid);
     }
 
 //    public Set<String> getIds() {
@@ -870,27 +874,21 @@ public class FolderCache {
         setForceRefresh();
     }
     
-    private Message[] getMessages(int ids[]) throws MessagingException {
-//        Message rmsgs[]=new Message[ids.length];
-//        int i=0;
-//        for(String id: ids) {
-//            rmsgs[i++]=getMessage(id);
-//            environment.getWebTopApp().log(id+"="+rmsgs[i-1]);
-//        }
+    private Message[] getMessages(long uids[]) throws MessagingException {
         open();
-        return folder.getMessages(ids);
+        return ((UIDFolder)folder).getMessagesByUID(uids);
     }
 
     protected Message[] getAllMessages() throws MessagingException {
         open();
-        return folder.getMessages();
+        return ((UIDFolder)folder).getMessagesByUID(1,UIDFolder.LASTUID);
     }
     
-    public void moveMessages(int ids[], FolderCache to) throws MessagingException {
-        Message mmsgs[]=getMessages(ids);
+    public void moveMessages(long uids[], FolderCache to) throws MessagingException {
+        Message mmsgs[]=getMessages(uids);
         folder.copyMessages(mmsgs, to.folder);
         folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
-        removeDHash(ids);
+        removeDHash(uids);
         folder.expunge();
         setForceRefresh();
         to.setForceRefresh();
@@ -898,37 +896,37 @@ public class FolderCache {
         to.modified=true;
     }
 
-    public void copyMessages(int ids[], FolderCache to) throws MessagingException, IOException {
+    public void copyMessages(long uids[], FolderCache to) throws MessagingException, IOException {
 		
         if (ms.hasDocumentArchiving() &&
                 ms.isSimpleArchiving() &&
                 ms.getSimpleArchivingMailFolder()!=null &&
                 ms.getSimpleArchivingMailFolder().equals(to.foldername)) {
-            archiveMessages(ids, to);
+            archiveMessages(uids, to);
         } else {
-            Message mmsgs[]=getMessages(ids);
+            Message mmsgs[]=getMessages(uids);
             folder.copyMessages(mmsgs, to.folder);
             to.setForceRefresh();
             to.modified=true;
         }
     }
 
-    public void archiveMessages(int ids[], FolderCache to) throws MessagingException, IOException {
-        Message mmsgs[]=getMessages(ids);
+    public void archiveMessages(long uids[], FolderCache to) throws MessagingException, IOException {
+        Message mmsgs[]=getMessages(uids);
         MimeMessage newmmsgs[]=getArchivedCopy(mmsgs);
-        moveMessages(ids,to);
+        moveMessages(uids,to);
         folder.appendMessages(newmmsgs);
         refresh();
     }
 
-    public void markArchivedMessages(int ids[]) throws MessagingException, IOException {
-        MimeMessage newmmsgs[]=getArchivedCopy(ids);
+    public void markArchivedMessages(long uids[]) throws MessagingException, IOException {
+        MimeMessage newmmsgs[]=getArchivedCopy(uids);
         try {
-			deleteMessages(ids);
+			deleteMessages(uids);
 			folder.appendMessages(newmmsgs);
 		} catch(MessagingException exc) {
 			//can't delete, try with flag
-			Message msgs[]=getMessages(ids);
+			Message msgs[]=getMessages(uids);
 			for(Message m: msgs) 
 				m.setFlags(Service.flagArchived,true);
 		}
@@ -936,8 +934,8 @@ public class FolderCache {
         refresh();
     }
 
-    public MimeMessage[] getArchivedCopy(int ids[]) throws MessagingException {
-        Message mmsgs[]=getMessages(ids);
+    public MimeMessage[] getArchivedCopy(long uids[]) throws MessagingException {
+        Message mmsgs[]=getMessages(uids);
         return getArchivedCopy(mmsgs);
     }
 
@@ -963,10 +961,10 @@ public class FolderCache {
 		_deleteMessages(getAllMessages());
 	}
 	
-    public void deleteMessages(int ids[]) throws MessagingException {
-        Message mmsgs[]=getMessages(ids);
+    public void deleteMessages(long uids[]) throws MessagingException {
+        Message mmsgs[]=getMessages(uids);
 		_deleteMessages(mmsgs);
-        removeDHash(ids);
+        removeDHash(uids);
     }
 	
 	private void _deleteMessages(Message mmsgs[]) throws MessagingException {
@@ -978,9 +976,9 @@ public class FolderCache {
         modified=true;
     }
 
-    public void flagMessages(int ids[], String flag) throws MessagingException {
+    public void flagMessages(long uids[], String flag) throws MessagingException {
 //        open();
-        Message mmsgs[]=getMessages(ids);
+        Message mmsgs[]=getMessages(uids);
         for(Message fmsg: mmsgs) {
 			if (flag.equals("special")) {
 				boolean wasspecial=fmsg.getFlags().contains(Service.flagFlagged);
@@ -1000,9 +998,9 @@ public class FolderCache {
         }
     }
   
-    public void clearMessagesFlag(int ids[]) throws MessagingException {
+    public void clearMessagesFlag(long uids[]) throws MessagingException {
 //        open();
-        Message mmsgs[]=getMessages(ids);
+        Message mmsgs[]=getMessages(uids);
         for(Message fmsg: mmsgs) {
             fmsg.setFlags(Service.flagsAll, false);
             fmsg.setFlags(Service.oldFlagsAll, false);
@@ -1011,8 +1009,8 @@ public class FolderCache {
         }
     }
 
-    public void setMessagesSeen(int ids[]) throws MessagingException {
-        Message mmsgs[]=getMessages(ids);
+    public void setMessagesSeen(long uids[]) throws MessagingException {
+        Message mmsgs[]=getMessages(uids);
         int changed=setMessagesSeen(mmsgs,true);
         if (changed>0) {
             unread-=changed;
@@ -1020,8 +1018,8 @@ public class FolderCache {
         }
     }
     
-    public void setMessagesUnseen(int ids[]) throws MessagingException {
-        Message mmsgs[]=getMessages(ids);
+    public void setMessagesUnseen(long uids[]) throws MessagingException {
+        Message mmsgs[]=getMessages(uids);
         int changed=setMessagesSeen(mmsgs,false);
         if (changed>0) {
             unread+=changed;
@@ -1374,12 +1372,11 @@ public class FolderCache {
 
 			//<SonicleMail>xmsgs=((IMAPFolder)folder).sort(sort, term);</SonicleMail>
 			try {
-				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+				xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
 			} catch(Exception exc) {
-				System.out.println("**************Retrying sort*********************");
 				close();
 				open();
-				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+				xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
 			}
 		}
 		if (quickfilter!=null && quickfilter.equals("attachment")) {
@@ -1670,15 +1667,15 @@ public class FolderCache {
         return mailData;
     }
     
-    public ArrayList<String> getHTMLParts(MimeMessage m, int msgnum, boolean forEdit) throws MessagingException, IOException {
-        return getHTMLParts(m, msgnum, null, null, forEdit);
+    public ArrayList<String> getHTMLParts(MimeMessage m, long msguid, boolean forEdit) throws MessagingException, IOException {
+        return getHTMLParts(m, msguid, null, null, forEdit);
     }
     
     public ArrayList<String> getHTMLParts(MimeMessage m, String provider, String providerid) throws MessagingException, IOException {
         return getHTMLParts(m, -1, provider, providerid, false);
     }
     
-    private ArrayList<String> getHTMLParts(MimeMessage m, int msgnum, String provider, String providerid, boolean forEdit) throws MessagingException, IOException {
+    private ArrayList<String> getHTMLParts(MimeMessage m, long msguid, String provider, String providerid, boolean forEdit) throws MessagingException, IOException {
       ArrayList<String> htmlparts=new ArrayList<>();
       //WebTopApp webtopapp=environment.getWebTopApp();
       //Session wts=environment.get();
@@ -1728,7 +1725,7 @@ public class FolderCache {
                 Object tlock=new Object();
                 String uri=environment.getSessionRefererUri();
                 HTMLMailParserThread parserThread=null;
-                if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msgnum, forEdit);
+                if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msguid, forEdit);
                 else parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, provider, providerid);
                 try {
                     java.io.BufferedReader breader=startHTMLMailParser(parserThread,mailData,false);
@@ -2095,12 +2092,12 @@ public class FolderCache {
     SaxHTMLMailParser saxHTMLMailParser=null;
     String appUrl=null;
     
-    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, int msgnum, boolean forEdit) {
+    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, long msguid, boolean forEdit) {
         this.threadLock=tlock;
         this.istream=istream;
         this.charset=charset;
         this.appUrl=appUrl;
-        this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),forEdit,msgnum);
+        this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),forEdit,msguid);
     }
     
     HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, String provider, String providerid) {

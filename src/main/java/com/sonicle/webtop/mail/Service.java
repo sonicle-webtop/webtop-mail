@@ -949,11 +949,11 @@ public class Service extends BaseService {
 		return folderPrefix;
 	}
 	
-	public void archiveMessages(FolderCache from, int nids[], String idcategory, String idsubcategory) throws MessagingException, FileNotFoundException, IOException {
+	public void archiveMessages(FolderCache from, long nuids[], String idcategory, String idsubcategory) throws MessagingException, FileNotFoundException, IOException {
 		UserProfile profile = environment.getProfile();
 		String archiveto = ss.getArchivePath();
-		for (int nid : nids) {
-			Message msg = from.getMessage(nid);
+		for (long nuid: nuids) {
+			Message msg = from.getMessage(nuid);
 			
 			String id = getMessageID(msg);
 			if (id.startsWith("<")) {
@@ -1006,14 +1006,14 @@ public class Service extends BaseService {
 				pw.close();
 			}
 		}
-		from.markArchivedMessages(nids);
+		from.markArchivedMessages(nuids);
 	}
 	
-  public void archiveMessagesWt(FolderCache from, int nids[], String idcategory, String idsubcategory,String customer_id,String causal_id) throws MessagingException, FileNotFoundException, IOException {
+  public void archiveMessagesWt(FolderCache from, long nuids[], String idcategory, String idsubcategory,String customer_id,String causal_id) throws MessagingException, FileNotFoundException, IOException {
     UserProfile profile=environment.getProfile();
     String archiveto=ss.getArchivePath();
-    for(int nid: nids) {
-        Message msg=from.getMessage(nid);
+    for(long nuid: nuids) {
+        Message msg=from.getMessage(nuid);
 
         String id=getMessageID(msg);
         if (id.startsWith("<")) id=id.substring(1,id.length()-1);
@@ -1048,7 +1048,7 @@ public class Service extends BaseService {
         saveMailInDocumentsDrm(path, name,request_id,generic_id);
         saveTrackingHistoryDrm(request_id);
     }
-    from.markArchivedMessages(nids);
+    from.markArchivedMessages(nuids);
   }
 	
   public String saveMailInGenericDocuments(String category_id,String customer_id,String subject,String contact_id,String causal_id){
@@ -1624,32 +1624,32 @@ public class Service extends BaseService {
 		return cat;
 	}
 	
-	public void moveMessages(FolderCache from, FolderCache to, int ids[]) throws MessagingException {
-		from.moveMessages(ids, to);
+	public void moveMessages(FolderCache from, FolderCache to, long uids[]) throws MessagingException {
+		from.moveMessages(uids, to);
 	}
 	
-	public void copyMessages(FolderCache from, FolderCache to, int ids[]) throws MessagingException, IOException {
-		from.copyMessages(ids, to);
+	public void copyMessages(FolderCache from, FolderCache to, long uids[]) throws MessagingException, IOException {
+		from.copyMessages(uids, to);
 	}
 	
-	public void deleteMessages(FolderCache from, int ids[]) throws MessagingException {
-		from.deleteMessages(ids);
+	public void deleteMessages(FolderCache from, long uids[]) throws MessagingException {
+		from.deleteMessages(uids);
 	}
 	
-	public void flagMessages(FolderCache from, int ids[], String flag) throws MessagingException {
-		from.flagMessages(ids, flag);
+	public void flagMessages(FolderCache from, long uids[], String flag) throws MessagingException {
+		from.flagMessages(uids, flag);
 	}
 	
-	public void clearMessagesFlag(FolderCache from, int ids[]) throws MessagingException {
-		from.clearMessagesFlag(ids);
+	public void clearMessagesFlag(FolderCache from, long uids[]) throws MessagingException {
+		from.clearMessagesFlag(uids);
 	}
 	
-	public void setMessagesSeen(FolderCache from, int ids[]) throws MessagingException {
-		from.setMessagesSeen(ids);
+	public void setMessagesSeen(FolderCache from, long uids[]) throws MessagingException {
+		from.setMessagesSeen(uids);
 	}
 	
-	public void setMessagesUnseen(FolderCache from, int ids[]) throws MessagingException {
-		from.setMessagesUnseen(ids);
+	public void setMessagesUnseen(FolderCache from, long uids[]) throws MessagingException {
+		from.setMessagesUnseen(uids);
 	}
 	
 	public String getShortFolderName(String fullname) {
@@ -3119,6 +3119,12 @@ public class Service extends BaseService {
 		}
 		return ret;
 	}
+
+    private long[] toLongs(String values[]) {
+        long ret[]=new long[values.length];
+        for(int i=0;i<values.length;++i) ret[i]=Long.parseLong(values[i]);
+        return ret;
+    }
 	
 	public boolean isSentFolder(String fullname) {
 		String lastname = getLastFolderName(fullname);
@@ -3988,7 +3994,7 @@ public class Service extends BaseService {
 		String allfiltered = request.getParameter("allfiltered");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
-		String ids[] = null;
+		String uids[] = null;
 		String sout = null;
 		try {
 			checkStoreConnected();
@@ -4005,25 +4011,28 @@ public class Service extends BaseService {
 			}
 			
 			if (allfiltered == null) {
-				ids = request.getParameterValues("ids");
-				if (!mf) {
-					moveMessages(mcache, tomcache, toInts(ids));
-				} else {
-					int iids[] = new int[1];
-					for (String id : ids) {
-						int ix = id.indexOf("|");
-						fromfolder = id.substring(0, ix);
-						id = id.substring(ix + 1);
-						mcache = getFolderCache(fromfolder);
-						iids[0] = Integer.parseInt(id);
-						moveMessages(mcache, tomcache, iids);
+				uids = request.getParameterValues("ids");
+				boolean norows=false;
+				if (uids.length==1 && uids[0].length()==0) norows=true;
+				if (!norows) {
+					if (!mf) moveMessages(mcache, tomcache, toLongs(uids));
+					else {
+						long iuids[]=new long[1];
+						for(String uid: uids) {
+							int ix=uid.indexOf("|");
+							fromfolder=uid.substring(0,ix);
+							uid=uid.substring(ix+1);
+							mcache = getFolderCache(fromfolder);
+							iuids[0]=Long.parseLong(uid);
+							moveMessages(mcache, tomcache, iuids);
+						}
 					}
 				}
 				long millis = System.currentTimeMillis();
 				sout = "{\nresult: true, millis: " + millis + "\n}";
 			} else {
-				ids = getMessageIds(mcache, request);
-				moveMessages(mcache, tomcache, toInts(ids));
+                uids=getMessageUIDs(mcache,request);
+                moveMessages(mcache, tomcache, toLongs(uids));
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
@@ -4043,31 +4052,30 @@ public class Service extends BaseService {
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		String sout = null;
-		String ids[] = null;
+		String uids[]=null;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			FolderCache tomcache = getFolderCache(tofolder);
 			if (allfiltered == null) {
-				ids = request.getParameterValues("ids");
-				if (!mf) {
-					copyMessages(mcache, tomcache, toInts(ids));
-				} else {
-					int iids[] = new int[1];
-					for (String id : ids) {
-						int ix = id.indexOf("|");
-						fromfolder = id.substring(0, ix);
-						id = id.substring(ix + 1);
+				uids = request.getParameterValues("ids");
+				if (!mf) copyMessages(mcache, tomcache, toLongs(uids));
+				else {
+                    long iuids[]=new long[1];
+                    for(String uid: uids) {
+                        int ix=uid.indexOf("|");
+                        fromfolder=uid.substring(0,ix);
+                        uid=uid.substring(ix+1);
 						mcache = getFolderCache(fromfolder);
-						iids[0] = Integer.parseInt(id);
-						copyMessages(mcache, tomcache, iids);
+                        iuids[0]=Long.parseLong(uid);
+                        copyMessages(mcache, tomcache, iuids);
 					}
 				}
 				long millis = System.currentTimeMillis();
 				sout = "{\nresult: true, millis: " + millis + "\n}";
 			} else {
-				ids = getMessageIds(mcache, request);
-				copyMessages(mcache, tomcache, toInts(ids));
+                uids=getMessageUIDs(mcache,request);
+                copyMessages(mcache, tomcache, toLongs(uids));
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
@@ -4088,23 +4096,22 @@ public class Service extends BaseService {
 		String idsubcategory = tofolder.substring(ix + 1);
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
-		String ids[] = null;
+		String uids[]=null;
 		String sout = null;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
-			ids = request.getParameterValues("ids");
-			if (!mf) {
-				archiveMessages(mcache, toInts(ids), idcategory, idsubcategory);
-			} else {
-				int iids[] = new int[1];
-				for (String id : ids) {
-					ix = id.indexOf("|");
-					fromfolder = id.substring(0, ix);
-					id = id.substring(ix + 1);
+			uids = request.getParameterValues("ids");
+			if (!mf) archiveMessages(mcache, toLongs(uids), idcategory, idsubcategory);
+			else {
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    ix=uid.indexOf("|");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
-					iids[0] = Integer.parseInt(id);
-					archiveMessages(mcache, iids, idcategory, idsubcategory);
+                    iuids[0]=Integer.parseInt(uid);
+                    archiveMessages(mcache, iuids, idcategory, idsubcategory);
 				}
 			}
 			long millis = System.currentTimeMillis();
@@ -4174,22 +4181,21 @@ public class Service extends BaseService {
         }
         String multifolder=request.getParameter("multifolder");
         boolean mf=multifolder!=null && multifolder.equals("true");
-        String ids[]=null;
+        String uids[]=null;
         String sout=null;
         try {
             
             checkStoreConnected();
             FolderCache mcache=getFolderCache(fromfolder);
-            ids=request.getParameterValues("ids");
-            if (!mf) {
-                archiveMessagesWt(mcache, toInts(ids), idcategory, idsubcategory,customer_id,causal_id);
-            }else {
-                int iids[]=new int[1];
-                for(String id: ids) {
-                    ix=id.indexOf("/");
-                    fromfolder=id.substring(0,ix);
-                    id=id.substring(ix+1);
-                    archiveMessagesWt(mcache, iids, idcategory, idsubcategory,customer_id,causal_id);
+            uids=request.getParameterValues("ids");
+            if (!mf) archiveMessagesWt(mcache, toLongs(uids), idcategory, idsubcategory,customer_id,causal_id);
+            else {
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    ix=uid.indexOf("/");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
+                    archiveMessagesWt(mcache, iuids, idcategory, idsubcategory,customer_id,causal_id);
                 }
             }
             long millis=System.currentTimeMillis();
@@ -4201,7 +4207,7 @@ public class Service extends BaseService {
         out.println(sout);
     }
 	
-	String[] getMessageIds(FolderCache mcache,HttpServletRequest request) throws MessagingException, IOException {
+	String[] getMessageUIDs(FolderCache mcache,HttpServletRequest request) throws MessagingException, IOException {
 		String psortfield = request.getParameter("sort");
 		String psortdir = request.getParameter("dir");
 		String pquickfilter=request.getParameter("quickfilter");
@@ -4275,7 +4281,7 @@ public class Service extends BaseService {
 		Message msgs[]=mcache.getMessages(pquickfilter,ppattern,psearchfield,sortby,ascending,false,sort_group,groupascending,threaded);
 		ArrayList<String> aids = new ArrayList<String>();
 		for (Message m : msgs) {
-			aids.add("" + m.getMessageNumber());
+			aids.add(""+mcache.getUID(m));
 			/*            String xids[];
 			 try {
 			 xids=m.getHeader("Message-ID");
@@ -4284,14 +4290,14 @@ public class Service extends BaseService {
 			 }
 			 if (xids!=null && xids.length>0) aids.add(xids[0]);*/
 		}
-		String ids[] = new String[aids.size()];
-		aids.toArray(ids);
-		return ids;
+        String uids[]=new String[aids.size()];
+        aids.toArray(uids);
+        return uids;
 	}
 	
 	public void processDeleteMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
-		String ids[] = request.getParameterValues("ids");
+		String uids[] = request.getParameterValues("ids");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		String sout = null;
@@ -4299,16 +4305,16 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			if (!mf) {
-				deleteMessages(mcache, toInts(ids));
+				deleteMessages(mcache, toLongs(uids));
 			} else {
-				int iids[] = new int[1];
-				for (String id : ids) {
-					int ix = id.indexOf("|");
-					fromfolder = id.substring(0, ix);
-					id = id.substring(ix + 1);
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    int ix=uid.indexOf("|");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
-					iids[0] = Integer.parseInt(id);
-					deleteMessages(mcache, iids);
+                    iuids[0]=Long.parseLong(uid);
+                    deleteMessages(mcache, iuids);
 				}
 			}
 			sout = "{\nresult: true\n}";
@@ -4321,7 +4327,7 @@ public class Service extends BaseService {
 	
 	public void processFlagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
-		String ids[] = request.getParameterValues("ids");
+		String uids[] = request.getParameterValues("ids");
 		String flag = request.getParameter("flag");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
@@ -4331,23 +4337,20 @@ public class Service extends BaseService {
 			FolderCache mcache = getFolderCache(fromfolder);
 			if (!mf) {
 				if (flag.equals("clear")) {
-					clearMessagesFlag(mcache, toInts(ids));
+					clearMessagesFlag(mcache, toLongs(uids));
 				} else {
-					flagMessages(mcache, toInts(ids), flag);
+					flagMessages(mcache, toLongs(uids), flag);
 				}
 			} else {
-				int iids[] = new int[1];
-				for (String id : ids) {
-					int ix = id.indexOf("|");
-					fromfolder = id.substring(0, ix);
-					id = id.substring(ix + 1);
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    int ix=uid.indexOf("|");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
-					iids[0] = Integer.parseInt(id);
-					if (flag.equals("clear")) {
-						clearMessagesFlag(mcache, iids);
-					} else {
-						flagMessages(mcache, iids, flag);
-					}
+                    iuids[0]=Long.parseLong(uid);
+                    if (flag.equals("clear")) clearMessagesFlag(mcache, iuids);
+                    else flagMessages(mcache, iuids, flag);
 				}
 			}
 			sout = "{\nresult: true\n}";
@@ -4360,7 +4363,7 @@ public class Service extends BaseService {
 	
 	public void processSeenMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
-		String ids[] = request.getParameterValues("ids");
+		String uids[] = request.getParameterValues("ids");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		String sout = null;
@@ -4368,16 +4371,16 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			if (!mf) {
-				setMessagesSeen(mcache, toInts(ids));
+				setMessagesSeen(mcache, toLongs(uids));
 			} else {
-				int iids[] = new int[1];
-				for (String id : ids) {
-					int ix = id.indexOf("|");
-					fromfolder = id.substring(0, ix);
-					id = id.substring(ix + 1);
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    int ix=uid.indexOf("|");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
-					iids[0] = Integer.parseInt(id);
-					setMessagesSeen(mcache, iids);
+                    iuids[0]=Long.parseLong(uid);
+                    setMessagesSeen(mcache, iuids);
 				}
 			}
 			long millis = System.currentTimeMillis();
@@ -4391,7 +4394,7 @@ public class Service extends BaseService {
 	
 	public void processUnseenMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
-		String ids[] = request.getParameterValues("ids");
+		String uids[] = request.getParameterValues("ids");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		String sout = null;
@@ -4399,16 +4402,16 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			if (!mf) {
-				setMessagesUnseen(mcache, toInts(ids));
+				setMessagesUnseen(mcache, toLongs(uids));
 			} else {
-				int iids[] = new int[1];
-				for (String id : ids) {
-					int ix = id.indexOf("|");
-					fromfolder = id.substring(0, ix);
-					id = id.substring(ix + 1);
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    int ix=uid.indexOf("|");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
-					iids[0] = Integer.parseInt(id);
-					setMessagesUnseen(mcache, iids);
+                    iuids[0]=Long.parseLong(uid);
+                    setMessagesUnseen(mcache, iuids);
 				}
 			}
 			long millis = System.currentTimeMillis();
@@ -4811,7 +4814,7 @@ public class Service extends BaseService {
 	
 	public void processGetSource(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String foldername = request.getParameter("folder");
-		String id = request.getParameter("id");
+		String uid = request.getParameter("id");
 		String sheaders = request.getParameter("headers");
 		boolean headers = sheaders.equals("true");
 		String sout = null;
@@ -4819,7 +4822,7 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			StringBuffer sb = new StringBuffer("<pre>");
 			FolderCache mcache = getFolderCache(foldername);
-			Message msg = mcache.getMessage(Integer.parseInt(id));
+			Message msg = mcache.getMessage(Long.parseLong(uid));
 			//Folder folder=msg.getFolder();
 			for (Enumeration e = msg.getAllHeaders(); e.hasMoreElements();) {
 				Header header = (Header) e.nextElement();
@@ -4843,13 +4846,13 @@ public class Service extends BaseService {
 	
 	public void processSaveMail(HttpServletRequest request, HttpServletResponse response) {
 		String foldername = request.getParameter("folder");
-		String id = request.getParameter("id");
+		String uid = request.getParameter("id");
 		String sout = null;
 		try {
 			checkStoreConnected();
 			StringBuffer sb = new StringBuffer();
 			FolderCache mcache = getFolderCache(foldername);
-			Message msg = mcache.getMessage(Integer.parseInt(id));
+			Message msg=mcache.getMessage(Long.parseLong(uid));
 			String subject = msg.getSubject();
 			String ctype = "binary/octet-stream";
 			response.setContentType(ctype);
@@ -4953,7 +4956,7 @@ public class Service extends BaseService {
 		UserProfile profile = environment.getProfile();
 		//WebTopApp webtopapp=environment.getWebTopApp();
 		String pfoldername = request.getParameter("folder");
-		String pidmessage = request.getParameter("idmessage");
+		String puidmessage = request.getParameter("idmessage");
 		String preplyall = request.getParameter("replyall");
 		boolean replyAll = false;
 		if (preplyall != null && preplyall.equals("1")) {
@@ -4963,9 +4966,9 @@ public class Service extends BaseService {
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
-			Message m = mcache.getMessage(Integer.parseInt(pidmessage));
+			Message m=mcache.getMessage(Long.parseLong(puidmessage));
 			if (m.isExpunged()) {
-				throw new MessagingException("Message " + pidmessage + " expunged");
+				throw new MessagingException("Message " + puidmessage + " expunged");
 			}
 			SimpleMessage smsg = getReplyMsg(
 					getNewMessageID(), m, replyAll, isSentFolder(pfoldername), true,
@@ -5027,7 +5030,7 @@ public class Service extends BaseService {
 		UserProfile profile = environment.getProfile();
 		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String pfoldername = request.getParameter("folder");
-		String pidmessage = request.getParameter("idmessage");
+		String puidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
 		String pattached = request.getParameter("attached");
 		boolean attached = (pattached != null && pattached.equals("1"));
@@ -5036,9 +5039,9 @@ public class Service extends BaseService {
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
-			Message m = mcache.getMessage(Integer.parseInt(pidmessage));
+			Message m=mcache.getMessage(Long.parseLong(puidmessage));
 			if (m.isExpunged()) {
-				throw new MessagingException("Message " + pidmessage + " expunged");
+				throw new MessagingException("Message " + puidmessage + " expunged");
 			}
 			SimpleMessage smsg = getForwardMsg(
 					newmsgid, m, true,
@@ -5118,14 +5121,14 @@ public class Service extends BaseService {
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String pfoldername = request.getParameter("folder");
-		String pidmessage = request.getParameter("idmessage");
+		String puidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
 		int newmsgid = Integer.parseInt(pnewmsgid);
 		String sout = null;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
-			Message m = mcache.getMessage(Integer.parseInt(pidmessage));
+			Message m = mcache.getMessage(Long.parseLong(puidmessage));
 			String vheader[] = m.getHeader("Disposition-Notification-To");
 			boolean receipt = false;
 			int priority = 3;
@@ -6077,12 +6080,12 @@ public class Service extends BaseService {
 			
 			int msgid = Integer.parseInt(request.getParameter("newmsgid"));
 			String pfoldername = request.getParameter("folder");
-			String pidmessage = request.getParameter("idmessage");
+			String puidmessage = request.getParameter("idmessage");
 			String pidattach = request.getParameter("idattach");
 			
 			FolderCache mcache = getFolderCache(pfoldername);
-			int idmessage = Integer.parseInt(pidmessage);
-			Message m = mcache.getMessage(idmessage);
+			long uidmessage = Long.parseLong(puidmessage);
+			Message m = mcache.getMessage(uidmessage);
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			Part part = mailData.getAttachmentPart(Integer.parseInt(pidattach));
 			
@@ -6839,7 +6842,7 @@ public class Service extends BaseService {
 				 }*/
 				int max = start + limit;
                 if (max>totalCount) max=totalCount;
-				ArrayList<Integer> autoeditList=new ArrayList<Integer>();
+				ArrayList<Long> autoeditList=new ArrayList<Long>();
 				
 				Folder fsent=getFolder(mprofile.getFolderSent());
 				boolean openedsent=false;
@@ -6908,7 +6911,7 @@ public class Service extends BaseService {
 					for(int k=0;k<amsgs.length;++k) {
 							
 						xm=(SonicleIMAPMessage)amsgs[k];
-	                    int nid=xm.getMessageNumber();
+	                    long nuid=mcache.getUID(xm);
 						flags=xm.getFlags();
 						
 						//Date
@@ -7096,7 +7099,7 @@ public class Service extends BaseService {
 								archived=flags.contains(sflagArchived);
 							}
 						}
-					sout += "{idmessage:'" + nid + "',"
+					sout += "{idmessage:'" + nuid + "',"
 							+ "priority:" + priority + ","
 							+ "status:'" + status + "',"
 							+ "to:'" + to + "',"
@@ -7119,7 +7122,7 @@ public class Service extends BaseService {
 							+ "}";
 
 						if (autoedit) {
-							autoeditList.add(nid);
+							autoeditList.add(nuid);
 						}
 					}
 					
@@ -7156,8 +7159,8 @@ public class Service extends BaseService {
 
 				if (autoeditList.size()>0) {
 					sout+="autoedit: [";
-					for(int mid: autoeditList) {
-						sout+=mid+",";
+					for(long muid: autoeditList) {
+						sout+=muid+",";
 					}
 					if(StringUtils.right(sout, 1).equals(",")) sout = StringUtils.left(sout, sout.length()-1);
 					sout+="],\n";
@@ -7302,7 +7305,7 @@ public class Service extends BaseService {
 	public void processGetMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		CoreUserSettings cus = new CoreUserSettings(getEnv().getProfileId());
 		String pfoldername = request.getParameter("folder");
-		String pidmessage = request.getParameter("idmessage");
+		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
 		String providername = request.getParameter("provider");
 		String providerid = request.getParameter("providerid");
@@ -7315,18 +7318,16 @@ public class Service extends BaseService {
 			FolderCache mcache = null;
 			Message m = null;
 			int recs = 0;
-			int msgnum = -1;
+			long msguid=-1;
 			String vheader[] = null;
 			boolean isseen = false;
 			String sout = "{\nmessage: [\n";
 			if (providername == null) {
 				checkStoreConnected();
 				mcache = getFolderCache(pfoldername);
-				msgnum = Integer.parseInt(pidmessage);
-				m = mcache.getMessage(msgnum);
-				if (m.isExpunged()) {
-					throw new MessagingException("Message " + pidmessage + " expunged");
-				}
+                msguid=Long.parseLong(puidmessage);
+                m=mcache.getMessage(msguid);
+                if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
 				vheader = m.getHeader("Disposition-Notification-To");
 				isseen = m.isSet(Flags.Flag.SEEN);
 				
@@ -7405,7 +7406,7 @@ public class Service extends BaseService {
 			}
 			ArrayList<String> htmlparts = null;
 			if (providername == null) {
-				htmlparts = mcache.getHTMLParts((MimeMessage) m, msgnum, false);
+				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false);
 			} else {
 				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid);
 			}
@@ -7506,7 +7507,7 @@ public class Service extends BaseService {
 	
 	public void processGetMessageNote(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String pfoldername = request.getParameter("folder");
-		String pidmessage = request.getParameter("idmessage");
+		String puidmessage = request.getParameter("idmessage");
 		UserProfile profile = environment.getProfile();
 		Connection con = null;
 		Statement stmt = null;
@@ -7516,8 +7517,8 @@ public class Service extends BaseService {
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
-			int msgnum = Integer.parseInt(pidmessage);
-			String id = getMessageID(mcache.getMessage(msgnum));
+            long msguid=Long.parseLong(puidmessage);
+            String id=getMessageID(mcache.getMessage(msguid));
 			con = getConnection();
 			stmt = con.createStatement();
 			rs = stmt.executeQuery("select text from mailnotes where iddomain='" + profile.getDomainId() + "' and messageid='" + DbUtils.getSQLString(id) + "'");
@@ -7553,7 +7554,7 @@ public class Service extends BaseService {
 	
 	public void processSaveMessageNote(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String pfoldername = request.getParameter("folder");
-		String pidmessage = request.getParameter("idmessage");
+		String puidmessage = request.getParameter("idmessage");
 		String text = request.getParameter("text").trim();
 		UserProfile profile = environment.getProfile();
 		Connection con = null;
@@ -7562,8 +7563,8 @@ public class Service extends BaseService {
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
-			int msgnum = Integer.parseInt(pidmessage);
-			Message msg = mcache.getMessage(msgnum);
+            long msguid=Long.parseLong(puidmessage);
+            Message msg=mcache.getMessage(msguid);
 			String id = getMessageID(msg);
 			con = getConnection();
 			NoteDAO.getInstance().deleteById(con, profile.getDomainId(), id);
@@ -7904,7 +7905,7 @@ public class Service extends BaseService {
 	 }*/
 	public void processGetAttachment(HttpServletRequest request, HttpServletResponse response) {
 		String pfoldername = request.getParameter("folder");
-		String pidmessage = request.getParameter("idmessage");
+		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
 		String providername = request.getParameter("provider");
 		String providerid = request.getParameter("providerid");
@@ -7919,8 +7920,8 @@ public class Service extends BaseService {
 			Message m = null;
 			if (providername == null) {
 				mcache = getFolderCache(pfoldername);
-				int newmsgid = Integer.parseInt(pidmessage);
-				m = mcache.getMessage(newmsgid);
+                long newmsguid=Long.parseLong(puidmessage);
+                m=mcache.getMessage(newmsguid);
 			} else {
 				mcache = fcProvided;
 				m = mcache.getProvidedMessage(providername, providerid);
@@ -7976,7 +7977,7 @@ public class Service extends BaseService {
 	
 	public void processGetAttachments(HttpServletRequest request, HttpServletResponse response) {
 		String pfoldername = request.getParameter("folder");
-		String pidmessage = request.getParameter("idmessage");
+		String puidmessage = request.getParameter("idmessage");
 		String pids[] = request.getParameterValues("ids");
 		String providername = request.getParameter("provider");
 		String providerid = request.getParameter("providerid");
@@ -7987,8 +7988,8 @@ public class Service extends BaseService {
 			Message m = null;
 			if (providername == null) {
 				mcache = getFolderCache(pfoldername);
-				int newmsgid = Integer.parseInt(pidmessage);
-				m = mcache.getMessage(newmsgid);
+                long newmsguid=Long.parseLong(puidmessage);
+                m=mcache.getMessage(newmsguid);
 			} else {
 				mcache = fcProvided;
 				m = mcache.getProvidedMessage(providername, providerid);
@@ -8372,13 +8373,13 @@ public class Service extends BaseService {
 	
     public void processDeclineInvitation(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         String pfoldername=request.getParameter("folder");
-        String pidmessage=request.getParameter("idmessage");
+        String puidmessage=request.getParameter("idmessage");
         String pidattach=request.getParameter("idattach");
         try {
             checkStoreConnected();
             FolderCache mcache=getFolderCache(pfoldername);
-            int newmsgid=Integer.parseInt(pidmessage);
-            Message m=mcache.getMessage(newmsgid);
+            long newmsguid=Long.parseLong(puidmessage);
+            Message m=mcache.getMessage(newmsguid);
             HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
             Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
             
@@ -8425,14 +8426,14 @@ public class Service extends BaseService {
 	
     public void processUpdateCalendarReply(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         String pfoldername=request.getParameter("folder");
-        String pidmessage=request.getParameter("idmessage");
+        String puidmessage=request.getParameter("idmessage");
         String pidattach=request.getParameter("idattach");
         //UserProfile profile=environment.getUserProfile();
         try {
             checkStoreConnected();
             FolderCache mcache=getFolderCache(pfoldername);
-            int newmsgid=Integer.parseInt(pidmessage);
-            Message m=mcache.getMessage(newmsgid);
+            long newmsguid=Long.parseLong(puidmessage);
+            Message m=mcache.getMessage(newmsguid);
             HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
             Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
             
@@ -9028,7 +9029,7 @@ public class Service extends BaseService {
 					if (xm.isExpunged()) {
 						continue;
 					}
-					int nid = xm.getMessageNumber();
+					long nuid=((IMAPFolder)xm.getFolder()).getUID(xm);
 					IMAPMessage m = (IMAPMessage) xm;
 					//Date
 					java.util.Date d = m.getSentDate();
@@ -9156,7 +9157,7 @@ public class Service extends BaseService {
 							archived=flags.contains(sflagArchived);
 						}
 					}
-					sout += "{folder:'" + folder + "', folderdesc:'" + foldername + "',idmandfolder:'" + folder + "|" + nid + "',idmessage:'" + nid + "',priority:" + priority + ",status:'" + status + "',to:'" + to + "',from:'" + from + "',subject:'" + subject + "',date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),unread: " + unread + ",size:" + msgsize + ",flag:'" + cflag + "'" + (archived ? ",arch:true" : "") + (isToday ? ",istoday:true" : "") + "}";
+					sout += "{folder:'" + folder + "', folderdesc:'" + foldername + "',idmandfolder:'" + folder + "|" + nuid + "',idmessage:'" + nuid + "',priority:" + priority + ",status:'" + status + "',to:'" + to + "',from:'" + from + "',subject:'" + subject + "',date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),unread: " + unread + ",size:" + msgsize + ",flag:'" + cflag + "'" + (archived ? ",arch:true" : "") + (isToday ? ",istoday:true" : "") + "}";
 					first = false;
 				}
 				sout += "\n]\n, progress: " + ast.getProgress() + ", curfoldername: '" + StringEscapeUtils.escapeEcmaScript(getInternationalFolderName(ast.getCurrentFolder())) + "', "
