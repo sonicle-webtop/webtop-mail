@@ -1773,7 +1773,11 @@ public class Service extends BaseService {
 		  }
 	  }
 	  InternetAddress ia[]=InternetAddress.parse(email, false);
-	  return ia[0];
+	  //TODO: default charset encofing?
+	  InternetAddress retia;
+	  if (ia[0].getPersonal()!=null) retia=new InternetAddress(ia[0].getAddress(),ia[0].getPersonal(),"UTF-8");
+	  else retia=ia[0];
+	  return retia;
 /*      String address=null;
 		String personal = null;
 		int ix = email.indexOf('<');
@@ -1936,7 +1940,7 @@ public class Service extends BaseService {
 		String replyTo = smsg.getReplyTo();
 		
 		msg = new MimeMessage(session);
-		msg.setFrom(new InternetAddress(from));
+		msg.setFrom(getInternetAddress(from));
 		InternetAddress ia = null;
 
 		//set the TO recipient
@@ -1976,7 +1980,7 @@ public class Service extends BaseService {
 		//set reply to addr
 		if (replyTo != null && replyTo.length() > 0) {
 			Address[] replyaddr = new Address[1];
-			replyaddr[0] = new InternetAddress(replyTo);
+			replyaddr[0] = getInternetAddress(replyTo);
 			msg.setReplyTo(replyaddr);
 		}
 
