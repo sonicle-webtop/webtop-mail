@@ -515,8 +515,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     },
     
 /*    
-    actionDelete: function() {
-        this.folderList.actionDelete();
+    actionDelete: function(sm,e) {
+        if (e.ctrlKey) this.ms.actionSpam();
+		else this.folderList.actionDelete(e);
     },
     
     rowDblClicked: function(grid, rowIndex, e) {
