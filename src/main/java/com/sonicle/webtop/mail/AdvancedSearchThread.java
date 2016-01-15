@@ -178,7 +178,15 @@ public class AdvancedSearchThread extends Thread {
 
     private void addChildren(FolderCache fc) {
         for(FolderCache fcc: fc.getChildren()) {
-            folders.add(fcc);
+			
+			/* TODO: decide what to do with this
+			
+			//skip trash and spam from advanced search
+			if (fcc.isTrash()||fcc.isSpam()) continue;
+			
+			*/
+			
+	            folders.add(fcc);
             if (fcc.hasChildren()) addChildren(fcc);
         }
     }
