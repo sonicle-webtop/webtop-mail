@@ -1652,18 +1652,20 @@ public class FolderCache {
 	}
 
     public HTMLMailData getMailData(MimeMessage m) throws MessagingException, IOException {
-        HTMLMailData mailData;
+        HTMLMailData mailData=null;
         synchronized(this) {
-            Long muid=new Long(((SonicleIMAPMessage)m).getUID());
-            mailData=dhash.get(muid);
-			if (mailData!=null && mailData.getMessage()!=m) {
-				Service.logger.debug("found wrong cached message, refreshing");
-				mailData=null;
+			long muid=-1;
+			if (m instanceof SonicleIMAPMessage) {
+				muid=((SonicleIMAPMessage)m).getUID();
+				mailData=dhash.get(muid);
+				if (mailData!=null && mailData.getMessage()!=m) {
+					System.out.println("found wrong cached message, refreshing");
+					mailData=null;
+				}
 			}
             if (mailData==null) {
                 mailData=prepareHTMLMailData(m);
                 if (muid>0) dhash.put(muid, mailData);
-            } else {
             }
         }
         return mailData;

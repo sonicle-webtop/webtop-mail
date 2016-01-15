@@ -58,7 +58,8 @@ public class HTMLMailData {
   public HTMLMailData(MimeMessage msg, Folder folder) throws MessagingException {
     this.message=msg;
     this.folder=folder;
-    this.nuid=((SonicleIMAPMessage)msg).getUID();
+    if (msg instanceof SonicleIMAPMessage)
+		this.nuid=((SonicleIMAPMessage)msg).getUID();
   }
 
   public Folder getFolder() {
