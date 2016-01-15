@@ -9036,7 +9036,11 @@ public class Service extends BaseService {
 					if (xm.isExpunged()) {
 						continue;
 					}
-					long nuid=((IMAPFolder)xm.getFolder()).getUID(xm);
+					IMAPFolder xmfolder=(IMAPFolder)xm.getFolder();
+					boolean wasopen=xmfolder.isOpen();
+					if (!wasopen) xmfolder.open(Folder.READ_ONLY);
+                    long nuid=xmfolder.getUID(xm);
+					if (!wasopen) xmfolder.close(false);
 					IMAPMessage m = (IMAPMessage) xm;
 					//Date
 					java.util.Date d = m.getSentDate();
