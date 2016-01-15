@@ -285,11 +285,13 @@ public class Service extends BaseService {
 		FP.add(FetchProfile.Item.ENVELOPE);
 		FP.add(FetchProfile.Item.FLAGS);
 		FP.add(FetchProfile.Item.CONTENT_INFO);
+		FP.add(UIDFolder.FetchProfileItem.UID);
 		FP.add("Message-ID");
 		FP.add("X-Priority");
 		draftsFP.add(FetchProfile.Item.ENVELOPE);
 		draftsFP.add(FetchProfile.Item.FLAGS);
 		draftsFP.add(FetchProfile.Item.CONTENT_INFO);
+		draftsFP.add(UIDFolder.FetchProfileItem.UID);
 		draftsFP.add("Message-ID");
 		draftsFP.add("X-Priority");
 		draftsFP.add(HEADER_SONICLE_FROM_DRAFTER);

@@ -1372,13 +1372,13 @@ public class FolderCache {
 
 			//<SonicleMail>xmsgs=((IMAPFolder)folder).sort(sort, term);</SonicleMail>
 			try {
-				xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
-				//xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+				//xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
+				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
 			} catch(Exception exc) {
 				close();
 				open();
-				xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
-				//xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+				//xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
+				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
 			}
 		}
 		if (quickfilter!=null && quickfilter.equals("attachment")) {
