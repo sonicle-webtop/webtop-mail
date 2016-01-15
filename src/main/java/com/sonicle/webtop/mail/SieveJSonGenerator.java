@@ -131,5 +131,5 @@ public class SieveJSonGenerator implements MailFiltersParserListener {
             }
             json.append("}\n");*/
         }
-
+		
 }
