@@ -4987,8 +4987,8 @@ public class Service extends BaseService {
 			sout = "{\n result: true,";
 			String inreplyto = smsg.getInReplyTo();
 			String references[] = smsg.getReferences();
+			sout += " replyfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
 			if (inreplyto != null) {
-				sout += " replyfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
 				sout += " inreplyto: '" + StringEscapeUtils.escapeEcmaScript(inreplyto) + "',";
 			}
 			if (references != null) {
@@ -5019,6 +5019,7 @@ public class Service extends BaseService {
 				first = false;
 			}
 			sout += "\n ],\n";
+			sout+=" origuid:"+puidmessage+",\n";
 			String html = smsg.getContent();
 			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
 			sout += "\n}";
@@ -5060,8 +5061,8 @@ public class Service extends BaseService {
 			
 			sout = "{\n result: true,";
 			String forwardedfrom = smsg.getForwardedFrom();
+			sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
 			if (forwardedfrom != null) {
-				sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
 				sout += " forwardedfrom: '" + StringEscapeUtils.escapeEcmaScript(forwardedfrom) + "',";
 			}
 			String subject = smsg.getSubject();
@@ -5114,6 +5115,7 @@ public class Service extends BaseService {
 				sout += "\n ],\n";
 			}
 			
+			sout += " origuid:"+puidmessage+",\n";
 			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
 			sout += "\n}";
 			out.println(sout);
@@ -5493,16 +5495,20 @@ public class Service extends BaseService {
 				String replyfolder = request.getParameter("replyfolder");
 				String forwardedfrom = request.getParameter("forwardedfrom");
 				String forwardedfolder = request.getParameter("forwardedfolder");
+                String soriguid=request.getParameter("origuid");
+				long origuid=0;
+				try { origuid=Long.parseLong(soriguid); } catch(RuntimeException rexc) {}
 				String foundfolder = null;
 				if (forwardedfrom != null && forwardedfrom.trim().length() > 0) {
 					try {
-						foundfolder = flagForwardedMessage(forwardedfolder, forwardedfrom);
+						foundfolder = foundfolder=flagForwardedMessage(forwardedfolder,forwardedfrom,origuid);
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					}
-				} else if (inreplyto != null && inreplyto.trim().length() > 0) {
+				}
+				else if((inreplyto != null && inreplyto.trim().length()>0)||(replyfolder!=null&&replyfolder.trim().length()>0&&origuid>0)) {
 					try {
-						foundfolder = flagAnsweredMessage(replyfolder, inreplyto);
+						foundfolder=flagAnsweredMessage(replyfolder,inreplyto,origuid);
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					}
@@ -5527,12 +5533,11 @@ public class Service extends BaseService {
 		out.println(sout);
 	}
 	
-	private String flagAnsweredMessage(String replyfolder, String id) throws MessagingException {
+	//FLAG ANSWERED
+    private String flagAnsweredMessage(String replyfolder, String id, long origuid) throws MessagingException {
 		String foundfolder = null;
 		if (replyfolder != null) {
-			if (_flagAnsweredMessage(replyfolder, id)) {
-				foundfolder = replyfolder;
-			}
+			if (_flagAnsweredMessage(replyfolder,origuid)) foundfolder=replyfolder;
 		}
 		if (foundfolder == null) {
 			SonicleIMAPFolder f = (SonicleIMAPFolder) store.getFolder("");
@@ -5558,7 +5563,7 @@ public class Service extends BaseService {
 		return found;
 	}
 	
-	private boolean _flagAnsweredMessage(String foldername, String id) throws MessagingException {
+/*	private boolean _flagAnsweredMessage(String foldername, String id) throws MessagingException {
 		Message msgs[] = null;
 		SonicleIMAPFolder sifolder = (SonicleIMAPFolder) store.getFolder(foldername);
 		sifolder.open(Folder.READ_WRITE);
@@ -5569,14 +5574,13 @@ public class Service extends BaseService {
 		}
 		sifolder.close(true);
 		return found;
-	}
+	}*/
 	
-	private String flagForwardedMessage(String forwardedfolder, String id) throws MessagingException {
+	//FLAG FORWARDED
+    private String flagForwardedMessage(String forwardedfolder, String id, long origuid) throws MessagingException {
 		String foundfolder = null;
 		if (forwardedfolder != null) {
-			if (_flagForwardedMessage(forwardedfolder, id)) {
-				foundfolder = forwardedfolder;
-			}
+			if (_flagForwardedMessage(forwardedfolder,origuid)) foundfolder=forwardedfolder;
 		}
 		if (foundfolder == null) {
 			SonicleIMAPFolder f = (SonicleIMAPFolder) store.getFolder("");
@@ -5602,7 +5606,7 @@ public class Service extends BaseService {
 		return found;
 	}
 	
-	private boolean _flagForwardedMessage(String foldername, String id) throws MessagingException {
+	/*private boolean _flagForwardedMessage(String foldername, String id) throws MessagingException {
 		Message msgs[] = null;
 		SonicleIMAPFolder sifolder = (SonicleIMAPFolder) store.getFolder(foldername);
 		sifolder.open(Folder.READ_WRITE);
@@ -5613,7 +5617,7 @@ public class Service extends BaseService {
 		}
 		sifolder.close(true);
 		return found;
-	}
+	}*/
 	
 	public void processSaveMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String sout = null;
