@@ -279,7 +279,7 @@ public class MultipartIterator {
                     }
 
                 } catch (IOException ioe) {
-                    ioe.printStackTrace(System.err);
+                    Service.logger.error("Exception",ioe);
                     throw new ServletException("IOException while reading file element: " + ioe.getMessage(), ioe);
                 }
             }

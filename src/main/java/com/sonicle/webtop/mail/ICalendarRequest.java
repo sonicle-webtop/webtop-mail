@@ -342,8 +342,8 @@ public class ICalendarRequest {
 						"E:\\gabriele.bulfon\\Downloads\\ibuildings.ics"
 				)
 		);
-		System.out.println("METHOD = "+ir.getMethod());
-		System.out.println("UID    = "+ir.getUID());
+		Service.logger.debug("METHOD = "+ir.getMethod());
+		Service.logger.debug("UID    = "+ir.getUID());
 		String html=ir.getHtmlView(Locale.FRENCH,"win");
 		FileOutputStream fout=new FileOutputStream("E:\\gabriele.bulfon\\Downloads\\ibuildings.html");
 		IOUtils.copy(new ByteArrayInputStream(html.getBytes("UTF8")), fout);

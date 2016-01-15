@@ -374,7 +374,7 @@ public class Service extends BaseService {
 							}
 						}
 					} catch (Exception exc) {
-						exc.printStackTrace();
+						Service.logger.error("Exception",exc);
 					}
 				}
 			});
@@ -382,7 +382,7 @@ public class Service extends BaseService {
 			
 			setSharedSeen(us.isSharedSeen());
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -478,7 +478,7 @@ public class Service extends BaseService {
 				store.close();
 			}
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 		boolean sucess = true;
 		disconnecting = false;
@@ -529,7 +529,7 @@ public class Service extends BaseService {
 			}
 			
 		} catch (MessagingException ex) {
-			ex.printStackTrace();
+			Service.logger.error("Exception",ex);
 		}
 		
 		return true;
@@ -589,7 +589,7 @@ public class Service extends BaseService {
 	 String sharedseen=null;
 	 String docmgtwt=null;
 	 String sharedsort=(String)params.get("sharedsort");
-	 //System.out.println("sharedsort="+sharedsort);
+	 //Service.logger.debug("sharedsort="+sharedsort);
 
 	 boolean restart=false;
       
@@ -674,7 +674,7 @@ public class Service extends BaseService {
 	 try {
 	 cmailpassword=wta.cipher(mailpassword,credential);
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 }
 	 sb1.addStringField("mailpassword", cmailpassword);
 	 sb2.addStringField("password", cmailpassword);
@@ -793,7 +793,7 @@ public class Service extends BaseService {
 	 try { stmt.executeUpdate(sb2.getSQL()); } catch(SQLException exc) {}
 	 }
 	 } catch(SQLException exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 } finally {
 	 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
 	 if (con!=null) try { con.close(); } catch(Exception exc) {}
@@ -828,7 +828,7 @@ public class Service extends BaseService {
 	 stmt=con.createStatement();
 	 String login=profile.getUser();
 	 String sql="delete from identities where iddomain='"+wtd.getLocalIDDomain()+"' and login='"+login+"'";
-	 //System.out.println(sql);
+	 //Service.logger.debug(sql);
 	 stmt.executeUpdate(sql);
 	 //profile.clearIdentities();
 	 stmt1 = con.prepareStatement("select count(*) from workgroups as wg inner join users as us on (wg.groupname = us.login) where (us.email = ?) AND (wg.mail <> 'F')");
@@ -857,7 +857,7 @@ public class Service extends BaseService {
 	 profile.buildIdentities(con);
 
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 } finally {
 	 if (stmt1!=null) try { stmt1.close(); } catch(Exception exc) {}
 	 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
@@ -1150,11 +1150,11 @@ public class Service extends BaseService {
 			stmt = con.createStatement();
 			filename=DbUtils.getSQLString(filename);
 			String sql = "INSERT INTO DRM_DOCUMENTS (DOCUMENT_ID,REQUEST_ID,FILENAME,FILE,REVISION,FROMGENERICDOCUMENTS,DATE_DOCUMENT) values (" + id + "," + request_id + ",'" + filename + "',lo_import('" + path + "'),NOW()," + generic_id + ",NOW())";
-			System.out.println("saveDocmail=" + sql);
+			Service.logger.debug("saveDocmail=" + sql);
 			stmt.executeUpdate(sql);
 			success = true;
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			Service.logger.error("Exception",ex);
 		} finally {
 			if (stmt != null) {
 				try {
@@ -1221,11 +1221,11 @@ public class Service extends BaseService {
 			String query = "";
 			query += "insert into drm_requests_history (HISTORY_ID,REQUEST_ID     ,REQUEST_BY      ,ASSIGN_TO      ,REQUEST_DATE,LOGIN     ,CATEGORY_ID    ,RELEASE      ,SEVERITY      ,CUSTOMER_ID      ,STATISTIC_ID      ,ENVIRONMENT       ,DESCRIPTION     ,FULLDESCRIPTION      ,SIMULATION      ,SUGGESTION      ,STATUS,RESOLUTION,MOV_TYPE,CONTACT_ID,N_DOCUMENT,YEAR_DOCUMENT,REVISION)"
 					+ " select " + history_id + ",REQUEST_ID     ,REQUEST_BY      ,ASSIGN_TO      ,REQUEST_DATE,LOGIN     ,CATEGORY_ID    ,RELEASE      ,SEVERITY      ,CUSTOMER_ID      ,STATISTIC_ID      ,ENVIRONMENT       ,DESCRIPTION     ,FULLDESCRIPTION      ,SIMULATION      ,SUGGESTION      ,STATUS,RESOLUTION,MOV_TYPE,CONTACT_ID,N_DOCUMENT,YEAR_DOCUMENT,NOW() from drm_requests where request_id=" + request_id;
-			System.out.println("save=" + query);
+			Service.logger.debug("save=" + query);
 			stmt.executeUpdate(query);
 			success = true;
 		} catch (SQLException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		} finally {
 			if (stmt != null) {
 				try {
@@ -1427,7 +1427,7 @@ public class Service extends BaseService {
 					updateCategorySequence(cat.sequence_id, cat.year, cat.category_id);
 				}
 				category_id = "'" + cat.category_id + "'";
-				System.out.println("category_id=" + category_id);
+				Service.logger.debug("category_id=" + category_id);
 			}
 			String query = "insert into drm_requests (";
 			query += " request_id,";
@@ -1509,11 +1509,11 @@ public class Service extends BaseService {
 			query += "'" + year + "',";
 			query += "'" + environment.getProfile().getDomainId() + "' ";
 			query += ")";
-			System.out.println("mail=" + query);
+			Service.logger.debug("mail=" + query);
 			stmt.executeUpdate(query);
 			
 		} catch (SQLException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		} finally {
 			if (stmt != null) {
 				try {
@@ -1543,7 +1543,7 @@ public class Service extends BaseService {
 			
 			con.close();
 		} catch (SQLException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		} finally {
 			if (stmt != null) {
 				try {
@@ -1604,7 +1604,7 @@ public class Service extends BaseService {
 				}
 			}
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			Service.logger.error("Exception",ex);
 		} finally {
 			if (rset != null) {
 				try {
@@ -1837,7 +1837,7 @@ public class Service extends BaseService {
 			return true;
 			
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			Service.logger.error("Exception",ex);
 			return false;
 		}
 		
@@ -1864,7 +1864,7 @@ public class Service extends BaseService {
 			msg = createMessage(from, smsg, attachments, false);
 			Transport.send(msg);
 		} catch (Exception ex) {
-			ex.printStackTrace();
+			Service.logger.error("Exception",ex);
 			retexc = ex;
 		}
 
@@ -1922,7 +1922,7 @@ public class Service extends BaseService {
 		}
 
 		/*    if (debug)
-		 System.out.println("sendMail()" + b);*/
+		 Service.logger.debug("sendMail()" + b);*/
 		return retexc;
 	}
 	
@@ -1941,7 +1941,7 @@ public class Service extends BaseService {
 
 		//set the TO recipient
 		for (int q = 0; q < to.length; q++) {
-//        System.out.println("to["+q+"]="+to[q]);
+//        Service.logger.debug("to["+q+"]="+to[q]);
 			to[q] = to[q].replace(',', ' ');
 			try {
 				ia = getInternetAddress(to[q]);
@@ -2090,7 +2090,7 @@ public class Service extends BaseService {
 				 try {
 				 qpe.write(textcontent.charAt(i));
 				 } catch(IOException exc) {
-				 exc.printStackTrace();
+				 Service.logger.error("Exception",exc);
 				 }
 				 }
 				 textcontent=new String(bos.toByteArray());*/
@@ -2121,7 +2121,7 @@ public class Service extends BaseService {
 					String contentType = null;
 					String contentFileName = null;
 					if (oldParts[r] instanceof Message) {
-//                System.out.println("Attachment is a message");
+//                Service.logger.debug("Attachment is a message");
 						Message msgpart = (Message) oldParts[r];
 						MimeMessage mm = new MimeMessage(session);
 						mm.addFrom(msgpart.getFrom());
@@ -2135,7 +2135,7 @@ public class Service extends BaseService {
 						content = mm;
 						contentType = "message/rfc822";
 					} else {
-//                System.out.println("Attachment is not a message");
+//                Service.logger.debug("Attachment is not a message");
 						content = oldParts[r].getContent();
 						contentType = oldParts[r].getContentType();
 						contentFileName = oldParts[r].getFileName();
@@ -2143,7 +2143,7 @@ public class Service extends BaseService {
 					MimeBodyPart mbp = new MimeBodyPart();
 					if (contentFileName != null) {
 						mbp.setFileName(contentFileName);
-//              System.out.println("adding attachment mime "+contentType+" filename "+contentFileName);
+//              Service.logger.debug("adding attachment mime "+contentType+" filename "+contentFileName);
 						contentType += "; name=\"" + contentFileName + "\"";
 					}
 					mbp.setDataHandler(new DataHandler(content, contentType));
@@ -2214,7 +2214,7 @@ public class Service extends BaseService {
 			
 			outgoing.appendMessages(saveMsgs);
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 		
 		return retexc;
@@ -2283,7 +2283,7 @@ public class Service extends BaseService {
 			for (Attachment att : origattachments) {
 				if (att.getFile().getName().equals(attname)) {
 					attachments.add(att);
-					//System.out.println("Adding attachment : "+attname+" -> "+att.getName());
+					//Service.logger.debug("Adding attachment : "+attname+" -> "+att.getName());
 					break;
 				}
 			}
@@ -2306,8 +2306,8 @@ public class Service extends BaseService {
 				StringBuffer htmlsb = new StringBuffer();
 				StringBuffer textsb = new StringBuffer();
 				boolean isHtml = appendReplyParts(msg, htmlsb, textsb, null);
-    //      System.out.println("isHtml="+isHtml);
-				//      System.out.println("richContent="+richContent);
+    //      Service.logger.debug("isHtml="+isHtml);
+				//      Service.logger.debug("richContent="+richContent);
 				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
 				if (!richContent) {
 					forward.setText(getForwardBody(msg, textsb.toString(), SimpleMessage.FORMAT_TEXT, false, fromtitle, totitle, cctitle, datetitle, subjecttitle));
@@ -2317,7 +2317,7 @@ public class Service extends BaseService {
 					forward.setText(getForwardBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle));
 				}
 			} catch (Exception exc) {
-				exc.printStackTrace();
+				Service.logger.error("Exception",exc);
 			}
 		}
 		
@@ -2331,7 +2331,7 @@ public class Service extends BaseService {
 				forward.setHeader("Forwarded-From", msgid);
 			}
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 		
 		SimpleMessage fwd = new SimpleMessage(id, forward);
@@ -2350,8 +2350,8 @@ public class Service extends BaseService {
 				fwd.setSubject(msg.getSubject());
 			}
 		} catch (MessagingException e) {
-			e.printStackTrace();
-//      System.out.println("*** SimpleMessage: " +e);
+			Service.logger.error("Exception",e);
+//      Service.logger.debug("*** SimpleMessage: " +e);
 		}
 		
 		return fwd;
@@ -2673,12 +2673,12 @@ public class Service extends BaseService {
 			}
 			return new SimpleMessage(id, reply);
 		} catch (MessagingException e) {
-			e.printStackTrace();
-//      System.out.println("*** SimpleMessage: " + e);
+			Service.logger.error("Exception",e);
+//      Service.logger.debug("*** SimpleMessage: " + e);
 			return null;
 		} catch (IOException e) {
-			e.printStackTrace();
-//      System.out.println("*** SimpleMessage: " + e);
+			Service.logger.error("Exception",e);
+//      Service.logger.debug("*** SimpleMessage: " + e);
 			return null;
 		}
 	}
@@ -3048,7 +3048,7 @@ public class Service extends BaseService {
 		try {
 			disconnect();
 		} catch (Exception e) {
-			e.printStackTrace();
+			Service.logger.error("Exception",e);
 		}
 		clearAllAttachments();
 		if (fcRoot != null) {
@@ -3106,7 +3106,7 @@ public class Service extends BaseService {
 	 }
 	 addServerEvents(events);
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 }
 	 }*/
 	private String getMessageID(Message m) throws MessagingException {
@@ -3437,7 +3437,7 @@ public class Service extends BaseService {
 		 VFSService vfs=(VFSService)wts.getServiceByName("vfs");
 		 vfs.discard(a.getVFSUri());
 		 } catch(Exception exc) {
-		 exc.printStackTrace();
+		 Service.logger.error("Exception",exc);
 		 }
 		 }
 		 attachments.clear();*/
@@ -3543,7 +3543,7 @@ public class Service extends BaseService {
 									_loadFoldersCache(fc);
 								}
 							} catch (MessagingException exc) {
-								exc.printStackTrace();
+								Service.logger.error("Exception",exc);
 							}
 						}
 					}
@@ -3702,7 +3702,7 @@ public class Service extends BaseService {
 			out.println("], message: '' }");
 			
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -3717,7 +3717,7 @@ public class Service extends BaseService {
 				String u2 = fc2.getWebTopUser();
 				ret = u1.compareTo(u2);
 			} catch (MessagingException exc) {
-				exc.printStackTrace();
+				Service.logger.error("Exception",exc);
 			}
 			return ret;
 		}
@@ -3735,7 +3735,7 @@ public class Service extends BaseService {
 				String desc2 = fc2.getDescription();
 				ret = desc1.compareTo(desc2);
 			} catch (MessagingException exc) {
-				exc.printStackTrace();
+				Service.logger.error("Exception",exc);
 			}
 			return ret;
 		}
@@ -3763,7 +3763,7 @@ public class Service extends BaseService {
 			if (mc == null) {
 				//continue;
 				FolderCache fcparent=getFolderCache(parent.getFullName());
-				//System.out.println("==folder not ready, adding now==");
+				//Service.logger.debug("==folder not ready, adding now==");
 				mc=addSingleFoldersCache(fcparent, f);
 			}
 			//String shortfoldername=getShortFolderName(foldername);
@@ -3970,7 +3970,7 @@ public class Service extends BaseService {
 			ss += "\n]";
 			out.println(ss);
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		} finally {
 			if (rs != null) {
 				try {
@@ -4044,7 +4044,7 @@ public class Service extends BaseService {
 				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + "\n}";
 			}
 		} catch(Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4087,7 +4087,7 @@ public class Service extends BaseService {
 				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + "\n}";
 			}
         } catch(Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4122,7 +4122,7 @@ public class Service extends BaseService {
 			long millis = System.currentTimeMillis();
 			sout = "{\nresult: true, millis: " + millis + "\n}";
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4324,7 +4324,7 @@ public class Service extends BaseService {
 			}
 			sout = "{\nresult: true\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4360,7 +4360,7 @@ public class Service extends BaseService {
 			}
 			sout = "{\nresult: true\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4391,7 +4391,7 @@ public class Service extends BaseService {
 			long millis = System.currentTimeMillis();
 			sout = "{\nresult: true, millis: " + millis + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4422,7 +4422,7 @@ public class Service extends BaseService {
 			long millis = System.currentTimeMillis();
 			sout = "{\nresult: true, millis: " + millis + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4450,7 +4450,7 @@ public class Service extends BaseService {
 			setScanFolder(stmt, fc, value, recursive);
 			sout = "{\nresult: true\n}";
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		} finally {
 			if (stmt != null) {
@@ -4508,7 +4508,7 @@ public class Service extends BaseService {
 			long millis = System.currentTimeMillis();
 			sout += "result: " + result + ", millis: " + millis + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, oldid: '" + folder + "', oldname: '" + (mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4531,7 +4531,7 @@ public class Service extends BaseService {
 			setMessagesSeen(mcache, false, recursive);
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, oldid: '" + folder + "', oldname: '" + (mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4583,7 +4583,7 @@ public class Service extends BaseService {
 		try {
 			pname = MailUtils.decodeQString(pname, "iso-8859-1");
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 		return pname;
 	}
@@ -4677,7 +4677,7 @@ public class Service extends BaseService {
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4700,7 +4700,7 @@ public class Service extends BaseService {
 			sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(name) + "',\n";
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4733,7 +4733,7 @@ public class Service extends BaseService {
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4762,7 +4762,7 @@ public class Service extends BaseService {
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4793,7 +4793,7 @@ public class Service extends BaseService {
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4811,7 +4811,7 @@ public class Service extends BaseService {
 			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 			sout += "result: true\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4843,7 +4843,7 @@ public class Service extends BaseService {
 			sb.append("</pre>");
 			sout = "{\nresult: true, source: '" + StringEscapeUtils.escapeEcmaScript(sb.toString()) + "'\n}";
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -4865,7 +4865,7 @@ public class Service extends BaseService {
 			OutputStream out = response.getOutputStream();
 			msg.writeTo(out);
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -4914,7 +4914,7 @@ public class Service extends BaseService {
 			jos.close();
 			
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -5023,7 +5023,7 @@ public class Service extends BaseService {
 			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
 			sout += "\n}";
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		if (sout != null) {
@@ -5118,7 +5118,7 @@ public class Service extends BaseService {
 			sout += "\n}";
 			out.println(sout);
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 	}
@@ -5293,15 +5293,15 @@ public class Service extends BaseService {
 			}
 			sout += "\n ],\n";
 
-            //System.out.println("HTML newmsgid="+newmsgid);
-			//System.out.println(html);
+            //Service.logger.debug("HTML newmsgid="+newmsgid);
+			//Service.logger.debug(html);
 			//String surl="service-requests?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
 			//html=replaceCidUrls(html, maildata, surl);
 			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
 			sout += "\n}";
 			out.println(sout);
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 	}
@@ -5383,8 +5383,8 @@ public class Service extends BaseService {
 	 }
 	 sout+="\n ],\n";
 
-	 //System.out.println("HTML newmsgid="+newmsgid);
-	 //System.out.println(html);
+	 //Service.logger.debug("HTML newmsgid="+newmsgid);
+	 //Service.logger.debug(html);
 	 //String surl="service-requests?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
 	 //html=replaceCidUrls(html, maildata, surl);
 
@@ -5392,7 +5392,7 @@ public class Service extends BaseService {
 	 sout+="\n}";
 	 out.println(sout);
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 }
 	 }*/
@@ -5411,13 +5411,13 @@ public class Service extends BaseService {
 		 char chars[]=new char[] { '\'', '"'};
 		 for(char c: chars) {
 		 String pattern="<a href="+c+puburl+"/public/vfs/";
-		 System.out.println("Looking for pattern "+pattern);
+		 Service.logger.debug("Looking for pattern "+pattern);
 		 while((hlx=html.indexOf(pattern,hlx+1))>=0) {
 		 int xhash1=hlx+pattern.length();
 		 int xhash2=html.indexOf(c,xhash1);
 		 if (xhash2>xhash1) {
 		 String hash=html.substring(xhash1,xhash2);
-		 System.out.println("Found hash "+hash);
+		 Service.logger.debug("Found hash "+hash);
 		 hashlinks.add(hash);
 		 }
 		 }
@@ -5481,7 +5481,7 @@ public class Service extends BaseService {
 				// TODO: Cloud integration!!!
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
 				 for(String hash: hashlinks) {
-				 System.out.println("Adding emails to hash "+hash);
+				 Service.logger.debug("Adding emails to hash "+hash);
 				 vfs.setAuthEmails(hash, from, emails);
 				 }
 
@@ -5498,13 +5498,13 @@ public class Service extends BaseService {
 					try {
 						foundfolder = flagForwardedMessage(forwardedfolder, forwardedfrom);
 					} catch (Exception xexc) {
-						xexc.printStackTrace();
+						Service.logger.error("Exception",xexc);
 					}
 				} else if (inreplyto != null && inreplyto.trim().length() > 0) {
 					try {
 						foundfolder = flagAnsweredMessage(replyfolder, inreplyto);
 					} catch (Exception xexc) {
-						xexc.printStackTrace();
+						Service.logger.error("Exception",xexc);
 					}
 				}
 				
@@ -5519,7 +5519,7 @@ public class Service extends BaseService {
 				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(msgstr) + "'\n}";
 			}
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			Throwable cause = exc.getCause();
 			String msg = cause != null ? cause.getMessage() : exc.getMessage();
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(msg) + "'\n}";
@@ -5644,7 +5644,7 @@ public class Service extends BaseService {
 				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 			}
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -5683,7 +5683,7 @@ public class Service extends BaseService {
 				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 			}
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -5725,7 +5725,7 @@ public class Service extends BaseService {
 	 }
 	 else sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 }
 	 out.println(sout);
@@ -5858,7 +5858,7 @@ public class Service extends BaseService {
 					 listdone=true;
 					 checkemail=false;
 					 } catch(SQLException exc) {
-					 //exc.printStackTrace();
+					 //Service.logger.error("Exception",exc);
 					 } finally {
 					 if (rs!=null) try { rs.close(); } catch(Exception exc2) {}
 					 if (stmt!=null) try { stmt.close(); } catch(Exception exc2) {}
@@ -5877,7 +5877,7 @@ public class Service extends BaseService {
 					//InternetAddress.parse(email.replace(',', ' '), false);
 					getInternetAddress(email);
 				} catch (AddressException exc) {
-					exc.printStackTrace();
+					Service.logger.error("Exception",exc);
 					throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR) + " : " + email);
 				}
 			}
@@ -6072,7 +6072,7 @@ public class Service extends BaseService {
 			sout += "], result: null, id: 'id', jsonrpc: '2.0' }";
 			out.println(sout);
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -6125,7 +6125,7 @@ public class Service extends BaseService {
 			String tempname = attachment.getFile().getName();
 			sout = "{ result:true, name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "', size: '" + size + "' }";
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{ result:false }";
 		}
 		out.println(sout);
@@ -6184,7 +6184,7 @@ public class Service extends BaseService {
 	 sout+="], result: null, id: 'id', jsonrpc: '2.0' }";
 	 out.println(sout);
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 }
 	 }
 
@@ -6204,7 +6204,7 @@ public class Service extends BaseService {
 	 String sout="{ success: true, vfsuri: '"+OldUtils.jsEscape(vfsuri)+"', name: '"+OldUtils.jsEscape(dirname)+"' }";
 	 out.println(sout);
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 String sout="{ success: false, message: '"+exc.getMessage()+"' }";
 	 out.println(sout);
 	 }
@@ -6228,11 +6228,11 @@ public class Service extends BaseService {
 			if (exc == null) {
 				sout = "{\nresult: true\n}";
 			} else {
-				exc.printStackTrace();
+				Service.logger.error("Exception",exc);
 				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 			}
 		} catch (MessagingException exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
@@ -6545,7 +6545,7 @@ public class Service extends BaseService {
 	 }
 	 rs.close();
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 } finally {
 	 if (rs!=null) try { rs.close(); } catch(Exception exc) {}
 	 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
@@ -6690,7 +6690,7 @@ public class Service extends BaseService {
 			group = "";
 		}
 
-		//System.out.println("psortfield="+psortfield+" group="+group);
+		//Service.logger.debug("psortfield="+psortfield+" group="+group);
 		if (psortfield == null) {
 			if (group.equals("")) {
 				String s = us.getMessageListSort(pfoldername);
@@ -6823,7 +6823,7 @@ public class Service extends BaseService {
 					try {
 						mlt.lock.wait();
 					} catch (InterruptedException exc) {
-						exc.printStackTrace();
+						Service.logger.error("Exception",exc);
 					}
 					mlThreads.remove(key);
 				}
@@ -7194,7 +7194,7 @@ public class Service extends BaseService {
 			}
 			out.println(sout);
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -7299,7 +7299,7 @@ public class Service extends BaseService {
 					this.millis = System.currentTimeMillis();
 					msgs=fc.getMessages(quickfilter,pattern,searchfield,sortby,ascending,refresh, sort_group, groupascending,threaded);
 				} catch (Exception exc) {
-					exc.printStackTrace();
+					Service.logger.error("Exception",exc);
 				}
 				lock.notifyAll();
 			}
@@ -7430,7 +7430,7 @@ public class Service extends BaseService {
 			for (int i = 0; i < acount; ++i) {
 				Part p = mailData.getAttachmentPart(i);
 				String ctype = p.getContentType();
-				System.out.println("attachment " + i + " is " + ctype);
+				Service.logger.debug("attachment " + i + " is " + ctype);
 				int ix = ctype.indexOf(';');
 				if (ix > 0) {
 					ctype = ctype.substring(0, ix);
@@ -7508,7 +7508,7 @@ public class Service extends BaseService {
 			out.println(sout);
 //            if (!wasopen) folder.close(false);
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -7534,7 +7534,7 @@ public class Service extends BaseService {
 			}
 			result = true;
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			text = exc.getMessage();
 		} finally {
 			if (rs != null) {
@@ -7591,7 +7591,7 @@ public class Service extends BaseService {
 			}
 			result = true;
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			message = exc.getMessage();
 		} finally {
 			DbUtils.closeQuietly(con);
@@ -7978,7 +7978,7 @@ public class Service extends BaseService {
 				fastStreamCopy(is, out);
 			}			
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -8045,7 +8045,7 @@ public class Service extends BaseService {
 			jos.close();
 			
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -8078,10 +8078,10 @@ public class Service extends BaseService {
 				 oout.close();
 				 return;*/
 			} else {
-				System.out.println("att was null!!!");
+				Service.logger.debug("att was null!!!");
 			}
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -8480,7 +8480,7 @@ public class Service extends BaseService {
 	 String sout=sb.toString();
 	 out.println(sout);
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 } finally {
 	 if (con!=null) try { con.close(); } catch(Exception e) {}
 	 }
@@ -8558,7 +8558,7 @@ public class Service extends BaseService {
 	 int n2=(nstart+ids.length-1)-1;
 	 sout="{\nresult: true, n1:"+n1+", n2:"+n2+"\n}";
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 } finally {
 	 if (rs!=null) try { rs.close(); } catch(Exception e) {}
@@ -8616,7 +8616,7 @@ public class Service extends BaseService {
 	 con.commit();
 	 sout="{\nresult: true\n}";
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 } finally {
 	 if (rs!=null) try { rs.close(); } catch(Exception e) {}
@@ -8661,7 +8661,7 @@ public class Service extends BaseService {
 	 con.commit();
 	 sout="{\nresult: true\n}";
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 } finally {
 	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
@@ -8734,7 +8734,7 @@ public class Service extends BaseService {
 	 con.commit();
 	 sout="{\nresult: true\n}";
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 } finally {
 	 if (rs!=null) try { rs.close(); } catch(Exception e) {}
@@ -8803,7 +8803,7 @@ public class Service extends BaseService {
 
 	 sout="{\nresult: true, scf:["+scf+"]\n}";
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage().replaceAll("\n","<BR>"))+"'\n}";
 	 } finally {
 	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
@@ -8828,7 +8828,7 @@ public class Service extends BaseService {
 	 con.setAutoCommit(false);
 	 TempTable tt1 = es.addTempTable(con, "mailfilters");
 	 TempTable tt2 = es.addTempTable(con, "mailsentfilters");
-	 System.out.println(es.getTempTable("mailfilters").tableName);
+	 Service.logger.debug(es.getTempTable("mailfilters").tableName);
 	 InboxMailFiltersDb.copyToTemp(con, tt1.tableName, profile.getIDDomain(), profile.getUser());
 	 SentMailFiltersDb.copyToTemp(con, tt2.tableName, profile.getIDDomain(), profile.getUser());
 	 con.commit();
@@ -8919,7 +8919,7 @@ public class Service extends BaseService {
 	 }
 	 sout+="  result: true\n}";
 	 }  catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 } finally {
 	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
@@ -9007,7 +9007,7 @@ public class Service extends BaseService {
 			ast.start();
 			out.println("{\nresult: true\n}");
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 			out.println("{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}");
 		}
 	}
@@ -9179,7 +9179,7 @@ public class Service extends BaseService {
 			}
 			out.println(sout);
 		} catch (Exception exc) {
-			exc.printStackTrace();
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -9198,7 +9198,7 @@ public class Service extends BaseService {
 	 autoSaveData(this.environment,"newmail",newmsgid, json);
 	 out.println("{\nresult: true\n}");
 	 } catch(Exception exc) {
-	 exc.printStackTrace();
+	 Service.logger.error("Exception",exc);
 	 out.println("{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}");
 	 }
 	 }*/
@@ -9453,7 +9453,7 @@ public class Service extends BaseService {
 		 }
 		 }
 		 } catch(SQLException exc) {
-		 exc.printStackTrace();
+		 Service.logger.error("Exception",exc);
 		 } finally {
 		 if (rs!=null) try { rs.close(); } catch(Exception exc) {}
 		 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}

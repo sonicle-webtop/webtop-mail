@@ -510,7 +510,7 @@ public class FolderCache {
                 Message umsgs[]=folder.search(unseenSearchTerm);
                 unread=umsgs.length;
             } else unread=folder.getUnreadMessageCount();
-			//System.out.println("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
+			//Service.logger.debug("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
             if (oldunread!=unread) {
 				unreadChanged=true;
 				sendUnreadChangedMessage();
@@ -552,7 +552,7 @@ public class FolderCache {
 
     protected boolean checkSubfolders(boolean all) throws MessagingException {
         boolean pHasUnread=false;
-		System.out.println("working on "+getFolderName());
+		Service.logger.debug("working on "+getFolderName());
         for(FolderCache fcchild: getChildren()) {
             if (fcchild.isScanForcedOff()) continue;
             boolean hasUnread=false;
@@ -574,14 +574,14 @@ public class FolderCache {
         try {
             if (checkUnreads) refreshUnreadMessagesCount();
         } catch(MessagingException exc) {
-            System.out.println("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            exc.printStackTrace();
+            Service.logger.debug("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
+            Service.logger.error("Exception",exc);
         }
         try {
             if (checkRecents) refreshRecentMessagesCount();
         } catch(MessagingException exc) {
-            System.out.println("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            exc.printStackTrace();
+            Service.logger.debug("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
+            Service.logger.error("Exception",exc);
         }
         return (unread>0);
     }
@@ -646,11 +646,11 @@ public class FolderCache {
                 }
                 modified=true;
             } else {
-                System.out.println("Message with no id from "+m.getFrom()[0]);
+                Service.logger.debug("Message with no id from "+m.getFrom()[0]);
             }
         } catch(MessageRemovedException exc1) {
         } catch(MessagingException exc2) {
-            exc2.printStackTrace();
+            Service.logger.error("Exception",exc2);
         }
     }*/
     
@@ -780,9 +780,9 @@ public class FolderCache {
             mcomp.setSortBy(sort_by);
             if(ascending) mcomp.setAscending();
             else mcomp.setDescending();
-            System.out.println("Sorting...");
+            Service.logger.debug("Sorting...");
             java.util.Arrays.sort(xmsgs,mcomp);
-            System.out.println("Done.");
+            Service.logger.debug("Done.");
         }*/
         modified=false;
         return xmsgs;
@@ -950,7 +950,7 @@ public class FolderCache {
                 if (oflags!=null) mm.setFlags(oflags, true);
                 newmmsgs[i++]=mm;
             } catch(Exception exc) {
-                exc.printStackTrace();
+                Service.logger.error("Exception",exc);
                 throw new MessagingException(exc.getMessage());
             }
         }
@@ -1178,7 +1178,7 @@ public class FolderCache {
 						  try {
 							year=Integer.parseInt(pattern);
 						  } catch(RuntimeException exc) {
-							exc.printStackTrace();
+							Service.logger.error("Exception",exc);
 						  }
 						}
 					  }
@@ -1346,8 +1346,8 @@ public class FolderCache {
 				break;
 		}
 
-		//System.out.println("gsort="+gsort);
-		//System.out.println("sort="+sort);
+		//Service.logger.debug("gsort="+gsort);
+		//Service.logger.debug("sort="+sort);
 
 		//Prepend group sorting if present
 		if (gsort!=null) {
@@ -1406,14 +1406,14 @@ public class FolderCache {
 			/*boolean hasrefs=((IMAPStore)folder.getStore()).hasCapability("THREAD=REFS");
 			String method=hasrefs?"REFS":"REFERENCES";
 			boolean simplified=!hasrefs;
-			System.out.println("THREAD: using method "+method+" simplified="+simplified);
+			Service.logger.debug("THREAD: using method "+method+" simplified="+simplified);
 			*/
 			String method="REFERENCES";
 			//String method="REFS";
 			try {
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,term);
 			} catch(Exception exc) {
-				System.out.println("**************Retrying thread*********************");
+				Service.logger.debug("**************Retrying thread*********************");
 				close();
 				open();
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,term);
@@ -1472,7 +1472,7 @@ public class FolderCache {
             int method=entry.getMethod();
             String pattern=entry.getValue();
             boolean negate=(method==AdvancedSearchEntry.METHOD_DOESNOTCONTAIN||method==AdvancedSearchEntry.METHOD_ISNOT);
-            //System.out.println("ADVSEARCH: pattern="+pattern+" searchfield="+searchfield);
+            //Service.logger.debug("ADVSEARCH: pattern="+pattern+" searchfield="+searchfield);
             if(searchfield.equals("subject")) {
               term=new SubjectTerm(pattern);
             } else if(searchfield.equals("to")) {
@@ -1659,7 +1659,7 @@ public class FolderCache {
 				muid=((SonicleIMAPMessage)m).getUID();
 				mailData=dhash.get(muid);
 				if (mailData!=null && mailData.getMessage()!=m) {
-					System.out.println("found wrong cached message, refreshing");
+					Service.logger.debug("found wrong cached message, refreshing");
 					mailData=null;
 				}
 			}
@@ -1739,7 +1739,7 @@ public class FolderCache {
                      if (n>0) xhtml.append(chars,0,n);
                     }
                 } catch(Exception exc) {
-                    exc.printStackTrace();
+                    Service.logger.error("Exception",exc);
                     parserThread.notifyParserEndOfRead();
                     //            return exc.getMessage();
                 }
@@ -1938,7 +1938,7 @@ public class FolderCache {
         //  }
         //  else prepareHTMLMailData(tnefp,mailData);
       } catch(Exception exc) {
-        exc.printStackTrace();
+        Service.logger.error("Exception",exc);
         mailData.addUnknownPart(msg);
         mailData.addAttachmentPart(msg);
       }
@@ -2008,7 +2008,7 @@ public class FolderCache {
           } catch(Exception exc) {
             mailData.addUnknownPart(p);
             mailData.addAttachmentPart(p);
-            exc.printStackTrace();
+            Service.logger.error("Exception",exc);
           }
         } else {
           mailData.addUnknownPart(p);
@@ -2124,7 +2124,7 @@ public class FolderCache {
           threadLock.wait(60000); //give up after one minute
         }
       } catch(Exception exc) {
-        exc.printStackTrace();
+        Service.logger.error("Exception",exc);
       }
     }
     

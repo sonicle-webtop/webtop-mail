@@ -64,7 +64,7 @@ public class ColumnVisibilitySetting extends HashMap<String, Boolean> {
 			if(StringUtils.isEmpty(value)) return new ColumnVisibilitySetting();
 			return JsonResult.gsonWoNulls.fromJson(value, ColumnVisibilitySetting.class);
 		} catch(Exception ex) {
-			ex.printStackTrace();
+			Service.logger.error("Exception",ex);
 			return new ColumnVisibilitySetting();
 		}
 	}

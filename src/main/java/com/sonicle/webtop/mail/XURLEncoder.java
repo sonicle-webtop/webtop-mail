@@ -50,7 +50,7 @@ public class XURLEncoder {
 			if((ret != null) && !encodeSpaceWithPlus) ret = ret.replaceAll("\\+", "%20");
 			
 		} catch(UnsupportedEncodingException ex) {
-			ex.printStackTrace();
+			Service.logger.error("Exception",ex);
 		}
 		return ret;
 	}

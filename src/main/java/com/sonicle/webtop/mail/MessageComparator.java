@@ -147,8 +147,8 @@ public class MessageComparator implements Comparator<Message> {
         case SORT_BY_DATE:
           java.util.Date date1=null;
           java.util.Date date2=null;
-          try { date1=m1.getSentDate(); if (date1==null) date1=m1.getReceivedDate(); } catch(Exception exc) { exc.printStackTrace();}
-          try { date2=m2.getSentDate(); if (date2==null) date2=m2.getReceivedDate(); } catch(Exception exc) {exc.printStackTrace();}
+          try { date1=m1.getSentDate(); if (date1==null) date1=m1.getReceivedDate(); } catch(Exception exc) { Service.logger.error("Exception",exc);}
+          try { date2=m2.getSentDate(); if (date2==null) date2=m2.getReceivedDate(); } catch(Exception exc) {Service.logger.error("Exception",exc);}
           if (date1==null) {
             if (date2==null) result=0;
             else result=-1;
@@ -177,7 +177,7 @@ public class MessageComparator implements Comparator<Message> {
                 :fl2.contains(Flags.Flag.SEEN)?2:0;
             result=f1-f2;
           } catch(MessagingException exc) {
-            exc.printStackTrace();
+            Service.logger.error("Exception",exc);
             result=0;
           }
           break;
@@ -187,7 +187,7 @@ public class MessageComparator implements Comparator<Message> {
               int p2=Service.getPriority(m2);
               result=p1-p2;
           } catch(MessagingException exc) {
-              exc.printStackTrace();
+              Service.logger.error("Exception",exc);
               result=0;
           }
           break;
@@ -205,7 +205,7 @@ public class MessageComparator implements Comparator<Message> {
             }
             result=f1-f2;
           } catch(MessagingException exc) {
-            exc.printStackTrace();
+            Service.logger.error("Exception",exc);
             result=0;
           }
           break;

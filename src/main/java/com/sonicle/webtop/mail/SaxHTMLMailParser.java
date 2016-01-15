@@ -105,7 +105,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
   
   public void setApplicationURL(String url) {
       this.appUrl=url;
-      //System.out.println("this.appUrl="+this.appUrl);
+      //Service.logger.debug("this.appUrl="+this.appUrl);
   }
   
   public BufferedReader getParsedHTML() {
@@ -122,7 +122,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
 
       }
     } catch(IOException exc) {
-      exc.printStackTrace();
+      Service.logger.error("Exception",exc);
     }
     writer=null;
     reader=null;
@@ -133,7 +133,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
       writer.flush();
       writer.close();
     } catch(IOException exc) {
-      exc.printStackTrace();
+      Service.logger.error("Exception",exc);
     }
   }
 
@@ -275,7 +275,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
           if (ex>sx) {
               String oldurl=pre.substring(sx+4, ex);
               String newurl=evaluateUrl(oldurl);
-    //					System.out.println("STYLE: substituting "+oldurl+" with "+newurl);
+    //					Service.logger.debug("STYLE: substituting "+oldurl+" with "+newurl);
               str+=pre.substring(0, sx+4)+newurl+")";
               pre=pre.substring(ex+1);
           } else {
@@ -338,15 +338,15 @@ public class SaxHTMLMailParser extends DefaultHandler {
   }
 
   public void error(SAXParseException e) throws SAXException {
-    e.printStackTrace();
+    Service.logger.error("Exception",e);
   }
 
   public void fatalError(SAXParseException e) throws SAXException {
-    e.printStackTrace();
+    Service.logger.error("Exception",e);
   }
 
   public void warning(SAXParseException e) throws SAXException {
-    e.printStackTrace();
+    Service.logger.error("Exception",e);
   }
 
   private String evaluateCid(String avalue) {
@@ -373,7 +373,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
   }
 
   private String evaluateUrl(String avalue) {
-//		System.out.println("evaluating url "+avalue);
+//		Service.logger.debug("evaluating url "+avalue);
     boolean islocal=mailData.conatinsUrlPart(avalue);
     if(!islocal) { //must use remote url: compose if necessary
       if(baseUrl==null) {
@@ -391,7 +391,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
       return baseUrl+avalue;
     }
     mailData.removeUnknownPart(mailData.getUrlPart(avalue));
-//		System.out.println("Using url copy of "+avalue);
+//		Service.logger.debug("Using url copy of "+avalue);
     String cidUrl="";
     if (!forEdit) {
         if (appUrl!=null) cidUrl+=appUrl;

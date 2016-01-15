@@ -117,35 +117,35 @@ public class AdvancedSearchThread extends Thread {
         morethanmax=false;
         exception=null;
         progress=0;
-        System.out.println("START OF ADVANCED SEARCH THREAD");
+        Service.logger.debug("START OF ADVANCED SEARCH THREAD");
         try {
             for(FolderCache fc: folders) {
                 curfolder=fc;
                 progress++;
                 if (cancel) {
-                    System.out.println("CANCELING ADVANCED SEARCH");
+                    Service.logger.debug("CANCELING ADVANCED SEARCH");
                     break;
                 }
 
-                System.out.println("ADVANCED SEARCH IN "+fc.getFolderName());
+                Service.logger.debug("ADVANCED SEARCH IN "+fc.getFolderName());
                 Message msgs[]=fc.advancedSearchMessages(entries, and, FolderCache.SORT_BY_DATE, false);
                 if (msgs!=null && msgs.length>0) {
                     fc.fetch(msgs, ms.getMessageFetchProfile());
                     for(int n=0;n<msgs.length && result.size()<MAXRESULTS;++n) result.add(msgs[n]);
                 }
                 if (result.size()>=MAXRESULTS) {
-                    System.out.println("RESULT REACHED MAX");
+                    Service.logger.debug("RESULT REACHED MAX");
                     this.morethanmax=true;
                     break;
                 }
             }
-            System.out.println("FINISHED ADVANCED SEARCH");
+            Service.logger.debug("FINISHED ADVANCED SEARCH");
         } catch(Exception exc) {
             exception=exc;
-            exc.printStackTrace();
+            com.sonicle.webtop.mail.Service.logger.error("Exception",exc);
         }
         finished=true;
-        System.out.println("END OF ADVANCED SEARCH THREAD");
+        Service.logger.debug("END OF ADVANCED SEARCH THREAD");
     }
 
     public boolean isRunning() {

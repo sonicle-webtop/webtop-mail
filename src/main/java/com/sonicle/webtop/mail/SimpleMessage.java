@@ -108,8 +108,8 @@ public class SimpleMessage {
         setContent((String)msg.getContent());
       }
     } catch(Exception e) {
-      e.printStackTrace();
-//      System.out.println("*** SimpleMessage: " +e);
+      Service.logger.error("Exception",e);
+//      Service.logger.debug("*** SimpleMessage: " +e);
     }
   }
 
@@ -521,7 +521,7 @@ public class SimpleMessage {
         }
       }
     } catch(Exception exc) {
-      exc.printStackTrace();
+      Service.logger.error("Exception",exc);
       smsg=null;
     }
     return smsg;

@@ -86,18 +86,18 @@ public class MailFoldersThread extends Thread {
         sleepCount=0;
         try {
             FolderCache fcroot=ms.getRootFolderCache();
-            System.out.println("Entering MFT loop");
+            Service.logger.debug("Entering MFT loop");
             FolderCache fcinbox=null;
 			if (ms.hasDifferentDefaultFolder()) fcinbox=fcroot;
 			else fcinbox=ms.getFolderCache("INBOX");
 			//Check inbox only once, then via idle
 			fcinbox.checkFolder();
             while(!abort) {
-                System.out.println("MFT Synchronizing");
+                Service.logger.debug("MFT Synchronizing");
                     synchronized(this) {
                         ms.checkStoreConnected();
                         if (sleepCount>0) {
-                            System.out.println("MailFolderThread: Checking inbox messages");
+                            Service.logger.debug("MailFolderThread: Checking inbox messages");
 							
 							//Don't check here inbox, it's in idle mode
                             //fcinbox.checkFolder();
@@ -115,26 +115,26 @@ public class MailFoldersThread extends Thread {
                             }
                         }
                         else {
-                            System.out.println("MailFolderThread: Checking all messages");
+                            Service.logger.debug("MailFolderThread: Checking all messages");
                             try {
                                 fcroot.checkSubfolders(checkAll);
                             } catch(Exception exc) {
-                                exc.printStackTrace();
+                                Service.logger.error("Exception",exc);
                             }
                         }
                     }
-                    System.out.println("MailFolderThread: Sleeping....");
+                    Service.logger.debug("MailFolderThread: Sleeping....");
                     if (sleepCount<=0) sleepCount=sleepOthers;
                     sleep(1000*sleepInbox);
                     sleepCount-=sleepInbox;
             }
         } catch(Throwable exc) {
-            exc.printStackTrace();
+            Service.logger.error("Exception",exc);
             abort=true;
             failed=true;
             failMessage=exc.getMessage();
         }
-        //System.out.println("Exiting MFT");
+        //Service.logger.debug("Exiting MFT");
     }
     
 }
