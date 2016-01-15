@@ -3342,12 +3342,18 @@ public class Service extends BaseService {
 		return store.getFolder(foldername);
 	}
 	
-	private void checkCreateFolder(String foldername) throws MessagingException {
+	public void checkCreateFolder(String foldername) throws MessagingException {
 		Folder folder = store.getFolder(foldername);
 		if (!folder.exists()) {
 			folder.create(Folder.HOLDS_MESSAGES | Folder.HOLDS_FOLDERS);
 		}
 	}
+	
+  
+  public boolean checkFolder(String foldername) throws MessagingException {
+      Folder folder=store.getFolder(foldername);
+	  return folder.exists();
+  }	
 	
 	public static int getPriority(Message m) throws MessagingException {
 		String xprio = null;
