@@ -4216,7 +4216,7 @@ public class Service extends BaseService {
 		String pquickfilter=request.getParameter("quickfilter");
 		String psearchfield = request.getParameter("searchfield");
 		String ppattern = request.getParameter("pattern");
-		String pthreaded=request.getParameter("threaded");
+		String pthreaded=null; //request.getParameter("threaded");
 		if (pquickfilter!=null && pquickfilter.trim().length()==0) pquickfilter=null;
 		if (psearchfield != null && psearchfield.trim().length() == 0) {
 			psearchfield = null;
@@ -6658,7 +6658,7 @@ public class Service extends BaseService {
 		String ppattern = request.getParameter("pattern");
 		String pquickfilter=request.getParameter("quickfilter");
 		String prefresh = request.getParameter("refresh");
-        String pthreaded=request.getParameter("threaded");
+        String pthreaded=null; //request.getParameter("threaded");
 		if (psearchfield != null && psearchfield.trim().length() == 0) {
 			psearchfield = null;
 		}
@@ -6669,12 +6669,14 @@ public class Service extends BaseService {
 		boolean refresh = (prefresh != null && prefresh.equals("true"));
 		boolean threaded=(pthreaded!=null && pthreaded.equals("1"));
 		
+		/*
+		//DISABLE THREADING
 		String threadedSetting="list-threaded-"+pfoldername;
 		if (pthreaded==null || pthreaded.equals("2")) {
 			threaded=us.isMessageListThreaded(pfoldername);
 		} else {
 			us.setMessageListThreaded(pfoldername, true);
-		}
+		}*/
 		
 		if (isSpecialFolder(pfoldername) || isSharedFolder(pfoldername)) {
 			logger.debug("folder is special or shared, refresh forced");
