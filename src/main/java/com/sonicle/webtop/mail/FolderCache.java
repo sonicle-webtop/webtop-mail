@@ -1697,10 +1697,10 @@ public class FolderCache {
       for(int i=0;i<mailData.getDisplayPartCount();++i) {
         Part dispPart=mailData.getDisplayPart(i);
         java.io.InputStream istream=null;
-        String charset=MailUtils.getCharset(dispPart.getContentType());
-        boolean ischarset=false;
-        try { ischarset=java.nio.charset.Charset.isSupported(charset); } catch(Exception exc) {}
-        if (!ischarset) charset="ISO-8859-1";
+        String charset=MailUtils.getCharsetOrDefault(dispPart.getContentType());
+//        boolean ischarset=false;
+//        try { ischarset=java.nio.charset.Charset.isSupported(charset); } catch(Exception exc) {}
+//        if (!ischarset) charset="UTF-8";
 		if (dispPart.isMimeType("text/plain")||dispPart.isMimeType("text/html")||dispPart.isMimeType("message/delivery-status")||dispPart.isMimeType("message/disposition-notification")||dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
             try {
               if (dispPart instanceof javax.mail.internet.MimeMessage) {
@@ -2148,7 +2148,8 @@ public class FolderCache {
     xmlparser.setErrorHandler(saxHTMLMailParser);
     while(!hstream.isRealEof()) {
       hstream.newDocument();
-      xmlparser.parse(new InputSource(new InputStreamReader(hstream,charset)));
+	  InputStreamReader isr=charset!=null?new InputStreamReader(hstream,charset):new InputStreamReader(hstream);
+      xmlparser.parse(new InputSource(isr));
     }
     saxHTMLMailParser.endOfFile();
   }

@@ -2907,7 +2907,7 @@ public class Service extends BaseService {
 	
 	private String getTextPlainContentAsString(Part p) throws IOException, MessagingException {
 		java.io.InputStream istream = null;
-		String charset = MailUtils.getCharset(p.getContentType());
+		String charset = MailUtils.getCharsetOrDefault(p.getContentType());
 		if (!java.nio.charset.Charset.isSupported(charset)) {
 			charset = "ISO-8859-1";
 		}
