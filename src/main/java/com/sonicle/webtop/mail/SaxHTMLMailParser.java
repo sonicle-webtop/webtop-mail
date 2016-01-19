@@ -292,7 +292,8 @@ public class SaxHTMLMailParser extends DefaultHandler {
     } else if(isscript) {
       pwriter.write(chars, start, len);
     } else {
-      pwriter.print(MailUtils.htmlescape(chars, start, len));
+	  String html=MailUtils.htmlescape(chars, start, len);
+      pwriter.print(html);
     }
   }
 

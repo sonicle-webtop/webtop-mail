@@ -53,7 +53,7 @@
 	 <dependency>
 	  <groupId>nekohtml</groupId>
 	  <artifactId>nekohtml</artifactId>
-	  <version>1.9.6.2</version>
+	  <version>0.9.4</version>
 	 </dependency>
 	</dependencies>
 	<build>

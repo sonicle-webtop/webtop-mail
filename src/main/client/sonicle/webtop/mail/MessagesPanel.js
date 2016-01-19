@@ -49,7 +49,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     filterTextField: null,
     filterCombo: null,
     groupCombo: null,
-    bFilterRow: null,
+    bMultiSearch: null,
     folderList: null,
     messageView: null,
     messageViewContainer: null,
@@ -80,6 +80,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			mp: me,
 			createPagingToolbar: true
         });
+		if (me.gridMenu) {
+			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
+				WT.showContextMenu(e, me.gridMenu, { rec: rec, row: i, grid: me.folderList });
+			});
+		}
 		
         var msgSelModel=me.folderList.getSelectionModel();
         msgSelModel.on('selectionchange',me.selectionChanged,me);
@@ -147,14 +152,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}
 			
         });
-		//TODO: filter components
-		
+		//TODO: grouping
 		/*
-        var txt=this.res('action-filterrow');
-        var action=new Ext.Action({text: '', handler: this.actionFilterRow, scope: this, iconCls: 'icon-mail-action-filterrow', tooltip: txt, enableToggle: true});
-        
-        this.bFilterRow=new Ext.Button(action);
-
         this.groupCombo=new Ext.form.ComboBox({
             forceSelection: true,
             mode: 'local',
@@ -186,12 +185,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		 */
         me.toolbar=Ext.create('Ext.toolbar.Toolbar',{ 
 			items:[
-/*                this.bFilterRow,
-                "-",*/
+				me.bMultiSearch=me.mys._TB("multisearch"),
+				"-",
 				me.quickFilterCombo,
                 "-",
 				me.filterCombo,
-                me.filterTextField/*,
+                me.filterTextField,
+				me.mys._TB("advsearch")/*,
                 "-",
                 this.res("groupby")+":",
                 this.groupCombo*/
@@ -209,8 +209,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			collapsed: me.viewCollapsed,
             height: me.viewHeight,
 			width: me.viewWidth,
-            bodyBorder: true,
-            border: true,
+            bodyBorder: false,
+            border: false,
 			tbar: Ext.create('Ext.toolbar.Toolbar',{
 				hidden: true,
 				items: [
@@ -346,12 +346,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     printMessageView: function() {
         this.messageView.print();
     },
-    
-    setGridContextMenu: function(menu) {
-        this.gridMenu=menu;
-        WT.app.setComponentContextMenu(this.folderList,menu,this.gridContextMenu,this);
-    },
-    
+	
     gridContextMenu: function(e,t) {
         var grid=this.folderList;
         WT.MessageGrid.setContextGrid(grid);
@@ -420,7 +415,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	    
 	reloadFiltered: function(quickfilter,field,pattern) {
 		var me=this;
-        me.depressFilterRowButton();
+        me.depressMultiSearchButton();
 //        me.folderList.store.baseParams={service: 'mail', action: 'ListMessages', folder: this.currentFolder, quickfilter: quickfilter, searchfield: field, pattern: pattern, refresh:1};
 //        me.folderList.store.reload({
 //          params: {start:0,limit:me.ms.pageRows}
@@ -436,11 +431,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		});
 	},
      
-    depressFilterRowButton: function() {
+    depressMultiSearchButton: function() {
 		var me=this;
-        if (me.bFilterRow && me.bFilterRow.pressed) {
-            me.bFilterRow.toggle();
-            me.folderList.hideFilterRow();
+        if (me.bMultiSearch && me.bMultiSearch.pressed) {
+            me.bMultiSearch.toggle();
+            me.folderList.hideMultiSearch();
         }
     },
     
@@ -453,9 +448,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	},
      
 	/*
-    actionFilterRow: function() {
-        if (this.bFilterRow.pressed) this.folderList.showFilterRow();
-        else this.folderList.hideFilterRow();
+    actionMultiSearch: function() {
+        if (this.bMultiSearch.pressed) this.folderList.showMultiSearch();
+        else this.folderList.hideMultiSearch();
     },
 
     

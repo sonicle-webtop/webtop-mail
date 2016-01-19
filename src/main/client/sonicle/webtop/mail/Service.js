@@ -70,7 +70,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
         actionNode: null,
         sna: null,
     
-        gridMenu: null,
         treeMenu: null,
         btreeMenu: null,
 
@@ -93,7 +92,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
         aDocMgt: null,
         aDocMgtwt: null,
         newmsgid: 0,
-        bFilterRow: null,
 
         //settings
         mailcard: null,
@@ -125,9 +123,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		me.initActions();
 		//TODO context menus
-		//me.initCxm();
+		me.initCxm();
 		//this.initTreeMenu();
-		//this.initGridMenu();
 		
 		//TODO load settings
 		//this.loadSettings();
@@ -262,12 +259,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			saveColumnVisibility: true,
 			saveColumnOrder: true,
 			savePaneSize: true,
+			gridMenu: me.getRef('cxmGrid'),
 			mys: me
 		});
 		me.messagesPanel=mp;
 		me.setMainComponent(me.messagesPanel);
-		//TODO grid context menu
-        //mp.setGridContextMenu(this.gridMenu);
 		//TODO old toolbar
         //this.toolbar=mp.toolbar;
 		//TODO grid events
@@ -295,8 +291,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 xb[xx++]=me._TB("markseen"),
                 xb[xx++]=me._TB("markunseen"),
                 "-",
-                xb[xx++]=me._TB("filters"),
-                xb[xx++]=me._TB("advsearch")
+                xb[xx++]=me._TB("filters")
             ]
         );
 		//TODO FAX
@@ -336,33 +331,35 @@ Ext.define('Sonicle.webtop.mail.Service', {
             this.sna=new Array();
             this.sna[0]=this.addAction("newfax",this.actionNewFax,this);
         }*/
-        //this.addAction("open",this.actionOpen,this,'');
-        //this.addAction("opennew",this.actionOpenNew,this,'');
+        me.addAction("open",{ handler: me.actionOpen, scope: me, iconCls: '' });
+        me.addAction("opennew",{ handler: me.actionOpenNew, scope: me, iconCls: '' });
         
 		me.addAction("print",{ handler: me.actionPrint, scope: me, iconCls: 'wt-icon-print-xs' });
         me.addAction("reply",{ handler: me.actionReply, scope: me });
         me.addAction("replyall",{ handler: me.actionReplyAll, scope: me });
         me.addAction("forward",{ handler: me.actionForward, scope: me });
-        //me.addAction("forwardeml",{ handler: me.actionForwardEml, scope: me });
+        me.addAction("forwardeml",{ handler: me.actionForwardEml, scope: me });
+		me.addAction("special",{ handler: me.actionSpecialEml, scope: me });
         me.addAction("filters", { handler: me.actionFilters, scope: me, iconCls: 'wt-icon-filter-xs' });
+        me.addAction("multisearch", { handler: me.actionMultiSearch, scope: me, iconCls: 'wt-icon-search-multi-xs' });
 		
-		/*
-        this.addAction("flagred",this.actionFlagRed,this);
-        this.addAction("flagblue",this.actionFlagBlue,this);
-        this.addAction("flagyellow",this.actionFlagYellow,this);
-        this.addAction("flaggreen",this.actionFlagGreen,this);
-        this.addAction("flagorange",this.actionFlagOrange,this);
-        this.addAction("flagpurple",this.actionFlagPurple,this);
-        this.addAction("flagblack",this.actionFlagBlack,this);
-        this.addAction("flaggray",this.actionFlagGray,this);
-        this.addAction("flagwhite",this.actionFlagWhite,this);
-        this.addAction("flagbrown",this.actionFlagBrown,this);
-        this.addAction("flagazure",this.actionFlagAzure,this);
-        this.addAction("flagpink",this.actionFlagPink,this);
-        this.addAction("flagcomplete",this.actionFlagComplete,this);
-        this.addAction("addnote",this.actionAddNote,this);
-        this.addAction("clear",this.actionClear,this,'');
-		*/
+		
+        me.addAction("flagred",{ handler: me.actionFlagRed, scope: me });
+        me.addAction("flagblue",{ handler: me.actionFlagBlue, scope: me });
+        me.addAction("flagyellow",{ handler: me.actionFlagYellow, scope: me });
+        me.addAction("flaggreen",{ handler: me.actionFlagGreen, scope: me });
+        me.addAction("flagorange",{ handler: me.actionFlagOrange, scope: me });
+        me.addAction("flagpurple",{ handler: me.actionFlagPurple, scope: me });
+        me.addAction("flagblack",{ handler: me.actionFlagBlack, scope: me });
+        me.addAction("flaggray",{ handler: me.actionFlagGray, scope: me });
+        me.addAction("flagwhite",{ handler: me.actionFlagWhite, scope: me });
+        me.addAction("flagbrown",{ handler: me.actionFlagBrown, scope: me });
+        me.addAction("flagazure",{ handler: me.actionFlagAzure, scope: me });
+        me.addAction("flagpink",{ handler: me.actionFlagPink, scope: me });
+        me.addAction("flagcomplete",{ handler: me.actionFlagComplete, scope: me });
+        me.addAction("addnote",{ handler: me.actionAddNote, scope: me });
+        me.addAction("clear",{ handler: me.actionClear, scope: me, iconCls: '' });
+		
 	   
         me.addAction("markseen",{ handler: me.actionMarkSeen, scope: me });
         me.addAction("markunseen",{ handler: me.actionMarkUnseen, scope: me });
@@ -370,27 +367,87 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("delete",{ handler: me.actionDelete, scope: me, iconCls: 'wt-icon-delete-xs' });
         me.addAction("movetofolder",{ handler: me.actionMoveToFolder, scope: me });
         me.addAction("check",{ handler: me.actionCheck, scope: me, iconCls: 'wt-icon-refresh-xs' });
-        me.addAction("advsearch", { handler: me.actionAdvancedSearch, scope: me });
+        me.addAction("advsearch", { handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv-xs' });
+		me.addAction("filterrow",{ handler: me.actionFilterRow, scope: me, enableToggle: true });
 		
-		/*
-        this.addAction("emptyfolder",this.actionEmptyFolder,this);
-        this.addAction("deletefolder",this.actionDeleteFolder,this);
-        this.addAction("renamefolder",this.actionRenameFolder,this);
-        this.addAction("newfolder",this.actionNewFolder,this);
-        this.addAction("newmainfolder",this.actionNewMainFolder,this);
-        this.addAction("movetomain",this.actionMoveToMainFolder,this,'');
-        this.addAction("refresh",this.actionFoldersRefresh,this,'');
-        this.aScan=this.addAction("scanfolder",null,null,'');
-        this.addAction("markseenfolder",this.actionFolderMarkSeen,this,'');
-        this.addAction("savemail",this.actionSaveMail,this,'iconSave');
-        this.addAction("downloadmails",this.actionDownloadMails,this,'iconSave');
-        this.addDependencyAction("viewheaders","webtop/js/mail/ViewSource.js","actionViewHeaders",this);
-        this.addDependencyAction("viewsource","webtop/js/mail/ViewSource.js","actionViewSource",this);
+		
+        me.addAction("emptyfolder",{ handler: me.actionEmptyFolder, scope: me });
+        me.addAction("deletefolder",{ handler: me.actionDeleteFolder, scope: me });
+        me.addAction("renamefolder",{ handler: me.actionRenameFolder, scope: me });
+        me.addAction("newfolder",{ handler: me.actionNewFolder, scope: me });
+        me.addAction("newmainfolder",{ handler: me.actionNewMainFolder, scope: me });
+        me.addAction("movetomain",{ handler: me.actionMoveToMainFolder, scope: me, iconsCls: '' });
+        me.addAction("refresh",{ handler: me.actionFoldersRefresh, scope: me, iconsCls: '' });
+        //me.aScan=this.addAction("scanfolder",null,null,'');
+        me.addAction("markseenfolder",{ handler: me.actionFolderMarkSeen, scope: me, iconsCls: '' });
+        me.addAction("savemail",{ handler: me.actionSaveMail, scope: me, iconsCls: 'wt-icon-save-xs' });
+        me.addAction("downloadmails",{ handler: me.actionDownloadMails, scope: me, iconsCls: 'wt-icon-save-xs' });
+        /*me.addDependencyAction("viewheaders","webtop/js/mail/ViewSource.js","actionViewHeaders",this);
+        me.addDependencyAction("viewsource","webtop/js/mail/ViewSource.js","actionViewSource",this);
         if (WT.docmgt) this.aDocMgt=this.addDependencyAction("docmgt","webtop/js/mail/DocMgt.js","actionDocMgt",this,'iconDocMgt');
         if (WT.docmgtwt) this.aDocMgtwt=this.addDependencyAction("docmgtwt","webtop/js/mail/DocMgt.js","actionDocMgtWt",this,'iconDocMgt');
 		*/
 	},
 
+	initCxm: function() {
+		var me = this;
+		me.addRef('cxmGrid', Ext.create({
+			xtype: 'menu',
+			items: [
+                me.getAction('open'),
+                me.getAction('opennew'),
+                me.getAction('print'),
+                '-',
+                me.getAction('reply'),
+                me.getAction('replyall'),
+                me.getAction('forward'),
+                me.getAction('forwardeml'),
+                me.getAction('special'),
+                new Ext.menu.Item({
+                    text: me.res("menu-complete"),
+                    menu: Ext.create({
+						xtype: 'menu',
+                        items: [
+                          me.getAction('flagred'),
+                          me.getAction('flagorange'),
+                          me.getAction('flaggreen'),
+                          me.getAction('flagblue'),
+                          me.getAction('flagpurple'),
+                          me.getAction('flagyellow'),
+                          me.getAction('flagblack'),
+                          me.getAction('flaggray'),
+                          me.getAction('flagwhite'),
+                          me.getAction('flagbrown'),
+                          me.getAction('flagazure'),
+                          me.getAction('flagpink'),
+                          '-',
+                          me.getAction('flagcomplete'),
+                          //me.getAction('addmemo'),
+                          me.getAction('clear')
+                        ]
+                    })
+                }),
+                me.getAction('addnote'),
+                me.getAction('markseen'),
+                me.getAction('markunseen'),
+                //me.getAction('categories'),
+                '-',
+                //me.getAction('findall'),
+                //me.getAction('createrule'),
+                me.getAction('spam'),
+                '-',
+                me.getAction('delete'),
+                '-',
+                me.getAction('movetofolder'),
+                me.getAction('savemail')
+			],
+			listeners: {
+				beforeshow: function() {
+				}
+			}
+		}));
+	},
+	
 	resizeColumns: function() {
 		var me=this;
         if (!me.resizedcols) {
@@ -480,8 +537,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 	},
 	
+    actionDelete: function() {
+        var g=this.getContextMessageGrid();
+        g.actionDelete();
+	},	
+	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();
-    }
+    },
+	
+	getContextMessageGrid: function() {
+		var md=WT.getContextMenuData();
+		return (md && md.grid) ? md.grid : this.messagesPanel.folderList;
+	}
 	
 });
