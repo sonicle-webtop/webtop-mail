@@ -9564,6 +9564,10 @@ public class Service extends BaseService {
 				identities.add(new JsIdentity(item));
 			}
 			
+			co.put("folderDrafts", us.getFolderDrafts());
+			co.put("folderSent", us.getFolderSent());
+			co.put("folderSpam", us.getFolderSpam());
+			co.put("folderTrash", us.getFolderTrash());
 			co.put("pageRows", us.getPageRows());
 			co.put("identities", identities);
 			co.put("messageViewRegion",us.getMessageViewRegion());

@@ -824,6 +824,36 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         }
 		*/
     },
+	
+    actionDelete: function() {
+		if (this.storeLoading) {
+			return;
+		}
+		
+		var me=this,
+			curfolder=me.currentFolder,
+			sm=me.getSelectionModel(),
+			selection=sm.getSelection(),
+			ftrash=me.mys.getFolderTrash();
+		
+		//TODO: old ixAutoSelect -> oldSelection
+        me.getView().oldSelection=selection;
+		
+        if (ftrash) {
+			if (!me.multifolder && curfolder===ftrash) {
+				//TODO: warning
+				WT.confirm(me.res('sureprompt'),function(bid) {
+					if (bid==='yes') {
+						me.deleteSelection(curfolder,selection);
+					}
+					me.focus();
+				},me);
+          } else {
+              me.moveSelection(curfolder,ftrash,selection);
+              me.focus();
+          }
+        }
+    },	
 
 	changePageSize: function() {
 		var me=this;
@@ -852,11 +882,91 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});
 	},
 	
+    moveSelection: function(from,to,selection) {
+        var me=this,
+			data=me.sel2ids(selection);
+        me.moveMessages(from,to,data)
+    },
+	
+    moveMessages: function(from,to,data) {
+		var me=this;
+		
+        me.fireEvent('moving',me);
+		
+		//TODO: old ixAutoSelect -> oldSelection
+        me.getView().oldSelection=me.getSelectionModel().getSelection();
+		
+        me.operateMessages("MoveMessages",from,to,data);
+    },	
+	
+    operateMessages: function(action,from,to,data,customer_id,causal_id) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, action, {
+			params: {
+                fromfolder: from,
+                ids: data.ids,
+                tofolder: to,
+                multifolder: data.multifolder,
+                customer_id:customer_id,
+                causal_id:causal_id
+			},
+			callback: function(success,json) {
+				if (json.result) {
+                  var d=data,
+				      //TODO: update imap tree?
+                      //tree=me.mys.imapTree,
+					  seen=d.seen,
+                      s=me.store;
+				  //TODO: update imap tree?
+                  //var nt=tree.getNodeById(options.tofolder);
+                  if (!d.multifolder) {
+                      s.reload();
+                  } else {
+					  //TODO: update imap tree?
+                      /*var ids=d.ids;
+                      var dorel=false;
+                      var remove=(action!="CopyMessages");
+                      for(var i=0;i<ids.length;++i) {
+                        var r=s.getById(ids[i]);
+                        if (!seen[i]) {
+                          var fid=r.get("folder");
+                          if (fid==this.currentFolder) dorel=true;
+                          else {
+                              var n=this.ms.imapTree.getNodeById(fid);
+                              if (n) {
+                                  var a=n.attributes;
+                                  jd={ unread: a.unread-1, millis: o.millis };
+                                  this.ms.updateUnreads(fid,jd,false);
+                              }
+                          }
+                        }
+                        if (remove) s.remove(r);
+                      }*/
+                      //if (dorel) {
+                          s.reload();
+                      //}
+                  }
+				  //TODO: update imap tree?
+				  /*
+                  var info=nt.attributes;
+                  info.millis=o.millis;
+                  for(var i=0;i<seen.length;++i) {
+                      if (!seen[i]) info.unread++;
+                  }
+                  this.ms.updateUnreads(options.tofolder,info,false);
+				  */
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});							
+    },
+	
     setFlag: function(flagstring) {
-        var g=this,
-			selection=g.getSelection(),
-			folder=g.currentFolder,
-			data=g.sel2ids(selection),
+        var me=this,
+			selection=me.getSelection(),
+			folder=me.currentFolder,
+			data=me.sel2ids(selection),
 			ids=data.ids,
 			params={
                 flag: flagstring,
@@ -867,12 +977,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
         if (data.folders) params.folders=data.folders;
 		
-		WT.ajaxReq(g.mys.ID, 'FlagMessages', {
+		WT.ajaxReq(me.mys.ID, 'FlagMessages', {
 			params: params,
 			callback: function(success,json) {
               if (json.result) {
                   var dorel=false,
-					  fl=g.mys.messagesPanel.folderList,
+					  fl=me.mys.messagesPanel.folderList,
 					  fs=flagstring;
 			  
                   if (fs==='clear') fs="";
@@ -880,8 +990,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   Ext.each(
                     selection,
                     function(r,index,allItems) {
-                      if (g!==fl) {
-                        var ff=(g.multifolder?r.get("folder"):g.currentFolder);
+                      if (me!==fl) {
+                        var ff=(me.multifolder?r.get("folder"):me.currentFolder);
                         if (ff===fl.currentFolder) dorel=true;
                       }
 					  if (fs==="special") {

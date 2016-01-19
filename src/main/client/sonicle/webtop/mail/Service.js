@@ -233,15 +233,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
         //this.imapTree.on('nodedragover',this.draggingOver,this);
         //this.imapTree.on('beforenodedrop',this.dropping,this);
 		//TODO: tree on load
-        this.imapTree.on('load',function(t,r,s,o,n) {
+        me.imapTree.on('load',function(t,r,s,o,n) {
             //if (n.id=='imaproot') {
             //    setTimeout(this.actionCheck.createDelegate(this),1000);
             //    WT.addServerEventListener("recents",this);
             //    //setTimeout(this.checkFolders.createDelegate(this),1000);
             //}
 			if (n.id==='root') {
-				this.imapTree.getSelectionModel().select(0);
-				this.showFolder(this.folderInbox);
+				me.imapTree.getSelectionModel().select(0);
+				me.showFolder(me.folderInbox);
 			}
         },this);
 		//TODO: context menu
@@ -538,8 +538,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
     actionDelete: function() {
-        var g=this.getContextMessageGrid();
-        g.actionDelete();
+        this.getContextMessageGrid().actionDelete();
 	},	
 	
     reloadFolderList: function() {
@@ -549,6 +548,22 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	getContextMessageGrid: function() {
 		var md=WT.getContextMenuData();
 		return (md && md.grid) ? md.grid : this.messagesPanel.folderList;
+	},
+	
+	getFolderDrafts: function() {
+		return this.getOption('folderDrafts');
+	},
+	
+	getFolderSent: function() {
+		return this.getOption('folderSent');
+	},
+	
+	getFolderSpam: function() {
+		return this.getOption('folderSpam');
+	},
+	
+	getFolderTrash: function() {
+		return this.getOption('folderTrash');
 	}
 	
 });
