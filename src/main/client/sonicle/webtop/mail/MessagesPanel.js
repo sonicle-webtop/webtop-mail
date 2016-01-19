@@ -88,12 +88,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		
         var msgSelModel=me.folderList.getSelectionModel();
         msgSelModel.on('selectionchange',me.selectionChanged,me);
-		//TODO: grid events
-        //msgSelModel.on('selectiondelete',me.actionDelete,me);
+		me.folderList.on('keydelete',me.actionDelete,me);
+		me.folderList.on('deleting',me.clearMessageView,me);
+		me.folderList.on('moving',me.clearMessageView,me);
+		//TODO: grid events        
         //me.folderList.on('rowdblclick',me.rowDblClicked,me);
         //me.folderList.on('cellclick',me.cellClicked,me);
-        //me.folderList.on('deleting',me.clearMessageView,me);
-        //me.folderList.on('moving',me.clearMessageView,me);
+
         if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
 		if (me.saveColumnVisibility) {
 			me.folderList.on('columnhide', function(ct,col) { me.columnHiddenChange(ct,col,true); });
@@ -509,12 +510,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         this.folderList.store.reload();
     },
     
-/*    
-    actionDelete: function(sm,e) {
-        if (e.ctrlKey) this.ms.actionSpam();
-		else this.folderList.actionDelete(e);
+
+    actionDelete: function(g,e,sm) {
+		var me=this;
+        if (e.ctrlKey) me.mys.actionSpam();
+		else me.folderList.actionDelete(e);
     },
-    
+/*    
     rowDblClicked: function(grid, rowIndex, e) {
         this.fireEvent('gridrowdblclick',grid,rowIndex,e);
     },

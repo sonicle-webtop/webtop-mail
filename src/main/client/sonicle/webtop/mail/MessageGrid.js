@@ -289,6 +289,26 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	key2flag: ['clear','red','orange','green','blue','purple','yellow','black','gray','white'],
 	createPagingToolbar: false,
 	
+    /**
+     * @event keydelete
+     * Fired after a DELETE key is pressed on the grid
+     * @param {Sonicle.webtop.mail.MessageGrid} this
+	 * @param {Ext.event.Event} ev The original event
+     * @param {Ext.data.Model[]} selected The selected records
+     */	
+	
+    /**
+     * @event deleting
+     * Fired when deleting messages
+     * @param {Sonicle.webtop.mail.MessageGrid} this
+     */	
+	
+    /**
+     * @event moving
+     * Fired when moving messages
+     * @param {Sonicle.webtop.mail.MessageGrid} this
+     */	
+	
 	listeners: {
 		render: function(g,opts) {
 			var me=this,
@@ -303,10 +323,17 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							}
 						},
 						{
-							key: 45, //INS
+							key: Ext.event.Event.INSERT,
 							shift: false,
 							fn: function(key,ev) {
 								me.setFlag("complete");
+							}
+						},
+						{
+							key: Ext.event.Event.DELETE,
+							shift: false,
+							fn: function(key,ev) {
+								me.fireEvent('keydelete', me, ev, me.getSelection());
 							}
 						}
 					]
@@ -317,12 +344,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     initComponent: function() {
         var me=this;
 
-		//TODO: add events
-        /*me.addEvents(
-            'deleting',
-            'moving'
-        );*/
-		
         /*this.view=Ext.create('Sonicle.webtop.mail.MessageListView',{
 			loadMask: { msg: WT.res("loading") },
 			grid: this
@@ -881,6 +902,34 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			value: me.getPageSize()
 		});
 	},
+	
+    deleteSelection: function(from,selection) {
+        var me=this,data=me.sel2ids(selection);
+        me.deleteMessages(from,data)
+    },
+    
+    deleteMessages: function(folder,data) {
+		var me=this;
+        me.fireEvent('deleting',me);
+		WT.ajaxReq(me.mys.ID, 'DeleteMessages', {
+			params: {
+                fromfolder: folder,
+                ids: data.ids,
+                multifolder: data.multifolder
+			},
+			callback: function(success,json) {
+              if (json.result) {
+                  me.store.reload();
+              } else {
+                  WT.error(json.text);
+              }
+			}
+		});					
+    },
+
+    deleteMessage: function(folder,idmessage) {
+		this.deleteMessages(folder, { ids: [ idmessage ], multifolder: false });
+    },	
 	
     moveSelection: function(from,to,selection) {
         var me=this,
