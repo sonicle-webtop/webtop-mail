@@ -235,6 +235,9 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
 
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
+	requires: [
+		'Sonicle.selection.RowModel'
+	],
 	
 	pageSize: 25,	
     frame: false,
@@ -251,7 +254,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			cls1=unread?'wtmail-row-unread':'';
 			cls2=tdy?'wtmail-row-today':'';
 			return cls1+' '+cls2;
-		}
+		},
+		plugins: {
+            ptype: 'gridviewdragdrop',
+			dragGroup: 'mail',
+			enabledDrop: false,
+            //dragText: 'Drag and drop to reorganize'
+        }		
 	},
 	
 	features: [
@@ -275,7 +284,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	selModel: { 
 		mode: 'MULTI'
 	},
-	selType: 'rowmodel',
+	selType: 'sorowmodel',
 	multiColumnSort: true,
 	
 	
@@ -875,6 +884,23 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
           }
         }
     },	
+	
+    actionSpam: function() {
+		if (this.storeLoading) {
+			return;
+		}
+		
+		var me=this,
+			curfolder=me.currentFolder,
+			sm=me.getSelectionModel(),
+			selection=sm.getSelection(),
+			fspam=me.mys.getFolderSpam();
+	
+        if (fspam) {
+			me.moveSelection(curfolder,fspam,selection);
+			me.focus();
+        }
+    },
 
 	changePageSize: function() {
 		var me=this;
@@ -920,7 +946,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			callback: function(success,json) {
 				if (json.result) {
 					//me.store.reload();
-					me.store.remove(data.selection);
+					//me.store.remove(data.selection);
+					me.getSelectionModel().removeSelection(data.selection);
 				} else {
 					WT.error(json.text);
 				}
@@ -936,7 +963,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         var me=this, 
             data=me.sel2ids(selection);
 		data.cb=function(result) {
-			if (result) me.store.remove(data.selection);
+			if (result) {
+				//me.store.remove(data.selection);
+				me.getSelectionModel().removeSelection(data.selection);
+			}
 		}
         me.moveMessages(from,to,data)
     },

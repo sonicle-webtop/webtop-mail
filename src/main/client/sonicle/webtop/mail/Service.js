@@ -137,11 +137,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			autoScroll: true,
 
 			//enableDD: true, ???
-			//ddGroup: 'mail', ???
 			//ddScroll: true, ???
-			//containerScroll: true, ???
 			viewConfig: {
-				plugins: { ptype: 'treeviewdragdrop' },
+				plugins: { 
+					ptype: 'treeviewdragdrop' ,
+					dropGroup: 'mail',
+					//enabledDrag: false,
+					containerScroll: true,
+					dropZone: {
+						
+					}
+				},
 				markDirty: false
 			},
 
@@ -539,6 +545,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
     actionDelete: function() {
         this.getContextMessageGrid().actionDelete();
+	},	
+	
+    actionSpam: function() {
+        this.getContextMessageGrid().actionSpam();
 	},	
 	
     reloadFolderList: function() {
