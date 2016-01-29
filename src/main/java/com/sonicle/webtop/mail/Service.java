@@ -6775,7 +6775,13 @@ public class Service extends BaseService {
 			//wts.setServiceStoreEntry(getName(), "filter"+psearchfield, ppattern.toUpperCase(),ppattern);
 		}
 		
-		int start = 0;
+		int start=Integer.parseInt(pstart);
+		int limit=Integer.parseInt(plimit);
+		if (ppage!=null) {
+			int page=Integer.parseInt(ppage);
+			start=(page-1)*limit;
+		}
+		/*int start = 0;
 		int limit = mprofile.getNumMsgList();
 		if (ppage==null) {
 			if (pstart != null) {
@@ -6789,7 +6795,7 @@ public class Service extends BaseService {
 			int nxpage=mprofile.getNumMsgList();
 			start=(page-1)*nxpage;
 			limit=nxpage;
-		}
+		}*/
 		
 		String sout = "{\n";
 		Folder folder = null;
@@ -6827,8 +6833,9 @@ public class Service extends BaseService {
 			}
 			String tname = Thread.currentThread().getName();			
 			long millis = System.currentTimeMillis();
-			mlt.lastRequest = millis;
+            Message xmsgs[]=null;
 			synchronized (mlt.lock) {
+				mlt.lastRequest = millis;
 				if (!mlt.started) {
 					Thread t = new Thread(mlt);
 					t.start();
@@ -6841,15 +6848,15 @@ public class Service extends BaseService {
 					}
 					mlThreads.remove(key);
 				}
-			}
-            Message xmsgs[]=null;
-            if (mlt.lastRequest==millis) {
-				xmsgs=mlt.msgs;
+				if (mlt.lastRequest==millis) {
+					xmsgs=mlt.msgs;
+				}
 			}
 			
             if (xmsgs!=null) {
-                int totalCount=xmsgs.length;
-                sout+="total:"+totalCount+",\nstart:"+start+",\nlimit:"+limit+",\nmessages: [\n";
+                int total=xmsgs.length;
+                //sout+="total:"+total+",\nstart:"+start+",\nlimit:"+limit+",\nmessages: [\n";
+				sout+="total:"+total+",\nmessages: [\n";
 
 				/*               if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
 				 //mcache.fetch(msgs,FolderCache.flagsFP,0,start);
@@ -6862,17 +6869,18 @@ public class Service extends BaseService {
 				 }
 				 }*/
 				int max = start + limit;
-                if (max>totalCount) max=totalCount;
+                if (max>total) max=total;
 				ArrayList<Long> autoeditList=new ArrayList<Long>();
 				
 				Folder fsent=getFolder(mprofile.getFolderSent());
 				boolean openedsent=false;
 				//Fetch others for these messages
+				System.out.println("start="+start+",limit="+limit+",max="+max);
 				mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
 				for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 					int ix = start + i;
 					int nx = start + ni;
-                    if (nx>=totalCount) break;
+                    if (nx>=total) break;
 					if (ix >= max) break;
 
 					SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];

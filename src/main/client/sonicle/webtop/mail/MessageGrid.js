@@ -236,7 +236,7 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
 	
-	pageSize: 25,	
+	pageSize: 50,	
     frame: false,
     //iconCls:'icon-grid',
 	//TODO: ddGroup
@@ -356,12 +356,43 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			smodel='Sonicle.webtop.mail.MultiFolderMessagesModel';
         }
 
-        me.store = Ext.create('Ext.data.JsonStore',{
-            proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
+        me.store = Ext.create('Ext.data.BufferedStore',{
+            //proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
+			proxy: {
+				// load using script tags for cross domain, if the data in on the same domain as
+				// this page, an Ajax proxy would be better
+				type: 'ajax',
+				url: WTF.requestBaseUrl(),
+				extraParams: {
+					action: me.reloadAction,
+					service: me.mys.ID
+				},
+				reader: {
+					rootProperty: 'messages',
+					totalProperty: 'total'
+				}
+				// sends single sort as multi parameter
+				//simpleSortMode: true,
+				// sends single group as multi parameter
+				//simpleGroupMode: true,
+
+				// This particular service cannot sort on more than one field, so grouping === sorting.
+				//groupParam: 'sort',
+				//groupDirectionParam: 'dir'
+			},
 			model: smodel,
 			pageSize: me.pageSize,
-			groupField: 'sdate',
-			groupDir: 'DESC',
+			//leadingBufferZone: 100,
+			
+			//groupField: 'gdate',
+			//groupDir: 'DESC'
+		});
+        //me.store = Ext.create('Ext.data.JsonStore',{
+        //    proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
+		//	model: smodel,
+		//	pageSize: me.pageSize,
+		//	groupField: 'sdate',
+		//	groupDir: 'DESC',
 			
 			//TODO: sort
             /*sortInfo: {field: (this.multifolder?'folderdesc':'date'), direction: (this.multifolder?'ASC':'DESC')},
@@ -403,9 +434,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             },*/
             //grid: me,
 			//ms: me.ms
-        });
+        //});
 
-		if (me.createPagingToolbar) {
+/*		if (me.createPagingToolbar) {
 			var tb=me.ptoolbar=Ext.create('Ext.toolbar.Paging',{
 				store: me.store,
 				displayInfo: true,
@@ -428,7 +459,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}));
 			me.tbar=me.ptoolbar;
 		}
-		
+*/		
 		//TODO: FilterRow
 /*        if (!Ext.isIE) {
             var filterRow = new WT.GridFilterRow({
@@ -485,6 +516,17 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             };
         }
         me.priIndex=n;
+/*		dcols[n++]={
+			text : 'row',
+			dataIndex: 'rowIndex',
+			width: 50,
+			sortable : false,
+			// other config you need..
+			renderer : function(value, metaData, record, rowIndex)
+			{
+				return rowIndex+1;
+			}
+		};*/
         dcols[n++]={//Priority
             header: WTF.imageTag(me.mys.ID,'headerpriority_16.gif',7,16),
             width: 35,
@@ -743,10 +785,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		/*
         me.selModel=new WT.GridSelectionModel({singleSelect:false});
 		*/
-        me.store.on('load',me.loaded,me);
         me.store.on('beforeload',function() {
 			me.storeLoading=true;
 		});
+		//me.store.on('load',me.loaded,me);
         me.store.on('load',function(s,r,o) {
 			me.storeLoading=false;
 			me.loaded(s,r,o);
@@ -761,9 +803,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 
 	setPageSize: function(size) {
-		var me=this;
+/*		var me=this;
 		me.pageSize=size;
-		if (me.store) me.store.setPageSize(size);
+		if (me.store) me.store.setPageSize(size);*/
 	},
 	
 	getPageSize: function() {
@@ -799,7 +841,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
     loaded: function(s,r,o) {
-		var me=this,
+/*		var me=this,
 			meta=me.store.proxy.reader.metaData,
 			ci2=meta.colsInfo2;
         if (ci2) {
@@ -818,7 +860,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             }
 			me.updatingColumns = false;
 			me.resumeEvents();
-        }
+        }*/
 		//TODO: autoedit
 		/*
         var ae=meta.autoedit;

@@ -575,13 +575,13 @@ public class FolderCache {
             if (checkUnreads) refreshUnreadMessagesCount();
         } catch(MessagingException exc) {
             Service.logger.debug("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            Service.logger.error("Exception",exc);
+            Service.logger.error("Exception on folder "+foldername,exc);
         }
         try {
             if (checkRecents) refreshRecentMessagesCount();
         } catch(MessagingException exc) {
             Service.logger.debug("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            Service.logger.error("Exception",exc);
+            Service.logger.error("Exception on folder "+foldername,exc);
         }
         return (unread>0);
     }
