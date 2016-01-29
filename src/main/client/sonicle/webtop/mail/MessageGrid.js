@@ -235,6 +235,9 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
 
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
+	requires: [
+		'Sonicle.selection.RowModel'
+	],
 	
 	pageSize: 50,	
     frame: false,
@@ -251,7 +254,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			cls1=unread?'wtmail-row-unread':'';
 			cls2=tdy?'wtmail-row-today':'';
 			return cls1+' '+cls2;
-		}
+		},
+		plugins: {
+            ptype: 'gridviewdragdrop',
+			dragGroup: 'mail',
+			enabledDrop: false,
+            //dragText: 'Drag and drop to reorganize'
+        }		
 	},
 	
 	features: [
@@ -275,7 +284,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	selModel: { 
 		mode: 'MULTI'
 	},
-	selType: 'rowmodel',
+	selType: 'sorowmodel',
 	multiColumnSort: true,
 	
 	
@@ -917,6 +926,23 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
           }
         }
     },	
+	
+    actionSpam: function() {
+		if (this.storeLoading) {
+			return;
+		}
+		
+		var me=this,
+			curfolder=me.currentFolder,
+			sm=me.getSelectionModel(),
+			selection=sm.getSelection(),
+			fspam=me.mys.getFolderSpam();
+	
+        if (fspam) {
+			me.moveSelection(curfolder,fspam,selection);
+			me.focus();
+        }
+    },
 
 	changePageSize: function() {
 		var me=this;
@@ -952,19 +978,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     
     deleteMessages: function(folder,data) {
 		var me=this;
-        me.fireEvent('deleting',me);
+			me.fireEvent('deleting',me);
 		WT.ajaxReq(me.mys.ID, 'DeleteMessages', {
 			params: {
-                fromfolder: folder,
-                ids: data.ids,
-                multifolder: data.multifolder
+				fromfolder: folder,
+				ids: data.ids,
+				multifolder: data.multifolder
 			},
 			callback: function(success,json) {
-              if (json.result) {
-                  me.store.reload();
-              } else {
-                  WT.error(json.text);
-              }
+				if (json.result) {
+					//me.store.reload();
+					//me.store.remove(data.selection);
+					me.getSelectionModel().removeSelection(data.selection);
+				} else {
+					WT.error(json.text);
+				}
 			}
 		});					
     },
@@ -974,8 +1002,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },	
 	
     moveSelection: function(from,to,selection) {
-        var me=this,
-			data=me.sel2ids(selection);
+        var me=this, 
+            data=me.sel2ids(selection);
+		data.cb=function(result) {
+			if (result) {
+				//me.store.remove(data.selection);
+				me.getSelectionModel().removeSelection(data.selection);
+			}
+		}
         me.moveMessages(from,to,data)
     },
 	
@@ -990,63 +1024,67 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.operateMessages("MoveMessages",from,to,data);
     },	
 	
-    operateMessages: function(action,from,to,data,customer_id,causal_id) {
+	//TODO: customer,causal
+	//operateMessages: function(action,from,to,data,customer_id,causal_id) {
+    operateMessages: function(action,from,to,data) {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, action, {
 			params: {
-                fromfolder: from,
-                ids: data.ids,
-                tofolder: to,
-                multifolder: data.multifolder,
-                customer_id:customer_id,
-                causal_id:causal_id
+				//customer_id:customer_id,
+				//causal_id:causal_id
+				fromfolder: from,
+				ids: data.ids,
+				tofolder: to,
+				multifolder: data.multifolder
 			},
 			callback: function(success,json) {
 				if (json.result) {
-                  var d=data,
-				      //TODO: update imap tree?
-                      //tree=me.mys.imapTree,
-					  seen=d.seen,
-                      s=me.store;
-				  //TODO: update imap tree?
-                  //var nt=tree.getNodeById(options.tofolder);
-                  if (!d.multifolder) {
-                      s.reload();
-                  } else {
-					  //TODO: update imap tree?
-                      /*var ids=d.ids;
-                      var dorel=false;
-                      var remove=(action!="CopyMessages");
-                      for(var i=0;i<ids.length;++i) {
-                        var r=s.getById(ids[i]);
-                        if (!seen[i]) {
-                          var fid=r.get("folder");
-                          if (fid==this.currentFolder) dorel=true;
-                          else {
-                              var n=this.ms.imapTree.getNodeById(fid);
-                              if (n) {
-                                  var a=n.attributes;
-                                  jd={ unread: a.unread-1, millis: o.millis };
-                                  this.ms.updateUnreads(fid,jd,false);
-                              }
-                          }
-                        }
-                        if (remove) s.remove(r);
-                      }*/
-                      //if (dorel) {
-                          s.reload();
-                      //}
-                  }
-				  //TODO: update imap tree?
-				  /*
-                  var info=nt.attributes;
-                  info.millis=o.millis;
-                  for(var i=0;i<seen.length;++i) {
-                      if (!seen[i]) info.unread++;
-                  }
-                  this.ms.updateUnreads(options.tofolder,info,false);
-				  */
+					var d=data,
+					//TODO: update imap tree?
+					//tree=me.mys.imapTree,
+					seen=d.seen,
+						s=me.store;
+					//TODO: update imap tree?
+					//var nt=tree.getNodeById(options.tofolder);
+					if (!d.multifolder) {
+						//s.reload();
+					} else {
+											//TODO: update imap tree?
+						/*var ids=d.ids;
+						var dorel=false;
+						var remove=(action!="CopyMessages");
+						for(var i=0;i<ids.length;++i) {
+						  var r=s.getById(ids[i]);
+						  if (!seen[i]) {
+							var fid=r.get("folder");
+							if (fid==this.currentFolder) dorel=true;
+							else {
+								var n=this.ms.imapTree.getNodeById(fid);
+								if (n) {
+									var a=n.attributes;
+									jd={ unread: a.unread-1, millis: o.millis };
+									this.ms.updateUnreads(fid,jd,false);
+								}
+							}
+						  }
+						  if (remove) s.remove(r);
+						}*/
+						//if (dorel) {
+							//s.reload();
+						//}
+					}
+					Ext.callback(data.cb,data.scope||me,[true]);
+					//TODO: update imap tree?
+					/*
+					var info=nt.attributes;
+					info.millis=o.millis;
+					for(var i=0;i<seen.length;++i) {
+						if (!seen[i]) info.unread++;
+					}
+					this.ms.updateUnreads(options.tofolder,info,false);
+					*/
 				} else {
+					Ext.callback(data.cb,data.scope||me,[false]);
 					WT.error(json.text);
 				}
 			}
@@ -1128,7 +1166,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
               
           }
         );
-        return {ids: ids, seen: seen, multifolder: mf};
+        return {selection: selection, ids: ids, seen: seen, multifolder: mf};
     },
     
     res: function(s) {

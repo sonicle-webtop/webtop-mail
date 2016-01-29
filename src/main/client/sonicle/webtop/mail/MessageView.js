@@ -100,7 +100,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		me.callParent(arguments);
 		me.proxy=Ext.create(
 				"Ext.data.proxy.Ajax",
-				WTF.proxyReader(me.mys.ID,'GetMessage','message',{ model: 'Sonicle.webtop.mail.MessageViewModel' })
+				WTF.proxyReader(me.mys.ID,'GetMessage','message',{ 
+					model: 'Sonicle.webtop.mail.MessageViewModel',
+					listeners: {
+						exception: Ext.emptyFn
+					}
+				})
 		);
         /*me.proxy=Ext.create("Ext.data.proxy.Ajax",{
             url:WTF.requestBaseUrl(),
