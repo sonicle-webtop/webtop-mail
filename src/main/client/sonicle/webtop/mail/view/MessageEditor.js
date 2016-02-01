@@ -35,10 +35,10 @@
 Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	extend: 'WT.sdk.ModelView',
 	requires: [
-		'Sonicle.webtop.mail.model.MessageModel',
 		'Sonicle.webtop.core.ux.RecipientsGrid',
-		'Sonicle.webtop.core.ux.SuggestCombo',
-		'Sonicle.form.field.HTMLEditor'
+		'Sonicle.webtop.core.ux.field.SuggestCombo',
+		'Sonicle.form.field.HTMLEditor',
+		'Sonicle.webtop.mail.model.MessageModel'
 	],
 	
 	dockableConfig: {

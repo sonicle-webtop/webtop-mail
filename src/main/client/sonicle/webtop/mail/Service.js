@@ -551,6 +551,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
         this.getContextMessageGrid().actionSpam();
 	},	
 	
+    actionMarkSeen: function() {
+        this.getContextMessageGrid().actionMarkSeen();
+    },
+    
+    actionMarkUnseen: function() {
+        this.getContextMessageGrid().actionMarkUnseen();
+    },
+	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();
     },

@@ -36,7 +36,6 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
 	extend: 'Ext.view.Table',
     
 	isTree: false,
-    ixAutoSelect: -1,
     //enableGroupingMenu: false,
 	
 	initComponent: function() {
@@ -236,6 +235,7 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
 	requires: [
+		'Sonicle.data.BufferedStore',
 		'Sonicle.selection.RowModel'
 	],
 	
@@ -247,6 +247,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     //enableDragDrop: true,
     enableColumnMove: true,
 	viewConfig: {
+		//preserveScrollOnRefresh: true,
 		navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
 		getRowClass: function(record, index, rowParams, store ) {
 			var unread=record.get('unread');
@@ -365,7 +366,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			smodel='Sonicle.webtop.mail.MultiFolderMessagesModel';
         }
 
-        me.store = Ext.create('Ext.data.BufferedStore',{
+        me.store = Ext.create('Sonicle.data.BufferedStore',{
             //proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
 			proxy: {
 				// load using script tags for cross domain, if the data in on the same domain as
@@ -390,7 +391,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				//groupDirectionParam: 'dir'
 			},
 			model: smodel,
-			pageSize: me.pageSize,
+			pageSize: me.pageSize
 			//leadingBufferZone: 100,
 			
 			//groupField: 'gdate',
@@ -908,9 +909,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			selection=sm.getSelection(),
 			ftrash=me.mys.getFolderTrash();
 		
-		//TODO: old ixAutoSelect -> oldSelection
-        me.getView().oldSelection=selection;
-		
         if (ftrash) {
 			if (!me.multifolder && curfolder===ftrash) {
 				//TODO: warning
@@ -944,6 +942,34 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         }
     },
 
+    actionMarkSeen: function() {
+		if (this.storeLoading) {
+			return;
+		}
+		
+		var me=this,
+			curfolder=me.currentFolder,
+			sm=me.getSelectionModel(),
+			selection=sm.getSelection();
+
+		me.markSeenSelection(curfolder,selection);
+		me.focus();
+    },
+	
+    actionMarkUnseen: function() {
+		if (this.storeLoading) {
+			return;
+		}
+		
+		var me=this,
+			curfolder=me.currentFolder,
+			sm=me.getSelectionModel(),
+			selection=sm.getSelection();
+
+		me.markUnseenSelection(curfolder,selection);
+		me.focus();
+    },
+	
 	changePageSize: function() {
 		var me=this;
 		WT.prompt(me.res("changepagesizetext"),{
@@ -1018,9 +1044,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
         me.fireEvent('moving',me);
 		
-		//TODO: old ixAutoSelect -> oldSelection
-        me.getView().oldSelection=me.getSelectionModel().getSelection();
-		
         me.operateMessages("MoveMessages",from,to,data);
     },	
 	
@@ -1091,6 +1114,113 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});							
     },
 	
+    markSeenSelection: function(from,selection) {
+        var me=this, 
+            data=me.sel2ids(selection);
+	
+		data.cb=function(result) {
+			if (result) {
+                Ext.each(
+                    selection,
+                    function(r,index,allItems) {
+						this.updateRecordSeen(r);
+					},this
+				);
+			}
+		}
+        me.markSeenMessages(from,data);
+    },
+
+    markSeenMessages: function(folder,data) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, "SeenMessages", {
+			params: {
+				fromfolder: folder,
+				ids: data.ids,
+				multifolder: data.multifolder
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					Ext.callback(data.cb,data.scope||me,[true]);
+				} else {
+					Ext.callback(data.cb,data.scope||me,[false]);
+					WT.error(json.text);
+				}
+			}
+		});
+	},
+	
+	updateRecordSeenAtIndex: function(ix) {
+		if (ix>=0) {
+			var r=this.store.getAt(ix);
+			this.updateRecordSeen(r);
+		}
+	},
+	
+	updateRecordSeen: function(r) {
+		if (r && r.get("unread")) {
+			r.set("unread",false);
+			var st=r.get("status");
+			if (st==="unread"||st==="new") r.set("status","read");
+			//TODO: not needed with websocket?
+			//var o=s.getProxy().getReader().rawData;
+			//o.millis=millis;
+			//o.unread--;
+			//me.mys.updateUnreads(me.currentFolder,o,false);
+		}
+	},
+	
+    markUnseenSelection: function(from,selection) {
+        var me=this, 
+            data=me.sel2ids(selection);
+	
+		data.cb=function(result) {
+			if (result) {
+                Ext.each(
+                    selection,
+                    function(r,index,allItems) {
+						this.updateRecordUnseen(r);
+					},this
+				);
+			}
+		}
+        me.markUnseenMessages(from,data);
+    },
+
+    markUnseenMessages: function(folder,data) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, "UnseenMessages", {
+			params: {
+				fromfolder: folder,
+				ids: data.ids,
+				multifolder: data.multifolder
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					Ext.callback(data.cb,data.scope||me,[true]);
+				} else {
+					Ext.callback(data.cb,data.scope||me,[false]);
+					WT.error(json.text);
+				}
+			}
+		});
+	},
+	
+	updateRecordUnseenAtIndex: function(ix) {
+		if (ix>=0) {
+			var r=this.store.getAt(ix);
+			this.updateRecordUnseen(r);
+		}
+	},
+	
+	updateRecordUnseen: function(r) {
+		if (r && r.get("unread")) {
+			r.set("unread",true);
+			var st=r.get("status");
+			if (st==="read") r.set("status","unread");
+		}
+	},
+	
     setFlag: function(flagstring) {
         var me=this,
 			selection=me.getSelection(),
@@ -1149,6 +1279,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
 		
     },
+	
+	indexOfMessage: function(id) {
+		return this.store.findExact('idmessage',id);
+	},
 
     sel2ids: function(selection) {
         var me=this,

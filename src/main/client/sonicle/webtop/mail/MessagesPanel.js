@@ -35,6 +35,7 @@
 Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	extend: 'Ext.panel.Panel',
 	requires: [
+		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.webtop.mail.MessageView',
 		'Sonicle.webtop.mail.MessageGrid',
 		'Sonicle.webtop.mail.store.QuickFilter'
@@ -385,23 +386,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
    
     //TODO verify rawData and getById
     messageViewed: function(idmessage,millis) {
-		var me=this,
-			s=me.folderList.store,
-			ix=s.findExact('idmessage',idmessage);
+		var fl=this.folderList;
         
-		if (ix>=0) {
-			var r=s.getAt(ix);
-			if (r.get("unread")) {
-				r.set("unread",false);
-				var st=r.get("status");
-				if (st==="unread"||st==="new") r.set("status","read");
-				//TODO: not needed with websocket?
-				//var o=s.getProxy().getReader().rawData;
-				//o.millis=millis;
-				//o.unread--;
-				//me.mys.updateUnreads(me.currentFolder,o,false);
-			}
-		}
+		fl.updateRecordSeenAtIndex(fl.indexOfMessage(idmessage));
     },
    
     filterAction: function(tf,e) {
