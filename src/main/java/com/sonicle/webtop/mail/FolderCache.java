@@ -597,7 +597,7 @@ public class FolderCache {
                 }
             }
         }
-		if (oldhuc!=hasUnreadChildren)
+		//if (oldhuc!=hasUnreadChildren)
 			sendUnreadChangedMessage();
         if (hasUnreadChildren) {
             FolderCache fcparent=parent;
