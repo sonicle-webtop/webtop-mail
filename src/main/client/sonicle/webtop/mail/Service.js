@@ -345,7 +345,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("replyall",{ handler: me.actionReplyAll, scope: me });
         me.addAction("forward",{ handler: me.actionForward, scope: me });
         me.addAction("forwardeml",{ handler: me.actionForwardEml, scope: me });
-		me.addAction("special",{ handler: me.actionSpecialEml, scope: me });
+		me.addAction("special",{ handler: me.actionSpecial, scope: me });
         me.addAction("filters", { handler: me.actionFilters, scope: me, iconCls: 'wt-icon-filter-xs' });
         me.addAction("multisearch", { handler: me.actionMultiSearch, scope: me, iconCls: 'wt-icon-search-multi-xs' });
 		
@@ -544,26 +544,42 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
     actionDelete: function() {
-        this.getContextMessageGrid().actionDelete();
+        this.getCtxGrid().actionDelete();
 	},	
 	
     actionSpam: function() {
-        this.getContextMessageGrid().actionSpam();
+        this.getCtxGrid().actionSpam();
 	},	
 	
     actionMarkSeen: function() {
-        this.getContextMessageGrid().actionMarkSeen();
+        this.getCtxGrid().actionMarkSeen();
     },
     
     actionMarkUnseen: function() {
-        this.getContextMessageGrid().actionMarkUnseen();
+        this.getCtxGrid().actionMarkUnseen();
     },
+	
+    actionSpecial: function() { this.getCtxGrid().setFlag("special");},
+    actionFlagRed: function() { this.getCtxGrid().setFlag("red");},
+    actionFlagBlue: function() { this.getCtxGrid().setFlag("blue");},
+    actionFlagYellow: function() { this.getCtxGrid().setFlag("yellow");},
+    actionFlagGreen: function() { this.getCtxGrid().setFlag("green");},
+    actionFlagOrange: function() { this.getCtxGrid().setFlag("orange");},
+    actionFlagPurple: function() { this.getCtxGrid().setFlag("purple");},
+    actionFlagBlack: function() { this.getCtxGrid().setFlag("black");},
+    actionFlagGray: function() { this.getCtxGrid().setFlag("gray");},
+    actionFlagWhite: function() { this.getCtxGrid().setFlag("white");},
+    actionFlagBrown: function() { this.getCtxGrid().setFlag("brown");},
+    actionFlagAzure: function() { this.getCtxGrid().setFlag("azure");},
+    actionFlagPink: function() { this.getCtxGrid().setFlag("pink");},
+    actionFlagComplete: function() { this.getCtxGrid().setFlag("complete");},
+    actionClear: function() { this.getCtxGrid().setFlag("clear");},	
 	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();
     },
 	
-	getContextMessageGrid: function() {
+	getCtxGrid: function() {
 		var md=WT.getContextMenuData();
 		return (md && md.grid) ? md.grid : this.messagesPanel.folderList;
 	},
