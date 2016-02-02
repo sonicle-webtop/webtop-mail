@@ -943,32 +943,24 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 
     actionMarkSeen: function() {
-		if (this.storeLoading) {
-			return;
-		}
-		
-		var me=this,
-			curfolder=me.currentFolder,
-			sm=me.getSelectionModel(),
-			selection=sm.getSelection();
-
-		me.markSeenSelection(curfolder,selection);
-		me.focus();
+		this.actionMarkSeenState(true);
     },
 	
     actionMarkUnseen: function() {
-		if (this.storeLoading) {
-			return;
-		}
-		
-		var me=this,
-			curfolder=me.currentFolder,
-			sm=me.getSelectionModel(),
-			selection=sm.getSelection();
-
-		me.markUnseenSelection(curfolder,selection);
-		me.focus();
+		this.actionMarkSeenState(false);
     },
+	
+	actionMarkSeenState: function(seen) {
+		if (this.storeLoading) return;
+		
+		var me=this;
+		me.markSelectionSeenState(
+			me.currentFolder,
+			me.getSelectionModel().getSelection(),
+			seen
+		);
+		me.focus();
+	},
 	
 	changePageSize: function() {
 		var me=this;
@@ -1061,6 +1053,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				multifolder: data.multifolder
 			},
 			callback: function(success,json) {
+				Ext.callback(data.cb,data.scope||me,[json.result]);
 				if (json.result) {
 					var d=data,
 					//TODO: update imap tree?
@@ -1096,7 +1089,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							//s.reload();
 						//}
 					}
-					Ext.callback(data.cb,data.scope||me,[true]);
 					//TODO: update imap tree?
 					/*
 					var info=nt.attributes;
@@ -1107,14 +1099,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					this.ms.updateUnreads(options.tofolder,info,false);
 					*/
 				} else {
-					Ext.callback(data.cb,data.scope||me,[false]);
 					WT.error(json.text);
 				}
 			}
 		});							
     },
 	
-    markSeenSelection: function(from,selection) {
+    markSelectionSeenState: function(from,selection,seen) {
         var me=this, 
             data=me.sel2ids(selection);
 	
@@ -1123,101 +1114,51 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                 Ext.each(
                     selection,
                     function(r,index,allItems) {
-						this.updateRecordSeen(r);
+						this.updateRecordSeenState(r,seen);
 					},this
 				);
 			}
 		}
-        me.markSeenMessages(from,data);
+        me.markMessagesSeenState(from,data,seen);
     },
 
-    markSeenMessages: function(folder,data) {
+    markMessagesSeenState: function(folder,data,seen) {
 		var me=this;
-		WT.ajaxReq(me.mys.ID, "SeenMessages", {
+		WT.ajaxReq(me.mys.ID, seen?"SeenMessages":"UnseenMessages", {
 			params: {
 				fromfolder: folder,
 				ids: data.ids,
 				multifolder: data.multifolder
 			},
 			callback: function(success,json) {
-				if (json.result) {
-					Ext.callback(data.cb,data.scope||me,[true]);
-				} else {
-					Ext.callback(data.cb,data.scope||me,[false]);
+				Ext.callback(data.cb,data.scope||me,[json.result]);
+				if (!json.result)
 					WT.error(json.text);
-				}
 			}
 		});
 	},
 	
-	updateRecordSeenAtIndex: function(ix) {
+	updateRecordSeenStateAtIndex: function(ix,seen) {
 		if (ix>=0) {
 			var r=this.store.getAt(ix);
-			this.updateRecordSeen(r);
+			this.updateRecordSeenState(r,seen);
 		}
 	},
 	
-	updateRecordSeen: function(r) {
-		if (r && r.get("unread")) {
-			r.set("unread",false);
+	updateRecordSeenState: function(r,seen) {
+		if (r && r.get("unread")===seen) {
+			r.set("unread",!seen);
 			var st=r.get("status");
-			if (st==="unread"||st==="new") r.set("status","read");
+			if (seen) {
+				if (st==="unread"||st==="new") r.set("status","read");
+			} else {
+				if (st==="read") r.set("status","unread");
+			}
 			//TODO: not needed with websocket?
 			//var o=s.getProxy().getReader().rawData;
 			//o.millis=millis;
 			//o.unread--;
 			//me.mys.updateUnreads(me.currentFolder,o,false);
-		}
-	},
-	
-    markUnseenSelection: function(from,selection) {
-        var me=this, 
-            data=me.sel2ids(selection);
-	
-		data.cb=function(result) {
-			if (result) {
-                Ext.each(
-                    selection,
-                    function(r,index,allItems) {
-						this.updateRecordUnseen(r);
-					},this
-				);
-			}
-		}
-        me.markUnseenMessages(from,data);
-    },
-
-    markUnseenMessages: function(folder,data) {
-		var me=this;
-		WT.ajaxReq(me.mys.ID, "UnseenMessages", {
-			params: {
-				fromfolder: folder,
-				ids: data.ids,
-				multifolder: data.multifolder
-			},
-			callback: function(success,json) {
-				if (json.result) {
-					Ext.callback(data.cb,data.scope||me,[true]);
-				} else {
-					Ext.callback(data.cb,data.scope||me,[false]);
-					WT.error(json.text);
-				}
-			}
-		});
-	},
-	
-	updateRecordUnseenAtIndex: function(ix) {
-		if (ix>=0) {
-			var r=this.store.getAt(ix);
-			this.updateRecordUnseen(r);
-		}
-	},
-	
-	updateRecordUnseen: function(r) {
-		if (r && r.get("unread")) {
-			r.set("unread",true);
-			var st=r.get("status");
-			if (st==="read") r.set("status","unread");
 		}
 	},
 	

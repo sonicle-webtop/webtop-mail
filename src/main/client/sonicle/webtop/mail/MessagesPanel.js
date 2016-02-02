@@ -388,7 +388,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     messageViewed: function(idmessage,millis) {
 		var fl=this.folderList;
         
-		fl.updateRecordSeenAtIndex(fl.indexOfMessage(idmessage));
+		fl.updateRecordSeenStateAtIndex(fl.indexOfMessage(idmessage),true);
     },
    
     filterAction: function(tf,e) {
