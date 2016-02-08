@@ -148,7 +148,38 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						
 					}
 				},
-				markDirty: false
+				markDirty: false,
+				
+				//workaround for bug in handleNodeDrop function of Ext.tree.ViewDropZone
+				listeners: {
+					beforedrop: function(node, data, overModel, dropPosition, dropHandlers) {
+						var record = data.records[0];
+
+						if (record.store !== this.getStore()) {
+							// Record from the grid. Take a copy ourselves
+							// because the built-in copying messes it up.
+							var copy = {children: []};
+
+
+							Ext.iterate(record.data,function(field,value){
+
+								copy[field] = value;
+							})
+
+							data.records = [copy];
+
+							// Uncomment this if you want to remove the record from the grid
+							//record.store.remove(record);
+						}
+
+						return true;
+					},
+					drop: function(node, data, overModel, dropPos, opts) {
+
+						this.droppedRecords = undefined;
+					}
+				}			
+				
 			},
 
 			//
