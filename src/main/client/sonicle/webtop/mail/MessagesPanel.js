@@ -200,7 +200,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             ]
 		});
 
-        me.messageViewContainer=Ext.create('WT.ux.Panel',{
+        me.messageViewContainer=Ext.create({
+			xtype: 'wtpanel',
             region: me.viewRegion,
             cls: 'wtmail-mv-container',
             layout: 'fit',
