@@ -259,9 +259,27 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		plugins: {
             ptype: 'gridviewdragdrop',
 			dragGroup: 'mail',
-			enabledDrop: false
+			enabledDrop: false,
             //dragText: 'Drag and drop to reorganize'
-			
+			dragZone: {
+				getDragData: function(e) {
+					var view = this.view,
+						item = e.getTarget(view.getItemSelector());
+
+					if (item) {
+						return {
+							copy: e.ctrlKey, //view.copy || (view.allowCopy && e.ctrlKey),
+							event: e,
+							view: view,
+							grid: view.grid,
+							ddel: this.ddel,
+							item: item,
+							records: view.getSelectionModel().getSelection(),
+							fromPosition: Ext.fly(item).getXY()
+						};
+					}					
+				}
+			}
 			
         },
 		
