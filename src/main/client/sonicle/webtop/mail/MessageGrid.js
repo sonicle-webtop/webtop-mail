@@ -236,7 +236,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
 	requires: [
 		'Sonicle.data.BufferedStore',
-		'Sonicle.selection.RowModel'
+		'Sonicle.selection.RowModel',
+		'Sonicle.webtop.mail.plugin.MessageGridViewDragDrop'
 	],
 	
 	pageSize: 50,	
@@ -257,31 +258,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			return cls1+' '+cls2;
 		},
 		plugins: {
-            ptype: 'gridviewdragdrop',
-			dragGroup: 'mail',
-			enabledDrop: false,
-            //dragText: 'Drag and drop to reorganize'
-			dragZone: {
-				getDragData: function(e) {
-					var view = this.view,
-						item = e.getTarget(view.getItemSelector());
-
-					if (item) {
-						return {
-							copy: e.ctrlKey, //view.copy || (view.allowCopy && e.ctrlKey),
-							event: e,
-							view: view,
-							grid: view.grid,
-							ddel: this.ddel,
-							item: item,
-							records: view.getSelectionModel().getSelection(),
-							fromPosition: Ext.fly(item).getXY()
-						};
-					}					
-				}
-			}
-			
-        },
+            ptype: 'messagegridviewdragdrop'
+        }
 		
 	},
 	
@@ -1052,6 +1030,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.moveMessages(from,to,data)
     },
 	
+    copySelection: function(from,to,selection) {
+        var me=this, 
+            data=me.sel2ids(selection);
+        me.copyMessages(from,to,data)
+    },
+	
     moveMessages: function(from,to,data) {
 		var me=this;
 		
@@ -1060,6 +1044,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.operateMessages("MoveMessages",from,to,data);
     },	
 	
+    copyMessages: function(from,to,data) {
+        this.operateMessages("CopyMessages",from,to,data);
+    },
+
 	//TODO: customer,causal
 	//operateMessages: function(action,from,to,data,customer_id,causal_id) {
     operateMessages: function(action,from,to,data) {

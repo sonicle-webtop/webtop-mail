@@ -58,63 +58,64 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	extend: 'WT.sdk.Service',
 	requires: [
 		'Sonicle.webtop.mail.MessagesPanel',
-		'Sonicle.webtop.mail.view.MessageEditor'
+		'Sonicle.webtop.mail.view.MessageEditor',
+		'Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop'
 	],
 
-        imapTree: null,
-        toolbar: null,
-        messagesPanel: null,
-        
-        treeEditor: null,
-        baloon: null,
-        actionNode: null,
-        sna: null,
-    
-        treeMenu: null,
-        btreeMenu: null,
+	imapTree: null,
+	toolbar: null,
+	messagesPanel: null,
 
-        ctxgrid: null,
-    
+	treeEditor: null,
+	baloon: null,
+	actionNode: null,
+	sna: null,
 
-        mtfwin: null,
-    
-        //util vars
-        aPrint: null,
-        aMove: null,
-        aDelete: null,
-        aSpam: null,
-        aReply: null,
-        aReplayAll: null,
-        aForward: null,
-        aForwardEml: null,
-		aSeen: null,
-		aUnseen: null,
-        aDocMgt: null,
-        aDocMgtwt: null,
-        newmsgid: 0,
+	treeMenu: null,
+	btreeMenu: null,
 
-        //settings
-        mailcard: null,
-        maxattachsize: null,
-        fontface: null,
-        fontsize: null,
-		differentDefaultFolder: null,
-		folderInbox: 'INBOX',
-        folderTrash: null,
-        folderSpam: null,
-        folderSent: null,
-        folderDrafts: null,
-        uncheckedFolders: {},
-        specialFolders: {},
-        identities: null,
-        separator: '.',
-        askreceipt: false,
+	ctxgrid: null,
 
-        //state vars
-        currentFolder: null,
 
-        //default protocol ports
-        protPorts: null,
+	mtfwin: null,
+
+	//util vars
+	aPrint: null,
+	aMove: null,
+	aDelete: null,
+	aSpam: null,
+	aReply: null,
+	aReplayAll: null,
+	aForward: null,
+	aForwardEml: null,
+	aSeen: null,
+	aUnseen: null,
+	aDocMgt: null,
+	aDocMgtwt: null,
+	newmsgid: 0,
+
+	//settings
+	mailcard: null,
+	maxattachsize: null,
+	fontface: null,
+	fontsize: null,
+	differentDefaultFolder: null,
+	folderInbox: 'INBOX',
+	folderTrash: null,
+	folderSpam: null,
+	folderSent: null,
+	folderDrafts: null,
+	uncheckedFolders: {},
+	specialFolders: {},
+	identities: null,
+	separator: '.',
+	askreceipt: false,
+
+	//state vars
+	currentFolder: null,
+
+	//default protocol ports
+	protPorts: null,
     
 
 	init: function() {
@@ -136,72 +137,26 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//title: "Email", //this.title,
 			autoScroll: true,
 
-			//enableDD: true, ???
-			//ddScroll: true, ???
 			viewConfig: {
 				plugins: { 
-					ptype: 'treeviewdragdrop' ,
-					ddGroup: 'mail',
-					//enabledDrag: false,
-					containerScroll: true,
-					dropZone: {
-						handleNodeDrop : function(data, targetNode, position) {
-							me.imapTreeNodeDrop(this,data,targetNode,position);
-						}
+					ptype: 'imaptreeviewdragdrop' ,
+					moveFolder: function(src,dst) {
+						me.moveFolder(src,dst);
+					},
+					moveMessages: function(data,dst) {
+						data.view.grid.moveSelection(data.srcFolder,dst,data.records);
+					},
+					copyMessages: function(data,dst) {
+						data.view.grid.copySelection(data.srcFolder,dst,data.records);
 					}
 				},
 				markDirty: false,
 				
-				//workaround for bug in handleNodeDrop function of Ext.tree.ViewDropZone
-				/*listeners: {
-					beforedrop: function(node, data, overModel, dropPosition, dropHandlers) {
-						var record = data.records[0];
-
-						if (record.store !== this.getStore()) {
-							// Record from the grid. Take a copy ourselves
-							// because the built-in copying messes it up.
-							var copy = {children: []};
-
-
-							Ext.iterate(record.data,function(field,value){
-
-								copy[field] = value;
-							})
-
-							data.records = [copy];
-
-							// Uncomment this if you want to remove the record from the grid
-							//record.store.remove(record);
-						}
-
-						return true;
-					},
-					drop: function(node, data, overModel, dropPos, opts) {
-
-						this.droppedRecords = undefined;
-					}
-				}*/			
-				
 			},
 
-			//
-			//loader: new Ext.tree.TreeLoader({
-			//    dataUrl:'ServiceRequest',
-			//    baseParams: {service: 'mail', action:'GetImapTree'},
-			//    baseAttrs: {uiProvider: WT.ImapTreeNodeUI}
-			//}),
 			store: Ext.create('Ext.data.TreeStore', {
 				model: 'Sonicle.webtop.mail.ImapTreeModel',
 				proxy: WTF.proxy(me.ID,'GetImapTree'),
-/*				proxy: {
-					type: 'ajax',
-					reader: 'json',
-					url: 'ServiceRequest',
-					extraParams: {
-						service: me.ID,
-						action: 'GetImapTree'
-					}
-				},*/
 				root: {
 					text: 'Imap Tree',
 					expanded: true
@@ -209,16 +164,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				rootVisible: false
 			}),
 
-
-			//root: new Ext.tree.AsyncTreeNode({
-			//    text: 'Imap Tree',
-			//    draggable:false,
-			//    id:'imaproot'
-			//}),
-
-//                root: {
-//                    text: 'Imap Tree',
-//                },
 
 			columns: {
 				items: [
@@ -633,25 +578,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return this.getOption('folderTrash');
 	},
 	
-    imapTreeNodeDrop : function(dz, data, targetNode, position) {
-        var g=data.grid;
-        if (g) {
-            if (!data.copy) {
-                g.moveSelection(g.currentFolder, targetNode.id, data.records);
-            } else {
-                g.copySelection(g.currentFolder, targetNode.id, data.records,g);
-            }
-            //e.cancel=false;
-            return true;
-        } else {
-            //e.dropStatus=true;
-            this.moveFolder(data.records[0].id,targetNode.id);
-        }
-    },
-	
     moveFolder: function(src,dst) {
 		var me=this;
-		WT.ajaxReq(me.mys.ID, 'MoveFolder', {
+		WT.ajaxReq(me.ID, 'MoveFolder', {
 			params: {
 				folder: src,
 				to: dst
@@ -659,6 +588,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			callback: function(success,json) {
 				if (json.result) {
 					var tr=me.imapTree,
+						v=tr.getView(),
 						s=tr.store,
 						n=s.getById(json.oldid);
 					if (n) n.remove();
@@ -666,32 +596,25 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					//n.mailservice=this;
 					//n.newname=o.newname;
 					//n.newid=o.newid;
-					n.expand(false,function(node) {
-						var newnode=node.findChild("text",node.newname);
-						if (!newnode) {
-							var t=node.getOwnerTree();
-							var l=t.loader;
-							var a=node.attributes;
-							newnode=l.createNode({id:node.newid, text:node.newname, leaf: options.leaf, iconCls: 'iconImapFolder'});
-							var cn=n.childNodes;
-							var before=null;
-							for(var c=0;before==null && c<cn.length;++c) {
-								var cid=cn[c].id;
-								if (me.specialFolders[cid]) continue;
-								if (cid>node.newname) before=cn[c];
+					
+					//TODO: not refreshing on node already expanded!!!
+					if (n.isExpanded()) {
+						v.refreshNode(n);
+					}
+					n.expand(false,function(nodes) {
+						Ext.each(nodes,function(newnode) {
+							if (newnode.getId()===json.newid) {
+								v.setSelection(newnode);
+								me.folderClicked(tr,newnode);
 							}
-							if (before) node.insertBefore(newnode,before);
-							else node.appendChild(newnode);
-						}
-						newnode.select();
-						me.folderClicked(newnode);
+						});
 					});
 				} else {
 					WT.error(json.text);
 				}
 			}
 		});					
-        WT.JsonAjaxRequest({
+/*        WT.JsonAjaxRequest({
           url: "ServiceRequest",
           params: {
               service: "mail",
@@ -708,8 +631,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
             }
           },
           scope: this
-        });
-        return false;
-    },
+        });*/
+    }
 	
 });
