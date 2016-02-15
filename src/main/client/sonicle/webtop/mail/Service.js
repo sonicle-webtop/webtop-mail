@@ -459,7 +459,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
     },*/
 	
 	folderClicked: function(t, r, tr, ix, e, eopts) {
-        var folderid=r.get("id");
+		if (e.target.classList.contains('x-tree-expander')) return;
+        
+		var folderid=r.get("id");
 		this.showFolder(folderid);
 	},
 	
@@ -593,13 +595,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						n=s.getById(json.oldid);
 					if (n) n.remove();
 					n=(json.parent?s.getNodeById(json.parent):s.getRoot());
-					//n.mailservice=this;
-					//n.newname=o.newname;
-					//n.newid=o.newid;
 					
-					//TODO: not refreshing on node already expanded!!!
 					if (n.isExpanded()) {
-						v.refreshNode(n);
+						s.load({ node: n });
 					}
 					n.expand(false,function(nodes) {
 						Ext.each(nodes,function(newnode) {
@@ -614,24 +612,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			}
 		});					
-/*        WT.JsonAjaxRequest({
-          url: "ServiceRequest",
-          params: {
-              service: "mail",
-              action: "MoveFolder",
-              folder: src,
-              to: dst
-          },
-          method: "POST",
-		  options: { leaf: this.imapTree.getNodeById(src).leaf },
-          callback: function(o,options) {
-            if (o.result) {
-            } else {
-              WT.alert(WT.res("error"),o.text);
-            }
-          },
-          scope: this
-        });*/
     }
 	
 });
