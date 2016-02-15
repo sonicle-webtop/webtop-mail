@@ -154,37 +154,28 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}
 			
         });
-		//TODO: grouping
-		/*
-        this.groupCombo=new Ext.form.ComboBox({
-            forceSelection: true,
-            mode: 'local',
-            displayField: 'desc',
-            triggerAction: 'all',
-            selectOnFocus: true,
+        me.groupCombo=Ext.create(WTF.localCombo('id', 'desc', {
             width: 60,
-            editable: false,
-            store: new Ext.data.SimpleStore({
-                fields: ['id','desc'],
-                data: [
-                    ['none',this.res('group-none')],
-                    ['gdate',this.res('column-date')],
-                    ['from',this.res('sender')],
-                    ['to',this.res('to')]
-                ]
-            }),
+			matchFieldWidth: false,
+			listConfig: { width: 100 },
+			store: Ext.create('Sonicle.webtop.mail.store.Group', {
+				autoLoad: true
+			}),
             value: '',
-            valueField: 'id'
-        });
-        this.groupCombo.on('select',function(cb,r,ix) {
-            this.groupChanged(r.get("id"));
-        },this);
-        this.folderList.store.on("metachange",function(s,meta) {
+			tooltip: me.res('group.tip'),
+			plugins: [ 'sofieldtooltip' ],
+			listeners: {
+				select: function(cb,r,eopts) {
+					me.groupChanged(r.get('id'));
+				}
+			}
+        }));
+        me.folderList.store.on("metachange",function(s,meta) {
             var gg=meta.groupField;
-            this.groupCombo.setValue(gg);
-        },this);
+			if (gg==='') gg='none';
+            me.groupCombo.setValue(gg);
+        });
         
-		 */
         me.toolbar=Ext.create('Ext.toolbar.Toolbar',{ 
 			items:[
 				me.bMultiSearch=me.mys._TB("multisearch"),
@@ -193,10 +184,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
                 "-",
 				me.filterCombo,
                 me.filterTextField,
-				me.mys._TB("advsearch")/*,
+				me.mys._TB("advsearch"),
                 "-",
-                this.res("groupby")+":",
-                this.groupCombo*/
+                me.res("groupby")+":",
+                me.groupCombo
             ]
 		});
 
@@ -359,23 +350,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
     },
     
-    groupChanged: function(nv) {
-        WT.JsonAjaxRequest({
-            url: "ServiceRequest",
-            params: {
-                service: 'mail',
-                action: 'GroupChanged',
-                group: nv,
-                folder: this.currentFolder
-            },
-            method: "POST",
-            callback: function(o,options) {
-                this.reloadGrid();
-            },
-            scope: this
-        });
-    },
-    
     archiveSelection: function(from,to,selection) {
         this.folderList.archiveSelection(from,to,selection);
     },
@@ -385,6 +359,23 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     },
     */
    
+    groupChanged: function(nv) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, 'GroupChanged', {
+			params: {
+                group: nv,
+                folder: me.currentFolder
+			},
+			callback: function(success,json) {
+				if (success) {
+					me.reloadGrid();
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+    },
+    
     //TODO verify rawData and getById
     messageViewed: function(idmessage,millis) {
 		var fl=this.folderList;

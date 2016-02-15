@@ -242,10 +242,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	pageSize: 50,	
     frame: false,
-    //iconCls:'icon-grid',
-	//TODO: ddGroup
-    //ddGroup: 'mail',
-    //enableDragDrop: true,
     enableColumnMove: true,
 	viewConfig: {
 		//preserveScrollOnRefresh: true,
@@ -266,7 +262,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	features: [
 		{
 			ftype:'grouping',
-			groupHeaderTpl: Ext.create('Ext.XTemplate',
+			groupHeaderTpl: '{columnName}: {name}'
+			/*groupHeaderTpl: Ext.create('Ext.XTemplate',
 				'{children:this.getHeaderPrefix}',
 				'<span>{children:this.getHeaderString}</span>',
 				{
@@ -278,7 +275,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						return children[0].get("gdate");
 					}
 				}
-			)
+			)*/
 		}
 	],
 	selModel: { 
@@ -396,6 +393,20 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//groupField: 'gdate',
 			//groupDir: 'DESC'
 		});
+        me.store.on("metachange",function(s,meta) {
+			if (meta.groupField && meta.groupField!=='none' && meta.groupField!=='') {
+				s.blockLoad();
+				s.group(null, null);
+				s.group(meta.groupField, meta.sortInfo.direction);
+				s.unblockLoad(false);
+			} else {
+				s.blockLoad();
+				s.group(null, null);
+				s.unblockLoad(false);
+				//s.sort(meta.sortInfo.sortField,meta.sortInfo.direction);
+			}
+        });
+		
         //me.store = Ext.create('Ext.data.JsonStore',{
         //    proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
 		//	model: smodel,

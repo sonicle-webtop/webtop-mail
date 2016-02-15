@@ -132,6 +132,10 @@ public class MailUserSettings extends BaseUserSettings {
 		return getString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),"");
 	}
 	
+	public void setMessageListGroup(String foldername, String group) {
+		setString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),group);
+	}
+	
 	public int getColumnSize(String name) {
 		return getInteger(MessageFormat.format(COLUMN_SIZE,name),100);
 	}
@@ -169,6 +173,10 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public String getMessageListSort(String foldername) {
 		return getString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
+	}
+	
+	public void setMessageListSort(String foldername, String value) {
+		setString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),value);
 	}
 	
 	public boolean isMessageListThreaded(String foldername) {

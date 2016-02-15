@@ -6640,15 +6640,13 @@ public class Service extends BaseService {
 	
 	HashMap<String, MessageListThread> mlThreads = new HashMap<String, MessageListThread>();
 
-	// TODO: groupChanged !!!!
-/*	public void processGroupChanged(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String group=request.getParameter("group");
-	 String folder=request.getParameter("folder");
-	 UserProfile profile=environment.getProfile();
-	 wts.setServiceSetting("mail", "messagelist-group-"+folder,group);
-	 if (!group.equals("")) wts.setServiceSetting("mail", "messagelist-"+folder+"-sort", "date|DESC");
-	 new JsonResult(true,"").printTo(out);
-	 }*/
+	public void processGroupChanged(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String group=request.getParameter("group");
+		String folder=request.getParameter("folder");
+		us.setMessageListGroup(folder, group);
+		if (!group.equals("")) us.setMessageListSort(folder, "date|DESC");
+		new JsonResult(true).printTo(out);
+	}
 	
 	
     public void processSavePageRows(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
