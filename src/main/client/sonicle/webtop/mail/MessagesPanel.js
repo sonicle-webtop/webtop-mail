@@ -437,16 +437,19 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	},
      
 	/*
+	 * TODO: action multi search
+	 **/
+	/*
     actionMultiSearch: function() {
         if (this.bMultiSearch.pressed) this.folderList.showMultiSearch();
         else this.folderList.hideMultiSearch();
-    },
+    },*/
 
     
     
     clearGridSelections: function() {
-        this.folderList.getSelectionModel().clearSelections(true);
-    },*/
+        this.folderList.getSelectionModel().deselectAll();
+    },
     
     reloadFolder: function(folderid,config) {
         this.currentFolder=folderid;

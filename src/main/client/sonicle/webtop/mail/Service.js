@@ -80,7 +80,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	mtfwin: null,
 
 	//util vars
-	aPrint: null,
+/*	aPrint: null,
 	aMove: null,
 	aDelete: null,
 	aSpam: null,
@@ -91,7 +91,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	aSeen: null,
 	aUnseen: null,
 	aDocMgt: null,
-	aDocMgtwt: null,
+	aDocMgtwt: null,*/
 	newmsgid: 0,
 
 	//settings
@@ -100,11 +100,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	fontface: null,
 	fontsize: null,
 	differentDefaultFolder: null,
-	folderInbox: 'INBOX',
+/*	folderInbox: 'INBOX',
 	folderTrash: null,
 	folderSpam: null,
 	folderSent: null,
-	folderDrafts: null,
+	folderDrafts: null,*/
 	uncheckedFolders: {},
 	specialFolders: {},
 	identities: null,
@@ -225,7 +225,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
             //}
 			if (n.id==='root') {
 				me.imapTree.getSelectionModel().select(0);
-				me.showFolder(me.folderInbox);
+				me.showFolder(me.getFolderInbox());
 			}
         },this);
 		//TODO: context menu
@@ -466,23 +466,24 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	showFolder: function(folderid) {
-        var mp=this.messagesPanel;
+        var me=this,
+			mp=me.messagesPanel;
 		//TODO: folder clicked
         //mp.depressFilterRowButton();
-        //mp.clearGridSelections();
-        //mp.clearMessageView();
+        mp.clearGridSelections();
+        mp.clearMessageView();
         //var a=n.attributes;
         var refresh=true; //a.changed?'1':'0';
 		//TODO: stop flash title and baloon hide
-        /*if (folderid==this.folderInbox) {
+        /*if (folderid==this.getFolderInbox()) {
             WT.app.stopFlashTitle();
             if (this.baloon) this.baloon.hide();
         }*/
 		//TODO: disable spam button
-        //this.aSpam.setDisabled((folderid==this.folderSpam));
-        this.currentFolder=folderid;
+        me.setActionDisabled('spam',(folderid===me.getFolderSpam()));
+        me.currentFolder=folderid;
 		//TODO: clear filter textfield
-        //mp.filterTextField.setValue('');
+        mp.filterTextField.setValue('');
 		mp.quickFilterCombo.setValue('any');
         
         mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh});
@@ -562,6 +563,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	getCtxGrid: function() {
 		var md=WT.getContextMenuData();
 		return (md && md.grid) ? md.grid : this.messagesPanel.folderList;
+	},
+	
+	getFolderInbox: function() {
+		return "INBOX";
 	},
 	
 	getFolderDrafts: function() {
