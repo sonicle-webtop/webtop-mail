@@ -908,6 +908,38 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		*/
     },
 	
+    actionOpen: function(rowIndex) {
+        var me=this,
+			recs=(rowIndex>=0)?
+				me.getStore().getAt(rowIndex):
+				me.getSelection();
+        me.openMessages(recs);
+    },
+	
+	openMessages: function(recs) {
+		Ext.each(recs,this.openMessage,this);
+	},
+
+    openMessage: function(r) {
+		var me=this,
+			v=WT.createView(me.mys.ID,'view.DockableMessageView',{
+				viewCfg: {
+					mys: me.mys,
+					model: r
+				}
+			});
+			
+		v.show(false,function() {
+			var me=this,
+				id=r.get('idmessage'),
+				folder=r.get('folder');
+			if (!folder) folder=me.currentFolder;
+			
+			v.getComponent(0).showMessage(folder,id);
+		});
+			
+    },
+
     actionDelete: function() {
 		if (this.storeLoading) {
 			return;
@@ -1263,7 +1295,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         );
         return {selection: selection, ids: ids, seen: seen, multifolder: mf};
     },
-    
+	
     res: function(s) {
         return this.mys.res(s);
     }

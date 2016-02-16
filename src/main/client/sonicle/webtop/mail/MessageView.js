@@ -52,7 +52,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     bodyBorder: false,
     border: false,
     cls: 'wtmail-mv-main',
-    windowed: false,
+    dockable: false,
 	
     //Elements
     tdHeader: null,
@@ -352,8 +352,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				this
 			);*/
 			
-			var wticon=(me.mp.getViewRegion()==='east'?'wt-icon-panel-bottom-xs':'wt-icon-panel-right-xs');
 			if (me.mp) {
+				var wticon=(me.mp.getViewRegion()==='east'?'wt-icon-panel-bottom-xs':'wt-icon-panel-right-xs');
 				me.divSubject.update(
 					"<table class='wtmail-mv-subject-table'><tr>"+
 					"<td>"+me.subject+"</td>"+
@@ -603,7 +603,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             }
 
             var h,w;
-            if (!me.windowed) {
+            if (!me.dockable) {
 				var ct=me.ownerCt;
 				//was -2, changed to -26 to keep space for h scrollbar
                 h=ct.getEl().getHeight()-26;
@@ -1013,7 +1013,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         if (newh<0) newh=0;
         me.divBody.setHeight(newh);
         if (neww>0) {
-            if (me.windowed) neww+=2;
+            if (me.dockable) neww+=2;
             me.divBody.setWidth(neww);
         }
         if (me.iframes) {

@@ -524,6 +524,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 	},
 	
+	actionOpen: function() {
+		this.getCtxGrid().actionOpen();
+	},
+	
     actionDelete: function() {
         this.getCtxGrid().actionDelete();
 	},	
