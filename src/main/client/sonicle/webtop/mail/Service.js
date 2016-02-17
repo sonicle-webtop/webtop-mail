@@ -519,41 +519,29 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 	},
 	
-	actionOpen: function() {
-		this.getCtxGrid().actionOpen();
-	},
+	actionOpen: function() { this.getCtxGrid().actionOpen(); },
+    actionDelete: function() { this.getCtxGrid().actionDelete(); },	
+    actionSpam: function() { this.getCtxGrid().actionSpam(); },	
+    actionMarkSeen: function() { this.getCtxGrid().actionMarkSeen(); },
+    actionMarkUnseen: function() { this.getCtxGrid().actionMarkUnseen(); },
 	
-    actionDelete: function() {
-        this.getCtxGrid().actionDelete();
-	},	
-	
-    actionSpam: function() {
-        this.getCtxGrid().actionSpam();
-	},	
-	
-    actionMarkSeen: function() {
-        this.getCtxGrid().actionMarkSeen();
-    },
-    
-    actionMarkUnseen: function() {
-        this.getCtxGrid().actionMarkUnseen();
-    },
-	
-    actionSpecial: function() { this.getCtxGrid().setFlag("special");},
-    actionFlagRed: function() { this.getCtxGrid().setFlag("red");},
-    actionFlagBlue: function() { this.getCtxGrid().setFlag("blue");},
-    actionFlagYellow: function() { this.getCtxGrid().setFlag("yellow");},
-    actionFlagGreen: function() { this.getCtxGrid().setFlag("green");},
-    actionFlagOrange: function() { this.getCtxGrid().setFlag("orange");},
-    actionFlagPurple: function() { this.getCtxGrid().setFlag("purple");},
-    actionFlagBlack: function() { this.getCtxGrid().setFlag("black");},
-    actionFlagGray: function() { this.getCtxGrid().setFlag("gray");},
-    actionFlagWhite: function() { this.getCtxGrid().setFlag("white");},
-    actionFlagBrown: function() { this.getCtxGrid().setFlag("brown");},
-    actionFlagAzure: function() { this.getCtxGrid().setFlag("azure");},
-    actionFlagPink: function() { this.getCtxGrid().setFlag("pink");},
-    actionFlagComplete: function() { this.getCtxGrid().setFlag("complete");},
-    actionClear: function() { this.getCtxGrid().setFlag("clear");},	
+    actionSpecial: function() { this.getCtxGrid().setFlag("special"); },
+    actionFlagRed: function() { this.getCtxGrid().setFlag("red"); },
+    actionFlagBlue: function() { this.getCtxGrid().setFlag("blue"); },
+    actionFlagYellow: function() { this.getCtxGrid().setFlag("yellow"); },
+    actionFlagGreen: function() { this.getCtxGrid().setFlag("green"); },
+    actionFlagOrange: function() { this.getCtxGrid().setFlag("orange"); },
+    actionFlagPurple: function() { this.getCtxGrid().setFlag("purple"); },
+    actionFlagBlack: function() { this.getCtxGrid().setFlag("black"); },
+    actionFlagGray: function() { this.getCtxGrid().setFlag("gray"); },
+    actionFlagWhite: function() { this.getCtxGrid().setFlag("white"); },
+    actionFlagBrown: function() { this.getCtxGrid().setFlag("brown"); },
+    actionFlagAzure: function() { this.getCtxGrid().setFlag("azure"); },
+    actionFlagPink: function() { this.getCtxGrid().setFlag("pink"); },
+    actionFlagComplete: function() { this.getCtxGrid().setFlag("complete"); },
+    actionClear: function() { this.getCtxGrid().setFlag("clear"); },	
+
+    actionAddNote: function() { this.getCtxGrid().actionAddNote(); },
 	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();

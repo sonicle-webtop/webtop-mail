@@ -7547,34 +7547,18 @@ public class Service extends BaseService {
             long msguid=Long.parseLong(puidmessage);
             String id=getMessageID(mcache.getMessage(msguid));
 			con = getConnection();
-			stmt = con.createStatement();
-			rs = stmt.executeQuery("select text from mailnotes where iddomain='" + profile.getDomainId() + "' and messageid='" + DbUtils.getSQLString(id) + "'");
-			if (rs.next()) {
-				text = rs.getString("text");
+			ONote onote=NoteDAO.getInstance().selectById(con, profile.getDomainId(), id);
+			//stmt = con.createStatement();
+			//rs = stmt.executeQuery("select text from mail.notes where domain_id='" + profile.getDomainId() + "' and message_id='" + DbUtils.getSQLString(id) + "'");
+			if (onote!=null) {
+				text = onote.getText();
 			}
 			result = true;
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			text = exc.getMessage();
 		} finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (con != null) {
-				try {
-					con.close();
-				} catch (Exception exc) {
-				}
-			}
+			DbUtils.closeQuietly(con);
 		}
 		new JsonResult(result, text).printTo(out);
 	}

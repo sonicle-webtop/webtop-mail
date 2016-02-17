@@ -556,7 +556,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
         if (grid.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {
             if (r.get("note")) {
-                me.mys.doAddNote(r.get("idmessage"),me.currentFolder);
+                me.folderList.editNote(r.get("idmessage"),me.currentFolder);
             }
         }
     },    

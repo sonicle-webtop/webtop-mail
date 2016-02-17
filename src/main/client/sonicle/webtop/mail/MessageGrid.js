@@ -1272,6 +1272,59 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
     },
 	
+	actionAddNote: function() {
+		var r=this.getSelectionModel().getSelection()[0];
+	
+		this.editNote(r.get('idmessage'),r.get("folder")||this.currentFolder);
+	},
+	
+    editNote: function(id,folder) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, 'GetMessageNote', {
+			params: {
+                folder: folder,
+                idmessage: id
+			},
+			callback: function(success,json) {
+				if (success) {
+					WT.prompt('',{
+						title: me.res("mailnote"),
+						fn: function(btn,text) {
+							if (btn=='ok') {
+								me.saveNote(folder,id,text);
+							}
+						},
+						scope: me,
+						width: 400,
+						multiline: 200,
+						value: json.message
+					});
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+    },
+    
+    saveNote: function(folder,id,text) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, 'SaveMessageNote', {
+			params: {
+                folder: folder,
+                idmessage: id,
+                text: text
+			},
+			callback: function(success,json) {
+				if (success) {
+					if (folder===me.currentFolder)
+						me.mys.reloadFolderList();
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+    },	
+	
 	indexOfMessage: function(id) {
 		return this.store.findExact('idmessage',id);
 	},
