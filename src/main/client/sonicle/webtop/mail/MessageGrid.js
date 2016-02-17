@@ -925,17 +925,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			v=WT.createView(me.mys.ID,'view.DockableMessageView',{
 				viewCfg: {
 					mys: me.mys,
+					folder: r.get('folder')||me.currentFolder,
+					idmessage: r.get('idmessage'),
+					title: r.get('subject'),
 					model: r
 				}
 			});
 			
 		v.show(false,function() {
-			var me=this,
-				id=r.get('idmessage'),
-				folder=r.get('folder');
-			if (!folder) folder=me.currentFolder;
-			
-			v.getComponent(0).showMessage(folder,id);
+			v.getComponent(0).showMessage();
 		});
 			
     },

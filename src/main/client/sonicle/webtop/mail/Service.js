@@ -248,13 +248,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		me.messagesPanel=mp;
 		me.setMainComponent(me.messagesPanel);
-		//TODO old toolbar
-        //this.toolbar=mp.toolbar;
-		//TODO grid events
-        //mp.on('gridrowdblclick',this.rowDblClicked,this);
-        //mp.on('gridcellclick',this.cellClicked,this);
 		
-		me.onMessage('unread', me.unreadChanged, this);
+        mp.on('gridrowdblclick',me.rowDblClicked,me);
+        mp.on('gridcellclick',me.cellClicked,me);
+		
+		me.onMessage('unread',me.unreadChanged,me);
 
 		me.toolbar=mp.toolbar;
         //var xb1,xb2,xb3,xb4,xb5,xb6,xb7;
@@ -621,6 +619,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			}
 		});					
-    }
+    },
+	
+	isDrafts: function(folder) {
+		return this.imapTree.getNodeById(folder).attributes.isDrafts;
+	}
+	
 	
 });

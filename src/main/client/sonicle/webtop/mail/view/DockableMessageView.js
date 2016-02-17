@@ -44,8 +44,11 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 	full: true,
 	
 	mys: null,
-	model: null,
 	messageView: null,
+	folder: null,
+	idmessage: null,
+	title: null,
+	model: null,
 
 	initComponent: function() {
 		var me = this,
@@ -76,7 +79,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 			]
 		});
 		
-		me.dockableConfig.title=me.model.get('subject');
+		me.dockableConfig.title=me.title;
 		
 		me.callParent(arguments);
 		
@@ -85,9 +88,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 	
 	showMessage: function() {
 		var me=this,
-			mv=me.messageView,
-			id=me.model.get('idmessage'),
-			folder=me.model.get('folder');
+			mv=me.messageView;
 		
 		mv.on('messageviewed',function() {
 			var r=me.model;
@@ -102,7 +103,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 			}
 		});
 		
-		mv._showMessage(folder,id);
+		mv._showMessage(me.folder,me.idmessage);
 	},
 	
 	createActionButton: function(name,handler,scope) {

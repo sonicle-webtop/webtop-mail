@@ -65,15 +65,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		
 		me.callParent(arguments);
 
-		//TODO: addEvents
-		/*
-        this.addEvents(
-            'gridselectionchange',
-            'gridselectiondelete',
-            'gridrowdblclick',
-            'gridcellclick'
-        );*/
-            
         me.folderList=Ext.create('Sonicle.webtop.mail.MessageGrid',{
             region:'center',
 			pageSize: 50,//me.pageSize,
@@ -92,9 +83,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.folderList.on('keydelete',me.actionDelete,me);
 		me.folderList.on('deleting',me.clearMessageView,me);
 		me.folderList.on('moving',me.clearMessageView,me);
-		//TODO: grid events        
-        //me.folderList.on('rowdblclick',me.rowDblClicked,me);
-        //me.folderList.on('cellclick',me.cellClicked,me);
+        me.folderList.on('rowdblclick',me.rowDblClicked,me);
+        me.folderList.on('cellclick',me.cellClicked,me);
 
         if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
 		if (me.saveColumnVisibility) {
@@ -498,15 +488,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         if (e.ctrlKey) me.folderList.actionSpam();
 		else me.folderList.actionDelete(e);
     },
-/*    
-    rowDblClicked: function(grid, rowIndex, e) {
-        this.fireEvent('gridrowdblclick',grid,rowIndex,e);
-    },
-    
-    cellClicked: function(grid, rowIndex, colIndex, e) {
-        this.fireEvent('gridcellclick',grid,rowIndex,colIndex, e);
-    },
-    */
    
     columnResized: function(ct, col, w) {
 		WT.ajaxReq(this.mys.ID, 'SaveColumnSize', {
@@ -565,6 +546,20 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
 	*/
    
+    rowDblClicked: function(grid, r, tr, rowIndex, e, eopts) {
+		//if not multifolder (has no folder data) and is in drafts, edit
+        if (!r.get('folder') && this.mys.isDrafts(this.currentFolder)) grid.editMessage(r);
+        else grid.openMessage(r);
+    },
+    
+    cellClicked: function(grid, td, cellIndex, r, rowIndex, e, eopts) {
+        if (grid.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {
+            if (r.get("note")) {
+                this.mys.doAddNote(r.get("idmessage"),r.get("folder")||this.currentFolder);
+            }
+        }
+    },    
+	
     res: function(name) {
 		return this.mys.res(name);
 	},
