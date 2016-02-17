@@ -249,9 +249,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.messagesPanel=mp;
 		me.setMainComponent(me.messagesPanel);
 		
-        mp.on('gridrowdblclick',me.rowDblClicked,me);
-        mp.on('gridcellclick',me.cellClicked,me);
-		
 		me.onMessage('unread',me.unreadChanged,me);
 
 		me.toolbar=mp.toolbar;
@@ -622,7 +619,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
     },
 	
 	isDrafts: function(folder) {
-		return this.imapTree.getNodeById(folder).attributes.isDrafts;
+		return this.imapTree.getStore().getById(folder).get("isDrafts");
 	}
 	
 	

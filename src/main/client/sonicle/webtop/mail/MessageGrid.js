@@ -922,18 +922,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 
     openMessage: function(r) {
 		var me=this,
-			v=WT.createView(me.mys.ID,'view.DockableMessageView',{
+			win=WT.createView(me.mys.ID,'view.DockableMessageView',{
 				viewCfg: {
 					mys: me.mys,
 					folder: r.get('folder')||me.currentFolder,
 					idmessage: r.get('idmessage'),
 					title: r.get('subject'),
-					model: r
+					model: r,
+					messageGrid: me
 				}
 			});
 			
-		v.show(false,function() {
-			v.getComponent(0).showMessage();
+		win.show(false,function() {
+			win.getView().showMessage();
 		});
 			
     },

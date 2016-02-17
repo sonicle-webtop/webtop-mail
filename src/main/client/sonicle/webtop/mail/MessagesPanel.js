@@ -547,15 +547,16 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	*/
    
     rowDblClicked: function(grid, r, tr, rowIndex, e, eopts) {
-		//if not multifolder (has no folder data) and is in drafts, edit
-        if (!r.get('folder') && this.mys.isDrafts(this.currentFolder)) grid.editMessage(r);
-        else grid.openMessage(r);
+		var me=this;
+        if (this.mys.isDrafts(this.currentFolder)) me.folderList.editMessage(r);
+        else me.folderList.openMessage(r);
     },
     
     cellClicked: function(grid, td, cellIndex, r, rowIndex, e, eopts) {
+		var me=this;
         if (grid.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {
             if (r.get("note")) {
-                this.mys.doAddNote(r.get("idmessage"),r.get("folder")||this.currentFolder);
+                me.mys.doAddNote(r.get("idmessage"),me.currentFolder);
             }
         }
     },    

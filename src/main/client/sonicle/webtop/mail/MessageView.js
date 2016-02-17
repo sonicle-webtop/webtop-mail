@@ -603,13 +603,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             }
 
             var h,w;
-            if (!me.dockable) {
+            //if (!me.dockable) {
 				var ct=me.ownerCt;
 				//was -2, changed to -26 to keep space for h scrollbar
                 h=ct.getEl().getHeight()-26;
                 w=ct.getEl().getWidth();
                 me.viewResized(me,w,h,w,h);
-            }
+            //}
             
             if (me.icalmethod) console.log("ical - method: "+me.icalmethod+" , uid: "+me.icaluid+" , webtopid: "+me.icalwebtopid);
 			

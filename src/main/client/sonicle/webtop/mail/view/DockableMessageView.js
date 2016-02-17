@@ -45,6 +45,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 	
 	mys: null,
 	messageView: null,
+	messageGrid: null,
 	folder: null,
 	idmessage: null,
 	title: null,
@@ -61,20 +62,32 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 		
 		Ext.apply(me, {
 			tbar: [
-				me.createActionButton("print",function() {
+				me.createAction("print",{
+					handler: function() {
 						mv.print();
+					},
+					iconCls: 'wt-icon-print-xs'
 				}),
-				me.createActionButton("delete",function() {
-						mv.mys.deleteMessage(mv.folder,mv.idmessage); mv.window.close();
+				me.createAction("delete",{
+					handler: function() {
+						me.messageGrid.deleteMessage(me.folder,me.idmessage); me.closeView();
+					},
+					iconCls: 'wt-icon-delete-xs'
 				}),
-				me.createActionButton("reply",function() {
-						mv.mys.replyMessage(mv.folder,mv.idmessage,false);
+				me.createAction("reply",{
+					hanlder: function() {
+						me.messageGrid.replyMessage(me.folder,me.idmessage,false);
+					}
 				}),
-				me.createActionButton("replyall",function() {
-						mv.mys.replyMessage(mv.folder,mv.idmessage,true);
+				me.createAction("replyall",{
+					handler: function() {
+						me.messageGrid.replyMessage(me.folder,me.idmessage,true);
+					}
 				}),
-				me.createActionButton("forward",function() {
-						mv.mys.forwardMessage(mv.folder,mv.idmessage);
+				me.createAction("forward",{
+					hanlder: function() {
+						me.messageGrid.forwardMessage(me.folder,me.idmessage);
+					}
 				})
 			]
 		});
@@ -104,20 +117,6 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 		});
 		
 		mv._showMessage(me.folder,me.idmessage);
-	},
-	
-	createActionButton: function(name,handler,scope) {
-		return Ext.create('Ext.button.Button',
-			Ext.apply(this.getAction(name),{
-				handler: handler,
-				scope: scope
-			})
-		);
-	},
-	
-	getAction: function(name) {
-		return this.mys.getAction(name);
-	},
-    
+	}
 	
 });
