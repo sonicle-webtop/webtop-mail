@@ -1325,6 +1325,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
     },	
 	
+	actionSaveMail: function() {
+		var r=this.getSelectionModel().getSelection()[0];
+	
+		this.saveMail(r.get('idmessage'),r.get("folder")||this.currentFolder);
+	},
+	
+	saveMail: function(id,folder) {
+        var params={
+            folder: folder,
+            id: id
+        };
+		
+        var url=WTF.processBinUrl(this.mys.ID,"SaveMail",params);;
+        window.open(url);
+	},
+	
 	indexOfMessage: function(id) {
 		return this.store.findExact('idmessage',id);
 	},

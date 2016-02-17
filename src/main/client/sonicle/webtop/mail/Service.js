@@ -542,6 +542,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
     actionClear: function() { this.getCtxGrid().setFlag("clear"); },	
 
     actionAddNote: function() { this.getCtxGrid().actionAddNote(); },
+    actionSaveMail: function() { this.getCtxGrid().actionSaveMail(); },
 	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();
