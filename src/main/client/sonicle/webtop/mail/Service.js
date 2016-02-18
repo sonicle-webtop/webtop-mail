@@ -301,6 +301,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	
+	gridAction: function(me,actionName,obj) {
+		return function() {
+			var g=me.getCtxGrid(),
+				fname='action'+actionName,
+				fn=g[fname];
+		
+			if (Ext.isFunction(fn)) fn.call(g,obj);
+			else Ext.Error.raise('missing grid action function '+fname);
+		};
+	},
+	
 	initActions: function() {
 		var me = this;
 	
@@ -310,121 +321,136 @@ Ext.define('Sonicle.webtop.mail.Service', {
             this.sna=new Array();
             this.sna[0]=this.addAction("newfax",this.actionNewFax,this);
         }*/
-        me.addAction("open",{ handler: me.actionOpen, scope: me, iconCls: '' });
-        me.addAction("opennew",{ handler: me.actionOpenNew, scope: me, iconCls: '' });
+		
+        me.addAction("open",{ handler: me.gridAction(me,'Open'), iconCls: '' });
+        me.addAction("opennew",{ handler: me.gridAction(me,'OpenNew'), iconCls: '' });
         
-		me.addAction("print",{ handler: me.actionPrint, scope: me, iconCls: 'wt-icon-print-xs' });
-        me.addAction("reply",{ handler: me.actionReply, scope: me });
-        me.addAction("replyall",{ handler: me.actionReplyAll, scope: me });
-        me.addAction("forward",{ handler: me.actionForward, scope: me });
-        me.addAction("forwardeml",{ handler: me.actionForwardEml, scope: me });
-		me.addAction("special",{ handler: me.actionSpecial, scope: me });
-        me.addAction("filters", { handler: me.actionFilters, scope: me, iconCls: 'wt-icon-filter-xs' });
-        me.addAction("multisearch", { handler: me.actionMultiSearch, scope: me, iconCls: 'wt-icon-search-multi-xs' });
+        me.addAction("print",{ handler: me.gridAction(me,'Print'), iconCls: 'wt-icon-print-xs' });
+        me.addAction("reply",{ handler: me.gridAction(me,'Reply') });
+        me.addAction("replyall",{ handler: me.gridAction(me,'ReplyAll') });
+        me.addAction("forward",{ handler: me.gridAction(me,'Forward') });
+        me.addAction("forwardeml",{ handler: me.gridAction(me,'ForwardEml') });
+        me.addAction("filters",{ handler: me.gridAction(me,'Filters'), iconCls: 'wt-icon-filter-xs' });
+        me.addAction("multisearch",{ handler: me.gridAction(me,'MultiSearch'), iconCls: 'wt-icon-search-multi-xs' });
 		
 		
-        me.addAction("flagred",{ handler: me.actionFlagRed, scope: me });
-        me.addAction("flagblue",{ handler: me.actionFlagBlue, scope: me });
-        me.addAction("flagyellow",{ handler: me.actionFlagYellow, scope: me });
-        me.addAction("flaggreen",{ handler: me.actionFlagGreen, scope: me });
-        me.addAction("flagorange",{ handler: me.actionFlagOrange, scope: me });
-        me.addAction("flagpurple",{ handler: me.actionFlagPurple, scope: me });
-        me.addAction("flagblack",{ handler: me.actionFlagBlack, scope: me });
-        me.addAction("flaggray",{ handler: me.actionFlagGray, scope: me });
-        me.addAction("flagwhite",{ handler: me.actionFlagWhite, scope: me });
-        me.addAction("flagbrown",{ handler: me.actionFlagBrown, scope: me });
-        me.addAction("flagazure",{ handler: me.actionFlagAzure, scope: me });
-        me.addAction("flagpink",{ handler: me.actionFlagPink, scope: me });
-        me.addAction("flagcomplete",{ handler: me.actionFlagComplete, scope: me });
-        me.addAction("addnote",{ handler: me.actionAddNote, scope: me });
-        me.addAction("clear",{ handler: me.actionClear, scope: me, iconCls: '' });
+        me.addAction("special",{ handler: me.gridAction(me,'Flag','special') });
+        me.addAction("flagred",{ handler: me.gridAction(me,'Flag','red')});
+        me.addAction("flagblue",{ handler: me.gridAction(me,'Flag','blue')});
+        me.addAction("flagyellow",{ handler: me.gridAction(me,'Flag','yellow')});
+        me.addAction("flaggreen",{ handler: me.gridAction(me,'Flag','green')});
+        me.addAction("flagorange",{ handler: me.gridAction(me,'Flag','orange')});
+        me.addAction("flagpurple",{ handler: me.gridAction(me,'Flag','purple')});
+        me.addAction("flagblack",{ handler: me.gridAction(me,'Flag','black')});
+        me.addAction("flaggray",{ handler: me.gridAction(me,'Flag','gray')});
+        me.addAction("flagwhite",{ handler: me.gridAction(me,'Flag','white')});
+        me.addAction("flagbrown",{ handler: me.gridAction(me,'Flag','brown')});
+        me.addAction("flagazure",{ handler: me.gridAction(me,'Flag','azure')});
+        me.addAction("flagpink",{ handler: me.gridAction(me,'Flag','pink')});
+        me.addAction("flagcomplete",{ handler: me.gridAction(me,'Flag','complete')});
+        me.addAction("clear",{ handler: me.gridAction(me,'Flag','clear'), iconCls: '' });
 		
+        me.addAction("addnote",{ handler: me.gridAction(me,'AddNote') });
 	   
-        me.addAction("markseen",{ handler: me.actionMarkSeen, scope: me });
-        me.addAction("markunseen",{ handler: me.actionMarkUnseen, scope: me });
-        me.addAction("spam",{ handler: me.actionSpam, scope: me, iconCls: 'wt-icon-block-xs' });
-        me.addAction("delete",{ handler: me.actionDelete, scope: me, iconCls: 'wt-icon-delete-xs' });
-        me.addAction("movetofolder",{ handler: me.actionMoveToFolder, scope: me });
-        me.addAction("check",{ handler: me.actionCheck, scope: me, iconCls: 'wt-icon-refresh-xs' });
-        me.addAction("advsearch", { handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv-xs' });
-		me.addAction("filterrow",{ handler: me.actionFilterRow, scope: me, enableToggle: true });
+        me.addAction("markseen",{ handler: me.gridAction(me,'MarkSeen') });
+        me.addAction("markunseen",{ handler: me.gridAction(me,'MarkUnseen') });
+        me.addAction("spam",{ handler: me.gridAction(me,'Spam'), iconCls: 'wt-icon-block-xs' });
+        me.addAction("delete",{ handler: me.gridAction(me,'Delete'), iconCls: 'wt-icon-delete-xs' });
+        me.addAction("movetofolder",{ handler: me.gridAction(me,'MoveToFolder') });
+        me.addAction("check",{ handler: me.gridAction(me,'Check'), iconCls: 'wt-icon-refresh-xs' });
+        me.addAction("advsearch",{ handler: me.gridAction(me,'AdvancedSearch'), iconCls: 'wt-icon-search-adv-xs' });
+        me.addAction("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
 		
-		
-        me.addAction("emptyfolder",{ handler: me.actionEmptyFolder, scope: me });
-        me.addAction("deletefolder",{ handler: me.actionDeleteFolder, scope: me });
-        me.addAction("renamefolder",{ handler: me.actionRenameFolder, scope: me });
-        me.addAction("newfolder",{ handler: me.actionNewFolder, scope: me });
-        me.addAction("newmainfolder",{ handler: me.actionNewMainFolder, scope: me });
-        me.addAction("movetomain",{ handler: me.actionMoveToMainFolder, scope: me, iconsCls: '' });
-        me.addAction("refresh",{ handler: me.actionFoldersRefresh, scope: me, iconsCls: '' });
+        me.addAction("emptyfolder",{ handler: me.gridAction(me,'EmptyFolder') });
+        me.addAction("deletefolder",{ handler: me.gridAction(me,'DeleteFolder') });
+        me.addAction("renamefolder",{ handler: me.gridAction(me,'RenameFolder') });
+        me.addAction("newfolder",{ handler: me.gridAction(me,'NewFolder') });
+        me.addAction("newmainfolder",{ handler: me.gridAction(me,'MoveToMainFolder') });
+        me.addAction("movetomain",{ handler: me.gridAction(me,'MoveToMainFolder'), iconCls: '' });
+        me.addAction("refresh",{ handler: me.gridAction(me,'FoldersRefresh'), iconCls: '' });
+
         //me.aScan=this.addAction("scanfolder",null,null,'');
-        me.addAction("markseenfolder",{ handler: me.actionFolderMarkSeen, scope: me, iconsCls: '' });
-        me.addAction("savemail",{ handler: me.actionSaveMail, scope: me, iconsCls: 'wt-icon-save-xs' });
-        me.addAction("downloadmails",{ handler: me.actionDownloadMails, scope: me, iconsCls: 'wt-icon-save-xs' });
-        /*me.addDependencyAction("viewheaders","webtop/js/mail/ViewSource.js","actionViewHeaders",this);
-        me.addDependencyAction("viewsource","webtop/js/mail/ViewSource.js","actionViewSource",this);
-        if (WT.docmgt) this.aDocMgt=this.addDependencyAction("docmgt","webtop/js/mail/DocMgt.js","actionDocMgt",this,'iconDocMgt');
+        me.addAction("markseenfolder",{ handler: me.gridAction(me,'FolderMarkSeen'), iconCls: '' });
+        me.addAction("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save-xs' });
+        me.addAction("downloadmails",{ handler: me.gridAction(me,'DownloadMails'), iconCls: 'wt-icon-save-xs' });
+        me.addAction("viewheaders",{ handler: me.gridAction(me,'ViewHeaders'), iconCls: '' });
+        me.addAction("viewsource",{ handler: me.gridAction(me,'ViewSource'), iconCls: '' });
+
+        /*if (WT.docmgt) this.aDocMgt=this.addDependencyAction("docmgt","webtop/js/mail/DocMgt.js","actionDocMgt",this,'iconDocMgt');
         if (WT.docmgtwt) this.aDocMgtwt=this.addDependencyAction("docmgtwt","webtop/js/mail/DocMgt.js","actionDocMgtWt",this,'iconDocMgt');
 		*/
 	},
 
 	initCxm: function() {
-		var me = this;
-		me.addRef('cxmGrid', Ext.create({
-			xtype: 'menu',
-			items: [
-                me.getAction('open'),
-                me.getAction('opennew'),
-                me.getAction('print'),
-                '-',
-                me.getAction('reply'),
-                me.getAction('replyall'),
-                me.getAction('forward'),
-                me.getAction('forwardeml'),
-                me.getAction('special'),
-                new Ext.menu.Item({
-                    text: me.res("menu-complete"),
-                    menu: Ext.create({
-						xtype: 'menu',
-                        items: [
-                          me.getAction('flagred'),
-                          me.getAction('flagorange'),
-                          me.getAction('flaggreen'),
-                          me.getAction('flagblue'),
-                          me.getAction('flagpurple'),
-                          me.getAction('flagyellow'),
-                          me.getAction('flagblack'),
-                          me.getAction('flaggray'),
-                          me.getAction('flagwhite'),
-                          me.getAction('flagbrown'),
-                          me.getAction('flagazure'),
-                          me.getAction('flagpink'),
-                          '-',
-                          me.getAction('flagcomplete'),
-                          //me.getAction('addmemo'),
-                          me.getAction('clear')
-                        ]
-                    })
-                }),
-                me.getAction('addnote'),
-                me.getAction('markseen'),
-                me.getAction('markunseen'),
-                //me.getAction('categories'),
-                '-',
-                //me.getAction('findall'),
-                //me.getAction('createrule'),
-                me.getAction('spam'),
-                '-',
-                me.getAction('delete'),
-                '-',
-                me.getAction('movetofolder'),
-                me.getAction('savemail')
-			],
-			listeners: {
-				beforeshow: function() {
+		var me = this,
+			cxmGrid=me.addRef('cxmGrid', Ext.create({
+				xtype: 'menu',
+				items: [
+					me.getAction('open'),
+					me.getAction('opennew'),
+					me.getAction('print'),
+					'-',
+					me.getAction('reply'),
+					me.getAction('replyall'),
+					me.getAction('forward'),
+					me.getAction('forwardeml'),
+					me.getAction('special'),
+					new Ext.menu.Item({
+						text: me.res("menu-complete"),
+						menu: Ext.create({
+							xtype: 'menu',
+							items: [
+							  me.getAction('flagred'),
+							  me.getAction('flagorange'),
+							  me.getAction('flaggreen'),
+							  me.getAction('flagblue'),
+							  me.getAction('flagpurple'),
+							  me.getAction('flagyellow'),
+							  me.getAction('flagblack'),
+							  me.getAction('flaggray'),
+							  me.getAction('flagwhite'),
+							  me.getAction('flagbrown'),
+							  me.getAction('flagazure'),
+							  me.getAction('flagpink'),
+							  '-',
+							  me.getAction('flagcomplete'),
+							  //me.getAction('addmemo'),
+							  me.getAction('clear')
+							]
+						})
+					}),
+					me.getAction('addnote'),
+					me.getAction('markseen'),
+					me.getAction('markunseen'),
+					//me.getAction('categories'),
+					'-',
+					//me.getAction('findall'),
+					//me.getAction('createrule'),
+					me.getAction('spam'),
+					'-',
+					me.getAction('delete'),
+					'-',
+					me.getAction('movetofolder'),
+					me.getAction('savemail')
+				],
+				listeners: {
+					beforeshow: function() {
+					}
 				}
-			}
-		}));
+			}));
+			
+        if (WT.docmgt) {
+            cxmGrid.add('-');
+            cxmGrid.add(me.getAction('docmgt'));
+        } else if (WT.docmgtwt) {
+            cxmGrid.add('-');
+            cxmGrid.add(me.getAction('docmgtwt'));
+        }
+		
+        cxmGrid.add('-');
+        cxmGrid.add(me.getAction('viewheaders'));
+        cxmGrid.add(me.getAction('viewsource'));
+		
 	},
 	
 	resizeColumns: function() {
@@ -519,31 +545,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 	},
 	
-	actionOpen: function() { this.getCtxGrid().actionOpen(); },
-    actionDelete: function() { this.getCtxGrid().actionDelete(); },	
-    actionSpam: function() { this.getCtxGrid().actionSpam(); },	
-    actionMarkSeen: function() { this.getCtxGrid().actionMarkSeen(); },
-    actionMarkUnseen: function() { this.getCtxGrid().actionMarkUnseen(); },
-	
-    actionSpecial: function() { this.getCtxGrid().setFlag("special"); },
-    actionFlagRed: function() { this.getCtxGrid().setFlag("red"); },
-    actionFlagBlue: function() { this.getCtxGrid().setFlag("blue"); },
-    actionFlagYellow: function() { this.getCtxGrid().setFlag("yellow"); },
-    actionFlagGreen: function() { this.getCtxGrid().setFlag("green"); },
-    actionFlagOrange: function() { this.getCtxGrid().setFlag("orange"); },
-    actionFlagPurple: function() { this.getCtxGrid().setFlag("purple"); },
-    actionFlagBlack: function() { this.getCtxGrid().setFlag("black"); },
-    actionFlagGray: function() { this.getCtxGrid().setFlag("gray"); },
-    actionFlagWhite: function() { this.getCtxGrid().setFlag("white"); },
-    actionFlagBrown: function() { this.getCtxGrid().setFlag("brown"); },
-    actionFlagAzure: function() { this.getCtxGrid().setFlag("azure"); },
-    actionFlagPink: function() { this.getCtxGrid().setFlag("pink"); },
-    actionFlagComplete: function() { this.getCtxGrid().setFlag("complete"); },
-    actionClear: function() { this.getCtxGrid().setFlag("clear"); },	
-
-    actionAddNote: function() { this.getCtxGrid().actionAddNote(); },
-    actionSaveMail: function() { this.getCtxGrid().actionSaveMail(); },
-	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();
     },
@@ -606,6 +607,20 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			}
 		});					
     },
+	
+    openEml: function(folder,idmessage,idattach) {
+		var win=WT.createView(this.ID,'view.EmlMessageView',{
+			viewCfg: {
+				mys: this,
+				folder: folder,
+				idmessage: idmessage,
+				idattach: idattach
+			}
+		});
+		win.show(false,function() {
+			win.getView().showEml();
+		});
+	},
 	
 	isDrafts: function(folder) {
 		return this.imapTree.getStore().getById(folder).get("isDrafts");

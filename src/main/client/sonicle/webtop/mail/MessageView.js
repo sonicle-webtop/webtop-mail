@@ -431,7 +431,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     var ics=null;
                     if (name.toLowerCase().endsWith(".ics")) ics=" ics='"+Ext.Object.toQueryString(aparams)+"'";
                     var eml=null;
-                    if (att.eml) eml=" eml='"+Ext.Object.toQueryString+"'";
+                    if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
                     var html="<a href='"+href+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+"><img src='"+imgname+"' width=16 height=16>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
@@ -1078,27 +1078,25 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         this.mys.openEml(params.folder,params.idmessage,params.idattach);
     },
     
-	//TODO loadEml
-	/*
     loadEml: function(folder,idmessage,idattach) {
 		var me=this;
         me._clear();
         me.idmessage=idmessage;
         me.folder=folder;
         me.idattach=idattach;
-        var params={service: 'mail', action: 'GetMessage', folder: folder, idmessage: idmessage, idattach: idattach };
-        var rparams={folder: folder, idmessage: idmessage, idattach: idattach};
+		me.proxy.abort();
+		WTU.applyExtraParams(me.proxy,{ folder: folder, idmessage: idmessage, idattach: idattach });
+		me.proxy.doRequest(
+			me.proxy.createOperation('read',{
+				url: WTF.requestBaseUrl(),
+				//params: params,
+				callback: me.messageRead,
+				scope: me
+			})
+		);
         this.latestId=idmessage;
-        this.proxy.doRequest(
-            'read',null,
-            params,
-            this.reader,
-            this.messageRead,
-            this,
-            rparams
-        );
     },
-    
+    /*
     loadProviderEml: function(provider,providerid) {
         WT.debug("loadProviderEml: "+provider+" - "+providerid);
         this._clear();

@@ -237,7 +237,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	requires: [
 		'Sonicle.data.BufferedStore',
 		'Sonicle.selection.RowModel',
-		'Sonicle.webtop.mail.plugin.MessageGridViewDragDrop'
+		'Sonicle.webtop.mail.plugin.MessageGridViewDragDrop',
+		'Sonicle.plugin.FilterBar'
 	],
 	
 	pageSize: 50,	
@@ -253,9 +254,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			cls2=tdy?'wtmail-row-today':'';
 			return cls1+' '+cls2;
 		},
-		plugins: {
-            ptype: 'messagegridviewdragdrop'
-        }
+		plugins: [
+			{
+				ptype: 'messagegridviewdragdrop'
+			},
+			{
+				ptype: 'filterbar'
+			}
+		]
 		
 	},
 	
@@ -325,14 +331,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							key: "0123456789",
 							shift: false,
 							fn: function(key,ev) {
-								me.setFlag(me.key2flag[key-48]);
+								me.actionFlag(me.key2flag[key-48]);
 							}
 						},
 						{
 							key: Ext.event.Event.INSERT,
 							shift: false,
 							fn: function(key,ev) {
-								me.setFlag("complete");
+								me.actionFlag("complete");
 							}
 						},
 						{
@@ -560,7 +566,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					else tag=WTF.globalImageTag('empty.gif',7,16,others);
 					return tag;
 			},
-			scope: me,
+			scope: me/*,
             filter: {
                 fieldEvents: ["select"],
                 field: {
@@ -581,7 +587,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                     triggerAction: 'all',
                     value: ""
                 }
-            }
+            }*/
         };
         dcols[n++]={//Status
             header: WTF.imageTag(me.mys.ID,'headerstatus_16.gif',15,16),
@@ -599,7 +605,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//else tag=imgtag;
 					return imgtag;
 			},
-			scope: me,
+			scope: me/*,
             filter: {
                 fieldEvents: ["select"],
                 field: {
@@ -628,7 +634,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                     triggerAction: 'all',
                     value: ""
                 }
-            }
+            }*/
             
         };
         dcols[n++]={//From
@@ -636,7 +642,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             width: 200,
             sortable: true,
             dataIndex: 'from',
-            filter: {}
+            filter: { xtype: 'textfield'}
         };
         dcols[n++]={//To
             header: me.res("column-to"),
@@ -725,7 +731,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					else tag=WTF.globalImageTag('empty.gif',16,16,others);
 					return tag;
 			},
-			scope: me,
+			scope: me/*,
             filter: {
                 fieldEvents: ["select"],
                 field: {
@@ -760,7 +766,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                     triggerAction: 'all',
                     value: ""
                 }
-            }
+            }*/
             
         };
         dcols[n++]={//Mail note
@@ -921,18 +927,18 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 
     openMessage: function(r) {
-		var me=this,
-			win=WT.createView(me.mys.ID,'view.DockableMessageView',{
-				viewCfg: {
-					mys: me.mys,
-					folder: r.get('folder')||me.currentFolder,
-					idmessage: r.get('idmessage'),
-					title: r.get('subject'),
-					model: r,
-					messageGrid: me
-				}
-			});
-			
+		var me=this;
+		
+		var win=WT.createView(me.mys.ID,'view.DockableMessageView',{
+			viewCfg: {
+				mys: me.mys,
+				folder: r.get('folder')||me.currentFolder,
+				idmessage: r.get('idmessage'),
+				title: r.get('subject'),
+				model: r,
+				messageGrid: me
+			}
+		});
 		win.show(false,function() {
 			win.getView().showMessage();
 		});
@@ -1213,7 +1219,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
 	},
 	
-    setFlag: function(flagstring) {
+    actionFlag: function(flagstring) {
         var me=this,
 			selection=me.getSelection(),
 			folder=me.currentFolder,
@@ -1340,6 +1346,37 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         var url=WTF.processBinUrl(this.mys.ID,"SaveMail",params);;
         window.open(url);
 	},
+	
+    actionViewHeaders: function() {
+        this.actionViewSource(true);
+    },
+
+    actionViewSource: function(headers) {
+        var me=this,
+			r=me.getSelectionModel().getSelection()[0];
+	
+		WT.ajaxReq(me.mys.ID, 'GetSource', {
+			params: {
+                folder: r.get('folder')||me.currentFolder,
+                id: r.get('idmessage'),
+                headers: !!headers
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					WT.createView(me.mys.ID,'view.HeadersView',{
+						viewCfg: {
+							source: json.source
+						}
+					}).show();
+
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	
+    },
+	
 	
 	indexOfMessage: function(id) {
 		return this.store.findExact('idmessage',id);
