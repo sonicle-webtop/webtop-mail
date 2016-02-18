@@ -59,6 +59,7 @@ import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
+import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsIdentity;
 import com.sonicle.webtop.mail.dal.FilterDAO;
 import com.sonicle.webtop.mail.dal.IdentityDAO;
@@ -6771,6 +6772,28 @@ public class Service extends BaseService {
 		if (psearchfield != null && psearchfield.trim().length() > 0 && ppattern != null && ppattern.trim().length() > 0) {
 			// TODO: save filter!!!!
 			//wts.setServiceStoreEntry(getName(), "filter"+psearchfield, ppattern.toUpperCase(),ppattern);
+		}
+		
+		//Check for multiple filters
+		try {
+			JsFilter.List filterList=ServletUtils.getObjectParameter(request,"filter",null,JsFilter.List.class);
+			String pfilter = request.getParameter("filter");
+			if (pfilter!=null) {
+				psearchfield="";
+				ppattern="";
+				boolean first=true;
+				for(JsFilter filter: filterList) {
+					if (!first) {
+						psearchfield+="|";
+						ppattern+="|";
+					}
+					psearchfield+=filter.property;
+					ppattern+=filter.value;
+					first=false;
+				}
+			}
+		} catch(Exception exc) {
+			logger.error("Excetpion",exc);
 		}
 		
 		int start=Integer.parseInt(pstart);

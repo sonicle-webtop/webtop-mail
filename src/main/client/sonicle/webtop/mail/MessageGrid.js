@@ -257,14 +257,17 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		plugins: [
 			{
 				ptype: 'messagegridviewdragdrop'
-			},
-			{
-				ptype: 'filterbar'
 			}
 		]
 		
 	},
 	
+	plugins: [
+		{
+			ptype: 'filterbar'
+		}
+	],
+		
 	features: [
 		{
 			ftype:'grouping',
@@ -356,11 +359,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     initComponent: function() {
         var me=this;
 
-        /*this.view=Ext.create('Sonicle.webtop.mail.MessageListView',{
-			loadMask: { msg: WT.res("loading") },
-			grid: this
-		});*/
-		
 		me.viewConfig.loadMask={ msg: WT.res("loading") };
 
 		var smodel='Sonicle.webtop.mail.MessagesModel';
@@ -369,7 +367,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         }
 
         me.store = Ext.create('Sonicle.data.BufferedStore',{
-            //proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
 			proxy: {
 				// load using script tags for cross domain, if the data in on the same domain as
 				// this page, an Ajax proxy would be better
@@ -383,21 +380,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					rootProperty: 'messages',
 					totalProperty: 'total'
 				}
-				// sends single sort as multi parameter
-				//simpleSortMode: true,
-				// sends single group as multi parameter
-				//simpleGroupMode: true,
-
-				// This particular service cannot sort on more than one field, so grouping === sorting.
-				//groupParam: 'sort',
-				//groupDirectionParam: 'dir'
 			},
 			model: smodel,
 			pageSize: me.pageSize
-			//leadingBufferZone: 100,
-			
-			//groupField: 'gdate',
-			//groupDir: 'DESC'
 		});
         me.store.on("metachange",function(s,meta) {
 			if (meta.groupField && meta.groupField!=='none' && meta.groupField!=='') {
@@ -413,55 +398,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
         });
 		
-        //me.store = Ext.create('Ext.data.JsonStore',{
-        //    proxy: WTF.proxy(me.mys.ID, me.reloadAction,'messages'),
-		//	model: smodel,
-		//	pageSize: me.pageSize,
-		//	groupField: 'sdate',
-		//	groupDir: 'DESC',
-			
-			//TODO: sort
-            /*sortInfo: {field: (this.multifolder?'folderdesc':'date'), direction: (this.multifolder?'ASC':'DESC')},
-            remoteSort: !this.localSort,
-            groupOnSort: false,*/
-			
-            /*reader: new Ext.data.JsonReader({
-                root: 'messages',
-                totalProperty: 'totalCount',
-                id: idx,
-                fields: fields
-            }),*/
-            
-			//TODO: reload group
-            /*reload: function(config) {
-                this.sortInfo=null;
-                Ext.data.GroupingStore.superclass.reload.call(this,config);
-            },*/
-            
-			//TODO: onMetaChange
-            /*onMetaChange : function(meta){
-                
-                if(this.reader.meta.groupField!=null) {
-                    this.groupField=this.reader.meta.groupField;
-                }
-                this.recordType = this.reader.recordType;
-                this.fields = this.recordType.prototype.fields;
-                delete this.snapshot;
-                if(this.reader.meta.sortInfo){
-                    this.sortInfo = this.reader.meta.sortInfo;
-                }else if(this.sortInfo  && !this.fields.get(this.sortInfo.field)){
-                    delete this.sortInfo;
-                }
-                if(this.writer){
-                    this.writer.meta = this.reader.meta;
-                }
-                this.modified = [];
-                this.fireEvent('metachange', this, this.reader.meta);
-            },*/
-            //grid: me,
-			//ms: me.ms
-        //});
-
 /*		if (me.createPagingToolbar) {
 			var tb=me.ptoolbar=Ext.create('Ext.toolbar.Paging',{
 				store: me.store,
@@ -486,42 +422,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.tbar=me.ptoolbar;
 		}
 */		
-		//TODO: FilterRow
-/*        if (!Ext.isIE) {
-            var filterRow = new WT.GridFilterRow({
-                autoFilter: false,
-                hidden: true,
-                listeners: {
-                    change: function(data) {
-                        var patterns='';
-                        var fields='';
-                        for(p in data) {
-                            var v=data[p];
-                            if (v.length>0) {
-                                if (patterns.length>0) {
-                                    patterns+="|";
-                                    fields+="|";
-                                }
-                                patterns+=v;
-                                fields+=p;
-                            }
-                        }
-                        var s=this.grid.store;
-                        var cf=s.baseParams.folder;
-                        s.baseParams={service: 'mail', action: this.grid.reloadAction, folder: cf, searchfield: fields, pattern: patterns, refresh:1};
-                        s.reload({
-                          params: {start:0,limit:me.pageSize}
-                        });
-                        s.baseParams.refresh=0;
-                        //this.grid.store.load({params: data});
-                    }
-                }
-            });
-            this.plugins=[ filterRow ];
-            this.filterRow=filterRow;
-        }*/
-
-
         n=0;
         var dcols=new Array();
         if (me.multifolder) {
@@ -531,14 +431,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                 sortable: true,
                 dataIndex: 'folder',
                 hidden: true,
-                filter: {}
+				filter: { xtype: 'textfield'}
             };
             dcols[n++]={//Folder Descripion
                 header: me.res("column-folder"),
                 width: 100,
                 sortable: true,
                 dataIndex: 'folderdesc',
-                filter: {}
+				filter: { xtype: 'textfield'}
             };
         }
         me.priIndex=n;
@@ -605,7 +505,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//else tag=imgtag;
 					return imgtag;
 			},
-			scope: me/*,
+			scope: me,
+			filter: {
+				xtype: 'soiconcombobox',
+				editable: false,
+				fields: ['value','text','iconCls'],
+				store: [
+					['','\u00a0',''],
+					['unread',me.res('stunread'),'iconStatusUnread'],
+					['new',me.res('strecent'),'iconStatusNew'],
+					['replied',me.res('streplied'),'iconStatusReplied'],
+					['forwarded',me.res('stforwarded'),'iconStatusForwarded'],
+					['repfwd',me.res('strepfwd'),'iconStatusRepFwd'],
+					['read',me.res('stread'),'iconStatusRead']
+				]
+			}
+			/*,
             filter: {
                 fieldEvents: ["select"],
                 field: {
@@ -650,14 +565,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             sortable: true,
             dataIndex: 'to',
             hidden: !me.multifolder,
-            filter: {}
+            filter: { xtype: 'textfield'}
         };
         dcols[n++]={//Subject
             header: me.res("column-subject"),
             width: 400,
             sortable: true,
             dataIndex: 'subject',
-            filter: {}
+            filter: { xtype: 'textfield'}
         };
         dcols[n++]={//Date
             header: me.res("column-date"),
@@ -672,7 +587,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                 return tag;
             },
             dataIndex: 'date',
-            filter: {}
+            filter: { xtype: 'textfield'}
         };
         dcols[n++]={//Date
             header: me.res("column-date"),
@@ -701,7 +616,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
                 return WTU.humanReadableSize(parseInt(value));
             },
-            filter: {}
+            filter: { }
         };
         dcols[n++]={//Attachment
 			header: WTF.imageTag(me.mys.ID,'headerattach_16.gif',15,16),
