@@ -331,7 +331,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("forward",{ handler: me.gridAction(me,'Forward') });
         me.addAction("forwardeml",{ handler: me.gridAction(me,'ForwardEml') });
         me.addAction("filters",{ handler: me.gridAction(me,'Filters'), iconCls: 'wt-icon-filter-xs' });
-        me.addAction("multisearch",{ handler: me.gridAction(me,'MultiSearch'), iconCls: 'wt-icon-search-multi-xs' });
+        
+		me.addAction("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi-xs', enableToggle: true });
 		
 		
         me.addAction("special",{ handler: me.gridAction(me,'Flag','special') });

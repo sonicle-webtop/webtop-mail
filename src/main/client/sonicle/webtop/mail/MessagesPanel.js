@@ -405,7 +405,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
         if (me.bMultiSearch && me.bMultiSearch.pressed) {
             me.bMultiSearch.toggle();
-            me.folderList.hideMultiSearch();
+            me.folderList.hideFilterBar();
         }
     },
     
@@ -417,14 +417,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		return this.folderList.getPageSize();
 	},
      
-	/*
-	 * TODO: action multi search
-	 **/
-	/*
     actionMultiSearch: function() {
-        if (this.bMultiSearch.pressed) this.folderList.showMultiSearch();
-        else this.folderList.hideMultiSearch();
-    },*/
+		var me=this;
+        if (me.bMultiSearch.pressed) me.folderList.showFilterBar();
+        else me.folderList.hideFilterBar();
+    },
 
     
     

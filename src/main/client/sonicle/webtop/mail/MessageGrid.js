@@ -264,7 +264,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	plugins: [
 		{
-			ptype: 'filterbar'
+			ptype: 'filterbar',
+			pluginId: 'gridfilterbar',
+			hidden: true
 		}
 	],
 		
@@ -454,7 +456,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 		};*/
         dcols[n++]={//Priority
-            header: WTF.imageTag(me.mys.ID,'headerpriority_16.gif',7,16),
+            header: '<i class="wtmail-icon-header-priority-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+			cls: 'wtmail-header-text-clip',
             width: 35,
             sortable: true,
             menuDisabled: true,
@@ -466,32 +469,25 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					else tag=WTF.globalImageTag('empty.gif',7,16,others);
 					return tag;
 			},
-			scope: me/*,
-            filter: {
-                fieldEvents: ["select"],
-                field: {
-                    xtype: "iconcombo",
-                    editable: false,
-                    mode: 'local',
-                    width: 24,
-    //                        autoCreate: {tag: "input", type: "text", size: "1", autocomplete: "off", disabled: 'disabled'},
-    //                        triggerConfig: {tag: "img", src: 'webtop/themes/win/minitrigger.gif', cls: "x-form-minitrigger ", width: 5},
-                    store: new Ext.data.ArrayStore({
-                      //id: 0,
-                      fields: ['value','text','icon'],
-                      data: [['','\u00a0',''], ['1',me.res('prihigh'),'iconPriorityHigh']]
-                    }),
-                    valueField: 'value',
-                    displayField: 'text',
-                    iconClsField: 'icon',
-                    triggerAction: 'all',
-                    value: ""
-                }
-            }*/
+			scope: me,
+			filter: {
+				xtype: 'soiconcombobox',
+				editable: false,
+				width: 24,
+				listConfig: {
+					minWidth: 42
+				},
+				hideTrigger: true,
+				store: [
+					['','\u00a0',''],
+					['1','\u00a0','wtmail-icon-priority-high-xs']
+				]
+			}
         };
         dcols[n++]={//Status
-            header: WTF.imageTag(me.mys.ID,'headerstatus_16.gif',15,16),
-            width: 30,
+            header: '<i class="wtmail-icon-header-status-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+			cls: 'wtmail-header-text-clip',
+            width: 28,
             sortable: true,
             menuDisabled: true,
             dataIndex: 'status',
@@ -509,48 +505,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			filter: {
 				xtype: 'soiconcombobox',
 				editable: false,
-				fields: ['value','text','iconCls'],
+				width: 24,
+				listConfig: {
+					minWidth: 42
+				},
+				hideTrigger: true,
 				store: [
 					['','\u00a0',''],
-					['unread',me.res('stunread'),'iconStatusUnread'],
-					['new',me.res('strecent'),'iconStatusNew'],
-					['replied',me.res('streplied'),'iconStatusReplied'],
-					['forwarded',me.res('stforwarded'),'iconStatusForwarded'],
-					['repfwd',me.res('strepfwd'),'iconStatusRepFwd'],
-					['read',me.res('stread'),'iconStatusRead']
+					['unread','\u00a0','wtmail-icon-status-unread-xs'],
+					['new','\u00a0','wtmail-icon-status-new-xs'],
+					['replied','\u00a0','wtmail-icon-status-replied-xs'],
+					['forwarded','\u00a0','wtmail-icon-status-forwarded-xs'],
+					['repfwd','\u00a0','wtmail-icon-status-replied-forwarded-xs'],
+					['read','\u00a0','wtmail-icon-status-read-xs']
 				]
 			}
-			/*,
-            filter: {
-                fieldEvents: ["select"],
-                field: {
-                    xtype: "iconcombo",
-                    editable: false,
-                    mode: 'local',
-                    width: 24,
-//                        autoCreate: {tag: "input", type: "text", size: "8", autocomplete: "off", disabled: 'disabled'},
-//                        triggerConfig: {tag: "img", src: 'webtop/themes/win/minitrigger.gif', cls: "x-form-minitrigger ", width: 5},
-                    store: new Ext.data.ArrayStore({
-                      //id: 0,
-                      fields: ['value','text','icon'],
-                      data: [
-                          ['','\u00a0',''],
-                          ['unread',me.res('stunread'),'iconStatusUnread'],
-                          ['new',me.res('strecent'),'iconStatusNew'],
-                          ['replied',me.res('streplied'),'iconStatusReplied'],
-                          ['forwarded',me.res('stforwarded'),'iconStatusForwarded'],
-                          ['repfwd',me.res('strepfwd'),'iconStatusRepFwd'],
-                          ['read',me.res('stread'),'iconStatusRead']
-                      ]
-                    }),
-                    valueField: 'value',
-                    displayField: 'text',
-                    iconClsField: 'icon',
-                    triggerAction: 'all',
-                    value: ""
-                }
-            }*/
-            
         };
         dcols[n++]={//From
             header: me.res("column-from"),
@@ -616,10 +585,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
                 return WTU.humanReadableSize(parseInt(value));
             },
-            filter: { }
+            filter: { xtype: 'textfield'}
         };
         dcols[n++]={//Attachment
-			header: WTF.imageTag(me.mys.ID,'headerattach_16.gif',15,16),
+            header: '<i class="wtmail-icon-header-attach-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+			cls: 'wtmail-header-text-clip',
             width: 30,
             sortable: false,
             menuDisabled: true,
@@ -630,11 +600,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			},
 			iconSize: WTU.imgSizeToPx('xs'),
 			scope: me,
-            filter: {}
+            filter: { xtype: 'textfield'}
             
         };
         dcols[n++]={//Flag
-            header: WTF.imageTag(me.mys.ID,'headerflag_16.gif',15,16),
+            header: '<i class="wtmail-icon-header-flag-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+			cls: 'wtmail-header-text-clip',
             width: 30,
             sortable: true,
             menuDisabled: true,
@@ -646,8 +617,32 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					else tag=WTF.globalImageTag('empty.gif',16,16,others);
 					return tag;
 			},
-			scope: me/*,
-            filter: {
+			scope: me,
+			filter: {
+				xtype: 'soiconcombobox',
+				editable: false,
+				width: 24,
+				listConfig: {
+					minWidth: 42
+				},
+				hideTrigger: true,
+				store: [
+					['','\u00a0',''],
+					['red','\u00a0','wtmail-icon-flagred-xs'],
+					['blue','\u00a0','wtmail-icon-flagblue-xs'],
+					['yellow','\u00a0','wtmail-icon-flagyellow-xs'],
+					['green','\u00a0','wtmail-icon-flaggreen-xs'],
+					['orange','\u00a0','wtmail-icon-flagorange-xs'],
+					['purple','\u00a0','wtmail-icon-flagpurple-xs'],
+					['black','\u00a0','wtmail-icon-flagblack-xs'],
+					['gray','\u00a0','wtmail-icon-flaggray-xs'],
+					['white','\u00a0','wtmail-icon-flagwhite-xs'],
+					['brown','\u00a0','wtmail-icon-flagbrown-xs'],
+					['azure','\u00a0','wtmail-icon-flagazure-xs'],
+					['pink','\u00a0','wtmail-icon-flagpink-xs']
+				]
+			}
+            /*filter: {
                 fieldEvents: ["select"],
                 field: {
                     xtype: "iconcombo",
@@ -685,7 +680,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             
         };
         dcols[n++]={//Mail note
-			header: WTF.imageTag(me.mys.ID,'headermailnote_16.gif',15,16),
+            header: '<i class="wtmail-icon-header-note-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+			cls: 'wtmail-header-text-clip',
             width: 30,
             sortable: true,
             menuDisabled: true,
@@ -697,13 +693,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					return tag;
 			},
 			scope: me,
-            filter: {}
+            filter: { xtype: 'textfield'}
             
         };
         
         if (me.arch) {
             dcols[n++]={//Archived
-				header: WTF.imageTag(me.mys.ID,'headerdocmgt_16.png',16,16),
+				header: '<i class="wtmail-icon-header-docmgt-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+				cls: 'wtmail-header-text-clip',
                 width: 30,
                 sortable: true,
                 menuDisabled: true,
@@ -717,7 +714,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						return tag;
 				},
 				scope: me,
-                filter: {}
+	            filter: { xtype: 'textfield'}
             };
         }
         //me.cm=new Ext.grid.ColumnModel(dcols);
@@ -1291,6 +1288,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
 	
     },
+	
+	showFilterBar: function() {
+		this.getPlugin('gridfilterbar').setHidden(false);
+	},
+	
+	hideFilterBar: function() {
+		this.getPlugin('gridfilterbar').setHidden(true);
+	},
 	
 	
 	indexOfMessage: function(id) {

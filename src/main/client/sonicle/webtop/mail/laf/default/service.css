@@ -34,6 +34,24 @@
 .wtmail-icon-htmleditor-template-xs { background-image: url('htmleditor_template_16.png') !important; }
 .wtmail-icon-attachment-xs { background-image: url('attachment_16.png') !important; }
 
+.wtmail-icon-header-priority-xs { background-image: url('headerpriority_16.gif') !important; background-repeat: no-repeat; background-position: center; }
+.wtmail-icon-priority-high-xs { background-image: url('priorityhigh_16.gif') !important; background-repeat: no-repeat; background-position: center; }
+
+.wtmail-icon-header-status-xs { background-image: url('headerstatus_16.gif') !important; background-repeat: no-repeat; background-position: center; }
+.wtmail-icon-status-unread-xs { background-image: url('statusread_16.png') !important; }
+.wtmail-icon-status-read-xs { background-image: url('statusunread_16.png') !important; }
+.wtmail-icon-status-new-xs { background-image: url('statusnew_16.png') !important; }
+.wtmail-icon-status-replied-xs { background-image: url('statusreplied_16.png') !important; }
+.wtmail-icon-status-forwarded-xs { background-image: url('statusforwarded_16.png') !important; }
+.wtmail-icon-status-replied-forwarded-xs { background-image: url('statusrepfwd_16.png') !important; }
+
+.wtmail-icon-header-attach-xs { background-image: url('headerattach_16.gif') !important; background-repeat: no-repeat; background-position: center; }
+.wtmail-icon-header-flag-xs { background-image: url('headerflag_16.gif') !important; background-repeat: no-repeat; background-position: center; }
+.wtmail-icon-header-note-xs { background-image: url('headermailnote_16.gif') !important; background-repeat: no-repeat; background-position: center; }
+.wtmail-icon-header-docmgt-xs { background-image: url('headerdocmgt_16.png') !important; background-repeat: no-repeat; background-position: center; }
+
+.wtmail-header-text-clip div div div div { text-overflow: clip; }
+
 /* tree */
 .wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox_16.png) !important; }
 .x-grid-tree-node-expanded .wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox-open_16.png) !important; }
