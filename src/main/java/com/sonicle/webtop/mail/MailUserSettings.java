@@ -179,6 +179,10 @@ public class MailUserSettings extends BaseUserSettings {
 		setString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),value);
 	}
 	
+	public void setMessageListSort(String foldername, String field, String direction) {
+		setString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),field+"|"+direction);
+	}
+	
 	public boolean isMessageListThreaded(String foldername) {
 		return getBoolean(MessageFormat.format(MESSAGE_LIST_THREADED, foldername),false);
 	}

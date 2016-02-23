@@ -293,7 +293,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		mode: 'MULTI'
 	},
 	selType: 'sorowmodel',
-	multiColumnSort: true,
+	multiColumnSort: false,
 	
 	
     clickTimeoutId: 0,

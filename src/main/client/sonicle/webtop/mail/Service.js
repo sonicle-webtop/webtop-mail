@@ -224,8 +224,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
             //    //setTimeout(this.checkFolders.createDelegate(this),1000);
             //}
 			if (n.id==='root') {
-				me.imapTree.getSelectionModel().select(0);
-				me.showFolder(me.getFolderInbox());
+				me.selectInbox();
 			}
         },this);
 		//TODO: context menu
@@ -358,7 +357,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("spam",{ handler: me.gridAction(me,'Spam'), iconCls: 'wt-icon-block-xs' });
         me.addAction("delete",{ handler: me.gridAction(me,'Delete'), iconCls: 'wt-icon-delete-xs' });
         me.addAction("movetofolder",{ handler: me.gridAction(me,'MoveToFolder') });
-        me.addAction("check",{ handler: me.gridAction(me,'Check'), iconCls: 'wt-icon-refresh-xs' });
+        me.addAction("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh-xs' });
         me.addAction("advsearch",{ handler: me.gridAction(me,'AdvancedSearch'), iconCls: 'wt-icon-search-adv-xs' });
         me.addAction("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
 		
@@ -473,6 +472,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
         }
         
     },
+	
+	selectInbox: function() {
+		var me=this;
+		me.imapTree.getSelectionModel().select(0);
+		me.showFolder(me.getFolderInbox());
+	},
 
     /*folderSelected: function(t, r, ix) {
         var folderid=r.get("id");

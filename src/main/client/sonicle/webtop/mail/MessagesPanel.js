@@ -358,6 +358,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			},
 			callback: function(success,json) {
 				if (success) {
+					if (nv && nv!=='' && nv!=='none') {
+						var s=me.folderList.store;
+						s.blockLoad();
+						s.sort('date', 'DESC');
+						s.unblockLoad(false);
+					}
 					me.reloadGrid();
 				} else {
 					WT.error(json.text);

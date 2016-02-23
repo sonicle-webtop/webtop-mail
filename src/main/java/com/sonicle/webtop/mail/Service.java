@@ -61,6 +61,7 @@ import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsIdentity;
+import com.sonicle.webtop.mail.bol.js.JsSort;
 import com.sonicle.webtop.mail.dal.FilterDAO;
 import com.sonicle.webtop.mail.dal.IdentityDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
@@ -6664,8 +6665,8 @@ public class Service extends BaseService {
 		Locale locale = profile.getLocale();
 		java.util.Calendar cal = java.util.Calendar.getInstance(locale);
 		String pfoldername = request.getParameter("folder");
-		String psortfield = request.getParameter("sort");
-		String psortdir = request.getParameter("dir");
+		//String psortfield = request.getParameter("sort");
+		//String psortdir = request.getParameter("dir");
 		String pstart = request.getParameter("start");
 		String plimit = request.getParameter("limit");
 		String ppage = request.getParameter("page");
@@ -6703,26 +6704,35 @@ public class Service extends BaseService {
 			group = "";
 		}
 
-		//Service.logger.debug("psortfield="+psortfield+" group="+group);
-		if (psortfield == null) {
-			if (group.equals("")) {
-				String s = us.getMessageListSort(pfoldername);
-				int ix = s.indexOf("|");
-				psortfield = s.substring(0, ix);
-				psortdir = s.substring(ix + 1);
+		String psortfield = "date";
+		String psortdir = "DESC";
+		try {
+			boolean nogroup=group.equals("");
+			JsSort.List sortList=ServletUtils.getObjectParameter(request,"sort",null,JsSort.List.class);
+			if (sortList==null) {
+				if (nogroup) {
+					String s = us.getMessageListSort(pfoldername);
+					int ix = s.indexOf("|");
+					psortfield = s.substring(0, ix);
+					psortdir = s.substring(ix + 1);
+				} else {
+					psortfield = "date";
+					psortdir = "DESC";
+				}
 			} else {
-				psortfield = "date";
-				psortdir = "DESC";
+				JsSort jsSort=sortList.get(0);
+				psortfield=jsSort.property;
+				psortdir=jsSort.direction;
+				if (!nogroup&&!psortfield.equals("date")) {
+					group = "";
+				}
+				us.setMessageListGroup(pfoldername, group);
+				us.setMessageListSort(pfoldername, psortfield, psortdir);
 			}
-		} else {
-			group = "";
-			// TODO: save new sort/group
-			//wts.setServiceSetting("mail", "messagelist-"+pfoldername+"-sort", psortfield+"|"+psortdir);
-			//wts.setServiceSetting("mail", "messagelist-group-"+pfoldername,"");
+		} catch(Exception exc) {
+			logger.error("Exception",exc);
 		}
-
-        //if (psortfield==null) psortfield="date";
-		//if (psortdir==null) psortdir="DESC";
+		
 		int sortby = MessageComparator.SORT_BY_NONE;
 		if (psortfield.equals("messageid")) {
 			sortby = MessageComparator.SORT_BY_MSGIDX;
@@ -6776,9 +6786,8 @@ public class Service extends BaseService {
 		
 		//Check for multiple filters
 		try {
-			JsFilter.List filterList=ServletUtils.getObjectParameter(request,"filter",null,JsFilter.List.class);
-			String pfilter = request.getParameter("filter");
-			if (pfilter!=null) {
+			JsFilter.List filterList=ServletUtils.getObjectParameter(request,"filter",JsFilter.List.class,false);
+			if (filterList!=null) {
 				psearchfield="";
 				ppattern="";
 				boolean first=true;
