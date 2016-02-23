@@ -370,8 +370,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 
         me.store = Ext.create('Sonicle.data.BufferedStore',{
 			proxy: {
-				// load using script tags for cross domain, if the data in on the same domain as
-				// this page, an Ajax proxy would be better
 				type: 'ajax',
 				url: WTF.requestBaseUrl(),
 				extraParams: {
@@ -383,6 +381,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					totalProperty: 'total'
 				}
 			},
+			//purgePageCount: 3,
+			leadingBufferZone: 50,
+			trailingBufferZone: 50,
 			model: smodel,
 			pageSize: me.pageSize
 		});
