@@ -156,7 +156,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			plugins: [ 'sofieldtooltip' ],
 			listeners: {
 				select: function(cb,r,eopts) {
-					me.groupChanged(r.get('id'));
+					me.folderList.changeGrouping(r.get('id'));
 				}
 			}
         }));
@@ -349,29 +349,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     },
     */
    
-    groupChanged: function(nv) {
-		var me=this;
-		WT.ajaxReq(me.mys.ID, 'GroupChanged', {
-			params: {
-                group: nv,
-                folder: me.currentFolder
-			},
-			callback: function(success,json) {
-				if (success) {
-					if (nv && nv!=='' && nv!=='none') {
-						var s=me.folderList.store;
-						s.blockLoad();
-						s.sort('date', 'DESC');
-						s.unblockLoad(false);
-					}
-					me.reloadGrid();
-				} else {
-					WT.error(json.text);
-				}
-			}
-		});					
-    },
-    
     //TODO verify rawData and getById
     messageViewed: function(idmessage,millis) {
 		var fl=this.folderList;
@@ -482,7 +459,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     },
 	
     reloadGrid: function() {
-        this.folderList.store.reload();
+        this.folderList.reload();
     },
     
 
@@ -566,10 +543,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	
     res: function(name) {
 		return this.mys.res(name);
-	},
-	
-    getGridStore: function() {
-		return this.folderList.store;
 	}
    
 });

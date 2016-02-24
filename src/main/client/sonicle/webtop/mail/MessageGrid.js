@@ -1290,6 +1290,33 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
     },
 	
+	reload: function() {
+		this.store.reload();
+	},
+	
+	changeGrouping: function(newgroup) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, 'GroupChanged', {
+			params: {
+                group: newgroup,
+                folder: me.currentFolder
+			},
+			callback: function(success,json) {
+				if (success) {
+					if (newgroup && newgroup!=='' && newgroup!=='none') {
+						var s=me.store;
+						s.blockLoad();
+						s.sort('date', 'DESC');
+						s.unblockLoad(false);
+					}
+					me.reload();
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},
+	
 	showFilterBar: function() {
 		this.getPlugin('gridfilterbar').setHidden(false);
 	},
