@@ -38,6 +38,7 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 	
 	ddGroup: 'mail',
 	containerScroll: true,
+	allowContainerDrops: false,
 	
     /**
      * Override to implement moveFolder

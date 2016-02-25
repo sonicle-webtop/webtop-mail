@@ -126,6 +126,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         //this.treeEditor.on('beforecomplete',this.renamingFolder,this);
 
 		me.imapTree.on("itemcontextmenu",function(v, rec, itm, i, e, eopts) {
+			me.updateCxmTree(rec);
 			WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
 		});
 		me.imapTree.on("containercontextmenu",function(v, e, eopts) {
@@ -194,7 +195,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		me.setToolbar(me.toolbar);
 		
-		console.log("mail service init completed");
+		var ff=me.specialFolders;
+		ff[me.getFolderInbox()]=
+		 ff[me.getFolderDrafts()]=
+		   ff[me.getFolderSent()]=
+		    ff[me.getFolderTrash()]=
+		     ff[me.getFolderSpam()]=true;
 	},
 	
 	_TB: function(actionname) {
@@ -434,7 +440,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
     },*/
 	
 	folderClicked: function(t, r, tr, ix, e, eopts) {
-		if (e.target.classList.contains('x-tree-expander')) return;
+		if (e && e.target.classList.contains('x-tree-expander')) return;
         
 		var folderid=r.get("id");
 		this.showFolder(folderid);
@@ -605,6 +611,28 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	isDrafts: function(folder) {
 		return this.imapTree.getStore().getById(folder).get("isDrafts");
+	},
+	
+	updateCxmTree: function(r) {
+		var me=this,
+			id=r.get("id"),
+			rootid=me.imapTree.getRootNode().get("id");
+	
+		me.getAction('emptyfolder').setDisabled(!r.get("isTrash")&&!r.get("isSpam"));
+
+		me.getAction('deletefolder').setDisabled(me.specialFolders[id]);
+		me.getAction('renamefolder').setDisabled(me.specialFolders[id]);
+		me.getAction('movetomain').setDisabled(me.specialFolders[id]?true:(r.parentNode.get("id")===rootid));
+		
+        /*var as=this.aScan;
+        var mi=this.miScan;
+        if (a.scanOff) {as.setDisabled(true);mi.setChecked(false,true);}
+        else if (a.scanOn) {as.setDisabled(true);mi.setChecked(true,true);}
+        else {
+            this.aScan.setDisabled(false);
+            if (a.scanEnabled) mi.setChecked(true,true);
+            else mi.setChecked(false,true);
+        }*/
 	}
 	
 	
