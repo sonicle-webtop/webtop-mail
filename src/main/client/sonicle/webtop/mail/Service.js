@@ -32,31 +32,10 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.ImapTreeModel', {
-    extend: 'Ext.data.TreeModel',
-    idProperty: 'id',
-    fields: [{
-        name: "id",
-        convert: undefined
-    }, {
-        name: "folder",
-        convert: undefined
-    }, {
-        name: "unread",
-        convert: undefined
-    }, {
-        name: "hasunread",
-        convert: undefined
-    }]
-});
-
-Ext.define('Sonicle.webtop.mail.ImapTree', {
-        extend: 'Ext.tree.Panel'
-});
-
 Ext.define('Sonicle.webtop.mail.Service', {
 	extend: 'WT.sdk.Service',
 	requires: [
+		'Sonicle.webtop.mail.ImapTree',
 		'Sonicle.webtop.mail.MessagesPanel',
 		'Sonicle.webtop.mail.view.MessageEditor',
 		'Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop'
@@ -79,19 +58,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 	mtfwin: null,
 
-	//util vars
-/*	aPrint: null,
-	aMove: null,
-	aDelete: null,
-	aSpam: null,
-	aReply: null,
-	aReplayAll: null,
-	aForward: null,
-	aForwardEml: null,
-	aSeen: null,
-	aUnseen: null,
-	aDocMgt: null,
-	aDocMgtwt: null,*/
 	newmsgid: 0,
 
 	//settings
@@ -100,11 +66,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	fontface: null,
 	fontsize: null,
 	differentDefaultFolder: null,
-/*	folderInbox: 'INBOX',
-	folderTrash: null,
-	folderSpam: null,
-	folderSent: null,
-	folderDrafts: null,*/
 	uncheckedFolders: {},
 	specialFolders: {},
 	identities: null,
@@ -131,66 +92,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.viewmaxtos=me.getOption('messageViewMaxTos');
 		me.viewmaxccs=me.getOption('messageViewMaxCcs');
 		
-		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
-			//title: "Email", //this.title,
-			autoScroll: true,
-
-			viewConfig: {
-				plugins: { 
-					ptype: 'imaptreeviewdragdrop' ,
-					moveFolder: function(src,dst) {
-						me.moveFolder(src,dst);
-					},
-					moveMessages: function(data,dst) {
-						data.view.grid.moveSelection(data.srcFolder,dst,data.records);
-					},
-					copyMessages: function(data,dst) {
-						data.view.grid.copySelection(data.srcFolder,dst,data.records);
-					}
-				},
-				markDirty: false,
-				
-			},
-
-			store: Ext.create('Ext.data.TreeStore', {
-				model: 'Sonicle.webtop.mail.ImapTreeModel',
-				proxy: WTF.proxy(me.ID,'GetImapTree'),
-				root: {
-					text: 'Imap Tree',
-					expanded: true
-				},
-				rootVisible: false
-			}),
-
-
-			columns: {
-				items: [
-					{
-						xtype: 'treecolumn', //this is so we know which column will show the tree
-						text: 'Folder',
-						dataIndex: 'folder',
-						flex: 3,
-						renderer: function(v,p,r) {
-							var unr=r.get('unread'),
-								hunr=r.get('hasUnread');
-							return (unr!==0||hunr?'<b>'+v+'</b>':v);
-						}
-					},
-					{
-						text: 'Unread', 
-						dataIndex: 'unread',
-						align: 'right',
-						flex: 1,
-						renderer: function(v,p,r) {
-							return (v===0?'':'<b>'+v+'</b>');
-						}
-					}
-			  ]
-			},
-
-			useArrows: true,
-			rootVisible: false
+		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
+			pageSize: me.getOption('pageRows'),
+			viewRegion: me.getOption('messageViewRegion','east'),
+			viewWidth: me.getOption('messageViewWidth',600),
+			viewHeight: me.getOption('messageViewHeight',400),
+			viewCollapsed: me.getOption('messageViewCollapsed',false),
+			saveColumnSizes: true,
+			saveColumnVisibility: true,
+			saveColumnOrder: true,
+			savePaneSize: true,
+			gridMenu: me.getRef('cxmGrid'),
+			mys: me
 		});
+		me.messagesPanel=mp;
+		me.setMainComponent(me.messagesPanel);
+		
+		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{ mys: me });
 
 		var tool = Ext.create({
 				xtype: 'panel',
@@ -237,21 +155,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
             t.body.on('contextmenu',this.treeBodyContextMenu,this);
         },this);*/
 		
-		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
-			pageSize: me.getOption('pageRows'),
-			viewRegion: me.getOption('messageViewRegion','east'),
-			viewWidth: me.getOption('messageViewWidth',600),
-			viewHeight: me.getOption('messageViewHeight',400),
-			viewCollapsed: me.getOption('messageViewCollapsed',false),
-			saveColumnSizes: true,
-			saveColumnVisibility: true,
-			saveColumnOrder: true,
-			savePaneSize: true,
-			gridMenu: me.getRef('cxmGrid'),
-			mys: me
-		});
-		me.messagesPanel=mp;
-		me.setMainComponent(me.messagesPanel);
 		
 		me.onMessage('unread',me.unreadChanged,me);
 
@@ -306,8 +209,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	
 	gridAction: function(me,actionName,obj) {
-		return function() {
-			var g=me.getCtxGrid(),
+		return function(s,e) {
+			var g=me.getCtxGrid(e),
 				fname='action'+actionName,
 				fn=g[fname];
 		
@@ -604,9 +507,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	actionNewMainFolder: function() {},
 	actionMoveToMainFolder: function() {},
 	
-	actionFoldersRefresh: function() {
+	actionFoldersRefresh: function(s,e) {
 		var me=this,
-			rec=me.getCtxNode();
+			rec=me.getCtxNode(e);
 	
 		if (rec) {
 			me.imapTree.getSelectionModel().select(rec);
@@ -622,13 +525,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
         this.messagesPanel.reloadGrid();
     },
 	
-	getCtxGrid: function() {
-		var md=WT.getContextMenuData();
+	getCtxGrid: function(e) {
+		var md=e.menuData;
 		return (md && md.grid) ? md.grid : this.messagesPanel.folderList;
 	},
 	
-	getCtxNode: function() {
-		var md=WT.getContextMenuData();
+	getCtxNode: function(e) {
+		var md=e.menuData;
 		return (md && md.rec) ? md.rec : null;
 	},
 	
