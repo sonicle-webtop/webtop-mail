@@ -70,7 +70,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 				}),
 				me.createAction("delete",{
 					handler: function() {
-						me.messageGrid.deleteMessage(me.folder,me.idmessage); me.closeView();
+						me.messageGrid.deleteMessage(me.folder,me.idmessage,me);
 					},
 					iconCls: 'wt-icon-delete-xs'
 				}),

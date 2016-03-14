@@ -951,6 +951,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
     deleteSelection: function(from,selection) {
         var me=this,data=me.sel2ids(selection);
+		data.cb=function(result) {
+			if (result) {
+				me.getSelectionModel().removeSelection(data.selection);
+			}
+		}
         me.deleteMessages(from,data)
     },
     
@@ -965,9 +970,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			},
 			callback: function(success,json) {
 				if (json.result) {
-					//me.store.reload();
-					//me.store.remove(data.selection);
-					me.getSelectionModel().removeSelection(data.selection);
+					Ext.callback(data.cb,data.scope||me,[json.result]);
 				} else {
 					WT.error(json.text);
 				}
@@ -975,8 +978,32 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
     },
 
-    deleteMessage: function(folder,idmessage) {
-		this.deleteMessages(folder, { ids: [ idmessage ], multifolder: false });
+    deleteMessage: function(folder,idmessage,dview) {
+		var me=this,
+			curfolder=me.currentFolder,
+			data={ 
+				ids: [ idmessage ], 
+				multifolder: false,
+				cb: function(result) {
+					if (result) {
+						me.getSelectionModel().removeIds(data.ids);
+					}
+				}
+			},
+			ftrash=me.mys.getFolderTrash();
+		
+		if (curfolder===ftrash) {
+			//TODO: warning
+			WT.confirm(me.res('sureprompt'),function(bid) {
+				if (bid==='yes') {
+					me.deleteMessages(folder,data);
+					dview.closeView();
+				}
+			},me);
+		} else {
+			me.moveMessages(folder,ftrash,data);
+			dview.closeView();
+		}
     },	
 	
     moveSelection: function(from,to,selection) {
@@ -984,7 +1011,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             data=me.sel2ids(selection);
 		data.cb=function(result) {
 			if (result) {
-				//me.store.remove(data.selection);
 				me.getSelectionModel().removeSelection(data.selection);
 			}
 		}
