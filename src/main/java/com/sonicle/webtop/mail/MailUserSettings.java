@@ -54,6 +54,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String COLUMN_VISIBLE = "column.visible@{0}";
 	public static final String COLUMNS_ORDER = "columns.order";
 	public static final String SHARED_SEEN = "sharedseen";
+	public static final String MANUAL_SEEN = "manualseen";
 	public static final String SHARING_RIGHTS = "sharing.rights";
 	public static final String FOLDER_PEFFIX = "folder.prefix";
 	public static final String SCAN_ALL = "scan.all";
@@ -126,6 +127,10 @@ public class MailUserSettings extends BaseUserSettings {
     
     public boolean isSharedSeen() {
         return getBoolean(SHARED_SEEN, false);
+    }
+	
+    public boolean isManualSeen() {
+        return getBoolean(MANUAL_SEEN, false);
     }
 	
 	public String getMessageListGroup(String foldername) {

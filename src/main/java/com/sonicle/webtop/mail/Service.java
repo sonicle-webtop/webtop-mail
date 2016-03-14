@@ -591,6 +591,7 @@ public class Service extends BaseService {
 	 String sharedseen=null;
 	 String docmgtwt=null;
 	 String sharedsort=(String)params.get("sharedsort");
+	 String manualseen=null;
 	 //Service.logger.debug("sharedsort="+sharedsort);
 
 	 boolean restart=false;
@@ -616,6 +617,7 @@ public class Service extends BaseService {
 	 sharedseen=(String)params.get("sharedseen");
 	 String scansecs=(String)params.get("scansecs");
 	 String scancycles=(String)params.get("scancycles");
+	 manualseen=(String)params.get("manualseen");
 
 	 SQLBuffer sb1=new SQLBuffer(SQLBuffer.Type.UPDATE,"users");
 	 SQLBuffer sb2=new SQLBuffer(SQLBuffer.Type.UPDATE,"mailsettings");
@@ -776,6 +778,10 @@ public class Service extends BaseService {
 		  if (altroot.length()>0) sm.setUserSetting(profile, "mail", "defaultfolder", altroot);
 		  else sm.deleteUserSetting(profile, "mail", "defaultfolder");
 	  }
+	
+	 if(manualseen != null) {
+		sm.setUserSetting(profile, "mail", Settings.MANUAL_SEEN, String.valueOf(Boolean.valueOf(manualseen)));
+	 }
 	
 	 if (docmgtwt!=null){
 	 wtd.setServiceSetting("mail", this.environment.getUserProfile(), "docmgtwt", docmgtwt);
@@ -7379,7 +7385,7 @@ public class Service extends BaseService {
 			int recs = 0;
 			long msguid=-1;
 			String vheader[] = null;
-			boolean isseen = false;
+			boolean wasseen = false;
 			String sout = "{\nmessage: [\n";
 			if (providername == null) {
 				checkStoreConnected();
@@ -7388,7 +7394,7 @@ public class Service extends BaseService {
                 m=mcache.getMessage(msguid);
                 if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
 				vheader = m.getHeader("Disposition-Notification-To");
-				isseen = m.isSet(Flags.Flag.SEEN);
+				wasseen = m.isSet(Flags.Flag.SEEN);
 				
 				if (pidattach != null) {
 					
@@ -7474,8 +7480,15 @@ public class Service extends BaseService {
 				sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(html) + "',value2:'',value3:0},\n";
 				++recs;
 			}
-			//if no html part, flag seen is not set
-			if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
+			
+			if (!wasseen) {
+				if (us.isManualSeen()) {
+					m.setFlag(Flags.Flag.SEEN, false);
+				} else {
+					//if no html part, flag seen is not set
+					if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
+				}
+			}
 			
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			int acount = mailData.getAttachmentPartCount();
@@ -7525,7 +7538,7 @@ public class Service extends BaseService {
 				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + "},\n";
 			}
 			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash()) {
-				if (vheader != null && vheader[0] != null && !isseen) {
+				if (vheader != null && vheader[0] != null && !wasseen) {
 					sout += "{iddata:'receipt',value1:'" + StringEscapeUtils.escapeEcmaScript(vheader[0]) + "',value2:'',value3:0},\n";
 				}
 			}
@@ -9592,6 +9605,7 @@ public class Service extends BaseService {
 			co.put("folderTrash", us.getFolderTrash());
 			co.put("pageRows", us.getPageRows());
 			co.put("identities", identities);
+			co.put("manualSeen",us.isManualSeen());
 			co.put("messageViewRegion",us.getMessageViewRegion());
 			co.put("messageViewWidth",us.getMessageViewWidth());
 			co.put("messageViewHeight",us.getMessageViewHeight());
