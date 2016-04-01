@@ -3090,7 +3090,7 @@ public class Service extends BaseService {
 	 boolean first=true;
 	 for(Entry<String, FolderCache> entry: entries) {
 	 FolderCache mc=entry.getValue();
-	 if (mc.unreadChanged()||mc.recentChanged()) {
+	 if (((!mc.isScanForcedOff() && mc.isScanEnabled())||mc.isScanForcedOn()) && ( mc.unreadChanged()||mc.recentChanged() )) {
 	 long millis=System.currentTimeMillis();
 	 if (events==null) events=new ArrayList<ServerEvent>();
 	 mc.resetUnreadChanged();
@@ -6911,7 +6911,7 @@ public class Service extends BaseService {
 				Folder fsent=getFolder(mprofile.getFolderSent());
 				boolean openedsent=false;
 				//Fetch others for these messages
-				System.out.println("start="+start+",limit="+limit+",max="+max);
+				//System.out.println("start="+start+",limit="+limit+",max="+max);
 				mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
 				for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 					int ix = start + i;
@@ -7205,10 +7205,12 @@ public class Service extends BaseService {
 				 } else {
 				 funread=mcache.getUnreadMessagesCount();
 				 }*/
-				if (!mcache.isSpecial()) {
+				if ((!mcache.isScanForcedOff() && mcache.isScanEnabled())||mcache.isScanForcedOn()) {
 					mcache.refreshUnreads();
+					funread=mcache.getUnreadMessagesCount();
 				}
-				funread = mcache.getUnreadMessagesCount();
+				else funread=0;
+				
 				sout += "\n],\n";
 				sout += "metaData: {\n"
 						+ "  root: 'messages', total: 'total', idProperty: 'idmessage',\n"
