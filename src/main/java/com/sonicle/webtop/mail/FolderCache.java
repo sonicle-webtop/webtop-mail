@@ -313,7 +313,8 @@ public class FolderCache {
         }
         else if (ms.isSpecialFolder(sfname)) {
             setScanForcedOn(false);
-            setScanForcedOff(true);
+            //setScanForcedOff(true);
+			setScanForcedOff(false);
         }
         else {
             setScanForcedOn(ms.checkFileRules(foldername));
@@ -417,6 +418,31 @@ public class FolderCache {
     public boolean isScanEnabled() {
         return scanEnabled;
     }
+	
+	public boolean isScanForcedOrEnabled() {
+		return (!isScanForcedOff() && isScanEnabled())||isScanForcedOn();
+	}
+	
+	public boolean hasChildWithScanForcedOrEnabled() {
+		boolean retval=false;
+		
+		if (children!=null) {
+			//look for a possible direct child with scan enabled
+			for (FolderCache child: children) {
+				retval=child.isScanForcedOrEnabled();
+				if (retval) break;
+			}
+			if (!retval) {
+				//look in subchildren
+				for (FolderCache child: children) {
+					retval=child.hasChildWithScanForcedOrEnabled();
+					if (retval) break;
+				}
+			}
+		}
+		
+		return retval;
+	}	
 
     public void setCheckUnreads(boolean b) {
         this.checkUnreads=b;

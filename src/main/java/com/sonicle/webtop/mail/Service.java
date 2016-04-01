@@ -3090,7 +3090,7 @@ public class Service extends BaseService {
 	 boolean first=true;
 	 for(Entry<String, FolderCache> entry: entries) {
 	 FolderCache mc=entry.getValue();
-	 if (((!mc.isScanForcedOff() && mc.isScanEnabled())||mc.isScanForcedOn()) && ( mc.unreadChanged()||mc.recentChanged() )) {
+	 if ((mc.isScanForcedOrEnabled() || mc.hasChildWithScanForcedOrEnabled()) && ( mc.unreadChanged()||mc.recentChanged() )) {
 	 long millis=System.currentTimeMillis();
 	 if (events==null) events=new ArrayList<ServerEvent>();
 	 mc.resetUnreadChanged();
@@ -7205,7 +7205,7 @@ public class Service extends BaseService {
 				 } else {
 				 funread=mcache.getUnreadMessagesCount();
 				 }*/
-				if ((!mcache.isScanForcedOff() && mcache.isScanEnabled())||mcache.isScanForcedOn()) {
+				if (mcache.isScanForcedOrEnabled()) {
 					mcache.refreshUnreads();
 					funread=mcache.getUnreadMessagesCount();
 				}
