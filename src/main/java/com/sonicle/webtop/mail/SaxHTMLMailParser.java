@@ -243,7 +243,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
 		  ismailto=true;
 		}
 	  }
-      pwriter.print(" "+aqname+"='"+avalue+"'");
+      pwriter.print(" "+aqname+"=\""+avalue+"\"");
     }
     if(ismailto) {
       pwriter.print(" onclick='parent.WT.app.handleMailClick(\""+address+"\"); return false;'");
