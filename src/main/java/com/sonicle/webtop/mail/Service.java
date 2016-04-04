@@ -3238,6 +3238,11 @@ public class Service extends BaseService {
 		return b;
 	}
 	
+	public boolean isUnderSentFolder(String foldername) {	
+		   String str=mprofile.getFolderSent()+folderSeparator;
+		   return foldername.startsWith(str);
+	}  	
+	
 	public boolean hasDocumentArchiving() {
 		return WT.isPermitted(environment.getProfile().getId(),SERVICE_ID, "DOCUMENT_ARCHIVING");
 	}
@@ -4641,7 +4646,8 @@ public class Service extends BaseService {
 
 			cvs.put(name, visible);
 			// Handle default cases...avoid data waste!
-			if(ColumnVisibilitySetting.isDefault(fc.isSent(), name, cvs.get(name))) cvs.remove(name);
+			//if(ColumnVisibilitySetting.isDefault(fc.isSent(), name, cvs.get(name))) cvs.remove(name);
+			if(ColumnVisibilitySetting.isDefault(isUnderSentFolder(fc.getFolderName()), name, cvs.get(name))) cvs.remove(name);
 
 			if(cvs.isEmpty()) {
 				us.clearColumnVisibilitySetting(folder);
@@ -6844,6 +6850,7 @@ public class Service extends BaseService {
 				folder = getFolder(pfoldername);
 			}
 			boolean issent = isSentFolder(folder.getFullName());
+			boolean isundersent=isUnderSentFolder(folder.getFullName());
 			boolean isdrafts = isDraftsFolder(folder.getFullName());
 			boolean isundershared=isUnderSharedFolder(pfoldername);
 			if (!issent) {
@@ -7222,7 +7229,7 @@ public class Service extends BaseService {
 				ColumnsOrderSetting cos = us.getColumnsOrderSetting();
 				// Apply grid defaults
 				//ColumnVisibilitySetting.applyDefaults(mcache.isSent(), cvs);
-				ColumnVisibilitySetting.applyDefaults(issent, cvs);
+				ColumnVisibilitySetting.applyDefaults(isundersent, cvs);
 
 				if (autoeditList.size()>0) {
 					sout+="autoedit: [";
