@@ -3090,7 +3090,7 @@ public class Service extends BaseService {
 	 boolean first=true;
 	 for(Entry<String, FolderCache> entry: entries) {
 	 FolderCache mc=entry.getValue();
-	 if ((mc.isScanForcedOrEnabled() || mc.hasChildWithScanForcedOrEnabled()) && ( mc.unreadChanged()||mc.recentChanged() )) {
+	 if ((isUnderSharedFolder(mc.getFolderName()) || mc.isScanForcedOrEnabled() || mc.hasChildWithScanForcedOrEnabled()) && ( mc.unreadChanged()||mc.recentChanged() )) {
 	 long millis=System.currentTimeMillis();
 	 if (events==null) events=new ArrayList<ServerEvent>();
 	 mc.resetUnreadChanged();
