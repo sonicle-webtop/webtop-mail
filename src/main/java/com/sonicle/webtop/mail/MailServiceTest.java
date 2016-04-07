@@ -34,7 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.web.json.JsonResult;
-import com.sonicle.webtop.core.WT;
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseService;
 import java.io.PrintWriter;
 import java.util.ArrayList;

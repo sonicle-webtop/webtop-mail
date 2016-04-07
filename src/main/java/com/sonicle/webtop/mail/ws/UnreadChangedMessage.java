@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.mail.ws;
 
-import com.sonicle.webtop.core.WT;
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sonicle.webtop.mail.Service;
 

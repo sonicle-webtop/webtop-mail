@@ -36,7 +36,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
-import com.sonicle.webtop.core.WT;
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseUserOptionsService;
 import java.io.PrintWriter;
 import javax.servlet.http.HttpServletRequest;

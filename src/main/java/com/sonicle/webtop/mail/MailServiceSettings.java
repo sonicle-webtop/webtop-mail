@@ -34,7 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
-import com.sonicle.webtop.core.CoreManifest;
+import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
 
