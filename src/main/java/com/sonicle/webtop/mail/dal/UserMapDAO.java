@@ -39,6 +39,7 @@ import com.sonicle.webtop.mail.bol.OUserMap;
 import java.sql.Connection;
 import org.jooq.DSLContext;
 import static com.sonicle.webtop.mail.jooq.Tables.USERS_MAP;
+import java.util.List;
 
 /**
  *
@@ -75,5 +76,17 @@ public class UserMapDAO extends BaseDAO {
 			.limit(1)
 			.fetchOneInto(OUserMap.class);
 	}
+	
+	public List<OUserMap> selectByDomainId(Connection con, String domainId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(USERS_MAP)
+			.where(
+				USERS_MAP.DOMAIN_ID.equal(domainId)
+			)
+			.fetchInto(OUserMap.class);
+	}
+	
 	
 }

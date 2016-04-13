@@ -33,7 +33,6 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
@@ -60,6 +59,9 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String MESSAGE_VIEW_MAX_CCS = "message.view.max.ccs";
 	public static final String SORT_FOLDERS = "sort.folders";
 	public static final String SPAMADM_SPAM = "spamadm.spam";
+	public static final String ADMIN_USER = "admin.user";
+	public static final String ADMIN_PASSWORD = "admin.password";
+	public static final String NETHTOP_VMAIL_SECRET = "nethtop.vmail.secret";
 
 /*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
 	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
@@ -131,6 +133,18 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public String getSpamadmSpam() {
 		return getString(SPAMADM_SPAM,null);
+	}
+	
+	public String getAdminUser() {
+		return getString(ADMIN_USER,null);
+	}
+	
+	public String getAdminPassword() {
+		return getString(ADMIN_PASSWORD,null);
+	}
+	
+	public String getNethTopVmailSecret() {
+		return getString(NETHTOP_VMAIL_SECRET,null);
 	}
 	
 	//DEFAULTS
