@@ -11,6 +11,16 @@
 			Value must be unique in webtop platform. This name is used as 
 			short service idenfitier (XID) and as prefix for css classes.
 			
+		<version> -> Service version. REQUIRED
+		<buildDate> -> This package build date.
+		<company> -> Service's company name.
+		<companyEmail> -> Service's company email.
+		<companyWebSite> -> Service's company website.
+		<supportEmail> -> Service's company support email for feedbacks.
+			
+		<controllerClassName> -> Controller class name (do not specify base package name).
+			If empty, default "Controller" value will be used.
+			
 		<serviceClassName> -> Service class name (do not specify base package name).
 			If empty, default "Service" value will be used.
 			
@@ -20,8 +30,11 @@
 		<publicServiceClassName> -> Public service class name (do not specify base package name).
 			If empty, default "PublicService" value will be used.
 			
-		<deamonServiceClassName> -> Deamon service class name (do not specify base package name).
-			If empty, default "DeamonService" value will be used.
+		<jobServiceClassName> -> Job service class name (do not specify base package name).
+			If empty, default "JobService" value will be used.
+			
+		<clientOptionsModelJsClassName> Client options model class name.
+			Defaults to "model.ClientOptions"
 			
 		<userOptions> -> User options section.
 			If empty, default keys values will be used. See below!
@@ -34,10 +47,15 @@
 			<modelJsClassName> -> Client model class name.
 				If empty, default "model.UserOptions" value will be used.
 		
-		<company> -> Service's company name.
-		<companyEmail> -> Service's company email.
-		<companyWebSite> -> Service's company website.
-		<supportEmail> -> Service's company support email for feedbacks.
+		<resources> -> Resources section.
+			It must contain zero or more <resource> elements that define following attributes:
+			- name
+				The resource name.
+			- [type]
+				Specifies the resource type: "default" or "share". Default to "default".
+			- actions
+				Specifies permission action on the recource: like READ, WRITE, ACCESS, MANAGE, etc...
+				Can be avoided in case of "share" type, this kind of type has a predefined action set.
 	-->
 	<service>
 		<package>com.sonicle.webtop.mail</package>
@@ -48,6 +66,7 @@
 		<serviceClassName>Service</serviceClassName>
 		<publicServiceClassName></publicServiceClassName>
 		<deamonServiceClassName></deamonServiceClassName>
+		<jobServiceClassName></jobServiceClassName>
 		<company>Sonicle S.r.l.</company>
 		<companyEmail>sonicle@sonicle.com</companyEmail>
 		<companyWebSite>http://www.sonicle.com</companyWebSite>

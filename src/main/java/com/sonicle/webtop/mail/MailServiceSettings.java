@@ -47,8 +47,6 @@ public class MailServiceSettings extends BaseServiceSettings {
         super(serviceId, domainId);
     }
 	
-	public static final String SMTP_HOST = "smtp.host";
-	public static final String SMTP_PORT = "smtp.port";
     public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
 	public static final String ARCHIVE = "archive";
 	public static final String FAX_MAX_RECIPIENTS = "fax.max.recipients";
@@ -77,14 +75,6 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String DEFAULT_PORT = "default.port";
 	public static final String DEFAULT_PROTOCOL = "default.protocol";*/
 	
-    public String getSmtpHost() {
-        return getString(SMTP_HOST,"localhost");
-    }
-    
-    public int getSmtpPort() {
-        return getInteger(SMTP_PORT,25);
-    }
-    
     public boolean isAutocreateSpecialFolders() {
         return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);
     }

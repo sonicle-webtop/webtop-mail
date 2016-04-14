@@ -57,6 +57,7 @@ import javax.mail.Flags;
 import javax.mail.Folder;
 import javax.mail.Message;
 import javax.mail.MessagingException;
+import javax.mail.Session;
 import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.MimeMessage;
@@ -98,10 +99,8 @@ public class JobService extends BaseJobService {
 		private JobService jobService = null;
 		private CoreManager cm=null;
 		
-		private java.util.Properties props=System.getProperties();
-		private javax.mail.Session session=null;
 		private HashMap<String,MailServiceSettings> hmss=new HashMap();
-		private HashMap<String,HashMap<String,MailUserSettings>> hhmus=new HashMap();
+		private HashMap<UserProfile.Id,MailUserSettings> hmus=new HashMap();
 
 		private boolean findSendTasksExceptionTraced=false;
 
@@ -109,8 +108,6 @@ public class JobService extends BaseJobService {
 		
 		public ScheduledSendJob() {
 			cm=WT.getCoreManager(getRunContext());
-			props.setProperty("mail.imaps.ssl.trust", "*");
-			session=javax.mail.Session.getDefaultInstance(props);
 		}
 	
 		@Override
@@ -128,6 +125,7 @@ public class JobService extends BaseJobService {
 				List<ODomain> domains=cm.listDomains(true);
 				for(ODomain domain: domains) {
 					String domainId=domain.getDomainId();
+					Session session=WT.getMailSession(domainId);
 					MailServiceSettings mss = getMailServiceSettings(domainId);
 					String vmailSecret=mss.getNethTopVmailSecret();
 					List<OUserMap> musers=UserMapDAO.getInstance().selectByDomainId(con, domainId);
@@ -139,14 +137,14 @@ public class JobService extends BaseJobService {
 							if (vmailSecret==null) {
 								String adminUser=mss.getAdminUser();
 								String adminPassword=mss.getAdminPassword();
-								store=connectAdminStore(muser, adminUser, adminPassword);
+								store=connectAdminStore(session, muser, adminUser, adminPassword);
 							} else {
-								store=connectVmailStore(muser, vmailSecret);
+								store=connectVmailStore(session, muser, vmailSecret);
 							}
 							MailUserSettings mus=getMailUserSettings(pid, mss);
 							Folder outgoings[]=getOutgoingFolders(store, domain, muser, vmailSecret, mus);
 							Folder folderSent=getSentFolder(store, muser, domain, vmailSecret, mus);
-							sendScheduledMails(muser,outgoings,folderSent,WT.getUserData(pid).getLocale());
+							sendScheduledMails(pid,domain,outgoings,folderSent,WT.getUserData(pid).getLocale());
 							store.close();
 							store=null;
 						} catch(Exception exc) {
@@ -166,7 +164,7 @@ public class JobService extends BaseJobService {
 			}
 		}
 		
-		public void sendScheduledMails(OUserMap mu, Folder outgoings[], Folder folderSent, Locale locale) {
+		public void sendScheduledMails(UserProfile.Id pid, ODomain domain, Folder outgoings[], Folder folderSent, Locale locale) {
 			for(Folder targetfolder: outgoings) {
 				try {
 					targetfolder.open(Folder.READ_WRITE);
@@ -180,7 +178,7 @@ public class JobService extends BaseJobService {
 								String sendtime=getSingleHeaderValue(m,"Sonicle-send-time");
 								boolean sendnotify=getSingleHeaderValue(m,"Sonicle-notify-delivery").equals("true");
 								if (isTimeToSend(senddate,sendtime)) {
-									sendScheduledMessage(mu, folderSent, locale, m, sendnotify);
+									sendScheduledMessage(pid, domain, folderSent, locale, m, sendnotify);
 								}
 								//scheduleSendTask(mu, mid, senddate, sendtime, sendnotify);
 							}
@@ -280,7 +278,7 @@ public class JobService extends BaseJobService {
 			return cal;
 		}
 		
-		private void sendScheduledMessage(OUserMap mu, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
+		private void sendScheduledMessage(UserProfile.Id pid, ODomain domain, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
 			try {
 				MimeMessage nm=new MimeMessage((MimeMessage)m);
 				nm.removeHeader("Sonicle-send-scheduled");
@@ -314,20 +312,21 @@ public class JobService extends BaseJobService {
 							DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT,locale).format(cal.getTime()),
 							MailUtils.htmlescape(recipients),
 							MailUtils.htmlescape(nmsubject));
-					//wta.sendHtmlMessage("webtop@"+mu.domain, mu.email, subject, html);
+					String email=WT.getUserData(pid).getEmail().toString();
+					WT.sendEmail(pid, true, "webtop@"+domain.getDomainName(), email, subject, html);
 				}
 			} catch(Throwable t) {
 				logger.error("Exception",t);
 			}
 		}
 		
-		private Store connectAdminStore(OUserMap mu, String adminUser, String adminPassword) throws MessagingException {
+		private Store connectAdminStore(Session session, OUserMap mu, String adminUser, String adminPassword) throws MessagingException {
 			Store store=session.getStore(mu.getMailProtocol());
 			store.connect(mu.getMailHost(),mu.getMailPort(),adminUser,adminPassword);
 			return store;
 		}
     
-		private Store connectVmailStore(OUserMap mu, String vmailSecret) throws MessagingException {
+		private Store connectVmailStore(Session session, OUserMap mu, String vmailSecret) throws MessagingException {
 			Store store=session.getStore(mu.getMailProtocol());
 			store.connect(mu.getMailHost(),mu.getMailPort(),mu.getMailUser()+"*vmail",vmailSecret);
 			return store;
@@ -349,18 +348,10 @@ public class JobService extends BaseJobService {
 		* Implement mail user settings object cache
 		*/
 		private MailUserSettings getMailUserSettings(UserProfile.Id pid, MailServiceSettings mss) {
-			String domainId=pid.getDomainId();
-			String userId=pid.getUserId();
-			HashMap<String,MailUserSettings> hmus=hhmus.get(domainId);
-			if (hmus==null) {
-				hmus=new HashMap();
-				hhmus.put(domainId, hmus);
-			}
-			
-			MailUserSettings mus=hmus.get(userId);
+			MailUserSettings mus=hmus.get(pid);
 			if (mus==null) {
 				mus=new MailUserSettings(pid,mss);
-				hmus.put(userId, mus);
+				hmus.put(pid, mus);
 			}
 			return mus;
 		}

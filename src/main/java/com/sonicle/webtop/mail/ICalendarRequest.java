@@ -286,14 +286,14 @@ public class ICalendarRequest {
 
 		String htmltitle=htmlsummary;
 		if (method.equals("REQUEST")) {
-			htmltitle=bundle.getString("ical.invited_by")+" "+StringEscapeUtils.escapeHtml4(organizerCN)+" "+bundle.getString("ical.invited_to")+" "+htmlsummary;
+			htmltitle=bundle.getString("ical.invited.by")+" "+StringEscapeUtils.escapeHtml4(organizerCN)+" "+bundle.getString("ical.invited.to")+" "+htmlsummary;
 		} else if (method.equals("REPLY")) {
 			Parameter param=icalAttendees[0].getParameter("PARTSTAT");
 			String v=param.getValue();
 			if (v.equals("ACCEPTED"))
-				htmltitle=attendeesCN[0]+" "+bundle.getString("ical.accepted")+" "+bundle.getString("ical.invited_to")+" "+htmlsummary;
+				htmltitle=attendeesCN[0]+" "+bundle.getString("ical.accepted")+" "+bundle.getString("ical.invited.to")+" "+htmlsummary;
 			else if (v.equals("DECLINED"))
-				htmltitle=attendeesCN[0]+" "+bundle.getString("ical.declined")+" "+bundle.getString("ical.invited_to")+" "+htmlsummary;
+				htmltitle=attendeesCN[0]+" "+bundle.getString("ical.declined")+" "+bundle.getString("ical.invited.to")+" "+htmlsummary;
 			else
 				htmltitle=attendeesCN[0]+" "+bundle.getString("ical.answered");
 		}

@@ -191,7 +191,6 @@ public class Service extends BaseService {
 //	private static String unwantedTags[] = {"style"};
 	
 	private Session session;
-	private Properties props;
 	private Store store;
 	private boolean disconnecting = false;
 	private String sharedPrefixes[] = null;
@@ -270,16 +269,6 @@ public class Service extends BaseService {
 		us = new MailUserSettings(profile.getId(),ss);
 		mprofile = new MailUserProfile(environment,this);
 		fcProvided = new FolderCache(this, environment);
-		this.props = System.getProperties();
-		//this.props.setProperty("mail.imap.parse.debug", "true");
-		this.props.setProperty("mail.smtp.host", ss.getSmtpHost());
-		this.props.setProperty("mail.smtp.port", ""+ss.getSmtpPort());
-		//this.props.setProperty("mail.socket.debug", "true");
-		this.props.setProperty("mail.imaps.ssl.trust", "*");
-		this.props.setProperty("mail.imap.folder.class", "com.sonicle.mail.imap.SonicleIMAPFolder");
-		this.props.setProperty("mail.imaps.folder.class", "com.sonicle.mail.imap.SonicleIMAPFolder");
-		//support idle events
-		this.props.setProperty("mail.imap.enableimapevents", "true");
 		
 		folderPrefix = mprofile.getFolderPrefix();
 		String protocol = mprofile.getMailProtocol();
@@ -306,7 +295,7 @@ public class Service extends BaseService {
 		
 		hasDifferentDefaultFolder=us.getDefaultFolder()!=null;
 		
-		session=Session.getInstance(props, null);
+		session=WT.getMailSession(profile.getDomainId());
 		//session=Session.getDefaultInstance(props, null);
 		session.setDebug(imapDebug);
 
