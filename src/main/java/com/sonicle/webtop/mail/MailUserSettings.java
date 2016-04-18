@@ -34,6 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import java.text.MessageFormat;
@@ -129,32 +130,40 @@ public class MailUserSettings extends BaseUserSettings {
         return getBoolean(SHARED_SEEN, false);
     }
 	
+    public boolean setSharedSeen(boolean b) {
+        return setBoolean(SHARED_SEEN, b);
+    }
+	
     public boolean isManualSeen() {
         return getBoolean(MANUAL_SEEN, false);
     }
+	
+	public boolean setManualSeen(boolean b) {
+        return setBoolean(MANUAL_SEEN, b);
+	}
 	
 	public String getMessageListGroup(String foldername) {
 		return getString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),"");
 	}
 	
-	public void setMessageListGroup(String foldername, String group) {
-		setString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),group);
+	public boolean setMessageListGroup(String foldername, String group) {
+		return setString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),group);
 	}
 	
 	public int getColumnSize(String name) {
 		return getInteger(MessageFormat.format(COLUMN_SIZE,name),100);
 	}
 	
-	public void setColumnSize(String name, int size) {
-		setInteger(MessageFormat.format(COLUMN_SIZE,name),size);
+	public boolean setColumnSize(String name, int size) {
+		return setInteger(MessageFormat.format(COLUMN_SIZE,name),size);
 	}
 	
 	public ColumnsOrderSetting getColumnsOrderSetting() {
 		return LangUtils.value(getSetting(COLUMNS_ORDER),new ColumnsOrderSetting(), ColumnsOrderSetting.class);
 	}
 	
-	public void setColumnsOrderSetting(ColumnsOrderSetting cos) {
-		setObject(COLUMNS_ORDER,cos,ColumnsOrderSetting.class);
+	public boolean setColumnsOrderSetting(ColumnsOrderSetting cos) {
+		return setObject(COLUMNS_ORDER,cos,ColumnsOrderSetting.class);
 	}
     
 	public void clearColumnsOrderSetting() {
@@ -168,160 +177,208 @@ public class MailUserSettings extends BaseUserSettings {
 		);
 	}
 	
-	public void setColumnVisibilitySetting(String foldername, ColumnVisibilitySetting cvs) {
-		setObject(MessageFormat.format(COLUMN_VISIBLE, foldername),cvs,ColumnVisibilitySetting.class);
+	public boolean setColumnVisibilitySetting(String foldername, ColumnVisibilitySetting cvs) {
+		return setObject(MessageFormat.format(COLUMN_VISIBLE, foldername),cvs,ColumnVisibilitySetting.class);
 	}
     
-	public void clearColumnVisibilitySetting(String foldername) {
-		clear(MessageFormat.format(COLUMN_VISIBLE, foldername));
+	public boolean clearColumnVisibilitySetting(String foldername) {
+		return clear(MessageFormat.format(COLUMN_VISIBLE, foldername));
 	}
 	
 	public String getMessageListSort(String foldername) {
 		return getString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
 	}
 	
-	public void setMessageListSort(String foldername, String value) {
-		setString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),value);
+	public boolean setMessageListSort(String foldername, String value) {
+		return setString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),value);
 	}
 	
-	public void setMessageListSort(String foldername, String field, String direction) {
-		setString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),field+"|"+direction);
+	public boolean setMessageListSort(String foldername, String field, String direction) {
+		return setString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),field+"|"+direction);
 	}
 	
 	public boolean isMessageListThreaded(String foldername) {
 		return getBoolean(MessageFormat.format(MESSAGE_LIST_THREADED, foldername),false);
 	}
 	
-	public void setMessageListThreaded(String foldername, boolean threaded) {
-		setBoolean(MessageFormat.format(MESSAGE_LIST_THREADED, foldername),threaded);
+	public boolean setMessageListThreaded(String foldername, boolean threaded) {
+		return setBoolean(MessageFormat.format(MESSAGE_LIST_THREADED, foldername),threaded);
 	}
 	
 	public String getFolderPrefix() {
 		return getString(FOLDER_PEFFIX, mss.getDefaultFolderPrefix());
 	}
 	
+	public boolean setFolderPrefix(String prefix) {
+		return setString(FOLDER_PEFFIX,prefix);
+	}
+	
 	public boolean isScanAll() {
 		return getBoolean(SCAN_ALL,mss.isDefaultScanAll());
+	}
+	
+	public boolean setScanAll(boolean b) {
+		return setBoolean(SCAN_ALL,b);
 	}
 	
 	public int getScanSeconds() {
 		return getInteger(SCAN_SECONDS,mss.getDefaultScanSeconds());
 	}
 	
+	public boolean setScanSeconds(int seconds) {
+		return setInteger(SCAN_SECONDS,seconds);
+	}
+	
 	public int getScanCycles() {
 		return getInteger(SCAN_CYCLES,mss.getDefaultScanCycles());
+	}
+	
+	public boolean setScanCycles(int cycles) {
+		return setInteger(SCAN_CYCLES,cycles);
 	}
 	
 	public String getFolderSent() {
 		return getString(FOLDER_SENT,mss.getDefaultFolderSent());
 	}
 	
+	public boolean setFolderSent(String name) {
+		return setString(FOLDER_SENT,name);
+	}
+	
 	public String getFolderDrafts() {
 		return getString(FOLDER_DRAFTS,mss.getDefaultFolderDrafts());
+	}
+	
+	public boolean setFolderDrafts(String name) {
+		return setString(FOLDER_DRAFTS,name);
 	}
 	
 	public String getFolderTrash() {
 		return getString(FOLDER_TRASH,mss.getDefaultFolderTrash());
 	}
 
+	public boolean setFolderTrash(String name) {
+		return setString(FOLDER_TRASH,name);
+	}
+	
 	public String getFolderSpam() {
 		return getString(FOLDER_SPAM,mss.getDefaultFolderSpam());
 	}
 	
+	public boolean setFolderSpam(String name) {
+		return setString(FOLDER_SPAM,name);
+	}
+	
 	public String getReplyTo() {
-		return getString(REPLY_TO, null);
+		return getString(REPLY_TO, WT.getUserData(profileId).getEmail().toString());
+	}
+	
+	public boolean setReplyTo(String replyto) {
+		return setString(REPLY_TO,replyto);
 	}
 	
 	public String getSharedSort() {
 		return getString(SHARED_SORT,"N");
 	}
 	
+	public boolean setSharedSort(String sharedSort) {
+		return setString(SHARED_SORT,sharedSort);
+	}
+	
 	public boolean isIncludeMessageInReply() {
 		return getBoolean(INCLUDE_MESSAGE_IN_REPLY, mss.isDefaultIncludeMessageInReply());
+	}
+	
+	public boolean setIncludeMessageInReply(boolean b) {
+		return setBoolean(INCLUDE_MESSAGE_IN_REPLY,b);
 	}
 	
 	public int getPageRows() {
 		return getInteger(PAGE_ROWS,mss.getDefaultPageRows());
 	}
 	
-	public void setPageRows(int rows) {
-		setInteger(PAGE_ROWS, rows);
+	public boolean setPageRows(int rows) {
+		return setInteger(PAGE_ROWS, rows);
 	}
 	
 	public String getHost() {
-		return getString(HOST,null);
+		return getString(HOST,mss.getDefaultHost());
 	}
 	
-	public void setHost(String host) {
-		setString(HOST, host);
+	public boolean setHost(String host) {
+		return setString(HOST, host);
 	}
 	
 	public int getPort() {
-		return getInteger(PORT,0);
+		return getInteger(PORT,mss.getDefaultPort());
 	}
 	
-	public void setPort(int port) {
-		setInteger(PORT, port);
+	public boolean setPort(int port) {
+		return setInteger(PORT, port);
 	}
 	
 	public String getUsername() {
 		return getString(USERNAME,null);
 	}
 	
-	public void setUsername(String username) {
-		setString(USERNAME, username);
+	public boolean setUsername(String username) {
+		return setString(USERNAME, username);
 	}
 	
 	public String getPassword() {
 		return getString(PASSWORD,null);
 	}
 	
-	public void setPassword(String password) {
-		setString(PASSWORD, password);
+	public boolean setPassword(String password) {
+		return setString(PASSWORD, password);
 	}
 	
 	public String getProtocol() {
 		return getString(PROTOCOL,null);
 	}
 	
-	public void setProtocol(String protocol) {
-		setString(PROTOCOL, protocol);
+	public boolean setProtocol(String protocol) {
+		return setString(PROTOCOL, protocol);
 	}
 	
 	public String getMessageViewRegion() {
 		return getString(MESSAGE_VIEW_REGION,"south");
 	}
 	
-	public void setMessageViewRegion(String region) {
-		setString(MESSAGE_VIEW_REGION,region);
+	public boolean setMessageViewRegion(String region) {
+		return setString(MESSAGE_VIEW_REGION,region);
 	}
 	
 	public int getMessageViewWidth() {
 		return getInteger(MESSAGE_VIEW_WIDTH,640);
 	}
 	
-	public void setMessageViewWidth(int width) {
-		setInteger(MESSAGE_VIEW_WIDTH, width);
+	public boolean setMessageViewWidth(int width) {
+		return setInteger(MESSAGE_VIEW_WIDTH, width);
 	}
 	
 	public int getMessageViewHeight() {
 		return getInteger(MESSAGE_VIEW_HEIGHT,400);
 	}
 	
-	public void setMessageViewHeight(int height) {
-		setInteger(MESSAGE_VIEW_HEIGHT,height);
+	public boolean setMessageViewHeight(int height) {
+		return setInteger(MESSAGE_VIEW_HEIGHT,height);
 	}
 	
 	public boolean getMessageViewCollapsed() {
 		return getBoolean(MESSAGE_VIEW_COLLAPSED,false);
 	}
 	
-	public void setMessageViewCollapsed(boolean collapsed) {
-		setBoolean(MESSAGE_VIEW_COLLAPSED,collapsed);
+	public boolean setMessageViewCollapsed(boolean collapsed) {
+		return setBoolean(MESSAGE_VIEW_COLLAPSED,collapsed);
 	}
 	
 	public String getDefaultFolder() {
 		return getString(DEFAULT_FOLDER,null);
+	}
+	
+	public boolean setDefaultFolder(String name) {
+		return setString(DEFAULT_FOLDER,name);
 	}
 	
 	public HashMap<String,Integer> getColumnSizes() {

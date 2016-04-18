@@ -71,5 +71,12 @@
 		<companyEmail>sonicle@sonicle.com</companyEmail>
 		<companyWebSite>http://www.sonicle.com</companyWebSite>
 		<supportEmail>sonicle@sonicle.com</supportEmail>
+		
+		<userOptions>
+			<serviceClassName>UserOptionsService</serviceClassName>
+			<viewJsClassName>view.UserOptions</viewJsClassName>
+			<modelJsClassName>model.UserOptions</modelJsClassName>
+		</userOptions>
+		
 	</service>
 </services>

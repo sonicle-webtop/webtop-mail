@@ -31,32 +31,41 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.mail.model.UserOptions', {
-	extend: 'WT.sdk.model.UserOptions',
+package com.sonicle.webtop.mail.bol.js;
+
+import com.sonicle.webtop.core.sdk.bol.js.JsUserOptionsBase;
+
+/**
+ *
+ * @author malbinola
+ */
+public class JsUserOptions extends JsUserOptionsBase {
 	
-	proxy: WT.optionsProxy('com.sonicle.webtop.mail'),
-	fields: [
-		
-		WTF.field('simpleArchivingMailFolder', 'string', true),
-		WTF.field('archivingMethod', 'string', true),
-		WTF.field('sharedSeen', 'boolean', false),
-		WTF.field('manualSeen', 'boolean', false),
-		WTF.field('scanAll', 'boolean', false),
-		WTF.field('scanSeconds', 'int', false),
-		WTF.field('scanCycles', 'int', false),
-		WTF.field('folderPrefix', 'string', true),
-		WTF.field('folderSent', 'string', true),
-		WTF.field('folderDrafts', 'string', true),
-		WTF.field('folderTrash', 'string', true),
-		WTF.field('folderSpam', 'string', true),
-		WTF.field('replyTo', 'string', true),
-		WTF.field('sharedSort', 'string', false),
-		WTF.field('includeMessageInReply', 'boolean', false),
-		WTF.field('host', 'string', false),
-		WTF.field('port', 'int', false),
-		WTF.field('username', 'string', false),
-		WTF.field('password', 'string', false),
-		WTF.field('protocol', 'string', false),
-		WTF.field('defaultFolder', 'string', true)
-	]
-});
+	public String simpleArchivingMailFolder;
+	public String archivingMethod;
+	public boolean sharedSeen;
+	public boolean manualSeen;
+	public boolean scanAll;
+	public int scanSeconds;
+	public int scanCycles;
+	public String folderPrefix;
+	public String folderSent;
+	public String folderDrafts;
+	public String folderTrash;
+	public String folderSpam;
+	public String replyTo;
+	public String sharedSort;
+	public boolean includeMessageInReply;
+	public String host;
+	public int port;
+	public String username;
+	public String password;
+	public String protocol;
+	public String defaultFolder;
+	
+	public JsUserOptions() {}
+	
+	public JsUserOptions(String id) {
+		super(id);
+	}
+}

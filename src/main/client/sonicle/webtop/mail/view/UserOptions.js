@@ -31,32 +31,32 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.mail.model.UserOptions', {
-	extend: 'WT.sdk.model.UserOptions',
-	
-	proxy: WT.optionsProxy('com.sonicle.webtop.mail'),
-	fields: [
+Ext.define('Sonicle.webtop.mail.view.UserOptions', {
+	extend: 'WT.sdk.UserOptionsView',
+	requires: [
+	],
 		
-		WTF.field('simpleArchivingMailFolder', 'string', true),
-		WTF.field('archivingMethod', 'string', true),
-		WTF.field('sharedSeen', 'boolean', false),
-		WTF.field('manualSeen', 'boolean', false),
-		WTF.field('scanAll', 'boolean', false),
-		WTF.field('scanSeconds', 'int', false),
-		WTF.field('scanCycles', 'int', false),
-		WTF.field('folderPrefix', 'string', true),
-		WTF.field('folderSent', 'string', true),
-		WTF.field('folderDrafts', 'string', true),
-		WTF.field('folderTrash', 'string', true),
-		WTF.field('folderSpam', 'string', true),
-		WTF.field('replyTo', 'string', true),
-		WTF.field('sharedSort', 'string', false),
-		WTF.field('includeMessageInReply', 'boolean', false),
-		WTF.field('host', 'string', false),
-		WTF.field('port', 'int', false),
-		WTF.field('username', 'string', false),
-		WTF.field('password', 'string', false),
-		WTF.field('protocol', 'string', false),
-		WTF.field('defaultFolder', 'string', true)
-	]
+	initComponent: function() {
+		var me = this;
+		me.callParent(arguments);
+		
+		me.add({
+			xtype: 'wtopttabsection',
+			title: WT.res(me.ID, 'opts.main.tit'),
+			items: [
+			{
+				xtype: 'textfield',
+				bind: '{record.replyto}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-replyto.lbl'),
+				width: 220,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.host}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-host.lbl'),
+				width: 220,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}]
+		});
+	}
 });
