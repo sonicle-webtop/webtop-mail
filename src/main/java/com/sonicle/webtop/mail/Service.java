@@ -2459,20 +2459,7 @@ public class Service extends BaseService {
 //          sb.append("</BLOCKQUOTE>");
 				}
 			} else {
-				int ix1 = body.indexOf("<BODY");
-				if (ix1 >= 0) {
-					int ix2 = body.indexOf(">", ix1 + 1);
-					if (ix2 < 0) {
-						ix2 = ix1 + 4;
-					}
-					int ix3 = body.indexOf("</BODY", ix2 + 1);
-					if (ix3 > 0) {
-						body = body.substring(ix2 + 1, ix3);
-					} else {
-						body = body.substring(ix2 + 1);
-					}
-				}
-				sb.append(body);
+				sb.append(getBodyInnerHtml(body));
 			}
 			if (format == SimpleMessage.FORMAT_HTML) {
 //        sb.append("</td></tr></table>");
@@ -2481,6 +2468,23 @@ public class Service extends BaseService {
 		}
 		return sb.toString();
 	}
+	
+  private String getBodyInnerHtml(String body) {
+	int ix1=body.indexOf("<BODY");
+	if(ix1>=0) {
+	  int ix2=body.indexOf(">", ix1+1);
+	  if(ix2<0) {
+		ix2=ix1+4;
+	  }
+	  int ix3=body.indexOf("</BODY", ix2+1);
+	  if(ix3>0) {
+		body=body.substring(ix2+1, ix3);
+	  } else {
+		body=body.substring(ix2+1);
+	  }	
+	}
+	return body;
+  }	
 
 	//Clone of MimeMessage that was private and used by my custom reply
 	private Address[] eliminateDuplicates(Vector v, Address[] addrs) {
@@ -2945,12 +2949,13 @@ public class Service extends BaseService {
 			IOException {
 		boolean isHtml = false;
 		String disp = p.getDisposition();
-		if (disp != null && disp.equalsIgnoreCase(Part.ATTACHMENT)) {
+		if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT) && !p.isMimeType("message/*")) {
 			return false;
 		}
 		if (p.isMimeType("text/html")) {
-			textsb.append(MailUtils.htmlToText(MailUtils.htmlunescapesource((String) p.getContent())));
-			htmlsb.append(MailUtils.htmlescapefixsource((String) p.getContent()));
+			String htmlcontent=(String)p.getContent();
+			textsb.append(MailUtils.htmlToText(MailUtils.htmlunescapesource(htmlcontent)));
+			htmlsb.append(MailUtils.htmlescapefixsource(getBodyInnerHtml(htmlcontent)));
 			isHtml = true;
 		} else if (p.isMimeType("text/plain")) {
 			String content = getTextPlainContentAsString(p);
