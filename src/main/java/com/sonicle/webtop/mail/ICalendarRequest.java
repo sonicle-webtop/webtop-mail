@@ -91,11 +91,8 @@ public class ICalendarRequest {
 		ical=ICalendarUtils.parseRelaxed(istream);
 		
 		Method icalMethod=ical.getMethod();
-		if (icalMethod==null) {
-			throw new ParserException("No ical Request, no method",1);
-		}
-		
-		method=icalMethod.getValue();
+		if (icalMethod==null) method="REQUEST";
+		else method=icalMethod.getValue();
 		vevent = (VEvent) ical.getComponent(Component.VEVENT);
 		
 		uid=vevent.getUid().getValue();
