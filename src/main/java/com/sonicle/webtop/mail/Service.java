@@ -8461,20 +8461,23 @@ public class Service extends BaseService {
 		smsg.setContent("");
 
 		net.fortuna.ical4j.model.Calendar reply=ICalendarUtils.buildInvitationReply(ir.getCalendar(), forAddress, response);
-		String content=reply.toString();
-		
-		javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
-		part1.setText(content, "UTF8", "application/ics");
-		part1.setHeader("Content-type", "application/ics");
-		part1.setFileName("webtop-reply.ics");
-		javax.mail.internet.MimeBodyPart part2 = new javax.mail.internet.MimeBodyPart();
-		part2.setText(content, "UTF8", "text/calendar");
-		part2.setHeader("Content-type", "text/calendar; charset=UTF-8; method=REPLY");
-		part2.setFileName("webtop-reply.ics");
+		//If forAddress is not on any of the intended iCal attendee, don't send a reply (e.g. forwarded ics)
+		if (reply!=null) {
+			String content=reply.toString();
 
-		smsg.setAttachments(new javax.mail.Part[]{part1,part2});
+			javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
+			part1.setText(content, "UTF8", "application/ics");
+			part1.setHeader("Content-type", "application/ics");
+			part1.setFileName("webtop-reply.ics");
+			javax.mail.internet.MimeBodyPart part2 = new javax.mail.internet.MimeBodyPart();
+			part2.setText(content, "UTF8", "text/calendar");
+			part2.setHeader("Content-type", "text/calendar; charset=UTF-8; method=REPLY");
+			part2.setFileName("webtop-reply.ics");
 
-		sendMsg(profile.getEmailAddress(), smsg, null);
+			smsg.setAttachments(new javax.mail.Part[]{part1,part2});
+
+			sendMsg(profile.getEmailAddress(), smsg, null);
+		}
 		
 	}
 	

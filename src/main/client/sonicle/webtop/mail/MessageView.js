@@ -499,21 +499,18 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 									return false;
 								},me );
 							},me);
-
 						}
+					} else {
+						Ext.each(aics,function(o) { 
+							Ext.get(o).on("click",function(e,t,o) { 
+								var xel=t; //sometimes returns SPAN or IMG instead of A
+								if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
+								me.importCalendarEvent(xel.getAttribute("ics")); 
+								e.stopEvent(); 
+								return false;
+							},me );
+						},me);
 					}
-
-					
-					/*
-                    Ext.each(aics,function(o) { 
-						Ext.get(o).on("click",function(e,t,o) { 
-							var xel=t; //sometimes returns SPAN or IMG instead of A
-							if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
-							me.importCalendarEvent(xel,xel.getAttribute("ics")); 
-							e.stopEvent(); 
-							return false;
-						},me );
-					},me);*/
                 }
 
 				
@@ -1205,9 +1202,17 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		},me);
     },
     
-    _importCalendarEvent: function(act, params) {
+    importCalendarEvent: function(params) {
+        WT.confirm(this.res('ical.import.message'), function(bid) {
+			if (bid==='yes') {
+				this._importCalendarEvent('accept',params);
+			}
+        },this);	
+    },	
+	
+	_importCalendarEvent: function(act, params) {
 		var me=this;
-		WT.ajaxReq(g.mys.ID, 'GetCalendarEvent', {
+		WT.ajaxReq(me.mys.ID, 'GetCalendarEvent', {
 			params: params,
 			callback: function(success,json) {
 				if (json.result) {
