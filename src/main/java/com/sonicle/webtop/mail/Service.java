@@ -7515,7 +7515,7 @@ public class Service extends BaseService {
 				
 				String imgname = null;
 				if (ctype.equalsIgnoreCase("text/calendar")||ctype.equalsIgnoreCase("text/icalendar")) {
-					imgname = "resources/" + getManifest().getId().replaceAll("\\.", "/") + "/laf/" + cus.getLookAndFeel() + "/service-small.gif";
+					imgname = "resources/" + getManifest().getId() + "/laf/" + cus.getLookAndFeel() + "/ical_16.png";
 				}
 				
 				String pname = getPartName(p);
