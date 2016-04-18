@@ -46,17 +46,93 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			items: [
 			{
 				xtype: 'textfield',
-				bind: '{record.replyto}',
-				fieldLabel: WT.res(me.ID, 'opts.main.fld-replyto.lbl'),
-				width: 220,
+				bind: '{record.replyTo}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-replyTo.lbl'),
+				width: 400,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
+			}, WTF.lookupCombo('id', 'desc', {
+				bind: '{record.protocol}',
+				store: Ext.create('WT.store.MailboxProtocols', {
+					autoLoad: true
+				}),
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-protocol.lbl'),
+				width: 220,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}), {
 				xtype: 'textfield',
 				bind: '{record.host}',
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-host.lbl'),
-				width: 220,
+				width: 400,
+				needReload: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}]
+			}, {
+				xtype: 'numberfield',
+				bind: '{record.port}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-port.lbl'),
+				width: 150,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.username}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-username.lbl'),
+				width: 400,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.password}',
+				inputType: 'password',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-password.lbl'),
+				width: 400,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.folderPrefix}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderPrefix.lbl'),
+				width: 400,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.folderSent}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderSent.lbl'),
+				width: 400,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.folderDrafts}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderDrafts.lbl'),
+				width: 400,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.folderTrash}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderTrash.lbl'),
+				width: 400,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.folderSpam}',
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderSpam.lbl'),
+				width: 400,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, WTF.lookupCombo('id', 'desc', {
+				bind: '{record.sharedSort}',
+				store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
+					autoLoad: true
+				}),
+				fieldLabel: WT.res(me.ID, 'opts.main.fld-sharedSort.lbl'),
+				width: 300,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			})]
 		});
 	}
 });
