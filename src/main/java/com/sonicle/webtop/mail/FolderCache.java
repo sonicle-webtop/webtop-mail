@@ -2174,7 +2174,12 @@ public class FolderCache {
     xmlparser.setErrorHandler(saxHTMLMailParser);
     while(!hstream.isRealEof()) {
       hstream.newDocument();
-	  InputStreamReader isr=charset!=null?new InputStreamReader(hstream,charset):new InputStreamReader(hstream);
+	  InputStreamReader isr=null;
+	  try {
+		  isr=charset!=null?new InputStreamReader(hstream,charset):new InputStreamReader(hstream);
+	  } catch(java.io.UnsupportedEncodingException exc) {
+		  isr=new InputStreamReader(hstream);	
+	  }
       xmlparser.parse(new InputSource(isr));
     }
     saxHTMLMailParser.endOfFile();
