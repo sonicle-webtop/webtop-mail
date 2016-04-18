@@ -348,22 +348,36 @@ public class Service extends BaseService {
 					try {
 						UserProfile profile = environment.getProfile();
 						Sieve sieve = getSieve();
-						SieveScript[] scripts = sieve.getScripts();
-						if (scripts.length == 0) {
-							logger.info("No Sieve scripts for {}. Creating from database.", profile.getUserId());
-							Connection con = null;
-							try {
-								con = getConnection();
-								MailFilters filters = getMailFilters(con, "INBOX", profile.getUserId(), profile.getDomainId());
-								if (filters != null) {
-									sieve.saveScript(filters, true);
+						
+						SieveScript[] scripts=sieve.getScripts();
+						boolean rebuildScript=scripts.length==0;
+						boolean foundWebtopScript=false;
+						if (scripts.length>0) {
+							for(SieveScript sscript:scripts) {
+								if (sscript.getName().equals("\"webtop\"")) {
+									foundWebtopScript=true;
+									String script=sieve.getScript("webtop");
+									if (script!=null) {
+										script=script.toLowerCase();
+										if (script.contains("*spam*")) rebuildScript=true;
+									}
 								}
-							} catch (SQLException exc) {
+							}
+							if (!foundWebtopScript) rebuildScript=true;
+						}
+						if (rebuildScript) {
+							logger.debug("No Sieve scripts for {}. Creating from database.", profile.getUserId());
+							Connection con=null;
+							try {
+								con=getConnection();
+								MailFilters filters=getMailFilters(con,"mailfilters",profile.getUserId(), profile.getDomainId());
+								if (filters!=null) sieve.saveScript(filters, true);
+							} catch(SQLException exc) {
 								logger.error("Error getting connection while trying to save Sieve script", exc);
 							} finally {
 								DbUtils.closeQuietly(con);
 							}
-						}
+						}						
 					} catch (Exception exc) {
 						Service.logger.error("Exception",exc);
 					}
