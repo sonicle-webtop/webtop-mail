@@ -86,6 +86,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.password=mus.getPassword();
 				jso.protocol=mus.getProtocol();
 				jso.defaultFolder=mus.getDefaultFolder();
+				jso.font=mus.getFontName();
+				jso.fontSize=mus.getFontSize();
+				jso.receipt=mus.isReceipt();
 				
 				new JsonResult(jso).printTo(out);
 				
@@ -114,6 +117,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("password")) mus.setPassword(pl.data.password);
 				if (pl.map.has("protocol")) mus.setProtocol(pl.data.protocol);
 				if (pl.map.has("defaultFolder")) mus.setDefaultFolder(pl.data.defaultFolder);
+				if (pl.map.has("font")) mus.setFontName(pl.data.font);
+				if (pl.map.has("fontSize")) mus.setFontSize(pl.data.fontSize);
+				if (pl.map.has("receipt")) mus.setReceipt(pl.data.receipt);
 
 				new JsonResult().printTo(out);
 			}

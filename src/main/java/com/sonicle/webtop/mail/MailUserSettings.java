@@ -79,6 +79,9 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String MESSAGE_VIEW_WIDTH = "message.view.width";
 	public static final String MESSAGE_VIEW_HEIGHT = "message.view.height";
 	public static final String MESSAGE_VIEW_COLLAPSED = "message.view.collapsed";
+	public static final String FONT_NAME = "font.name";
+	public static final String FONT_SIZE = "font.size";
+	public static final String RECEIPT = "receipt";
     
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
@@ -413,6 +416,36 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public HashMap<String,Integer> getColumnSizes() {
 		return getIntegers(COLUMN_SIZE_PREFIX);
+	}
+	
+	public String getFontName() {
+		String s=getString(FONT_NAME,null);
+		if (s==null) s=mss.getDefaultFontName();
+		return s;
+	}
+	
+	public boolean setFontName(String fontname) {
+		return setString(FONT_NAME, fontname);
+	}
+	
+	public int getFontSize() {
+		Integer i=getInteger(FONT_SIZE,null);
+		if (i==null) i=mss.getDefaultFontSize();
+		return i;
+	}
+	
+	public boolean setFontSize(int size) {
+		return setInteger(FONT_SIZE, size);
+	}
+	
+	public boolean isReceipt() {
+		Boolean b=getBoolean(RECEIPT,null);
+		if (b==null) b=mss.isDefaultReceipt();
+		return b;
+	}
+	
+	public boolean setReceipt(boolean b) {
+		return setBoolean(RECEIPT,b);
 	}
 	
 }

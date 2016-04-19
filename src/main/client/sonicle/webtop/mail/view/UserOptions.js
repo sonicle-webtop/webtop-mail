@@ -35,6 +35,16 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	extend: 'WT.sdk.UserOptionsView',
 	requires: [
 	],
+	
+	viewModel: {
+		formulas: {
+			receipt: WTF.checkboxBind('record', 'receipt'),
+			scanAll: WTF.checkboxBind('record', 'scanAll'),
+			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
+			manualSeen: WTF.checkboxBind('record', 'manualSeen')
+		}
+	},
+	
 		
 	initComponent: function() {
 		var me = this;
@@ -70,8 +80,11 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				xtype: 'numberfield',
 				bind: '{record.port}',
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-port.lbl'),
-				width: 150,
+				width: 200,
 				needReload: true,
+				hideTrigger: true,
+				keyNavEnabled: false,
+				mouseWheelEnabled: false,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
@@ -133,6 +146,137 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				needReload: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			})]
+		});
+		
+		me.add({
+			xtype: 'wtopttabsection',
+			title: WT.res(me.ID, 'opts.editing.tit'),
+			items: [
+				WTF.lookupCombo('id', 'desc', {
+					bind: '{record.font}',
+					store: Ext.create('WT.store.TxtFont', {
+						autoLoad: true
+					}),
+					fieldLabel: WT.res('word.font'),
+					width: 400,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				}), {
+					xtype: 'numberfield',
+					bind: '{record.fontSize}',
+					fieldLabel: WT.res('word.size'),
+					width: 200,
+					hideTrigger: true,
+					keyNavEnabled: false,
+					mouseWheelEnabled: false,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				}, {
+					xtype: 'checkbox',
+					bind: '{receipt}',
+					fieldLabel: WT.res(me.ID, 'opts.editing.fld-receipt.lbl'),
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'fieldcontainer',
+					fieldLabel: WT.res(me.ID, 'opts.editing.fld-emaildomainMailcard.lbl'),
+					layout: 'hbox',
+					items: [ 
+						{ xtype: 'button', text: WT.res('act-edit.lbl') },
+						{ xtype: 'displayfield', text: '', width: 10 },
+						{ xtype: 'button', text: WT.res('act-delete.lbl')}
+					]
+				}, {
+					xtype: 'fieldcontainer',
+					fieldLabel: WT.res(me.ID, 'opts.editing.fld-identity0Mailcard.lbl'),
+					layout: 'hbox',
+					items: [ 
+						{ xtype: 'button', text: WT.res('act-edit.lbl') },
+						{ xtype: 'displayfield', text: '', width: 10 },
+						{ xtype: 'button', text: WT.res('act-delete.lbl')}
+					]
+				}
+			]		
+		});
+		
+		me.add({
+			xtype: 'wtopttabsection',
+			title: WT.res(me.ID, 'opts.ident.tit'),
+			items: [
+			]
+		});
+		
+		me.add({
+			xtype: 'wtopttabsection',
+			title: WT.res(me.ID, 'opts.arch.tit'),
+			items: [
+			]
+		});
+		
+		me.add({
+			xtype: 'wtopttabsection',
+			title: WT.res(me.ID, 'opts.adv.tit'),
+			items: [
+				{
+					xtype: 'checkbox',
+					bind: '{scanAll}',
+					fieldLabel: WT.res(me.ID, 'opts.adv.fld-scanAll.lbl'),
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'numberfield',
+					bind: '{record.scanSeconds}',
+					fieldLabel: WT.res(me.ID, 'opts.adv.fld-scanSeconds.lbl'),
+					width: 200,
+					hideTrigger: true,
+					keyNavEnabled: false,
+					mouseWheelEnabled: false,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				}, {
+					xtype: 'slider',
+					fieldLabel: WT.res(me.ID, 'opts.adv.fld-scanCycles.lbl'),
+					bind: '{record.scanCycles}',
+					width: 100,
+					increment: 1,
+					keyIncrement: 1,
+					minValue: 3,
+					maxValue: 30,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'numberfield',
+					bind: '{record.scanSecondsOthers}',
+					fieldLabel: ' ',
+					width: 50,
+					hideTrigger: true,
+					keyNavEnabled: false,
+					mouseWheelEnabled: false,
+					disabled: true
+				}, {
+					xtype: 'checkbox',
+					bind: '{sharedSeen}',
+					fieldLabel: WT.res(me.ID, 'opts.adv.fld-sharedSeen.lbl'),
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'textfield',
+					bind: '{record.defaultFolder}',
+					fieldLabel: WT.res(me.ID, 'opts.main.fld-defaultFolder.lbl'),
+					width: 400,
+					needReload: true,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				}, {
+					xtype: 'checkbox',
+					bind: '{manualSeen}',
+					fieldLabel: WT.res(me.ID, 'opts.adv.fld-manualSeen.lbl'),
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}
+			]
+		});
+		
+		me.add({
+			xtype: 'wtopttabsection',
+			title: WT.res(me.ID, 'opts.wkf.tit'),
+			items: [
+			]
 		});
 	}
 });

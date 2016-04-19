@@ -493,7 +493,7 @@ public class Service extends BaseService {
 			String mailHost = mprofile.getMailHost();
 			String mailUsername = mprofile.getMailUsername();
 			String mailPassword = mprofile.getMailPassword();
-			//wta.log("Store.connect to "+mailHost+" as "+mailUsername+" / "+mailPassword);
+			Service.logger.debug("Store.connect to "+mailHost+" as "+mailUsername+" / "+mailPassword);
 			if (port > 0) {
 				store.connect(mailHost, port, mailUsername, mailPassword);
 			} else {

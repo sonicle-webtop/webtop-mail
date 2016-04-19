@@ -44,6 +44,11 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('scanAll', 'boolean', false),
 		WTF.field('scanSeconds', 'int', false),
 		WTF.field('scanCycles', 'int', false),
+		WTF.calcField('scanSecondsOthers', 'int', ['scanSeconds','scanCycles'], function(v, rec) {
+			var ss = rec.get('scanSeconds')||0,
+			    sc = rec.get('scanCycles')||0;
+			return ss*sc;
+		}),
 		WTF.field('folderPrefix', 'string', true),
 		WTF.field('folderSent', 'string', true),
 		WTF.field('folderDrafts', 'string', true),
@@ -52,11 +57,14 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('replyTo', 'string', true),
 		WTF.field('sharedSort', 'string', false),
 		WTF.field('includeMessageInReply', 'boolean', false),
-		WTF.field('host', 'string', false),
-		WTF.field('port', 'int', false),
-		WTF.field('username', 'string', false),
-		WTF.field('password', 'string', false),
-		WTF.field('protocol', 'string', false),
-		WTF.field('defaultFolder', 'string', true)
+		WTF.field('host', 'string', true),
+		WTF.field('port', 'int', true),
+		WTF.field('username', 'string', true),
+		WTF.field('password', 'string', true),
+		WTF.field('protocol', 'string', true),
+		WTF.field('defaultFolder', 'string', true),
+		WTF.field('font', 'string', true),
+		WTF.field('fontSize', 'int', true),
+		WTF.field('receipt', 'boolean', false)
 	]
 });

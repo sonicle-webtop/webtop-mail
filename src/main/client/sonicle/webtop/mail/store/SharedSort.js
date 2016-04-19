@@ -45,7 +45,7 @@ Ext.define('Sonicle.webtop.mail.store.SharedSort', {
 	constructor: function(cfg) {
 		var me = this;
 		Ext.each(me.config.data, function(row) {
-			row[1] = WT.res('store.sharedSort.'+row[0]);
+			row[1] = WT.res('com.sonicle.webtop.mail','store.sharedSort.'+row[0]);
 		});
 		me.callParent([cfg]);
 	}
