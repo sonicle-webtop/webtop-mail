@@ -231,24 +231,32 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					mouseWheelEnabled: false,
 					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 				}, {
-					xtype: 'slider',
+					xtype: 'fieldcontainer',
 					fieldLabel: WT.res(me.ID, 'opts.adv.fld-scanCycles.lbl'),
-					bind: '{record.scanCycles}',
-					width: 100,
-					increment: 1,
-					keyIncrement: 1,
-					minValue: 3,
-					maxValue: 30,
-					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-				}, {
-					xtype: 'numberfield',
-					bind: '{record.scanSecondsOthers}',
-					fieldLabel: ' ',
-					width: 50,
-					hideTrigger: true,
-					keyNavEnabled: false,
-					mouseWheelEnabled: false,
-					disabled: true
+					layout: 'hbox',
+					items: [ 
+						{
+							xtype: 'sliderwidget',
+							bind: '{record.scanCycles}',
+							width: 100,
+							increment: 1,
+							keyIncrement: 1,
+							minValue: 3,
+							maxValue: 30,
+							listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+						},
+						{ xtype: 'displayfield', text: '', width: 10 },
+						{
+							xtype: 'numberfield',
+							bind: '{record.scanSecondsOthers}',
+							fieldLabel: ' ',
+							width: 150,
+							hideTrigger: true,
+							keyNavEnabled: false,
+							mouseWheelEnabled: false,
+							disabled: true
+						}
+					]
 				}, {
 					xtype: 'checkbox',
 					bind: '{sharedSeen}',

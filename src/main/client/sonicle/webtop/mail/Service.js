@@ -284,7 +284,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("newfolder",{ handler: me.actionNewFolder, scope: me });
         me.addAction("newmainfolder",{ handler: me.actionNewMainFolder, scope: me });
         me.addAction("movetomain",{ handler: me.actionMoveToMainFolder, scope: me, iconCls: '' });
-        me.addAction("refresh",{ handler: me.actionFoldersRefresh, scope: me, iconCls: 'wt-icon-refresh-xs' });
+        me.addAction("refresh",{ handler: me.actionFolderRefresh, scope: me, iconCls: 'wt-icon-refresh-xs' });
 
         //me.aScan=this.addAction("scanfolder",null,null,'');
         me.addAction("scanfolder",{ handler: null, iconCls: '' });
@@ -509,11 +509,31 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	actionEmptyFolder: function() {},
 	actionDeleteFolder: function() {},
 	actionRenameFolder: function() {},
-	actionNewFolder: function() {},
-	actionNewMainFolder: function() {},
+	
+    actionNewFolder: function(s,e) {
+		var me=this,
+			folder=me.getCtxNode(e).get("id");
+        WT.prompt('',{
+			title: me.res("act-newfolder.lbl"),
+			fn: function(btn,value) {
+				if (btn==="ok" && value && value!=="") me.createFolder(folder,value);
+			}
+		});
+    },
+	
+    actionNewMainFolder: function() {
+		var me=this;
+		WT.prompt('',{
+			title: me.res("act-newmainfolder.lbl"),
+			fn: function(btn,value) {
+				if (btn==="ok" && value && value!=="") me.createFolder(null,value);
+			}
+		});        
+    },
+	
 	actionMoveToMainFolder: function() {},
 	
-	actionFoldersRefresh: function(s,e) {
+	actionFolderRefresh: function(s,e) {
 		var me=this,
 			rec=me.getCtxNode(e);
 	
@@ -560,6 +580,54 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	getFolderTrash: function() {
 		return this.getOption('folderTrash');
 	},
+
+    createFolder: function(parent,name) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'NewFolder', {
+			params: {
+				folder: parent,
+				name: name
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					var tr=me.imapTree,
+						v=tr.getView(),
+						s=tr.store,
+						n=(parent?s.getNodeById(parent):s.getRoot()),
+						newname=name,
+						newfullname=json.fullname;
+					n.expand(false,function(nodes) {
+						var newnode=n.findChild("text",newname);
+						if (!newnode) {
+							newnode=n.createNode({
+								id: newfullname,
+								text: newname,
+								folder: newname,
+								leaf: true,
+								iconCls: 'wtmail-icon-imap-folder-xs',
+								unread:0,
+								hasUnread:false
+							});
+							var cn=n.childNodes;
+							var before=null;
+							for(var c=0;before==null && c<cn.length;++c) {
+								var cid=cn[c].id;
+								if (me.specialFolders[cid]) continue;
+								if (cid>newfullname) before=cn[c];
+							}
+							if (before) n.insertBefore(newnode,before);
+							else n.appendChild(newnode);
+						}
+						v.setSelection(newnode);
+						me.folderClicked(tr,newnode);
+					});
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});
+		
+    },
 	
     moveFolder: function(src,dst) {
 		var me=this;
