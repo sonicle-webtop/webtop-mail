@@ -78,5 +78,9 @@
 			<modelJsClassName>model.UserOptions</modelJsClassName>
 		</userOptions>
 		
+		<resources>
+			<resource name="DOCUMENT_MANAGEMENT" actions="ACCESS" />
+			<resource name="MAIL_WORKFLOW" actions="ACCESS" />
+		</resources>
 	</service>
 </services>

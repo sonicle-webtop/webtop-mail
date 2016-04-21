@@ -200,16 +200,82 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		me.add({
 			xtype: 'wtopttabsection',
 			title: WT.res(me.ID, 'opts.ident.tit'),
-			items: [
-			]
+			layout: 'fit',
+			items: [{
+				xtype: 'wtpanel',
+				layout: 'border',
+				items: [{					
+					region: 'center',
+					xtype: 'gridpanel',
+					reference: 'gpidents',
+					store: {
+						autoLoad: true,
+						model: 'Sonicle.webtop.mail.model.Identity',
+						proxy: WTF.apiProxy(me.ID, 'ListIdentities', 'identities', {
+							extraParams: {
+								id: me.profileId,
+								options: true
+							}
+						})
+					},
+					columns: [{
+						dataIndex: 'displayName',
+						header: WT.res(me.ID, 'opts.ident.displayName.lbl'),
+						flex: 1
+					}, {
+						dataIndex: 'email',
+						header: WT.res(me.ID, 'opts.ident.email.lbl'),
+						flex: 1
+					}, {
+						dataIndex: 'mainFolder',
+						header: WT.res(me.ID, 'opts.ident.mainFolder.lbl'),
+						flex: 1
+					}, {
+						dataIndex: 'fax',
+						header: WT.res(me.ID, 'opts.ident.fax.lbl'),
+						flex: 1
+					}, {
+						dataIndex: 'useMyPersonalInfos',
+						header: WT.res(me.ID, 'opts.ident.useMyPersonalInfos.lbl'),
+						flex: 1
+					}],
+					tbar: [
+						me.addAction('addIdentity', {
+							text: WT.res('act-add.lbl'),
+							tooltip: null,
+							iconCls: 'wt-icon-add-xs',
+							handler: function() {
+								me.addIdentity();
+							}
+						}),
+						me.addAction('deleteIdentity', {
+							text: WT.res('act-delete.lbl'),
+							tooltip: null,
+							iconCls: 'wt-icon-delete-xs',
+							handler: function() {
+								var sm = me.lref('gpidents').getSelectionModel();
+								me.deleteIdentity(sm.getSelection());
+							},
+							disabled: true
+						})
+					],
+					listeners: {
+						selectionchange: function(s,recs) {
+							me.getAction('deleteIdentity').setDisabled(!recs.length);
+						}
+					}
+				}]	
+			}]
 		});
 		
-		me.add({
-			xtype: 'wtopttabsection',
-			title: WT.res(me.ID, 'opts.arch.tit'),
-			items: [
-			]
-		});
+		if (WT.isPermitted(me.ID,'DOCUMENT_MANAGEMENT','ACCESS')) {
+			me.add({
+				xtype: 'wtopttabsection',
+				title: WT.res(me.ID, 'opts.arch.tit'),
+				items: [
+				]
+			});
+		}
 		
 		me.add({
 			xtype: 'wtopttabsection',
@@ -280,11 +346,13 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			]
 		});
 		
-		me.add({
-			xtype: 'wtopttabsection',
-			title: WT.res(me.ID, 'opts.wkf.tit'),
-			items: [
-			]
-		});
+		if (WT.isPermitted(me.ID,'MAIL_WORKFLOW','ACCESS')) {
+			me.add({
+				xtype: 'wtopttabsection',
+				title: WT.res(me.ID, 'opts.wkf.tit'),
+				items: [
+				]
+			});
+		}
 	}
 });

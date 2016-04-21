@@ -41,7 +41,9 @@ import com.sonicle.commons.web.json.Payload;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseUserOptionsService;
 import com.sonicle.webtop.mail.bol.js.JsUserOptions;
+import com.sonicle.webtop.mail.bol.model.Identity;
 import java.io.PrintWriter;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
@@ -55,8 +57,6 @@ public class UserOptionsService extends BaseUserOptionsService {
 	
 	@Override
 	public void processUserOptions(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
-		//Connection con = null;
-		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			
@@ -127,8 +127,19 @@ public class UserOptionsService extends BaseUserOptionsService {
 		} catch (Exception ex) {
 			logger.error("Error executing UserOptions", ex);
 			new JsonResult(false).printTo(out);
-		} finally {
-			//DbUtils.closeQuietly(con);
 		}
 	}
+	
+	public void processListIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
+		try {
+			MailManager mman= new MailManager(getRunContext(),getTargetProfileId());
+			List<Identity> idents=mman.listIdentities(false);
+			new JsonResult("identities", idents).printTo(out);
+			
+		} catch (Exception ex) {
+			logger.error("Error listing identities", ex);
+			new JsonResult(false).printTo(out);
+		}
+	}
+	
 }

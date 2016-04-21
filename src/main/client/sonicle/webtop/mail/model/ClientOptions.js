@@ -50,9 +50,13 @@ Ext.define('Sonicle.webtop.mail.model.ClientOptions', {
 Ext.define('Sonicle.webtop.mail.model.Identity', {
     extend: 'WT.model.Base',
     fields: [
+		{ name: "type" },
 		{ name: "email" },
 		{ name: "displayName" },
 		{ name: "mainFolder" },
+		{ name: "fax", type: 'boolean' },
+		{ name: "useMyPersonalInfos", type: 'boolean' },
+		{ name: "lockMailcard", type: 'boolean' },
 		WTF.calcField("description","string",["email","displayName"], function(v,r) {
 			return r.get("displayName")+" - "+r.get("email");
 		})

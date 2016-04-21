@@ -42,10 +42,10 @@ import com.sonicle.webtop.core.util.Encryption;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.OUserMap;
+import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.IdentityDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -246,7 +246,8 @@ public class MailUserProfile {
 	
 	public Identity getIdentity(String foldername) {
 		for(Identity ident: identities) {
-			if (ident.mainfolder!=null && ident.mainfolder.length()>0 && ident.mainfolder.equals(foldername)) {
+			String mainFolder=ident.getMainFolder();
+			if (mainFolder!=null && mainFolder.length()>0 && mainFolder.equals(foldername)) {
 				return ident;
 		}
 	  }
