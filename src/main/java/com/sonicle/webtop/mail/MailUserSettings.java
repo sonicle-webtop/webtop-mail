@@ -79,6 +79,9 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String MESSAGE_VIEW_WIDTH = "message.view.width";
 	public static final String MESSAGE_VIEW_HEIGHT = "message.view.height";
 	public static final String MESSAGE_VIEW_COLLAPSED = "message.view.collapsed";
+	public static final String FONT_NAME = "font.name";
+	public static final String FONT_SIZE = "font.size";
+	public static final String RECEIPT = "receipt";
     
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
@@ -206,7 +209,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getFolderPrefix() {
-		return getString(FOLDER_PEFFIX, mss.getDefaultFolderPrefix());
+		String s=getString(FOLDER_PEFFIX, null);
+		if (s==null) s=mss.getDefaultFolderPrefix();
+		return s;
 	}
 	
 	public boolean setFolderPrefix(String prefix) {
@@ -214,7 +219,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public boolean isScanAll() {
-		return getBoolean(SCAN_ALL,mss.isDefaultScanAll());
+		Boolean b=getBoolean(SCAN_ALL,null);
+		if (b==null) b=mss.isDefaultScanAll();
+		return b;
 	}
 	
 	public boolean setScanAll(boolean b) {
@@ -222,7 +229,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public int getScanSeconds() {
-		return getInteger(SCAN_SECONDS,mss.getDefaultScanSeconds());
+		Integer i=getInteger(SCAN_SECONDS,null);
+		if (i==null) i=mss.getDefaultScanSeconds();
+		return i;
 	}
 	
 	public boolean setScanSeconds(int seconds) {
@@ -230,7 +239,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public int getScanCycles() {
-		return getInteger(SCAN_CYCLES,mss.getDefaultScanCycles());
+		Integer i=getInteger(SCAN_CYCLES,null);
+		if (i==null) i=mss.getDefaultScanCycles();
+		return i;
 	}
 	
 	public boolean setScanCycles(int cycles) {
@@ -238,7 +249,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getFolderSent() {
-		return getString(FOLDER_SENT,mss.getDefaultFolderSent());
+		String s=getString(FOLDER_SENT,null);
+		if (s==null) s=mss.getDefaultFolderSent();
+		return s;
 	}
 	
 	public boolean setFolderSent(String name) {
@@ -246,7 +259,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getFolderDrafts() {
-		return getString(FOLDER_DRAFTS,mss.getDefaultFolderDrafts());
+		String s=getString(FOLDER_DRAFTS,null);
+		if (s==null) s=mss.getDefaultFolderDrafts();
+		return s;
 	}
 	
 	public boolean setFolderDrafts(String name) {
@@ -254,7 +269,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getFolderTrash() {
-		return getString(FOLDER_TRASH,mss.getDefaultFolderTrash());
+		String s=getString(FOLDER_TRASH,null);
+		if (s==null) s=mss.getDefaultFolderTrash();
+		return s;
 	}
 
 	public boolean setFolderTrash(String name) {
@@ -262,7 +279,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getFolderSpam() {
-		return getString(FOLDER_SPAM,mss.getDefaultFolderSpam());
+		String s=getString(FOLDER_SPAM,null);
+		if (s==null) s=mss.getDefaultFolderSpam();
+		return s;
 	}
 	
 	public boolean setFolderSpam(String name) {
@@ -270,7 +289,11 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getReplyTo() {
-		return getString(REPLY_TO, WT.getUserData(profileId).getEmail().toString());
+		String s=getString(REPLY_TO, null);
+		if (s==null) {
+			s=WT.getUserData(profileId).getEmail().toString();
+		}
+		return s;
 	}
 	
 	public boolean setReplyTo(String replyto) {
@@ -286,7 +309,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public boolean isIncludeMessageInReply() {
-		return getBoolean(INCLUDE_MESSAGE_IN_REPLY, mss.isDefaultIncludeMessageInReply());
+		Boolean b=getBoolean(INCLUDE_MESSAGE_IN_REPLY, null);
+		if (b==null) b=mss.isDefaultIncludeMessageInReply();
+		return b;
 	}
 	
 	public boolean setIncludeMessageInReply(boolean b) {
@@ -294,7 +319,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public int getPageRows() {
-		return getInteger(PAGE_ROWS,mss.getDefaultPageRows());
+		Integer i=getInteger(PAGE_ROWS,null);
+		if (i==null) i=mss.getDefaultPageRows();
+		return i;
 	}
 	
 	public boolean setPageRows(int rows) {
@@ -302,7 +329,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getHost() {
-		return getString(HOST,mss.getDefaultHost());
+		String s=getString(HOST,null);
+		if (s==null) s=mss.getDefaultHost();
+		return s;
 	}
 	
 	public boolean setHost(String host) {
@@ -310,7 +339,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public int getPort() {
-		return getInteger(PORT,mss.getDefaultPort());
+		Integer i=getInteger(PORT,null);
+		if (i==null) i=mss.getDefaultPort();
+		return i;
 	}
 	
 	public boolean setPort(int port) {
@@ -334,7 +365,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getProtocol() {
-		return getString(PROTOCOL,null);
+		String s=getString(PROTOCOL,null);
+		if (s==null) s=mss.getDefaultProtocol();
+		return s;
 	}
 	
 	public boolean setProtocol(String protocol) {
@@ -383,6 +416,36 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public HashMap<String,Integer> getColumnSizes() {
 		return getIntegers(COLUMN_SIZE_PREFIX);
+	}
+	
+	public String getFontName() {
+		String s=getString(FONT_NAME,null);
+		if (s==null) s=mss.getDefaultFontName();
+		return s;
+	}
+	
+	public boolean setFontName(String fontname) {
+		return setString(FONT_NAME, fontname);
+	}
+	
+	public int getFontSize() {
+		Integer i=getInteger(FONT_SIZE,null);
+		if (i==null) i=mss.getDefaultFontSize();
+		return i;
+	}
+	
+	public boolean setFontSize(int size) {
+		return setInteger(FONT_SIZE, size);
+	}
+	
+	public boolean isReceipt() {
+		Boolean b=getBoolean(RECEIPT,null);
+		if (b==null) b=mss.isDefaultReceipt();
+		return b;
+	}
+	
+	public boolean setReceipt(boolean b) {
+		return setBoolean(RECEIPT,b);
 	}
 	
 }

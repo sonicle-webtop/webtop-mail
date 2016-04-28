@@ -191,7 +191,16 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(DEFAULT_PREFIX+MailUserSettings.PROTOCOL,"imap");
 	}
 	
+	public String getDefaultFontName() {
+		return getString(DEFAULT_PREFIX+MailUserSettings.FONT_NAME,"Arial");
+	}
 	
+	public int getDefaultFontSize() {
+		return getInteger(DEFAULT_PREFIX+MailUserSettings.FONT_SIZE,12);
+	}
 	
+	public boolean isDefaultReceipt() {
+		return getBoolean(DEFAULT_PREFIX+MailUserSettings.RECEIPT,false);
+	}
 	
 }

@@ -56,14 +56,12 @@ import com.sonicle.webtop.core.dal.UserDAO;
 //import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.util.ICalendarUtils;
-import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
-import com.sonicle.webtop.mail.bol.js.JsIdentity;
 import com.sonicle.webtop.mail.bol.js.JsSort;
+import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.FilterDAO;
-import com.sonicle.webtop.mail.dal.IdentityDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
@@ -189,7 +187,8 @@ public class Service extends BaseService {
 //			= "This email has been sent through Sonicle WebMail system [ http://www.sonicle.com ]";
 //	private static String webtopHTMLMessage = "This email has been sent through Sonicle WebMail system [ <A HREF='http://www.sonicle.com'>http://www.sonicle.com</A> ]";
 //	private static String unwantedTags[] = {"style"};
-	
+
+	private MailManager mailManager;
 	private Session session;
 	private Store store;
 	private boolean disconnecting = false;
@@ -263,6 +262,8 @@ public class Service extends BaseService {
 		allFlagsArray.toArray(allFlagStrings);
 
 		this.environment = getEnv();
+		
+		mailManager=new MailManager(getRunContext(),this.environment.getProfileId());
 		
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
@@ -358,8 +359,8 @@ public class Service extends BaseService {
 									foundWebtopScript=true;
 									String script=sieve.getScript("webtop");
 									if (script!=null) {
-										script=script.toLowerCase();
-										if (script.contains("*spam*")) rebuildScript=true;
+										//script=script.toLowerCase();
+										if (!script.contains(SieveScriptGenerator.getVersionComment())) rebuildScript=true;
 									}
 								}
 							}
@@ -493,7 +494,7 @@ public class Service extends BaseService {
 			String mailHost = mprofile.getMailHost();
 			String mailUsername = mprofile.getMailUsername();
 			String mailPassword = mprofile.getMailPassword();
-			//wta.log("Store.connect to "+mailHost+" as "+mailUsername+" / "+mailPassword);
+			Service.logger.debug("Store.connect to "+mailHost+" as "+mailUsername+" / "+mailPassword);
 			if (port > 0) {
 				store.connect(mailHost, port, mailUsername, mailPassword);
 			} else {
@@ -1862,15 +1863,18 @@ public class Service extends BaseService {
 		UserProfile profile = environment.getProfile();
 		String sentfolder = mprofile.getFolderSent();
 		Identity ident = smsg.getFrom();
-		if (ident != null && ident.mainfolder != null && ident.mainfolder.trim().length() > 0) {
-			String newsentfolder = ident.mainfolder + folderSeparator + getLastFolderName(sentfolder);
-			try {
-				Folder folder = getFolder(newsentfolder);
-				if (folder.exists()) {
-					sentfolder = newsentfolder;
+		if (ident != null ) {
+			String mainfolder=ident.getMainFolder();
+			if (mainfolder != null && mainfolder.trim().length() > 0) {
+				String newsentfolder = mainfolder + folderSeparator + getLastFolderName(sentfolder);
+				try {
+					Folder folder = getFolder(newsentfolder);
+					if (folder.exists()) {
+						sentfolder = newsentfolder;
+					}
+				} catch (MessagingException exc) {
+					logger.error("Error on identity {}/{} Sent Folder", profile.getUserId(), ident.getEmail(), exc);
 				}
-			} catch (MessagingException exc) {
-				logger.error("Error on identity {}/{} Sent Folder", profile.getUserId(), ident.email, exc);
 			}
 		}
 		Exception retexc = null;
@@ -1900,9 +1904,9 @@ public class Service extends BaseService {
 		
 		if (msg.getFrom() != null) {
 			Identity from = msg.getFrom();
-			sender = from.email;
-			name = from.displayname;
-			replyto = from.email;
+			sender = from.getEmail();
+			name = from.getDisplayName();
+			replyto = sender;
 		}
 		
 		msg.setReplyTo(replyto);
@@ -2281,9 +2285,9 @@ public class Service extends BaseService {
 		
 		if (msg.getFrom() != null) {
 			Identity from = msg.getFrom();
-			sender = from.email;
-			name = from.displayname;
-			replyto = from.email;
+			sender = from.getEmail();
+			name = from.getDisplayName();
+			replyto = sender;
 		}
 		
 		msg.setReplyTo(replyto);
@@ -2667,7 +2671,7 @@ public class Service extends BaseService {
 			
 			removeDestination(reply, myemail);
 			for (Identity ident : mprofile.getIdentities()) {
-				removeDestination(reply, ident.email);
+				removeDestination(reply, ident.getEmail());
 			}
 
       // Setup the message body
@@ -5503,7 +5507,7 @@ public class Service extends BaseService {
 			Identity ifrom = msg.getFrom();
 			String from = environment.getProfile().getEmailAddress();
 			if (ifrom != null) {
-				from = ifrom.email;
+				from = ifrom.getEmail();
 			}
 			checkStoreConnected();
 			Exception exc = sendMessage(msg, attachments);
@@ -6254,7 +6258,7 @@ public class Service extends BaseService {
 		String from = profile.getCompleteEmailAddress();
 		Identity ident = mprofile.getIdentity(folder);
 		if (ident != null) {
-			from = ident.displayname + " <" + ident.email + ">";
+			from = ident.toString();
 		}
 		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] è stato letto.\n\n"
 				+ "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
@@ -9606,18 +9610,9 @@ public class Service extends BaseService {
 	
 	@Override
 	public ClientOptions returnClientOptions() {
-		UserProfile profile=environment.getProfile();
-		Connection con = null;
 		ClientOptions co = new ClientOptions();
 		try {
-			con = getConnection();
-			IdentityDAO idao=IdentityDAO.getInstance();
-			List<OIdentity> items=idao.selectById(con, profile.getDomainId(),profile.getUserId());
-			ArrayList<JsIdentity> identities=new ArrayList<>();
-			identities.add(new JsIdentity(profile.getEmailAddress(),profile.getDisplayName(),null,false,false));
-			for(OIdentity item: items) {
-				identities.add(new JsIdentity(item));
-			}
+			List<Identity> identities=mailManager.listIdentities(true);
 			
 			co.put("folderDrafts", us.getFolderDrafts());
 			co.put("folderSent", us.getFolderSent());
@@ -9635,10 +9630,7 @@ public class Service extends BaseService {
 			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes())); //json obj
 			
 		} catch(Exception ex) {
-			logger.error("Error executing action ManageCalendarsTree", ex);
-			
-		} finally {
-			DbUtils.closeQuietly(con);
+			logger.error("Error getting client options", ex);	
 		}
 		return co;
 	}
