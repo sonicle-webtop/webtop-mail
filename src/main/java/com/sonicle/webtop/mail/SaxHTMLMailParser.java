@@ -166,10 +166,17 @@ public class SaxHTMLMailParser extends DefaultHandler {
       body.setData(attributes);
 
     }
+	
+	//filter out any script element
+	if (qName.equalsIgnoreCase("script")) {
+		isscript=true;
+		return;
+	}
+	
     if(!isbody) {
-      if(!isscript&&qName.equalsIgnoreCase("script")) {
+      /*if(!isscript&&qName.equalsIgnoreCase("script")) {
         isscript=true;
-      }
+      }*/
       if(baseUrl==null&&qName.equalsIgnoreCase("base")) {
         baseUrl=attributes.getValue("href");
         if(baseUrl!=null) {
@@ -290,7 +297,8 @@ public class SaxHTMLMailParser extends DefaultHandler {
       pwriter.print(str);
 
     } else if(isscript) {
-      pwriter.write(chars, start, len);
+	  //skip any scripting
+      //pwriter.write(chars, start, len);
     } else {
 	  String html=MailUtils.htmlescape(chars, start, len);
       pwriter.print(html);
