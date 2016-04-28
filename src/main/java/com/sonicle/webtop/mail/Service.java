@@ -3252,7 +3252,7 @@ public class Service extends BaseService {
 	}  	
 	
 	public boolean hasDocumentArchiving() {
-		return WT.isPermitted(environment.getProfile().getId(),SERVICE_ID, "DOCUMENT_ARCHIVING");
+		return getRunContext().isPermitted(SERVICE_ID, "DOCUMENT_ARCHIVING");
 	}
 	
 	public String getSimpleArchivingMailFolder() {

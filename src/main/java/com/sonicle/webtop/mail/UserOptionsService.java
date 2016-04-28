@@ -60,7 +60,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			
-			MailServiceSettings mss=new MailServiceSettings(getServiceId(),getTargetDomainId());
+			MailServiceSettings mss=new MailServiceSettings(SERVICE_ID,getTargetDomainId());
 			MailUserSettings mus = new MailUserSettings(getTargetProfileId(),mss);
 			
 			if(crud.equals(Crud.READ)) {
