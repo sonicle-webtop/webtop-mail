@@ -359,8 +359,8 @@ public class Service extends BaseService {
 									foundWebtopScript=true;
 									String script=sieve.getScript("webtop");
 									if (script!=null) {
-										script=script.toLowerCase();
-										if (script.contains("*spam*")) rebuildScript=true;
+										//script=script.toLowerCase();
+										if (!script.contains(SieveScriptGenerator.getVersionComment())) rebuildScript=true;
 									}
 								}
 							}
