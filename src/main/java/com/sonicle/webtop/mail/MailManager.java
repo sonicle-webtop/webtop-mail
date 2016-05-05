@@ -34,7 +34,8 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.db.DbUtils;
-import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.RunContextOLD;
+import com.sonicle.webtop.core.app.ServiceContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.sdk.BaseManager;
@@ -59,11 +60,11 @@ public class MailManager extends BaseManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
 	
-	public MailManager(RunContext context) {
+	public MailManager(ServiceContext context) {
 		super(context);
 	}
 	
-	public MailManager(RunContext context, UserProfile.Id targetProfileId) {
+	public MailManager(ServiceContext context, UserProfile.Id targetProfileId) {
 		super(context, targetProfileId);
 	}
 	
