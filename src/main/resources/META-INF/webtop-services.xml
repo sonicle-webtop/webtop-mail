@@ -63,20 +63,21 @@
 		<shortName>wtmail</shortName>
 		<version>1.0.0</version>
 		<buildDate>03/11/2014</buildDate>
-		<serviceClassName>Service</serviceClassName>
-		<publicServiceClassName></publicServiceClassName>
-		<deamonServiceClassName></deamonServiceClassName>
-		<jobServiceClassName></jobServiceClassName>
+		
 		<company>Sonicle S.r.l.</company>
 		<companyEmail>sonicle@sonicle.com</companyEmail>
 		<companyWebSite>http://www.sonicle.com</companyWebSite>
 		<supportEmail>sonicle@sonicle.com</supportEmail>
 		
+		<controllerClassName>MailController</controllerClassName>
+		<serviceClassName>Service</serviceClassName>
 		<userOptions>
 			<serviceClassName>UserOptionsService</serviceClassName>
 			<viewJsClassName>view.UserOptions</viewJsClassName>
 			<modelJsClassName>model.UserOptions</modelJsClassName>
 		</userOptions>
+		<publicServiceClassName></publicServiceClassName>
+		<jobServiceClassName>JobService</jobServiceClassName>
 		
 		<resources>
 			<resource name="DOCUMENT_MANAGEMENT" actions="ACCESS" />

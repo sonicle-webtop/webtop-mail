@@ -106,7 +106,7 @@ public class JobService extends BaseJobService {
 		HeaderTerm hterm=new HeaderTerm("Sonicle-send-scheduled","true");
 		
 		public ScheduledSendJob() {
-			cm=WT.getCoreManager(getServiceContext());
+			cm=WT.getCoreManager();
 		}
 	
 		@Override

@@ -99,7 +99,6 @@ import javax.activation.*;
 import javax.mail.*;
 import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
-import javax.mail.search.MessageIDTerm;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
@@ -264,7 +263,7 @@ public class Service extends BaseService {
 
 		this.environment = getEnv();
 		
-		mailManager=new MailManager(getServiceContext(),this.environment.getProfileId());
+		mailManager=new MailManager(this.environment.getProfileId());
 		
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
@@ -3277,7 +3276,7 @@ public class Service extends BaseService {
 	}
 	
 	public boolean isDocMgtFolder(String foldername) {
-		CoreManager core = WT.getCoreManager(getServiceContext());
+		CoreManager core = WT.getCoreManager();
 		
 		UserProfile profile = environment.getProfile();
 		if (!hasDocumentArchiving()) {
@@ -6685,7 +6684,7 @@ public class Service extends BaseService {
 	}	
  	
 	public void processListMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreManager core = WT.getCoreManager(getServiceContext());
+		CoreManager core = WT.getCoreManager();
 		UserProfile profile = environment.getProfile();
 		Locale locale = profile.getLocale();
 		java.util.Calendar cal = java.util.Calendar.getInstance(locale);
@@ -9087,7 +9086,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processPollAdvancedSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreManager core = WT.getCoreManager(getServiceContext());
+		CoreManager core = WT.getCoreManager();
 		
 		try {
 			String sstart = request.getParameter("start");
