@@ -1937,7 +1937,7 @@ public class Service extends BaseService {
 			
 			retexc = sendMsg(sender, msg, attachments);
 			
-			clearAttachments(msg.getId());
+			if (retexc==null) clearAttachments(msg.getId());
 		}
 
 		/*    if (debug)
@@ -8081,6 +8081,8 @@ public class Service extends BaseService {
 			} catch (Exception exc) {
 			}
 			name += ".zip";
+			//prepare hashmap to hold already used pnames
+			HashMap<String,String> pnames=new HashMap<String,String>();
 			response.setContentType("application/x-zip-compressed");
 			response.setHeader("Content-Disposition", "inline; filename=\"" + name + "\"");
 			JarOutputStream jos = new java.util.jar.JarOutputStream(response.getOutputStream());
@@ -8095,7 +8097,23 @@ public class Service extends BaseService {
 					pname = MailUtils.decodeQString(pname, "iso-8859-1");
 				} catch (Exception exc) {
 				}
-				JarEntry je = new JarEntry(pname);
+				//keep name and extension
+				String bpname=pname;
+				String extpname=null;
+				int ix=pname.lastIndexOf(".");
+				if (ix>0) {
+					bpname=pname.substring(0,ix);
+					extpname=pname.substring(ix+1);
+				}
+				//check for existing pname and find an unused name
+				int xid=0;
+				String rpname=pname;
+				while(pnames.containsKey(rpname)) {
+					rpname=bpname+" ("+(++xid)+")";
+					if (extpname!=null) rpname+="."+extpname;
+				}
+								
+				JarEntry je = new JarEntry(rpname);
 				jos.putNextEntry(je);
 				if (providername == null) {
 					Folder folder = mailData.getFolder();
@@ -8109,6 +8127,9 @@ public class Service extends BaseService {
 					jos.write(b, 0, len);
 				}
 				is.close();
+				
+				//remember used pname
+				pnames.put(rpname, rpname);
 			}
 			jos.closeEntry();
 			jos.flush();
