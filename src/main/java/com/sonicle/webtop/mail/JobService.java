@@ -41,7 +41,6 @@ import com.sonicle.webtop.core.bol.ODomain;
 import com.sonicle.webtop.core.sdk.BaseJobService;
 import com.sonicle.webtop.core.sdk.BaseJobServiceTask;
 import com.sonicle.webtop.core.sdk.UserProfile;
-import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import java.sql.Connection;
@@ -107,7 +106,7 @@ public class JobService extends BaseJobService {
 		HeaderTerm hterm=new HeaderTerm("Sonicle-send-scheduled","true");
 		
 		public ScheduledSendJob() {
-			cm=WT.getCoreManager(getRunContext());
+			cm=WT.getCoreManager();
 		}
 	
 		@Override

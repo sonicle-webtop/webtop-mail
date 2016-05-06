@@ -59,12 +59,12 @@ public class MailManager extends BaseManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
 	
-	public MailManager(RunContext context) {
-		super(context);
+	public MailManager() {
+		this(RunContext.getProfileId());
 	}
 	
-	public MailManager(RunContext context, UserProfile.Id targetProfileId) {
-		super(context, targetProfileId);
+	public MailManager(UserProfile.Id targetProfileId) {
+		super(targetProfileId);
 	}
 	
 	public Identity createIdentity(OIdentity oi) throws WTException {

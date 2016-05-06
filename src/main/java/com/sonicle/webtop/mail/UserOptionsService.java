@@ -132,7 +132,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 	
 	public void processListIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
 		try {
-			MailManager mman= new MailManager(getRunContext(),getTargetProfileId());
+			MailManager mman= new MailManager(getTargetProfileId());
 			List<Identity> idents=mman.listIdentities(false);
 			new JsonResult("identities", idents).printTo(out);
 			
