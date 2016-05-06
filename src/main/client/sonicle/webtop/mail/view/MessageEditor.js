@@ -87,6 +87,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			fields: { recipientType: 'rtype', email: 'email' },
 			bind: {
 				store: '{record.recipients}'
+			},
+			listeners: {
+				exitfocus: function(recgrid) {
+					me.subject.focus();
+				}
 			}
 		});
 		
