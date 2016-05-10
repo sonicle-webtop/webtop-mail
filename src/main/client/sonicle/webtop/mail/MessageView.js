@@ -107,30 +107,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					}
 				})
 		);
-        /*me.proxy=Ext.create("Ext.data.proxy.Ajax",{
-            url:WTF.requestBaseUrl(),
-			model: 'Sonicle.webtop.mail.MessageViewModel',
-			reader: {
-				type: 'json',
-				rootProperty: 'message',
-				totalProperty: 'totalRecords'
-			}
-        });*/
         
-        var t=document.createElement("table");
-        t.className="wtmail-mv-table";
-        me.el=Ext.get(t);
-        
-        var tr=t.insertRow(-1);
-        var td=tr.insertCell(-1);
-        td.className="wtmail-mv-header";
-        me.tdHeader=Ext.get(td);
-
-		tr=t.insertRow(-1);
-        td=tr.insertCell(-1);
-        td.className="wtmail-mv-bodycell";
-        me.tdBody=Ext.get(td);
-
         me.addListener('resize',me.viewResized,me);
 
 		//create email menu
@@ -174,6 +151,26 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		
 		
     },
+	
+	onRender: function(parentNode, containerIdx) {
+		var me=this;
+		
+        var t=document.createElement("table");
+        t.className="wtmail-mv-table";
+        me.el=Ext.get(t);
+      
+        var tr=t.insertRow(-1);
+        var td=tr.insertCell(-1);
+        td.className="wtmail-mv-header";
+        me.tdHeader=Ext.get(td);
+
+		tr=t.insertRow(-1);
+        td=tr.insertCell(-1);
+        td.className="wtmail-mv-bodycell";
+        me.tdBody=Ext.get(td);
+
+		me.callParent(arguments);
+	},
 	
     removeElement: function(el) {
         //var p=el.parent();

@@ -86,18 +86,17 @@ public class MailFoldersThread extends Thread {
         sleepCount=0;
         try {
             FolderCache fcroot=ms.getRootFolderCache();
-            Service.logger.debug("Entering MFT loop");
+            //Service.logger.debug("Entering MFT loop");
             FolderCache fcinbox=null;
 			if (ms.hasDifferentDefaultFolder()) fcinbox=fcroot;
 			else fcinbox=ms.getFolderCache("INBOX");
 			//Check inbox only once, then via idle
 			fcinbox.checkFolder();
             while(!abort) {
-                Service.logger.debug("MFT Synchronizing");
+                //Service.logger.debug("MFT Synchronizing");
                     synchronized(this) {
-                        ms.checkStoreConnected();
-                        if (sleepCount>0) {
-                            Service.logger.debug("MailFolderThread: Checking inbox messages");
+                        ms.checkStoreConnected();                      if (sleepCount>0) {
+                            //Service.logger.debug("MailFolderThread: Checking inbox messages");
 							
 							//Don't check here inbox, it's in idle mode
                             //fcinbox.checkFolder();
@@ -115,7 +114,7 @@ public class MailFoldersThread extends Thread {
                             }
                         }
                         else {
-                            Service.logger.debug("MailFolderThread: Checking all messages");
+                            //Service.logger.debug("MailFolderThread: Checking all messages");
                             try {
                                 fcroot.checkSubfolders(checkAll);
                             } catch(Exception exc) {
@@ -123,7 +122,7 @@ public class MailFoldersThread extends Thread {
                             }
                         }
                     }
-                    Service.logger.debug("MailFolderThread: Sleeping....");
+                    //Service.logger.debug("MailFolderThread: Sleeping....");
                     if (sleepCount<=0) sleepCount=sleepOthers;
                     sleep(1000*sleepInbox);
                     sleepCount-=sleepInbox;

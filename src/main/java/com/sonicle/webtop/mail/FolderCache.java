@@ -244,9 +244,9 @@ public class FolderCache {
 				while(goidle) {
 					IMAPFolder folder=((IMAPFolder)FolderCache.this.getFolder());
 					if (!folder.isOpen()) folder.open(Folder.READ_WRITE);
-					Service.logger.debug("Entering idle mode on {}",foldername);
+					//Service.logger.debug("Entering idle mode on {}",foldername);
 					folder.idle();
-					Service.logger.debug("Exiting idle mode on {}",foldername);
+					//Service.logger.debug("Exiting idle mode on {}",foldername);
 				}
 				Service.logger.debug("Exiting idle loop: goidle is {}",goidle);
 			} catch(MessagingException exc) {
@@ -262,7 +262,7 @@ public class FolderCache {
 					@Override
 					public void messageChanged(MessageChangedEvent mce) {
 						try {
-							Service.logger.debug("MessageChanged: {}",mce.getMessageChangeType());
+							Service.logger.debug("MessageChanged: {},{},{}",mce.getMessage().getFolder().getFullName(),mce.getMessage().getSubject(),mce.getMessageChangeType());
 							refreshUnreads();
 						} catch(MessagingException exc) {
 						}
@@ -518,7 +518,7 @@ public class FolderCache {
     }    
 	
 	private void sendUnreadChangedMessage() {
-		//MailService.logger.debug("sending unread changed on "+foldername);
+		Service.logger.debug("sending unread changed on "+foldername);
 		this.environment.notify(
 				new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
 		);
@@ -578,7 +578,7 @@ public class FolderCache {
 
     protected boolean checkSubfolders(boolean all) throws MessagingException {
         boolean pHasUnread=false;
-		Service.logger.debug("working on "+getFolderName());
+		//Service.logger.debug("working on "+getFolderName());
         for(FolderCache fcchild: getChildren()) {
             if (fcchild.isScanForcedOff()) continue;
             boolean hasUnread=false;

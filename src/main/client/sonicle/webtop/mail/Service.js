@@ -471,10 +471,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	}, 
 	
 	unreadChanged: function(cfg) {
-		//console.log('unreadChanged on '+cfg.foldername+" (unread="+cfg.unread+", hasUnreadChildren"+cfg.hasUnreadChildren+")");
 		var me=this;
-		var node=me.imapTree.getStore().getById(cfg.foldername);
-		if (node) {
+		var node=me.imapTree.getStore().getById(cfg.foldername);		if (node) {
 			var folder=node.get("folder");
 			node.set('hasUnread',cfg.hasUnreadChildren);
 			node.set('unread',cfg.unread);
