@@ -95,11 +95,11 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getInteger(ATTACHMENT_MAXSIZE,10*1024*1024);
 	}
 	
-	public String getAttachDir() {
+/*	public String getAttachDir() {
 		String adir=getString(ATTACHMENT_DIR,null);
 		if (adir==null) adir=new CoreServiceSettings(CoreManifest.ID, domainId).getTempPath();
 		return adir;
-	}
+	}*/
 	
 	public int getMessageViewMaxTos() {
 		return getInteger(MESSAGE_VIEW_MAX_TOS,20);

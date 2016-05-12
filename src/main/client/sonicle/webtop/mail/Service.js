@@ -68,7 +68,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	differentDefaultFolder: null,
 	uncheckedFolders: {},
 	specialFolders: {},
-	identities: null,
 	separator: '.',
 	askreceipt: false,
 
@@ -488,16 +487,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			v.getComponent(0).beginNew({
 				data: {
 					messageId: 1,
-					subject: 'Default Subject',
+					subject: '',
 					recipients: [
-						{ rtype: 'to', email: 'matteo.albinola@sonicle.com'},
-						{ rtype: 'to', email: 'cristian@sonicle.com'},
-						{ rtype: 'to', email: 'filippo@sonicle.com'},
-						{ rtype: 'cc', email: 'raffaele.fullone@sonicle.com'},
-						{ rtype: 'bcc', email: 'sergio.decillis@sonicle.com'},
-						{ rtype: 'bcc', email: 'nethesis@sonicle.com'}
+						{ rtype: 'to', email: ''}
 					],
-					html: '<BR><B>Test bind HTML</B><BR><BR><I>Let\'s see if it works!</I><BR><BR>Gabry'
+					html: '<BR><BR><B>Test bind HTML</B><BR><BR><I>Let\'s see if it works!</I><BR><BR>Gabry'
 				}
 			});
 		});

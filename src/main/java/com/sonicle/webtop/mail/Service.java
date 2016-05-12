@@ -5067,7 +5067,9 @@ public class Service extends BaseService {
 			out.println(sout);
 		}
 	}
-	
+
+	// TODO: getEditForwardMessage!!!
+/*
 	public void processGetForwardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
 		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
@@ -5160,7 +5162,10 @@ public class Service extends BaseService {
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 	}
+*/
 	
+	// TODO: getEditMessage!!!
+/*
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String pfoldername = request.getParameter("folder");
@@ -5343,7 +5348,7 @@ public class Service extends BaseService {
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 	}
-
+*/
 	// TODO: getEditProviderMessage!!!
 /*    public void processGetEditProviderMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 String providername=request.getParameter("provider");
@@ -6050,6 +6055,8 @@ public class Service extends BaseService {
 		}
 	}
 	
+	// TODO: Attachments
+/*	
 	public void processUploadAttachments(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		doUploadAttachments(request, response, out, false);
 	}
@@ -6170,7 +6177,7 @@ public class Service extends BaseService {
 		}
 		out.println(sout);
 	}
-
+*/
 	// TODO: Cloud integration
 /*    public void processUploadCloudAttachments(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 doUploadCloudAttachments(request, response, out);

@@ -33,6 +33,9 @@
  */
 package com.sonicle.webtop.mail.bol.model;
 
+import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.mail.Mailcard;
+
 /**
  *
  * @author gabriele.bulfon
@@ -46,6 +49,9 @@ public class Identity {
 	protected String email;
 	protected String displayName;
 	protected String mainFolder;
+	protected Mailcard mailcard;
+	protected UserProfile.Id fromUserProfileId;
+
 	protected boolean fax;
 	protected boolean useMyPersonalInfos;
 	protected boolean lockMailcard = false;
@@ -111,6 +117,22 @@ public class Identity {
 		this.mainFolder = mainFolder;
 	}
 
+	public Mailcard getMailcard() {
+		return mailcard;
+	}
+
+	public void setMailcard(Mailcard mailcard) {
+		this.mailcard = mailcard;
+	}
+	
+	public UserProfile.Id getFromUserProfileId() {
+		return fromUserProfileId;
+	}
+
+	public void setFromUserProfileId(UserProfile.Id fromUserProfileId) {
+		this.fromUserProfileId = fromUserProfileId;
+	}
+
 	public boolean isFax() {
 		return fax;
 	}
@@ -125,6 +147,10 @@ public class Identity {
 
 	public void setUseMyPersonalInfos(boolean useMyPersonalInfos) {
 		this.useMyPersonalInfos = useMyPersonalInfos;
+	}
+	
+	public boolean isType(String type) {
+		return this.type.equals(type);
 	}
 	
     @Override

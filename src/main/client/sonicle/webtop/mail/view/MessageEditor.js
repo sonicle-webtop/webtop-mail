@@ -51,6 +51,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	autoToolbar: false,
 	identityIndex: 0,
+	selectedIdentity: null,
 	
     showSave: true,
     showAddressBook: true,
@@ -78,12 +79,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			region: 'east',
 			layout: 'anchor',
 			border: false,
-			bodyBorder: false
+			bodyBorder: false,
+			tabIndex: 1
         });
 		me.recgrid=Ext.create({
 			xtype: 'wtrecipientsgrid',
 			height: 90,
 			region: 'center',
+			tabIndex: 2,
 			fields: { recipientType: 'rtype', email: 'email' },
 			bind: {
 				store: '{record.recipients}'
@@ -100,37 +103,21 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             sid: me.mys.ID,
             suggestionContext: 'subject',
             width: 600,
+			tabIndex: 3,
+			enableKeyEvents: true,
 			fieldLabel: WT.res('word.subject'),
 			labelWidth: 60,
-			labelAlign: 'right'/*,
-			bind: '{record.subject}'*/
+			labelAlign: 'right',
+			listeners: {
+				keydown: function(cb, e, eOpts) {
+					if (e.getKey() === e.TAB) {
+						e.stopEvent();
+						me.htmlEditor.focusEditor();
+					}
+				}
+			},
+			bind: '{record.subject}'
         });
-		me.xcombo=Ext.create({
-			xtype: 'combo',
-			typeAhead: true,
-			queryMode: 'local',
-			forceSelection: true,
-			selectOnFocus: true,
-			store: Ext.create('Ext.data.Store', {
-				fields: ['id','fs'],
-				data : [
-					{ id: 1, fs: "8" },
-					{ id: 2, fs: "10"},
-					{ id: 3, fs: "12"},
-					{ id: 4, fs: "14"},
-					{ id: 5, fs: "18"},
-					{ id: 6, fs: "24"},
-					{ id: 7, fs: "36"}
-				]
-			}),
-            width: 600,
-			valueField: 'id',
-			displayField: 'fs',
-			fieldLabel: 'Suck!',
-			labelWidth: 60,
-			labelAlign: 'right'
-		});
-		
 		var tbitems=new Array(),
 			tbx=0;
 		
@@ -148,7 +135,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					} else {
 						if (id.fax) continue;
 					}
-                    //var a=new Array();
+                    //var a=new Array);
                     //a[0]=i;
                     //a[1]=id.displayname+" - "+id.email;
                     idents[x]=id;
@@ -156,6 +143,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					++x;
                 }
 				if (!selident) selident=idents[0];
+				me.selectedIdentity=selident;
 				
 				tbitems[tbx++]={
 					xtype:'combo',
@@ -204,8 +192,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						me.attlist
                     ]
 				}),
-				me.subject,
-				me.xcombo
+				me.subject
 			]
 		}));
 		me.add(
@@ -225,7 +212,25 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			})
 		);
 
-		console.log("init");
+		me.on('viewload', me.onViewLoad);
+	},
+	
+	onViewLoad: function(s, success) {
+		if(!success) return;
+		
+		var me=this,
+			rg=me.recgrid,
+			c=rg.getRecipientsCount();
+	
+		if (c===1) {
+			var r=c-1,
+				email=rg.getRecipientAt(r);
+		
+			if (email==="") rg.startEditAt(r);
+		} else {
+			if (me.subject.getValue()==="") me.subject.focus();
+			else me.htmlEditor.focusEditor();
+		}
 	},
 	
 	sendMail: function() {
