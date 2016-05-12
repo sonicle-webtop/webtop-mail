@@ -34,8 +34,11 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.bol.OShare;
+import com.sonicle.webtop.core.bol.model.IncomingShareRoot;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.sdk.BaseManager;
 import com.sonicle.webtop.core.sdk.UserPersonalInfo;
@@ -64,6 +67,7 @@ import org.slf4j.Logger;
 public class MailManager extends BaseManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
+	public static final String RESOURCE_IMAPFOLDER = "IMAPFOLDER";
 	
 	List<Identity> identities=null;
 	
@@ -114,6 +118,14 @@ public class MailManager extends BaseManager {
 			for(OIdentity oi: items) {
 				Identity id=createIdentity(oi);
 				idents.add(id);
+			}
+			
+			CoreManager core=WT.getCoreManager(getTargetProfileId());
+			for(IncomingShareRoot share: core.listIncomingShareRoots(SERVICE_ID, RESOURCE_IMAPFOLDER)) {
+				for(OShare folder: core.listIncomingShareFolders(share.getShareId(), SERVICE_ID, RESOURCE_IMAPFOLDER)) {
+					Data udata=core.getUserData(share.getOriginPid());
+					//Identity id = new Identity(udata.getEmail().getAddress(), udata.getDisplayName(), folder.getInstance(),);
+				}
 			}
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
