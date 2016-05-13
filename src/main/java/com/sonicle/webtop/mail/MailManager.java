@@ -34,6 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
@@ -90,9 +91,17 @@ public class MailManager extends BaseManager {
 		return identities;
 	}
 	
-	class ImapFolderData {
+	public static class ImapFolderData {
 		boolean useMyPersonalInfo;
 		boolean forceMyMailcard;
+		
+		public static ImapFolderData fromJson(String s) {
+			return JsonResult.gson.fromJson(s, ImapFolderData.class);
+		}
+		
+		public static String toJson(ImapFolderData ifd) {
+			return JsonResult.gson.toJson(ifd);
+		}
 	}
 	
 	private List<Identity> buildIdentities() throws WTException {
