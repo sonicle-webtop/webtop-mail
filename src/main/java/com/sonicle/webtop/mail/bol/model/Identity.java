@@ -50,30 +50,16 @@ public class Identity {
 	protected String displayName;
 	protected String mainFolder;
 	protected Mailcard mailcard;
-	protected UserProfile.Id fromUserProfileId;
+	protected UserProfile.Id originPid;
 
 	protected boolean fax;
 	protected boolean useMyPersonalInfos;
 	protected boolean lockMailcard = false;
 	
+	protected boolean isMainIdentity=false;
+	
 	public Identity() {
-		
-	}
-
-	public String getType() {
-		return type;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public boolean isLockMailcard() {
-		return lockMailcard;
-	}
-
-	public void setLockMailcard(boolean lockMailcard) {
-		this.lockMailcard = lockMailcard;
+		type=Identity.TYPE_USER;
 	}
 
 	public Identity(String displayName, String email, String mainFolder) {
@@ -91,6 +77,30 @@ public class Identity {
 		this.mainFolder=mainFolder;
 		this.fax=fax;
 		this.useMyPersonalInfos=useMyPersonalInfos;
+	}
+
+	public String getType() {
+		return type;
+	}
+
+	public void setType(String type) {
+		this.type = type;
+	}
+
+	public boolean isLockMailcard() {
+		return lockMailcard;
+	}
+
+	public void setLockMailcard(boolean lockMailcard) {
+		this.lockMailcard = lockMailcard;
+	}
+	
+	public boolean isMainIdentity() {
+		return isMainIdentity;
+	}
+
+	public void setIsMainIdentity(boolean isMainIdentity) {
+		this.isMainIdentity = isMainIdentity;
 	}
 
 	public String getEmail() {
@@ -125,12 +135,12 @@ public class Identity {
 		this.mailcard = mailcard;
 	}
 	
-	public UserProfile.Id getFromUserProfileId() {
-		return fromUserProfileId;
+	public UserProfile.Id getOriginPid() {
+		return originPid;
 	}
 
-	public void setFromUserProfileId(UserProfile.Id fromUserProfileId) {
-		this.fromUserProfileId = fromUserProfileId;
+	public void setOriginPid(UserProfile.Id originPid) {
+		this.originPid = originPid;
 	}
 
 	public boolean isFax() {
