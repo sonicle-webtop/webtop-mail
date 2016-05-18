@@ -9741,7 +9741,7 @@ public class Service extends BaseService {
 		try {
 			con=WT.getConnection(SERVICE_ID);
 			OUserMap omap=UserMapDAO.getInstance().selectById(con, userProfileId.getDomainId(), userProfileId.getUserId());
-			username=omap.getMailUser();
+			if (omap!=null) username=omap.getMailUser();
 			if (username==null || username.isEmpty()) username=userProfileId.getUserId();
 		} catch(Exception exc) {
 			logger.error("Error mapping mail user",exc);

@@ -71,6 +71,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.callParent(arguments);
 		
 		me.identities=me.mys.getOption("identities");
+		//save hashed identities, by email
+		me.identHash={};
+		Ext.each(me.identities,function(ident) { me.identHash[ident.email]=ident},me);
 		
 		me.attlist= Ext.create({
 			xtype: 'panel',
@@ -159,7 +162,23 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						model: 'Sonicle.webtop.mail.model.Identity',
 						data : idents
 					}),
-					value: selident.email
+					value: selident.email,
+					listeners: {
+						change: {
+							fn: function(s,nv,ov) {
+								// We are using the select event because change event is
+								// fired only after blur. Within this event we have to
+								// calculate new and old values manually.
+								//var ov = s.lastValue || s.startValue;
+								//var nv = r.get('id');
+								if(ov === nv) return;
+								//s.lastValue = nv;
+								me.setHtml(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html, true));
+							},
+							scope: this
+						}
+					}
+					
 				};
 
             }
@@ -233,8 +252,77 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 	},
 	
+	startNew: function(data) {
+		var me=this;
+		data.html=me.prepareHtml(data.html);
+		me.beginNew({
+			data: data
+		});
+	},
+	
 	sendMail: function() {
 		console.log("sendMail");
+	},
+	
+    prepareHtml: function(html) {
+		var me=this,
+			mc=me.identities[me.identityIndex].mailcard;
+		if (mc) html='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+html;
+        html='<div style="font-family: '+me.fontface+'; font-size: '+me.fontsize+';">'+html+'</div>';
+        return html;
+    },
+
+    setHtml: function(html) {
+		var me=this;
+        me.htmlEditor.initHtmlValue(html);
+/*        var w=this.htmleditor.getWin();
+        var d=w.document;
+        var n=d.body.firstChild;
+        if (w.getSelection) {
+            var r=d.createRange();
+            r.setStart(n,0);
+            r.setEnd(n,0);
+            var s = this.htmleditor.win.getSelection();
+            s.removeAllRanges();
+            s.addRange(r);
+        } else if (d.selection) {
+            var r=d.body.createTextRange();
+            r.moveToElementText(n);
+            r.collapse(true);
+            r.select();
+        }*/
+    },
+
+	replaceMailcard: function(html, omc, nmc, dom) {
+		if(Ext.isEmpty(omc) || Ext.isEmpty(nmc)) return html;
+		
+		if(dom) { // DOM way!
+			var htmlEl = Ext.get(Ext.DomHelper.createDom({html: html})),
+				mcEl = htmlEl.query('#wt-mailcard',false);
+			if(mcEl) {
+				mcEl=mcEl[0];
+				// We need to get html passing from dom created by browser;
+				// FF arranges html code making it unmatchable
+				var htmlOmc = Ext.DomHelper.createDom({html: omc}).innerHTML;
+				if (mcEl.dom.innerHTML == htmlOmc) {
+					mcEl.dom.innerHTML = nmc;
+				} else {
+					WT.alert(WT.res('warning'), this.ms.res('editor.mailcard.replace.no'));
+				}
+				return htmlEl.dom.innerHTML;
+			} else {
+				return html;
+			}
+		} else { // Classic regEx way!
+			var start = html.search(Ext.escapeRe(omc));
+			if(start !== -1) {
+				var end = start + omc.length -1;
+				return html.substring(0, start) + nmc + html.substring(end+1);
+			} else {
+				return html;
+			}
+		}
 	}
+	
 	
 });

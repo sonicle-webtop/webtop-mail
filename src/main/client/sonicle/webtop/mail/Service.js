@@ -501,15 +501,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 	
 		v.show(false,function() {
-			v.getComponent(0).beginNew({
-				data: {
-					messageId: 1,
-					subject: '',
-					recipients: [
-						{ rtype: 'to', email: ''}
-					],
-					html: identities[identIndex].mailcard.html
-				}
+			var meditor=v.getView();
+			meditor.startNew({
+				messageId: 1,
+				subject: '',
+				recipients: [
+					{ rtype: 'to', email: ''}
+				],
+				html: ''
 			});
 		});
 	},
