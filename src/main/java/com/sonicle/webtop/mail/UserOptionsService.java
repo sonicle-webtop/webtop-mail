@@ -133,7 +133,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 	public void processListIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
 		try {
 			MailManager mman= new MailManager(getTargetProfileId());
-			List<Identity> idents=mman.listIdentities(false);
+			List<Identity> idents=mman.listIdentities();
+			//TODO should send only configured identities, skipping main
 			new JsonResult("identities", idents).printTo(out);
 			
 		} catch (Exception ex) {

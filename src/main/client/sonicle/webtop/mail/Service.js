@@ -481,18 +481,34 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionNew: function() {
-		var me=this;
-		var v=WT.createView(me.ID,'view.MessageEditor');
+		var me=this,
+			identIndex=0,
+			idfolder=me.currentFolder,
+			identities=me.optionsData.identities;
+	
+        for(var i=1;i<identities.length;++i) {
+            var ifolder=identities[i].mainFolder;
+            if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
+                identIndex=i;
+                break;
+            }
+        }
+
+		var v=WT.createView(me.ID,'view.MessageEditor',{
+			viewCfg: {
+				identityIndex: identIndex
+			}
+		});
+	
 		v.show(false,function() {
-			v.getComponent(0).beginNew({
-				data: {
-					messageId: 1,
-					subject: '',
-					recipients: [
-						{ rtype: 'to', email: ''}
-					],
-					html: '<BR><BR><B>Test bind HTML</B><BR><BR><I>Let\'s see if it works!</I><BR><BR>Gabry'
-				}
+			var meditor=v.getView();
+			meditor.startNew({
+				messageId: 1,
+				subject: '',
+				recipients: [
+					{ rtype: 'to', email: ''}
+				],
+				html: ''
 			});
 		});
 	},

@@ -47,8 +47,6 @@ import com.sonicle.mail.sieve.*;
 import com.sonicle.security.Principal;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.webtop.core.CoreManager;
-import com.sonicle.webtop.core.app.CoreManifest;
-import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
@@ -56,6 +54,7 @@ import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.dal.UserDAO;
 //import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
+import com.sonicle.webtop.core.sdk.UserProfile.Data;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
@@ -90,6 +89,7 @@ import com.sun.mail.util.PropUtil;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.*;
@@ -102,6 +102,7 @@ import javax.mail.internet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
@@ -9291,6 +9292,26 @@ public class Service extends BaseService {
 		out.println("{\nresult: true\n}");
 	}
 
+	public void processSetMessageView(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String region = ServletUtils.getStringParameter(request, "region", true);
+			Integer width = ServletUtils.getIntParameter(request, "width", true);
+			Integer height = ServletUtils.getIntParameter(request, "height", true);
+			Boolean collapsed = ServletUtils.getBooleanParameter(request, "collapsed", false);
+			
+			us.setMessageViewRegion(region);
+			us.setMessageViewWidth(width);
+			us.setMessageViewHeight(height);
+			us.setMessageViewCollapsed(collapsed);
+			
+			new JsonResult().printTo(out);
+			
+		} catch (Exception ex) {
+			logger.error("Error executing action SetToolComponentWidth", ex);
+			new JsonResult(false, "Unable to save with").printTo(out);
+		}
+	}	
+	
 	// TODO: auto save message
 /*    public void processAutoSaveMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 try {
@@ -9640,14 +9661,21 @@ public class Service extends BaseService {
 	public ClientOptions returnClientOptions() {
 		ClientOptions co = new ClientOptions();
 		try {
-			List<Identity> identities=mailManager.listIdentities(true);
+			List<Identity> identities=mailManager.listIdentities();
+			
+			List<Identity> jsidents=new ArrayList();
+			jsidents.addAll(identities);
+			for(Identity jsid: jsidents) {
+				if (jsid.isMainIdentity()) loadMainIdentityMailcard(jsid);
+				else loadIdentityMailcard(jsid);
+			}
 			
 			co.put("folderDrafts", us.getFolderDrafts());
 			co.put("folderSent", us.getFolderSent());
 			co.put("folderSpam", us.getFolderSpam());
 			co.put("folderTrash", us.getFolderTrash());
 			co.put("pageRows", us.getPageRows());
-			co.put("identities", identities);
+			co.put("identities", jsidents);
 			co.put("manualSeen",us.isManualSeen());
 			co.put("messageViewRegion",us.getMessageViewRegion());
 			co.put("messageViewWidth",us.getMessageViewWidth());
@@ -9663,25 +9691,202 @@ public class Service extends BaseService {
 		return co;
 	}
 	
-	
-	public void processSetMessageView(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+	private void loadMainIdentityMailcard(Identity id) {
+		Mailcard mc = getMailcard();
 		try {
-			String region = ServletUtils.getStringParameter(request, "region", true);
-			Integer width = ServletUtils.getIntParameter(request, "width", true);
-			Integer height = ServletUtils.getIntParameter(request, "height", true);
-			Boolean collapsed = ServletUtils.getBooleanParameter(request, "collapsed", false);
-			
-			us.setMessageViewRegion(region);
-			us.setMessageViewWidth(width);
-			us.setMessageViewHeight(height);
-			us.setMessageViewCollapsed(collapsed);
-			
-			new JsonResult().printTo(out);
-			
-		} catch (Exception ex) {
-			logger.error("Error executing action SetToolComponentWidth", ex);
-			new JsonResult(false, "Unable to save with").printTo(out);
+			UserPersonalInfo upi=WT.getCoreManager().getUserPersonalInfo(mailManager.getTargetProfileId());
+			mc.substitutePlaceholders(upi);			
+		} catch(WTException exc) {
+			logger.error("cannot load user personal info",exc);
 		}
+		//mc.html=LangUtils.stripLineBreaks(mc.html);
+		id.setMailcard(mc);
+	}
+	
+	private void loadIdentityMailcard(Identity id) {
+		Mailcard mc = getMailcard(id);
+		if (mc!=null) {
+			if(id.isType(Identity.TYPE_AUTO)) {
+				UserProfile.Id opid=id.getOriginPid();
+				// In case of auto identities we need to build real mainfolder
+				try {
+					String mailUser = getMailUsername(opid);
+					String mainfolder = getSharedFolderName(mailUser, id.getMainFolder());
+					id.setMainFolder(mainfolder);
+					if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, id.getMainFolder()));
+				} catch (Exception ex) {
+					logger.error("Unable to get auto identity foldername [{}]", id.getEmail(), ex);
+				}
+
+				// Avoids default mailcard display for automatic identities
+				if(mc.source.equals(Mailcard.TYPE_DEFAULT) && !StringUtils.isEmpty(id.getMainFolder())) {
+					mc = getMailcard();
+				}
+
+				try {
+					UserPersonalInfo upi=WT.getCoreManager().getUserPersonalInfo(opid);
+					mc.substitutePlaceholders(upi);
+				} catch (Exception ex) {
+					logger.error("Unable to get auto identity personal info [{}]", id.getEmail(), ex);
+				}
+			}
+		}
+		//mc.html=LangUtils.stripLineBreaks(mc.html);
+		id.setMailcard(mc);
+	}
+	
+	private String getMailUsername(UserProfile.Id userProfileId) {
+		Connection con=null;
+		String username=null;
+		try {
+			con=WT.getConnection(SERVICE_ID);
+			OUserMap omap=UserMapDAO.getInstance().selectById(con, userProfileId.getDomainId(), userProfileId.getUserId());
+			if (omap!=null) username=omap.getMailUser();
+			if (username==null || username.isEmpty()) username=userProfileId.getUserId();
+		} catch(Exception exc) {
+			logger.error("Error mapping mail user",exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+		return username;
 	}	
 	
+	public Mailcard getMailcard() {
+		UserProfile.Id pid=mailManager.getTargetProfileId();
+		Data udata=WT.getUserData(pid);
+		String email=udata.getEmail().getAddress();
+		Mailcard mc = readEmailMailcard(email);
+		if(mc != null) return mc;
+		mc = readUserMailcard(pid.getUserId());
+		if(mc != null) return mc;
+		mc = readEmailDomainMailcard(email);
+		if(mc != null) return mc;
+		return readDefaultMailcard();
+    }
+	
+	public Mailcard getMailcard(Identity identity) {
+		Mailcard mc = readEmailMailcard(identity.getEmail());
+		if(mc != null) return mc;
+		UserProfile.Id fpid=identity.getOriginPid();
+		if (fpid!=null) mc = readUserMailcard(fpid.getUserId());
+		if(mc != null) return mc;
+		mc = readEmailDomainMailcard(identity.getEmail());
+		if(mc != null) return mc;
+		return readDefaultMailcard();
+    }
+	
+//	public Mailcard getMailcard() {
+//		return readDefaultMailcard();
+//    }
+	
+	public Mailcard getMailcard(String emailAddress) {
+		Mailcard mc = readEmailMailcard(emailAddress);
+		if (mc != null) {
+			return mc;
+		}
+		mc = readEmailDomainMailcard(emailAddress);
+		if (mc != null) {
+			return mc;
+		}
+		return readDefaultMailcard();
+	}
+	
+	public Mailcard getEmailDomainMailcard(UserProfile profile) {
+		Mailcard mc = readEmailDomainMailcard(profile.getEmailAddress());
+		if (mc != null) {
+			return mc;
+		}
+		return getMailcard();
+	}
+
+	private Mailcard readEmailMailcard(String email) {
+		String mailcard = readMailcard("mailcard_" + email);
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_EMAIL, mailcard);
+		}
+		return null;
+	}
+
+	private Mailcard readEmailDomainMailcard(String email) {
+		int index = email.indexOf("@");
+		if (index < 0) {
+			return null;
+		}
+		String mailcard = readMailcard("mailcard_" + email.substring(index + 1));
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_EMAIL_DOMAIN, mailcard);
+		}
+		return null;
+	}
+
+	private Mailcard readUserMailcard(String user) {
+		String mailcard = readMailcard("mailcard_" + user);
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_USER, mailcard);
+		}
+		return null;
+	}
+
+	private Mailcard readDefaultMailcard() {
+		String mailcard = readMailcard("mailcard");
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_DEFAULT, mailcard);
+		}
+		return new Mailcard();
+	}
+
+	public void setEmailMailcard(String email, String html) {
+		writeMailcard("mailcard_" + email, html);
+	}
+
+	public void setEmailDomainMailcard(String email, String html) {
+		int index = email.indexOf("@");
+		if (index < 0) {
+			return;
+		}
+		writeMailcard("mailcard_" + email.substring(index + 1), html);
+	}
+
+	public void setUserMailcard(String user, String html) {
+		writeMailcard("mailcard_" + user, html);
+	}
+
+	private void writeMailcard(String filename, String html) {
+		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(), filename);
+
+		try {
+			File file = new File(pathname);
+			if (html != null) {
+				FileUtils.write(file, html, "ISO-8859-15");
+			} else {
+				FileUtils.forceDelete(file);
+			}
+
+		} catch (FileNotFoundException ex) {
+			logger.trace("Cleaning not necessary. Mailcard file not found. [{}]", pathname, ex);
+		} catch (IOException ex) {
+			logger.error("Unable to write/delete mailcard file. [{}]", pathname, ex);
+		}
+	}
+
+	private String readMailcard(String filename) {
+		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(), filename);
+
+		try {
+			File file = new File(pathname);
+			return FileUtils.readFileToString(file, "ISO-8859-15");
+
+		} catch (FileNotFoundException ex) {
+			logger.trace("Mailcard file not found. [{}]", pathname);
+			return null;
+		} catch (IOException ex) {
+			logger.error("Unable to read mailcard file. [{}]", pathname, ex);
+		}
+		return null;
+	}
+	
+	public String getModelPath() {
+		return "c:/temp/models";
+	}
+
 }

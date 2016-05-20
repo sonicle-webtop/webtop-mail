@@ -518,7 +518,7 @@ public class FolderCache {
     }    
 	
 	private void sendUnreadChangedMessage() {
-		Service.logger.debug("sending unread changed on "+foldername);
+		//Service.logger.debug("sending unread changed on "+foldername);
 		this.environment.notify(
 				new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
 		);
