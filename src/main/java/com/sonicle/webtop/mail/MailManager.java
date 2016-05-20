@@ -122,7 +122,7 @@ public class MailManager extends BaseManager {
 			
 			CoreManager core=WT.getCoreManager(getTargetProfileId());
 			for(IncomingShareRoot share: core.listIncomingShareRoots(SERVICE_ID, RESOURCE_IMAPFOLDER)) {
-				for(OShare folder: core.listIncomingShareFolders(share.getShareId(), SERVICE_ID, RESOURCE_IMAPFOLDER)) {
+				for(OShare folder: core.listIncomingShareFolders(share.getShareId(), RESOURCE_IMAPFOLDER)) {
 					Data udata=core.getUserData(share.getOriginPid());
 					//Identity id = new Identity(udata.getEmail().getAddress(), udata.getDisplayName(), folder.getInstance(),);
 				}
