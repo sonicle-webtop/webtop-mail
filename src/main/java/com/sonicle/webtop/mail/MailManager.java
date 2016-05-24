@@ -127,7 +127,7 @@ public class MailManager extends BaseManager {
 			//add automatic shared identities
 			CoreManager core=WT.getCoreManager(getTargetProfileId());
 			for(IncomingShareRoot share: core.listIncomingShareRoots(SERVICE_ID, RESOURCE_IMAPFOLDER)) {
-				for(OShare folder: core.listIncomingShareFolders(share.getShareId(), SERVICE_ID, RESOURCE_IMAPFOLDER)) {
+				for(OShare folder: core.listIncomingShareFolders(share.getShareId(), RESOURCE_IMAPFOLDER)) {
 					UserProfile.Id opid=share.getOriginPid();
 					udata=core.getUserData(opid);
 					ImapFolderData ifd=core.getIncomingShareFolderData(folder.getShareId().toString(),ImapFolderData.class);
