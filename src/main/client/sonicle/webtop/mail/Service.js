@@ -496,7 +496,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		var v=WT.createView(me.ID,'view.MessageEditor',{
 			viewCfg: {
-				identityIndex: identIndex
+				mys: me,
+				identityIndex: identIndex,
+				fontFace: me.getOption('fontName'),
+				fontSize: me.getOption('fontSize')
 			}
 		});
 	

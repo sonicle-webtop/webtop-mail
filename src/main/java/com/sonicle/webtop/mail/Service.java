@@ -9674,6 +9674,8 @@ public class Service extends BaseService {
 			co.put("folderSent", us.getFolderSent());
 			co.put("folderSpam", us.getFolderSpam());
 			co.put("folderTrash", us.getFolderTrash());
+			co.put("fontName", us.getFontName());
+			co.put("fontSize", us.getFontSize());
 			co.put("pageRows", us.getPageRows());
 			co.put("identities", jsidents);
 			co.put("manualSeen",us.isManualSeen());

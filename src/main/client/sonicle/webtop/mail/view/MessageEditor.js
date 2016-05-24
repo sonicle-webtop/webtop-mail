@@ -52,6 +52,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	autoToolbar: false,
 	identityIndex: 0,
 	selectedIdentity: null,
+	fontFace: 'Arial',
+	fontSize: 12,
 	
     showSave: true,
     showAddressBook: true,
@@ -173,7 +175,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								//var nv = r.get('id');
 								if(ov === nv) return;
 								//s.lastValue = nv;
-								me.setHtml(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html, true));
+								me.setHtml(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html));
 							},
 							scope: this
 						}
@@ -268,13 +270,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		var me=this,
 			mc=me.identities[me.identityIndex].mailcard;
 		if (mc) html='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+html;
-        html='<div style="font-family: '+me.fontface+'; font-size: '+me.fontsize+';">'+html+'</div>';
+        html='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+html+'</div>';
         return html;
     },
 
     setHtml: function(html) {
 		var me=this;
-        me.htmlEditor.initHtmlValue(html);
+        //me.htmlEditor.initHtmlValue(html);
+		me.getModel().set("html",html);
 /*        var w=this.htmleditor.getWin();
         var d=w.document;
         var n=d.body.firstChild;
@@ -293,34 +296,24 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         }*/
     },
 
-	replaceMailcard: function(html, omc, nmc, dom) {
+	replaceMailcard: function(html, omc, nmc) {
 		if(Ext.isEmpty(omc) || Ext.isEmpty(nmc)) return html;
 		
-		if(dom) { // DOM way!
-			var htmlEl = Ext.get(Ext.DomHelper.createDom({html: html})),
-				mcEl = htmlEl.query('#wt-mailcard',false);
-			if(mcEl) {
-				mcEl=mcEl[0];
-				// We need to get html passing from dom created by browser;
-				// FF arranges html code making it unmatchable
-				var htmlOmc = Ext.DomHelper.createDom({html: omc}).innerHTML;
-				if (mcEl.dom.innerHTML == htmlOmc) {
-					mcEl.dom.innerHTML = nmc;
-				} else {
-					WT.alert(WT.res('warning'), this.ms.res('editor.mailcard.replace.no'));
-				}
-				return htmlEl.dom.innerHTML;
+		var htmlEl = Ext.get(Ext.DomHelper.createDom({html: html})),
+			mcEl = htmlEl.query('#wt-mailcard',false);
+		if(mcEl) {
+			mcEl=mcEl[0];
+			var htmlOmc = this.htmlEditor.cleanUpHtml(omc);
+			var htmlMcEl = this.htmlEditor.cleanUpHtmlFromDom(mcEl.dom);
+
+			if (htmlMcEl == htmlOmc) {
+				mcEl.dom.innerHTML = nmc;
 			} else {
-				return html;
+				WT.error(this.mys.res('editor.mailcard.replace.no'));
 			}
-		} else { // Classic regEx way!
-			var start = html.search(Ext.escapeRe(omc));
-			if(start !== -1) {
-				var end = start + omc.length -1;
-				return html.substring(0, start) + nmc + html.substring(end+1);
-			} else {
-				return html;
-			}
+			return htmlEl.dom.innerHTML;
+		} else {
+			return html;
 		}
 	}
 	
