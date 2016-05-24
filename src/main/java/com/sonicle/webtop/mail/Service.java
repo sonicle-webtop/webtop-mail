@@ -4789,18 +4789,16 @@ public class Service extends BaseService {
 				result = false;
 			} else {
 				FolderCache newfc = trashFolder(folder);
-				sout+="oldid: '"+StringEscapeUtils.escapeEcmaScript(folder)+"',\n";
 				if (newfc!=null) { 
-					Folder newf=newfc.getFolder();
-					sout+="newid: '"+StringEscapeUtils.escapeEcmaScript(newf.getFullName())+"',\n";
-					sout+="newname: '"+StringEscapeUtils.escapeEcmaScript(newf.getName())+"',\n";
+					sout+="newid: '"+StringEscapeUtils.escapeEcmaScript(newfc.getFolder().getFullName())+"',\n";
+					sout+="trashid: '"+StringEscapeUtils.escapeEcmaScript(newfc.getParent().getFolder().getFullName())+"',\n";
 				}
 				result = true;
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
 			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
 	}

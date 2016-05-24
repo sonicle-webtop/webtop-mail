@@ -518,7 +518,25 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionAdvancedSearch: function() {},
 	actionEmptyFolder: function() {},
-	actionDeleteFolder: function() {},
+	
+	actionDeleteFolder: function(s,e) {
+		var me=this,
+			r=me.getCtxNode(e),
+			folder=r.get("id"),
+			pn=r.parentNode;
+	
+		if (pn && pn.get("isTrash")) {
+			WT.confirm(me.res('sureprompt'),function(bid) {
+				if (bid==='yes') {
+					me.deleteFolder(folder);
+				}
+			},me);
+		}
+		else {
+			me.trashFolder(folder);
+		}
+	},
+	
 	actionRenameFolder: function() {},
 	
     actionNewFolder: function(s,e) {
@@ -650,29 +668,73 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			callback: function(success,json) {
 				if (json.result) {
 					var tr=me.imapTree,
-						v=tr.getView(),
 						s=tr.store,
 						n=s.getById(json.oldid);
 					if (n) n.remove();
 					n=(json.parent?s.getNodeById(json.parent):s.getRoot());
-					
-					if (n.isExpanded()) {
-						s.load({ node: n });
-					}
-					n.expand(false,function(nodes) {
-						Ext.each(nodes,function(newnode) {
-							if (newnode.getId()===json.newid) {
-								v.setSelection(newnode);
-								me.folderClicked(tr,newnode);
-							}
-						});
-					});
+					me.selectChildNode(n,json.newid);
 				} else {
 					WT.error(json.text);
 				}
 			}
 		});					
     },
+	
+	deleteFolder: function(folder) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'DeleteFolder', {
+			params: {
+				folder: folder
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					var node=me.imapTree.getStore().getById(folder);
+					if (node) node.remove();
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},
+	
+	trashFolder: function(folder) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'TrashFolder', {
+			params: {
+				folder: folder
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					var s=me.imapTree.getStore(),
+						n=s.getById(folder);
+					if (n) n.remove();
+					if (json.newid && json.trashid) {
+						n=s.getById(json.trashid);
+						me.selectChildNode(n,json.newid);
+					}
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},
+	
+	selectChildNode: function(parentNode, childId) {
+		var me=this,
+			tr=me.imapTree;
+	
+		if (parentNode.isExpanded()) {
+			tr.getStore().load({ node: parentNode });
+		}
+		parentNode.expand(false,function(nodes) {
+			Ext.each(nodes,function(newnode) {
+				if (newnode.getId()===childId) {
+					tr.getView().setSelection(newnode);
+					me.folderClicked(tr,newnode);
+				}
+			});
+		});
+	},
 	
     openEml: function(folder,idmessage,idattach) {
 		var win=WT.createView(this.ID,'view.EmlMessageView',{
