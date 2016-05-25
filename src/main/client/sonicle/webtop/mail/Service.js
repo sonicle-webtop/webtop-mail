@@ -582,7 +582,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});        
     },
 	
-	actionMoveToMainFolder: function() {},
+	actionMoveToMainFolder: function(s,e) {
+		var me=this,
+			rec=me.getCtxNode(e);
+	
+		me.moveFolder(rec.get("id"),null);
+	},
 	
 	actionFolderRefresh: function(s,e) {
 		var me=this,
@@ -749,6 +754,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					if (n) n.remove();
 					if (json.newid && json.trashid) {
 						n=s.getById(json.trashid);
+						n.set("leaf",false);
 						me.selectChildNode(n,json.newid);
 					}
 				} else {
