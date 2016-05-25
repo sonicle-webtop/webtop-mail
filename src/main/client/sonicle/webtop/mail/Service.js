@@ -155,6 +155,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
             t.body.on('contextmenu',this.treeBodyContextMenu,this);
         },this);*/
 		
+		me.imapTree.on('edit', function(ed, e) {
+			if (e.colIdx===0)
+				me.renameFolder(e.record,e.originalValue,e.value);
+		});
+		
 		
 		me.onMessage('unread',me.unreadChanged,me);
 
@@ -549,7 +554,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 	},
 	
-	actionRenameFolder: function() {},
+	actionRenameFolder: function(s,e) {
+		var me=this,
+			r=me.getCtxNode(e);
+	
+		me.imapTree.startEdit(r,0);
+	},
 	
     actionNewFolder: function(s,e) {
 		var me=this,
@@ -669,6 +679,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		
     },
+	
+	renameFolder: function(n,oldName,newName) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'RenameFolder', {
+			params: {
+				folder: n.get("id"),
+				name: newName
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					n.set("id",json.newid);
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},
 	
     moveFolder: function(src,dst) {
 		var me=this;
@@ -808,10 +835,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
             if (a.scanEnabled) mi.setChecked(true,true);
             else mi.setChecked(false,true);
         }*/
-	},
-	
-	updateNodeUnreads: function(unreads) {
-		
 	}
 	
 	

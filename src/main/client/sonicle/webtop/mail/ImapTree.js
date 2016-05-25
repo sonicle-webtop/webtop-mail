@@ -51,7 +51,8 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 					var unr=r.get('unread'),
 						hunr=r.get('hasUnread');
 					return (unr!==0||hunr?'<b>'+v+'</b>':v);
-				}
+				},
+				editor: 'textfield'
 			},
 			{
 				text: 'Unread', 
@@ -64,6 +65,12 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 			}
 	  ]
 	},
+	
+	plugins: {
+        ptype: 'cellediting',
+		pluginId: 'cellediting',
+        clicksToEdit: 2
+    },	
 
 	useArrows: true,
 	rootVisible: false,
@@ -103,6 +110,10 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 
 		
 		me.callParent([cfg]);
+	},
+	
+	startEdit: function(record,c) {
+		this.getPlugin('cellediting').startEdit(record, this.getView().ownerCt.getColumnManager().getHeaderAtIndex(c));
 	}
 	
 });

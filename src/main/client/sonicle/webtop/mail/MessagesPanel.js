@@ -85,7 +85,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.folderList.on('moving',me.clearMessageView,me);
         me.folderList.on('rowdblclick',me.rowDblClicked,me);
         me.folderList.on('cellclick',me.cellClicked,me);
-		//trick to reset empty folders' nodes
+		//trick to reset unreads on empty folders' nodes
 		me.folderList.on('load',function(g,foldername,data) {
 			if (data.total && data.total===0)
 				me.mys.unreadChanged({
