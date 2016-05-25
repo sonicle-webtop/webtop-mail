@@ -469,11 +469,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
         mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh});
 	}, 
 	
-	unreadChanged: function(cfg) {
+	unreadChanged: function(cfg,unreadOnly) {
 		var me=this;
-		var node=me.imapTree.getStore().getById(cfg.foldername);		if (node) {
+		var node=me.imapTree.getStore().getById(cfg.foldername);
+		if (node) {
 			var folder=node.get("folder");
-			node.set('hasUnread',cfg.hasUnreadChildren);
+			if (!unreadOnly) node.set('hasUnread',cfg.hasUnreadChildren);
 			node.set('unread',cfg.unread);
 			node.set('folder','');
 			node.set('folder',folder);
@@ -517,7 +518,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionAdvancedSearch: function() {},
-	actionEmptyFolder: function() {},
+	
+	actionEmptyFolder: function(s,e) {
+		var me=this,
+			r=me.getCtxNode(e),
+			folder=r.get("id");
+	
+		WT.confirm(me.res('sureprompt'),function(bid) {
+			if (bid==='yes') {
+				me.emptyFolder(folder);
+			}
+		},me);
+	},
 	
 	actionDeleteFolder: function(s,e) {
 		var me=this,
@@ -719,6 +731,28 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});					
 	},
 	
+	emptyFolder: function(folder) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'EmptyFolder', {
+			params: {
+				folder: folder
+			},
+			callback: function(success,json) {
+				var tr=me.imapTree,
+					s=tr.getStore();				
+				if (json.result) {
+					s.load({
+						node: s.getById(folder)
+					});
+				} else {
+					WT.error(json.text);
+				}
+				if (folder===me.currentFolder)
+					me.folderClicked(tr,s.getById(folder));
+			}
+		});					
+	},
+	
 	selectChildNode: function(parentNode, childId) {
 		var me=this,
 			tr=me.imapTree;
@@ -774,6 +808,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
             if (a.scanEnabled) mi.setChecked(true,true);
             else mi.setChecked(false,true);
         }*/
+	},
+	
+	updateNodeUnreads: function(unreads) {
+		
 	}
 	
 	

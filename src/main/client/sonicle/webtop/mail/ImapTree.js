@@ -86,7 +86,8 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 					}
 				},
 				markDirty: false,
-
+				loadMask: false,
+				animate: true
 			},
 			
 			store: Ext.create('Ext.data.TreeStore', {

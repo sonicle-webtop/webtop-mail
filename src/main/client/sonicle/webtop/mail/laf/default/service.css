@@ -157,3 +157,10 @@ div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 .wtmail-ical-declined-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-declined_16.png') !important; }
 .wtmail-ical-needaction-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-needaction_16.png') !important; }
 .wtmail-ical-tentative-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-tentative_16.png') !important; }
+
+.wtmail-blockquote { 
+    display: block;
+    margin-left: 5px;
+    border-left: solid 2px blue;
+    padding-left: 10px;
+}

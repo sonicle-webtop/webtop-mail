@@ -780,6 +780,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
     loaded: function(s,r,o) {
+		var me=this;
+		me.fireEvent('load',me,me.currentFolder,s.proxy.reader.rawData);
 /*		var me=this,
 			meta=me.store.proxy.reader.metaData,
 			ci2=meta.colsInfo2;
