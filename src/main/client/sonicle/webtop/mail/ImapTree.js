@@ -39,6 +39,10 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 	],
 	
 	autoScroll: true,
+	
+	selModel: {
+		ignoreRightMouseSelection: true
+	},
 		
 	columns: {
 		items: [

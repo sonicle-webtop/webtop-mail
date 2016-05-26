@@ -91,7 +91,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				me.mys.unreadChanged({
 					foldername: foldername,
 					unread: 0
-				});
+				},true);
 		},me);
 
         if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);

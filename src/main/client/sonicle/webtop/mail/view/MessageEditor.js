@@ -229,7 +229,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableLinks: true,
 				enableLists: true,
 				enableSourceEdit: true,
-				enableClean: true
+				enableClean: true,
+				listeners: {
+					init: function() {
+						var xdoc=me.htmlEditor.getDoc(),
+							xstyle=xdoc.createElement('style');
+
+						xstyle.type='text/css';
+						xstyle.appendChild(xdoc.createTextNode(
+								'div#wt-mailcard { border: 1px dotted lightgray !important; } '+
+								'blockquote { display: block; margin-left: 5px; border-left: solid 2px blue; padding-left: 10px; } '
+						));
+						xdoc.head.appendChild(xstyle);
+					}
+				}
 			})
 		);
 

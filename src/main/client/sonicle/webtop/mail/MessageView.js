@@ -887,7 +887,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
 		var xstyle=doc.createElement('style');
 		xstyle.type='text/css';
-		xstyle.appendChild(doc.createTextNode('pre { white-space: pre-wrap !important; } body { font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif; }'));
+		xstyle.appendChild(doc.createTextNode(
+				'pre { white-space: pre-wrap !important; } '+
+				'body { font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif; } '+
+				'blockquote { display: block; margin-left: 5px; border-left: solid 2px blue; padding-left: 10px; } '
+		));
 		doc.head.appendChild(xstyle);
 		
         var thebody=doc.body;

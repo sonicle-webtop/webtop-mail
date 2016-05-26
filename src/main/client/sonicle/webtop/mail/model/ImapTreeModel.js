@@ -35,18 +35,22 @@
 Ext.define('Sonicle.webtop.mail.model.ImapTreeModel', {
     extend: 'Ext.data.TreeModel',
     idProperty: 'id',
-    fields: [{
-        name: "id",
-        convert: undefined
-    }, {
-        name: "folder",
-        convert: undefined
-    }, {
-        name: "unread",
-        convert: undefined
-    }, {
-        name: "hasunread",
-        convert: undefined
-    }]
+    fields: [
+		{ name: "id" },
+		{ name: "text" },
+		{ name: "folder" },
+		{ name: "leaf" },
+		{ name: "iconCls" },
+		{ name: "unread" },
+		{ name: "hasUnread" },
+		{ name: "isInbox" },
+		{ name: "isDrafts" },
+		{ name: "isSent" },
+		{ name: "isTrash" },
+		{ name: "isSpam" },
+		{ name: "scanOff" },
+		{ name: "scanOn" },
+		{ name: "scanEnabled" }
+    ]
 });
 

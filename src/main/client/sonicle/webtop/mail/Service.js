@@ -399,6 +399,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			]
 		}));
         mscan.on('checkchange',me.actionScanFolder,me);
+		me.addRef("mnuScan",mscan);
         //cxmTree.on('hide',this.treeMenuHidden,this);
 		
 		var cxmBackTree=me.addRef('cxmBackTree', Ext.create({
@@ -593,13 +594,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this,
 			rec=me.getCtxNode(e);
 	
-		if (rec) {
-			me.imapTree.getSelectionModel().select(rec);
-			me.showFolder(rec.get("id"));
+		if (rec) me.refreshFolder(rec);
+	},
+	
+	actionScanFolder: function(mi,v) {
+		var me=this,
+			n=me.getCtxNode(e),
+			folder=n.get("id");
+	
+		if (n.hasChildNodes()) {
+			WT.confirm(me.res('recursive'),function(bid) {
+				me.setScanFolder(folder,v,(bid=='yes'));
+			},me);
+		} else {
+			me.setScanFolder(folder,v,false);
 		}
 	},
 	
-	actionScanFolder: function() {},
 	actionFolderMarkSeen: function() {},
 	actionDownloadMails: function() {},
 	
@@ -772,19 +783,51 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			},
 			callback: function(success,json) {
 				var tr=me.imapTree,
-					s=tr.getStore();				
+					s=tr.getStore(),
+					n=s.getById(folder);
+			
 				if (json.result) {
 					s.load({
-						node: s.getById(folder)
+						node: n
 					});
 				} else {
 					WT.error(json.text);
 				}
 				if (folder===me.currentFolder)
-					me.folderClicked(tr,s.getById(folder));
+					me.folderClicked(tr,n);
 			}
 		});					
 	},
+	
+    setScanFolder: function(folder,v,recursive) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'SetScanFolder', {
+			params: {
+				folder: folder,
+				value: (v?"1":"0"),
+				recursive: (recursive?"1":"0")
+			},
+			callback: function(success,json) {
+				var tr=me.imapTree,
+					s=tr.getStore(),
+					n=s.getById(folder);
+			
+				if (json.result) {
+					n.set("scanEnabled",v);
+					if (!v) me.unreadChanged({ foldername: folder, unread: 0 },true);
+					else me.refreshFolder(n);
+					if (recursive)
+						n.cascadeBy(function(n) {
+							n.set("scanEnabled",v);
+							if (!v) me.unreadChanged({ foldername: n.get("id"), unread: 0 },true);
+							else me.refreshFolder(n);
+						},me);
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},	
 	
 	selectChildNode: function(parentNode, childId) {
 		var me=this,
@@ -801,6 +844,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			});
 		});
+	},
+	
+	refreshFolder: function(rec) {
+		var me=this;
+		me.imapTree.getSelectionModel().select(rec);
+		me.showFolder(rec.get("id"));
 	},
 	
     openEml: function(folder,idmessage,idattach) {
@@ -831,7 +880,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.getAction('deletefolder').setDisabled(me.specialFolders[id]);
 		me.getAction('renamefolder').setDisabled(me.specialFolders[id]);
 		me.getAction('movetomain').setDisabled(me.specialFolders[id]?true:(r.parentNode.get("id")===rootid));
-		
+
+		var as=me.getAction('scanfolder');
+		var mi=me.getRef("mnuScan");
+		if (r.get("scanOff")) { as.setDisabled(true); mi.setChecked(false,true); }
+		else if (r.get("scanOn")) { as.setDisabled(true); mi.setChecked(true,true); }
+		else {
+			as.setDisabled(false);
+			if (r.get("scanEnabled")) mi.setChecked(true,true);
+            else mi.setChecked(false,true);
+		}
         /*var as=this.aScan;
         var mi=this.miScan;
         if (a.scanOff) {as.setDisabled(true);mi.setChecked(false,true);}
