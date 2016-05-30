@@ -38,7 +38,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.webtop.core.ux.RecipientsGrid',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.form.field.HTMLEditor',
-		'Sonicle.webtop.mail.model.MessageModel'
+		'Sonicle.webtop.mail.model.MessageModel',
+		'Sonicle.upload.Button'
 	],
 	
 	dockableConfig: {
@@ -185,6 +186,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 
             }
 		}
+		
+		tbitems[tbx++]={
+			xtype:'souploadbutton',
+			text:'Upload!',
+			uploaderConfig: WTF.uploader(me.mys.ID,'UploadAttachment',{
+				
+			}),
+			listeners: {
+				fileuploaded: function(up,file) {
+					alert("Complete! ("+file.uploadId+")");
+				}
+			}
+		};
+		
 		me.toolbar=Ext.create({
 			xtype: 'toolbar',
 			region: 'north',
