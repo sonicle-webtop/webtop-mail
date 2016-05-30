@@ -238,7 +238,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		'Sonicle.data.BufferedStore',
 		'Sonicle.selection.RowModel',
 		'Sonicle.webtop.mail.plugin.MessageGridViewDragDrop',
-		'Sonicle.plugin.FilterBar'
+		'Sonicle.plugin.FilterBar',
+		'Sonicle.form.field.IconComboBox'
 	],
 	
 	pageSize: 50,	
