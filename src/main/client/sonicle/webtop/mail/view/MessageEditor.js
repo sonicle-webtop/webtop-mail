@@ -66,12 +66,25 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     showSourceEdit: true,
     showCloud: true,
 	
+    autoSave: false,
+    autoSaveService: 'mail',
+    autoSaveAction: 'AutoSaveMessage',
+    autoSaveDirty: false,
+    autoSaveTask: null,
+    autoSaveDelay: 30000,
+	
 	fax: false,
 	faxident: null,
+	
+	msgId: 0,
+	dirty: false,
+	
 	
 	initComponent: function() {
 		var me=this;
 		me.callParent(arguments);
+		
+		me.msgId=(new Date()).getTime();
 		
 		me.identities=me.mys.getOption("identities");
 		//save hashed identities, by email
@@ -191,11 +204,35 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			xtype:'souploadbutton',
 			text:'Upload!',
 			uploaderConfig: WTF.uploader(me.mys.ID,'UploadAttachment',{
-				
+				extraParams: {
+					tag: me.msgId
+				}
 			}),
 			listeners: {
-				fileuploaded: function(up,file) {
-					alert("Complete! ("+file.uploadId+")");
+				/*uploadstarted: function(s) {
+				},*/
+				beforeupload: function(s,plup,file) {
+					me.htmlEditor.showProgress(file.name);
+				},
+				uploadprogress: function(s,file) {
+					me.htmlEditor.setProgress(file.percent);
+				},
+				fileuploaded: function(s,file,resp) {
+					me.htmlEditor.hideProgress();
+					me.setDirty(true);
+					me.attlist.add(Ext.create('Sonicle.webtop.mail.AttachItem',{
+						fileName: file.name, 
+						uploadId: resp.data.uploadId, 
+						fileSize: file.size,
+						msgId: me.msgid,
+						mys: me.mys
+					}));
+					me.attlist.doLayout();
+					var el=me.attlist.body.dom;
+					el.scrollTop=el.scrollHeight;
+				},
+				uploadcomplete: function(s,fok,ffailed) {
+					console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
 				}
 			}
 		};
@@ -262,6 +299,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		);
 
 		me.on('viewload', me.onViewLoad);
+		me.on('viewclose',function() {
+			this.mys.cleanupUploadedFile(me.msgId);
+		});
 	},
 	
 	onViewLoad: function(s, success) {
@@ -343,7 +383,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		} else {
 			return html;
 		}
-	}
+	},
+	
+    setDirty: function(b) {
+        this.dirty=true;
+        this.autoSaveDirty=true;
+    }
+    
+	
 	
 	
 });
