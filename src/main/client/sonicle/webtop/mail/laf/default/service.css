@@ -138,6 +138,10 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 .wtmail-mv-subject-table { width: 100%; border: none; }
 .wtmail-mv-subject-table TR TD { border: none; padding: 0px; }
 
+.wtmail-attach-item {text-decoration: none; font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: black; }
+.wtmail-attach-item-normal {background-color: transparent; border: none; cursor: pointer}
+.wtmail-attach-item-over { background-color: #D9E8FB; background-image: none; }
+
 div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 
 .wtmail-element-toclick {

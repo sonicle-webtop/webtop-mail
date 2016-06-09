@@ -50,6 +50,7 @@ import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.dal.UserDAO;
 //import com.sonicle.webtop.core.*;
@@ -6266,7 +6267,7 @@ public class Service extends BaseService {
 		if (ident != null) {
 			from = ident.toString();
 		}
-		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] è stato letto.\n\n"
+		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] Ã¨ stato letto.\n\n"
 				+ "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
 		try {
 			checkStoreConnected();
@@ -8149,33 +8150,26 @@ public class Service extends BaseService {
 	public void processPreviewAttachment(HttpServletRequest request, HttpServletResponse response) {
 		try {
 			checkStoreConnected();
-			int msgid = Integer.parseInt(request.getParameter("newmsgid"));
-			String tempname = request.getParameter("tempname");
-			String cid = request.getParameter("cid");
+			String uploadId = request.getParameter("uploadId");
+			/*String cid = request.getParameter("cid");
 			Attachment att = null;
 			if (tempname != null) {
 				att = getAttachment(msgid, tempname);
 			} else if (cid != null) {
 				att = getAttachmentByCid(msgid, cid);
-			}
-			if (att != null) {
-				String ctype = att.getContentType();
+			}*/
+			if (uploadId != null && hasUploadedFile(uploadId)) {
+				WebTopSession.UploadedFile upl = getUploadedFile(uploadId);
+				String ctype = upl.getMediaType();
+				//System.out.println("uploaded content type is "+ctype);
 				response.setContentType(ctype);
-				response.setHeader("Content-Disposition", "filename=\"" + att.getName() + "\"");
+				response.setHeader("Content-Disposition", "filename=\"" + upl.getFilename() + "\"");
 				
-				InputStream is = new FileInputStream(att.getFile());
+				InputStream is = new FileInputStream(upl.getFile());
 				OutputStream oout = response.getOutputStream();
 				fastStreamCopy(is, oout);
-				/*                    byte[] b = new byte[4 * 1024];
-				 int len = 0;
-
-				 while ((len = is.read(b)) != -1)
-				 oout.write(b, 0, len);
-				 oout.flush();
-				 oout.close();
-				 return;*/
 			} else {
-				Service.logger.debug("att was null!!!");
+				Service.logger.debug("uploadId was not valid!");
 			}
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);

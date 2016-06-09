@@ -59,8 +59,8 @@ Ext.define('Sonicle.webtop.mail.AttachItem', {
 				cls: xcls
 			},position);
 		}
-		el.addCls('normalAttachItem');
-		el.addClsOnOver("overAttachItem");
+		el.addCls('wtmail-attach-item-normal');
+		el.addClsOnOver("wtmail-attach-item-over");
 		el.on('click',me.onClick,me);
 	},
 
@@ -68,22 +68,31 @@ Ext.define('Sonicle.webtop.mail.AttachItem', {
 		var me=this,
 			name=me.fileName,
 			href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",{
-				uploadId: me.uploadId,
-				newmsgid: me.msgId
+				uploadId: me.uploadId
 			});
 
 		me.el.update(
-				"<div class='x-tool x-tool-close'>&#160;</div><a href='javascript:Ext.emptyFn()' "+
-				" onclick='WT.popup(\""+href+"\");' "+
-				" class='editorAttach'>"+
-				"<img src='"+WTF.resourceUrl(WT.ID,"/filetypes/"+WT.Util.normalizeFileType(name)+"_16.gif")+"'>"+
-				"&nbsp;"+name+"</a>");
+				"<table border=0 cellspacing=0 cellpadding=0 style='width: 200px; table-layout: fixed; '><tr>"+
+				"<td style='width:16px'><img src='"+WTF.resourceUrl(WT.ID,"/filetypes/"+WT.Util.normalizeFileType(name)+"_16.gif")+"'></td>"+
+				"<td style='text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-right: 4px;'>"+
+				 "<a href='javascript:Ext.emptyFn()' "+
+				 " title='"+Ext.htmlEncode(name)+"' "+
+				 " onclick='Sonicle.URLMgr.open(\""+href+"\",true,\"location=no,menubar=no,resizable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=no,top=10,left=10,width=770,height=480\");' "+
+				 " class='wtmail-attach-item'>"+
+				 "&nbsp;"+name+"</a>"+
+				"</td>"+
+				"<td style='width: 20px'><img class='x-tool-img x-tool-close'></td>"+
+				"</tr></table>"
+		);
 		me.callParent(arguments);
 	},
 
 	onClick: function(e) {
-		if (e.getTarget(null,null,true).hasClass('x-tool')) {
-			this.ownerCt.remove(this);
+		var me=this;
+		
+		if (e.getTarget(null,null,true).hasCls('x-tool-img')) {
+			me.ownerCt.remove(this);
+			me.fireEvent('remove',me);
 		}
 	}
 	

@@ -200,7 +200,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             }
 		}
 		
-		tbitems[tbx++]={
+		var uploader=tbitems[tbx++]={
 			xtype:'souploadbutton',
 			text:'Upload!',
 			uploaderConfig: WTF.uploader(me.mys.ID,'UploadAttachment',{
@@ -211,7 +211,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			listeners: {
 				/*uploadstarted: function(s) {
 				},*/
-				beforeupload: function(s,plup,file) {
+				beforeupload: function(s,file) {
 					me.htmlEditor.showProgress(file.name);
 				},
 				uploadprogress: function(s,file) {
@@ -224,15 +224,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						fileName: file.name, 
 						uploadId: resp.data.uploadId, 
 						fileSize: file.size,
-						msgId: me.msgid,
-						mys: me.mys
+						msgId: me.msgId,
+						mys: me.mys,
+						listeners: {
+							remove: function(s) {
+								console.log("removed "+s.uploadId);
+							}
+						}
 					}));
 					me.attlist.doLayout();
 					var el=me.attlist.body.dom;
 					el.scrollTop=el.scrollHeight;
 				},
 				uploadcomplete: function(s,fok,ffailed) {
-					console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
+					//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
 				}
 			}
 		};
@@ -298,6 +303,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			})
 		);
 
+		/*me.on('afterrender', function() {
+			me.uploader.setBrowseButton(me.triggers['upload'].domId);
+			me.uploader.setContainer(me.pluWrap.getId());
+			me.uploader.setDropElement(me.inputWrap.getId());
+			me.uploader.init();
+		}, {single: true});*/
+		
 		me.on('viewload', me.onViewLoad);
 		me.on('viewclose',function() {
 			this.mys.cleanupUploadedFile(me.msgId);
