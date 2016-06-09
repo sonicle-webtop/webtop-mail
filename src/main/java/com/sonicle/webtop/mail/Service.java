@@ -8161,8 +8161,7 @@ public class Service extends BaseService {
 			if (uploadId != null && hasUploadedFile(uploadId)) {
 				WebTopSession.UploadedFile upl = getUploadedFile(uploadId);
 				String ctype = upl.getMediaType();
-				//System.out.println("uploaded content type is "+ctype);
-				response.setContentType(ctype);
+				response.setContentType(ctype+"; name=\"" + upl.getFilename() + "\"");
 				response.setHeader("Content-Disposition", "filename=\"" + upl.getFilename() + "\"");
 				
 				InputStream is = new FileInputStream(upl.getFile());

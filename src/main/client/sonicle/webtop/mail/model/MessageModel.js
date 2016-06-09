@@ -36,6 +36,9 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
     extend: 'WT.model.Base',
     fields: [
 		{ name: "messageId", type: 'int' },
+		{ name: "receipt", type: 'boolean' },
+		{ name: "priority", type: 'boolean' },
+		{ name: "from", type: 'string' },
 		{ name: "subject", type: 'string' },
 		{ name: "html", type: 'string' }
 	]

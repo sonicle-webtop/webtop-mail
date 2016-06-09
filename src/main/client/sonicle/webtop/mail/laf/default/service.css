@@ -33,6 +33,12 @@
 .wtmail-icon-mailcardremove-xs { background-image: url('mailcard_remove_16.png') !important; }
 .wtmail-icon-htmleditor-template-xs { background-image: url('htmleditor_template_16.png') !important; }
 .wtmail-icon-attachment-xs { background-image: url('attachment_16.png') !important; }
+.wtmail-icon-send-xs { background-image: url('send_16.png') !important; }
+.wtmail-icon-schedule-xs { background-image: url('schedule_16.png') !important; }
+.wtmail-icon-addressbook-xs { background-image: url('addressbook_16.png') !important; }
+.wtmail-icon-receipt-xs { background-image: url('receipt_16.png') !important; }
+.wtmail-icon-cloud-download-xs { background-image: url('cloud-download_16.png') !important; }
+.wtmail-icon-cloud-upload-xs { background-image: url('cloud-upload_16.png') !important; }
 
 .wtmail-icon-header-priority-xs { background-image: url('headerpriority_16.gif') !important; background-repeat: no-repeat; background-position: center; }
 .wtmail-icon-priority-high-xs { background-image: url('priorityhigh_16.gif') !important; background-repeat: no-repeat; background-position: center; }

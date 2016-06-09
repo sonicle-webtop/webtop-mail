@@ -262,7 +262,7 @@ public class FolderCache {
 					@Override
 					public void messageChanged(MessageChangedEvent mce) {
 						try {
-							Service.logger.debug("MessageChanged: {},{},{}",mce.getMessage().getFolder().getFullName(),mce.getMessage().getSubject(),mce.getMessageChangeType());
+							//Service.logger.debug("MessageChanged: {},{},{}",mce.getMessage().getFolder().getFullName(),mce.getMessage().getSubject(),mce.getMessageChangeType());
 							refreshUnreads();
 						} catch(MessagingException exc) {
 						}
@@ -276,7 +276,7 @@ public class FolderCache {
 					@Override
 					public void messagesAdded(MessageCountEvent mce) {
 						try {
-							Service.logger.debug("MessageAdded: {}",mce.getType());
+							//Service.logger.debug("MessageAdded: {}",mce.getType());
 							refreshUnreads();
 						} catch(MessagingException exc) {
 						}
@@ -285,7 +285,7 @@ public class FolderCache {
 					@Override
 					public void messagesRemoved(MessageCountEvent mce) {
 						try {
-							Service.logger.debug("MessageRemoved: {}",mce.getType());
+							//Service.logger.debug("MessageRemoved: {}",mce.getType());
 							refreshUnreads();
 						} catch(MessagingException exc) {
 						}
