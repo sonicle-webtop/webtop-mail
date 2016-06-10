@@ -515,7 +515,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			meditor.startNew({
 				messageId: 1,
 				subject: '',
-				receipt: this.getOption('receipt'),
+				receipt: me.getOption('receipt'),
 				priority: false,
 				from: identities[1].email,
 				recipients: [

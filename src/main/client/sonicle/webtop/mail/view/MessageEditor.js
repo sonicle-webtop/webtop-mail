@@ -395,7 +395,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		me.on('viewload', me.onViewLoad);
 		me.on('viewclose',function() {
-			this.mys.cleanupUploadedFile(me.msgId);
+			this.mys.cleanupUploadedFiles(me.msgId);
 		});
 	},
 	
@@ -482,8 +482,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	
     setDirty: function(b) {
-        this.dirty=true;
-        this.autoSaveDirty=true;
+        this.dirty=b;
+        this.autoSaveDirty=b;
     }
     
 	
@@ -570,7 +570,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachItem', {
 				 " class='wtmail-attach-item'>"+
 				 "&nbsp;"+name+"</a>"+
 				"</td>"+
-				"<td style='width: 16px'><img class='wt-icon-delete-xs' style='width: 16px; height: 16px;'></td>"+
+				"<td style='width: 16px'><img class='wt-icon-delete-xs' style='width: 16px; height: 16px;'></img></td>"+
 				"</tr></table>"
 		);
 		me.callParent(arguments);

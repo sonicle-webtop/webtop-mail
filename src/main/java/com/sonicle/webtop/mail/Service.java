@@ -50,6 +50,7 @@ import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.dal.UserDAO;
@@ -9748,104 +9749,105 @@ public class Service extends BaseService {
 		UserProfile.Id pid=mailManager.getTargetProfileId();
 		Data udata=WT.getUserData(pid);
 		String email=udata.getEmail().getAddress();
-		Mailcard mc = readEmailMailcard(email);
+		Mailcard mc = readEmailMailcard(pid.getDomainId(),email);
 		if(mc != null) return mc;
-		mc = readUserMailcard(pid.getUserId());
+		mc = readUserMailcard(pid.getDomainId(),pid.getUserId());
 		if(mc != null) return mc;
-		mc = readEmailDomainMailcard(email);
+		mc = readEmailDomainMailcard(pid.getDomainId(),email);
 		if(mc != null) return mc;
-		return readDefaultMailcard();
+		return readDefaultMailcard(pid.getDomainId());
     }
 	
 	public Mailcard getMailcard(Identity identity) {
-		Mailcard mc = readEmailMailcard(identity.getEmail());
+        UserProfile.Id pid=mailManager.getTargetProfileId();
+		Mailcard mc = readEmailMailcard(pid.getDomainId(),identity.getEmail());
 		if(mc != null) return mc;
 		UserProfile.Id fpid=identity.getOriginPid();
-		if (fpid!=null) mc = readUserMailcard(fpid.getUserId());
+		if (fpid!=null) mc = readUserMailcard(fpid.getDomainId(),fpid.getUserId());
 		if(mc != null) return mc;
-		mc = readEmailDomainMailcard(identity.getEmail());
+		mc = readEmailDomainMailcard(pid.getDomainId(),identity.getEmail());
 		if(mc != null) return mc;
-		return readDefaultMailcard();
+		return readDefaultMailcard(pid.getDomainId());
     }
 	
 //	public Mailcard getMailcard() {
 //		return readDefaultMailcard();
 //    }
 	
-	public Mailcard getMailcard(String emailAddress) {
-		Mailcard mc = readEmailMailcard(emailAddress);
+	public Mailcard getMailcard(String domainId, String emailAddress) {
+		Mailcard mc = readEmailMailcard(domainId, emailAddress);
 		if (mc != null) {
 			return mc;
 		}
-		mc = readEmailDomainMailcard(emailAddress);
+		mc = readEmailDomainMailcard(domainId, emailAddress);
 		if (mc != null) {
 			return mc;
 		}
-		return readDefaultMailcard();
+		return readDefaultMailcard(domainId);
 	}
 	
 	public Mailcard getEmailDomainMailcard(UserProfile profile) {
-		Mailcard mc = readEmailDomainMailcard(profile.getEmailAddress());
+		Mailcard mc = readEmailDomainMailcard(profile.getDomainId(), profile.getEmailAddress());
 		if (mc != null) {
 			return mc;
 		}
 		return getMailcard();
 	}
 
-	private Mailcard readEmailMailcard(String email) {
-		String mailcard = readMailcard("mailcard_" + email);
+	private Mailcard readEmailMailcard(String domainId, String email) {
+		String mailcard = readMailcard(domainId, "mailcard_" + email);
 		if (mailcard != null) {
 			return new Mailcard(Mailcard.TYPE_EMAIL, mailcard);
 		}
 		return null;
 	}
 
-	private Mailcard readEmailDomainMailcard(String email) {
+	private Mailcard readEmailDomainMailcard(String domainId, String email) {
 		int index = email.indexOf("@");
 		if (index < 0) {
 			return null;
 		}
-		String mailcard = readMailcard("mailcard_" + email.substring(index + 1));
+		String mailcard = readMailcard(domainId, "mailcard_" + email.substring(index + 1));
 		if (mailcard != null) {
 			return new Mailcard(Mailcard.TYPE_EMAIL_DOMAIN, mailcard);
 		}
 		return null;
 	}
 
-	private Mailcard readUserMailcard(String user) {
-		String mailcard = readMailcard("mailcard_" + user);
+	private Mailcard readUserMailcard(String domainId, String user) {
+		String mailcard = readMailcard(domainId, "mailcard_" + user);
 		if (mailcard != null) {
 			return new Mailcard(Mailcard.TYPE_USER, mailcard);
 		}
 		return null;
 	}
 
-	private Mailcard readDefaultMailcard() {
-		String mailcard = readMailcard("mailcard");
+	private Mailcard readDefaultMailcard(String domainId) {
+		String mailcard = readMailcard(domainId, "mailcard");
 		if (mailcard != null) {
 			return new Mailcard(Mailcard.TYPE_DEFAULT, mailcard);
 		}
 		return new Mailcard();
 	}
 
-	public void setEmailMailcard(String email, String html) {
-		writeMailcard("mailcard_" + email, html);
+	public void setEmailMailcard(String domainId, String email, String html) {
+		writeMailcard(domainId, "mailcard_" + email, html);
 	}
 
-	public void setEmailDomainMailcard(String email, String html) {
+	public void setEmailDomainMailcard(String domainId, String email, String html) {
 		int index = email.indexOf("@");
 		if (index < 0) {
 			return;
 		}
-		writeMailcard("mailcard_" + email.substring(index + 1), html);
+		writeMailcard(domainId, "mailcard_" + email.substring(index + 1), html);
 	}
 
-	public void setUserMailcard(String user, String html) {
-		writeMailcard("mailcard_" + user, html);
+	public void setUserMailcard(String domainId, String user, String html) {
+		writeMailcard(domainId, "mailcard_" + user, html);
 	}
 
-	private void writeMailcard(String filename, String html) {
-		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(), filename);
+	private void writeMailcard(String domainId, String filename, String html) {
+		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(domainId), filename);
 
 		try {
 			File file = new File(pathname);
@@ -9862,8 +9864,8 @@ public class Service extends BaseService {
 		}
 	}
 
-	private String readMailcard(String filename) {
-		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(), filename);
+	private String readMailcard(String domainId, String filename) {
+		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(domainId), filename);
 
 		try {
 			File file = new File(pathname);
@@ -9878,8 +9880,8 @@ public class Service extends BaseService {
 		return null;
 	}
 	
-	public String getModelPath() {
-		return "c:/temp/models";
+	public String getModelPath(String domainId) {
+		return WebTopApp.getInstance().getHomePath(domainId)+"models";
 	}
 
 }
