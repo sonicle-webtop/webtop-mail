@@ -35,6 +35,8 @@ Ext.define('Sonicle.webtop.mail.model.ClientOptions', {
 	extend: 'WT.sdk.model.ClientOptions',
 	
 	fields: [
+		{ name: 'receipt', type: 'boolean' },
+		{ name: 'priority', type: 'boolean' },
 		{ name: 'pageRows', type: 'int' },
 		{ name: 'messageViewRegion', type: 'string' },
 		{ name: 'messageViewWidth', type: 'int' },

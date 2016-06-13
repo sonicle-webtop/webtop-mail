@@ -861,6 +861,95 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
     },
 
+    actionReply: function(rowIndex) {
+        this._actionReply(rowIndex,false);
+    },
+	
+    actionReplyAll: function(rowIndex) {
+        this._actionReply(rowIndex,true);
+    },
+	
+    _actionReply: function(rowIndex,all) {
+        var me=this,
+			recs=(rowIndex>=0)?
+				me.getStore().getAt(rowIndex):
+				me.getSelection();
+        me.replyMessage(recs[0],all);
+    },
+	
+	replyMessage: function(r,all) {
+		var me=this,
+			idfolder=r.get('folder')||me.currentFolder;
+		
+		WT.ajaxReq(me.mys.ID, 'GetReplyMessage', {
+			params: {
+				folder: idfolder,
+				idmessage: r.get("idmessage"),
+				replyall: (all?'1':'0')
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					me.mys.startNewMessage(idfolder,{
+						subject: json.subject,
+						recipients: json.recipients,
+						html: json.html,
+						replyfolder: json.replyfolder,
+						inreplyto: json.inreplyto,
+						references: json.references,
+						origuid: json.origuid
+					});
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},
+	
+    actionForward: function(rowIndex) {
+        this._actionForward(rowIndex,false);
+    },
+	
+    actionForwardEml: function(rowIndex) {
+        this._actionForward(rowIndex,true);
+    },
+	
+    _actionForward: function(rowIndex,eml) {
+        var me=this,
+			recs=(rowIndex>=0)?
+				me.getStore().getAt(rowIndex):
+				me.getSelection();
+        me.forwardMessage(recs[0],eml);
+    },
+	
+	forwardMessage: function(r,eml) {
+		var me=this,
+			idfolder=r.get('folder')||me.currentFolder,
+			msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
+		
+		WT.ajaxReq(me.mys.ID, 'GetForwardMessage', {
+			params: {
+				folder: idfolder,
+				idmessage: r.get("idmessage"),
+				attached: eml?1:0,
+				newmsgid: msgId,
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					me.mys.startNewMessage(idfolder,{
+						subject: json.subject,
+						html: json.html,
+						msgId: msgId,
+						forwardedfolder: json.forwardedfolder,
+						forwardedfrom: json.forwardedfrom,
+						origuid: json.origuid
+					});
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},
+	
     actionDelete: function() {
 		if (this.storeLoading) {
 			return;

@@ -65,6 +65,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public String font;
 	public int fontSize;
 	public boolean receipt;
+	public boolean priority;
 	
 	public JsUserOptions() {}
 	

@@ -488,10 +488,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionNew: function() {
+		this.startNewMessage(this.currentFolder);
+	},
+	
+	/**
+	 * Starts a new message with preconfigured options.
+	 * @param {String} Reference folder id 
+	 * @param {Object} [opts.subject] Initial subject
+	 * @param {Object[]} [opts.recipients] Array of recipients objects with rtype/email pairs
+	 * @param {Object} [opts.html] Initial html content
+	 */
+	startNewMessage: function(idfolder, opts) {
+		opts=opts||{};
+		
 		var me=this,
 			identIndex=0,
-			idfolder=me.currentFolder,
-			identities=me.optionsData.identities;
+			identities=me.optionsData.identities,
+			rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 	
         for(var i=1;i<identities.length;++i) {
             var ifolder=identities[i].mainFolder;
@@ -513,15 +526,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		v.show(false,function() {
 			var meditor=v.getView();
 			meditor.startNew({
-				messageId: 1,
-				subject: '',
+				msgId: opts.msgId||0,
+				subject: opts.subject||'',
 				receipt: me.getOption('receipt'),
-				priority: false,
-				from: identities[1].email,
-				recipients: [
-					{ rtype: 'to', email: ''}
-				],
-				html: ''
+				priority: me.getOption('priority'),
+				from: identities[identIndex].email,
+				recipients: rcpts,
+				html: opts.html||''
 			});
 		});
 	},

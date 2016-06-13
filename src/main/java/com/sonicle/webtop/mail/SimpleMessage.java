@@ -40,7 +40,7 @@ import javax.mail.*;
 import javax.mail.internet.*;
 
 public class SimpleMessage {
-  private int id=0;
+  private long id=0;
   private Identity from=null;
   private String to="";
   private String cc="";
@@ -67,7 +67,7 @@ public class SimpleMessage {
   /**
    * Default constructor.
    */
-  public SimpleMessage(int id) {
+  public SimpleMessage(long id) {
     this.id=id;
   }
 
@@ -76,7 +76,7 @@ public class SimpleMessage {
    * Takes as parameters the TO, Cc, Bcc and subject fields as
    * well as the message's content.
    */
-  public SimpleMessage(int id, String to, String cc, String bcc,
+  public SimpleMessage(long id, String to, String cc, String bcc,
       String subject, String content) {
     this.id=id;
     setTo(to);
@@ -90,7 +90,7 @@ public class SimpleMessage {
    * Constructor.
    * Creates a SimpleMessage from a Message object passed as parameter.
    */
-  public SimpleMessage(int id, Message msg) {
+  public SimpleMessage(long id, Message msg) {
     try {
       this.id=id;
       setTo(msg.getRecipients(Message.RecipientType.TO));
@@ -114,7 +114,7 @@ public class SimpleMessage {
     }
   }
 
-  public int getId() {
+  public long getId() {
     return id;
   }
 

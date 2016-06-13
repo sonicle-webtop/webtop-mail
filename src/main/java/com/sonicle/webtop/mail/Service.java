@@ -218,8 +218,8 @@ public class Service extends BaseService {
 	
 	private static ArrayList<String> inlineableMimes = new ArrayList<String>();
 	
-	private HashMap<Integer, ArrayList<Attachment>> msgattach = new HashMap<Integer, ArrayList<Attachment>>();
-	private HashMap<Integer, ArrayList<Attachment>> msgcloudattach = new HashMap<Integer, ArrayList<Attachment>>();
+	private HashMap<Long, ArrayList<Attachment>> msgattach = new HashMap<Long, ArrayList<Attachment>>();
+	private HashMap<Long, ArrayList<Attachment>> msgcloudattach = new HashMap<Long, ArrayList<Attachment>>();
 	private ArrayList<Attachment> emptyAttachments = new ArrayList<Attachment>();
 	
 	private AdvancedSearchThread ast = null;
@@ -2321,7 +2321,7 @@ public class Service extends BaseService {
 		return newmsg;
 	}
 	
-	private SimpleMessage getForwardMsg(int id, Message msg, boolean richContent, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean attached) {
+	private SimpleMessage getForwardMsg(long id, Message msg, boolean richContent, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean attached) {
 		Message forward = new MimeMessage(session);
 		if (!attached) {
 			try {
@@ -3090,8 +3090,8 @@ public class Service extends BaseService {
 	}
 	
 	protected void clearAllAttachments() {
-		for (Integer id : msgattach.keySet()) {
-			clearAttachments(id.intValue());
+		for (Long id : msgattach.keySet()) {
+			clearAttachments(id.longValue());
 		}
 		msgattach.clear();
 	}
@@ -3415,23 +3415,23 @@ public class Service extends BaseService {
 		return ++newMessageID;
 	}
 	
-	public ArrayList<Attachment> getAttachments(int msgid) {
-		ArrayList<Attachment> attachments = msgattach.get(new Integer(msgid));
+	public ArrayList<Attachment> getAttachments(long msgid) {
+		ArrayList<Attachment> attachments = msgattach.get(new Long(msgid));
 		if (attachments != null) {
 			return attachments;
 		}
 		return emptyAttachments;
 	}
 	
-	public ArrayList<Attachment> getCloudAttachments(int msgid) {
-		ArrayList<Attachment> attachments = msgcloudattach.get(new Integer(msgid));
+	public ArrayList<Attachment> getCloudAttachments(long msgid) {
+		ArrayList<Attachment> attachments = msgcloudattach.get(new Long(msgid));
 		if (attachments != null) {
 			return attachments;
 		}
 		return emptyAttachments;
 	}
 	
-	public Attachment getAttachment(int msgid, String tempName) {
+	public Attachment getAttachment(long msgid, String tempName) {
 		ArrayList<Attachment> attachments = getAttachments(msgid);
 		for (Attachment att : attachments) {
 			if (att.getFile().getName().equals(tempName)) {
@@ -3441,7 +3441,7 @@ public class Service extends BaseService {
 		return null;
 	}
 	
-	public Attachment getCloudAttachment(int msgid, String filename) {
+	public Attachment getCloudAttachment(long msgid, String filename) {
 		ArrayList<Attachment> attachments = getCloudAttachments(msgid);
 		for (Attachment att : attachments) {
 			if (att.getName().equals(filename)) {
@@ -3451,7 +3451,7 @@ public class Service extends BaseService {
 		return null;
 	}
 	
-	public Attachment getAttachmentByCid(int msgid, String cid) {
+	public Attachment getAttachmentByCid(long msgid, String cid) {
 		ArrayList<Attachment> attachments = getAttachments(msgid);
 		for (Attachment att : attachments) {
 			if (att.getCid().equals(cid)) {
@@ -3461,7 +3461,7 @@ public class Service extends BaseService {
 		return null;
 	}
 	
-	public void clearAttachments(int msgid) {
+	public void clearAttachments(long msgid) {
 		ArrayList<Attachment> attachments = getAttachments(msgid);
 		for (Attachment a : attachments) {
 			a.getFile().delete();
@@ -3481,15 +3481,15 @@ public class Service extends BaseService {
 		 attachments.clear();*/
 	}
 	
-	public void putAttachments(int msgid, ArrayList<Attachment> attachments) {
-		msgattach.put(new Integer(msgid), attachments);
+	public void putAttachments(long msgid, ArrayList<Attachment> attachments) {
+		msgattach.put(new Long(msgid), attachments);
 	}
 	
-	public void putCloudAttachments(int msgid, ArrayList<Attachment> attachments) {
-		msgcloudattach.put(new Integer(msgid), attachments);
+	public void putCloudAttachments(long msgid, ArrayList<Attachment> attachments) {
+		msgcloudattach.put(new Long(msgid), attachments);
 	}
 	
-	public Attachment attachFile(int msgid, File file, String name, String contentType, String cid, boolean inline) {
+	public Attachment attachFile(long msgid, File file, String name, String contentType, String cid, boolean inline) {
 		Attachment attachment = null;
 		ArrayList<Attachment> attachments = getAttachments(msgid);
 		if (attachments == null || attachments == emptyAttachments) {
@@ -3501,7 +3501,7 @@ public class Service extends BaseService {
 		return attachment;
 	}
 	
-	public Attachment attachCloud(int msgid, FileObject fileObject, String name, String contentType, String vfsuri) {
+	public Attachment attachCloud(long msgid, FileObject fileObject, String name, String contentType, String vfsuri) {
 		Attachment attachment = null;
 		ArrayList<Attachment> attachments = getCloudAttachments(msgid);
 		if (attachments == null || attachments == emptyAttachments) {
@@ -5069,17 +5069,15 @@ public class Service extends BaseService {
 		}
 	}
 
-	// TODO: getEditForwardMessage!!!
-/*
 	public void processGetForwardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
-		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
+		//CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
 		String pattached = request.getParameter("attached");
 		boolean attached = (pattached != null && pattached.equals("1"));
-		int newmsgid = Integer.parseInt(pnewmsgid);
+		long newmsgid = Long.parseLong(pnewmsgid);
 		String sout = null;
 		try {
 			checkStoreConnected();
@@ -5112,7 +5110,7 @@ public class Service extends BaseService {
 				HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
 				boolean first = true;
 				sout += " attachments: [\n";
-				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
+/*				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					Part part = maildata.getAttachmentPart(i);
 					String filename = getPartName(part);
 					if (filename != null) {
@@ -5138,19 +5136,18 @@ public class Service extends BaseService {
 						sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
 						first = false;
 					}
-				}
+				}*/
 				sout += "\n ],\n";
-				String surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
-				html = replaceCidUrls(html, maildata, surl);
+				//String surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
+				//html = replaceCidUrls(html, maildata, surl);
 			} else {
-				String filename = m.getSubject() + ".eml";
+				/*String filename = m.getSubject() + ".eml";
 				File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
 				m.writeTo(new FileOutputStream(tempFile));
-				//wta.createFile(m.getInputStream(), tempFile);
 				attachFile(newmsgid, tempFile, filename, "message/rfc822", null, false);
-				String tempname = tempFile.getName();
+				String tempname = tempFile.getName();*/
 				sout += " attachments: [\n";
-				sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
+				//sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
 				sout += "\n ],\n";
 			}
 			
@@ -5163,7 +5160,6 @@ public class Service extends BaseService {
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 	}
-*/
 	
 	// TODO: getEditMessage!!!
 /*
@@ -5737,7 +5733,7 @@ public class Service extends BaseService {
 	
 	public void processDiscardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String newmsgid = request.getParameter("newmsgid");
-		clearAttachments(Integer.parseInt(newmsgid));
+		clearAttachments(Long.parseLong(newmsgid));
 		// TODO: deleteAutoSaveData!!!!
 		//wts.deleteAutoSaveData("mail","newmail",newmsgid);
 		out.println("{\nresult: true\n}");
@@ -5949,7 +5945,7 @@ public class Service extends BaseService {
 			}
 		}
 		
-		int id = Integer.parseInt(msgid);
+		long id = Long.parseLong(msgid);
 		SimpleMessage msg = new SimpleMessage(id);
 		int idx = Integer.parseInt(sident) - 1;
 		Identity from = null;
@@ -9668,6 +9664,8 @@ public class Service extends BaseService {
 			co.put("folderTrash", us.getFolderTrash());
 			co.put("fontName", us.getFontName());
 			co.put("fontSize", us.getFontSize());
+			co.put("receipt", us.isReceipt());
+			co.put("priority", us.isPriority());
 			co.put("pageRows", us.getPageRows());
 			co.put("identities", jsidents);
 			co.put("manualSeen",us.isManualSeen());

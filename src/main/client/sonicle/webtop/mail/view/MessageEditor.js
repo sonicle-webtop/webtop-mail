@@ -42,6 +42,12 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.upload.Button'
 	],
 	
+	statics: {
+		buildMsgId: function() {
+			return (new Date()).getTime();
+		}
+	},
+	
 	dockableConfig: {
 		title: '{message.tit}',
 		iconCls: 'wtmail-icon-newmsg-xs',
@@ -84,7 +90,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		var me=this;
 		me.callParent(arguments);
 		
-		me.msgId=(new Date()).getTime();
+		if (me.msgId===0) me.msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
 		
 		me.identities=me.mys.getOption("identities");
 		//save hashed identities, by email
