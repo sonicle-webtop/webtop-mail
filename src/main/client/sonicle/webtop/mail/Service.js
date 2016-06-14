@@ -516,6 +516,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		var v=WT.createView(me.ID,'view.MessageEditor',{
 			viewCfg: {
+				msgId: opts.msgId||0,
 				mys: me,
 				identityIndex: identIndex,
 				fontFace: me.getOption('fontName'),
@@ -526,12 +527,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		v.show(false,function() {
 			var meditor=v.getView();
 			meditor.startNew({
-				msgId: opts.msgId||0,
 				subject: opts.subject||'',
 				receipt: me.getOption('receipt'),
 				priority: me.getOption('priority'),
 				from: identities[identIndex].email,
 				recipients: rcpts,
+				attachments: opts.attachments,
 				html: opts.html||''
 			});
 		});

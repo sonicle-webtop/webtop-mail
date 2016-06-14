@@ -52,6 +52,7 @@ import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
+import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.dal.UserDAO;
 //import com.sonicle.webtop.core.*;
@@ -5071,7 +5072,6 @@ public class Service extends BaseService {
 
 	public void processGetForwardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
-		//CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
@@ -5110,7 +5110,7 @@ public class Service extends BaseService {
 				HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
 				boolean first = true;
 				sout += " attachments: [\n";
-/*				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
+				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					Part part = maildata.getAttachmentPart(i);
 					String filename = getPartName(part);
 					if (filename != null) {
@@ -5122,32 +5122,44 @@ public class Service extends BaseService {
 							if (cid.startsWith("<")) cid=cid.substring(1);
 							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
 						}
-						File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
-						createFile(part.getInputStream(), tempFile);
+						UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, part.getContentType(), part.getInputStream());
+						//File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
+						//createFile(part.getInputStream(), tempFile);
 						boolean inline = false;
 						if (part.getDisposition() != null) {
 							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
 						}
-						attachFile(newmsgid, tempFile, filename, part.getContentType(), cid, inline);
-						String tempname = tempFile.getName();
+						maildata.setCidProperties(cid, new CidProperties(cid,inline,upfile));
+						//attachFile(newmsgid, tempFile, filename, part.getContentType(), cid, inline);
+						//String tempname = tempFile.getName();
 						if (!first) {
 							sout += ",\n";
 						}
-						sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
+						sout += "{ "+
+								" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
+								" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
+								" fileSize: "+upfile.getSize()+" "+
+								" }";
 						first = false;
+						html = StringUtils.replace(html, "cid:" + cid, "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId());
 					}
-				}*/
+				}
 				sout += "\n ],\n";
 				//String surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
 				//html = replaceCidUrls(html, maildata, surl);
 			} else {
-				/*String filename = m.getSubject() + ".eml";
-				File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
-				m.writeTo(new FileOutputStream(tempFile));
-				attachFile(newmsgid, tempFile, filename, "message/rfc822", null, false);
-				String tempname = tempFile.getName();*/
+				String filename = m.getSubject() + ".eml";
+				UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, "message/rfc822", ((IMAPMessage)m).getMimeStream());
+				//File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
+				//m.writeTo(new FileOutputStream(tempFile));
+				//attachFile(newmsgid, tempFile, filename, "message/rfc822", null, false);
+				//String tempname = tempFile.getName();
 				sout += " attachments: [\n";
-				//sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
+				sout += "{ "+
+						" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
+						" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
+						" fileSize: "+upfile.getSize()+" "+
+						" }";
 				sout += "\n ],\n";
 			}
 			
@@ -5158,6 +5170,7 @@ public class Service extends BaseService {
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			out.println(sout);
 		}
 	}
 	

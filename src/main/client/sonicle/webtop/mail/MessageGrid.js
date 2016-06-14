@@ -939,6 +939,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						subject: json.subject,
 						html: json.html,
 						msgId: msgId,
+						attachments: json.attachments,
 						forwardedfolder: json.forwardedfolder,
 						forwardedfrom: json.forwardedfrom,
 						origuid: json.origuid
