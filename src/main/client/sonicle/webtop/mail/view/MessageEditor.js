@@ -96,7 +96,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			region: 'east',
 			tabIndex: 1,
 			msgId: me.msgId,
-			mys: me.mys
+			mys: me.mys,
 		});
 		
 		me.recgrid=Ext.create({
@@ -215,8 +215,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				iconCls: 'wtmail-icon-attachment-xs',
 				uploaderConfig: WTF.uploader(me.mys.ID,'UploadAttachment',{
 					extraParams: {
-						tag: me.msgId
-					}
+						tag: me.msgId,
+					},
+                    dropElement: me.getId()
 				}),
 				listeners: {
 					/*uploadstarted: function(s) {
