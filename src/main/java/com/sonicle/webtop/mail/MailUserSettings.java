@@ -82,6 +82,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String FONT_NAME = "font.name";
 	public static final String FONT_SIZE = "font.size";
 	public static final String RECEIPT = "receipt";
+	public static final String PRIORITY = "priority";
     
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
@@ -448,4 +449,13 @@ public class MailUserSettings extends BaseUserSettings {
 		return setBoolean(RECEIPT,b);
 	}
 	
+	public boolean isPriority() {
+		Boolean b=getBoolean(PRIORITY,null);
+		if (b==null) b=false;
+		return b;
+	}
+	
+	public boolean setPriority(boolean b) {
+		return setBoolean(PRIORITY,b);
+	}
 }

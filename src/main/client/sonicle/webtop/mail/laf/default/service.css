@@ -144,10 +144,6 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 .wtmail-mv-subject-table { width: 100%; border: none; }
 .wtmail-mv-subject-table TR TD { border: none; padding: 0px; }
 
-.wtmail-attach-item {text-decoration: none; font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: black; }
-.wtmail-attach-item-normal {background-color: transparent; border: none; cursor: pointer}
-.wtmail-attach-item-over { background-color: #D9E8FB; background-image: none; }
-
 div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 
 .wtmail-element-toclick {
@@ -167,6 +163,15 @@ div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 .wtmail-ical-declined-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-declined_16.png') !important; }
 .wtmail-ical-needaction-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-needaction_16.png') !important; }
 .wtmail-ical-tentative-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-tentative_16.png') !important; }
+
+.wtmail-table-editor-attachment { width: 100%; table-layout: fixed; background-color: transparent; border: none; cursor: pointer }
+.wtmail-table-editor-attachement-over { background-color: #D9E8FB; background-image: none; }
+.wtmail-td-editor-attachment-icon { width:16px }
+.wtmail-td-editor-attachment-text { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-right: 4px; }
+.wtmail-td-editor-attachment-text A {text-decoration: none; font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: normal; color: black; }
+.wtmail-td-editor-attachment-delete-icon { width:16px }
+.wtmail-td-editor-attachment-delete-icon IMG { width: 16px; height: 16px; }
+
 
 blockquote { 
     display: block;
