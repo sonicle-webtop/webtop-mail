@@ -84,8 +84,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	msgId: 0,
 	dirty: false,
-	
-	
+    
+    sendMask: null,
+    	
 	initComponent: function() {
 		var me=this;
 		me.callParent(arguments);
@@ -97,14 +98,21 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.identHash={};
 		Ext.each(me.identities,function(ident) { me.identHash[ident.email]=ident},me);
 		
-		me.attlist=Ext.create('Sonicle.webtop.mail.EditorAttachments', {
-			width: 250,
-			region: 'east',
-			mys: me.mys,
-			bind: {
-				store: '{record.attachments}'
-			}
-		});
+        me.attcontainer=Ext.create('Ext.container.Container', {
+            width: 250,
+            region: 'east',
+            scrollable: true,
+            cls: 'x-panel-body-default wtmail-table-editor-attachment-container',
+            items: [
+                me.attlist=Ext.create('Sonicle.webtop.mail.EditorAttachments', {
+                    region: 'center',
+                    mys: me.mys,
+                    bind: {
+                        store: '{record.attachments}'
+                    }
+                })                
+            ]
+        });
 		
 		me.recgrid=Ext.create({
 			xtype: 'wtrecipientsgrid',
@@ -360,7 +368,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
                     layout: 'border',
                     items: [
                         me.recgrid,
-						me.attlist
+						me.attcontainer
                     ]
 				}),
 				me.subject
@@ -409,6 +417,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			rg=me.recgrid,
 			c=rg.getRecipientsCount();
 	
+        //me.sendMask=new Ext.LoadMask(me.htmlEditor.wrap, {msg:WT.res("loading")});
 		if (c===1) {
 			var r=c-1,
 				email=rg.getRecipientAt(r);
@@ -427,11 +436,64 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			data: data
 		});
 	},
+    
+    actionSend: function() {
+        var me=this;
+        me.recgrid.completeEdit();
+        me.disableControls(/*false,*/true);
+        if (me.fireEvent('beforesend',me)) {
+            me.send();
+        } else {
+            this.enableControls(false,true);
+        }
+    },
 	
-	sendMail: function() {
-		console.log("sendMail");
+	send: function() {
+        var me=this;
+        me.getModel().setExtraParams({
+            action: 'SendMessage'
+        });
+        me.saveView(true);
 	},
+    
+    actionSave: function() {
+        var me=this;
+        me.recgrid.completeEdit();
+        me.disableControls(/*false,*/true);
+        if (me.fireEvent('beforesave',me)) {
+            me.saveAsDraft();
+        } else {
+            this.enableControls(false,true);
+        }
+    },
+    
+    saveAsDraft: function() {
+        var me=this;
+        me.getModel().setExtraParams({
+            action: 'SaveMessage'
+        });
+        me.saveView(true);
+    },
+    
+    actionSchedule: function() {
+        var me=this;
+        me.recgrid.completeEdit();
+        me.disableControls(/*false,*/true);
+        if (me.fireEvent('beforeschedule',me)) {
+            me.schedule();
+        } else {
+            this.enableControls(false,true);
+        }
+    },
 	
+	schedule: function() {
+        var me=this;
+        me.getModel().setExtraParams({
+            action: 'ScheduleMessage'
+        });
+        me.saveView(true);
+	},
+    
     prepareHtml: function(html,mc) {
 		var me=this;
 		if (!mc) mc=me.identities[me.identityIndex].mailcard;
@@ -487,8 +549,34 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     setDirty: function(b) {
         this.dirty=b;
         this.autoSaveDirty=b;
-    }
+    },
     
+    disableControls: function(/*showProgress,*/showSendmask) {
+        var me=this;
+        me.toolbar.disable();
+        //if (showProgress) this.progress.show();
+        //this.aSend.disable();
+        //if (this.aSave) this.aSave.disable();
+        //if (this.aReceipt) this.aReceipt.disable();
+        if (!showSendmask) me.htmleditor.disable();
+        //else me.sendMask.show();
+        me.recgrid.disable();
+        me.subject.disable();
+    },
+
+    enableControls: function() {
+        var me=this;
+        me.toolbar.enable();
+        //this.progress.hide();
+        //this.aSend.enable();
+        //if (this.aSave) this.aSave.enable();
+        //if (this.aReceipt) this.aReceipt.enable();
+        if (!me.faxsubject) me.htmleditor.enable();
+        //me.sendMask.hide();
+        me.recgrid.enable();
+        if (!me.faxsubject) me.subject.enable();
+    },
+
 	
 	
 	
@@ -497,7 +585,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 	extend: 'Ext.view.View',
 	
-	cls: 'x-panel-body-default',
+//	cls: 'x-panel-body-default',
 	overItemCls: 'wtmail-table-editor-attachement-over',
 	itemSelector: 'table.wtmail-table-editor-attachment',
 	
