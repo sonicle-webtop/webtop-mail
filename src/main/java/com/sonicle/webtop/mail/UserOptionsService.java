@@ -89,6 +89,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.font=mus.getFontName();
 				jso.fontSize=mus.getFontSize();
 				jso.receipt=mus.isReceipt();
+				jso.priority=mus.isPriority();
 				
 				new JsonResult(jso).printTo(out);
 				
@@ -120,26 +121,27 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("font")) mus.setFontName(pl.data.font);
 				if (pl.map.has("fontSize")) mus.setFontSize(pl.data.fontSize);
 				if (pl.map.has("receipt")) mus.setReceipt(pl.data.receipt);
+				if (pl.map.has("priority")) mus.setPriority(pl.data.priority);
 
 				new JsonResult().printTo(out);
 			}
 			
 		} catch (Exception ex) {
 			logger.error("Error executing UserOptions", ex);
-			new JsonResult(false).printTo(out);
+			new JsonResult(false,ex.getMessage()).printTo(out);
 		}
 	}
 	
 	public void processListIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
 		try {
-			MailManager mman= new MailManager(getTargetProfileId());
+			MailManager mman=(MailManager)WT.getServiceManager(SERVICE_ID,getTargetProfileId()); // new MailManager(getTargetProfileId());
 			List<Identity> idents=mman.listIdentities();
 			//TODO should send only configured identities, skipping main
 			new JsonResult("identities", idents).printTo(out);
 			
 		} catch (Exception ex) {
 			logger.error("Error listing identities", ex);
-			new JsonResult(false).printTo(out);
+			new JsonResult(false,ex.getMessage()).printTo(out);
 		}
 	}
 	

@@ -39,6 +39,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	viewModel: {
 		formulas: {
 			receipt: WTF.checkboxBind('record', 'receipt'),
+			priority: WTF.checkboxBind('record', 'priority'),
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen')
@@ -173,6 +174,12 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'checkbox',
 					bind: '{receipt}',
 					fieldLabel: WT.res(me.ID, 'opts.editing.fld-receipt.lbl'),
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'checkbox',
+					bind: '{priority}',
+					fieldLabel: WT.res(me.ID, 'opts.editing.fld-priority.lbl'),
 					width: 100,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {

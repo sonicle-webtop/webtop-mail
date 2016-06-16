@@ -42,6 +42,12 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.upload.Button'
 	],
 	
+	statics: {
+		buildMsgId: function() {
+			return (new Date()).getTime();
+		}
+	},
+	
 	dockableConfig: {
 		title: '{message.tit}',
 		iconCls: 'wtmail-icon-newmsg-xs',
@@ -78,26 +84,35 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	msgId: 0,
 	dirty: false,
-	
-	
+    
+    sendMask: null,
+    	
 	initComponent: function() {
 		var me=this;
 		me.callParent(arguments);
 		
-		me.msgId=(new Date()).getTime();
+		if (me.msgId===0) me.msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
 		
 		me.identities=me.mys.getOption("identities");
 		//save hashed identities, by email
 		me.identHash={};
 		Ext.each(me.identities,function(ident) { me.identHash[ident.email]=ident},me);
 		
-		me.attlist=Ext.create('Sonicle.webtop.mail.EditorAttachPanel', {
-			width: 250,
-			region: 'east',
-			tabIndex: 1,
-			msgId: me.msgId,
-			mys: me.mys
-		});
+        me.attcontainer=Ext.create('Ext.container.Container', {
+            width: 250,
+            region: 'east',
+            scrollable: true,
+            cls: 'x-panel-body-default wtmail-table-editor-attachment-container',
+            items: [
+                me.attlist=Ext.create('Sonicle.webtop.mail.EditorAttachments', {
+                    region: 'center',
+                    mys: me.mys,
+                    bind: {
+                        store: '{record.attachments}'
+                    }
+                })                
+            ]
+        });
 		
 		me.recgrid=Ext.create({
 			xtype: 'wtrecipientsgrid',
@@ -207,16 +222,16 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             tbitems[tbx++]='-';
         }
 		
-		var uploader=null;
         if (me.showAttach) {
-			uploader=tbitems[tbx++]={
+			tbitems[tbx++]={
 				xtype:'souploadbutton',
 				tooltip: me.mys.res('editor.btn-attach.tip'),
 				iconCls: 'wtmail-icon-attachment-xs',
 				uploaderConfig: WTF.uploader(me.mys.ID,'UploadAttachment',{
 					extraParams: {
-						tag: me.msgId
-					}
+						tag: me.msgId,
+					},
+                    dropElement: me.getId()
 				}),
 				listeners: {
 					/*uploadstarted: function(s) {
@@ -230,7 +245,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					fileuploaded: function(s,file,resp) {
 						me.htmlEditor.hideProgress();
 						me.setDirty(true);
-						me.attlist.addAttachItem(file.name,resp.data.uploadId,file.size);
+						//me.attlist.addAttachItem(file.name,resp.data.uploadId,file.size);
+						me.attlist.getStore().add(
+								{ msgId: me.msgId, fileName: file.name, uploadId: resp.data.uploadId, fileSize: file.size }
+						);
 					},
 					uploadcomplete: function(s,fok,ffailed) {
 						//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
@@ -350,7 +368,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
                     layout: 'border',
                     items: [
                         me.recgrid,
-						me.attlist
+						me.attcontainer
                     ]
 				}),
 				me.subject
@@ -386,13 +404,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			})
 		);
 
-		/*me.on('afterrender', function() {
-			me.uploader.setBrowseButton(me.triggers['upload'].domId);
-			me.uploader.setContainer(me.pluWrap.getId());
-			me.uploader.setDropElement(me.inputWrap.getId());
-			me.uploader.init();
-		}, {single: true});*/
-		
 		me.on('viewload', me.onViewLoad);
 		me.on('viewclose',function() {
 			this.mys.cleanupUploadedFiles(me.msgId);
@@ -406,6 +417,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			rg=me.recgrid,
 			c=rg.getRecipientsCount();
 	
+        //me.sendMask=new Ext.LoadMask(me.htmlEditor.wrap, {msg:WT.res("loading")});
 		if (c===1) {
 			var r=c-1,
 				email=rg.getRecipientAt(r);
@@ -424,11 +436,64 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			data: data
 		});
 	},
+    
+    actionSend: function() {
+        var me=this;
+        me.recgrid.completeEdit();
+        me.disableControls(/*false,*/true);
+        if (me.fireEvent('beforesend',me)) {
+            me.send();
+        } else {
+            this.enableControls(false,true);
+        }
+    },
 	
-	sendMail: function() {
-		console.log("sendMail");
+	send: function() {
+        var me=this;
+        me.getModel().setExtraParams({
+            action: 'SendMessage'
+        });
+        me.saveView(true);
 	},
+    
+    actionSave: function() {
+        var me=this;
+        me.recgrid.completeEdit();
+        me.disableControls(/*false,*/true);
+        if (me.fireEvent('beforesave',me)) {
+            me.saveAsDraft();
+        } else {
+            this.enableControls(false,true);
+        }
+    },
+    
+    saveAsDraft: function() {
+        var me=this;
+        me.getModel().setExtraParams({
+            action: 'SaveMessage'
+        });
+        me.saveView(true);
+    },
+    
+    actionSchedule: function() {
+        var me=this;
+        me.recgrid.completeEdit();
+        me.disableControls(/*false,*/true);
+        if (me.fireEvent('beforeschedule',me)) {
+            me.schedule();
+        } else {
+            this.enableControls(false,true);
+        }
+    },
 	
+	schedule: function() {
+        var me=this;
+        me.getModel().setExtraParams({
+            action: 'ScheduleMessage'
+        });
+        me.saveView(true);
+	},
+    
     prepareHtml: function(html,mc) {
 		var me=this;
 		if (!mc) mc=me.identities[me.identityIndex].mailcard;
@@ -484,105 +549,86 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     setDirty: function(b) {
         this.dirty=b;
         this.autoSaveDirty=b;
-    }
+    },
     
+    disableControls: function(/*showProgress,*/showSendmask) {
+        var me=this;
+        me.toolbar.disable();
+        //if (showProgress) this.progress.show();
+        //this.aSend.disable();
+        //if (this.aSave) this.aSave.disable();
+        //if (this.aReceipt) this.aReceipt.disable();
+        if (!showSendmask) me.htmleditor.disable();
+        //else me.sendMask.show();
+        me.recgrid.disable();
+        me.subject.disable();
+    },
+
+    enableControls: function() {
+        var me=this;
+        me.toolbar.enable();
+        //this.progress.hide();
+        //this.aSend.enable();
+        //if (this.aSave) this.aSave.enable();
+        //if (this.aReceipt) this.aReceipt.enable();
+        if (!me.faxsubject) me.htmleditor.enable();
+        //me.sendMask.hide();
+        me.recgrid.enable();
+        if (!me.faxsubject) me.subject.enable();
+    },
+
 	
 	
 	
 });
 
-Ext.define('Sonicle.webtop.mail.EditorAttachPanel', {
-	extend: 'Ext.Panel',
+Ext.define('Sonicle.webtop.mail.EditorAttachments', {
+	extend: 'Ext.view.View',
 	
-	autoScroll: true,
-	layout: 'anchor',
-	border: false,
-	bodyBorder: false,
-	msgId: null,
+//	cls: 'x-panel-body-default',
+	overItemCls: 'wtmail-table-editor-attachement-over',
+	itemSelector: 'table.wtmail-table-editor-attachment',
+	
 	mys: null,
 	
-	addAttachItem: function(name,uploadId,size) {
-		var me=this;
-		me.add(Ext.create('Sonicle.webtop.mail.EditorAttachItem',{
-			fileName: name, 
-			uploadId: uploadId, 
-			fileSize: size,
-			msgId: me.msgId,
-			mys: me.mys,
-			listeners: {
-				remove: function(s) {
-					//console.log("removed "+s.uploadId);
-				}
+	tpl: new Ext.XTemplate(
+		"<tpl for='.'>",
+			"<table border=0 cellspacing=0 cellpadding=0 class='wtmail-table-editor-attachment'>",
+			  "<tr>",
+				"<td class='wtmail-td-editor-attachment-icon'>",
+					"<img src='{[WTF.resourceUrl(WT.ID,\"filetypes/\"+WT.Util.normalizeFileType(name)+\"_16.gif\")]}'>",
+				"</td>",
+				"<td class='wtmail-td-editor-attachment-text'>",
+					"<a href='javascript:Ext.emptyFn()' title='{fileName}'>",
+						"&nbsp;{fileName}",
+					"</a>",
+				"</td>",
+				"<td class='wtmail-td-editor-attachment-delete-icon'>",
+					"<img class='wt-icon-delete-xs' style='width: 16px; height: 16px;'>",
+				"</td>",
+			  "</tr>",
+			"</table>",
+		"</tpl>"
+	),
+	
+	listeners: {
+		itemclick: function(s, r, item, ix, e) {
+			var me=this,
+				tgt=e.getTarget(null,null,true);
+
+			if (tgt.hasCls('wt-icon-delete-xs')) {
+				//me.ownerCt.remove(this);
+				//me.fireEvent('remove',me);
+				me.getStore().remove(r);
 			}
-		}));
-		me.doLayout();
-		var el=me.body.dom;
-		el.scrollTop=el.scrollHeight;
-	}
-});
-
-Ext.define('Sonicle.webtop.mail.EditorAttachItem', {
-	extend: 'Ext.Component',
-	
-	fileName: null,
-	uploadId: null,
-	fileSize: 0,
-	msgId:null,
-
-	initComponent : function(){
-		var me=this;
-		me.callParent(arguments);
-	},
-
-	onRender: function(ct, position) {
-		var me=this,el=me.el;
-
-		me.callParent(arguments);
-
-		var xcls='x-panel-header';
-		if (el) {
-			el.addCls(xcls);
-		} else {
-			el=ct.createChild({
-				id: me.id,
-				cls: xcls
-			},position);
-		}
-		el.addCls('wtmail-attach-item-normal');
-		el.addClsOnOver("wtmail-attach-item-over");
-		el.on('click',me.onClick,me);
-	},
-
-	afterRender: function() {
-		var me=this,
-			name=me.fileName,
-			href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",{
-				uploadId: me.uploadId
-			});
-
-		me.el.update(
-				"<table border=0 cellspacing=0 cellpadding=0 style='width: 100%; table-layout: fixed; '><tr>"+
-				"<td style='width:16px'><img src='"+WTF.resourceUrl(WT.ID,"/filetypes/"+WT.Util.normalizeFileType(name)+"_16.gif")+"'></td>"+
-				"<td style='text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-right: 4px;'>"+
-				 "<a href='javascript:Ext.emptyFn()' "+
-				 " title='"+Ext.htmlEncode(name)+"' "+
-				 " onclick='Sonicle.URLMgr.open(\""+href+"\",true,\"location=no,menubar=no,resizable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=no,top=10,left=10,width=770,height=480\");' "+
-				 " class='wtmail-attach-item'>"+
-				 "&nbsp;"+name+"</a>"+
-				"</td>"+
-				"<td style='width: 16px'><img class='wt-icon-delete-xs' style='width: 16px; height: 16px;'></img></td>"+
-				"</tr></table>"
-		);
-		me.callParent(arguments);
-	},
-
-	onClick: function(e) {
-		var me=this;
-		
-		if (e.getTarget(null,null,true).hasCls('wt-icon-delete-xs')) {
-			me.ownerCt.remove(this);
-			me.fireEvent('remove',me);
+			else {
+				var href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",{
+					uploadId: r.get("uploadId")
+				});
+				Sonicle.URLMgr.open(href,true,"location=no,menubar=no,resizable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=no,top=10,left=10,width=770,height=480");
+			}
 		}
 	}
 	
 });
+

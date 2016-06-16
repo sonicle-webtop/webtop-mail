@@ -34,20 +34,33 @@
 
 Ext.define('Sonicle.webtop.mail.model.MessageModel', {
     extend: 'WT.model.Base',
+    proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'OperateMessage','data', {
+		writer: {
+			type: 'sojson',
+			writeAssociations: true
+		}
+	}),
+    idProperty: 'msgId',
+    
     fields: [
-		{ name: "messageId", type: 'int' },
+		{ name: "msgId", type: 'int' },
 		{ name: "receipt", type: 'boolean' },
 		{ name: "priority", type: 'boolean' },
 		{ name: "from", type: 'string' },
 		{ name: "subject", type: 'string' },
 		{ name: "html", type: 'string' }
-	]
+	]//,
+    
+//	hasMany: [ WTF.hasMany('recipients','Sonicle.webtop.mail.model.MessageRecipientModel') ],
+//	hasMany: [ WTF.hasMany('attachments','Sonicle.webtop.mail.model.AttachmentModel') ]
+    
 });
 
 Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {
     extend: 'WT.model.Base',
     fields: [
-		{ name: "messageId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'recipients' } },
+//        WTF.fkField('string'),
+		{ name: "msgId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'recipients' } },
 		{ name: "rtype", type: 'string' },
 		{ name: "email", type: 'string' }
 	]
@@ -56,10 +69,10 @@ Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {
 Ext.define('Sonicle.webtop.mail.model.AttachmentModel', {
     extend: 'WT.model.Base',
     fields: [
-		{ name: "messageId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'attachments' } },
-		{ name: "filename", type: 'string' },
-		{ name: "tempname", type: 'string' },
-		{ name: "filesize", type: 'int' },
-		{ name: "servername", type: 'string' }
+//        WTF.fkField('string'),
+		{ name: "msgId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'attachments' } },
+		{ name: "fileName", type: 'string' },
+		{ name: "uploadId", type: 'string' },
+		{ name: "fileSize", type: 'int' }
 	]
 });

@@ -46,7 +46,8 @@ public class HTMLMailData {
   private final HashMap<String,Part> urlParts=new HashMap<>();
   private final ArrayList<Part> unknownParts=new ArrayList<> ();
   private final ArrayList<Part> attachmentParts=new ArrayList<> ();
-  private ArrayList<String> referencedCids=new ArrayList<String>();
+  private final ArrayList<String> referencedCids=new ArrayList<>();
+  private final HashMap<String,CidProperties> cidProperties=new HashMap<>();
 
   private MimeMessage message=null;
   private Folder folder=null;
@@ -203,4 +204,11 @@ public class HTMLMailData {
     return tot;
   }
   
+  public void setCidProperties(String cid, CidProperties props) {
+	  cidProperties.put(cid, props);
+  }
+  
+  public CidProperties getCidProperties(String cid) {
+	  return cidProperties.get(cid);
+  }
 }

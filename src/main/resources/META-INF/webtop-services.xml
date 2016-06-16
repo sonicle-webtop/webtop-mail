@@ -70,6 +70,7 @@
 		<supportEmail>sonicle@sonicle.com</supportEmail>
 		
 		<controllerClassName>MailController</controllerClassName>
+		<managerClassName>MailManager</managerClassName>
 		<serviceClassName>Service</serviceClassName>
 		<userOptions>
 			<serviceClassName>UserOptionsService</serviceClassName>
