@@ -41,6 +41,8 @@ import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.commons.web.json.MapItem;
+import com.sonicle.commons.web.json.Payload;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.sieve.*;
@@ -61,7 +63,10 @@ import com.sonicle.webtop.core.sdk.UserProfile.Data;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
+import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
+import com.sonicle.webtop.mail.bol.js.JsMessage;
+import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSort;
 import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.FilterDAO;
@@ -1820,7 +1825,7 @@ public class Service extends BaseService {
 	}
 	
 	private Exception sendTextMsg(String fromAddr, String rplyAddr, String[] toAddr, String[] ccAddr, String[] bccAddr,
-			String subject, String body, ArrayList<Attachment> attachments) {
+			String subject, String body, List<JsAttachment> attachments) {
 		
 		SimpleMessage smsg = new SimpleMessage(0);
 
@@ -1863,7 +1868,7 @@ public class Service extends BaseService {
 		
 	}
 	
-	public Exception sendMsg(String from, SimpleMessage smsg, ArrayList<Attachment> attachments) {
+	public Exception sendMsg(String from, SimpleMessage smsg, List<JsAttachment> attachments) {
 		UserProfile profile = environment.getProfile();
 		String sentfolder = mprofile.getFolderSent();
 		Identity ident = smsg.getFrom();
@@ -1900,7 +1905,7 @@ public class Service extends BaseService {
 		
 	} //end sendMsg, SimpleMessage version
 
-	public Exception sendMessage(SimpleMessage msg, String attnames[]) {
+	public Exception sendMessage(SimpleMessage msg, List<JsAttachment> attachments) {
 		UserProfile profile = environment.getProfile();
 		String sender = profile.getEmailAddress();
 		String name = profile.getDisplayName();
@@ -1920,7 +1925,7 @@ public class Service extends BaseService {
 			
 		}
 		Exception retexc = null;
-		ArrayList<Attachment> origattachments = getAttachments(msg.getId());
+		/*ArrayList<Attachment> origattachments = getAttachments(msg.getId());
 		ArrayList<Attachment> attachments = new ArrayList<Attachment>();
 		for (String attname : attnames) {
 			for (Attachment att : origattachments) {
@@ -1929,7 +1934,7 @@ public class Service extends BaseService {
 					break;
 				}
 			}
-		}
+		}*/
 		
 		if (attachments.size() == 0 && msg.getAttachments() == null) {
 			/*      b = mmgr.sendMsg(sender, msg.getReplyTo(),
@@ -1949,7 +1954,7 @@ public class Service extends BaseService {
 		return retexc;
 	}
 	
-	public Message createMessage(String from, SimpleMessage smsg, ArrayList<Attachment> attachments, boolean tosave) throws Exception {
+	public Message createMessage(String from, SimpleMessage smsg, List<JsAttachment> attachments, boolean tosave) throws Exception {
 		MimeMessage msg = null;
 		boolean success = true;
 		
@@ -2094,7 +2099,7 @@ public class Service extends BaseService {
 			//else create a multipart/alternative with both rich and text mime content
 			if (textcontent == null || smsg.getMime().equalsIgnoreCase("text/plain")) {
 				MimeBodyPart mbp1 = new MimeBodyPart();
-				mbp1.setText(smsg.getContent(), "iso-8859-1");
+				mbp1.setText(smsg.getContent(), "UTF-8");
 				mbp1.setHeader("Content-type", smsg.getMime());
 				
 				mp.addBodyPart(mbp1);
@@ -2102,7 +2107,7 @@ public class Service extends BaseService {
 				MimeMultipart alternative = new MimeMultipart("alternative");
 				//the rich part
 				MimeBodyPart mbp2 = new MimeBodyPart();
-				mbp2.setText(smsg.getContent(), "iso-8859-1");
+				mbp2.setText(smsg.getContent(), "UTF-8");
 				mbp2.setHeader("Content-type", smsg.getMime());
 				//the text part
 				MimeBodyPart mbp1 = new MimeBodyPart();
@@ -2117,7 +2122,7 @@ public class Service extends BaseService {
 				 }
 				 }
 				 textcontent=new String(bos.toByteArray());*/
-				mbp1.setText(textcontent, "iso-8859-1");
+				mbp1.setText(textcontent, "UTF-8");
 				mbp1.setHeader("Content-type", "text/plain");
 //          mbp1.setHeader("Content-transfer-encoding","quoted-printable");
 
@@ -2183,22 +2188,23 @@ public class Service extends BaseService {
 					mbps[e] = new MimeBodyPart();
 
 					// attach the file to the message
-					Attachment attach = (Attachment) attachments.get(e);
-					FileDataSource fds = new FileDataSource(attach.getFile());
+					JsAttachment attach = (JsAttachment) attachments.get(e);
+                    UploadedFile upfile=getUploadedFile(attach.uploadId);
+					FileDataSource fds = new FileDataSource(upfile.getFile());
 					mbps[e].setDataHandler(new DataHandler(fds));
           // filename starts has format:
 					// "_" + userid + sessionId + "_" + filename
 					//
-					if (attach.isInline()) {
+					if (attach.inline) {
 						mbps[e].setDisposition(Part.INLINE);
 					}
-					String contentFileName = attach.getName().trim();
+					String contentFileName = attach.fileName.trim();
 					mbps[e].setFileName(contentFileName);
-					String contentType = attach.getContentType() + "; name=\"" + contentFileName + "\"";
+					String contentType = upfile.getMediaType() + "; name=\"" + contentFileName + "\"";
 					mbps[e].setHeader("Content-type", contentType);
-					if (attach.getCid() != null) {
-						mbps[e].setHeader("Content-ID", "<" + attach.getCid() + ">");
-						mbps[e].setHeader("X-Attachment-Id", attach.getCid());
+					if (attach.cid != null) {
+						mbps[e].setHeader("Content-ID", "<" + attach.cid + ">");
+						mbps[e].setHeader("X-Attachment-Id", attach.cid);
 						mbps[e].setDisposition(Part.INLINE);
 					}
 				} //end for e
@@ -2244,24 +2250,24 @@ public class Service extends BaseService {
 		
 	}
 	
-	public Exception saveMessage(SimpleMessage msg, String attnames[], FolderCache fc) {
+	public Exception saveMessage(SimpleMessage msg, List<JsAttachment> attachments, FolderCache fc) {
 		Exception retexc = null;
 		try {
-			_saveMessage(msg, attnames, fc);
+			_saveMessage(msg, attachments, fc);
 		} catch (Exception exc) {
 			retexc = exc;
 		}
 		return retexc;
 	}
 	
-	public Exception scheduleMessage(SimpleMessage msg, String attnames[], FolderCache fc, String senddate, String sendtime, String sendnotify) {
+	public Exception scheduleMessage(SimpleMessage msg, List<JsAttachment> attachments, FolderCache fc, String senddate, String sendtime, String sendnotify) {
 		Exception retexc = null;
 		try {
 			msg.addHeaderLine("Sonicle-send-scheduled: true");
 			msg.addHeaderLine("Sonicle-send-date: " + senddate);
 			msg.addHeaderLine("Sonicle-send-time: " + sendtime);
 			msg.addHeaderLine("Sonicle-notify-delivery: " + sendnotify);
-			Message m = _saveMessage(msg, attnames, fc);
+			Message m = _saveMessage(msg, attachments, fc);
 			/*        String mid=m.getHeader("Message-ID")[0];
 			 MailServiceGeneral mservgen=(MailServiceGeneral)wta.getServiceGeneralByName("mail");
         
@@ -2281,7 +2287,7 @@ public class Service extends BaseService {
 		return retexc;
 	}
 	
-	private Message _saveMessage(SimpleMessage msg, String attnames[], FolderCache fc) throws Exception {
+	private Message _saveMessage(SimpleMessage msg, List<JsAttachment> attachments, FolderCache fc) throws Exception {
 		UserProfile profile = environment.getProfile();
 		String sender = profile.getEmailAddress();
 		String name = profile.getDisplayName();
@@ -2300,7 +2306,7 @@ public class Service extends BaseService {
 			sender = name + " <" + sender + ">";
 			
 		}
-		ArrayList<Attachment> origattachments = getAttachments(msg.getId());
+		/*ArrayList<Attachment> origattachments = getAttachments(msg.getId());
 		ArrayList<Attachment> attachments = new ArrayList<Attachment>();
 		for (String attname : attnames) {
 			for (Attachment att : origattachments) {
@@ -2310,7 +2316,7 @@ public class Service extends BaseService {
 					break;
 				}
 			}
-		}
+		}*/
 		
 		Message newmsg = createMessage(sender, msg, attachments, true);
 		newmsg.setHeader("Sonicle-draft", "true");
@@ -5059,7 +5065,8 @@ public class Service extends BaseService {
 			sout += "\n ],\n";
 			sout+=" origuid:"+puidmessage+",\n";
 			String html = smsg.getContent();
-			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
+			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
+            sout += " mime:'text/html'\n";
 			sout += "\n}";
 		} catch (MessagingException exc) {
 			Service.logger.error("Exception",exc);
@@ -5122,22 +5129,25 @@ public class Service extends BaseService {
 							if (cid.startsWith("<")) cid=cid.substring(1);
 							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
 						}
-						UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, part.getContentType(), part.getInputStream());
+                        String mime=part.getContentType();
+						UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
 						//File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
 						//createFile(part.getInputStream(), tempFile);
 						boolean inline = false;
 						if (part.getDisposition() != null) {
 							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
 						}
-						maildata.setCidProperties(cid, new CidProperties(cid,inline,upfile));
+						//maildata.setCidProperties(cid, new CidProperties(cid,inline,upfile));
 						//attachFile(newmsgid, tempFile, filename, part.getContentType(), cid, inline);
 						//String tempname = tempFile.getName();
 						if (!first) {
 							sout += ",\n";
 						}
 						sout += "{ "+
-								" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
 								" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
+								" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
+								" cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
+                                " inline: "+inline+", "+
 								" fileSize: "+upfile.getSize()+" "+
 								" }";
 						first = false;
@@ -5156,15 +5166,18 @@ public class Service extends BaseService {
 				//String tempname = tempFile.getName();
 				sout += " attachments: [\n";
 				sout += "{ "+
-						" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
 						" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
+						" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
+                        " cid: null, "+
+                        " inline: false, "+
 						" fileSize: "+upfile.getSize()+" "+
 						" }";
 				sout += "\n ],\n";
 			}
 			
 			sout += " origuid:"+puidmessage+",\n";
-			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
+			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
+            sout += " mime:'text/html'\n";
 			sout += "\n}";
 			out.println(sout);
 		} catch (Exception exc) {
@@ -5450,7 +5463,7 @@ public class Service extends BaseService {
 	 }
 	 }*/
 	public void processSendMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String sout = null;
+		JsonResult json = null;
 
 		// TODO: Cloud integration!!!
 /*        VFSService vfs=(VFSService)wts.getServiceByName("vfs");
@@ -5477,9 +5490,14 @@ public class Service extends BaseService {
 		 }
 		 }*/
 		try {
-			boolean isFax=request.getParameter("fax")!=null;
-			String emails[]=request.getParameterValues("recipients");
-			
+			//String emails[]=request.getParameterValues("recipients");
+            Payload<MapItem, JsMessage> pl=ServletUtils.getPayload(request,JsMessage.class);
+            JsMessage jsmsg=pl.data;
+            long msgId=ServletUtils.getLongParameter(request, "msgId", true);
+            boolean isFax=ServletUtils.getBooleanParameter(request, "isFax", false);
+            boolean save=ServletUtils.getBooleanParameter(request, "save", false);
+            //TODO: fax
+			/*
 			if (isFax) {
 				int faxmaxtos=ss.getFaxMaxRecipients();
 				
@@ -5501,7 +5519,7 @@ public class Service extends BaseService {
 					throw new WTException(lookupResource(MailLocaleKey.FAX_MAXADDRESS_ERROR), faxmaxtos);
 				}
 
-			}
+			}*/
 			
 			//TODO save used recipients
 			//Save used recipients
@@ -5514,21 +5532,19 @@ public class Service extends BaseService {
 			if (subject!=null && subject.trim().length()>0) wts.setServiceStoreEntry(getName(), "subject", subject.toUpperCase(),subject);*/
         
 			checkStoreConnected();
-			String attachments[] = request.getParameterValues("attachments");
-			if (attachments == null) {
-				attachments = new String[0];
-			}
-			SimpleMessage msg = prepareMessage(request);
+			//String attachments[] = request.getParameterValues("attachments");
+			//if (attachments == null) {
+			//	attachments = new String[0];
+			//}
+			SimpleMessage msg = prepareMessage(jsmsg,msgId,save,isFax);
 			Identity ifrom = msg.getFrom();
 			String from = environment.getProfile().getEmailAddress();
 			if (ifrom != null) {
 				from = ifrom.getEmail();
 			}
 			checkStoreConnected();
-			Exception exc = sendMessage(msg, attachments);
+			Exception exc = sendMessage(msg, jsmsg.attachments);
 			if (exc == null) {
-				String newmsgid = request.getParameter("newmsgid");
-
 				//TODO: deleteAutoSaveData!!!!
 				//wts.deleteAutoSaveData("mail","newmail",newmsgid);
 				// TODO: Cloud integration!!!
@@ -5542,46 +5558,44 @@ public class Service extends BaseService {
 				FolderCache fc = getFolderCache(mprofile.getFolderSent());
 				fc.setForceRefresh();
 				//check for in-reply-to and set the answered flags
-				String inreplyto = request.getParameter("inreplyto");
-				String replyfolder = request.getParameter("replyfolder");
-				String forwardedfrom = request.getParameter("forwardedfrom");
-				String forwardedfolder = request.getParameter("forwardedfolder");
-                String soriguid=request.getParameter("origuid");
-				long origuid=0;
-				try { origuid=Long.parseLong(soriguid); } catch(RuntimeException rexc) {}
+				//String inreplyto = request.getParameter("inreplyto");
+				//String replyfolder = request.getParameter("replyfolder");
+				//String forwardedfrom = request.getParameter("forwardedfrom");
+				//String forwardedfolder = request.getParameter("forwardedfolder");
+                //String soriguid=request.getParameter("origuid");
+				//long origuid=0;
+				//try { origuid=Long.parseLong(soriguid); } catch(RuntimeException rexc) {}
 				String foundfolder = null;
-				if (forwardedfrom != null && forwardedfrom.trim().length() > 0) {
+				if (jsmsg.forwardedfrom != null && jsmsg.forwardedfrom.trim().length() > 0) {
 					try {
-						foundfolder = foundfolder=flagForwardedMessage(forwardedfolder,forwardedfrom,origuid);
+						foundfolder = foundfolder=flagForwardedMessage(jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					}
 				}
-				else if((inreplyto != null && inreplyto.trim().length()>0)||(replyfolder!=null&&replyfolder.trim().length()>0&&origuid>0)) {
+				else if((jsmsg.inreplyto != null && jsmsg.inreplyto.trim().length()>0)||(jsmsg.replyfolder!=null&&jsmsg.replyfolder.trim().length()>0&&jsmsg.origuid>0)) {
 					try {
-						foundfolder=flagAnsweredMessage(replyfolder,inreplyto,origuid);
+						foundfolder=flagAnsweredMessage(jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					}
 				}
 				
-				sout = "{\nresult: true,";
-				if (foundfolder != null) {
-					sout += " foundfolder: '" + StringEscapeUtils.escapeEcmaScript(foundfolder) + "',";
-				}
-				sout += " saved: false\n}";
+                json=new JsonResult()
+                        .set("foundfolder",foundfolder)
+                        .set("saved", Boolean.FALSE);
 			} else {
 				Throwable cause = exc.getCause();
 				String msgstr = cause != null ? cause.getMessage() : exc.getMessage();
-				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(msgstr) + "'\n}";
+                json=new JsonResult(false, msgstr);
 			}
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			Throwable cause = exc.getCause();
 			String msg = cause != null ? cause.getMessage() : exc.getMessage();
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(msg) + "'\n}";
+            json=new JsonResult(false, msg);
 		}
-		out.println(sout);
+        json.printTo(out);
 	}
 	
 	//FLAG ANSWERED
@@ -5671,15 +5685,19 @@ public class Service extends BaseService {
 	}*/
 	
 	public void processSaveMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String sout = null;
+		JsonResult json = null;
 		try {
 			checkStoreConnected();
-			String attachments[] = request.getParameterValues("attachments");
-			String savefolder = request.getParameter("savefolder");
-			if (attachments == null) {
-				attachments = new String[0];
-			}
-			SimpleMessage msg = prepareMessage(request);
+            Payload<MapItem, JsMessage> pl=ServletUtils.getPayload(request,JsMessage.class);
+            JsMessage jsmsg=pl.data;
+            long msgId=ServletUtils.getLongParameter(request, "msgId", true);
+			//String attachments[] = request.getParameterValues("attachments");
+			String savefolder = ServletUtils.getStringParameter(request, "savefolder", false);
+            
+			//if (attachments == null) {
+			//	attachments = new String[0];
+			//}
+			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false);
 			checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
@@ -5687,38 +5705,40 @@ public class Service extends BaseService {
 			} else {
 				fc = getFolderCache(savefolder);
 			}
-			Exception exc = saveMessage(msg, attachments, fc);
+			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
 			if (exc == null) {
-				String newmsgid = request.getParameter("newmsgid");
 				// TODO: deleteAutoSaveData!!!!
 				//wts.deleteAutoSaveData("mail","newmail",newmsgid);
 				
 				fc.setForceRefresh();
-				sout = "{\nresult: true, saved: true\n}";
+                json=new JsonResult()
+                        .set("saved", Boolean.TRUE);
 			} else {
-				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+                json=new JsonResult(false, exc.getMessage());
 			}
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+            json=new JsonResult(false, exc.getMessage());
 		}
-		out.println(sout);
+        json.printTo(out);
 	}
 	
 	public void processScheduleMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String sout = null;
+		JsonResult json = null;
 		try {
 			checkStoreConnected();
-			String attachments[] = request.getParameterValues("attachments");
-			String savefolder = request.getParameter("savefolder");
-			String scheddate = request.getParameter("scheddate");
-			String schedtime = request.getParameter("schedtime");
-			String schednotify = request.getParameter("schednotify");
+            Payload<MapItem, JsMessage> pl=ServletUtils.getPayload(request,JsMessage.class);
+            JsMessage jsmsg=pl.data;
+            long msgId=ServletUtils.getLongParameter(request, "msgId", true);
+			String savefolder = ServletUtils.getStringParameter(request, "savefolder", false);
+			String scheddate = ServletUtils.getStringParameter(request, "scheddate", true);
+			String schedtime = ServletUtils.getStringParameter(request, "schedtime", true);
+			String schednotify = ServletUtils.getStringParameter(request, "schednotify", true);
 			
-			if (attachments == null) {
+			/*if (attachments == null) {
 				attachments = new String[0];
-			}
-			SimpleMessage msg = prepareMessage(request);
+			}*/
+			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false);
 			checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
@@ -5726,22 +5746,23 @@ public class Service extends BaseService {
 			} else {
 				fc = getFolderCache(savefolder);
 			}
-			Exception exc = scheduleMessage(msg, attachments, fc, scheddate, schedtime, schednotify);
+			Exception exc = scheduleMessage(msg, jsmsg.attachments, fc, scheddate, schedtime, schednotify);
 			if (exc == null) {
 				String newmsgid = request.getParameter("newmsgid");
 				// TODO: deleteAutoSaveData!!!!
 				//wts.deleteAutoSaveData("mail","newmail",newmsgid);
 				
 				fc.setForceRefresh();
-				sout = "{\nresult: true, saved: true\n}";
+                json=new JsonResult()
+                        .set("saved", Boolean.TRUE);
 			} else {
-				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+                json=new JsonResult(false, exc.getMessage());
 			}
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+            json=new JsonResult(false, exc.getMessage());
 		}
-		out.println(sout);
+        json.printTo(out);
 	}
 	
 	public void processDiscardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -5785,7 +5806,7 @@ public class Service extends BaseService {
 	 }
 	 out.println(sout);
 	 }*/
-	private SimpleMessage prepareMessage(HttpServletRequest request) throws Exception {
+	private SimpleMessage prepareMessage(JsMessage jsmsg, long msgId, boolean save, boolean isFax) throws Exception {
 		Environment env = environment;
 		//WebTopApp webtopapp=env.getWebTopApp();
 		UserProfile profile = env.getProfile();
@@ -5793,42 +5814,41 @@ public class Service extends BaseService {
 		//WebTopSession wts=(WebTopSession)session.getAttribute("webtopsession");
 
         //CharsetDecoder decoder=Charset.forName("UTF-16").newDecoder();
-		String emails[] = request.getParameterValues("recipients");
-		String rtypes[] = request.getParameterValues("rtypes");
+		//String emails[] = request.getParameterValues("recipients");
+		//String rtypes[] = request.getParameterValues("rtypes");
 		//expand multiple addresses
-		ArrayList<String> aemails = new ArrayList<String>();
-		ArrayList<String> artypes = new ArrayList<String>();
-		for (int i = 0; i < emails.length; ++i) {
-			StringTokenizer st = new StringTokenizer(emails[i], ";");
-			while (st.hasMoreElements()) {
-				String email = st.nextToken();
+		ArrayList<String> aemails = new ArrayList<>();
+		ArrayList<String> artypes = new ArrayList<>();
+		for (JsRecipient jsrcpt: jsmsg.recipients) {
+            String emails[]=StringUtils.split(jsrcpt.email,';');
+			for(String email: emails) {
 				aemails.add(email);
-				artypes.add(rtypes[i]);
+				artypes.add(jsrcpt.rtype);
 			}
 		}
-		emails = (String[]) aemails.toArray(emails);
-		rtypes = (String[]) artypes.toArray(rtypes);
+		String emails[] = (String[]) aemails.toArray();
+		String rtypes[] = (String[]) artypes.toArray();
 		
-		String replyfolder = request.getParameter("replyfolder");
-		String inreplyto = request.getParameter("inreplyto");
-		String references = request.getParameter("references");
+		//String replyfolder = request.getParameter("replyfolder");
+		//String inreplyto = request.getParameter("inreplyto");
+		//String references = request.getParameter("references");
 		
-		String forwardedfolder = request.getParameter("forwardedfolder");
-		String forwardedfrom = request.getParameter("forwardedfrom");
+		//String forwardedfolder = request.getParameter("forwardedfolder");
+		//String forwardedfrom = request.getParameter("forwardedfrom");
 		
-		String subject = request.getParameter("subject");
-		String mime = request.getParameter("mime");
-		String sident = request.getParameter("identity");
-		String content = request.getParameter("content");
-		String msgid = request.getParameter("newmsgid");
-		String ssave = request.getParameter("save");
-		boolean save = (ssave != null && ssave.equals("true"));
-		String sreceipt = request.getParameter("receipt");
-		boolean receipt = (sreceipt != null && sreceipt.equals("true"));
-		String spriority = request.getParameter("priority");
-		boolean priority = (spriority != null && spriority.equals("true"));
+		//String subject = request.getParameter("subject");
+		//String mime = request.getParameter("mime");
+		//String sident = request.getParameter("identity");
+		//String content = request.getParameter("content");
+		//String msgid = request.getParameter("newmsgid");
+		//String ssave = request.getParameter("save");
+		//boolean save = (ssave != null && ssave.equals("true"));
+		//String sreceipt = request.getParameter("receipt");
+		//boolean receipt = (sreceipt != null && sreceipt.equals("true"));
+		//String spriority = request.getParameter("priority");
+		//boolean priority = (spriority != null && spriority.equals("true"));
 		
-		boolean isFax = request.getParameter("fax") != null;
+		//boolean isFax = request.getParameter("fax") != null;
 		
 		String to = null;
 		String cc = null;
@@ -5958,20 +5978,22 @@ public class Service extends BaseService {
 			}
 		}
 		
-		long id = Long.parseLong(msgid);
-		SimpleMessage msg = new SimpleMessage(id);
-		int idx = Integer.parseInt(sident) - 1;
+		//long id = Long.parseLong(msgid);
+		SimpleMessage msg = new SimpleMessage(msgId);
+		/*int idx = jsmsg.identity - 1;
 		Identity from = null;
 		if (idx >= 0) {
 			from = mprofile.getIdentity(idx);
-		}
+		}*/
+        Identity from=mprofile.getIdentityFromKey(jsmsg.identityId);
 		msg.setFrom(from);
 		msg.setTo(to);
 		msg.setCc(cc);
 		msg.setBcc(bcc);
-		msg.setSubject(subject);
+		msg.setSubject(jsmsg.subject);
 		
-		if (isFax) {
+        //TODO: fax
+		/*if (isFax) {
 			String coverpage = request.getParameter("faxcover");
 			if (coverpage != null) {
 				if (coverpage.equals("none")) {
@@ -5981,9 +6003,10 @@ public class Service extends BaseService {
 					msg.addHeaderLine("X-FAX-Cover-Template: " + coverpage);
 				}
 			}
-		}
+		}*/
 		
-		String[] headersKeys = request.getParameterValues("headersKeys");
+        //TODO: custom headers keys
+		/*String[] headersKeys = request.getParameterValues("headersKeys");
 		String[] headersValues = request.getParameterValues("headersValues");
 		if (headersKeys != null && headersValues != null && headersKeys.length == headersValues.length) {
 			for (int i = 0; i < headersKeys.length; i++) {
@@ -5991,31 +6014,31 @@ public class Service extends BaseService {
 					msg.addHeaderLine(headersKeys[i] + ": " + headersValues[i]);
 				}
 			}
+		}*/
+		
+		if (jsmsg.inreplyto != null) {
+			msg.setInReplyTo(jsmsg.inreplyto);
+		}
+		if (jsmsg.references != null) {
+			msg.setReferences(new String[]{jsmsg.references});
+		}
+		if (jsmsg.replyfolder != null) {
+			msg.setReplyFolder(jsmsg.replyfolder);
 		}
 		
-		if (inreplyto != null) {
-			msg.setInReplyTo(inreplyto);
+		if (jsmsg.forwardedfolder != null) {
+			msg.setForwardedFolder(jsmsg.forwardedfolder);
 		}
-		if (references != null) {
-			msg.setReferences(new String[]{references});
-		}
-		if (replyfolder != null) {
-			msg.setReplyFolder(replyfolder);
+		if (jsmsg.forwardedfrom != null) {
+			msg.setForwardedFrom(jsmsg.forwardedfrom);
 		}
 		
-		if (forwardedfolder != null) {
-			msg.setForwardedFolder(forwardedfolder);
-		}
-		if (forwardedfrom != null) {
-			msg.setForwardedFrom(forwardedfrom);
-		}
-		
-		msg.setReceipt(receipt);
-		msg.setPriority(priority ? 1 : 3);
-		if (mime == null || mime.equals("text/plain")) {
-			msg.setContent(content);
+		msg.setReceipt(jsmsg.receipt);
+		msg.setPriority(jsmsg.priority ? 1 : 3);
+		if (jsmsg.mime == null || jsmsg.mime.equals("text/plain")) {
+			msg.setContent(jsmsg.content);
 		} else {
-			if (mime.equalsIgnoreCase("text/html")) {
+			if (jsmsg.mime.equalsIgnoreCase("text/html")) {
 				/*                String surl=webtopapp.getUri();
 				 int ix=surl.indexOf("?");
 				 if (ix>=0) surl=surl.substring(0,ix);
@@ -6026,21 +6049,21 @@ public class Service extends BaseService {
             //String surl="PreviewAttachment\\?newmsgid\\="+msgid+"\\&cid\\=";
 				//String surl="PreviewAttachment?newmsgid="+msgid+"&amp;cid=";
 
-				//CIDs
-				String surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
-				content = StringUtils.replace(content, surl, "cid:");
-				surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
-				content = StringUtils.replace(content, surl, "cid:");
-				//URLs
-				surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;url=";
-				content = StringUtils.replace(content, surl, "");
-				surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
-				content = StringUtils.replace(content, surl, "");
-				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
-				content = MailUtils.htmlescapefixsource(content);
-				msg.setContent(content, textcontent, mime);
+				//TODO: CIDs
+				//String surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
+				//content = StringUtils.replace(content, surl, "cid:");
+				//surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
+				//content = StringUtils.replace(content, surl, "cid:");
+				//TODO: URLs
+				//surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;url=";
+				//content = StringUtils.replace(content, surl, "");
+				//surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
+				//content = StringUtils.replace(content, surl, "");
+				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(jsmsg.content));
+				String htmlcontent = MailUtils.htmlescapefixsource(jsmsg.content);
+				msg.setContent(htmlcontent, textcontent, jsmsg.mime);
 			} else {
-				msg.setContent(content, null, mime);
+				msg.setContent(jsmsg.content, null, jsmsg.mime);
 			}
 			
 		}
