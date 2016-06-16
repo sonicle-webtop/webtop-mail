@@ -46,11 +46,11 @@ public class ColumnsOrderSetting extends ArrayList<String> {
 	}
 	
 	public static ColumnsOrderSetting fromJson(String value) {
-		return JsonResult.gson.fromJson(value, ColumnsOrderSetting.class);
+		return JsonResult.GSON_PLAIN_WONULLS.fromJson(value, ColumnsOrderSetting.class);
 	}
 	
 	public static String toJson(ColumnsOrderSetting cos) {
-		return JsonResult.gsonWoNulls.toJson(cos);
+		return JsonResult.GSON_PLAIN_WONULLS.toJson(cos);
 	}
 	
 }
