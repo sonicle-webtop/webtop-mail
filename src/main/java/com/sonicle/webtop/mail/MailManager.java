@@ -74,22 +74,21 @@ public class MailManager extends BaseManager {
 		super(targetProfileId);
 	}
 	
-	public Identity createIdentity(OIdentity oi) throws WTException {
-		try {
-			Identity i=new Identity();
-			BeanUtils.copyProperties(i,oi);
-			return i;
-		} catch(Exception ex) {
-			throw new WTException(ex,"Error creating identity");
-		}
-	}
-	
 	public List<Identity> listIdentities() throws WTException {
 		if (identities==null)
 			identities=buildIdentities();
 		
 		return identities;
 	}
+    
+    public Identity getMainIdentity() {
+		if (identities==null) {
+            try {
+                identities=buildIdentities();
+            } catch(WTException exc) {}
+        }
+        return identities.get(0);
+    }
 	
 	public static class ImapFolderData {
 		boolean useMyPersonalInfo;
@@ -120,8 +119,7 @@ public class MailManager extends BaseManager {
 			IdentityDAO idao=IdentityDAO.getInstance();
 			List<OIdentity> items=idao.selectById(con, pid.getDomainId(),pid.getUserId());
 			for(OIdentity oi: items) {
-				id=createIdentity(oi);
-				idents.add(id);
+				idents.add(new Identity(oi));
 			}
 			
 			//add automatic shared identities

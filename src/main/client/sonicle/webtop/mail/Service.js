@@ -488,7 +488,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionNew: function() {
-		this.startNewMessage(this.currentFolder);
+		this.startNewMessage(this.currentFolder, { mime: 'text/html' });
 	},
 	
 	/**
@@ -509,12 +509,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this,
 			identIndex=0,
 			identities=me.optionsData.identities,
+            ident=identities[0],
 			rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 	
         for(var i=1;i<identities.length;++i) {
             var ifolder=identities[i].mainFolder;
             if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
                 identIndex=i;
+                ident=identities[i];
                 break;
             }
         }
@@ -535,7 +537,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				subject: opts.subject||'',
 				receipt: me.getOption('receipt'),
 				priority: me.getOption('priority'),
-				from: identities[identIndex].email,
+				from: ident.email,
+                identityId: ident.identityId,
 				recipients: rcpts,
 				attachments: opts.attachments,
 				content: opts.content||'',

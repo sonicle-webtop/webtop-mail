@@ -5029,6 +5029,7 @@ public class Service extends BaseService {
 					lookupResource(MailLocaleKey.MSG_SUBJECTTITLE)
 			);
 			sout = "{\n result: true,";
+            Identity ident=mprofile.getIdentity(pfoldername);
 			String inreplyto = smsg.getInReplyTo();
 			String references[] = smsg.getReferences();
 			sout += " replyfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
@@ -5063,9 +5064,10 @@ public class Service extends BaseService {
 				first = false;
 			}
 			sout += "\n ],\n";
-			sout+=" origuid:"+puidmessage+",\n";
+            sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
+			sout += " origuid:"+puidmessage+",\n";
 			String html = smsg.getContent();
-			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
+			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
             sout += " mime:'text/html'\n";
 			sout += "\n}";
 		} catch (MessagingException exc) {
@@ -5104,6 +5106,7 @@ public class Service extends BaseService {
 			);
 			
 			sout = "{\n result: true,";
+            Identity ident=mprofile.getIdentity(pfoldername);
 			String forwardedfrom = smsg.getForwardedFrom();
 			sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
 			if (forwardedfrom != null) {
@@ -5174,9 +5177,9 @@ public class Service extends BaseService {
 						" }";
 				sout += "\n ],\n";
 			}
-			
+            sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
 			sout += " origuid:"+puidmessage+",\n";
-			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
+			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
             sout += " mime:'text/html'\n";
 			sout += "\n}";
 			out.println(sout);
@@ -5826,8 +5829,10 @@ public class Service extends BaseService {
 				artypes.add(jsrcpt.rtype);
 			}
 		}
-		String emails[] = (String[]) aemails.toArray();
-		String rtypes[] = (String[]) artypes.toArray();
+		String emails[] = new String[aemails.size()];
+        emails=(String[]) aemails.toArray(emails);
+		String rtypes[] = new String[artypes.size()];
+        rtypes=(String[]) artypes.toArray(rtypes);
 		
 		//String replyfolder = request.getParameter("replyfolder");
 		//String inreplyto = request.getParameter("inreplyto");

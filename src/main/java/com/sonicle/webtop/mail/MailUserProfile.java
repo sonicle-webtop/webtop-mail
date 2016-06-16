@@ -37,6 +37,7 @@ import com.sonicle.commons.db.DbUtils;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.CredentialAlgorithm;
 import com.sonicle.security.Principal;
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.Environment;
 import com.sonicle.webtop.core.util.Encryption;
 import com.sonicle.webtop.core.sdk.UserProfile;
@@ -79,6 +80,7 @@ public class MailUserProfile {
 	private String sharedSort;
 	private boolean includeMessageInReply;
 	private int numMessageList;
+    private MailManager mman;
 
     public MailUserProfile(Environment env, Service ms) {
         this.env=env;
@@ -87,6 +89,7 @@ public class MailUserProfile {
 		Connection con=null;
 		try {
 			con=ms.getConnection();
+            mman=(MailManager)WT.getServiceManager(ms.SERVICE_ID);
 			
 			Principal principal=profile.getPrincipal();
 			
@@ -259,7 +262,7 @@ public class MailUserProfile {
 				return ident;
 		}
 	  }
-	  return null;
+	  return mman.getMainIdentity();
 	}
 		
 	public String getSharedSort() {
