@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail.bol.model;
 
+import com.sonicle.commons.web.json.CompositeId;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.mail.Mailcard;
 
@@ -45,6 +46,7 @@ public class Identity {
 	public static final String TYPE_AUTO = "auto";
 	public static final String TYPE_USER = "user";
 
+    protected String identityId;
 	protected String type = null;
 	protected String email;
 	protected String displayName;
@@ -77,6 +79,7 @@ public class Identity {
 		this.mainFolder=mainFolder;
 		this.fax=fax;
 		this.useMyPersonalInfos=useMyPersonalInfos;
+        this.identityId=new CompositeId(displayName,email).toString();
 	}
 
 	public String getType() {
@@ -162,6 +165,10 @@ public class Identity {
 	public boolean isType(String type) {
 		return this.type.equals(type);
 	}
+    
+    public String getIdentityId() {
+        return identityId;
+    }
 	
     @Override
 	public String toString() {

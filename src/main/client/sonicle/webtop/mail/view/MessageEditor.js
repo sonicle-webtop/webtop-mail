@@ -247,7 +247,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						me.setDirty(true);
 						//me.attlist.addAttachItem(file.name,resp.data.uploadId,file.size);
 						me.attlist.getStore().add(
-								{ msgId: me.msgId, fileName: file.name, uploadId: resp.data.uploadId, fileSize: file.size }
+								{ 
+                                    msgId: me.msgId, 
+                                    uploadId: resp.data.uploadId, 
+                                    fileName: file.name, 
+                                    cid: null,
+                                    inline: false,
+                                    fileSize: file.size 
+                                }
 						);
 					},
 					uploadcomplete: function(s,fok,ffailed) {
@@ -282,11 +289,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				tbitems[tbx++]='-';
 				tbitems[tbx++]={
 					xtype:'combo',
-					bind: '{record.from}',
+					bind: '{record.identityId}',
 					tooltip: me.mys.res('editor.cbo-identities.tip'),
 					queryMode: 'local',
 					displayField: 'description',
-					valueField: 'email',
+					valueField: 'identityId',
 					width:me.customToolbarButtons?200:300,
 					matchFieldWidth: false,
 					listConfig: {
@@ -296,7 +303,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						model: 'Sonicle.webtop.mail.model.Identity',
 						data : idents
 					}),
-					value: selident.email,
+					value: selident.identityId,
 					listeners: {
 						change: {
 							fn: function(s,nv,ov) {
@@ -307,8 +314,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								//var nv = r.get('id');
 								if(!nv || !ov || ov === nv) return;
 								
-								if (!this.htmlEditor.isReady()) me.setHtml(me.prepareHtml(me.htmlEditor.getValue(),me.identHash[nv].mailcard));
-								else me.setHtml(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html));
+                                var mime='text/html';
+								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),mime,me.identHash[nv].mailcard),mime);
+								else me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),mime);
 							},
 							scope: this
 						}
@@ -378,7 +386,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			me.htmlEditor=Ext.create({
 				xtype: 'sohtmleditor',
 				region: 'center',
-				bind: '{record.html}',
+				bind: '{record.content}',
 				enableFont: true,
 				enableFontSize: true,
 				enableFormat: true,
@@ -417,6 +425,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			rg=me.recgrid,
 			c=rg.getRecipientsCount();
 	
+        me.getModel().setExtraParams({
+            msgId: me.msgId
+        });
+        
         //me.sendMask=new Ext.LoadMask(me.htmlEditor.wrap, {msg:WT.res("loading")});
 		if (c===1) {
 			var r=c-1,
@@ -431,7 +443,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	startNew: function(data) {
 		var me=this;
-		data.html=me.prepareHtml(data.html);
+		data.content=me.prepareContent(data.content,data.mime);
 		me.beginNew({
 			data: data
 		});
@@ -442,13 +454,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.recgrid.completeEdit();
         me.disableControls(/*false,*/true);
         if (me.fireEvent('beforesend',me)) {
-            me.send();
+            me.sendMessage();
         } else {
             this.enableControls(false,true);
         }
     },
 	
-	send: function() {
+	sendMessage: function() {
         var me=this;
         me.getModel().setExtraParams({
             action: 'SendMessage'
@@ -461,13 +473,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.recgrid.completeEdit();
         me.disableControls(/*false,*/true);
         if (me.fireEvent('beforesave',me)) {
-            me.saveAsDraft();
+            me.saveMessage();
         } else {
             this.enableControls(false,true);
         }
     },
     
-    saveAsDraft: function() {
+    saveMessage: function() {
         var me=this;
         me.getModel().setExtraParams({
             action: 'SaveMessage'
@@ -494,19 +506,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.saveView(true);
 	},
     
-    prepareHtml: function(html,mc) {
+    prepareContent: function(content,mime,mc) {
 		var me=this;
 		if (!mc) mc=me.identities[me.identityIndex].mailcard;
 		
-		if (mc) html='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+html;
-        html='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+html+'</div>';
-        return html;
+		if (mc) content='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+content;
+        content='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+content+'</div>';
+        return content;
     },
 	
-    setHtml: function(html) {
+    setContent: function(content,mime) {
 		var me=this;
         //me.htmlEditor.initHtmlValue(html);
-		me.getModel().set("html",html);
+		me.getModel().set("content",content);
+        me.getModel().set("mime",mime);
 /*        var w=this.htmleditor.getWin();
         var d=w.document;
         var n=d.body.firstChild;

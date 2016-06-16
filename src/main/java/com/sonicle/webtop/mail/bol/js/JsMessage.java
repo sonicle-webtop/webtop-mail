@@ -1,5 +1,5 @@
 /*
- * webtop-calendar is a WebTop Service developed by Sonicle S.r.l.
+ * webtop-mail is a WebTop Service developed by Sonicle S.r.l.
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -31,37 +31,32 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.mail.model.ClientOptions', {
-	extend: 'WT.sdk.model.ClientOptions',
-	
-	fields: [
-		{ name: 'receipt', type: 'boolean' },
-		{ name: 'priority', type: 'boolean' },
-		{ name: 'pageRows', type: 'int' },
-		{ name: 'messageViewRegion', type: 'string' },
-		{ name: 'messageViewWidth', type: 'int' },
-		{ name: 'messageViewHeight', type: 'int' },
-		{ name: 'columnSizes', type: 'string' }
-	],
-	hasMany: [{
-		name: 'identities',
-		model: 'Sonicle.webtop.mail.model.Identity'
-	}]
-});
+package com.sonicle.webtop.mail.bol.js;
 
-Ext.define('Sonicle.webtop.mail.model.Identity', {
-    extend: 'WT.model.Base',
-    fields: [
-        { name: "identityId" },
-		{ name: "type" },
-		{ name: "email" },
-		{ name: "displayName" },
-		{ name: "mainFolder" },
-		{ name: "fax", type: 'boolean' },
-		{ name: "useMyPersonalInfos", type: 'boolean' },
-		{ name: "lockMailcard", type: 'boolean' },
-		WTF.calcField("description","string",["email","displayName"], function(v,r) {
-			return r.get("displayName")+" - "+r.get("email");
-		})
-	]
-});
+import java.util.List;
+
+/**
+ *
+ * @author gbulfon
+ */
+public class JsMessage {
+
+    public Boolean receipt;
+    public Boolean priority;
+    public String from;
+    public String subject;
+    public String content;
+    public String mime;
+    public String identityId;
+    public List<JsAttachment> attachments;
+    public List<JsRecipient> recipients;
+    //Reply data
+    public String replyfolder;
+    public String inreplyto;
+    public String references;
+    //Forward data
+    public String forwardedfolder;
+    public String forwardedfrom;
+    //Reply/Forward data
+    public long origuid;
+}

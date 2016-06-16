@@ -34,7 +34,7 @@
 
 Ext.define('Sonicle.webtop.mail.model.MessageModel', {
     extend: 'WT.model.Base',
-    proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'OperateMessage','data', {
+    proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'SaveMessage','data', {
 		writer: {
 			type: 'sojson',
 			writeAssociations: true
@@ -48,7 +48,18 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
 		{ name: "priority", type: 'boolean' },
 		{ name: "from", type: 'string' },
 		{ name: "subject", type: 'string' },
-		{ name: "html", type: 'string' }
+		{ name: "content", type: 'string' },
+        { name: "mime", type: 'string' },
+        { name: "identityId", type: 'string' },
+        //Reply data
+        { name: "replyfolder", type: 'string' },
+        { name: "inreplyto", type: 'string' },
+        { name: "references", type: 'string' },
+        //Forward data
+        { name: "forwardedfolder", type: 'string' },
+        { name: "forwardedfrom", type: 'string' },
+        //Reply/Forward data
+        { name: "origuid", type: 'string' }
 	]//,
     
 //	hasMany: [ WTF.hasMany('recipients','Sonicle.webtop.mail.model.MessageRecipientModel') ],
@@ -71,8 +82,10 @@ Ext.define('Sonicle.webtop.mail.model.AttachmentModel', {
     fields: [
 //        WTF.fkField('string'),
 		{ name: "msgId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'attachments' } },
-		{ name: "fileName", type: 'string' },
 		{ name: "uploadId", type: 'string' },
+		{ name: "fileName", type: 'string' },
+		{ name: "cid", type: 'string' },
+		{ name: "inline", type: 'boolean' },
 		{ name: "fileSize", type: 'int' }
 	]
 });

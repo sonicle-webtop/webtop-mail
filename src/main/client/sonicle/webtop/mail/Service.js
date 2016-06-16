@@ -494,9 +494,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	/**
 	 * Starts a new message with preconfigured options.
 	 * @param {String} Reference folder id 
-	 * @param {Object} [opts.subject] Initial subject
-	 * @param {Object[]} [opts.recipients] Array of recipients objects with rtype/email pairs
-	 * @param {Object} [opts.html] Initial html content
+	 * @param {String} [opts.from] Initial from
+	 * @param {String} [opts.subject] Initial subject
+	 * @param {bool} [opts.receipt] ask receipt
+     * @param {bool} [opts.priority] high priority
+	 * @param {Object[]} [opts.recipients] Array of recipient objects with rtype/email pairs
+	 * @param {Object[]} [opts.attachments] Array of attachment objects with uploadId/fileName/fileSize data
+	 * @param {String} [opts.content] Initial content
+	 * @param {String} [opts.mime] Content mime type
 	 */
 	startNewMessage: function(idfolder, opts) {
 		opts=opts||{};
@@ -533,7 +538,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				from: identities[identIndex].email,
 				recipients: rcpts,
 				attachments: opts.attachments,
-				html: opts.html||''
+				content: opts.content||'',
+                mime: opts.mime
 			});
 		});
 	},

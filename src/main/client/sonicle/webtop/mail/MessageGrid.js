@@ -892,7 +892,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					me.mys.startNewMessage(idfolder,{
 						subject: json.subject,
 						recipients: json.recipients,
-						html: json.html,
+						content: json.content,
+                        mime: json.mime,
 						replyfolder: json.replyfolder,
 						inreplyto: json.inreplyto,
 						references: json.references,
@@ -937,7 +938,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				if (json.result) {
 					me.mys.startNewMessage(idfolder,{
 						subject: json.subject,
-						html: json.html,
+						content: json.content,
+                        mime: json.mime,
 						msgId: msgId,
 						attachments: json.attachments,
 						forwardedfolder: json.forwardedfolder,

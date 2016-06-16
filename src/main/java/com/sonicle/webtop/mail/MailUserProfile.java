@@ -46,6 +46,7 @@ import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.IdentityDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,6 +75,7 @@ public class MailUserProfile {
 	private String mailPassword;
 	private String replyTo;
 	private Identity identities[];
+    private HashMap<String,Identity> hidentities=new HashMap<>();
 	private String sharedSort;
 	private boolean includeMessageInReply;
 	private int numMessageList;
@@ -170,7 +172,9 @@ public class MailUserProfile {
 			identities=new Identity[oids.size()];
 			int i=0;
 			for(OIdentity oid: oids) {
-				identities[i++]=new Identity(oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
+                Identity ident=new Identity(oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
+				identities[i++]=ident;
+                hidentities.put(ident.getIdentityId(), ident);
 			}
 			
 		} catch(Exception exc) {
@@ -243,6 +247,10 @@ public class MailUserProfile {
 	public Identity getIdentity(int index) {
 		return identities[index];
 	}
+    
+    public Identity getIdentityFromKey(String key) {
+        return hidentities.get(key);
+    }
 	
 	public Identity getIdentity(String foldername) {
 		for(Identity ident: identities) {
