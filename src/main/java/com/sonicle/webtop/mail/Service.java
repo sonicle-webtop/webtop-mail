@@ -38,6 +38,7 @@ import com.sonicle.commons.LangUtils;
 import java.nio.*;
 import java.nio.channels.*;
 import com.sonicle.commons.MailUtils;
+import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
@@ -6056,11 +6057,11 @@ public class Service extends BaseService {
 
 				//CIDs
                 String content=jsmsg.content;
-                String pattern1=Pattern.quote("service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
-                String pattern2=Pattern.quote("&amp;cid=");
+                String pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
+                String pattern2=RegexUtils.escapeRegexSpecialChars("&amp;cid=");
                 content=StringUtils.replacePattern(content, pattern1+".*"+pattern2, "cid:");
-                pattern1=Pattern.quote("service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
-                pattern2=Pattern.quote("&cid=");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
+                pattern2=RegexUtils.escapeRegexSpecialChars("&cid=");
                 content=StringUtils.replacePattern(content, pattern1+".*"+pattern2, "cid:");
 				//String surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
 				//content = StringUtils.replace(content, surl, "cid:");
