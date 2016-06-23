@@ -2498,13 +2498,13 @@ public class Service extends BaseService {
 	}
 	
   private String getBodyInnerHtml(String body) {
-	int ix1=body.indexOf("<BODY");
+	int ix1=StringUtils.indexOfIgnoreCase(body,"<BODY");
 	if(ix1>=0) {
 	  int ix2=body.indexOf(">", ix1+1);
 	  if(ix2<0) {
 		ix2=ix1+4;
 	  }
-	  int ix3=body.indexOf("</BODY", ix2+1);
+	  int ix3=StringUtils.indexOfIgnoreCase(body,"</BODY", ix2+1);
 	  if(ix3>0) {
 		body=body.substring(ix2+1, ix3);
 	  } else {
@@ -5154,7 +5154,7 @@ public class Service extends BaseService {
 								" fileSize: "+upfile.getSize()+" "+
 								" }";
 						first = false;
-						html = StringUtils.replace(html, "cid:" + cid, "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId());
+						html = StringUtils.replace(html, "cid:" + cid, "service-request?service="+SERVICE_ID+"&csrf="+RunContext.getCSRFToken()+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 					}
 				}
 				sout += "\n ],\n";
@@ -6054,7 +6054,14 @@ public class Service extends BaseService {
             //String surl="PreviewAttachment\\?newmsgid\\="+msgid+"\\&cid\\=";
 				//String surl="PreviewAttachment?newmsgid="+msgid+"&amp;cid=";
 
-				//TODO: CIDs
+				//CIDs
+                String content=jsmsg.content;
+                String pattern1=Pattern.quote("service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
+                String pattern2=Pattern.quote("&amp;cid=");
+                content=StringUtils.replacePattern(content, pattern1+".*"+pattern2, "cid:");
+                pattern1=Pattern.quote("service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
+                pattern2=Pattern.quote("&cid=");
+                content=StringUtils.replacePattern(content, pattern1+".*"+pattern2, "cid:");
 				//String surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
 				//content = StringUtils.replace(content, surl, "cid:");
 				//surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
@@ -6064,8 +6071,8 @@ public class Service extends BaseService {
 				//content = StringUtils.replace(content, surl, "");
 				//surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
 				//content = StringUtils.replace(content, surl, "");
-				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(jsmsg.content));
-				String htmlcontent = MailUtils.htmlescapefixsource(jsmsg.content);
+				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
+				String htmlcontent = MailUtils.htmlescapefixsource(content);
 				msg.setContent(htmlcontent, textcontent, jsmsg.mime);
 			} else {
 				msg.setContent(jsmsg.content, null, jsmsg.mime);
