@@ -239,7 +239,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		'Sonicle.selection.RowModel',
 		'Sonicle.webtop.mail.plugin.MessageGridViewDragDrop',
 		'Sonicle.plugin.FilterBar',
-		'Sonicle.form.field.IconComboBox'
+		'Sonicle.form.field.IconComboBox',
+		'Sonicle.grid.column.Bytes'
 	],
 	
 	pageSize: 50,	
@@ -579,14 +580,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             filter: {}
         };
         dcols[n++]={//Dimension
+            xtype: 'sobytescolumn',
             header: me.res("column-size"),
             width: 50,
             sortable: true,
             dataIndex: 'size',
             hidden: me.multifolder,
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+/*            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
                 return WTU.humanReadableSize(parseInt(value));
-            },
+            },*/
             filter: { xtype: 'textfield'}
         };
         dcols[n++]={//Attachment

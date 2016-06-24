@@ -421,7 +421,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     }
                     vparams[i]=aparams;
                     ids[ids.length]=att.id;
-                    var ssize=WT.Util.humanReadableSize(att.size);
+                    var ssize=Sonicle.String.humanReadableSize(att.size);
 					var href=WTF.processBinUrl(me.mys.ID,"GetAttachment",aparams);
                     if (Ext.isIE) href+="&saveas=1";
                     var ics=null;
