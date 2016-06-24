@@ -91,7 +91,7 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
     padding: 0px 0px 0px 0px;
     margin: 0px 0px 0px 0px;
 }
-.wtmail-mv-table { width: 100%; height: 100%; }
+.wtmail-mv-table { width: 100%; height: 100%; background: white }
 .wtmail-mv-header { padding: 6px 6px 0px 6px; border: none; }
 .wtmail-mv-hsubject { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: bold; }
 .wtmail-mv-hfromname { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: plain; }

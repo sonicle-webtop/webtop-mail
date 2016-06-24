@@ -6057,21 +6057,21 @@ public class Service extends BaseService {
 
 				//CIDs
                 String content=jsmsg.content;
-                String pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
+                String pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&amp;csrf="+RunContext.getCSRFToken()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
                 String pattern2=RegexUtils.escapeRegexSpecialChars("&amp;cid=");
-                content=StringUtils.replacePattern(content, pattern1+".*"+pattern2, "cid:");
-                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
+                content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "cid:");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&csrf="+RunContext.getCSRFToken()+"&action=PreviewAttachment&nowriter=true&uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&cid=");
-                content=StringUtils.replacePattern(content, pattern1+".*"+pattern2, "cid:");
-				//String surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;cid=";
-				//content = StringUtils.replace(content, surl, "cid:");
-				//surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&cid=";
-				//content = StringUtils.replace(content, surl, "cid:");
-				//TODO: URLs
-				//surl = "service-request?service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;newmsgid=" + msgid + "&amp;url=";
-				//content = StringUtils.replace(content, surl, "");
-				//surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + msgid + "&url=";
-				//content = StringUtils.replace(content, surl, "");
+                content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "cid:");
+				
+                //URLs
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&amp;csrf="+RunContext.getCSRFToken()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
+                pattern2=RegexUtils.escapeRegexSpecialChars("&amp;url=");
+                content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&csrf="+RunContext.getCSRFToken()+"&action=PreviewAttachment&nowriter=true&uploadId=");
+                pattern2=RegexUtils.escapeRegexSpecialChars("&url=");
+                content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
+                
 				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
 				String htmlcontent = MailUtils.htmlescapefixsource(content);
 				msg.setContent(htmlcontent, textcontent, jsmsg.mime);

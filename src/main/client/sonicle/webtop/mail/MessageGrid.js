@@ -878,13 +878,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	replyMessage: function(r,all) {
-		var me=this,
-			idfolder=r.get('folder')||me.currentFolder;
-		
+        this.replyMessageById(r.get('folder')||this.currentFolder,r.get("idmessage"),all);        
+	},
+	
+	replyMessageById: function(idfolder,idmessage,all) {
+        var me=this;
+        
 		WT.ajaxReq(me.mys.ID, 'GetReplyMessage', {
 			params: {
 				folder: idfolder,
-				idmessage: r.get("idmessage"),
+				idmessage: idmessage,
 				replyall: (all?'1':'0')
 			},
 			callback: function(success,json) {
@@ -923,14 +926,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	forwardMessage: function(r,eml) {
-		var me=this,
-			idfolder=r.get('folder')||me.currentFolder,
-			msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
+        this.forwardMessageById(r.get('folder')||this.currentFolder,r.get("idmessage"),eml);
+	},
+	
+	forwardMessageById: function(idfolder,idmessage,eml) {
+		var me=this,msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
 		
 		WT.ajaxReq(me.mys.ID, 'GetForwardMessage', {
 			params: {
 				folder: idfolder,
-				idmessage: r.get("idmessage"),
+				idmessage: idmessage,
 				attached: eml?1:0,
 				newmsgid: msgId,
 			},
