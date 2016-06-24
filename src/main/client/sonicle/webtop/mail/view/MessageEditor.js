@@ -94,9 +94,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if (me.msgId===0) me.msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
 		
 		me.identities=me.mys.getOption("identities");
-		//save hashed identities, by email
+		//save hashed identities, by identityId
 		me.identHash={};
-		Ext.each(me.identities,function(ident) { me.identHash[ident.email]=ident},me);
+		Ext.each(me.identities,function(ident) { me.identHash[ident.identityId]=ident},me);
 		
         me.attcontainer=Ext.create('Ext.container.Container', {
             width: 250,
@@ -294,10 +294,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					queryMode: 'local',
 					displayField: 'description',
 					valueField: 'identityId',
-					width:me.customToolbarButtons?200:300,
+					width:me.customToolbarButtons?300:400,
 					matchFieldWidth: false,
 					listConfig: {
-						width: 300
+						width: 400
 					},
 					store: Ext.create('Ext.data.Store', {
 						model: 'Sonicle.webtop.mail.model.Identity',
@@ -609,7 +609,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 			"<table border=0 cellspacing=0 cellpadding=0 class='wtmail-table-editor-attachment'>",
 			  "<tr>",
 				"<td class='wtmail-td-editor-attachment-icon'>",
-					"<img src='{[WTF.resourceUrl(WT.ID,\"filetypes/\"+WT.Util.normalizeFileType(name)+\"_16.gif\")]}'>",
+					"<div class='{[WTF.fileTypeCssIconCls(WT.Util.getFileExtension(values['fileName']),'xs')]}' style='width:16px;height:16px'>",
 				"</td>",
 				"<td class='wtmail-td-editor-attachment-text'>",
 					"<a href='javascript:Ext.emptyFn()' title='{fileName}'>",

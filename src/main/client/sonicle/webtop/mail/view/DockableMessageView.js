@@ -75,18 +75,18 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 					iconCls: 'wt-icon-delete-xs'
 				}),
 				me.createAction("reply",{
-					hanlder: function() {
-						me.messageGrid.replyMessage(me.folder,me.idmessage,false);
+					handler: function() {
+						me.messageGrid.replyMessageById(me.folder,me.idmessage,false);
 					}
 				}),
 				me.createAction("replyall",{
 					handler: function() {
-						me.messageGrid.replyMessage(me.folder,me.idmessage,true);
+						me.messageGrid.replyMessageById(me.folder,me.idmessage,true);
 					}
 				}),
 				me.createAction("forward",{
-					hanlder: function() {
-						me.messageGrid.forwardMessage(me.folder,me.idmessage);
+					handler: function() {
+						me.messageGrid.forwardMessageById(me.folder,me.idmessage);
 					}
 				})
 			]

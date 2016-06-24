@@ -404,8 +404,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 for(var i=0;i<len;++i) {
                     var att=atts[i];
                     var name=att.name;
-                    var imgname=att.imgname;
-                    if (!imgname) imgname=WTF.resourceUrl(WT.ID,"/filetypes/"+WT.Util.normalizeFileType(name)+"_16.gif");
+                    var imgclass=WTF.fileTypeCssIconCls(WT.Util.getFileExtension(name),"xs");
                     var aparams;
                     if (!provider) {
                         aparams={
@@ -422,14 +421,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     }
                     vparams[i]=aparams;
                     ids[ids.length]=att.id;
-                    var ssize=WT.Util.humanReadableSize(att.size);
+                    var ssize=Sonicle.String.humanReadableSize(att.size);
 					var href=WTF.processBinUrl(me.mys.ID,"GetAttachment",aparams);
                     if (Ext.isIE) href+="&saveas=1";
                     var ics=null;
                     if (name.toLowerCase().endsWith(".ics")) ics=" ics='"+Ext.Object.toQueryString(aparams)+"'";
                     var eml=null;
                     if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
-                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+"><img src='"+imgname+"' width=16 height=16>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
+                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
