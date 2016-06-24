@@ -609,7 +609,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 			"<table border=0 cellspacing=0 cellpadding=0 class='wtmail-table-editor-attachment'>",
 			  "<tr>",
 				"<td class='wtmail-td-editor-attachment-icon'>",
-					"<img src='{[WTF.resourceUrl(WT.ID,\"filetypes/\"+WT.Util.normalizeFileType(name)+\"_16.gif\")]}'>",
+					"<div class='{[WTF.fileTypeCssIconCls(WT.Util.getFileExtension(values['fileName']),'xs')]}' style='width:16px;height:16px'>",
 				"</td>",
 				"<td class='wtmail-td-editor-attachment-text'>",
 					"<a href='javascript:Ext.emptyFn()' title='{fileName}'>",
