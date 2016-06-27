@@ -535,13 +535,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			var meditor=v.getView();
 			meditor.startNew({
 				subject: opts.subject||'',
-				receipt: me.getOption('receipt'),
-				priority: me.getOption('priority'),
+				receipt: opts.receipt||me.getOption('receipt'),
+				priority: opts.priority||me.getOption('priority'),
 				from: ident.email,
                 identityId: ident.identityId,
 				recipients: rcpts,
 				attachments: opts.attachments,
 				content: opts.content||'',
+                contentReady: opts.contentReady,
                 mime: opts.mime
 			});
 		});

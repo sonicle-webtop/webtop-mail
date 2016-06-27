@@ -960,6 +960,56 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
 	},
 	
+    actionOpenNew: function(rowIndex) {
+        var me=this,
+			recs=(rowIndex>=0)?
+				me.getStore().getAt(rowIndex):
+				me.getSelection();    
+        me.editMessage(recs[0],false);
+    },
+    
+    editMessage: function(r,del) {
+        this.editMessageById(r.get('folder')||this.currentFolder,r.get("idmessage"),del);
+    },
+    
+    editMessageById: function(idfolder,idmessage,del) {
+        var me=this,msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
+        
+		WT.ajaxReq(me.mys.ID, 'GetEditMessage', {
+			params: {
+				folder: idfolder,
+				idmessage: idmessage,
+                newmsgid: msgId
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					me.mys.startNewMessage(idfolder,{
+						subject: json.subject,
+						recipients: json.recipients,
+						content: json.content,
+                        contentReady: true,
+                        proprity: json.priority,
+						replyfolder: json.replyfolder,
+                        mime: json.mime,
+                        msgId: msgId,
+						attachments: json.attachments,
+						forwardedfolder: json.forwardedfolder,
+						forwardedfrom: json.forwardedfrom,
+						replyfolder: json.replyfolder,
+						inreplyto: json.inreplyto,
+						references: json.references,
+						origuid: json.origuid
+					});
+                    if (del) {
+                        //TODO: remove original
+                    }
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+    },
+	
     actionDelete: function() {
 		if (this.storeLoading) {
 			return;

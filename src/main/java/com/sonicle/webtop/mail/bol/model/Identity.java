@@ -80,11 +80,11 @@ public class Identity {
 		this.mainFolder=mainFolder;
 		this.fax=fax;
 		this.useMyPersonalInfos=useMyPersonalInfos;
-        buildId();
+        this.identityId=buildId(displayName,email);
 	}
     
-    private void buildId() {
-        this.identityId=new CompositeId(displayName,email).toString();
+    public static String buildId(String displayName, String email) {
+        return new CompositeId(displayName,email).toString();
     }
 
 	public String getType() {

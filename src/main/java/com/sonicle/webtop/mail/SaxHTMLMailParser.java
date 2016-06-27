@@ -373,9 +373,10 @@ public class SaxHTMLMailParser extends DefaultHandler {
         }
         cidUrl+="&cid="+XURLEncoder.encode(name);
     } else {
-        cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
+        /*cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
             "&newmsgid="+msguid+
-            "&cid="+XURLEncoder.encode(name);
+            "&cid="+XURLEncoder.encode(name);*/
+        cidUrl=avalue;
     }
 	mailData.addReferencedCid(name);
     return cidUrl;
@@ -412,9 +413,10 @@ public class SaxHTMLMailParser extends DefaultHandler {
         }
         cidUrl+="&url="+XURLEncoder.encode(avalue);
     } else {
-        cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
+        /*cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
             "&newmsgid="+msguid+
-            "&url="+XURLEncoder.encode(avalue);
+            "&url="+XURLEncoder.encode(avalue);*/
+        cidUrl=avalue;
     }
     return cidUrl;
   }

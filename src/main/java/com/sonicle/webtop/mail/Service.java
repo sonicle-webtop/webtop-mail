@@ -5191,14 +5191,12 @@ public class Service extends BaseService {
 		}
 	}
 	
-	// TODO: getEditMessage!!!
-/*
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
+		//CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
-		int newmsgid = Integer.parseInt(pnewmsgid);
+		long newmsgid = Long.parseLong(pnewmsgid);
 		String sout = null;
 		try {
 			checkStoreConnected();
@@ -5269,13 +5267,15 @@ public class Service extends BaseService {
 			sout += " receipt: " + receipt + ",\n";
 			sout += " priority: " + (priority >= 3 ? false : true) + ",\n";
 			
+            Identity ident=null;
 			Address from[]=m.getFrom();
 			if (from!=null && from.length>0) {
 				InternetAddress ia=(InternetAddress)from[0];
 				String email=ia.getAddress();
 				String displayname=ia.getPersonal();
 				if (displayname==null) displayname=email;
-				sout+=" from: { email: '"+StringEscapeUtils.escapeEcmaScript(email)+"', displayname: '"+StringEscapeUtils.escapeEcmaScript(displayname)+"' },\n";
+				//sout+=" from: { email: '"+StringEscapeUtils.escapeEcmaScript(email)+"', displayname: '"+StringEscapeUtils.escapeEcmaScript(displayname)+"' },\n";
+                ident=mprofile.getIdentityFromKey(Identity.buildId(displayname, email));
 			}
 			
 			sout += " recipients: [\n";
@@ -5288,8 +5288,8 @@ public class Service extends BaseService {
 							srec += ",\n";
 						}
 						srec += "   { "
-								+ "type: 'to', "
-								+ "address: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(to)) + "'"
+								+ "rtype: 'to', "
+								+ "email: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(to)) + "'"
 								+ " }";
 					}
 				}
@@ -5300,8 +5300,8 @@ public class Service extends BaseService {
 							srec += ",\n";
 						}
 						srec += "   { "
-								+ "type: 'cc', "
-								+ "address: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(cc)) + "'"
+								+ "rtype: 'cc', "
+								+ "email: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(cc)) + "'"
 								+ " }";
 					}
 				}
@@ -5312,14 +5312,20 @@ public class Service extends BaseService {
 							srec += ",\n";
 						}
 						srec += "   { "
-								+ "type: 'bcc', "
-								+ "address: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(bcc)) + "'"
+								+ "rtype: 'bcc', "
+								+ "email: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(bcc)) + "'"
 								+ " }";
 					}
 				}
 				
 				sout += srec;
-			}
+			} else {
+                sout += "   { "
+                        + "rtype: 'to', "
+                        + "email: ''"
+                        + " }";
+                
+            }
 			sout += " ],\n";
 			
 			String html = "";
@@ -5327,55 +5333,62 @@ public class Service extends BaseService {
 			for (String xhtml : htmlparts) {
 				html += xhtml + "<BR><BR>";
 			}
-			HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
-			boolean first = true;
-			sout += " attachments: [\n";
-			for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
-				Part part = maildata.getAttachmentPart(i);
-				String filename = part.getFileName();
-				if (filename != null) {
-					String cids[] = part.getHeader("Content-ID");
-					String cid = null;
-					//String cid=filename;
-					if (cids != null && cids[0] != null) {
-						cid = cids[0];
-						if (cid.startsWith("<")) {
-							cid = cid.substring(1);
-						}
-						if (cid.endsWith(">")) {
-							cid = cid.substring(0, cid.length() - 1);
-						}
-					}
-					File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
-					createFile(part.getInputStream(), tempFile);
-					boolean inline = false;
-					if (part.getDisposition() != null) {
-						inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
-					}
-					attachFile(newmsgid, tempFile, filename, part.getContentType(), cid, inline);
-					String tempname = tempFile.getName();
-					if (!first) {
-						sout += ",\n";
-					}
-					sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
-					first = false;
-				}
-			}
-			sout += "\n ],\n";
-
-            //Service.logger.debug("HTML newmsgid="+newmsgid);
-			//Service.logger.debug(html);
-			//String surl="service-requests?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
-			//html=replaceCidUrls(html, maildata, surl);
-			sout += " html:'" + StringEscapeUtils.escapeEcmaScript(html) + "'\n";
+            HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
+            boolean first = true;
+            sout += " attachments: [\n";
+            for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
+                Part part = maildata.getAttachmentPart(i);
+                String filename = getPartName(part);
+                if (filename != null) {
+                    String cids[] = part.getHeader("Content-ID");
+                    String cid = null;
+                    //String cid=filename;
+                    if (cids != null && cids[0] != null) {
+                        cid = cids[0];
+                        if (cid.startsWith("<")) cid=cid.substring(1);
+                        if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
+                    }
+                    String mime=part.getContentType();
+                    UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
+                    //File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
+                    //createFile(part.getInputStream(), tempFile);
+                    boolean inline = false;
+                    if (part.getDisposition() != null) {
+                        inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
+                    }
+                    //maildata.setCidProperties(cid, new CidProperties(cid,inline,upfile));
+                    //attachFile(newmsgid, tempFile, filename, part.getContentType(), cid, inline);
+                    //String tempname = tempFile.getName();
+                    if (!first) {
+                        sout += ",\n";
+                    }
+                    sout += "{ "+
+                            " uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
+                            " fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
+                            " cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
+                            " inline: "+inline+", "+
+                            " fileSize: "+upfile.getSize()+" "+
+                            " }";
+                    first = false;
+                    html = StringUtils.replace(html, "cid:" + cid, "service-request?service="+SERVICE_ID+"&csrf="+RunContext.getCSRFToken()+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+                }
+            }
+            sout += "\n ],\n";
+            
+            if (ident!=null) sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
+			sout += " origuid:"+puidmessage+",\n";
+			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
+            sout += " mime:'text/html'\n";
 			sout += "\n}";
+            
+
 			out.println(sout);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 	}
-*/
+
 	// TODO: getEditProviderMessage!!!
 /*    public void processGetEditProviderMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 String providername=request.getParameter("provider");

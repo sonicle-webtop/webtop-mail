@@ -443,7 +443,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	startNew: function(data) {
 		var me=this;
-		data.content=me.prepareContent(data.content,data.mime);
+		if (!data.contentReady) data.content=me.prepareContent(data.content,data.mime);
 		me.beginNew({
 			data: data
 		});
