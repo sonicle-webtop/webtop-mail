@@ -1154,7 +1154,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				el.addCls('wt-element-toclick-selected');
                 el.ctxMenu.activeElement=el;
                 el.ctxMenu.on('hide',function() {
-                    this.activeElement.removeClass('wt-element-toclick-selected');
+                    this.activeElement.removeCls('wt-element-toclick-selected');
                 },this.ctxMenu);
                 this.ctxMenu.showAt(e.getXY());
             }

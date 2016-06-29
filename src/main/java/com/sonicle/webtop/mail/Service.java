@@ -61,6 +61,7 @@ import com.sonicle.webtop.core.dal.UserDAO;
 //import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.UserProfile.Data;
+import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OUserMap;
@@ -7610,12 +7611,12 @@ public class Service extends BaseService {
 					if (ix > 0) {
 						fname = ctype.substring(ix + 1);
 					}
-					String ext = WT.getMediaTypeExtension(ctype);
-					if (ext == null) {
+					//String ext = WT.getMediaTypeExtension(ctype);
+					//if (ext == null) {
 						pname = fname;
-					} else {
-						pname = fname + "." + ext;
-					}
+					//} else {
+					//	pname = fname + "." + ext;
+					//}
 				}
 				int size = p.getSize();
 				int lines = (size / 76);
@@ -8098,8 +8099,8 @@ public class Service extends BaseService {
 				if (psaveas==null) {
 					int ix=name.lastIndexOf(".");
 					if (ix>0) {
-						String ext=name.substring(ix+1);
-						String xctype=WT.getMediaType(ext);
+						//String ext=name.substring(ix+1);
+						String xctype=ServletHelper.guessMediaType(name);
 						if (xctype!=null) ctype=xctype;
 					}
 				}
