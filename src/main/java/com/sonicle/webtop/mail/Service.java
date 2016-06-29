@@ -7610,7 +7610,7 @@ public class Service extends BaseService {
 					if (ix > 0) {
 						fname = ctype.substring(ix + 1);
 					}
-					String ext = WT.getExtension(ctype);
+					String ext = WT.getMediaTypeExtension(ctype);
 					if (ext == null) {
 						pname = fname;
 					} else {
@@ -8099,7 +8099,7 @@ public class Service extends BaseService {
 					int ix=name.lastIndexOf(".");
 					if (ix>0) {
 						String ext=name.substring(ix+1);
-						String xctype=WT.getContentType(ext);
+						String xctype=WT.getMediaType(ext);
 						if (xctype!=null) ctype=xctype;
 					}
 				}
