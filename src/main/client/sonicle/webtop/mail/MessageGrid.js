@@ -491,14 +491,18 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
         };
         dcols[n++]={//Status
-            header: '<i class="wtmail-icon-header-status-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
-			cls: 'wtmail-header-text-clip',
+            xtype: 'soiconcolumn',
+            header: WTF.headerWithGlyphIcon('fa fa-eye'),
+			//cls: 'wtmail-header-text-clip',
             width: 28,
             sortable: true,
             menuDisabled: true,
             dataIndex: 'unread',
             hidden: false,
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+            iconField: function(v,rec) {
+                return 'wtmail-icon-status-'+(value?'seen':'unseen')+'-xs';
+            },
+            /*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					//var sdate=record.get("scheddate");
 					//if (sdate) value="scheduled";
 					var imgname=Ext.String.format("status{0}_16.png",value?'unread':'read');
@@ -506,7 +510,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
 					//else tag=imgtag;
 					return imgtag;
-			},
+			},*/
 			scope: me,
 			filter: {
 				xtype: 'soiconcombobox',
