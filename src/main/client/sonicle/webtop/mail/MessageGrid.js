@@ -275,7 +275,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	features: [
 		{
 			ftype:'grouping',
-			groupHeaderTpl: '{columnName}: {name}'
+			groupHeaderTpl: '{columnName}: {name}',
+            onColumnMove: function() {
+                console.log('onColumnMove overridden!');
+            }
 			/*groupHeaderTpl: Ext.create('Ext.XTemplate',
 				'{children:this.getHeaderPrefix}',
 				'<span>{children:this.getHeaderString}</span>',
@@ -387,7 +390,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			leadingBufferZone: 50,
 			trailingBufferZone: 50,
 			model: smodel,
-			pageSize: me.pageSize
+			pageSize: me.pageSize,
 		});
         me.store.on("metachange",function(s,meta) {
 			if (meta.groupField && meta.groupField!=='none' && meta.groupField!=='') {

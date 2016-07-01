@@ -543,7 +543,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				attachments: opts.attachments,
 				content: opts.content||'',
                 contentReady: opts.contentReady,
-                mime: opts.mime
+                mime: opts.mime,
+                replyfolder: opts.replyfolder,
+                inreplyto: opts.inreplyto,
+                references: opts.references,
+                origuid: opts.origuid,
+                forwardedfolder: opts.forwardedfolder,
+                forwardedfrom: opts.forwardedfrom
 			});
 		});
 	},
