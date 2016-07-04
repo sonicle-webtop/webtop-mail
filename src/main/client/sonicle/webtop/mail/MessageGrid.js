@@ -500,7 +500,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             dataIndex: 'unread',
             hidden: false,
             iconField: function(v,rec) {
-                return 'wtmail-icon-status-'+(value?'seen':'unseen')+'-xs';
+                return 'wtmail-icon-status-'+(v?'seen':'unseen')+'-xs';
             },
             /*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					//var sdate=record.get("scheddate");
@@ -523,10 +523,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				store: [
 					['','\u00a0',''],
 					['unread','\u00a0','wtmail-icon-status-unread-xs'],
-					['new','\u00a0','wtmail-icon-status-new-xs'],
-					['replied','\u00a0','wtmail-icon-status-replied-xs'],
-					['forwarded','\u00a0','wtmail-icon-status-forwarded-xs'],
-					['repfwd','\u00a0','wtmail-icon-status-replied-forwarded-xs'],
+//					['new','\u00a0','wtmail-icon-status-new-xs'],
+//					['replied','\u00a0','wtmail-icon-status-replied-xs'],
+//					['forwarded','\u00a0','wtmail-icon-status-forwarded-xs'],
+//					['repfwd','\u00a0','wtmail-icon-status-replied-forwarded-xs'],
 					['read','\u00a0','wtmail-icon-status-read-xs']
 				]
 			}
