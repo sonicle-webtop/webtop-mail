@@ -46,6 +46,8 @@
 .wtmail-icon-header-status-xs { background-image: url('headerstatus_16.gif') !important; background-repeat: no-repeat; background-position: center; }
 .wtmail-icon-status-unread-xs { background-image: url('statusread_16.png') !important; }
 .wtmail-icon-status-read-xs { background-image: url('statusunread_16.png') !important; }
+.wtmail-icon-status-unseen-xs { background-image: url('status-seen_16.png') !important; }
+.wtmail-icon-status-seen-xs { background-image: url('status-unseen_16.png') !important; }
 .wtmail-icon-status-new-xs { background-image: url('statusnew_16.png') !important; }
 .wtmail-icon-status-replied-xs { background-image: url('statusreplied_16.png') !important; }
 .wtmail-icon-status-forwarded-xs { background-image: url('statusforwarded_16.png') !important; }

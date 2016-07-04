@@ -2204,7 +2204,7 @@ public class Service extends BaseService {
 					mbps[e].setFileName(contentFileName);
 					String contentType = upfile.getMediaType() + "; name=\"" + contentFileName + "\"";
 					mbps[e].setHeader("Content-type", contentType);
-					if (attach.cid != null) {
+					if (attach.cid != null && attach.cid.trim().length()>0) {
 						mbps[e].setHeader("Content-ID", "<" + attach.cid + ">");
 						mbps[e].setHeader("X-Attachment-Id", attach.cid);
 						mbps[e].setDisposition(Part.INLINE);

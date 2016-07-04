@@ -472,7 +472,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         mp.filterTextField.setValue('');
 		mp.quickFilterCombo.setValue('any');
         
-        mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh});
+        mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any'});
 	}, 
 	
 	unreadChanged: function(cfg,unreadOnly) {
@@ -543,7 +543,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				attachments: opts.attachments,
 				content: opts.content||'',
                 contentReady: opts.contentReady,
-                mime: opts.mime
+                mime: opts.mime,
+                replyfolder: opts.replyfolder,
+                inreplyto: opts.inreplyto,
+                references: opts.references,
+                origuid: opts.origuid,
+                forwardedfolder: opts.forwardedfolder,
+                forwardedfrom: opts.forwardedfrom
 			});
 		});
 	},

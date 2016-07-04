@@ -275,7 +275,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	features: [
 		{
 			ftype:'grouping',
-			groupHeaderTpl: '{columnName}: {name}'
+			groupHeaderTpl: '{columnName}: {name}',
+            onColumnMove: function() {
+                console.log('onColumnMove overridden!');
+            }
 			/*groupHeaderTpl: Ext.create('Ext.XTemplate',
 				'{children:this.getHeaderPrefix}',
 				'<span>{children:this.getHeaderString}</span>',
@@ -387,7 +390,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			leadingBufferZone: 50,
 			trailingBufferZone: 50,
 			model: smodel,
-			pageSize: me.pageSize
+			pageSize: me.pageSize,
 		});
         me.store.on("metachange",function(s,meta) {
 			if (meta.groupField && meta.groupField!=='none' && meta.groupField!=='') {
@@ -488,22 +491,26 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
         };
         dcols[n++]={//Status
-            header: '<i class="wtmail-icon-header-status-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
-			cls: 'wtmail-header-text-clip',
+            xtype: 'soiconcolumn',
+            header: WTF.headerWithGlyphIcon('fa fa-eye'),
+			//cls: 'wtmail-header-text-clip',
             width: 28,
             sortable: true,
             menuDisabled: true,
-            dataIndex: 'status',
+            dataIndex: 'unread',
             hidden: false,
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+            iconField: function(v,rec) {
+                return 'wtmail-icon-status-'+(value?'seen':'unseen')+'-xs';
+            },
+            /*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					//var sdate=record.get("scheddate");
 					//if (sdate) value="scheduled";
-					var imgname=Ext.String.format("status{0}_16.png",value);
+					var imgname=Ext.String.format("status{0}_16.png",value?'unread':'read');
 					var imgtag=WTF.imageTag(me.mys.ID,imgname,16,16);
 					//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
 					//else tag=imgtag;
 					return imgtag;
-			},
+			},*/
 			scope: me,
 			filter: {
 				xtype: 'soiconcombobox',
@@ -544,6 +551,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             width: 400,
             sortable: true,
             dataIndex: 'subject',
+            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+                var status=record.get("status");
+                var imgtag="";
+                if (status!=="read" && status!=="unread") {
+                    var imgname=Ext.String.format("status{0}_16.png",status);
+                    imgtag=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";
+                }
+                return imgtag+value;
+			},
             filter: { xtype: 'textfield'}
         };
         dcols[n++]={//Date
