@@ -248,6 +248,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     enableColumnMove: true,
 	viewConfig: {
 		//preserveScrollOnRefresh: true,
+        markDirty: false,
 		navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
 		getRowClass: function(record, index, rowParams, store ) {
 			var unread=record.get('unread');
@@ -491,7 +492,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
         };
         dcols[n++]={//Status
-            xtype: 'soiconcolumn',
+            //xtype: 'soiconcolumn',
+            xtype:'actioncolumn',
             header: WTF.headerWithGlyphIcon('fa fa-eye'),
 			//cls: 'wtmail-header-text-clip',
             width: 28,
@@ -499,9 +501,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             menuDisabled: true,
             dataIndex: 'unread',
             hidden: false,
-            iconField: function(v,rec) {
-                return 'wtmail-icon-status-'+(v?'seen':'unseen')+'-xs';
-            },
+            items: [{
+                getClass: function(v,md,r,rix,cix,s) {
+                    return 'wtmail-icon-status-'+(v?'seen':'unseen')+'-xs';
+                },
+                handler: function(grid, rix, cix, item, e, rec) {
+                    var newunread=!rec.get('unread');
+                    me.markMessageSeenState(rec,!newunread);
+                }
+            }],
             /*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 					//var sdate=record.get("scheddate");
 					//if (sdate) value="scheduled";
@@ -512,7 +520,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					return imgtag;
 			},*/
 			scope: me,
-			filter: {
+/*			filter: {
 				xtype: 'soiconcombobox',
 				editable: false,
 				width: 24,
@@ -523,13 +531,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				store: [
 					['','\u00a0',''],
 					['unread','\u00a0','wtmail-icon-status-unread-xs'],
-//					['new','\u00a0','wtmail-icon-status-new-xs'],
-//					['replied','\u00a0','wtmail-icon-status-replied-xs'],
-//					['forwarded','\u00a0','wtmail-icon-status-forwarded-xs'],
-//					['repfwd','\u00a0','wtmail-icon-status-replied-forwarded-xs'],
 					['read','\u00a0','wtmail-icon-status-read-xs']
 				]
-			}
+			}*/
         };
         dcols[n++]={//From
             header: me.res("column-from"),
@@ -1284,6 +1288,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 		}
         me.markMessagesSeenState(from,data,seen);
+    },
+    
+    markMessageSeenState: function(r,seen) {
+        var me=this,
+            folder=me.multifolder?r.get("fromfolder"):me.currentFolder,
+            data={ 
+                ids: [ r.get("idmessage") ],
+                multifolder: me.multifolder,
+                cb: function() {
+                    me.updateRecordSeenState(r,seen);
+                }
+            };
+        me.markMessagesSeenState(folder,data,seen);
     },
 
     markMessagesSeenState: function(folder,data,seen) {
