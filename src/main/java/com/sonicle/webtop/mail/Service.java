@@ -5541,9 +5541,10 @@ public class Service extends BaseService {
 			
 			//TODO save used recipients
 			//Save used recipients
-			/*for(String email: emails) {
-					if (email!=null && email.trim().length()>0) wts.setServiceStoreEntry(getName(), "recipients", email.toUpperCase(),email);
-			}*/
+			for(JsRecipient rcpt: pl.data.recipients) {
+                String email=rcpt.email;
+				if (email!=null && email.trim().length()>0) WT.getCoreManager().addServiceStoreEntry(SERVICE_ID, "recipients", email.toUpperCase(),email);
+			}
 			//TODO save used subject
 			//Save used subject
 			/*String subject=request.getParameter("subject");
