@@ -556,11 +556,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             sortable: true,
             dataIndex: 'subject',
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-                var status=record.get("status");
-                var imgtag="";
+                var status=record.get("status"),
+                    imgtag="",
+                    tindent=record.get("threadIndent");
+                for(var i=0;i<tindent;++i) imgtag+="&nbsp;&nbsp;";
                 if (status!=="read" && status!=="unread") {
                     var imgname=Ext.String.format("status{0}_16.png",status);
-                    imgtag=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";
+                    imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";
                 }
                 return imgtag+value;
 			},
@@ -835,13 +837,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 		}*/
 		
-		//TODO: discussions
-		/*
-		if (s.reader.jsonData.threaded===1) {
-			this.ms.messagesPanel.pressDiscussionsButton();
-		} else {
-			this.ms.messagesPanel.depressDiscussionsButton();
-		}*/
         /*
         if (!this.multifolder) {
             var b=s.reader.jsonData.issent;

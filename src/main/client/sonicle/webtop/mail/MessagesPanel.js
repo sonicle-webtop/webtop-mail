@@ -51,6 +51,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     filterCombo: null,
     groupCombo: null,
     bMultiSearch: null,
+    bThreaded: null,
     folderList: null,
     messageView: null,
     messageViewContainer: null,
@@ -172,6 +173,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             var gg=meta.groupField;
 			if (gg==='') gg='none';
             me.groupCombo.setValue(gg);
+            me.bThreaded.toggle(meta.threaded);
         });
         
         me.toolbar=Ext.create('Ext.toolbar.Toolbar',{ 
@@ -185,7 +187,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				me.mys._TB("advsearch"),
                 "-",
                 me.res("groupby")+":",
-                me.groupCombo
+                me.groupCombo,
+                me.bThreaded=me.mys._TB("threaded")
             ]
 		});
 
@@ -415,7 +418,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         else me.folderList.hideFilterBar();
     },
 
-    
+	actionThreaded: function() {
+        var me=this;
+		me.reloadFolder(me.currentFolder,{
+			threaded: me.bThreaded.pressed?1:0
+		});
+        me.folderList.focus();
+    },    
     
     clearGridSelections: function() {
         this.folderList.getSelectionModel().deselectAll();

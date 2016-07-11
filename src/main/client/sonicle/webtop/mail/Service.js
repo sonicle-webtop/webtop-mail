@@ -282,6 +282,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
         //me.addAction("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
         me.addAction("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv-xs' });
+        me.addAction("threaded",{ handler: function() { me.messagesPanel.actionThreaded(); }, iconCls: 'wtmail-icon-threaded-xs', enableToggle: true });
         me.addAction("emptyfolder",{ handler: me.actionEmptyFolder, scope: me });
         me.addAction("deletefolder",{ handler: me.actionDeleteFolder, scope: me, iconCls: 'wt-icon-delete-xs' });
         me.addAction("renamefolder",{ handler: me.actionRenameFolder, scope: me });
@@ -472,7 +473,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         mp.filterTextField.setValue('');
 		mp.quickFilterCombo.setValue('any');
         
-        mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any'});
+        mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2});
 	}, 
 	
 	unreadChanged: function(cfg,unreadOnly) {

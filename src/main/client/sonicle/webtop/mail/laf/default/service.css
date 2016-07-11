@@ -27,7 +27,7 @@
 .wtmail-icon-markunseen-xs { background-image: url('statusunread_16.png') !important; }
 /*.wtmail-icon-filters-xs { background-image: url('filters_16.png') !important; }
 .wtmail-icon-newfilter-xs { background-image: url('filters_16.png') !important; }*/
-.wtmail-icon-discussions-xs { background-image: url('discussions_16.png') !important; }
+.wtmail-icon-threaded-xs { background-image: url('threaded_16.png') !important; }
 .wtmail-icon-movetofolder-xs { background-image: url('movetofolder_16.png') !important; }
 .wtmail-icon-mailcardedit-xs { background-image: url('mailcard_edit_16.png') !important; }
 .wtmail-icon-mailcardremove-xs { background-image: url('mailcard_remove_16.png') !important; }

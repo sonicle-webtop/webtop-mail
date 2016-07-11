@@ -6766,7 +6766,7 @@ public class Service extends BaseService {
 		String ppattern = request.getParameter("pattern");
 		String pquickfilter=request.getParameter("quickfilter");
 		String prefresh = request.getParameter("refresh");
-        String pthreaded=null; //request.getParameter("threaded");
+        String pthreaded=request.getParameter("threaded");
 		if (psearchfield != null && psearchfield.trim().length() == 0) {
 			psearchfield = null;
 		}
@@ -6777,14 +6777,12 @@ public class Service extends BaseService {
 		boolean refresh = (prefresh != null && prefresh.equals("true"));
 		boolean threaded=(pthreaded!=null && pthreaded.equals("1"));
 		
-		/*
-		//DISABLE THREADING
-		String threadedSetting="list-threaded-"+pfoldername;
+		//String threadedSetting="list-threaded-"+pfoldername;
 		if (pthreaded==null || pthreaded.equals("2")) {
 			threaded=us.isMessageListThreaded(pfoldername);
 		} else {
-			us.setMessageListThreaded(pfoldername, true);
-		}*/
+			us.setMessageListThreaded(pfoldername, threaded);
+		}
 		
 		if (isSpecialFolder(pfoldername) || isSharedFolder(pfoldername)) {
 			logger.debug("folder is special or shared, refresh forced");
@@ -7117,11 +7115,11 @@ public class Service extends BaseService {
 						}
 						else subject="";
 
-						/*if (threaded) {
-							int n=xm.getThreadIndent();
-							if (n>0) {
+                        int tIndent=xm.getThreadIndent();
+/*						if (threaded) {
+							if (tIndent>0) {
 								StringBuffer sb=new StringBuffer();
-								for(int w=0;w<n;++w) sb.append('-');
+								for(int w=0;w<tIndent;++w) sb.append("&nbsp;");
 								subject=sb+subject;
 							}
 						}*/
@@ -7257,6 +7255,7 @@ public class Service extends BaseService {
 							+ "to:'" + to + "',"
 							+ "from:'" + from + "',"
 							+ "subject:'" + subject + "',"
+                            + "threadIndent:"+tIndent+","
 							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
 							+ "gdate: '" + gdate + "',"
 							+ "sdate: '" + sdate + "',"
@@ -7303,6 +7302,7 @@ public class Service extends BaseService {
 						+ "  root: 'messages', total: 'total', idProperty: 'idmessage',\n"
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
+                        + "  threaded: "+threaded+",\n"
 						+ "  groupField: '" + group + "',\n";
 				
 				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
