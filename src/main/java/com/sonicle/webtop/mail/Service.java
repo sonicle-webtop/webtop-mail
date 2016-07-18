@@ -6775,14 +6775,14 @@ public class Service extends BaseService {
 		}
 		if (pquickfilter!=null && pquickfilter.trim().length()==0) pquickfilter=null;
 		boolean refresh = (prefresh != null && prefresh.equals("true"));
-		boolean threaded=(pthreaded!=null && pthreaded.equals("1"));
+		//boolean threaded=(pthreaded!=null && pthreaded.equals("1"));
 		
 		//String threadedSetting="list-threaded-"+pfoldername;
-		if (pthreaded==null || pthreaded.equals("2")) {
-			threaded=us.isMessageListThreaded(pfoldername);
-		} else {
-			us.setMessageListThreaded(pfoldername, threaded);
-		}
+		//if (pthreaded==null || pthreaded.equals("2")) {
+		//	threaded=us.isMessageListThreaded(pfoldername);
+		//} else {
+		//	us.setMessageListThreaded(pfoldername, threaded);
+		//}
 		
 		if (isSpecialFolder(pfoldername) || isSharedFolder(pfoldername)) {
 			logger.debug("folder is special or shared, refresh forced");
@@ -6793,6 +6793,7 @@ public class Service extends BaseService {
 		if (group == null) {
 			group = "";
 		}
+		boolean threaded=group.equals("threadId");
 
 		String psortfield = "date";
 		String psortdir = "DESC";

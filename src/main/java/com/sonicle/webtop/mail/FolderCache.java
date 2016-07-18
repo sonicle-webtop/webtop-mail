@@ -1429,13 +1429,8 @@ public class FolderCache {
 			
 			open();
 			
-			/*boolean hasrefs=((IMAPStore)folder.getStore()).hasCapability("THREAD=REFS");
+			boolean hasrefs=((IMAPStore)folder.getStore()).hasCapability("THREAD=REFS");
 			String method=hasrefs?"REFS":"REFERENCES";
-			boolean simplified=!hasrefs;
-			Service.logger.debug("THREAD: using method "+method+" simplified="+simplified);
-			*/
-			String method="REFERENCES";
-			//String method="REFS";
 			FetchProfile fp=ms.getMessageFetchProfile();
 			try {
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,term,fp);

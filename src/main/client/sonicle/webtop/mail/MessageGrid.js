@@ -320,6 +320,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     firstShow: true,
 	key2flag: ['clear','red','orange','green','blue','purple','yellow','black','gray','white'],
 	createPagingToolbar: false,
+	threaded: false,
 	
     /**
      * @event keydelete
@@ -393,7 +394,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				},
 				reader: {
 					rootProperty: 'messages',
-					totalProperty: 'total'
+					totalProperty: 'total',
+					idProperty: 'idmessage'
 				}
 			},
 			//purgePageCount: 3,
@@ -407,10 +409,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				s.blockLoad();
 				s.group(null, null);
 				s.group(meta.groupField, meta.sortInfo.direction);
+				me.threaded=meta.threaded;
 				s.unblockLoad(false);
 			} else {
 				s.blockLoad();
 				s.group(null, null);
+				me.threaded=false;
 				s.unblockLoad(false);
 				//s.sort(meta.sortInfo.sortField,meta.sortInfo.direction);
 			}
@@ -566,9 +570,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             dataIndex: 'subject',
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
                 var status=record.get("status"),
-                    imgtag="",
-                    tindent=record.get("threadIndent");
-                for(var i=0;i<tindent;++i) imgtag+="&nbsp;&nbsp;&nbsp;";
+                    imgtag="";
+			
+				if (me.threaded) {
+                    var tindent=record.get("threadIndent");
+					for(var i=0;i<tindent;++i) imgtag+="&nbsp;&nbsp;&nbsp;";
+				}
                 if (status!=="read" && status!=="unread") {
                     var imgname=Ext.String.format("status{0}_16.png",status);
                     imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";

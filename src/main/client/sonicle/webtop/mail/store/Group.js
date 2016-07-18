@@ -43,7 +43,8 @@ Ext.define('Sonicle.webtop.mail.store.Group', {
 		['none'],
 		['gdate'],
 		['from'],
-		['to']
+		['to'],
+		['threadId']
 	]
 	
 });
