@@ -1436,13 +1436,14 @@ public class FolderCache {
 			*/
 			String method="REFERENCES";
 			//String method="REFS";
+			FetchProfile fp=ms.getMessageFetchProfile();
 			try {
-				tmsgs=((SonicleIMAPFolder)folder).thread(method,term);
+				tmsgs=((SonicleIMAPFolder)folder).thread(method,term,fp);
 			} catch(Exception exc) {
 				Service.logger.debug("**************Retrying thread*********************");
 				close();
 				open();
-				tmsgs=((SonicleIMAPFolder)folder).thread(method,term);
+				tmsgs=((SonicleIMAPFolder)folder).thread(method,term,fp);
 			}
 		}
 		

@@ -6998,6 +6998,8 @@ public class Service extends BaseService {
 				//Fetch others for these messages
 				//System.out.println("start="+start+",limit="+limit+",max="+max);
 				mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
+				long tId=0;
+
 				for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 					int ix = start + i;
 					int nx = start + ni;
@@ -7116,6 +7118,7 @@ public class Service extends BaseService {
 						else subject="";
 
                         int tIndent=xm.getThreadIndent();
+						if (tIndent==0) tId=nuid;
 /*						if (threaded) {
 							if (tIndent>0) {
 								StringBuffer sb=new StringBuffer();
@@ -7255,6 +7258,7 @@ public class Service extends BaseService {
 							+ "to:'" + to + "',"
 							+ "from:'" + from + "',"
 							+ "subject:'" + subject + "',"
+							+ "threadId: "+tId+","
                             + "threadIndent:"+tIndent+","
 							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
 							+ "gdate: '" + gdate + "',"
@@ -7303,7 +7307,7 @@ public class Service extends BaseService {
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
                         + "  threaded: "+threaded+",\n"
-						+ "  groupField: '" + group + "',\n";
+						+ "  groupField: '" + (threaded?"threadId":group) + "',\n";
 				
 				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
 				ColumnsOrderSetting cos = us.getColumnsOrderSetting();

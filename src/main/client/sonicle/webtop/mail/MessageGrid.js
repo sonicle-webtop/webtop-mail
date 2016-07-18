@@ -173,6 +173,8 @@ Ext.define('Sonicle.webtop.mail.NavigationModel',{
 	
 });
 
+
+
 Ext.define('Sonicle.webtop.mail.MessagesModel',{
 	extend: 'Ext.data.Model',
 	idProperty: 'idmessage',
@@ -183,6 +185,8 @@ Ext.define('Sonicle.webtop.mail.MessagesModel',{
         { name: 'from' },
         { name: 'to' },
         { name: 'subject' },
+        { name: "threadId", type: 'int' },
+        { name: "threadIndent", type: 'int' },
         { name: 'date', type:'date' },
 		{ name: 'fmtd', type:'boolean'},
 		{ name: 'fromfolder' },
@@ -214,6 +218,8 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
         { name: 'from' },
         { name: 'to' },
         { name: 'subject' },
+        { name: "threadId", type: 'int' },
+        { name: "threadIndent", type: 'int' },
         { name: 'date', type:'date' },
 		{ name: 'fmtd', type:'boolean'},
 		{ name: 'fromfolder' },
@@ -276,23 +282,26 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	features: [
 		{
 			ftype:'grouping',
-			groupHeaderTpl: '{columnName}: {name}',
+			//groupHeaderTpl: '{columnName}: {name}',
+			groupHeaderTpl: Ext.create('Ext.XTemplate',
+				'{[this.formatColumnName(values)]}: {[this.formatName(parent,values)]}',
+				{
+					formatColumnName: function(v) {
+						if (v.groupField==='threadId') return WT.res('word.thread');
+						return v.columnName;
+					},
+					formatName: function(p,v) {
+						if (v.groupField==='threadId') {
+							var rec=p.view.store.findRecord("idmessage",v.name);
+							if (rec) return rec.get("subject");
+						}
+						return v.name;
+					}
+				}
+			),
             onColumnMove: function() {
                 console.log('onColumnMove overridden!');
             }
-			/*groupHeaderTpl: Ext.create('Ext.XTemplate',
-				'{children:this.getHeaderPrefix}',
-				'<span>{children:this.getHeaderString}</span>',
-				{
-					getHeaderPrefix: function(children) {
-						var xdate=children[0].get("xdate");
-						return (xdate.length>0)?xdate+"&nbsp;:&nbsp;":"";
-					},
-					getHeaderString: function(children) {
-						return children[0].get("gdate");
-					}
-				}
-			)*/
 		}
 	],
 	selModel: { 
