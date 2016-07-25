@@ -88,7 +88,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.folderList.on('cellclick',me.cellClicked,me);
 		//trick to reset unreads on empty folders' nodes
 		me.folderList.on('load',function(g,foldername,data) {
-			if (data.total && data.total===0)
+			if (data && data.total && data.total===0)
 				me.mys.unreadChanged({
 					foldername: foldername,
 					unread: 0
