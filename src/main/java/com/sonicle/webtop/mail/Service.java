@@ -377,19 +377,21 @@ public class Service extends BaseService {
 							}
 							if (!foundWebtopScript) rebuildScript=true;
 						}
-						if (rebuildScript) {
-							logger.debug("No Sieve scripts for {}. Creating from database.", profile.getUserId());
-							Connection con=null;
-							try {
-								con=getConnection();
-								MailFilters filters=getMailFilters(con,"mailfilters",profile.getUserId(), profile.getDomainId());
-								if (filters!=null) sieve.saveScript(filters, true);
-							} catch(SQLException exc) {
-								logger.error("Error getting connection while trying to save Sieve script", exc);
-							} finally {
-								DbUtils.closeQuietly(con);
-							}
-						}						
+						
+						//TODO: rebuild sieve script
+						//if (rebuildScript) {
+						//	logger.debug("No Sieve scripts for {}. Creating from database.", profile.getUserId());
+						//	Connection con=null;
+						//	try {
+						//		con=getConnection();
+						//		MailFilters filters=getMailFilters(con,"mailfilters",profile.getUserId(), profile.getDomainId());
+						//		if (filters!=null) sieve.saveScript(filters, true);
+						//	} catch(SQLException exc) {
+						//		logger.error("Error getting connection while trying to save Sieve script", exc);
+						//	} finally {
+						//		DbUtils.closeQuietly(con);
+						//	}
+						//}						
 					} catch (Exception exc) {
 						Service.logger.error("Exception",exc);
 					}

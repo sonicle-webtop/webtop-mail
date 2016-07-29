@@ -238,6 +238,36 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
 	]
 });
 
+Ext.define('Sonicle.webtop.mail.GridFeatureGrouping', {
+	extend: 'Ext.grid.feature.Grouping',
+	alias: 'feature.mailgrouping',
+	/*init: function() {
+		var me=this;
+		me.callParent(arguments);
+		me.collapsible = true;
+	},*/
+	//groupHeaderTpl: '{columnName}: name',
+/*	groupHeaderTpl: Ext.create('Ext.XTemplate',
+		'{[this.formatColumnName(values)]}: {[this.formatName(parent,values)]}',
+		{
+			formatColumnName: function(v) {
+				if (v.groupField==='threadId') return WT.res('word.thread');
+				return v.columnName;
+			},
+			formatName: function(p,v) {
+				if (v.groupField==='threadId') {
+					var rec=p.view.store.findRecord("idmessage",v.name);
+					if (rec) return rec.get("subject");
+				}
+				return v.name;
+			}
+		}
+	),*/
+	onColumnMove: function() {
+		console.log('onColumnMove overridden!');
+	}
+});
+
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	extend: 'Ext.grid.Panel',
 	requires: [
@@ -281,27 +311,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
 	features: [
 		{
-			ftype:'grouping',
-			//groupHeaderTpl: '{columnName}: {name}',
-			groupHeaderTpl: Ext.create('Ext.XTemplate',
-				'{[this.formatColumnName(values)]}: {[this.formatName(parent,values)]}',
-				{
-					formatColumnName: function(v) {
-						if (v.groupField==='threadId') return WT.res('word.thread');
-						return v.columnName;
-					},
-					formatName: function(p,v) {
-						if (v.groupField==='threadId') {
-							var rec=p.view.store.findRecord("idmessage",v.name);
-							if (rec) return rec.get("subject");
-						}
-						return v.name;
-					}
-				}
-			),
-            onColumnMove: function() {
-                console.log('onColumnMove overridden!');
-            }
+			ftype:'mailgrouping',
 		}
 	],
 	selModel: { 
@@ -404,21 +414,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			model: smodel,
 			pageSize: me.pageSize,
 		});
-        me.store.on("metachange",function(s,meta) {
+/*        me.store.on("metachange",function(s,meta) {
 			if (meta.groupField && meta.groupField!=='none' && meta.groupField!=='') {
-				s.blockLoad();
-				s.group(null, null);
+				//s.blockLoad();
+				//s.group(null, null);
 				s.group(meta.groupField, meta.sortInfo.direction);
 				me.threaded=meta.threaded;
-				s.unblockLoad(false);
+				//s.unblockLoad(false);
 			} else {
-				s.blockLoad();
+				//s.blockLoad();
 				s.group(null, null);
 				me.threaded=false;
-				s.unblockLoad(false);
+				//s.unblockLoad(false);
 				//s.sort(meta.sortInfo.sortField,meta.sortInfo.direction);
 			}
-        });
+        });*/
 		
 /*		if (me.createPagingToolbar) {
 			var tb=me.ptoolbar=Ext.create('Ext.toolbar.Paging',{
@@ -815,13 +825,29 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), config));
 
 		
+		s.group(meta.groupField, meta.sortInfo.direction);
 		me.store.load();
 		//this.render();
 		me.currentFolder = folder_id;
 	},
 	
     loaded: function(s,r,o) {
-		var me=this;
+		var me=this,
+			meta=s.getProxy().getReader().metaData;
+		
+/*		if (meta && meta.groupField && meta.groupField!=='none' && meta.groupField!=='') {
+			s.blockLoad();
+			s.group(null, null);
+			s.group(meta.groupField, meta.sortInfo.direction);
+			me.threaded=meta.threaded;
+			s.unblockLoad(false);
+		} else {
+			s.blockLoad();
+			s.group(null, null);
+			me.threaded=false;
+			s.unblockLoad(false);
+			//s.sort(meta.sortInfo.sortField,meta.sortInfo.direction);
+		}*/
 		me.fireEvent('load',me,me.currentFolder,s.proxy.reader.rawData);
 /*		var me=this,
 			meta=me.store.proxy.reader.metaData,
@@ -1531,7 +1557,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						s.sort('date', 'DESC');
 						s.unblockLoad(false);
 					}
-					me.reload();
+					//me.reload();
+					me.mys.showFolder(me.currentFolder);
 				} else {
 					WT.error(json.text);
 				}
