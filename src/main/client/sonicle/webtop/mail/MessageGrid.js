@@ -825,7 +825,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), config));
 
 		
-		s.group(meta.groupField, meta.sortInfo.direction);
+		//s.group(meta.groupField, meta.sortInfo.direction);
 		me.store.load();
 		//this.render();
 		me.currentFolder = folder_id;
