@@ -477,14 +477,32 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	}, 
 	
 	unreadChanged: function(cfg,unreadOnly) {
-		var me=this;
-		var node=me.imapTree.getStore().getById(cfg.foldername);
+		var me=this,
+			node=me.imapTree.getStore().getById(cfg.foldername);
 		if (node) {
 			var folder=node.get("folder");
 			if (!unreadOnly) node.set('hasUnread',cfg.hasUnreadChildren);
 			node.set('unread',cfg.unread);
 			node.set('folder','');
 			node.set('folder',folder);
+		}
+	},
+	
+	getFolderGroup: function(foldername) {
+		var me=this,
+			node=me.imapTree.getStore().getById(foldername),
+			group='';
+		if (node) {
+			group=node.get('group');
+		}
+		return group;
+	},
+	
+	setFolderGroup: function(foldername,group) {
+		var me=this,
+			node=me.imapTree.getStore().getById(foldername);
+		if (node) {
+			node.set('group',group);
 		}
 	},
 	
