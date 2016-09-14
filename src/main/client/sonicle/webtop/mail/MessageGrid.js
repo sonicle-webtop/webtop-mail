@@ -200,6 +200,7 @@ Ext.define('Sonicle.webtop.mail.MessagesModel',{
         { name: 'istoday', type:'boolean' },
         { name: 'arch', type:'boolean' },
         { name: 'atts', type:'boolean' },
+		{ name: 'threadOpen', type:'boolean' },
         { name: 'scheddate', type:'date' },
 		{ name: 'autoedit', type:'boolean' }
 	]
@@ -233,6 +234,7 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
         { name: 'istoday', type:'boolean' },
         { name: 'arch', type:'boolean' },
         { name: 'atts', type:'boolean' },
+		{ name: 'threadOpen', type:'boolean' },
         { name: 'scheddate', type:'date' },
 		{ name: 'autoedit', type:'boolean' }
 	]
@@ -284,14 +286,18 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     enableColumnMove: true,
 	viewConfig: {
 		//preserveScrollOnRefresh: true,
+		
+		preserveScrollOnReload: true,
         markDirty: false,
 		navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
 		getRowClass: function(record, index, rowParams, store ) {
 			var unread=record.get('unread');
 			var tdy=record.get('istoday');
+			//var ti=record.get('threadIndent');
 			cls1=unread?'wtmail-row-unread':'';
 			cls2=tdy?'wtmail-row-today':'';
-			return cls1+' '+cls2;
+			//cls3=ti>0?'wtmail-row-hidden':'';
+			return cls1+' '+cls2/*+' '+cls3*/;
 		},
 		plugins: [
 			{
@@ -331,6 +337,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	key2flag: ['clear','red','orange','green','blue','purple','yellow','black','gray','white'],
 	createPagingToolbar: false,
 	threaded: false,
+	openThreads: {},
 	
     /**
      * @event keydelete
@@ -414,21 +421,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			model: smodel,
 			pageSize: me.pageSize,
 		});
-/*        me.store.on("metachange",function(s,meta) {
-			if (meta.groupField && meta.groupField!=='none' && meta.groupField!=='') {
-				//s.blockLoad();
-				//s.group(null, null);
-				s.group(meta.groupField, meta.sortInfo.direction);
-				me.threaded=meta.threaded;
-				//s.unblockLoad(false);
-			} else {
-				//s.blockLoad();
-				s.group(null, null);
-				me.threaded=false;
-				//s.unblockLoad(false);
-				//s.sort(meta.sortInfo.sortField,meta.sortInfo.direction);
-			}
-        });*/
 		
 /*		if (me.createPagingToolbar) {
 			var tb=me.ptoolbar=Ext.create('Ext.toolbar.Paging',{
@@ -580,17 +572,33 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             dataIndex: 'subject',
             renderer: function(value,metadata,record,rowIndex,colIndex,store) {
                 var status=record.get("status"),
+					tid=record.get("threadId"),
+					tindent=record.get("threadIndent"),
+					topen=record.get("threadOpen"),
+					tchildren=record.get("threadHasChildren"),
                     imgtag="";
 			
-				if (me.threaded) {
-                    var tindent=record.get("threadIndent");
+				if (me.threaded) {                    
+					if (tindent===0) {
+						if (tchildren) {
+							var cls=topen?"":"x-grid-group-hd-collapsed";
+							imgtag="<div class='x-grid-group-hd-collapsible "+cls+"'>"+
+									"<span class='x-grid-group-title wtmail-element-toclick'"+
+									  "onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+",this);'"+
+									">&nbsp;</span>";
+						}
+					} else {
+						imgtag="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+					}
 					for(var i=0;i<tindent;++i) imgtag+="&nbsp;&nbsp;&nbsp;";
 				}
                 if (status!=="read" && status!=="unread") {
                     var imgname=Ext.String.format("status{0}_16.png",status);
                     imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";
                 }
-                return imgtag+value;
+				imgtag+=value;
+				if (me.threaded && tindent===0) imgtag+="</div>";
+                return imgtag;
 			},
             filter: { xtype: 'textfield'}
         };
@@ -791,6 +799,26 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
         me.callParent(arguments);
     },
+	
+/*	isThreadOpen: function(threadId) {
+		return this.openThreads[threadId];
+	},
+	
+	setThreadOpen: function(threadId,open) {
+		this.openThreads[threadId]=open;
+	},*/	
+	
+	collapseClicked: function(rowIndex,el) {
+		var me=this,
+			s=me.store,
+		    r=s.getAt(rowIndex);
+		this.store.reload({ 
+			params: {
+				threadaction: r.get("threadOpen")?'close':'open',
+				threadactionuid: r.get("idmessage")
+			}
+		});
+	},
 
 	setPageSize: function(size) {
 /*		var me=this;
@@ -824,10 +852,23 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		//this.store.baseParams = {service: 'mail', action: 'ListMessages', folder: folder_id};
 		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), config));
 
-		
-		//s.group(meta.groupField, meta.sortInfo.direction);
-		me.store.load();
-		//this.render();
+
+		var groupField=me.mys.getFolderGroup(folder_id),
+			s=me.store,
+			meta=s.getProxy().getReader().metaData;
+		if (groupField && groupField!=='none' && groupField!=='threadId' && groupField!=='') {
+			s.blockLoad();
+			s.group(null, null);
+			s.group(groupField, meta.sortInfo.direction);
+			me.threaded=groupField==='threadId';
+			s.unblockLoad(false);
+		} else {
+			s.blockLoad();
+			s.group(null, null);
+			me.threaded=groupField==='threadId';
+			s.unblockLoad(false);
+		}
+		s.load();
 		me.currentFolder = folder_id;
 	},
 	
@@ -835,19 +876,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var me=this,
 			meta=s.getProxy().getReader().metaData;
 		
-/*		if (meta && meta.groupField && meta.groupField!=='none' && meta.groupField!=='') {
-			s.blockLoad();
-			s.group(null, null);
-			s.group(meta.groupField, meta.sortInfo.direction);
-			me.threaded=meta.threaded;
-			s.unblockLoad(false);
-		} else {
-			s.blockLoad();
-			s.group(null, null);
-			me.threaded=false;
-			s.unblockLoad(false);
-			//s.sort(meta.sortInfo.sortField,meta.sortInfo.direction);
-		}*/
 		me.fireEvent('load',me,me.currentFolder,s.proxy.reader.rawData);
 /*		var me=this,
 			meta=me.store.proxy.reader.metaData,
@@ -1557,7 +1585,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						s.sort('date', 'DESC');
 						s.unblockLoad(false);
 					}
-					//me.reload();
+					me.mys.setFolderGroup(me.currentFolder,newgroup);
 					me.mys.showFolder(me.currentFolder);
 				} else {
 					WT.error(json.text);

@@ -123,6 +123,8 @@ public class FolderCache {
     private FolderCache parent=null;
     private ArrayList<FolderCache> children=null;
 	private HashMap<String,FolderCache> childrenMap=null;
+	
+	private HashMap<Long,Boolean> openThreads=new HashMap<>();
     
     private boolean startupLeaf=true;
 
@@ -1692,6 +1694,17 @@ public class FolderCache {
         }
         return mailData;
     }
+	
+	public void setThreadOpen(long uid, boolean open) {
+		if (open) openThreads.put(uid, open);
+		else openThreads.remove(uid);
+	}
+	
+	public boolean isThreadOpen(long uid) {
+		Boolean b=openThreads.get(uid);
+		if (b!=null) return b;
+		return false;
+	}
     
     public ArrayList<String> getHTMLParts(MimeMessage m, long msguid, boolean forEdit) throws MessagingException, IOException {
         return getHTMLParts(m, msguid, null, null, forEdit);
