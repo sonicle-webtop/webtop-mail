@@ -320,7 +320,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             
             var tdh=me.tdHeader,
 				tdb=me.tdBody,
-				laf=WT.getOption('laf');
+				laf=WT.getVar('laf');
             
             var htmlDate="<span class='wtmail-mv-hlabeldate'>"+me.mys.res('date')+":&nbsp;</span>"+me.date;
             if (me.scheddate) {

@@ -93,7 +93,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		if (me.msgId===0) me.msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
 		
-		me.identities=me.mys.getOption("identities");
+		me.identities=me.mys.getVar("identities");
 		//save hashed identities, by identityId
 		me.identHash={};
 		Ext.each(me.identities,function(ident) { me.identHash[ident.identityId]=ident},me);

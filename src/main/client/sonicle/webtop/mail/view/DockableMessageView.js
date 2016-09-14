@@ -104,7 +104,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 			mv=me.messageView;
 		
 		mv.on('messageviewed',function() {
-			if (!this.mys.getOption("manualSeen")) {
+			if (!this.mys.getVar("manualSeen")) {
 				var r=me.model;
 				if (r.get("unread")) {
 					r.set("unread",false);

@@ -88,15 +88,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		//TODO load settings
 		//this.loadSettings();
 		
-		me.viewmaxtos=me.getOption('messageViewMaxTos');
-		me.viewmaxccs=me.getOption('messageViewMaxCcs');
+		me.viewmaxtos=me.getVar('messageViewMaxTos');
+		me.viewmaxccs=me.getVar('messageViewMaxCcs');
 		
 		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
-			pageSize: me.getOption('pageRows'),
-			viewRegion: me.getOption('messageViewRegion','east'),
-			viewWidth: me.getOption('messageViewWidth',600),
-			viewHeight: me.getOption('messageViewHeight',400),
-			viewCollapsed: me.getOption('messageViewCollapsed',false),
+			pageSize: me.getVar('pageRows'),
+			viewRegion: me.getVar('messageViewRegion','east'),
+			viewWidth: me.getVar('messageViewWidth',600),
+			viewHeight: me.getVar('messageViewHeight',400),
+			viewCollapsed: me.getVar('messageViewCollapsed',false),
 			saveColumnSizes: true,
 			saveColumnVisibility: true,
 			saveColumnOrder: true,
@@ -416,7 +416,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	resizeColumns: function() {
 		var me=this;
         if (!me.resizedcols) {
-			var colsizes=me.getOptionAsObject('columnSizes');
+			var colsizes=me.getVarAsObject('columnSizes');
             if (colsizes && me.messagesPanel && me.messagesPanel.folderList) {
                 var cols=me.messagesPanel.folderList.getColumns();
                 var ctot=cols.length;
@@ -509,7 +509,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		var me=this,
 			identIndex=0,
-			identities=me.optionsData.identities,
+			identities=me.varsData.identities,
             ident=identities[0],
 			rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 	
@@ -527,8 +527,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				msgId: opts.msgId||0,
 				mys: me,
 				identityIndex: identIndex,
-				fontFace: me.getOption('fontName'),
-				fontSize: me.getOption('fontSize')
+				fontFace: me.getVar('fontName'),
+				fontSize: me.getVar('fontSize')
 			}
 		});
 	
@@ -536,8 +536,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			var meditor=v.getView();
 			meditor.startNew({
 				subject: opts.subject||'',
-				receipt: opts.receipt||me.getOption('receipt'),
-				priority: opts.priority||me.getOption('priority'),
+				receipt: opts.receipt||me.getVar('receipt'),
+				priority: opts.priority||me.getVar('priority'),
 				from: ident.email,
                 identityId: ident.identityId,
 				recipients: rcpts,
@@ -665,19 +665,19 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	getFolderDrafts: function() {
-		return this.getOption('folderDrafts');
+		return this.getVar('folderDrafts');
 	},
 	
 	getFolderSent: function() {
-		return this.getOption('folderSent');
+		return this.getVar('folderSent');
 	},
 	
 	getFolderSpam: function() {
-		return this.getOption('folderSpam');
+		return this.getVar('folderSpam');
 	},
 	
 	getFolderTrash: function() {
-		return this.getOption('folderTrash');
+		return this.getVar('folderTrash');
 	},
 
     createFolder: function(parent,name) {
