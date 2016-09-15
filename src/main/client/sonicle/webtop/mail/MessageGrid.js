@@ -579,14 +579,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                     imgtag="";
 			
 				if (me.threaded) {                    
-					if (tindent===0) {
-						if (tchildren) {
-							var cls=topen?"":"x-grid-group-hd-collapsed";
-							imgtag="<div class='x-grid-group-hd-collapsible "+cls+"'>"+
-									"<span class='x-grid-group-title wtmail-element-toclick'"+
-									  "onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+",this);'"+
-									">&nbsp;</span>";
-						}
+					if (tindent===0 && tchildren) {
+						var cls=topen?"":"x-grid-group-hd-collapsed";
+						imgtag="<div class='x-grid-group-hd-collapsible "+cls+"'>"+
+								"<span class='x-grid-group-title wtmail-element-toclick'"+
+								  " onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+",this);'"+
+								">&nbsp;</span>";
 					} else {
 						imgtag="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 					}
@@ -800,19 +798,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.callParent(arguments);
     },
 	
-/*	isThreadOpen: function(threadId) {
-		return this.openThreads[threadId];
-	},
-	
-	setThreadOpen: function(threadId,open) {
-		this.openThreads[threadId]=open;
-	},*/	
-	
 	collapseClicked: function(rowIndex,el) {
 		var me=this,
 			s=me.store,
 		    r=s.getAt(rowIndex);
-		this.store.reload({ 
+		me.getView().suspendEvents();
+		me.store.reload({ 
 			params: {
 				threadaction: r.get("threadOpen")?'close':'open',
 				threadactionuid: r.get("idmessage")
@@ -876,6 +867,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var me=this,
 			meta=s.getProxy().getReader().metaData;
 		
+		me.getView().resumeEvents();
 		me.fireEvent('load',me,me.currentFolder,s.proxy.reader.rawData);
 /*		var me=this,
 			meta=me.store.proxy.reader.metaData,

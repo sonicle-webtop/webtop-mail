@@ -124,7 +124,8 @@ public class FolderCache {
     private ArrayList<FolderCache> children=null;
 	private HashMap<String,FolderCache> childrenMap=null;
 	
-	private HashMap<Long,Boolean> openThreads=new HashMap<>();
+	private HashMap<Long,Integer> openThreads=new HashMap<>();
+	private int totalOpenThreadChildren=0;
     
     private boolean startupLeaf=true;
 
@@ -1695,15 +1696,25 @@ public class FolderCache {
         return mailData;
     }
 	
-	public void setThreadOpen(long uid, boolean open) {
-		if (open) openThreads.put(uid, open);
-		else openThreads.remove(uid);
+	public void setThreadOpen(long uid, boolean open) throws MessagingException {
+		int children=((SonicleIMAPMessage)getMessage(uid)).getThreadChildren();
+		if (open) {
+			totalOpenThreadChildren+=children;
+			openThreads.put(uid, children);
+		}
+		else {
+			totalOpenThreadChildren-=children;
+			openThreads.remove(uid);
+		}
 	}
 	
 	public boolean isThreadOpen(long uid) {
-		Boolean b=openThreads.get(uid);
-		if (b!=null) return b;
-		return false;
+		Integer children=openThreads.get(uid);
+		return children!=null;
+	}
+	
+	public int getThreadedCount() {
+		return ((SonicleIMAPFolder)folder).getThreadRoots()+totalOpenThreadChildren;
 	}
     
     public ArrayList<String> getHTMLParts(MimeMessage m, long msguid, boolean forEdit) throws MessagingException, IOException {

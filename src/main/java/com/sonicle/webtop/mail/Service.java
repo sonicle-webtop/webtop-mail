@@ -7014,7 +7014,7 @@ public class Service extends BaseService {
 				//System.out.println("start="+start+",limit="+limit+",max="+max);
 				mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
 				long tId=0;
-				int total=0;
+				int total=threaded?mcache.getThreadedCount():xmsgs.length;
 				for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 					int ix = start + i;
 					int nx = start + ni;
@@ -7274,7 +7274,6 @@ public class Service extends BaseService {
 						+ (threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")
 						+ "}";
 
-					++total;
 					if (autoedit) {
 						autoeditList.add(nuid);
 					}
