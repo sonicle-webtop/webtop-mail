@@ -7037,6 +7037,7 @@ public class Service extends BaseService {
 				 }
 				 }
 				 }*/
+				total=threaded?mcache.getThreadedCount():xmsgs.length;
 				if (start<max) {
 					
 					Folder fsent=getFolder(mprofile.getFolderSent());
@@ -7044,7 +7045,6 @@ public class Service extends BaseService {
 					//Fetch others for these messages
 					mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
 					long tId=0;
-					total=threaded?mcache.getThreadedCount():xmsgs.length;
 					for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 						int ix = start + i;
 						int nx = start + ni;
