@@ -6910,8 +6910,9 @@ public class Service extends BaseService {
 		
 		int start=Integer.parseInt(pstart);
 		int limit=Integer.parseInt(plimit);
+		int page=0;
 		if (ppage!=null) {
-			int page=Integer.parseInt(ppage);
+			page=Integer.parseInt(ppage);
 			start=(page-1)*limit;
 		}
 		/*int start = 0;
@@ -6987,12 +6988,44 @@ public class Service extends BaseService {
 				}
 			}
 			
+			//if threaded, look for the start considering roots and opened children
+			if (xmsgs!=null && threaded && page>1) {
+				int i=0,ni=0,np=1;
+				long tId=0;
+				while(np < page && ni < xmsgs.length ) {
+					SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[ni];
+					++ni;
+					if (xm.isExpunged())
+						continue;
+					
+					long nuid=mcache.getUID(xm);
+
+					int tIndent=xm.getThreadIndent();
+					if (tIndent==0) tId=nuid;
+					else {
+						if (!mcache.isThreadOpen(tId))
+							continue;
+					}
+					
+					++i;
+					if ((i%limit)==0) ++np;
+				}
+				if (np==page) {
+					start=ni;
+					System.out.println("page "+np+" start is "+start);
+				}
+			}
+
+			int max = start + limit;
+			if (max>xmsgs.length) max=xmsgs.length;
+			ArrayList<Long> autoeditList=new ArrayList<Long>();
 			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
 				long actuid=Long.parseLong(pthreadactionuid);
 				mcache.setThreadOpen(actuid, pthreadaction.equals("open"));
 			}
             if (xmsgs!=null) {
-                //sout+="total:"+total+",\nstart:"+start+",\nlimit:"+limit+",\nmessages: [\n";
+                int total=0;
+				
 				sout+="messages: [\n";
 
 				/*               if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
@@ -7005,281 +7038,281 @@ public class Service extends BaseService {
 				 }
 				 }
 				 }*/
-				int max = start + limit;
-                if (max>xmsgs.length) max=xmsgs.length;
-				ArrayList<Long> autoeditList=new ArrayList<Long>();
-				
-				Folder fsent=getFolder(mprofile.getFolderSent());
-				boolean openedsent=false;
-				//Fetch others for these messages
-				//System.out.println("start="+start+",limit="+limit+",max="+max);
-				mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
-				long tId=0;
-				int total=threaded?mcache.getThreadedCount():xmsgs.length;
-				for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
-					int ix = start + i;
-					int nx = start + ni;
-                    if (nx>=xmsgs.length) break;
-					if (ix >= max) break;
-
-					SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];
-					if (xm.isExpunged()) {
-						--i;
-						continue;
-					}
-					/*String ids[]=null;
-					 try {
-					 ids=xm.getHeader("Message-ID");
-					 } catch(MessagingException exc) {
-					 --i;
-					 continue;
-					 }
-					 if (ids==null || ids.length==0) { --i; continue; }
-					 String idmessage=ids[0];*/
+				total=threaded?mcache.getThreadedCount():xmsgs.length;
+				if (start<max) {
 					
-					long nuid=mcache.getUID(xm);
+					Folder fsent=getFolder(mprofile.getFolderSent());
+					boolean openedsent=false;
+					//Fetch others for these messages
+					mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
+					long tId=0;
+					for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
+						int ix = start + i;
+						int nx = start + ni;
+						if (nx>=xmsgs.length) break;
+						if (ix >= max) break;
 
-					int tIndent=xm.getThreadIndent();
-					if (tIndent==0) tId=nuid;
-					else if (threaded) {
-						if (!mcache.isThreadOpen(tId)) {
+						SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];
+						if (xm.isExpunged()) {
 							--i;
 							continue;
 						}
-					}
-					boolean tChildren=false;
-					if (threaded) {
-						int cnx=nx+1;
-						while(cnx<xmsgs.length) {
-							SonicleIMAPMessage cxm=(SonicleIMAPMessage)xmsgs[cnx];
-							if (cxm.isExpunged()) {
-								cnx++;
+						/*String ids[]=null;
+						 try {
+						 ids=xm.getHeader("Message-ID");
+						 } catch(MessagingException exc) {
+						 --i;
+						 continue;
+						 }
+						 if (ids==null || ids.length==0) { --i; continue; }
+						 String idmessage=ids[0];*/
+
+						long nuid=mcache.getUID(xm);
+
+						int tIndent=xm.getThreadIndent();
+						if (tIndent==0) tId=nuid;
+						else if (threaded) {
+							if (!mcache.isThreadOpen(tId)) {
+								--i;
 								continue;
 							}
-							if (cxm.getThreadIndent()>0) tChildren=true;
-							break;
 						}
-					}
-					
-					
-					
-					Flags flags=xm.getFlags();
+						boolean tChildren=false;
+						if (threaded) {
+							int cnx=nx+1;
+							while(cnx<xmsgs.length) {
+								SonicleIMAPMessage cxm=(SonicleIMAPMessage)xmsgs[cnx];
+								if (cxm.isExpunged()) {
+									cnx++;
+									continue;
+								}
+								if (cxm.getThreadIndent()>0) tChildren=true;
+								break;
+							}
+						}
 
-					//Date
-					java.util.Date d=xm.getSentDate();
-					if (d==null) d=xm.getReceivedDate();
-					if (d==null) d=new java.util.Date(0);
-					cal.setTime(d);
-					int yyyy=cal.get(java.util.Calendar.YEAR);
-					int mm=cal.get(java.util.Calendar.MONTH);
-					int dd=cal.get(java.util.Calendar.DAY_OF_MONTH);
-					int hhh=cal.get(java.util.Calendar.HOUR_OF_DAY);
-					int mmm=cal.get(java.util.Calendar.MINUTE);
-					int sss=cal.get(java.util.Calendar.SECOND);
-					//From
-					String from="";
-					Address ia[]=xm.getFrom();
-					if (ia!=null) {
-						InternetAddress iafrom=(InternetAddress)ia[0];
-						from=iafrom.getPersonal();
-						if (from==null) from=iafrom.getAddress();
-					}
-					if (from==null) from="";
 
-					//To
-					String to="";
-					ia=xm.getRecipients(Message.RecipientType.TO);
-					//if not sent and not shared, show me first if in TO
-					if (ia!=null) {
-						InternetAddress iato=(InternetAddress)ia[0];
-						if (!issent && !isundershared) {
-							for(Address ax: ia) {
-								InternetAddress iax=(InternetAddress)ax;
-								if (iax.getAddress().equals(profile.getEmailAddress())) {
-									iato=iax;
-									break;
+
+						Flags flags=xm.getFlags();
+
+						//Date
+						java.util.Date d=xm.getSentDate();
+						if (d==null) d=xm.getReceivedDate();
+						if (d==null) d=new java.util.Date(0);
+						cal.setTime(d);
+						int yyyy=cal.get(java.util.Calendar.YEAR);
+						int mm=cal.get(java.util.Calendar.MONTH);
+						int dd=cal.get(java.util.Calendar.DAY_OF_MONTH);
+						int hhh=cal.get(java.util.Calendar.HOUR_OF_DAY);
+						int mmm=cal.get(java.util.Calendar.MINUTE);
+						int sss=cal.get(java.util.Calendar.SECOND);
+						//From
+						String from="";
+						Address ia[]=xm.getFrom();
+						if (ia!=null) {
+							InternetAddress iafrom=(InternetAddress)ia[0];
+							from=iafrom.getPersonal();
+							if (from==null) from=iafrom.getAddress();
+						}
+						if (from==null) from="";
+
+						//To
+						String to="";
+						ia=xm.getRecipients(Message.RecipientType.TO);
+						//if not sent and not shared, show me first if in TO
+						if (ia!=null) {
+							InternetAddress iato=(InternetAddress)ia[0];
+							if (!issent && !isundershared) {
+								for(Address ax: ia) {
+									InternetAddress iax=(InternetAddress)ax;
+									if (iax.getAddress().equals(profile.getEmailAddress())) {
+										iato=iax;
+										break;
+									}
+								}
+							}
+							to=iato.getPersonal();
+							if (to==null) to=iato.getAddress();
+						}
+						to=(to==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
+						//Subject
+						String subject=xm.getSubject();
+						if (subject!=null) {
+							try {
+								subject=MailUtils.decodeQString(subject);
+							} catch(Exception exc) {
+
+							}
+						}
+						else subject="";
+
+	/*						if (threaded) {
+							if (tIndent>0) {
+								StringBuffer sb=new StringBuffer();
+								for(int w=0;w<tIndent;++w) sb.append("&nbsp;");
+								subject=sb+subject;
+							}
+						}*/
+
+						boolean hasAttachments=hasAttachements(xm);
+
+						from=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from));
+						subject=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject));
+
+						//Unread
+						boolean unread=!xm.isSet(Flags.Flag.SEEN);
+						if (ppattern==null && unread) ++funread;
+						//Priority
+						int priority=getPriority(xm);
+						//Status
+						java.util.Date today=new java.util.Date();
+						java.util.Calendar cal1=java.util.Calendar.getInstance(locale);
+						java.util.Calendar cal2=java.util.Calendar.getInstance(locale);
+						boolean isToday=false;
+						String gdate="";
+						String sdate = "";
+						String xdate = "";
+						if (d!=null) {
+							java.util.Date gd=threaded?xm.getMostRecentThreadDate():d;
+
+							cal1.setTime(today);
+							cal2.setTime(gd);
+
+							gdate=DateFormat.getDateInstance(DateFormat.MEDIUM,locale).format(gd);
+							sdate=cal2.get(java.util.Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(java.util.Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(java.util.Calendar.DATE));
+							//boolean isGdate=group.equals("gdate");
+							if (cal1.get(java.util.Calendar.MONTH)==cal2.get(java.util.Calendar.MONTH) && cal1.get(java.util.Calendar.YEAR)==cal2.get(java.util.Calendar.YEAR)) {
+								int dx=cal1.get(java.util.Calendar.DAY_OF_MONTH)-cal2.get(java.util.Calendar.DAY_OF_MONTH);
+								if (dx==0) {
+									isToday=true;
+									//if (isGdate) {
+									//	gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY)+"  "+gdate;
+									//}
+									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY);
+								} else if (dx == 1 /*&& isGdate*/) {
+									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY);
+								}							}
+						}
+
+						String status="read";
+						if (flags!=null) {
+							if (flags.contains(Flags.Flag.ANSWERED)) {
+								if (flags.contains("$Forwarded")) status = "repfwd";
+								else status = "replied";
+							} else if (flags.contains("$Forwarded")) {
+								status="forwarded";
+							} else if (flags.contains(Flags.Flag.SEEN)) {
+								status="read";
+							} else if (isToday) {
+								status="new";
+							} else {
+								status="unread";
+							}
+		//                    if (flags.contains(Flags.Flag.USER)) flagImage=webtopapp.getUri()+"/images/themes/"+profile.getTheme()+"/mail/flag.gif";
+						}
+						//Size
+						int msgsize=0;
+						msgsize=(xm.getSize()*3)/4;// /1024 + 1;
+						//User flags
+						String cflag="";
+						for (WebtopFlag webtopFlag: webtopFlags) {
+							String flagstring=webtopFlag.label;
+							String tbflagstring=webtopFlag.tbLabel;
+							if (!flagstring.equals("complete")) {
+								String oldflagstring="flag"+flagstring;
+								if (flags.contains(flagstring)
+										||flags.contains(oldflagstring)
+										|| (tbflagstring!=null && flags.contains(tbflagstring))
+								) {
+									cflag=flagstring;
 								}
 							}
 						}
-						to=iato.getPersonal();
-						if (to==null) to=iato.getAddress();
-					}
-					to=(to==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
-					//Subject
-					String subject=xm.getSubject();
-					if (subject!=null) {
-						try {
-							subject=MailUtils.decodeQString(subject);
-						} catch(Exception exc) {
-
+						boolean flagComplete=flags.contains("complete");
+						if (flagComplete) {
+							if (cflag.length()>0) cflag+="-complete";
+							else cflag="complete";
 						}
-					}
-					else subject="";
 
-/*						if (threaded) {
-						if (tIndent>0) {
-							StringBuffer sb=new StringBuffer();
-							for(int w=0;w<tIndent;++w) sb.append("&nbsp;");
-							subject=sb+subject;
-						}
-					}*/
+						if (cflag.length()==0 && flags.contains(Flags.Flag.FLAGGED)) cflag="special";
 
-					boolean hasAttachments=hasAttachements(xm);
+						boolean hasNote=flags.contains(sflagNote);
 
-					from=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from));
-					subject=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject));
+						boolean autoedit=false;
 
-					//Unread
-					boolean unread=!xm.isSet(Flags.Flag.SEEN);
-					if (ppattern==null && unread) ++funread;
-					//Priority
-					int priority=getPriority(xm);
-					//Status
-					java.util.Date today=new java.util.Date();
-					java.util.Calendar cal1=java.util.Calendar.getInstance(locale);
-					java.util.Calendar cal2=java.util.Calendar.getInstance(locale);
-					boolean isToday=false;
-					String gdate="";
-					String sdate = "";
-					String xdate = "";
-					if (d!=null) {
-						java.util.Date gd=threaded?xm.getMostRecentThreadDate():d;
+						boolean issched=false;
+						int syyyy=0;
+						int smm=0;
+						int sdd=0;
+						int shhh=0;
+						int smmm=0;
+						int ssss=0;
+						if (isdrafts) {
+							String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
+							if (h!=null && h.equals("true")) {
+								java.util.Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
+								syyyy=scal.get(java.util.Calendar.YEAR);
+								smm=scal.get(java.util.Calendar.MONTH);
+								sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
+								shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
+								smmm=scal.get(java.util.Calendar.MINUTE);
+								ssss=scal.get(java.util.Calendar.SECOND);
+								issched=true;
+								status="scheduled";
+							} 
 
-						cal1.setTime(today);
-						cal2.setTime(gd);
-
-						gdate=DateFormat.getDateInstance(DateFormat.MEDIUM,locale).format(gd);
-						sdate=cal2.get(java.util.Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(java.util.Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(java.util.Calendar.DATE));
-						//boolean isGdate=group.equals("gdate");
-						if (cal1.get(java.util.Calendar.MONTH)==cal2.get(java.util.Calendar.MONTH) && cal1.get(java.util.Calendar.YEAR)==cal2.get(java.util.Calendar.YEAR)) {
-							int dx=cal1.get(java.util.Calendar.DAY_OF_MONTH)-cal2.get(java.util.Calendar.DAY_OF_MONTH);
-							if (dx==0) {
-								isToday=true;
-								//if (isGdate) {
-								//	gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY)+"  "+gdate;
-								//}
-								xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY);
-							} else if (dx == 1 /*&& isGdate*/) {
-								xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY);
-							}							}
-					}
-
-					String status="read";
-					if (flags!=null) {
-						if (flags.contains(Flags.Flag.ANSWERED)) {
-							if (flags.contains("$Forwarded")) status = "repfwd";
-							else status = "replied";
-						} else if (flags.contains("$Forwarded")) {
-							status="forwarded";
-						} else if (flags.contains(Flags.Flag.SEEN)) {
-							status="read";
-						} else if (isToday) {
-							status="new";
-						} else {
-							status="unread";
-						}
-	//                    if (flags.contains(Flags.Flag.USER)) flagImage=webtopapp.getUri()+"/images/themes/"+profile.getTheme()+"/mail/flag.gif";
-					}
-					//Size
-					int msgsize=0;
-					msgsize=(xm.getSize()*3)/4;// /1024 + 1;
-					//User flags
-					String cflag="";
-					for (WebtopFlag webtopFlag: webtopFlags) {
-						String flagstring=webtopFlag.label;
-						String tbflagstring=webtopFlag.tbLabel;
-						if (!flagstring.equals("complete")) {
-							String oldflagstring="flag"+flagstring;
-							if (flags.contains(flagstring)
-									||flags.contains(oldflagstring)
-									|| (tbflagstring!=null && flags.contains(tbflagstring))
-							) {
-								cflag=flagstring;
+							h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
+							if (h!=null && h.equals("true")) {
+								autoedit=true;
 							}
 						}
-					}
-					boolean flagComplete=flags.contains("complete");
-					if (flagComplete) {
-						if (cflag.length()>0) cflag+="-complete";
-						else cflag="complete";
-					}
 
-					if (cflag.length()==0 && flags.contains(Flags.Flag.FLAGGED)) cflag="special";
+						String xmfoldername=xm.getFolder().getFullName();
 
-					boolean hasNote=flags.contains(sflagNote);
-
-					boolean autoedit=false;
-
-					boolean issched=false;
-					int syyyy=0;
-					int smm=0;
-					int sdd=0;
-					int shhh=0;
-					int smmm=0;
-					int ssss=0;
-					if (isdrafts) {
-						String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
-						if (h!=null && h.equals("true")) {
-							java.util.Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
-							syyyy=scal.get(java.util.Calendar.YEAR);
-							smm=scal.get(java.util.Calendar.MONTH);
-							sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
-							shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
-							smmm=scal.get(java.util.Calendar.MINUTE);
-							ssss=scal.get(java.util.Calendar.SECOND);
-							issched=true;
-							status="scheduled";
-						} 
-
-						h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
-						if (h!=null && h.equals("true")) {
-							autoedit=true;
+						//idmessage=idmessage.replaceAll("\\\\", "\\\\");
+						//idmessage=Utils.jsEscape(idmessage);
+						if (i>0) sout+=",\n";
+						boolean archived=false;
+						if (hasDocumentArchiving()) {
+							archived=xm.getHeader("X-WT-Archived")!=null;
+							if (!archived) {
+								archived=flags.contains(sflagArchived);
+							}
 						}
-					}
+						sout += "{idmessage:'" + nuid + "',"
+							+ "priority:" + priority + ","
+							+ "status:'" + status + "',"
+							+ "to:'" + to + "',"
+							+ "from:'" + from + "',"
+							+ "subject:'" + subject + "',"
+							+ "threadId: "+tId+","
+							+ "threadIndent:"+tIndent+","
+							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
+							+ "gdate: '" + gdate + "',"
+							+ "sdate: '" + sdate + "',"
+							+ "xdate: '" + xdate + "',"
+							+ "unread: " + unread + ","
+							+ "size:" + msgsize + ","
+							+ "flag:'" + cflag + "'"
+							+ (hasNote ? ",note:true" : "")
+							+ (archived ? ",arch:true" : "")
+							+ (isToday ? ",istoday:true" : "")
+							+ (hasAttachments ? ",atts:true" : "")
+							+ (issched ? ",scheddate: new Date(" + syyyy + "," + smm + "," + sdd + "," + shhh + "," + smmm + "," + ssss + ")" : "")
+							+ (threaded ? ",threadOpen: "+mcache.isThreadOpen(nuid) : "")
+							+ (threaded ? ",threadHasChildren: "+tChildren : "")
+							+ (threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")
+							+ (threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")
+							+ "}";
 
-					String xmfoldername=xm.getFolder().getFullName();
-
-					//idmessage=idmessage.replaceAll("\\\\", "\\\\");
-					//idmessage=Utils.jsEscape(idmessage);
-					if (i>0) sout+=",\n";
-					boolean archived=false;
-					if (hasDocumentArchiving()) {
-						archived=xm.getHeader("X-WT-Archived")!=null;
-						if (!archived) {
-							archived=flags.contains(sflagArchived);
+						if (autoedit) {
+							autoeditList.add(nuid);
 						}
-					}
-					sout += "{idmessage:'" + nuid + "',"
-						+ "priority:" + priority + ","
-						+ "status:'" + status + "',"
-						+ "to:'" + to + "',"
-						+ "from:'" + from + "',"
-						+ "subject:'" + subject + "',"
-						+ "threadId: "+tId+","
-						+ "threadIndent:"+tIndent+","
-						+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
-						+ "gdate: '" + gdate + "',"
-						+ "sdate: '" + sdate + "',"
-						+ "xdate: '" + xdate + "',"
-						+ "unread: " + unread + ","
-						+ "size:" + msgsize + ","
-						+ "flag:'" + cflag + "'"
-						+ (hasNote ? ",note:true" : "")
-						+ (archived ? ",arch:true" : "")
-						+ (isToday ? ",istoday:true" : "")
-						+ (hasAttachments ? ",atts:true" : "")
-						+ (issched ? ",scheddate: new Date(" + syyyy + "," + smm + "," + sdd + "," + shhh + "," + smmm + "," + ssss + ")" : "")
-						+ (threaded ? ",threadOpen: "+mcache.isThreadOpen(nuid) : "")
-						+ (threaded ? ",threadHasChildren: "+tChildren : "")
-						+ (threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")
-						+ (threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")
-						+ "}";
 
-					if (autoedit) {
-						autoeditList.add(nuid);
+						//                sout+="{messageid:'"+m.getMessageID()+"',from:'"+from+"',subject:'"+subject+"',date: new Date("+yyyy+","+mm+","+dd+"),unread: "+unread+"},\n";
 					}
 					
-					//                sout+="{messageid:'"+m.getMessageID()+"',from:'"+from+"',subject:'"+subject+"',date: new Date("+yyyy+","+mm+","+dd+"),unread: "+unread+"},\n";
+					if (openedsent) fsent.close(false);
 				}
 				/*                if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
 				 //if (max<msgs.length) mcache.fetch(msgs,FolderCache.flagsFP,max,msgs.length);
@@ -7337,7 +7370,6 @@ public class Service extends BaseService {
 				sout += "threaded: "+(threaded?"1":"0")+",\n";
 				sout += "unread: " + funread + ", issent: " + issent + ", millis: " + mlt.millis + " }\n";
 				
-				if (openedsent) fsent.close(false);
 			} else {
 				sout += "total:0,\nstart:0,\nlimit:0,\nmessages: [\n";
 				sout += "\n], unread: 0, issent: false }\n";

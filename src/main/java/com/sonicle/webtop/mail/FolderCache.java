@@ -1697,15 +1697,19 @@ public class FolderCache {
         return mailData;
     }
 	
-	public void setThreadOpen(long uid, boolean open) throws MessagingException {
+	public synchronized void setThreadOpen(long uid, boolean open) throws MessagingException {
 		int children=((SonicleIMAPMessage)getMessage(uid)).getThreadChildren();
 		if (open) {
-			totalOpenThreadChildren+=children;
-			openThreads.put(uid, children);
+			if (!openThreads.containsKey(uid)) {
+				totalOpenThreadChildren+=children;
+				openThreads.put(uid, children);
+			}
 		}
 		else {
-			totalOpenThreadChildren-=children;
-			openThreads.remove(uid);
+			if (openThreads.containsKey(uid)) {
+				totalOpenThreadChildren-=children;
+				openThreads.remove(uid);
+			}
 		}
 	}
 	
@@ -1715,7 +1719,8 @@ public class FolderCache {
 	}
 	
 	public int getThreadedCount() {
-		return ((SonicleIMAPFolder)folder).getThreadRoots()+totalOpenThreadChildren;
+		int threadRoots=((SonicleIMAPFolder)folder).getThreadRoots();
+		return threadRoots+totalOpenThreadChildren;
 	}
     
     public ArrayList<String> getHTMLParts(MimeMessage m, long msguid, boolean forEdit) throws MessagingException, IOException {

@@ -848,9 +848,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			s=me.store,
 			meta=s.getProxy().getReader().metaData;
 		if (groupField && groupField!=='none' && groupField!=='threadId' && groupField!=='') {
+			var dir=meta?meta.sortInfo.direction:'ASC';
 			s.blockLoad();
 			s.group(null, null);
-			s.group(groupField, meta.sortInfo.direction);
+			s.group(groupField, dir);
 			me.threaded=groupField==='threadId';
 			s.unblockLoad(false);
 		} else {
