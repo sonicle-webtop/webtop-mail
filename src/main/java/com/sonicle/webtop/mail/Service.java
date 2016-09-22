@@ -274,7 +274,7 @@ public class Service extends BaseService {
 
 		this.environment = getEnv();
 		
-		mailManager=new MailManager(this.environment.getProfileId());
+		mailManager=new MailManager(false, this.environment.getProfileId());
 		
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
