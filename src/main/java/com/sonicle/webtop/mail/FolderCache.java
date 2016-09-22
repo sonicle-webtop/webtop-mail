@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.mail.imap.*;
 import com.sonicle.mail.tnef.internet.*;
@@ -75,7 +76,7 @@ public class FolderCache {
     public static final int SORT_BY_STATUS=7;
     public static final int SORT_BY_FLAG=8;
 
-    private Environment environment=null;
+    private PrivateEnvironment environment=null;
     //private WebTopDomain wtd=null;
     private Service ms=null;
     private boolean externalProvider=false;
@@ -178,7 +179,7 @@ public class FolderCache {
     }
 
     //Special constructor for externally provided messages
-    public FolderCache(Service ms, Environment env) {
+    public FolderCache(Service ms, PrivateEnvironment env) {
         this.ms=ms;
 		comparator=new MessageComparator(ms);
         externalProvider=true;
@@ -187,7 +188,7 @@ public class FolderCache {
         profile=env.getProfile();
     }
     
-    public FolderCache(Folder folder, Service ms, Environment env) throws MessagingException {
+    public FolderCache(Folder folder, Service ms, PrivateEnvironment env) throws MessagingException {
         this(ms,env);
         foldername=folder.getFullName();
         this.folder=folder;
