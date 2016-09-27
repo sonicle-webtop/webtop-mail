@@ -286,7 +286,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     enableColumnMove: true,
 	viewConfig: {
 		//preserveScrollOnRefresh: true,
-		
 		preserveScrollOnReload: true,
         markDirty: false,
 		navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
@@ -585,6 +584,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								"<span class='x-grid-group-title wtmail-element-toclick'"+
 								  " onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+",this);'"+
 								">&nbsp;</span>";
+						var tuc=record.get("threadUnseenChildren")
+						if (!topen && tuc && tuc>0) imgtag+="<b>+"+tuc+"</b>&nbsp;";
 					} else {
 						imgtag="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
 					}
@@ -595,7 +596,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                     imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";
                 }
 				imgtag+=value;
-				if (me.threaded && tindent===0) imgtag+="</div>";
+				if (me.threaded && tindent===0) {
+					imgtag+="</div>";
+				}
                 return imgtag;
 			},
             filter: { xtype: 'textfield'}

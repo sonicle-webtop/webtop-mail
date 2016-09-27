@@ -7011,7 +7011,7 @@ public class Service extends BaseService {
 				}
 				if (np==page) {
 					start=ni;
-					System.out.println("page "+np+" start is "+start);
+					//System.out.println("page "+np+" start is "+start);
 				}
 			}
 
@@ -7077,6 +7077,7 @@ public class Service extends BaseService {
 							}
 						}
 						boolean tChildren=false;
+						int tUnseenChildren=0;
 						if (threaded) {
 							int cnx=nx+1;
 							while(cnx<xmsgs.length) {
@@ -7085,7 +7086,13 @@ public class Service extends BaseService {
 									cnx++;
 									continue;
 								}
-								if (cxm.getThreadIndent()>0) tChildren=true;
+								while(cxm.getThreadIndent()>0) {
+									tChildren=true;
+									if (!cxm.isExpunged() && !cxm.isSet(Flags.Flag.SEEN)) ++tUnseenChildren;
+									++cnx;
+									if (cnx>=xmsgs.length) break;
+									cxm=(SonicleIMAPMessage)xmsgs[cnx];
+								}
 								break;
 							}
 						}
@@ -7298,8 +7305,9 @@ public class Service extends BaseService {
 							+ (isToday ? ",istoday:true" : "")
 							+ (hasAttachments ? ",atts:true" : "")
 							+ (issched ? ",scheddate: new Date(" + syyyy + "," + smm + "," + sdd + "," + shhh + "," + smmm + "," + ssss + ")" : "")
-							+ (threaded ? ",threadOpen: "+mcache.isThreadOpen(nuid) : "")
-							+ (threaded ? ",threadHasChildren: "+tChildren : "")
+							+ (threaded&&tIndent==0 ? ",threadOpen: "+mcache.isThreadOpen(nuid) : "")
+							+ (threaded&&tIndent==0 ? ",threadHasChildren: "+tChildren : "")
+							+ (threaded&&tIndent==0 ? ",threadUnseenChildren: "+tUnseenChildren : "")
 							+ (threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")
 							+ (threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")
 							+ "}";
