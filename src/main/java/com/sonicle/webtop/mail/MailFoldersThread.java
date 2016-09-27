@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sonicle.webtop.core.sdk.Environment;
+import com.sonicle.webtop.core.app.PrivateEnvironment;
 import java.util.ArrayList;
 
 /**
@@ -54,7 +54,7 @@ public class MailFoldersThread extends Thread {
     int sleepCount=0;
     boolean checkAll=false;
     
-    public MailFoldersThread(Service ms, Environment env) {
+    public MailFoldersThread(Service ms, PrivateEnvironment env) {
         super();
         this.setName("MailFoldersThread"+(threadCountMailFolders++)+"-"+env.getProfile().getUserId());
         this.ms=ms;

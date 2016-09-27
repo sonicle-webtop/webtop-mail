@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.CoreLocaleKey;
 import com.sonicle.commons.LangUtils;
 import java.nio.*;
@@ -207,7 +208,7 @@ public class Service extends BaseService {
 	private char folderSeparator = 0;
 	private String folderPrefix = null;
 	
-	private Environment environment = null;
+	private PrivateEnvironment environment = null;
 	private MailUserProfile mprofile;
 	private MailServiceSettings ss = null;
 	private MailUserSettings us = null;
@@ -274,7 +275,7 @@ public class Service extends BaseService {
 
 		this.environment = getEnv();
 		
-		mailManager=new MailManager(this.environment.getProfileId());
+		mailManager=new MailManager(false, this.environment.getProfileId());
 		
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
@@ -5835,7 +5836,7 @@ public class Service extends BaseService {
 	 out.println(sout);
 	 }*/
 	private SimpleMessage prepareMessage(JsMessage jsmsg, long msgId, boolean save, boolean isFax) throws Exception {
-		Environment env = environment;
+		PrivateEnvironment env = environment;
 		//WebTopApp webtopapp=env.getWebTopApp();
 		UserProfile profile = env.getProfile();
         //HttpSession session=request.getSession();
