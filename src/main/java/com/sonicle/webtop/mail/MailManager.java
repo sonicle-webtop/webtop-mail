@@ -66,10 +66,6 @@ public class MailManager extends BaseManager {
 	
 	List<Identity> identities=null;
 	
-	public MailManager(boolean fastInit) {
-		this(fastInit, RunContext.getProfileId());
-	}
-	
 	public MailManager(boolean fastInit, UserProfile.Id targetProfileId) {
 		super(fastInit, targetProfileId);
 	}
