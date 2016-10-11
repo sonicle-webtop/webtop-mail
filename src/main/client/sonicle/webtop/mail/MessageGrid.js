@@ -166,9 +166,37 @@ Ext.define('Sonicle.webtop.mail.NavigationModel',{
     },
 	
     onKeyRight: function(keyEvent) {
+        var me = this,
+            view = keyEvent.view,
+			g = view.grid,
+			s = g.getSelection();
+	
+		if (s) {
+			var r=s[0],
+				tid=r.get("threadId"),
+				tindent=r.get("threadIndent"),
+				topen=r.get("threadOpen");
+			if (tid && tid>0 && tindent===0 && !topen) {
+				g.collapseClicked(g.store.indexOf(r));
+			}
+		}
 	},
 	
 	onKeyLeft: function(keyEvent) {
+        var me = this,
+            view = keyEvent.view,
+			g = view.grid,
+			s = g.getSelection();
+	
+		if (s) {
+			var r=s[0],
+				tid=r.get("threadId"),
+				tindent=r.get("threadIndent"),
+				topen=r.get("threadOpen");
+			if (tid && tid>0 && tindent===0 && topen) {
+				g.collapseClicked(g.store.indexOf(r));
+			}
+		}
 	}
 	
 });
@@ -582,7 +610,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						var cls=topen?"":"x-grid-group-hd-collapsed";
 						imgtag="<div class='x-grid-group-hd-collapsible "+cls+"'>"+
 								"<span class='x-grid-group-title wtmail-element-toclick'"+
-								  " onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+",this);'"+
+								  " onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+");'"+
 								">&nbsp;</span>";
 						var tuc=record.get("threadUnseenChildren")
 						if (!topen && tuc && tuc>0) imgtag+="<b>+"+tuc+"</b>&nbsp;";
@@ -801,7 +829,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.callParent(arguments);
     },
 	
-	collapseClicked: function(rowIndex,el) {
+	collapseClicked: function(rowIndex) {
 		var me=this,
 			s=me.store,
 		    r=s.getAt(rowIndex);
