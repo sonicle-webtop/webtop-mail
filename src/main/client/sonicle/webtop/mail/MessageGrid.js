@@ -831,9 +831,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	collapseClicked: function(rowIndex) {
 		var me=this,
+			sel=me.getSelection(),
 			s=me.store,
 		    r=s.getAt(rowIndex);
-		me.getView().suspendEvents();
+	
+		if (sel) {
+			me.selectOnLoad=me.store.indexOf(sel[0]);
+			me.view.on('refresh',function() {
+				if (me.selectOnLoad) {
+					me.getSelectionModel().select(me.selectOnLoad);
+					delete me.selectOnLoad;
+				}
+			},me,{ single: true });
+		}
 		me.store.reload({ 
 			params: {
 				threadaction: r.get("threadOpen")?'close':'open',
@@ -898,8 +908,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     loaded: function(s,r,o) {
 		var me=this,
 			meta=s.getProxy().getReader().metaData;
-		
-		me.getView().resumeEvents();
+
 		me.fireEvent('load',me,me.currentFolder,s.proxy.reader.rawData);
 /*		var me=this,
 			meta=me.store.proxy.reader.metaData,
