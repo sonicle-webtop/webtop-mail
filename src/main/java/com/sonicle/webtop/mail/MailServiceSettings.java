@@ -60,6 +60,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String ADMIN_USER = "admin.user";
 	public static final String ADMIN_PASSWORD = "admin.password";
 	public static final String NETHTOP_VMAIL_SECRET = "nethtop.vmail.secret";
+	public static final String SCHEDULED_EMAILS_DISABLED = "scheduled-emails.disabled";
 
 /*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
 	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
@@ -135,6 +136,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public String getNethTopVmailSecret() {
 		return getString(NETHTOP_VMAIL_SECRET,null);
+	}
+	
+	public boolean isScheduledEmailsDisabled() {
+		return getBoolean(DEFAULT_PREFIX+SCHEDULED_EMAILS_DISABLED,false);
 	}
 	
 	//DEFAULTS

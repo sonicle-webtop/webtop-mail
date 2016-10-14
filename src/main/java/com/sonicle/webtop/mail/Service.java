@@ -7819,6 +7819,10 @@ public class Service extends BaseService {
 	 String text="";
 	 String text2="";
 	 if (query!=null) text=query.trim();
+	 if (text.length()==0) {	
+		out.println("{ contacts: [ ], totalRecords: 0 }");
+		return;
+	 }	
 	 String otext=text;
 	 if (text.contains(" ")) {
 	 String ss[]=text.split(" ");

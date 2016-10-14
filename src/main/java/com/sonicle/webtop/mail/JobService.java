@@ -126,6 +126,10 @@ public class JobService extends BaseJobService {
 					String domainId=domain.getDomainId();
 					Session session=WT.getMailSession(domainId);
 					MailServiceSettings mss = getMailServiceSettings(domainId);
+					if (mss.isScheduledEmailsDisabled()) {
+						logger.debug(" skipping domain "+domainId+" : scheduled-emails disabled");
+						continue;
+					}
 					String vmailSecret=mss.getNethTopVmailSecret();
 					List<OUserMap> musers=UserMapDAO.getInstance().selectByDomainId(con, domainId);
 					for(OUserMap muser: musers) {
