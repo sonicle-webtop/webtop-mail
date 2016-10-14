@@ -324,7 +324,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				me.getAction('forwardeml'),
 				me.getAction('special'),
 				{
-					xtype: 'menu',
 					text: me.res("menu-complete"),
 					menu: {
 						items: [
