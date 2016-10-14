@@ -139,7 +139,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}
 	
 	public boolean isScheduledEmailsDisabled() {
-		return getBoolean(DEFAULT_PREFIX+SCHEDULED_EMAILS_DISABLED,false);
+		return getBoolean(SCHEDULED_EMAILS_DISABLED,false);
 	}
 	
 	//DEFAULTS

@@ -153,6 +153,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		var tbitems=new Array(),
 			tbx=0;
 		
+		var smenu=[],sx=0;
+		smenu[sx++]={ text: me.mys.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-send-xs', handler: me.actionSend, scope: me };
+		if (!me.mys.getVar("schedDisabled"))
+			smenu[sx++]={ text: me.mys.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me };
 		tbitems[tbx++]={
 			xtype: 'splitbutton',
 			text: me.mys.res('editor.send.btn-send.lbl'),
@@ -160,10 +164,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			iconCls: 'wtmail-icon-send-xs',
 			handler: me.actionSend,
 			scope: me,
-			menu: [
-				{ text: me.mys.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-send-xs', handler: me.actionSend, scope: me },
-				{ text: me.mys.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me }
-			]
+			menu: smenu
 		};
 		tbitems[tbx++]='-';
 		
