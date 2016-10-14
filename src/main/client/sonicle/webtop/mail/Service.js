@@ -148,6 +148,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
             //}
 			if (n.id==='root') {
 				me.selectInbox();
+				Ext.each(n.childNodes,function(cn,cx,an) {
+					if (cn.get("isSharedRoot")) {
+						cn.expand();
+					}
+				},me);
 			}
         },this);
 		//TODO: context menu

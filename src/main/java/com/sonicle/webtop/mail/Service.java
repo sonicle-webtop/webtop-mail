@@ -3883,6 +3883,7 @@ public class Service extends BaseService {
 					+ ",hasUnread:" + hasUnread
 					+ ",group: '"+group+"'";
 
+			if (mc.isSharedFolder()) ss+=",isSharedRoot: true";
 			if (mc.isInbox()) {
 				ss += ",isInbox: true";
 			}
