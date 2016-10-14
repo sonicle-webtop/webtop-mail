@@ -6331,15 +6331,15 @@ public class Service extends BaseService {
 	public void processSendReceipt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
 		String subject = request.getParameter("subject");
+		String from = request.getParameter("from");
 		String to = request.getParameter("to");
 		String folder = request.getParameter("folder");
 		String sout = "";
-		String from = profile.getCompleteEmailAddress();
 		Identity ident = mprofile.getIdentity(folder);
 		if (ident != null) {
 			from = ident.toString();
 		}
-		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] Ã¨ stato letto.\n\n"
+		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] è stato letto.\n\n"
 				+ "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
 		try {
 			checkStoreConnected();

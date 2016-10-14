@@ -531,25 +531,26 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		opts=opts||{};
 		
 		var me=this,
-			identIndex=0,
-			identities=me.varsData.identities,
-            ident=identities[0],
+//			identIndex=0,
+//			identities=me.varsData.identities,
+//          ident=identities[0],
+			ident=me.getFolderIdentity(idfolder);
 			rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 	
-        for(var i=1;i<identities.length;++i) {
+/*        for(var i=1;i<identities.length;++i) {
             var ifolder=identities[i].mainFolder;
             if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
                 identIndex=i;
                 ident=identities[i];
                 break;
             }
-        }
+        }*/
 
 		var v=WT.createView(me.ID,'view.MessageEditor',{
 			viewCfg: {
 				msgId: opts.msgId||0,
 				mys: me,
-				identityIndex: identIndex,
+				identityIndex: ident.index,
 				fontFace: me.getVar('fontName'),
 				fontSize: me.getVar('fontSize')
 			}
@@ -576,6 +577,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 forwardedfrom: opts.forwardedfrom
 			});
 		});
+	},
+	
+	getFolderIdentity: function(idfolder) {
+		var me=this,
+			identities=me.varsData.identities,
+            ident=identities[0];
+	
+        for(var i=1;i<identities.length;++i) {
+            var ifolder=identities[i].mainFolder;
+            if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
+                ident=identities[i];
+                ident.index=i;
+                break;
+            }
+        }
+		
+		return ident;
 	},
 	
 	actionAdvancedSearch: function() {},

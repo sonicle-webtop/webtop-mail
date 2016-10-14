@@ -106,7 +106,7 @@ public class MailManager extends BaseManager {
 			UserProfile.Id pid=getTargetProfileId();
 			//first add main identity
 			Data udata=WT.getUserData(pid);
-			Identity id=new Identity(udata.getEmail().getAddress(),udata.getDisplayName(),null);
+			Identity id=new Identity(udata.getDisplayName(),udata.getEmail().getAddress(),null);
 			id.setIsMainIdentity(true);
 			idents.add(id);
 			

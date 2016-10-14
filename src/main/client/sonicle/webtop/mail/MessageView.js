@@ -292,31 +292,22 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.divBody=Ext.get(div);
 			
 			//TODO workflow
-			/*
 			if (me.workflow) {
+			/*
                 WT.alert(
                     "Workflow",
                     me.mys.res('alert-workflow')
                 );
+			*/
 			}
 			//no receipt if workflow
-			//TODO receipt
-            else if (this.receipt) {
-              var config={
-                mv: this,
-                title: ms.res('receipt'),
-                msg: ms.res('receiptprompt'),
-                buttons: Ext.Msg.YESNO,
-                fn: function(btn) {
+            else if (me.receipt) {
+				WT.confirm(me.mys.res("receipt.confirm"),function(btn) {
                     if (btn=='yes') {
-                        this.mv.sendReceipt();
+                        me.sendReceipt();
                     }
-                },
-                icon: Ext.Msg.WARNING
-              };
-              config.scope=config;
-              WT.show(config);
-            }*/
+				});
+            }
             
             var tdh=me.tdHeader,
 				tdb=me.tdBody,
@@ -1026,29 +1017,25 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
 
-	//TODO sendReceipt
-	/*
     sendReceipt: function() {
-        WT.JsonAjaxRequest({
-            url: "ServiceRequest",
-            params: {
-                service: 'mail',
-                action: 'SendReceipt',
-                subject: this.subject,
-                to: this.receipt,
-                folder: this.folder
-            },
-            options: {
-            },
-            method: "POST",
-            callback: function(o,options) {
-              if (!o.result) {
-                  WT.alert(o.text);
-              }
-            },
-            scope: this
-        });
-    },*/
+		var me=this,
+			ident=me.mys.getFolderIdentity(me.folder);
+	
+		WT.ajaxReq(me.mys.ID, 'SendReceipt', {
+			params: {
+				from: ident.displayName+" <"+ident.email+">",
+                subject: me.subject,
+                to: me.receipt,
+                folder: me.folder
+			},
+			callback: function(success,json) {
+				if (json.result) {
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+    },
 
 	// TODO print
 	/*
