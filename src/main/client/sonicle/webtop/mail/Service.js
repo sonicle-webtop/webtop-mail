@@ -954,7 +954,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
             if (a.scanEnabled) mi.setChecked(true,true);
             else mi.setChecked(false,true);
         }*/
-	}
+	},
 	
+	getCalendarAPI: function() {
+		return WT.getServiceAPI("com.sonicle.webtop.calendar");
+	}
 	
 });

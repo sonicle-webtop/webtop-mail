@@ -66,6 +66,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     showAddressBook: true,
     showReceipt: true,
     showPriority: true,
+	showReminder: true,
     showAttach: true,
     showIdentities: true,
     showEditToolbar: true,
@@ -86,7 +87,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	dirty: false,
     
     sendMask: null,
-    	
+
 	initComponent: function() {
 		var me=this;
 		me.callParent(arguments);
@@ -198,10 +199,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				tooltip: me.mys.res('editor.btn-receipt.tip'),
 				iconCls: 'wtmail-icon-receipt-xs',
 				handler: me.actionReceipt,
-				scope: me,
-				bind: {
-					pressed: '{record.receipt}'
-				}
+				scope: me
 			};
             dash=true;
         }
@@ -212,10 +210,18 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				tooltip: me.mys.res('editor.btn-priority.tip'),
 				iconCls: 'wtmail-icon-priority-high-xs',
 				handler: me.actionPriority,
-				scope: me,
-				bind: {
-					pressed: '{record.priority}'
-				}
+				scope: me
+			};
+            dash=true;
+        }
+        if (this.showReminder) {
+			tbitems[tbx++]={
+				xtype: 'button',
+				enableToggle: true,
+				tooltip: me.mys.res('editor.btn-reminder.tip'),
+				iconCls: 'wtcal-icon-newEvent-xs',
+				handler: me.actionReminder,
+				scope: me
 			};
             dash=true;
         }
@@ -449,6 +455,18 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			data: data
 		});
 	},
+	
+	actionReceipt: function(b) {
+		this.getModel().set("receipt",b.pressed);
+	},
+    
+	actionPriority: function(b) {
+		this.getModel().set("priority",b.pressed);
+	},
+    
+	actionReminder: function(b) {
+		this.getModel().set("reminder",b.pressed);
+	},
     
     actionSend: function() {
         var me=this;
@@ -466,6 +484,18 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.getModel().setExtraParams({
             action: 'SendMessage'
         });
+		if (me.getModel().get("reminder")) {
+			me.on("modelsave",function(me, op, success) {
+				if (success) {
+					var api=me.mys.getCalendarAPI();
+					if (api) {
+						api.newCalendarEvent({
+							//TODO: new reminder
+						});
+					}
+				}
+			},me,{ single: true });
+		}
         me.saveView(true);
 	},
     

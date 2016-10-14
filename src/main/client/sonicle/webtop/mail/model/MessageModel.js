@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
 		{ name: "msgId", type: 'int' },
 		{ name: "receipt", type: 'boolean' },
 		{ name: "priority", type: 'boolean' },
+		{ name: "reminder", type: 'boolean' },
 		{ name: "from", type: 'string' },
 		{ name: "subject", type: 'string' },
 		{ name: "content", type: 'string' },
