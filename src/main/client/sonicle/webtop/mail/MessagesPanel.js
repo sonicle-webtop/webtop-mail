@@ -148,7 +148,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			tooltip: me.res('filtertext.tip'),
 			listeners: {
 				enterkey: function(tf,e) {
-					me.filterAction(tf,e);
+					me.filterAction(tf);
+				},
+				select: function(tf,r,eopts) {
+					me.filterAction(tf);
 				}
 			}
 			
@@ -368,7 +371,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			fl.updateRecordSeenStateAtIndex(fl.indexOfMessage(idmessage),true);
     },
    
-    filterAction: function(tf,e) {
+    filterAction: function(tf) {
         var me=this;
 		me.reloadFiltered(me.quickFilterCombo.getValue(),me.filterCombo.getValue(),tf.getValue());
     },
