@@ -403,7 +403,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 me.getAction('markseenfolder')
 			]
 		}));
-        mscan.on('checkchange',me.actionScanFolder,me);
+        //mscan.on('checkchange',me.actionScanFolder,me);
+		mscan.on('click',me.actionScanFolder,me);
 		me.addRef("mnuScan",mscan);
         //cxmTree.on('hide',this.treeMenuHidden,this);
 		
@@ -669,10 +670,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if (rec) me.refreshFolder(rec);
 	},
 	
-	actionScanFolder: function(mi,v) {
+	actionScanFolder: function(mi,e) {
 		var me=this,
 			n=me.getCtxNode(e),
-			folder=n.get("id");
+			folder=n.get("id"),
+			v=mi.checked;
 	
 		if (n.hasChildNodes()) {
 			WT.confirm(me.res('recursive'),function(bid) {
