@@ -684,7 +684,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionFolderMarkSeen: function() {},
-	actionDownloadMails: function() {},
+	
+	actionDownloadMails: function(s,e) {
+		var me=this,
+			rec=me.getCtxNode(e);
+	
+		me.downloadMails(rec.get("id"));
+	},
+	
+    downloadMails: function(folder) {
+        var params={
+            folder: folder
+        };
+        var url=WTF.processBinUrl(this.ID,"DownloadMails",params);;
+        window.open(url);
+    },	
 	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();
