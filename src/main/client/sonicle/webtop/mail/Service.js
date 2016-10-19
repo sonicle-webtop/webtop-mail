@@ -683,7 +683,19 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 	},
 	
-	actionFolderMarkSeen: function() {},
+	actionFolderMarkSeen: function(s,e) {
+		var me=this,
+			n=me.getCtxNode(e),
+			folder=n.get("id");
+	
+		if (n.hasChildNodes()) {
+			WT.confirm(me.res('recursive'),function(bid) {
+				me.markSeenFolder(folder,(bid=='yes'));
+			},me);
+		} else {
+				me.markSeenFolder(folder,false);
+		}
+	},
 	
 	actionDownloadMails: function(s,e) {
 		var me=this,
@@ -691,14 +703,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 		me.downloadMails(rec.get("id"));
 	},
-	
-    downloadMails: function(folder) {
-        var params={
-            folder: folder
-        };
-        var url=WTF.processBinUrl(this.ID,"DownloadMails",params);;
-        window.open(url);
-    },	
 	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();
@@ -734,6 +738,31 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return this.getVar('folderTrash');
 	},
 
+    downloadMails: function(folder) {
+        var params={
+            folder: folder
+        };
+        var url=WTF.processBinUrl(this.ID,"DownloadMails",params);;
+        window.open(url);
+    },
+	
+	markSeenFolder: function(folder,recursive) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'SeenFolder', {
+			params: {
+				folder: folder,
+				recursive: (recursive?"1":"0")
+			},
+			callback: function(success,json) {
+				if (json.result) {
+					me.reloadFolderList();
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},
+	
     createFolder: function(parent,name) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'NewFolder', {
