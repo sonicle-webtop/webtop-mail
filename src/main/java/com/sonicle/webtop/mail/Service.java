@@ -65,6 +65,7 @@ import com.sonicle.webtop.core.sdk.UserProfile.Data;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ONote;
+import com.sonicle.webtop.mail.bol.OScan;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
@@ -4500,23 +4501,15 @@ public class Service extends BaseService {
 		}
 		String sout = null;
 		Connection con = null;
-		Statement stmt = null;
 		try {
 			con = getConnection();
-			stmt = con.createStatement();
 			FolderCache fc = getFolderCache(folder);
-			setScanFolder(stmt, fc, value, recursive);
+			setScanFolder(con, fc, value, recursive);
 			sout = "{\nresult: true\n}";
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		} finally {
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (SQLException exc) {
-				}
-			}
 			if (con != null) {
 				try {
 					con.close();
@@ -4527,22 +4520,24 @@ public class Service extends BaseService {
 		out.println(sout);
 	}
 	
-	private void setScanFolder(Statement stmt, FolderCache fc, boolean value, boolean recursive) throws SQLException {
+	private void setScanFolder(Connection con, FolderCache fc, boolean value, boolean recursive) throws SQLException {
 		UserProfile profile = environment.getProfile();
+		String iddomain=profile.getDomainId();
 		String login = profile.getUserId();
 		String folder = fc.getFolderName();
 		if (value) {
-			stmt.executeUpdate("insert into mailscan values ('" + login + "','" + DbUtils.getSQLString(folder) + "','" + profile.getDomainId() + "')");
+			OScan oscan = new OScan(iddomain, login, folder);
+			ScanDAO.getInstance().insert(con, oscan);
 			fc.setScanEnabled(true);
 		} else {
-			stmt.executeUpdate("delete from mailscan where iddomain='" + profile.getDomainId() + "' and login='" + login + "' and foldername='" + DbUtils.getSQLString(folder) + "'");
+			ScanDAO.getInstance().deleteById(con, iddomain, login, folder);
 			fc.setScanEnabled(false);
 		}
 		if (recursive) {
 			ArrayList<FolderCache> children = fc.getChildren();
 			if (children != null) {
 				for (FolderCache child : children) {
-					setScanFolder(stmt, child, value, recursive);
+					setScanFolder(con, child, value, recursive);
 				}
 			}
 		}

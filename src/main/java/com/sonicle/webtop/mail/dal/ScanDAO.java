@@ -37,6 +37,7 @@ import com.sonicle.webtop.core.dal.BaseDAO;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.mail.bol.OScan;
 import static com.sonicle.webtop.mail.jooq.Tables.SCAN;
+import com.sonicle.webtop.mail.jooq.tables.records.ScanRecord;
 import java.sql.Connection;
 import org.jooq.DSLContext;
 
@@ -68,4 +69,24 @@ public class ScanDAO extends BaseDAO {
 		return selectById(con,domainId,userId,foldername)!=null;
 	}
 	
+	public int insert(Connection con, OScan item) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		ScanRecord record = dsl.newRecord(SCAN, item);
+		return dsl
+			.insertInto(SCAN)
+			.set(record)
+			.execute();
+	}
+	
+	public int deleteById(Connection con, String domainId, String userId, String foldername) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.delete(SCAN)
+			.where(
+				SCAN.DOMAIN_ID.equal(domainId)
+				.and(SCAN.USER_ID.equal(userId)
+				.and(SCAN.FOLDERNAME.equal(foldername)))
+			)
+			.execute();
+	}
 }
