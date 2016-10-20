@@ -90,6 +90,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 
 	initComponent: function() {
 		var me=this;
+		
+		me.plugins=me.plugins||[];
+		me.plugins.push({
+			ptype: 'sofiledrop',
+			text: WT.res('sofiledrop.text')
+		});
+
 		me.callParent(arguments);
 		
 		if (me.msgId===0) me.msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
@@ -263,6 +270,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
                                     fileSize: file.size 
                                 }
 						);
+					},
+					uploaderror: function(s,file,msg) {
+						me.htmlEditor.hideProgress();
+						WT.error(msg);
 					},
 					uploadcomplete: function(s,fok,ffailed) {
 						//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
@@ -539,7 +550,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     
     prepareContent: function(content,mime,mc) {
 		var me=this;
-		if (!mc) mc=me.identities[me.identityIndex].mailcard;
+		if (!mc) {
+			var ident=me.identities[me.identityIndex];
+			if (ident.mailcard) mc=ident.mailcard;
+		}
 		
 		if (mc) content='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+content;
         content='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+content+'</div>';

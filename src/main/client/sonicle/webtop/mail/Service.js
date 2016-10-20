@@ -550,7 +550,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			viewCfg: {
 				msgId: opts.msgId||0,
 				mys: me,
-				identityIndex: ident.index,
+				identityIndex: ident.index||0,
 				fontFace: me.getVar('fontName'),
 				fontSize: me.getVar('fontSize')
 			}
