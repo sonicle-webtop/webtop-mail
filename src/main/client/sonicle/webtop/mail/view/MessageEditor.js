@@ -74,11 +74,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     showCloud: true,
 	
     autoSave: false,
-    autoSaveService: 'mail',
-    autoSaveAction: 'AutoSaveMessage',
+    autoSaveSID: null,
+    autoSaveAction: null,
     autoSaveDirty: false,
     autoSaveTask: null,
-    autoSaveDelay: 30000,
+    autoSaveDelay: 5000,
 	
 	fax: false,
 	faxident: null,
@@ -100,6 +100,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.callParent(arguments);
 		
 		if (me.msgId===0) me.msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
+		if (!me.autoSaveSID) me.autoSaveSID=me.mys.ID;
+		if (!me.autoSaveAction) me.autoSaveAction='AutoSaveMessage';
 		
 		me.identities=me.mys.getVar("identities");
 		//save hashed identities, by identityId
@@ -432,7 +434,16 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 
 		me.on('viewload', me.onViewLoad);
 		me.on('viewclose',function() {
-			this.mys.cleanupUploadedFiles(me.msgId);
+			if (me.autoSaveTask) me.autoSaveTask.cancel();
+			me.mys.cleanupUploadedFiles(me.msgId);
+		});
+		me.on('beforemodelsave', function() {
+			if (me.autoSaveTask) me.autoSaveTask.cancel();
+		});
+		me.on('modelsave', function(s,op,success) {
+			if (!success) {
+				if (me.autoSaveTask) me.autoSaveTask.delay(me.autoSaveDelay);
+			}
 		});
 	},
 	
@@ -457,6 +468,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			if (me.subject.getValue()==="") me.subject.focus();
 			else me.htmlEditor.focusEditor();
 		}
+        if (me.autoSave) {
+			me.clearAutoSaveDirty();
+            me.autoSaveTask=new Ext.util.DelayedTask(me.doAutoSave,me);
+            me.autoSaveTask.delay(me.autoSaveDelay);
+        }
 	},
 	
 	startNew: function(data) {
@@ -604,11 +620,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 	},
 	
-    setDirty: function(b) {
-        this.dirty=b;
-        this.autoSaveDirty=b;
-    },
-    
     disableControls: function(/*showProgress,*/showSendmask) {
         var me=this;
         me.toolbar.disable();
@@ -621,7 +632,49 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.recgrid.disable();
         me.subject.disable();
     },
+	
+    fillRecipients: function(rcpts,rtypes) {
+        Ext.each(
+          this.recgrid.store.getRange(),
+          function(r,index,allItems) {
+            rcpts[index]=Ext.util.Format.htmlDecode(r.get("email"));
+            rtypes[index]=r.get("totype");
+          }
+        );
+    },	
 
+    doAutoSave: function() {
+		var me=this;
+        if (me.isAutoSaveDirty()) {
+            var mailparams={
+              subject: me.subject.getValue(),
+              content: me.htmleditor.getValue(),
+              recipients: [],
+              rtypes: []
+            };
+            me.fillRecipients(mailparams.recipients,mailparams.rtypes);
+
+			WT.ajaxReq(me.autoSaveSID, me.autoSaveAction, {
+				params: {
+					newmsgid: me.msgid,
+					json: Ext.encode(mailparams)
+				},
+				callback: function(success,json) {
+					if (json.result) {
+						console.log("autosave done");
+					} else {
+						WT.error(json.text);
+					}
+				}
+			});					
+			
+			me.clearAutoSaveDirty();
+		} else {
+			console.log("autosave is clean");
+		}
+		me.autoSaveTask.delay(me.autoSaveDelay);
+	},
+	
     enableControls: function() {
         var me=this;
         me.toolbar.enable();
@@ -636,7 +689,21 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     },
 
 	
-	
+    isAutoSaveDirty: function() {
+		var me=this;
+        return me.recgrid.isRecipientComboAutoSaveDirty() || 
+            (me.autoSaveSubjectValue!=me.subject.getValue()) || 
+            me.htmlEditor.isAutoSaveDirty() || 
+            me.getModel().isAutoSaveDirty();
+    },
+    
+    clearAutoSaveDirty: function() {
+		var me=this;
+        me.recgrid.clearAutoSaveDirty();
+        me.autoSaveSubjectValue=me.subject.getValue();
+        me.htmlEditor.clearAutoSaveDirty();
+        me.getModel().clearAutoSaveDirty();
+    }
 	
 });
 

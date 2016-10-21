@@ -552,7 +552,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				mys: me,
 				identityIndex: ident.index||0,
 				fontFace: me.getVar('fontName'),
-				fontSize: me.getVar('fontSize')
+				fontSize: me.getVar('fontSize'),
+				autoSave: true
 			}
 		});
 	
