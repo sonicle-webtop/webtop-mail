@@ -127,7 +127,7 @@ public class MailUserProfile {
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
 				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId()+"@"+ad.getDomain();
-				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=principal.getPassword();
+				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
 			}
 			
 			//If still something is invalid, provides defaults
@@ -147,10 +147,10 @@ public class MailUserProfile {
 			
 			CredentialAlgorithm encpasswordType=principal.getCredentialAlgorithm();
 			String encpassword=principal.getCredential();
-			if (encpasswordType==null) encpassword=principal.getPassword();
+			if (encpasswordType==null) encpassword=new String(principal.getPassword());
 
 			if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
-			if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=principal.getPassword();
+			if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
 			else {
 				if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
 					mailPassword=Encryption.decipher(mailPassword,encpassword);

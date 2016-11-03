@@ -88,9 +88,9 @@ public class Mailcard {
 			String mobile=personalInfo.getMobile();
 			String telephone=personalInfo.getTelephone();
 			String fax=personalInfo.getFax();
-			String custom1=personalInfo.getCustom1();
-			String custom2=personalInfo.getCustom2();
-			String custom3=personalInfo.getCustom3();
+			String custom1=personalInfo.getCustom01();
+			String custom2=personalInfo.getCustom02();
+			String custom3=personalInfo.getCustom03();
 			if(title != null) html = PATTERN_TITLE.matcher(html).replaceAll(title);
 			if(firstName != null) html = PATTERN_FIRST_NAME.matcher(html).replaceAll(firstName);
 			if(lastName != null) html = PATTERN_LAST_NAME.matcher(html).replaceAll(lastName);
