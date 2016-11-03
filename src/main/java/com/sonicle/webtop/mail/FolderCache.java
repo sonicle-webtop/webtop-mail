@@ -96,7 +96,7 @@ public class FolderCache {
     private boolean checkUnreads=true;
     private boolean checkRecents=true;
     private boolean isSharedInbox=false;
-    private com.sonicle.security.Principal sharedInboxPrincipal=null;
+    private SharedPrincipal sharedInboxPrincipal=null;
     private boolean isInbox=false;
     private boolean isRoot=false;
     private boolean isSent=false;
@@ -216,7 +216,7 @@ public class FolderCache {
 			int isep=subname.indexOf(sep);
             if (isep<0) {
                 isSharedInbox=true;
-                sharedInboxPrincipal=ms.getPrincipal(environment.getProfile().getDomainId(),subname);
+                sharedInboxPrincipal=ms.getSharedPrincipal(environment.getProfile().getDomainId(),subname);
 				//Cyrus has shared/user = inbox
 				//Dovecot has shared/user no messages, then INBOX under
 				if ((folder.getType()&IMAPFolder.HOLDS_MESSAGES)==0) {
@@ -232,8 +232,8 @@ public class FolderCache {
         }
         if (sharedInboxPrincipal==null) description=ms.getInternationalFolderName(this);
         else {
-            description=sharedInboxPrincipal.getDescription();
-            wtuser=sharedInboxPrincipal.getSubjectId();
+            description=sharedInboxPrincipal.getDisplayName();
+            wtuser=sharedInboxPrincipal.getUserId();
         }
         updateScanFlags();
 		if (isInbox) startIdle();
@@ -395,7 +395,7 @@ public class FolderCache {
         return isSharedInbox;
     }
 
-    public com.sonicle.security.Principal getSharedInboxPrincipal() {
+    public SharedPrincipal getSharedInboxPrincipal() {
         return sharedInboxPrincipal;
     }
 

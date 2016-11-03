@@ -3630,7 +3630,7 @@ public class Service extends BaseService {
 			for (ArrayList<FolderCache> al : hm.values()) {
 				if (al.size() > 1) {
 					for (FolderCache fcc : al) {
-						com.sonicle.security.Principal sip = fcc.getSharedInboxPrincipal();
+						SharedPrincipal sip = fcc.getSharedInboxPrincipal();
 						String user = sip.getUserId();
 						fcc.setWebTopUser(user);
 						fcc.setDescription(fcc.getDescription() + " [" + user + "]");
@@ -9646,37 +9646,8 @@ public class Service extends BaseService {
 	 logger.debug("remove sharing from {} to {}",folder.getFullName(),acluser);
 	 folder.removeACL(acluser);
 	 }*/
-	public Principal getPrincipal(String domainId, String mailUserId) {
-		/*        Connection con=null;
-		 String iddomain=wtd.getLocalIDDomain();
-		 String dlogin=mailusername;
-		 String dname=mailusername;
-		 AuthenticationDomain ad=getAuthenticationDomain(iddomain);
-		 try {
-		 con=getMainConnection();
-		 stmt=con.createStatement();
-		 rs=stmt.executeQuery("select login,username from users where iddomain='"+iddomain+"' and mailusername='"+mailusername+"'");
-		 if (rs.next()) {
-		 dlogin=rs.getString("login");
-		 dname=rs.getString("username");
-		 }
-		 else if (wtd.isLdap()) {
-		 rs.close();
-		 rs=stmt.executeQuery("select login,username from users where iddomain='"+iddomain+"' and login='"+mailusername+"'");
-		 if (rs.next()) {
-		 dlogin=rs.getString("login");
-		 dname=rs.getString("username");
-		 }
-		 }
-		 } catch(SQLException exc) {
-		 Service.logger.error("Exception",exc);
-		 } finally {
-		 if (rs!=null) try { rs.close(); } catch(Exception exc) {}
-		 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-		 if (con!=null) try { con.close(); } catch(Exception exc) {}
-		 }
-		 com.sonicle.security.acl.Principal p=new com.sonicle.security.acl.Principal(dlogin,ad,dname);*/
-		Principal p = null;
+	public SharedPrincipal getSharedPrincipal(String domainId, String mailUserId) {
+		SharedPrincipal p = null;
 		Connection con = null;
 		try {
 			con = getConnection();
@@ -9697,10 +9668,10 @@ public class Service extends BaseService {
 				String desc=LangUtils.value(ouser.getDisplayName(),"");
 				desc=desc.trim();
 				logger.debug("webtop user found, desc={}",desc);
-				p = new Principal(mailUserId, AuthenticationDomain.getInstance(con, domainId), desc);
+				p = new SharedPrincipal(mailUserId, desc);
 			} else {
 				logger.debug("webtop user not found, creating unmapped principal");
-				p = new Principal(mailUserId, AuthenticationDomain.getInstance(con, domainId), mailUserId);
+				p = new SharedPrincipal(mailUserId, mailUserId);
 			}
 			
 		} catch (SQLException exc) {

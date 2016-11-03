@@ -37,6 +37,7 @@ import com.sonicle.commons.db.DbUtils;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.CredentialAlgorithm;
 import com.sonicle.security.Principal;
+import com.sonicle.security.auth.DirectoryManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.util.Encryption;
@@ -102,13 +103,13 @@ public class MailUserProfile {
 			
 			//Use AD properties if it can provide them
 			AuthenticationDomain ad=principal.getAuthenticationDomain();
-			if (ad!=null && ad.getProperty("mail.protocol",null)!=null) {
+/*			if (ad!=null && ad.getProperty("mail.protocol",null)!=null) {
 				mailProtocol=ad.getProperty("mail.protocol",null);
 				mailHost=ad.getProperty("mail.host",null);
 				mailPort=ad.getProperty("mail.port",0);
 				mailUsername=ad.getProperty("mail.username",null);
 				mailPassword=ad.getProperty("mail.password",null);
-			} else {
+			} else {*/
 				OUserMap omap=UserMapDAO.getInstance().selectById(con, profile.getDomainId(), profile.getUserId());
 				if (omap!=null) {
 					mailProtocol=omap.getMailProtocol();
@@ -117,16 +118,17 @@ public class MailUserProfile {
 					mailUsername=omap.getMailUser();
 					mailPassword=omap.getMailPassword();
 				}
-			}
+			//}
 			
 
 			//If LDAP overwrite any null value with specific LDAP default values
-			if (ad!=null && ad.getAuthUriProtocol().startsWith("ldap")) {
+			com.sonicle.security.auth.directory.AbstractDirectory dir=DirectoryManager.getManager().getDirectory(ad.getAuthUri().getScheme());
+			if (ad!=null && dir!=null && dir instanceof com.sonicle.security.auth.directory.LdapDirectory) {
 				MailServiceSettings mss=ms.getMailServiceSettings();
 				if (mailHost==null) mailHost=mss.getDefaultHost();
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
-				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId()+"@"+ad.getDomain();
+				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId()+"@"+ad.getInternetDomain();
 				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
 			}
 			
@@ -145,16 +147,17 @@ public class MailUserProfile {
 				}
 			}
 			
-			CredentialAlgorithm encpasswordType=principal.getCredentialAlgorithm();
-			String encpassword=principal.getCredential();
-			if (encpasswordType==null) encpassword=new String(principal.getPassword());
+			//TODO: encrypted mail password
+			//CredentialAlgorithm encpasswordType=principal.getCredentialAlgorithm();
+			//String encpassword=principal.getCredential();
+			//if (encpasswordType==null) encpassword=new String(principal.getPassword());
 
 			if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
 			if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
-			else {
-				if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
-					mailPassword=Encryption.decipher(mailPassword,encpassword);
-			}
+			//else {
+			//	if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
+			//		mailPassword=Encryption.decipher(mailPassword,encpassword);
+			//}
 
 			logger.info("  accessing "+mailProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+mailPort);
 
