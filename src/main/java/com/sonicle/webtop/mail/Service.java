@@ -9407,7 +9407,6 @@ public class Service extends BaseService {
 		}
 	}	
 	
-	// TODO: auto save message
 /*    public void processAutoSaveMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 try {
 	 String newmsgid=request.getParameter("newmsgid");
