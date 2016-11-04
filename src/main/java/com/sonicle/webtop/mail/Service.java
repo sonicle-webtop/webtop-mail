@@ -5545,11 +5545,11 @@ public class Service extends BaseService {
 
 			}*/
 			
-			//TODO save used recipients
 			//Save used recipients
 			for(JsRecipient rcpt: pl.data.recipients) {
                 String email=rcpt.email;
-				if (email!=null && email.trim().length()>0) WT.getCoreManager().addServiceStoreEntry(SERVICE_ID, "recipients", email.toUpperCase(),email);
+				if (email!=null && email.trim().length()>0) 
+					WT.getCoreManager().learnInternetRecipient(email);
 			}
 			//TODO save used subject
 			//Save used subject
