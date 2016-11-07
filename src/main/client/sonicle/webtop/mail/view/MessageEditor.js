@@ -73,12 +73,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     showSourceEdit: true,
     showCloud: true,
 	
-    autoSave: false,
-    autoSaveSID: null,
-    autoSaveAction: null,
-    autoSaveDirty: false,
-    autoSaveTask: null,
-    autoSaveDelay: 5000,
+    autosave: false,
+    autosaveDirty: false,
+    autosaveTask: null,
+    autosaveDelay: 10000,
 	
 	fax: false,
 	faxident: null,
@@ -100,8 +98,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.callParent(arguments);
 		
 		if (me.msgId===0) me.msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
-		if (!me.autoSaveSID) me.autoSaveSID=me.mys.ID;
-		if (!me.autoSaveAction) me.autoSaveAction='AutoSaveMessage';
 		
 		me.identities=me.mys.getVar("identities");
 		//save hashed identities, by identityId
@@ -432,17 +428,18 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			})
 		);
 
+		me.on('viewdiscard', me.onDiscard);
 		me.on('viewload', me.onViewLoad);
 		me.on('viewclose',function() {
-			if (me.autoSaveTask) me.autoSaveTask.cancel();
+			if (me.autosaveTask) me.autosaveTask.cancel();
 			me.mys.cleanupUploadedFiles(me.msgId);
 		});
 		me.on('beforemodelsave', function() {
-			if (me.autoSaveTask) me.autoSaveTask.cancel();
+			if (me.autosaveTask) me.autosaveTask.cancel();
 		});
 		me.on('modelsave', function(s,op,success) {
 			if (!success) {
-				if (me.autoSaveTask) me.autoSaveTask.delay(me.autoSaveDelay);
+				if (me.autosaveTask) me.autosaveTask.delay(me.autosaveDelay);
 			}
 		});
 	},
@@ -468,10 +465,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			if (me.subject.getValue()==="") me.subject.focus();
 			else me.htmlEditor.focusEditor();
 		}
-        if (me.autoSave) {
-			me.clearAutoSaveDirty();
-            me.autoSaveTask=new Ext.util.DelayedTask(me.doAutoSave,me);
-            me.autoSaveTask.delay(me.autoSaveDelay);
+        if (me.autosave) {
+			me.clearAutosaveDirty();
+            me.autosaveTask=new Ext.util.DelayedTask(me.doAutosave,me);
+            me.autosaveTask.delay(me.autosaveDelay);
         }
 	},
 	
@@ -581,14 +578,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         //me.htmlEditor.initHtmlValue(html);
 		me.getModel().set("content",content);
         me.getModel().set("mime",mime);
-/*        var w=this.htmleditor.getWin();
+/*        var w=this.htmlEditor.getWin();
         var d=w.document;
         var n=d.body.firstChild;
         if (w.getSelection) {
             var r=d.createRange();
             r.setStart(n,0);
             r.setEnd(n,0);
-            var s = this.htmleditor.win.getSelection();
+            var s = this.htmlEditor.win.getSelection();
             s.removeAllRanges();
             s.addRange(r);
         } else if (d.selection) {
@@ -627,7 +624,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         //this.aSend.disable();
         //if (this.aSave) this.aSave.disable();
         //if (this.aReceipt) this.aReceipt.disable();
-        if (!showSendmask) me.htmleditor.disable();
+        if (!showSendmask) me.htmlEditor.disable();
         //else me.sendMask.show();
         me.recgrid.disable();
         me.subject.disable();
@@ -643,24 +640,26 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         );
     },	
 
-    doAutoSave: function() {
+    doAutosave: function() {
 		var me=this;
-        if (me.isAutoSaveDirty()) {
+        if (me.isAutosaveDirty()) {
             var mailparams={
               subject: me.subject.getValue(),
-              content: me.htmleditor.getValue(),
+              content: me.htmlEditor.getEditingValue(),
               recipients: [],
               rtypes: []
             };
             me.fillRecipients(mailparams.recipients,mailparams.rtypes);
 
-			WT.ajaxReq(me.autoSaveSID, me.autoSaveAction, {
+			WT.ajaxReq(me.mys.ID, "ManageAutosave", {
 				params: {
-					newmsgid: me.msgid,
-					json: Ext.encode(mailparams)
+					crud: "update",
+					context: "newmail",
+					key: me.msgId,
+					value: Ext.encode(mailparams)
 				},
 				callback: function(success,json) {
-					if (json.result) {
+					if (success) {
 						console.log("autosave done");
 					} else {
 						WT.error(json.text);
@@ -668,11 +667,27 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 			});					
 			
-			me.clearAutoSaveDirty();
+			me.clearAutosaveDirty();
 		} else {
 			console.log("autosave is clean");
 		}
-		me.autoSaveTask.delay(me.autoSaveDelay);
+		me.autosaveTask.delay(me.autosaveDelay);
+	},
+	
+    onDiscard: function() {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, "DiscardMessage", {
+			params: {
+				msgId: me.msgId
+			},
+			callback: function(success,json) {
+				if (success) {
+					console.log("message discarded");
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
 	},
 	
     enableControls: function() {
@@ -682,27 +697,27 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         //this.aSend.enable();
         //if (this.aSave) this.aSave.enable();
         //if (this.aReceipt) this.aReceipt.enable();
-        if (!me.faxsubject) me.htmleditor.enable();
+        if (!me.faxsubject) me.htmlEditor.enable();
         //me.sendMask.hide();
         me.recgrid.enable();
         if (!me.faxsubject) me.subject.enable();
     },
 
 	
-    isAutoSaveDirty: function() {
+    isAutosaveDirty: function() {
 		var me=this;
-        return me.recgrid.isRecipientComboAutoSaveDirty() || 
-            (me.autoSaveSubjectValue!=me.subject.getValue()) || 
-            me.htmlEditor.isAutoSaveDirty() || 
-            me.getModel().isAutoSaveDirty();
+        return me.recgrid.isRecipientComboAutosaveDirty() || 
+            (me.autosaveSubjectValue!=me.subject.getValue()) || 
+            me.htmlEditor.isAutosaveDirty() || 
+            me.getModel().isAutosaveDirty();
     },
     
-    clearAutoSaveDirty: function() {
+    clearAutosaveDirty: function() {
 		var me=this;
-        me.recgrid.clearAutoSaveDirty();
-        me.autoSaveSubjectValue=me.subject.getValue();
-        me.htmlEditor.clearAutoSaveDirty();
-        me.getModel().clearAutoSaveDirty();
+        me.recgrid.clearAutosaveDirty();
+        me.autosaveSubjectValue=me.subject.getValue();
+        me.htmlEditor.clearAutosaveDirty();
+        me.getModel().clearAutosaveDirty();
     }
 	
 });

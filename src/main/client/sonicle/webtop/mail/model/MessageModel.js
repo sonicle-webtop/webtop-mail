@@ -33,7 +33,7 @@
  */
 
 Ext.define('Sonicle.webtop.mail.model.MessageModel', {
-    extend: 'WT.model.AutoSave',
+    extend: 'WT.model.Autosave',
     proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'SaveMessage','data', {
 		writer: {
 			type: 'sojson',
@@ -69,7 +69,7 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
 });
 
 Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {
-    extend: 'WT.model.AutoSave',
+    extend: 'WT.model.Autosave',
     fields: [
 //        WTF.fkField('string'),
 		{ name: "msgId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'recipients' } },
@@ -79,7 +79,7 @@ Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {
 });
 
 Ext.define('Sonicle.webtop.mail.model.AttachmentModel', {
-    extend: 'WT.model.AutoSave',
+    extend: 'WT.model.Autosave',
     fields: [
 //        WTF.fkField('string'),
 		{ name: "msgId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'attachments' } },

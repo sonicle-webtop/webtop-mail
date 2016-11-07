@@ -5488,6 +5488,7 @@ public class Service extends BaseService {
 	 }*/
 	public void processSendMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		JsonResult json = null;
+		CoreManager coreMgr=WT.getCoreManager();
 
 		// TODO: Cloud integration!!!
 /*        VFSService vfs=(VFSService)wts.getServiceByName("vfs");
@@ -5549,7 +5550,7 @@ public class Service extends BaseService {
 			for(JsRecipient rcpt: pl.data.recipients) {
                 String email=rcpt.email;
 				if (email!=null && email.trim().length()>0) 
-					WT.getCoreManager().learnInternetRecipient(email);
+					coreMgr.learnInternetRecipient(email);
 			}
 			//TODO save used subject
 			//Save used subject
@@ -5570,8 +5571,7 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			Exception exc = sendMessage(msg, jsmsg.attachments);
 			if (exc == null) {
-				//TODO: deleteAutoSaveData!!!!
-				//wts.deleteAutoSaveData("mail","newmail",newmsgid);
+				coreMgr.deleteAutosaveData(SERVICE_ID, "newmail", ""+msgId);
 				// TODO: Cloud integration!!!
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
 				 for(String hash: hashlinks) {
@@ -5711,6 +5711,7 @@ public class Service extends BaseService {
 	
 	public void processSaveMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		JsonResult json = null;
+		CoreManager coreMgr=WT.getCoreManager();
 		try {
 			checkStoreConnected();
             Payload<MapItem, JsMessage> pl=ServletUtils.getPayload(request,JsMessage.class);
@@ -5732,8 +5733,7 @@ public class Service extends BaseService {
 			}
 			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
 			if (exc == null) {
-				// TODO: deleteAutoSaveData!!!!
-				//wts.deleteAutoSaveData("mail","newmail",newmsgid);
+				coreMgr.deleteAutosaveData(SERVICE_ID, "newmail", ""+msgId);
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -5750,6 +5750,7 @@ public class Service extends BaseService {
 	
 	public void processScheduleMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		JsonResult json = null;
+		CoreManager coreMgr=WT.getCoreManager();
 		try {
 			checkStoreConnected();
             Payload<MapItem, JsMessage> pl=ServletUtils.getPayload(request,JsMessage.class);
@@ -5773,9 +5774,7 @@ public class Service extends BaseService {
 			}
 			Exception exc = scheduleMessage(msg, jsmsg.attachments, fc, scheddate, schedtime, schednotify);
 			if (exc == null) {
-				String newmsgid = request.getParameter("newmsgid");
-				// TODO: deleteAutoSaveData!!!!
-				//wts.deleteAutoSaveData("mail","newmail",newmsgid);
+				coreMgr.deleteAutosaveData(SERVICE_ID, "newmail", ""+msgId);
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -5791,11 +5790,18 @@ public class Service extends BaseService {
 	}
 	
 	public void processDiscardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String newmsgid = request.getParameter("newmsgid");
-		clearAttachments(Long.parseLong(newmsgid));
-		// TODO: deleteAutoSaveData!!!!
-		//wts.deleteAutoSaveData("mail","newmail",newmsgid);
-		out.println("{\nresult: true\n}");
+		JsonResult json = null;
+		CoreManager coreMgr=WT.getCoreManager();
+		try {
+			long msgId=ServletUtils.getLongParameter(request, "msgId", true);
+			clearAttachments(msgId);
+			coreMgr.deleteAutosaveData(SERVICE_ID, "newmail", ""+msgId);
+			json=new JsonResult();
+		} catch(Exception exc) {
+			Service.logger.error("Exception",exc);
+            json=new JsonResult(false, exc.getMessage());
+		}
+        json.printTo(out);
 	}
 
 	// TODO: sendNewsletter
