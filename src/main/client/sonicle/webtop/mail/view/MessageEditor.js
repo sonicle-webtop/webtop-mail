@@ -505,6 +505,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	sendMessage: function() {
         var me=this;
+		console.log("sendMessage");
         me.getModel().setExtraParams({
             action: 'SendMessage'
         });

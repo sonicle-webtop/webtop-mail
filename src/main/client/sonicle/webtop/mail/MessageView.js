@@ -368,7 +368,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             //me.divFromName.set({ 'data-qtitle': me.fromName, 'data-qtip': me.fromEmail })
             me.divFromName.update(
 				"<a data-qtip='"+me.fromEmail+"' data-qtitle='"+me.fromName+"' href='javascript:Ext.emptyFn()'>"+
-					me.fromName+" ["+me.fromEmail+"]</a>"
+					me.fromName+" &lt;"+me.fromEmail+"&gt;</a>"
 			);
             tdh.insertFirst(me.divLine);
 			
@@ -1111,15 +1111,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             e.recType=type;
             e.mys=me;
             me.setElementContextMenu(e,me.emailMenu);
-            e.on('click', me.emailElementClicked,e);
+            e.on('click', function() {
+				var email=(e.recDesc==e.recEmail)?e.recEmail:e.recDesc+" <"+e.recEmail+">";
+				me.mys.startNewMessage(me.folder,{
+					recipients: [ { rtype: 'to', email: email } ]
+				});
+			});
         }
-    },
-
-	//called in the context of element
-    emailElementClicked: function(e,t,o) {
-		var el=this;
-        var email=(el.recDesc==el.recEmail)?el.recEmail:el.recDesc+" <"+el.recEmail+">";
-        this.beginNewMessage(email);
     },
 
     setAttachElement: function(e,linkSave,linkSaveAll) {
