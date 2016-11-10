@@ -74,7 +74,7 @@ public class SieveJSonGenerator implements MailFiltersParserListener {
         public void filter(int row, MailFilterConditions mfcs) {
             if (row>0) json.append(",\n");
             
-			int idfilter=mfcs.getIDFilter();
+			long idfilter=mfcs.getIDFilter();
 			boolean enabled=mfcs.isEnabled();
 			String operator=mfcs.getOperator();
 			String action=mfcs.getAction();
