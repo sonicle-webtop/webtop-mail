@@ -507,7 +507,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         var me=this;
 		console.log("sendMessage");
         me.getModel().setExtraParams({
-            action: 'SendMessage'
+			sendAction: 'send'
         });
 		if (me.getModel().get("reminder")) {
 			me.on("modelsave",function(me, op, success) {
@@ -557,7 +557,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	schedule: function() {
         var me=this;
         me.getModel().setExtraParams({
-            action: 'ScheduleMessage'
+			sendAction: 'schedule'
         });
         me.saveView(true);
 	},

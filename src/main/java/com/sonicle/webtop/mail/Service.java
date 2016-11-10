@@ -41,6 +41,7 @@ import java.nio.channels.*;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
@@ -5486,6 +5487,30 @@ public class Service extends BaseService {
 	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
 	 }
 	 }*/
+	public void processManageMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String sendAction=ServletUtils.getStringParameter(request, "sendAction", "save");
+			
+			if (sendAction.equals("save")) {
+				processSaveMessage(request, response, out);
+			}
+			else if (sendAction.equals("send")) {
+				processSendMessage(request, response, out);
+			}
+			else if (sendAction.equals("schedule")) {
+				processScheduleMessage(request, response, out);
+			} else {
+				throw new Exception("Invlid send action operation "+sendAction);
+			}
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			Throwable cause = exc.getCause();
+			String msg = cause != null ? cause.getMessage() : exc.getMessage();
+            JsonResult json=new JsonResult(false, msg);
+			json.printTo(out);
+		}
+	}
+	
 	public void processSendMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		JsonResult json = null;
 		CoreManager coreMgr=WT.getCoreManager();
