@@ -34,7 +34,7 @@
 
 Ext.define('Sonicle.webtop.mail.model.MessageModel', {
     extend: 'WT.model.Autosave',
-    proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'SaveMessage','data', {
+    proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'ManageMessage','data', {
 		writer: {
 			type: 'sojson',
 			writeAssociations: true
@@ -61,11 +61,8 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
         { name: "forwardedfrom", type: 'string' },
         //Reply/Forward data
         { name: "origuid", type: 'int' }
-	]//,
-    
-//	hasMany: [ WTF.hasMany('recipients','Sonicle.webtop.mail.model.MessageRecipientModel') ],
-//	hasMany: [ WTF.hasMany('attachments','Sonicle.webtop.mail.model.AttachmentModel') ]
-    
+	]
+	
 });
 
 Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {

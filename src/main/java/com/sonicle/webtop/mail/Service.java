@@ -48,8 +48,6 @@ import com.sonicle.commons.web.json.Payload;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.sieve.*;
-import com.sonicle.security.Principal;
-import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
@@ -58,12 +56,13 @@ import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
+import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.dal.UserDAO;
-//import com.sonicle.webtop.core.*;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.UserProfile.Data;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICalendarUtils;
+import com.sonicle.webtop.mail.bol.OFilter;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OScan;
 import com.sonicle.webtop.mail.bol.OUserMap;
@@ -105,8 +104,6 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.activation.*;
 import javax.mail.*;
 import javax.mail.Message.RecipientType;
@@ -420,51 +417,6 @@ public class Service extends BaseService {
 	}
 	
 	
-/****
-	*	TODO initialize filters with spam
-	*/
-/*	private void initializeUser(UserProfile userProfile) {
-		SettingsManager sm = wta.getSettingsManager();
-		Connection con=null;
-		Statement stmt=null;
-
-		logger.debug("Initializing user [{}]", userProfile.getUser());
-
-		try {
-			con=wta.getMainConnection();
-			String subject = sm.getServiceSettingByPriority("mail", Settings.MAILFILTER_SPAM_SUBJECT);
-			String sql="insert into mailfilters ("+
-				"iddomain,login,idfilter,status,continue,keepcopy,condition,"+
-				"fromvalue,tovalue,subjectvalue,"+
-				"action,actionvalue"+
-				") values ("+
-				"'"+userProfile.getIDDomain()+"',"+
-				"'"+userProfile.getUser()+"',"+
-				"1,"+
-				"'E','N','N',"+
-				"'ANY',"+
-				"'',"+
-				"'',"+
-				"'"+subject+"',"+
-				"'FILE',"+
-				"'Spam'"+
-				")";
-
-			stmt=con.createStatement();
-			stmt.executeUpdate(sql);
-			getSieve().saveScript(con, userProfile.getPrincipal(), true);
-
-		} catch(Exception ex) {
-			logger.error("Error during user initialization [{}]", userProfile.getUser(), ex);
-		} finally {
-			if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-			if (con!=null) try { con.close(); } catch(Exception exc) {}
-		}
-
-		sm.deleteUserSetting(userProfile, "mail", com.sonicle.webtop.Settings.INITIALIZE);
-	}*/
-	
-	
 	public Session getMailSession() {
 		return this.session;
 	}
@@ -509,7 +461,10 @@ public class Service extends BaseService {
 			String mailHost = mprofile.getMailHost();
 			String mailUsername = mprofile.getMailUsername();
 			String mailPassword = mprofile.getMailPassword();
+			
+			//warning: debug mode shows credentials
 			Service.logger.debug("Store.connect to "+mailHost+" as "+mailUsername+" / "+mailPassword);
+			
 			if (port > 0) {
 				store.connect(mailHost, port, mailUsername, mailPassword);
 			} else {
@@ -580,353 +535,11 @@ public class Service extends BaseService {
 		return FP;
 	}
 
-  // TODO: how to save options?!?!
-/*  @Override
-	 public void saveOptions(Hashtable params) {
-	 WebTopApp wta=environment.getWebTopApp();
-	 WebTopSession wts=environment.getWebTopSession();
-	 UserProfile profile=environment.getUserProfile();
-	 SettingsManager sm = wta.getSettingsManager();
-
-	 String fontface=(String)params.get("fontface");
-	 String fontsize=(String)params.get("fontsize");
-	 String email=(String)params.get("email");
-	 String askreceipt=(String)params.get("askreceipt");
-	 String mailprotocol=null;
-	 String mailhost=null;
-	 String mailport=null;
-	 String mailuser=null;
-	 String mailpassword=null;
-	 String folderprefix=null;
-	 String foldersent=null;
-	 String folderdrafts=null;
-	 String foldertrash=null;
-	 String folderspam=null;
-	 String docmgt=null;
-	 String docmgt2=null;
-	 String docmgtFolder=null;
-	 String scanall=null;
-	 String altroot=null;
-	 String sharedseen=null;
-	 String docmgtwt=null;
-	 String sharedsort=(String)params.get("sharedsort");
-	 String manualseen=null;
-	 //Service.logger.debug("sharedsort="+sharedsort);
-
-	 boolean restart=false;
-      
-	 if (wts.isAdministrator()) {
-	 mailprotocol=(String)params.get("mailprotocol");
-	 mailhost=(String)params.get("mailhost");
-	 mailport=(String)params.get("mailport");
-	 mailuser=(String)params.get("mailuser");
-	 mailpassword=(String)params.get("mailpassword");
-	 folderprefix=(String)params.get("folderprefix");
-	 foldersent=(String)params.get("foldersent");
-	 folderdrafts=(String)params.get("folderdrafts");
-	 foldertrash=(String)params.get("foldertrash");
-	 folderspam=(String)params.get("folderspam");
-	 docmgt=(String)params.get("docmgt");
-	 docmgt2=(String)params.get("docmgt2");
-	 docmgtFolder=(String)params.get("docmgtfolder");
-	 docmgtwt=(String)params.get("docmgtwt");
-	 scanall=(String)params.get("scanall");
-	 altroot=(String)params.get("altroot");
-	 }
-	 sharedseen=(String)params.get("sharedseen");
-	 String scansecs=(String)params.get("scansecs");
-	 String scancycles=(String)params.get("scancycles");
-	 manualseen=(String)params.get("manualseen");
-
-	 SQLBuffer sb1=new SQLBuffer(SQLBuffer.Type.UPDATE,"users");
-	 SQLBuffer sb2=new SQLBuffer(SQLBuffer.Type.UPDATE,"mailsettings");
-	 if (email!=null) {
-	 sb1.addStringField("email", email);
-	 sb2.addStringField("email", email);
-	 profile.setEmailAddress(email);
-	 }
-	 if (fontface!=null) {
-	 sb1.addStringField("fontface", fontface);
-	 sb2.addStringField("fontface", fontface);
-	 profile.setFontFace(fontface);
-	 }
-	 if (fontsize!=null) {
-	 sb1.addStringField("fontsize", fontsize);
-	 sb2.addStringField("fontsize", fontsize);
-	 profile.setFontSize(fontsize);
-	 }
-	 if (askreceipt!=null) { 
-	 if (askreceipt.equals("true")) {
-	 sb1.addStringField("mailreceipt", "Y");
-	 sb2.addBooleanField("receipt", true);
-	 profile.setAskReceipt(true);
-	 } else {
-	 sb1.addStringField("mailreceipt", null);
-	 sb2.addBooleanField("receipt", false);
-	 profile.setAskReceipt(false);
-	 }
-	 }
-	 if (mailprotocol!=null) {
-	 sb1.addStringField("mailprotocol", mailprotocol);
-	 sb2.addStringField("protocol", mailprotocol);
-	 restart=true;
-	 profile.setMailProtocol(mailprotocol);
-	 }
-	 if (mailhost!=null) {
-	 sb1.addStringField("mailhost", mailhost);
-	 sb2.addStringField("host", mailhost);
-	 restart=true;
-	 profile.setMailHost(mailhost);
-	 }
-	 if (mailport!=null) {
-	 sb1.addNumberField("mailport", mailport);
-	 sb2.addNumberField("port", mailport);
-	 restart=true;
-	 profile.setMailPort(Integer.parseInt(mailport));
-	 }
-	 if (mailuser!=null) {
-	 sb1.addStringField("mailusername", mailuser);
-	 sb2.addStringField("username", mailuser);
-	 restart=true;
-	 profile.setMailUsername(mailuser);
-	 }
-	 if (mailpassword!=null) {
-	 Principal p=profile.getPrincipal();
-	 String credential=p.getCredential();
-	 String cmailpassword=mailpassword;
-	 try {
-	 cmailpassword=wta.cipher(mailpassword,credential);
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 }
-	 sb1.addStringField("mailpassword", cmailpassword);
-	 sb2.addStringField("password", cmailpassword);
-	 restart=true;
-	 profile.setMailPassword(mailpassword);
-	 }
-	 if (folderprefix!=null) {
-	 sb1.addStringField("folderprefix", folderprefix);
-	 sb2.addStringField("folderprefix", folderprefix);
-	 restart=true;
-	 profile.setFolderPrefix(folderprefix);
-	 }
-	 if (foldersent!=null) {
-	 sb1.addStringField("mailsent", foldersent);
-	 sb2.addStringField("foldersent", foldersent);
-	 restart=true;
-	 profile.setFolderSent(foldersent);
-	 }
-	 if (folderdrafts!=null) {
-	 sb1.addStringField("maildrafts", folderdrafts);
-	 sb2.addStringField("folderdrafts", folderdrafts);
-	 restart=true;
-	 profile.setFolderDrafts(folderdrafts);
-	 }
-	 if (foldertrash!=null) {
-	 sb1.addStringField("mailtrash", foldertrash);
-	 sb2.addStringField("foldertrash", foldertrash);
-	 restart=true;
-	 profile.setFolderTrash(foldertrash);
-	 }
-	 if (folderspam!=null) {
-	 sb1.addStringField("mailspam", folderspam);
-	 sb2.addStringField("folderspam", folderspam);
-	 restart=true;
-	 profile.setFolderSpam(folderspam);
-	 }
-	 if (sharedsort!=null) {
-	 sb1.addStringField("mailsharedsort", sharedsort);
-	 sb2.addStringField("sharedsort", sharedsort);
-	 restart=true;
-	 profile.setMailSharedSort(sharedsort);
-	 }
-	 if (docmgt!=null) {
-	 if (docmgt.equals("true")) {
-	 sb1.addStringField("docmgt", "Y");
-	 profile.setDocumentManagement(true);
-	 } else {
-	 sb1.addStringField("docmgt", null);
-	 profile.setDocumentManagement(false);
-	 }
-	 }
-	 if (docmgt2!=null) {
-	 if (docmgt2.equals("true")) {
-	 sb1.addStringField("docmgt2", "Y");
-	 profile.setStructuredArchiving(true);
-	 } else {
-	 sb1.addStringField("docmgt2", null);
-	 profile.setStructuredArchiving(false);
-	 }
-	 }
-	 if (docmgtFolder!=null) {
-	 sb1.addStringField("docmgtfolder", docmgtFolder);
-	 profile.setDocumentManagementFolder(docmgtFolder);
-	 }
-
-	 if (scanall!=null) {
-	 if (scanall.equals("true")) {
-	 sb1.addStringField("scanall", "Y");
-	 profile.setScanAll(true);
-	 mft.setCheckAll(true);
-	 } else {
-	 sb1.addStringField("scanall", "N");
-	 profile.setScanAll(false);
-	 mft.setCheckAll(false);
-	 }
-	 }
-	 if(sharedseen != null) applySharedSeen(Boolean.valueOf(sharedseen));
-
-	 if (scansecs!=null) {
-	 int ss=Integer.parseInt(scansecs);
-	 if (ss<30) { ss=30; scansecs="30"; }
-	 sb1.addNumberField("scansecs", scansecs);
-	 profile.setScanSeconds(ss);
-	 mft.setSleepInbox(ss);
-	 }
-
-	 if (scancycles!=null) {
-	 sb1.addNumberField("scancycles", scancycles);
-	 int sc=Integer.parseInt(scancycles);
-	 profile.setScanSeconds(sc);
-	 mft.setSleepCycles(sc);
-	 }
-      
-	  
-	  if (altroot!=null) {
-		  altroot=altroot.trim();
-		  if (altroot.length()>0) sm.setUserSetting(profile, "mail", "defaultfolder", altroot);
-		  else sm.deleteUserSetting(profile, "mail", "defaultfolder");
-	  }
-	
-	 if(manualseen != null) {
-		sm.setUserSetting(profile, "mail", Settings.MANUAL_SEEN, String.valueOf(Boolean.valueOf(manualseen)));
-	 }
-	
-	 if (docmgtwt!=null){
-	 wtd.setServiceSetting("mail", this.environment.getUserProfile(), "docmgtwt", docmgtwt);
-	 }
-      
-	 Connection con=null;
-	 Statement stmt=null;
-	 try {
-	 con=wta.getMainConnection();
-	 stmt=con.createStatement();
-	 if (sb1.hasFields()) {
-	 sb1.setWhere("iddomain='"+wtd.getLocalIDDomain()+"' and login='"+profile.getUser()+"'");
-	 try { stmt.executeUpdate(sb1.getSQL()); } catch(SQLException exc) {}
-	 }
-	 if (sb2.hasFields()) {
-	 sb2.setWhere("idprincipal="+profile.getIdPrincipal());
-	 try { stmt.executeUpdate(sb2.getSQL()); } catch(SQLException exc) {}
-	 }
-	 } catch(SQLException exc) {
-	 Service.logger.error("Exception",exc);
-	 } finally {
-	 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-	 if (con!=null) try { con.close(); } catch(Exception exc) {}
-	 }
-
-	 if (params.get("idents")!=null) {
-	 String dn[]=null;
-	 String em[]=null;
-	 String bf[]=null;
-	 String ty[]=null;
-	 String fx[]=null;
-	 String my[]=null;
-	 if(params.get("idents-email") instanceof String[]) {
-	  dn=(String[])params.get("idents-displayname");
-	  em=(String[])params.get("idents-email");
-	  bf=(String[])params.get("idents-basefolder");
-	  ty=(String[])params.get("idents-type");
-	  fx=(String[])params.get("idents-isfax");
-	  my=(String[])params.get("idents-usemypersonalinfos");
-	 } else {
-	  dn=new String[]{(String)params.get("idents-displayname")};
-	  em=new String[]{(String)params.get("idents-email")};
-	  bf=new String[]{(String)params.get("idents-basefolder")};
-	  ty=new String[]{(String)params.get("idents-type")};
-	  fx=new String[]{(String)params.get("idents-isfax")};
-	  my=new String[]{(String)params.get("idents-usemypersonalinfos")};
-	 }
-		  
-	 PreparedStatement stmt1 = null;
-	 try {
-	 con=wta.getMainConnection();
-	 stmt=con.createStatement();
-	 String login=profile.getUser();
-	 String sql="delete from identities where iddomain='"+wtd.getLocalIDDomain()+"' and login='"+login+"'";
-	 //Service.logger.debug(sql);
-	 stmt.executeUpdate(sql);
-	 //profile.clearIdentities();
-	 stmt1 = con.prepareStatement("select count(*) from workgroups as wg inner join users as us on (wg.groupname = us.login) where (us.email = ?) AND (wg.mail <> 'F')");
-	 Integer count = null;
-	 for(int i=0;i<dn.length;++i) {
-	 if(StringUtils.isEmpty(em[i])) continue; // To skip empty records! How?
-	 if(ty[i].equals(Identity.TYPE_AUTO)) continue; // Skip automatic addresses! Why are this records passed back? They aren't dirty! Mmm..
-	 StatementUtils.setString(stmt1, 1, em[i]);
-	 count = StatementUtils.getIntQueryValue(stmt1);
-	 if(count > 0) {
-	 logger.warn("Unable to use [{}] as new identity. Address already shared.", em[i]);
-	 continue;
-	 }
-	 sql="insert into identities (iddomain,login,email,displayname,mainfolder,isfax,usemypersonalinfos) values ("+
-	  "'"+wtd.getLocalIDDomain()+"',"+
-	  "'"+login+"',"+
-	  "'"+Utils.getSQLString(em[i])+"',"+
-	  "'"+Utils.getSQLString(dn[i])+"',"+
-      "'"+Utils.getSQLString(bf[i])+"',"+
-      ""+Utils.getSQLString(fx[i])+","+
-      ""+Utils.getSQLString(my[i])+""+
-      ")";
-     stmt.executeUpdate(sql);
-	 //profile.addIdentity(Identity.TYPE_USER, dn[i], em[i], bf[i]);
-	 }
-	 profile.buildIdentities(con);
-
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 } finally {
-	 if (stmt1!=null) try { stmt1.close(); } catch(Exception exc) {}
-	 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-	 if (con!=null) try { con.close(); } catch(Exception exc) {}
-	 }
-	 }
-	 if (restart) {
-	 this.logout();
-	 this.initialize(environment);
-	 }
-	 }*/
-  // TODO: Sharing management
-/*  @Override
-	 public void addSharing(OWorkgroup workgroup) throws Exception {
-	 setFolderSharing(workgroup.login, workgroup.resource, workgroup.parameters);
-	 }
-  
-	 @Override
-	 public void removeSharing(OWorkgroup workgroup) throws Exception {
-	 removeFolderSharing(workgroup.login, workgroup.resource);
-	 }*/
-  // TODO: applySharedSeen!
-/*	private void applySharedSeen(boolean value) {
-	 UserProfile profile = environment.getProfile();
-	 boolean old = mus.isSharedSeen();
-	 sm.setUserSetting(profile, "mail", Settings.SHARED_SEEN, String.valueOf(value));
-	 try {
-	 setSharedSeen(value);
-	 } catch (MessagingException ex) {
-	 logger.error("Unable to apply shared seen to {}. Restoring setting!", profile.getUser());
-	 sm.setUserSetting(profile, "mail", Settings.SHARED_SEEN, String.valueOf(old));
-	 }
-	 }*/
 	public MailFoldersThread getMailFoldersThread() {
 		return mft;
 	}
 
-	/*  public Vector getFoldersCache(boolean refresh) {
-	 return msm.getFoldersCache(refresh);
-	 }*/
 	public Sieve getSieve() {
-		UserProfile profile = environment.getProfile();
 		String mailHost = mprofile.getMailHost();
 		String mailUsername = mprofile.getMailUsername();
 		String mailPassword = mprofile.getMailPassword();
@@ -1041,621 +654,6 @@ public class Service extends BaseService {
 		from.markArchivedMessages(nuids);
 	}
 	
-  public void archiveMessagesWt(FolderCache from, long nuids[], String idcategory, String idsubcategory,String customer_id,String causal_id) throws MessagingException, FileNotFoundException, IOException {
-    UserProfile profile=environment.getProfile();
-    String archiveto=ss.getArchivePath();
-    for(long nuid: nuids) {
-        Message msg=from.getMessage(nuid);
-
-        String id=getMessageID(msg);
-        if (id.startsWith("<")) id=id.substring(1,id.length()-1);
-        id=id.replaceAll("\\\\","_");
-        id=id.replaceAll("/","_");
-        String filename=id+".eml";
-        String path=archiveto+"/"+filename;
-        File file=new File(path);
-        //Only if spool file does not exists
-        if (!file.exists()) {
-            FileOutputStream fos=new FileOutputStream(file);
-            msg.writeTo(fos);
-            fos.close();
-        }
-        String subject=msg.getSubject();
-        String emailfrom="nomail@nodomain.it";
-        String namefrom="";
-        Address a[]=msg.getFrom();
-            if (a!=null && a.length>0) {
-                    InternetAddress sender=((InternetAddress)a[0]);
-                    emailfrom=sender.getAddress();
-                    namefrom=sender.getPersonal();
-        }
-        String name=subject;
-        //String request_id = saveMailInRequestsDrm(idcategory,customer_id);
-        String category=idcategory;
-        if (idsubcategory!=null && !idsubcategory.equals("")) category+="/"+idsubcategory;
-        String contact_id=existContact(namefrom,emailfrom);
-        String request_id = saveMailInRequestsDrm("","",category,"",customer_id,"","","","","",contact_id,causal_id);
-        name=name+".eml";
-        String generic_id=saveMailInGenericDocuments(category,customer_id,subject,contact_id,causal_id);
-        saveMailInDocumentsDrm(path, name,request_id,generic_id);
-        saveTrackingHistoryDrm(request_id);
-    }
-    from.markArchivedMessages(nuids);
-  }
-	
-  public String saveMailInGenericDocuments(String category_id,String customer_id,String subject,String contact_id,String causal_id){
-         String generic_document_id="";
-         Connection con = null;
-         Statement stmt = null;
-         try{
-             con=getConnection();
-             stmt = con.createStatement();
-			 logger.debug("category_id={}", category_id);
-             Category cat=getCategory(category_id);
-             if (cat!=null) category_id=cat.category_id;
-             generic_document_id=getDrmGenericDocumentsId(con);
-             String sql=" insert into drm_generic_documents ("
-                     + "generic_document_id,"
-                      +"senderrecipient,"
-                      +"iddomain,"
-                      +"request_date,"
-                      +"login,"
-                      +"category_id,";
-                      if (customer_id!=null && !customer_id.equals("")) sql+="customer_id,";
-                      sql+="severity,";
-                      sql+="description,";
-                      sql+="status,";
-                      sql+="type_document,  ";
-                      sql+="date_create,  ";
-                      sql+="causal_id  ";
-                      if (contact_id!=null && !contact_id.equals("")) sql+=",contact_id";
-                      sql+=") values (";
-                      sql+=generic_document_id+",";
-                      sql+="'"+environment.getProfile().getUserId()+"',";
-                      sql+="'"+environment.getProfile().getDomainId()+"',";
-                      sql+="now(),";
-                      sql+="'"+environment.getProfile().getUserId()+"',";
-                      sql+=category_id+",";
-                      if (customer_id!=null && !customer_id.equals("")) sql+="'"+customer_id+"',";
-                      sql+="'S',";
-                      sql+="'"+subject+"',";
-                      sql+="'O',";
-                      sql+="'I',";  
-                      sql+="'now()',";
-                      if (causal_id==null || causal_id.equals("")) causal_id=null;
-                      sql+=""+causal_id+"";
-                      if (contact_id!=null && !contact_id.equals("")) sql+=","+contact_id;
-                      sql+= ")";
-			logger.trace("generic={}", sql);
-             stmt.executeUpdate(sql);   
-         }catch(Exception ex){
-			 logger.error("Error", ex);
-         }
-         return generic_document_id;
-  }
-	
-	String getDrmGenericDocumentsId(Connection con) throws SQLException {
-		String document_id = "";
-		Statement stmt = con.createStatement();
-		ResultSet rset = null;
-		if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("oracle")) {
-			rset = stmt.executeQuery("SELECT SEQ_DRM_GENERIC_DOCUMENTS.nextval AS DOCUMENT_ID from DUAL");
-		} else if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("postgresql")) {
-			rset = stmt.executeQuery("SELECT nextval('SEQ_DRM_GENERIC_DOCUMENTS') AS DOCUMENT_ID from DUAL");
-		}
-		rset.next();
-		document_id = rset.getString("document_id");
-		rset.close();
-		stmt.close();
-		return document_id;
-	}	
-	
-	String getDrmTrackingDocumentsId(Connection con) throws SQLException {
-		String document_id = "";
-		Statement stmt = con.createStatement();
-		ResultSet rset = null;
-		if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("oracle")) {
-			rset = stmt.executeQuery("SELECT SEQ_DRM_DOCUMENTS.nextval AS DOCUMENT_ID from DUAL");
-		} else if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("postgresql")) {
-			rset = stmt.executeQuery("SELECT nextval('SEQ_DRM_DOCUMENTS') AS DOCUMENT_ID from DUAL");
-		}
-		rset.next();
-		document_id = rset.getString("document_id");
-		rset.close();
-		stmt.close();
-		return document_id;
-	}
-	
-	public boolean saveMailInDocumentsDrm(String path, String filename, String request_id, String generic_id) {
-		boolean success = false;
-		Statement stmt = null;
-		Connection con = null;
-		FileInputStream fi = null;
-		try {
-			con = getConnection();
-			String id = getDrmTrackingDocumentsId(con);
-			stmt = con.createStatement();
-			filename=DbUtils.getSQLString(filename);
-			String sql = "INSERT INTO DRM_DOCUMENTS (DOCUMENT_ID,REQUEST_ID,FILENAME,FILE,REVISION,FROMGENERICDOCUMENTS,DATE_DOCUMENT) values (" + id + "," + request_id + ",'" + filename + "',lo_import('" + path + "'),NOW()," + generic_id + ",NOW())";
-			Service.logger.debug("saveDocmail=" + sql);
-			stmt.executeUpdate(sql);
-			success = true;
-		} catch (Exception ex) {
-			Service.logger.error("Exception",ex);
-		} finally {
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (fi != null) {
-				try {
-					fi.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (con != null) {
-				try {
-					con.close();
-				} catch (Exception exc) {
-				}
-			}
-		}
-		return success;
-	}
-	
-	String getDrmRequestsId(Connection con) throws SQLException {
-		String requests_id = "";
-		Statement stmt = con.createStatement();
-		ResultSet rset = null;
-		if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("oracle")) {
-			rset = stmt.executeQuery("SELECT seq_requests.nextval as requests_id FROM DUAL");
-		} else if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("postgresql")) {
-			rset = stmt.executeQuery("SELECT nextval('seq_requests') as requests_id FROM DUAL");
-		}
-		rset.next();
-		requests_id = rset.getString("requests_id");
-		rset.close();
-		stmt.close();
-		return requests_id;
-	}
-	
-	String getDrmHistoryId(Connection con) throws SQLException {
-		String history_id = "";
-		Statement stmt = con.createStatement();
-		ResultSet rset = null;
-		if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("oracle")) {
-			rset = stmt.executeQuery("SELECT SEQ_DRM_REQUESTS_HISTORY.nextval AS HISTORY_ID from DUAL");
-		} else if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("postgresql")) {
-			rset = stmt.executeQuery("SELECT nextval('SEQ_DRM_REQUESTS_HISTORY') AS HISTORY_ID from DUAL");
-		}
-		rset.next();
-		history_id = rset.getString("history_id");
-		rset.close();
-		stmt.close();
-		return history_id;
-	}	
-
-	public boolean saveTrackingHistoryDrm(String request_id) {
-		Connection con = null;
-		Statement stmt = null;
-		boolean success = false;		
-		try {			
-			con = getConnection();
-			String history_id = getDrmHistoryId(con);
-			stmt = con.createStatement();
-			String query = "";
-			query += "insert into drm_requests_history (HISTORY_ID,REQUEST_ID     ,REQUEST_BY      ,ASSIGN_TO      ,REQUEST_DATE,LOGIN     ,CATEGORY_ID    ,RELEASE      ,SEVERITY      ,CUSTOMER_ID      ,STATISTIC_ID      ,ENVIRONMENT       ,DESCRIPTION     ,FULLDESCRIPTION      ,SIMULATION      ,SUGGESTION      ,STATUS,RESOLUTION,MOV_TYPE,CONTACT_ID,N_DOCUMENT,YEAR_DOCUMENT,REVISION)"
-					+ " select " + history_id + ",REQUEST_ID     ,REQUEST_BY      ,ASSIGN_TO      ,REQUEST_DATE,LOGIN     ,CATEGORY_ID    ,RELEASE      ,SEVERITY      ,CUSTOMER_ID      ,STATISTIC_ID      ,ENVIRONMENT       ,DESCRIPTION     ,FULLDESCRIPTION      ,SIMULATION      ,SUGGESTION      ,STATUS,RESOLUTION,MOV_TYPE,CONTACT_ID,N_DOCUMENT,YEAR_DOCUMENT,NOW() from drm_requests where request_id=" + request_id;
-			Service.logger.debug("save=" + query);
-			stmt.executeUpdate(query);
-			success = true;
-		} catch (SQLException exc) {
-			Service.logger.error("Exception",exc);
-		} finally {
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (con != null) {
-				try {
-					con.close();
-				} catch (Exception exc) {
-				}
-			}
-		}
-		return success;
-	}
-	
-    public String saveMailInRequestsDrm(
-             String request_by,
-             String assign_to,
-             String category_id,
-             String severity,
-             String customer_id,
-             String statistic_id,
-             String description,
-             String fulldescription,
-             String status,
-             String mov_type,
-             String contact_id,
-             String causal_id){
-        Connection con = null;
-        Statement stmt = null;
-        String requests_id="";
-        
-        try{    
-            con = getConnection();
-            requests_id=getDrmRequestsId(con);
-            stmt = con.createStatement();
-            Category cat=getCategory(category_id);
-            String document_id=requests_id;
-            java.util.Calendar date=java.util.Calendar.getInstance();
-            String year=date.get(java.util.Calendar.YEAR)+"";
-            if (cat!=null){
-                if (cat.year_sequence.equals("true")){
-                    document_id=cat.sequence_id;
-                    year=cat.year;
-                    updateCategorySequence(cat.sequence_id, cat.year, cat.category_id);
-                }
-                category_id="'"+cat.category_id+"'";
-				logger.debug("category_id={}", category_id);
-            }
-            String query="insert into drm_requests (";
-            query+=" request_id,";
-            query+=" request_by,";
-            query+=" assign_to,";
-            query+=" request_date,";
-            query+=" login,";
-            query+=" category_id,";
-            query+=" severity,";
-            query+=" customer_id,";
-            query+=" statistic_id,";
-            query+=" description,";
-            query+=" fulldescription,";
-            query+=" status,";
-            query+=" mov_type,";
-            query+=" contact_id,";
-            query+=" n_document,";
-            query+=" year_document,";
-            query+=" iddomain,";
-            query+=" causal_id";
-            query+=" ) values ( ";
-            query+=requests_id+",";
-            if (request_by==null || request_by.equals("")) request_by=environment.getProfile().getUserId();
-            query+="'"+request_by+"',";
-            if (assign_to==null || assign_to.equals("")) 
-                query+="(select assign_to from drm_profiles where type='M'),";
-            else 
-                query+="'"+assign_to+"',";
-            query+="now(),";
-            query+="'"+environment.getProfile().getUserId()+"',";
-            if (category_id==null || category_id.equals("")) 
-                query+="(select category_id from drm_profiles where type='M'),";
-            else 
-                query+=category_id+",";
-            if (severity==null || severity.equals("")) 
-                query+="(select severity from drm_profiles where type='M'),";
-            else 
-                query+="'"+severity+"',";
-            if (customer_id==null || customer_id.equals("")) 
-                query+="(select customer_id from drm_profiles where type='M'),";
-            else 
-                query+=customer_id+",";
-            if (statistic_id==null || statistic_id.equals("")) 
-                query+="(select statistic_id from drm_profiles where type='M'),";
-            else 
-                query+=statistic_id+",";
-            if (description==null || description.equals("")) 
-                query+="(select case description when '' then 'Email' else description end  from drm_profiles where type='M'),";
-            else 
-                query+="'"+description+"',";
-            if (fulldescription==null || fulldescription.equals("")) 
-                query+="(select fulldescription from drm_profiles where type='M'),";
-            else 
-                query+="'"+fulldescription+"',";
-            if (status==null || status.equals("")) 
-                query+="(select status from drm_profiles where type='M'),";
-            else 
-                query+="'"+status+"',";
-            if (mov_type==null || mov_type.equals("")) 
-                query+="(select mov_type from drm_profiles where type='M'),";
-            else 
-                query+="'"+mov_type+"',";
-            if (contact_id==null || contact_id.equals("")) 
-                query+="(select contact_id from drm_profiles where type='M'),";
-            else 
-                query+=contact_id+",";
-            query+="'"+document_id+"',";
-            query+="'"+year+"',";
-            query+="'"+environment.getProfile().getDomainId()+"', ";
-            if (causal_id==null || causal_id.equals("")) causal_id=null;
-            query+=""+causal_id+" ";
-            query+=")";
-			logger.trace("mail={}", query);
-            
-                        
-                        stmt.executeUpdate(query);
-            
-        } catch(SQLException exc) {
-            logger.error("Exception",exc);
-        } finally {
-            if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-            if (con!=null) try { con.close(); } catch(Exception exc) {}
-        }
-        return requests_id;
-   }
-	
-	class Category {
-
-		String category_id;
-		String description;
-		String longdescription;
-		String openevent;
-		String status;
-		String expired;
-		String sequence_id;
-		String year;
-		String year_sequence;
-
-		Category(String category_id,
-				String description,
-				String longdescription,
-				String openevent,
-				String status,
-				String expired,
-				String sequence_id,
-				String year,
-				String year_sequence) {
-			this.category_id = category_id;
-			this.description = description;
-			this.longdescription = longdescription;
-			this.openevent = openevent;
-			this.status = status;
-			this.expired = expired;
-			this.sequence_id = sequence_id;
-			this.year = year;
-			this.year_sequence = year_sequence;
-			
-		}
-	}
-	
-	public String saveMailInRequestsDrm(
-			String request_by,
-			String assign_to,
-			String category_id,
-			String severity,
-			String customer_id,
-			String statistic_id,
-			String description,
-			String fulldescription,
-			String status,
-			String mov_type,
-			String contact_id) {
-		Connection con = null;
-		Statement stmt = null;
-		String requests_id = "";
-		
-		try {			
-			con = getConnection();
-			requests_id = getDrmRequestsId(con);
-			stmt = con.createStatement();
-			Category cat = getCategory(category_id);
-			String document_id = requests_id;
-			java.util.Calendar date = java.util.Calendar.getInstance();
-			String year = date.get(java.util.Calendar.YEAR) + "";
-			if (cat != null) {
-				if (cat.year_sequence.equals("true")) {
-					document_id = cat.sequence_id;
-					year = cat.year;
-					updateCategorySequence(cat.sequence_id, cat.year, cat.category_id);
-				}
-				category_id = "'" + cat.category_id + "'";
-				Service.logger.debug("category_id=" + category_id);
-			}
-			String query = "insert into drm_requests (";
-			query += " request_id,";
-			query += " request_by,";
-			query += " assign_to,";
-			query += " request_date,";
-			query += " login,";
-			query += " category_id,";
-			query += " severity,";
-			query += " customer_id,";
-			query += " statistic_id,";
-			query += " description,";
-			query += " fulldescription,";
-			query += " status,";
-			query += " mov_type,";
-			query += " contact_id,";
-			query += " n_document,";
-			query += " year_document,";
-			query += " iddomain";
-			query += " ) values ( ";
-			query += requests_id + ",";
-			if (request_by == null || request_by.equals("")) {
-				request_by = environment.getProfile().getUserId();
-			}
-			query += "'" + request_by + "',";
-			if (assign_to == null || assign_to.equals("")) {
-				query += "(select assign_to from drm_profiles where type='M'),";
-			} else {
-				query += "'" + assign_to + "',";
-			}
-			query += "now(),";
-			query += "'" + environment.getProfile().getUserId() + "',";
-			if (category_id == null || category_id.equals("")) {
-				query += "(select category_id from drm_profiles where type='M'),";
-			} else {
-				query += category_id + ",";
-			}
-			if (severity == null || severity.equals("")) {
-				query += "(select severity from drm_profiles where type='M'),";
-			} else {
-				query += "'" + severity + "',";
-			}
-			if (customer_id == null || customer_id.equals("")) {
-				query += "(select customer_id from drm_profiles where type='M'),";
-			} else {
-				query += customer_id + ",";
-			}
-			if (description == null || description.equals("")) {
-				query += "(select case description when '' then 'Email' else description end  from drm_profiles where type='M'),";
-			} else {
-				query += "'" + description + "',";
-			}
-			if (statistic_id == null || statistic_id.equals("")) {
-				query += "(select statistic_id from drm_profiles where type='M'),";
-			} else {
-				query += statistic_id + ",";
-			}
-			if (fulldescription == null || fulldescription.equals("")) {
-				query += "(select fulldescription from drm_profiles where type='M'),";
-			} else {
-				query += "'" + fulldescription + "',";
-			}
-			if (status == null || status.equals("")) {
-				query += "(select status from drm_profiles where type='M'),";
-			} else {
-				query += "'" + status + "',";
-			}
-			if (mov_type == null || mov_type.equals("")) {
-				query += "(select mov_type from drm_profiles where type='M'),";
-			} else {
-				query += "'" + mov_type + "',";
-			}
-			if (contact_id == null || contact_id.equals("")) {
-				query += "(select contact_id from drm_profiles where type='M'),";
-			} else {
-				query += contact_id + ",";
-			}
-			query += "'" + document_id + "',";
-			query += "'" + year + "',";
-			query += "'" + environment.getProfile().getDomainId() + "' ";
-			query += ")";
-			Service.logger.debug("mail=" + query);
-			stmt.executeUpdate(query);
-			
-		} catch (SQLException exc) {
-			Service.logger.error("Exception",exc);
-		} finally {
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (con != null) {
-				try {
-					con.close();
-				} catch (Exception exc) {
-				}
-			}
-		}
-		return requests_id;
-	}
-	
-	public void updateCategorySequence(String sequence, String year, String category_id) {
-		Connection con = null;
-		Statement stmt = null;
-		try {
-			con = getConnection();
-			stmt = con.createStatement();
-			
-			String query = ("UPDATE DRM_CATEGORIES SET SEQUENCE_ID=" + sequence + ",YEAR='" + year + "' WHERE CATEGORY_ID=" + category_id);
-			stmt.executeUpdate(query);
-			
-			con.close();
-		} catch (SQLException exc) {
-			Service.logger.error("Exception",exc);
-		} finally {
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (con != null) {
-				try {
-					con.close();
-				} catch (Exception exc) {
-				}
-			}
-		}
-	}
-	
-	public Category getCategory(String category) {
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rset = null;
-		Category cat = null;
-		try {
-			if (category.equals("/")) {
-				cat = new Category("0", "", "", "", "", "", "", "", "");
-			} else {
-				if (category.startsWith("/")) {
-					category = category.substring(1);
-				}
-				
-				con = getConnection();
-				stmt = con.createStatement();
-				String query = "SELECT * FROM DRM_CATEGORIES WHERE DESCRIPTION='" + category + "' and status!='D' for update";
-				rset = stmt.executeQuery(query);
-				if (rset.next()) {
-					String category_id = rset.getString("category_id");
-					String description = rset.getString("description");
-					String longdescription = rset.getString("longdescription");
-					String openevent = rset.getString("openevent");
-					String status = rset.getString("status");
-					String expired = rset.getString("expired");
-					String sequence_id = rset.getString("sequence_id");
-					String year = rset.getString("year");
-					String year_sequence = rset.getString("year_sequence");
-					cat = new Category(category_id, description, longdescription, openevent, status, expired, sequence_id, year, year_sequence);
-				}
-				
-				if (cat != null) {
-					java.util.Calendar date = java.util.Calendar.getInstance();
-					String year = date.get(java.util.Calendar.YEAR) + "";
-					if (cat.year_sequence.equals("true")) {
-						if (cat.year.equals(year)) {
-							cat.sequence_id = (Integer.parseInt(cat.sequence_id)) + 1 + "";
-						} else {
-							cat.sequence_id = "1";
-						}
-					}
-					cat.year = year;
-				}
-			}
-		} catch (Exception ex) {
-			Service.logger.error("Exception",ex);
-		} finally {
-			if (rset != null) {
-				try {
-					rset.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (con != null) {
-				try {
-					con.close();
-				} catch (Exception exc) {
-				}
-			}
-		}
-		
-		return cat;
-	}
-	
 	public void moveMessages(FolderCache from, FolderCache to, long uids[]) throws MessagingException {
 		from.moveMessages(uids, to);
 	}
@@ -1723,25 +721,15 @@ public class Service extends BaseService {
 		}
 		fc.deleteAllMessages();
 	  
-      /*FolderCache parent=fc.getParent();
-		if (deleteFolder(fullname)) {
-			destroyFolderCache(fc);
-			Folder f = getFolder(fullname);
-			f.create(Folder.HOLDS_FOLDERS | Folder.HOLDS_MESSAGES);
-			fc = addFoldersCache(parent, f);
-			if (fc != null) {
-				return true;
-			}
-      }*/
-      return true;
+		return true;
 	}
 	
 	public FolderCache trashFolder(String fullname) throws MessagingException {
-      if (!isUnderTrashFolder(fullname)) return moveFolder(fullname,mprofile.getFolderTrash());
-	  else {
-		  deleteFolder(fullname);
-		  return null;
-	  }
+		if (!isUnderTrashFolder(fullname)) return moveFolder(fullname,mprofile.getFolderTrash());
+		else {
+			deleteFolder(fullname);
+			return null;
+		}
 	}
 	
 	public FolderCache moveFolder(String source, String dest) throws MessagingException {
@@ -1800,21 +788,9 @@ public class Service extends BaseService {
 		  }
 	  }
 	  InternetAddress ia[]=InternetAddress.parse(email, false);
-	  //TODO: default charset encofing?
-	  InternetAddress retia;
-	  if (ia[0].getPersonal()!=null) retia=new InternetAddress(ia[0].getAddress(),ia[0].getPersonal(),"UTF-8");
-	  else retia=ia[0];
+	  //build an InternetAddress with UTF8 personal, if present
+	  InternetAddress retia=MailUtils.buildInternetAddress(ia[0].getAddress(),ia[0].getPersonal());
 	  return retia;
-/*      String address=null;
-		String personal = null;
-		int ix = email.indexOf('<');
-		if (ix >= 0) {
-			int ix2 = email.indexOf('>');
-			personal = email.substring(0, ix).trim();
-			address = email.substring(ix + 1, ix2);
-			return new InternetAddress(address, personal, "UTF-8");
-		}
-		return new InternetAddress(email);*/
 	}
 	
 	public Exception sendReceipt(String from, String to, String subject, String body) {
@@ -1931,22 +907,8 @@ public class Service extends BaseService {
 			
 		}
 		Exception retexc = null;
-		/*ArrayList<Attachment> origattachments = getAttachments(msg.getId());
-		ArrayList<Attachment> attachments = new ArrayList<Attachment>();
-		for (String attname : attnames) {
-			for (Attachment att : origattachments) {
-				if (att.getFile().getName().equals(attname)) {
-					attachments.add(att);
-					break;
-				}
-			}
-		}*/
 		
 		if (attachments.size() == 0 && msg.getAttachments() == null) {
-			/*      b = mmgr.sendMsg(sender, msg.getReplyTo(),
-			 breakAddr(msg.getTo()),
-			 breakAddr(msg.getCc()), breakAddr(msg.getBcc()),
-			 msg.getSubject(), msg.getContent(), msg.getMime());*/
 			retexc = sendMsg(sender, msg, null);
 		} else {
 			
@@ -1955,8 +917,6 @@ public class Service extends BaseService {
 			if (retexc==null) clearAttachments(msg.getId());
 		}
 
-		/*    if (debug)
-		 Service.logger.debug("sendMail()" + b);*/
 		return retexc;
 	}
 	
@@ -3109,46 +2069,6 @@ public class Service extends BaseService {
 		msgattach.clear();
 	}
 
-  // TODO: updateServerEvents!!!!!!!
-/*    public void updateServerEvents() {
-	 try {
-	 ArrayList<ServerEvent> events=null;
-	 synchronized(getMailFoldersThread()) {
-	 Set<Entry<String, FolderCache>> entries=getFolderCacheEntries();
-	 boolean first=true;
-	 for(Entry<String, FolderCache> entry: entries) {
-	 FolderCache mc=entry.getValue();
-	 if ((isUnderSharedFolder(mc.getFolderName()) || mc.isScanForcedOrEnabled() || mc.hasChildWithScanForcedOrEnabled()) && ( mc.unreadChanged()||mc.recentChanged() )) {
-	 long millis=System.currentTimeMillis();
-	 if (events==null) events=new ArrayList<ServerEvent>();
-	 mc.resetUnreadChanged();
-	 mc.resetRecentChanged();
-	 String fname=mc.getFolderName();
-	 int unread=mc.getUnreadMessagesCount();
-	 int recent=mc.getRecentMessagesCount();
-	 boolean hasUnread=false;
-	 boolean log=false;
-	 if (!mc.isInbox()) {
-	 hasUnread=mc.hasUnreadChildren();
-	 if (recent>0) log=true;
-	 }
-	 String data="[ {id:'"+Utils.jsEscape(fname)+"',unread:"+unread+",recent:"+recent+",hasunread:"+hasUnread+",millis:"+millis+"} ]";
-	 events.add(
-	 new ServerEvent(
-	 "recents",
-	 "Email",
-	 "Cartella: "+getInternationalFolderPath(mc),
-	 data,log)
-	 );
-	 first=false;
-	 }
-	 }
-	 }
-	 addServerEvents(events);
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 }
-	 }*/
 	private String getMessageID(Message m) throws MessagingException {
 		String ids[] = m.getHeader("Message-ID");
 		if (ids == null) {
@@ -3977,81 +2897,6 @@ public class Service extends BaseService {
 		return afolders;
 	}
 	
-	public void processGetDocMgtTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		//WebTopApp wta=environment.getWebTopApp();
-		UserProfile profile = environment.getProfile();
-		String pnodename = request.getParameter("node");
-		String ss = "[\n";
-		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs = null;
-		try {
-			checkStoreConnected();
-			con = getConnection();
-			stmt = con.createStatement();
-			if (pnodename.equals("docmgtroot")) {
-				rs = stmt.executeQuery(
-						"select docmgt_associations.idcategory as idcategory,docmgt_categories.description as description from "
-						+ "docmgt_associations,docmgt_categories where "
-						+ "docmgt_associations.idcategory=docmgt_categories.idcategory and "
-						+ "login='" + profile.getUserId() + "' order by docmgt_categories.description"
-				);
-				boolean first = true;
-				while (rs.next()) {
-					if (!first) {
-						ss += ",\n";
-					}
-					String idcategory = rs.getString("idcategory");
-					String description = rs.getString("description");
-					ss += "{id:'" + StringEscapeUtils.escapeEcmaScript(idcategory)
-							+ "',text:'" + StringEscapeUtils.escapeEcmaScript(description)
-							+ "',leaf:false,iconCls: 'iconImapFolder'}";
-					first = false;
-				}
-			} else {
-				String idcategory = pnodename;
-				rs = stmt.executeQuery(
-						"select idsubcategory, description from docmgt_subcategories where idcategory='" + idcategory + "' order by description"
-				);
-				boolean first = true;
-				while (rs.next()) {
-					if (!first) {
-						ss += ",\n";
-					}
-					String idsubcategory = rs.getString("idsubcategory");
-					String description = rs.getString("description");
-					ss += "{id:'" + StringEscapeUtils.escapeEcmaScript(idcategory) + "|" + StringEscapeUtils.escapeEcmaScript(idsubcategory)
-							+ "',text:'" + StringEscapeUtils.escapeEcmaScript(description)
-							+ "',leaf:true,iconCls: 'iconImapFolder'}";
-					first = false;
-				}
-			}
-			ss += "\n]";
-			out.println(ss);
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-		} finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (Exception exc) {
-				}
-			}
-			if (con != null) {
-				try {
-					con.close();
-				} catch (Exception exc) {
-				}
-			}
-		}
-	}
-	
 	public void processMoveMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
@@ -4186,90 +3031,6 @@ public class Service extends BaseService {
 		}
 		out.println(sout);
 	}
-	
-    public String existContact(String fromName,String fromEmail){
-        Connection con=null;
-        Statement stmt=null;
-        ResultSet rs=null;
-        String contact_id="";
-        try{
-            con=getConnection();
-            stmt=con.createStatement();
-            rs=stmt.executeQuery("select idcontact from contacts where (hemail='"+fromEmail+"' or cemail='"+fromEmail+"') and iddomain='"+environment.getProfile().getDomainId()+"' and login='"+environment.getProfile().getUserId()+"'");
-            if (rs.next()) {
-                contact_id=rs.getString("idcontact");
-            }
-            if (contact_id.equals("")){
-                String id=getSeqContactsId(con);
-                contact_id=id;
-                String query="insert into contacts (idcontact,firstname,lastname,cemail,iddomain,login,revision,category) values ("+id+",'"+fromName+"','','"+fromEmail+"','"+environment.getProfile().getDomainId()+"','"+environment.getProfile().getUserId()+"',now(),'WebTop')";
-                stmt.executeUpdate(query);
-            }
-        }catch(Exception ex){
-            logger.error("Exception",ex);
-        }finally {
-            if (rs!=null) try { rs.close(); } catch(Exception exc) {}
-            if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-            if (con!=null) try { con.close(); } catch(Exception exc) {}
-        }
-        return contact_id;
-    }
-	
-    public static String getSeqContactsId(Connection con) throws SQLException {
-        String id = "";
-        Statement stmt = con.createStatement();
-        ResultSet rset = null;
-        if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("oracle")) {
-            rset = stmt.executeQuery("SELECT seq_contacts.nextval as id FROM DUAL");
-        } else if (con.getMetaData().getDatabaseProductName().equalsIgnoreCase("postgresql")) {
-            rset = stmt.executeQuery ("SELECT nextval('seq_contacts') as id FROM DUAL");
-        }
-        rset.next();
-        id = rset.getString("id");
-        rset.close();
-        stmt.close();
-        return id;
-    }
-	
-    public void processArchiveMessagesWt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        String fromfolder=request.getParameter("fromfolder");
-        String tofolder=request.getParameter("tofolder");
-        String customer_id=request.getParameter("customer_id");
-        String causal_id=request.getParameter("causal_id");
-        int ix=tofolder.indexOf("/");
-        String idcategory=tofolder;
-        String idsubcategory="";
-        if (ix>0){
-            idcategory=tofolder.substring(0,ix);
-            idsubcategory=tofolder.substring(ix+1);
-        }
-        String multifolder=request.getParameter("multifolder");
-        boolean mf=multifolder!=null && multifolder.equals("true");
-        String uids[]=null;
-        String sout=null;
-        try {
-            
-            checkStoreConnected();
-            FolderCache mcache=getFolderCache(fromfolder);
-            uids=request.getParameterValues("ids");
-            if (!mf) archiveMessagesWt(mcache, toLongs(uids), idcategory, idsubcategory,customer_id,causal_id);
-            else {
-                long iuids[]=new long[1];
-                for(String uid: uids) {
-                    ix=uid.indexOf("/");
-                    fromfolder=uid.substring(0,ix);
-                    uid=uid.substring(ix+1);
-                    archiveMessagesWt(mcache, iuids, idcategory, idsubcategory,customer_id,causal_id);
-                }
-            }
-            long millis=System.currentTimeMillis();
-            sout="{\nresult: true, millis: "+millis+"\n}";
-        } catch(Exception exc) {
-            logger.error("Exception",exc);
-            sout="{\nresult: false, text:'"+StringEscapeUtils.escapeEcmaScript(exc.getMessage())+"'\n}";
-        }
-        out.println(sout);
-    }
 	
 	String[] getMessageUIDs(FolderCache mcache,HttpServletRequest request) throws MessagingException, IOException {
 		String psortfield = request.getParameter("sort");
@@ -4692,12 +3453,6 @@ public class Service extends BaseService {
 		}
 	}
 	
-	// TODO: save pane size
-/*    public void processSavePaneSize(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String hperc=request.getParameter("hperc");
-	 wts.setServiceSetting("mail", "pane-hperc", hperc);
-	 out.println("{ result: true }");
-	 }*/
 	public void processNewFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String folder = request.getParameter("folder");
 		String name = request.getParameter("name");
@@ -4940,29 +3695,6 @@ public class Service extends BaseService {
 			int cut=foldername.length()+1;
 			cycleMailFolder(mcache.getFolder(), cut, jos);
 			
-/*            int digits=(msgs.length>0?(int)Math.log10(msgs.length)+1:1);
-			for (int i = 0; i < msgs.length; ++i) {
-				Message msg = msgs[i];
-				String subject = msg.getSubject();
-				if (subject != null) {
-					subject = subject.replace('/', '_').replace('\\', '_').replace(':', '-');
-				} else {
-					subject = "";
-				}
-				java.util.Date date = msg.getReceivedDate();
-				if (date == null) {
-					date = new java.util.Date();
-				}
-				
-				String fname = LangUtils.zerofill(i + 1, digits) + " - " + subject + ".eml";
-				JarEntry je = new JarEntry(fname);
-				je.setTime(date.getTime());
-				jos.putNextEntry(je);
-				msg.writeTo(jos);
-				jos.closeEntry();
-
-			}
-			jos.flush();*/
 			jos.close();
 			
 		} catch (Exception exc) {
@@ -5396,96 +4128,30 @@ public class Service extends BaseService {
 		}
 	}
 
-	// TODO: getEditProviderMessage!!!
-/*    public void processGetEditProviderMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String providername=request.getParameter("provider");
-	 String providerid=request.getParameter("providerid");
-	 String pnewmsgid=request.getParameter("newmsgid");
-	 WebTopService provider=wts.getServiceByName(providername);
-	 MessageContentProvider mcp=provider.getMessageContentProvider(providerid);
-	 int newmsgid=Integer.parseInt(pnewmsgid);
-	 String sout=null;
-	 try {
-	 boolean receipt=mcp.getReceipt();
-	 int priority=mcp.getPriority();
-	 boolean recipients=false;
-
-	 sout="{\n result: true,";
-	 String subject=mcp.getSubject();
-	 if (subject==null) subject="";
-	 sout+=" subject: '"+OldUtils.jsEscape(subject)+"',\n";
-	 sout+=" receipt: "+receipt+",\n";
-	 sout+=" priority: "+(priority>=3?false:true)+",\n";
-	 sout+=" recipients: [\n";
-	 if (recipients) {
-	 Address tos[]=mcp.getToRecipients();
-	 String srec="";
-	 if (tos!=null) {
-	 for(Address to: tos) {
-	 if (srec.length()>0) srec+=",\n";
-	 srec+="   { "+
-	 "type: 'to', "+
-	 "address: '"+OldUtils.jsEscape(getDecodedAddress(to))+"'"+
-	 " }";
-	 }
-	 }
-	 Address ccs[]=mcp.getCcRecipients();
-	 if (ccs!=null) {
-	 for(Address cc: ccs) {
-	 if (srec.length()>0) srec+=",\n";
-	 srec+="   { "+
-	 "type: 'cc', "+
-	 "address: '"+OldUtils.jsEscape(getDecodedAddress(cc))+"'"+
-	 " }";
-	 }
-	 }
-	 Address bccs[]=mcp.getBccRecipients();
-	 if (bccs!=null) {
-	 for(Address bcc: bccs) {
-	 if (srec.length()>0) srec+=",\n";
-	 srec+="   { "+
-	 "type: 'bcc', "+
-	 "address: '"+OldUtils.jsEscape(getDecodedAddress(bcc))+"'"+
-	 " }";
-	 }
-	 }
-
-	 sout+=srec;
-	 }
-	 sout+=" ],\n";
-
-	 String html=mcp.getHtml();
-	 boolean first=true;
-	 sout+=" attachments: [\n";
-	 if (mcp.hasAttachments()) {
-	 for (int i = 0; i < mcp.getAttachmentsCount(); ++i) {
-	 String filename = mcp.getAttachmentName(i);
-	 if (filename != null) {
-	 File tempFile = File.createTempFile("strts", null, new File(wtd.getTempPath()));
-	 wta.createFile(mcp.getAttachment(i), tempFile);
-	 attachFile(newmsgid, tempFile, filename, mcp.getContentType(i), null, false);
-	 String tempname=tempFile.getName();
-	 if (!first) sout+=",\n";
-	 sout+="{ name: '"+OldUtils.jsEscape(filename)+"', tempname: '"+OldUtils.jsEscape(tempname)+"' }";
-	 first=false;
-	 }
-	 }
-	 }
-	 sout+="\n ],\n";
-
-	 //Service.logger.debug("HTML newmsgid="+newmsgid);
-	 //Service.logger.debug(html);
-	 //String surl="service-requests?service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true&newmsgid="+newmsgid+"&cid=";
-	 //html=replaceCidUrls(html, maildata, surl);
-
-	 sout+=" html:'"+OldUtils.jsEscape(html)+"'\n";
-	 sout+="\n}";
-	 out.println(sout);
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
-	 }
-	 }*/
+	public void processManageMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String sendAction=ServletUtils.getStringParameter(request, "sendAction", "save");
+			
+			if (sendAction.equals("save")) {
+				processSaveMessage(request, response, out);
+			}
+			else if (sendAction.equals("send")) {
+				processSendMessage(request, response, out);
+			}
+			else if (sendAction.equals("schedule")) {
+				processScheduleMessage(request, response, out);
+			} else {
+				throw new Exception("Invlid send action operation "+sendAction);
+			}
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			Throwable cause = exc.getCause();
+			String msg = cause != null ? cause.getMessage() : exc.getMessage();
+            JsonResult json=new JsonResult(false, msg);
+			json.printTo(out);
+		}
+	}
+	
 	public void processSendMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		JsonResult json = null;
 		CoreManager coreMgr=WT.getCoreManager();
@@ -5623,7 +4289,6 @@ public class Service extends BaseService {
         json.printTo(out);
 	}
 	
-	//FLAG ANSWERED
     private String flagAnsweredMessage(String replyfolder, String id, long origuid) throws MessagingException {
 		String foundfolder = null;
 		if (replyfolder != null) {
@@ -5653,20 +4318,6 @@ public class Service extends BaseService {
 		return found;
 	}
 	
-/*	private boolean _flagAnsweredMessage(String foldername, String id) throws MessagingException {
-		Message msgs[] = null;
-		SonicleIMAPFolder sifolder = (SonicleIMAPFolder) store.getFolder(foldername);
-		sifolder.open(Folder.READ_WRITE);
-		msgs = sifolder.search(new MessageIDTerm(id));
-		boolean found = (msgs != null && msgs.length > 0);
-		if (found) {
-			msgs[0].setFlags(FolderCache.repliedFlags, true);
-		}
-		sifolder.close(true);
-		return found;
-	}*/
-	
-	//FLAG FORWARDED
     private String flagForwardedMessage(String forwardedfolder, String id, long origuid) throws MessagingException {
 		String foundfolder = null;
 		if (forwardedfolder != null) {
@@ -5695,19 +4346,6 @@ public class Service extends BaseService {
 		sifolder.close(true);
 		return found;
 	}
-	
-	/*private boolean _flagForwardedMessage(String foldername, String id) throws MessagingException {
-		Message msgs[] = null;
-		SonicleIMAPFolder sifolder = (SonicleIMAPFolder) store.getFolder(foldername);
-		sifolder.open(Folder.READ_WRITE);
-		msgs = sifolder.search(new MessageIDTerm(id));
-		boolean found = (msgs != null && msgs.length > 0);
-		if (found) {
-			msgs[0].setFlags(FolderCache.forwardedFlags, true);
-		}
-		sifolder.close(true);
-		return found;
-	}*/
 	
 	public void processSaveMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		JsonResult json = null;
@@ -5804,49 +4442,9 @@ public class Service extends BaseService {
         json.printTo(out);
 	}
 
-	// TODO: sendNewsletter
-/*    public void processSendNewsletter(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 sendNewsletter(request,response,out,false);
-	 }
-
-	 public void processSendNewsletterTest(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 sendNewsletter(request,response,out,true);
-	 }
-
-	 private void sendNewsletter(HttpServletRequest request, HttpServletResponse response, PrintWriter out, boolean test) {
-	 String sout=null;
-	 try {
-	 //WebTopDomain wtd=environment.getWebTopDomain();
-	 checkStoreConnected();
-	 String attachments[]=request.getParameterValues("attachments");
-	 if (attachments==null) attachments=new String[0];
-	 SimpleMessage msg=prepareMessage(request);
-	 checkStoreConnected();
-	 String ssetting="newsletter.folder";
-	 if (test) ssetting="newsletter.testfolder";
-	 FolderCache fc=getFolderCache(wtd.getSetting(ssetting));
-	 Exception exc=saveMessage(msg,attachments,fc);
-	 if (exc==null) {
-	 fc.setForceRefresh();
-	 sout="{\nresult: true, saved: true\n}";
-	 }
-	 else sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
-	 }
-	 out.println(sout);
-	 }*/
 	private SimpleMessage prepareMessage(JsMessage jsmsg, long msgId, boolean save, boolean isFax) throws Exception {
 		PrivateEnvironment env = environment;
-		//WebTopApp webtopapp=env.getWebTopApp();
 		UserProfile profile = env.getProfile();
-        //HttpSession session=request.getSession();
-		//WebTopSession wts=(WebTopSession)session.getAttribute("webtopsession");
-
-        //CharsetDecoder decoder=Charset.forName("UTF-16").newDecoder();
-		//String emails[] = request.getParameterValues("recipients");
-		//String rtypes[] = request.getParameterValues("rtypes");
 		//expand multiple addresses
 		ArrayList<String> aemails = new ArrayList<>();
 		ArrayList<String> artypes = new ArrayList<>();
@@ -5920,59 +4518,7 @@ public class Service extends BaseService {
 					}
 
 				// TODO: list integration!!!!
-/*                ContactsService cs=(ContactsService)wts.getServiceByName("contacts");
-					 DirectoryResult dr=cs.lookupDirectoryManager(dmid,name,false,false);
-					 if (dr.getElementsCount()>0) {
-					 DirectoryElement de=dr.elementAt(0);
-					 String idlist=de.getField("IDLIST");
-					 Connection con=null;
-					 Statement stmt=null;
-					 ResultSet rs=null;
-					 try {
-					 con=wtd.getConnection();
-					 stmt=con.createStatement();
-					 rs=stmt.executeQuery("select email,etype from listelements where idlist="+idlist);
-					 email=null;
-					 while (rs.next()) {
-					 String xemail=rs.getString("email");
-					 String xrtype=rs.getString("etype");
-					 if (xemail!=null) {
-					 try {
-					 checkEmail(xemail);
-					 InternetAddress.parse(xemail.replace(',', ' '),true);
-					 } catch(AddressException exc) {
-					 throw new AddressException(lookupResource(profile, MailLocaleKey.ADDRESS_ERROR)+" : "+xemail);
-					 }
-					 if (rtypes[i].equals("to")) {
-					 if (xrtype.equals("to")) {
-					 if (to==null) to=xemail;
-					 else to+="; "+xemail;
-					 } else if (xrtype.equals("cc")) {
-					 if (cc==null) cc=xemail;
-					 else cc+="; "+xemail;
-					 } else if (xrtype.equals("bcc")) {
-					 if (bcc==null) bcc=xemail;
-					 else bcc+="; "+xemail;
-					 }
-					 } else if (rtypes[i].equals("cc")) {
-					 if (cc==null) cc=xemail;
-					 else cc+="; "+xemail;
-					 } else if (rtypes[i].equals("bcc")) {
-					 if (bcc==null) bcc=xemail;
-					 else bcc+="; "+xemail;
-					 }
-					 }
-					 }
-					 listdone=true;
-					 checkemail=false;
-					 } catch(SQLException exc) {
-					 //Service.logger.error("Exception",exc);
-					 } finally {
-					 if (rs!=null) try { rs.close(); } catch(Exception exc2) {}
-					 if (stmt!=null) try { stmt.close(); } catch(Exception exc2) {}
-					 if (con!=null) try { con.close(); } catch(Exception exc2) {}
-					 }
-					 }*/
+
 				}
 			}
 			if (listdone) {
@@ -6072,15 +4618,6 @@ public class Service extends BaseService {
 			msg.setContent(jsmsg.content);
 		} else {
 			if (jsmsg.mime.equalsIgnoreCase("text/html")) {
-				/*                String surl=webtopapp.getUri();
-				 int ix=surl.indexOf("?");
-				 if (ix>=0) surl=surl.substring(0,ix);
-				 ix=surl.lastIndexOf("/");
-				 if (ix>=0) surl=surl.substring(0,ix);
-				 surl=surl+"/Download?cid=";
-				 content=OldUtils.replace(content,surl,"cid:");*/
-            //String surl="PreviewAttachment\\?newmsgid\\="+msgid+"\\&cid\\=";
-				//String surl="PreviewAttachment?newmsgid="+msgid+"&amp;cid=";
 
 				//CIDs
                 String content=jsmsg.content;
@@ -6130,72 +4667,6 @@ public class Service extends BaseService {
 	
 	// TODO: Attachments
 /*	
-	public void processUploadAttachments(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		doUploadAttachments(request, response, out, false);
-	}
-	
-	public void processUploadCids(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		doUploadAttachments(request, response, out, true);
-	}
-	
-	private void doUploadAttachments(HttpServletRequest request, HttpServletResponse response, PrintWriter out, boolean cid) {
-		try {
-			checkStoreConnected();
-			//WebTopApp webtopapp=environment.getWebTopApp();
-			MultipartIterator iterator = new MultipartIterator(request, 64 * 1024, ss.getAttachmentMaxSize(), ss.getAttachDir());
-			MultipartElement element = null;
-			ArrayList<MultipartElement> elements = new ArrayList<MultipartElement>();
-			int msgid = 0;
-			while ((element = iterator.getNextElement()) != null) {
-				if (element.isFile() && element.getFileName() != null && element.getFileName().length() > 0) {
-					elements.add(element);
-				} else {
-					String name = element.getName();
-					if (name.equals("newmsgid")) {
-						msgid = Integer.parseInt(element.getValue());
-					}
-				}
-			}
-			if (msgid == 0) {
-				String smsgid = request.getParameter("newmsgid");
-				if (smsgid != null) {
-					msgid = Integer.parseInt(smsgid);
-				}
-			}
-			String sout = "{ success: true, data: [\n";
-			boolean first = true;
-			for (MultipartElement el : elements) {
-				String filename = el.getFileName();
-				File file = el.getFile();
-				String ctype = "binary/octet-stream";
-				int ix = filename.lastIndexOf(".");
-				if (ix > 0) {
-					String extension = filename.substring(ix + 1);
-					String xctype = WT.getContentType(extension);
-					if (xctype != null) {
-						ctype = xctype;
-					}
-				}
-				
-				String cidname = null;
-				if (cid) {
-					cidname = filename;
-				}
-				Attachment attachment = attachFile(msgid, file, filename, ctype, cidname, false);
-				String tempname = attachment.getFile().getName();
-				if (!first) {
-					sout += ",\n";
-				}
-				sout += "{ name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "' }";
-				first = false;
-			}
-			sout += "], result: null, id: 'id', jsonrpc: '2.0' }";
-			out.println(sout);
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-		}
-	}
-	
 	public void processAttachFromMail(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
 		String sout = null;
@@ -6557,168 +5028,6 @@ public class Service extends BaseService {
 		DbUtils.closeQuietly(con);
 	 }
 	 }*/
-	// TODO: get settings!!!!!!!!!!!
-/*    public void processGetSettings(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile=environment.getUserProfile();
-	 AuthenticationDomain ad=environment.getWebTopDomain().getAuthenticationDomain();
-	 SettingsManager sm = wta.getSettingsManager();
-	 String authprot=ad.getAuthUriProtocol();
-	 Mailcard mc = null;
-	 char sep='.';
-	 try { sep=getFolderSeparator(); } catch(Exception exc) {}
-
-	 String sout="{\n";
-	 mc = wtd.getEmailDomainMailcard(profile);
-	 sout += " mailcardsource: '"+mc.source+"',";
-	 sout += " mailcard: '"+OldUtils.jsEscape(mc.html)+"',";
-	 mc = wtd.getMailcard(profile);
-	 mc.substitutePlaceholders(profile.getPersonalInfo());
-	 sout+=" identities: [ \n";
-	 sout+="    { "+
-	 " type: '"+Identity.TYPE_AUTO+"',"+
-	 " displayname: '"+OldUtils.jsEscape(profile.getDisplayName())+"',"+
-	 " email: '"+OldUtils.jsEscape(profile.getEmailAddress())+"',"+
-	 " mailcardsource: '"+mc.source+"',"+
-	 " mailcard: '"+OldUtils.jsEscape(mc.html)+"',"+
-	 " folder: null"+
-	 "    }";
-	 boolean faxident=false;
-	 ArrayList<Identity> identities=profile.getIdentities();
-	 for(Identity i: identities) {
-	 sout+=",\n    { "+
-	 " type: '"+i.type+"',"+
-	 " displayname: '"+OldUtils.jsEscape(i.displayname)+"',"+
-	 " email: '"+OldUtils.jsEscape(i.email)+"',";
-	 mc=wtd.getMailcard(i);
-	 if (mc!=null) {
-		if(i.type.equals(Identity.TYPE_AUTO)) {
-			// In case of auto identities we need to build real mainfolder
-			try {
-				String mailUser = wtd.getMailUsername(i.fromLogin);
-				String mainfolder = getSharedFolderName(mailUser, i.mainfolder);
-				i.mainfolder = mainfolder;
-				if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, i.mainfolder));
-				
-			} catch (Exception ex) {
-				logger.error("Unable to get auto identity foldername [{}]", i.email, ex);
-			}
-			
-			// Avoids default mailcard display for automatic identities
-			if(mc.source.equals(Mailcard.TYPE_DEFAULT) && !StringUtils.isEmpty(i.mainfolder)) {
-				mc = wtd.getMailcard(profile);
-			}
-		}
-			
-		//// Avoids default mailcard display for automatic identities
-		//if(mc.source.equals(Mailcard.TYPE_DEFAULT) 
-		//		&& !StringUtils.isEmpty(i.mainfolder) 
-		//		&& !i.type.equals(Identity.TYPE_AUTO)) {
-		//	mc = wtd.getMailcard(profile);
-		//}
-	
-		mc.substitutePlaceholders(getPersonalInfo(i));
-		sout+=" mailcardsource: '"+mc.source+"',";
-		// Clears any new-line chars in order to avoid html substistution
-		// problems at client-side
-		mc.html = LangUtils.stripLineBreaks(mc.html);
-		sout+=" mailcard: '"+OldUtils.jsEscape(mc.html)+"',";
-	 }
-	 if (i.isfax) faxident=true;
-	 sout+=" isfax: "+i.isfax+",";
-	 sout+=" usemypersonalinfos: "+i.usemypersonalinfos+",";
-	 sout+=" folder: "+(i.mainfolder==null?"null":"'"+OldUtils.jsEscape(i.mainfolder)+"'")+
-	 "    }";
-	 }
-	 sout+=" ],\n";
-        
-	 sout+=" faxident: "+faxident+",\n";
-	
-	 sout+=" columnsize: {\n";
-	 sout+="    folder: "+wts.getServiceSetting("mail", "column-folder", "100")+",\n";
-	 sout+="    folderdesc: "+wts.getServiceSetting("mail", "column-folderdesc", "100")+",\n";
-	 sout+="    priority: "+wts.getServiceSetting("mail", "column-priority", "35")+",\n";
-	 sout+="    status: "+wts.getServiceSetting("mail", "column-status", "30")+",\n";
-	 sout+="    from: "+wts.getServiceSetting("mail", "column-from", "200")+",\n";
-	 sout+="    to: "+wts.getServiceSetting("mail", "column-to", "200")+",\n";
-	 sout+="    subject: "+wts.getServiceSetting("mail", "column-subject", "400")+",\n";
-	 sout+="    date: "+wts.getServiceSetting("mail", "column-date", "80")+",\n";
-	 sout+="    size: "+wts.getServiceSetting("mail", "column-size", "50")+",\n";
-	 sout+="    flag: "+wts.getServiceSetting("mail", "column-flag", "30")+",\n";
-	 sout+="    arch: "+wts.getServiceSetting("mail", "column-arch", "30")+"\n";
-	 sout+=" },\n";
-        
-	 Connection con=null;
-	 Statement stmt=null;
-	 ResultSet rs=null;
-	 String vactive="N";
-	 String vmessage="";
-	 String vaddresses=profile.getEmailAddress();
-	 try {
-	 String sql="select * from vacation where iddomain='"+profile.getIDDomain()+"' and login='"+profile.getUser()+"'";
-	 con=wtd.getConnection();
-	 stmt=con.createStatement();
-	 rs=stmt.executeQuery(sql);
-	 if (rs.next()) {
-	 vactive=rs.getString("active");
-	 vmessage=rs.getString("message");
-	 vaddresses=rs.getString("addresses");
-	 }
-	 rs.close();
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 } finally {
-	 if (rs!=null) try { rs.close(); } catch(Exception exc) {}
-	 if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-	 if (con!=null) try { con.close(); } catch(Exception exc) {}
-	 }
-	 String imapPassword=profile.getMailPassword();
-	 String imapPassFake="";
-	 if (imapPassword!=null) for(int i=0;i<imapPassword.length();++i) imapPassFake+="x";
-        
-	String viewMaxTos=sm.getServiceSettingByPriority(profile.getIDDomain(), "mail","view-max-tos");
-	String viewMaxCcs=sm.getServiceSettingByPriority(profile.getIDDomain(), "mail","view-max-ccs");
-	if (viewMaxTos==null || viewMaxTos.trim().length()==0) viewMaxTos="20";
-	if (viewMaxCcs==null || viewMaxCcs.trim().length()==0) viewMaxCcs="20";
-        
-	String faxsubject=wtd.getSetting("fax.subject");
-		
-	 sout+="  vactive: "+(vactive.equals("Y")?"true":"false")+",\n";
-	 sout+="  vmessage: '"+OldUtils.jsEscape(vmessage)+"',\n";
-	 sout+="  vaddresses: '"+OldUtils.jsEscape(vaddresses)+"',\n";
-	 sout+="  maxattachsize: '"+wtd.getMaxAttachmentSize()+"',\n";
-	 sout+="  fontface: '"+OldUtils.jsEscape(profile.getFontFace())+"',\n";
-	 sout+="  fontsize: '"+OldUtils.jsEscape(profile.getFontSize())+"',\n";
-     sout+="  differentDefaultFolder: "+hasDifferentDefaultFolder+",\n";
-     sout+="  folderInbox: '"+Utils.jsEscape(getInboxFolderFullName())+"',\n";
-	 sout+="  folderSent: '"+OldUtils.jsEscape(profile.getFolderSent())+"',\n";
-	 sout+="  folderTrash: '"+OldUtils.jsEscape(profile.getFolderTrash())+"',\n";
-	 sout+="  folderSpam: '"+OldUtils.jsEscape(profile.getFolderSpam())+"',\n";
-	 sout+="  sharedsort: '"+OldUtils.jsEscape(profile.getMailSharedSort())+"',\n";
-	 sout+="  folderDrafts: '"+OldUtils.jsEscape(profile.getFolderDrafts())+"',\n";
-	 sout+="  folderPrefix: '"+OldUtils.jsEscape(folderPrefix)+"',\n";
-	 sout+="  mailProtocol: '"+OldUtils.jsEscape(profile.getMailProtocol())+"',\n";
-	 sout+="  mailHost: '"+OldUtils.jsEscape(profile.getMailHost())+"',\n";
-	 sout+="  mailPort: '"+profile.getMailPort()+"',\n";
-	 sout+="  mailUser: '"+OldUtils.jsEscape(profile.getMailUsername())+"',\n";
-	 sout+="  mailPassword: '"+OldUtils.jsEscape(imapPassFake)+"',\n";
-	 sout+="  separator: '"+sep+"',\n";
-	 sout+="  askreceipt: "+profile.isAskReceipt()+",\n";
-	 sout+="  scanall: "+profile.isScanAll()+",\n";
-	 sout+="  sharedseen: "+sm.getUserSetting(profile, "mail", Settings.SHARED_SEEN)+",\n";
-	 sout+="  scansecs: "+profile.getScanSeconds()+",\n";
-	 sout+="  scancycles: "+profile.getScanCycles()+",\n";
-     //sout+="  optimap: "+(profile.isAdministrator()||(!profile.isAutoMailSettings()))+",\n";
-	 sout+="  optimap: "+wts.isAdministrator()+",\n";
-	 sout+="  optimap2: "+(profile.isAdministrator()||(!authprot.equals("webtop")))+",\n";
-	 sout+="  pageRows: "+profile.getNumMsgList()+",\n";
-     sout+="  viewMaxTos: "+viewMaxTos+",\n";        
-     sout+="  viewMaxCcs: "+viewMaxCcs+",\n";        
-	 sout+="  viewHPerc: "+wts.getServiceSetting("mail", "pane-hperc", "60");        
-     if (StringUtils.isNotEmpty(faxsubject)) sout+="  faxsubject: '"+faxsubject+"',\n";
-	 sout+="}";
-	 out.println(sout);
-	 }*/
-	
 	private String getSharedFolderName(String mailUser, String folder) throws MessagingException {
 		FolderCache folderCache = null;
 		String sharedFolderName = null;
@@ -7716,8 +6025,6 @@ public class Service extends BaseService {
 		String puidmessage = request.getParameter("idmessage");
 		UserProfile profile = environment.getProfile();
 		Connection con = null;
-		Statement stmt = null;
-		ResultSet rs = null;
 		boolean result = false;
 		String text = "";
 		try {
@@ -7727,8 +6034,6 @@ public class Service extends BaseService {
             String id=getMessageID(mcache.getMessage(msguid));
 			con = getConnection();
 			ONote onote=NoteDAO.getInstance().selectById(con, profile.getDomainId(), id);
-			//stmt = con.createStatement();
-			//rs = stmt.executeQuery("select text from mail.notes where domain_id='" + profile.getDomainId() + "' and message_id='" + DbUtils.getSQLString(id) + "'");
 			if (onote!=null) {
 				text = onote.getText();
 			}
@@ -7758,16 +6063,9 @@ public class Service extends BaseService {
 			String id = getMessageID(msg);
 			con = getConnection();
 			NoteDAO.getInstance().deleteById(con, profile.getDomainId(), id);
-            //stmt=con.createStatement();
-			//stmt.executeUpdate("delete from mailnotes where iddomain='"+profile.getDomainId()+"' and messageid='"+OldUtils.getSQLString(id)+"'");
 			if (text.length() > 0) {
 				ONote onote = new ONote(profile.getDomainId(), id, text);
 				NoteDAO.getInstance().insert(con, onote);
-                //pstmt=con.prepareStatement("insert into mailnotes (iddomain,messageid,text) values (?,?,?)");
-				//pstmt.setString(1,profile.getDomainId());
-				//pstmt.setString(2, id);
-				//pstmt.setString(3, text);
-				//pstmt.execute();
 				msg.setFlags(flagNote, true);
 			} else {
 				msg.setFlags(flagNote, false);
@@ -7812,291 +6110,6 @@ public class Service extends BaseService {
 		}
 	}
 
-	// TODO: lookupContacts!!!!!!!!!!
-/*    public void processLookupContacts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String query=request.getParameter("query");
-	 String context=request.getParameter("context");
-	 String group=request.getParameter("group");
-	 if (group!=null && (group.trim().length()==0||group.trim().equals("*"))) group=null;
-	 String text="";
-	 String text2="";
-	 if (query!=null) text=query.trim();
-	 if (text.length()==0) {	
-		out.println("{ contacts: [ ], totalRecords: 0 }");
-		return;
-	 }	
-	 String otext=text;
-	 if (text.contains(" ")) {
-	 String ss[]=text.split(" ");
-	 String str="";
-	 for(String s: ss) {
-	 str+="%"+s.trim()+"% ";
-	 }
-	 text=str.trim();
-	 text2 = text;
-	 } else {
-	 text+="%";
-	 text2+="%"+text;
-	 }
-
-	 String sout="{ contacts: [\n";
-	 String xsout="";
-	 ArrayList<String> patterns=new ArrayList<String>();
-	 patterns.add(text);
-	 patterns.add(text);
-	 patterns.add(text);
-	 if (!text.contains("@")) {
-	 String s="%@"+otext;
-	 //if (!otext.contains(".")) s+=".";
-	 s+="%";
-	 patterns.add(s);
-	 }
-
-	 HttpSession session=request.getSession();
-	 //WebTopSession wts=(WebTopSession)session.getAttribute("webtopsession");
-	 int recs=0;
-	 ArrayList<ContactElement> values=new ArrayList<ContactElement>();
-	 String autodesc=lookupResource(wts.getEnvironment().getUserProfile(), MailLocaleKey.RECIPIENTS_SOURCE_AUTO);
-	 if (group==null) {
-	 boolean doauto=true;
-	 String xs=wta.getDomainSetting(wts.getEnvironment().getWebTopDomain(), "contacts.suggestautosaved");
-	 if (xs!=null && xs.equals("N")) doauto=false;
-            
-	 if (doauto) {
-	 //Start with auto storage
-	 ArrayList<WebTopSession.ServiceStoreEntry> storevalues=wts.getServiceStoreEntries(getName(), context, query.toUpperCase(), 10);
-	 for(WebTopSession.ServiceStoreEntry sse: storevalues) {
-	 ContactElement ce=new ContactElement(sse.getValue(),null);
-	 if (ce.email.length()>0 && ce.email.contains("@") && !values.contains(ce)) values.add(ce);
-	 }
-	 }
-            
-	 //Now contacts
-	 ContactsService cs=(ContactsService)wts.getServiceByName("contacts");
-	 for (DirectoryManager dm: cs.getDirectoryManagers()) {
-	 if (dm instanceof LDAPDirectoryManager) continue;
-	 ArrayList<String> searchFields=new ArrayList<String>();
-	 searchFields.add(dm.getFirstNameField());
-	 searchFields.add(dm.getLastNameField());
-	 searchFields.add(dm.getMailField());
-	 if (patterns.size()==4) searchFields.add(dm.getMailField());
-	 if(dm.getCompanyField() != null) {
-	 searchFields.add(dm.getCompanyField());
-	 patterns.add(text2);
-	 }
-				
-	 ContactElement cex[]=lookup(wts,dm,searchFields,patterns);
-	 for (ContactElement ce: cex) {
-	 if (ce.email.length()>0) { 
-	 int ix=values.indexOf(ce);
-	 if (ix<0) values.add(ce);
-	 else {
-	 ContactElement cep=values.get(ix);
-	 if (cep.source==null) cep.source=ce.source;
-	 }
-	 }
-	 }
-	 }
-            
-	 } else {
-	 ContactsService cs=(ContactsService)wts.getServiceByName("contacts");
-	 DirectoryManager dm=cs.getDirectoryManager(group);
-	 ArrayList<String> searchFields=new ArrayList<String>();
-	 searchFields.add(dm.getFirstNameField());
-	 searchFields.add(dm.getLastNameField());
-	 searchFields.add(dm.getMailField());
-	 if (patterns.size()==4) searchFields.add(dm.getMailField());
-	 if(dm.getCompanyField() != null) {
-	 searchFields.add(dm.getCompanyField());
-	 patterns.add(text2);
-	 }
-			
-	 ContactElement cex[]=lookup(wts,dm,searchFields,patterns);
-	 for (ContactElement ce: cex) {
-	 if (ce.email.length()>0) { 
-	 int ix=values.indexOf(ce);
-	 if (ix<0) values.add(ce);
-	 else {
-	 ContactElement cep=values.get(ix);
-	 if (cep.source==null) cep.source=ce.source;
-	 }
-	 }
-	 }
-	 }
-
-	 boolean first=true;
-	 for(ContactElement ce: values) {
-	 if (!first) xsout+=",\n";
-	 xsout+=" { email: \""+OldUtils.jsEscape(OldUtils.htmlescape(ce.email))+"\", source: '["+OldUtils.jsEscape(OldUtils.htmlescape(ce.source==null?autodesc:ce.source))+"]'}";
-	 ++recs;
-	 first=false;
-	 }
-	 sout+=xsout+"\n],\ntotalRecords:"+recs+"\n}\n";
-	 out.println(sout);
-	 }*/
-	// TODO: lookupFaxContacts
-/*    public void processLookupFaxContacts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String query=request.getParameter("query");
-	 String context=request.getParameter("context");
-	 String group=request.getParameter("group");
-	 if (group!=null && (group.trim().length()==0||group.trim().equals("*"))) group=null;
-	 String text="";
-	 if (query!=null) text=query.trim();
-	 String otext=text;
-	 if (text.contains(" ")) {
-	 String ss[]=text.split(" ");
-	 String str="";
-	 for(String s: ss) {
-	 str+="%"+s.trim()+"% ";
-	 }
-	 text=str.trim();
-	 }
-	 else text+="%";
-
-	 String sout="{ contacts: [\n";
-	 String xsout="";
-	 ArrayList<String> patterns=new ArrayList<String>();
-	 patterns.add(text);
-	 patterns.add(text);
-	 patterns.add(text);
-	 if (!text.contains("@")) {
-	 String s="%@"+otext;
-	 //if (!otext.contains(".")) s+=".";
-	 s+="%";
-	 patterns.add(s);
-	 }
-
-	 boolean first=true;
-	 HttpSession session=request.getSession();
-	 WebTopSession wts=(WebTopSession)session.getAttribute("webtopsession");
-	 int recs=0;
-	 if (group==null) {
-
-	 //now contacts
-	 ContactsService cs=(ContactsService)wts.getServiceByName("contacts");
-	 for (DirectoryManager dm: cs.getDirectoryManagers()) {
-	 if (dm instanceof LDAPDirectoryManager) continue;
-	 ArrayList<String> searchFields=new ArrayList<String>();
-	 searchFields.add(dm.getFirstNameField());
-	 searchFields.add(dm.getLastNameField());
-	 searchFields.add(dm.getMailField());
-	 if (patterns.size()==4) searchFields.add(dm.getMailField());
-	 String s=lookupFax(wts,dm,searchFields,patterns);
-	 if (s.length()>0) {
-	 if (!first) xsout+=",\n";
-	 xsout+=s;
-	 ++recs;
-	 first=false;
-	 }
-	 }
-	 } else {
-	 ContactsService cs=(ContactsService)wts.getServiceByName("contacts");
-	 DirectoryManager dm=cs.getDirectoryManager(group);
-	 ArrayList<String> searchFields=new ArrayList<String>();
-	 searchFields.add(dm.getFirstNameField());
-	 searchFields.add(dm.getLastNameField());
-	 searchFields.add(dm.getMailField());
-	 if (patterns.size()==4) searchFields.add(dm.getMailField());
-	 String s=lookupFax(wts,dm,searchFields,patterns);
-	 if (s.length()>0) {
-	 if (!first) xsout+=",\n";
-	 xsout+=s;
-	 ++recs;
-	 first=false;
-	 }
-	 }
-
-	 sout+=xsout+"\n],\ntotalRecords:"+recs+"\n}\n";
-	 out.println(sout);
-	 }*/
-	// TODO: lookup
-/*    private ContactElement[] lookup(WebTopSession wts, DirectoryManager dm, List<String> searchFields, List<String> patterns) {
-	 String emailfield=dm.getMailField();
-	 String fnfield=dm.getFirstNameField();
-	 String lnfield=dm.getLastNameField();
-	 Locale locale=wts.getEnvironment().getUserProfile().getLocale();
-	 DirectoryResult dr=dm.lookup(searchFields,patterns,locale,false,false,false,null);
-	 int n=dr.getElementsCount();
-	 ArrayList<String> emails=new ArrayList<String>();
-	 for(int i=0;i<n;++i) {
-	 DirectoryElement de=dr.elementAt(i);
-	 String email=de.getField(emailfield).trim();
-	 if (email.length()==0) continue;
-	 String fname=null;
-	 String lname=null;
-	 if (fnfield!=null) fname=de.getField(fnfield);
-	 if (lnfield!=null) lname=de.getField(lnfield);
-	 if (fname==null) fname="";
-	 if (lname==null) lname="";
-	 fname=fname.trim();
-	 lname=lname.trim();
-	 String cemail=fname;
-	 if (cemail.length()>0) cemail+=" ";
-	 cemail+=lname;
-	 if (cemail.length()>0) cemail+=" <"+email+">";
-	 else cemail=email;
-	 if (!emails.contains(cemail)) emails.add(cemail);
-	 }
-	 ContactElement ce[]=new ContactElement[emails.size()];
-	 for(int i=0;i<ce.length;++i) {
-	 ce[i]=new ContactElement(emails.get(i),dm.getDescription());
-	 }
-	 return ce;
-	 }
-
-	 private String lookupFax(WebTopSession wts, DirectoryManager dm, List<String> searchFields, List<String> patterns) {
-	 String sout="";
-	 String faxfield=dm.getFaxField();
-	 String fnfield=dm.getFirstNameField();
-	 String lnfield=dm.getLastNameField();
-
-	 Locale locale=wts.getEnvironment().getUserProfile().getLocale();
-	 DirectoryResult dr=dm.lookup(searchFields,patterns,locale,false,false,false,null);
-	 int n=dr.getElementsCount();
-	 ArrayList<String> emails=new ArrayList<String>();
-	 for(int i=0;i<n;++i) {
-	 DirectoryElement de=dr.elementAt(i);
-	 String fax=de.getField(faxfield);
-	 if (fax==null) continue;
-	 fax=fax.trim();
-	 if (fax.length()==0) continue;
-	 String fname=null;
-	 String lname=null;
-	 if (fnfield!=null) fname=de.getField(fnfield);
-	 if (lnfield!=null) lname=de.getField(lnfield);
-	 if (fname==null) fname="";
-	 if (lname==null) lname="";
-	 fname=fname.trim();
-	 lname=lname.trim();
-	 String username=fname.toLowerCase().replaceAll(" ", ".")+"."+lname.toLowerCase().replaceAll(" ", ".");
-	 String cemail=fname;
-	 if (cemail.length()>0) cemail+=" ";
-	 cemail+=lname;
-	 fax=fixFax(fax);
-	 String email=wts.getEnvironment().getWebTopDomain().getSetting("fax.pattern");
-	 email=email.replace("{username}", username).replace("{number}", fax);
-	 if (cemail.length()>0) cemail+=" <"+email+">";
-	 else cemail=email;
-	 if (!emails.contains(cemail)) emails.add(cemail);
-	 //            sout+=" { email: \""+OldUtils.jsEscape(OldUtils.htmlescape(cemail))+"\" }";
-	 }
-	 for(String cemail: emails) {
-	 if (sout.length()>0) sout+=",\n";
-	 sout+=" { email: \""+OldUtils.jsEscape(OldUtils.htmlescape(cemail))+"\" }";
-	 }
-	 return sout;
-	 }
-
-	 private String fixFax(String fax) {
-	 StringBuffer newfax=new StringBuffer();
-	 for(char c: fax.toCharArray()) {
-	 if (Character.isDigit(c)) newfax.append(c);
-	 else if (c=='+') {
-	 if (newfax.length()==0) newfax.append("00");
-	 }
-	 }
-	 return newfax.toString();
-	 }*/
 	public void processGetAttachment(HttpServletRequest request, HttpServletResponse response) {
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
@@ -8297,287 +6310,6 @@ public class Service extends BaseService {
 		return calendarout;
 	}
 
-    // TODO: get calendar event!!!
-/*    public void processGetCalendarEvent(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        String pfoldername=request.getParameter("folder");
-        String puidmessage=request.getParameter("idmessage");
-        String pidattach=request.getParameter("idattach");
-        UserProfile profile=environment.getUserProfile();
-        JsonObject sout=new JsonObject();
-        JsonArray partecipant=new JsonArray();
-        //String sout;
-        Connection con = null;
-        Statement stmt = null;
-        ResultSet rset = null;
-        String event_id="";
-        try {
-            checkStoreConnected();
-            FolderCache mcache=getFolderCache(pfoldername);
-            long newmsguid=Long.parseLong(puidmessage);
-            Message m=mcache.getMessage(newmsguid);
-            HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
-            Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
-            
-			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			String event=ir.getSummary();
-			String description=ir.getDescription();
-			String location=ir.getLocation();
-			String uid=ir.getUID();
-			String method=ir.getMethod();
-			con = wtd.getConnection();
-			stmt = con.createStatement();
-			logger.trace(
-				"SELECT EVENT_ID "+
-				"FROM EVENTS "+
-				"WHERE UID_PLANNING='"+uid+"' AND STATUS!='D' AND IDDOMAIN='"+wtd.getDataIDDomain()+"' AND EVENT_BY='"+environment.getUserProfile().getUser()+"'"
-				);
-			rset = stmt.executeQuery(
-				"SELECT EVENT_ID "+
-				"FROM EVENTS "+
-				"WHERE UID_PLANNING='"+uid+"' AND STATUS!='D' AND IDDOMAIN='"+wtd.getDataIDDomain()+"' AND EVENT_BY='"+environment.getUserProfile().getUser()+"'"
-			);
-			if (rset.next()) {
-			 event_id = rset.getString("event_id");
-			}
-
-			Calendar xcal=Calendar.getInstance();
-			java.util.Date uid_lm=ir.getLastModified();
-			xcal.setTime(uid_lm);
-			int uid_lm_yyyy=xcal.get(Calendar.YEAR);
-			int uid_lm_mm=xcal.get(Calendar.MONTH)+1;
-			int uid_lm_dd=xcal.get(Calendar.DAY_OF_MONTH);
-			int uid_lm_hhh=xcal.get(Calendar.HOUR_OF_DAY);
-			int uid_lm_mmm=xcal.get(Calendar.MINUTE);
-			int uid_lm_sss=xcal.get(Calendar.SECOND);
-
-			java.util.Date starts=ir.getStartDate();
-
-
-			java.util.Date ends=ir.getEndDate();
-			if (ends==null || ends.before(starts)) ends=starts;
-			xcal.setTime(starts);
-
-			//ricorrenza
-			boolean recurrence=false;
-			String recurr_type="";
-			String until_date_dd="";
-			String until_date_mm="";
-			String until_date_yyyy="";
-			String dayly_freq="";
-			String weekly_freq="";
-			String weekly_day1="false";
-			String weekly_day2="false"; 
-			String weekly_day3="false";
-			String weekly_day4="false";
-			String weekly_day5="false";
-			String weekly_day6="false";
-			String weekly_day7="false";
-			String monthly_month="";
-			String monthly_day="";
-			String yearly_day="";
-			String yearly_month="";
-			String repeat="0";
-			String permanent="";
-			RRule rrule = (RRule) ir.getVEvent().getProperties().getProperty(Property.RRULE);
-			if (rrule!=null){
-				recurrence=true;
-				recurr_type=rrule.getRecur().getFrequency();    //frequenza
-
-				java.util.Date until =rrule.getRecur().getUntil();  //data di fine
-				if (until!=null){
-					Calendar u=Calendar.getInstance();
-					u.setTime(until);
-					until_date_dd=u.get(Calendar.DAY_OF_MONTH)+"";
-					until_date_mm=u.get(Calendar.MONTH)+1+"";
-					until_date_yyyy=u.get(Calendar.YEAR)+"";
-				}else{
-					permanent="true";
-				}   
-				if (recurr_type.equals("DAILY")){
-					WeekDayList dayList = rrule.getRecur().getDayList();
-					logger.debug("daylylist={}", dayList);
-					if (!dayList.isEmpty()){ //ricorrenza giornaliera feriale
-						recurr_type="F";
-					}else{
-						recurr_type="D"; //ricorrenza giornaliera con intervallo   
-						dayly_freq=String.valueOf(rrule.getRecur().getInterval());
-						if (dayly_freq.equals("-1")) dayly_freq="1";
-					}
-				}else if (recurr_type.equals("WEEKLY")){
-					recurr_type="W";
-					weekly_freq=String.valueOf(rrule.getRecur().getInterval());
-					if (weekly_freq.equals("-1")) weekly_freq="1";
-					WeekDayList dayList = rrule.getRecur().getDayList();
-					if (!dayList.isEmpty()){
-						for (Object o:dayList){
-							WeekDay weekday=(WeekDay)o;
-							if (weekday.getDay().equals("MO")) weekly_day1="true";
-							if (weekday.getDay().equals("TU")) weekly_day2="true"; 
-							if (weekday.getDay().equals("WE")) weekly_day3="true";
-							if (weekday.getDay().equals("TH")) weekly_day4="true";
-							if (weekday.getDay().equals("FR")) weekly_day5="true";
-							if (weekday.getDay().equals("SA")) weekly_day6="true";
-							if (weekday.getDay().equals("SU")) weekly_day7="true";
-						}
-					}
-
-				}else if (recurr_type.equals("MONTHLY")){
-					recurr_type="M";
-					monthly_month=String.valueOf(rrule.getRecur().getInterval());
-					NumberList monthDayList = rrule.getRecur().getMonthDayList();
-					for (Object o:monthDayList){
-						monthly_day=String.valueOf((Integer)o);
-					}
-				}else if (recurr_type.equals("YEARLY")){
-					recurr_type="Y";
-					NumberList monthList = rrule.getRecur().getMonthList();
-					for (Object o:monthList){
-						yearly_month=String.valueOf((Integer)o);
-					}
-					NumberList monthDayList = rrule.getRecur().getMonthDayList();
-					for (Object o:monthDayList){
-						yearly_day=String.valueOf((Integer)o);
-					}
-				}
-
-				if (rrule.getRecur().getCount()!=-1)
-					repeat=String.valueOf(rrule.getRecur().getCount());
-
-
-			}
-			//fine ricorrenza
-
-			PropertyList pl=ir.getVEvent().getProperties("ATTENDEE");
-			boolean attendees=false;
-			description=description.trim();
-			if (pl!=null) {
-				for(Object op: pl) {
-					Property p=(Property)op;
-					Parameter pcn=p.getParameter("CN");
-					if (pcn!=null) {
-						String cn=pcn.getValue();
-						String vcn[]=cn.split(":");
-						if (vcn.length>0) {
-							if (!attendees) {
-								if (description.length()>0) {
-									if (!description.endsWith("\n")) description+="\n";
-									description+="\n";
-								}
-								//description+=lookupResource(profile, MailLocaleKey.ICAL_ATTENDEES)+":\n";
-							}
-
-							//description+="- "+vcn[0]+"\n";
-							attendees=true;
-
-							JsonObject mail=new JsonObject();
-							mail.addProperty("invitation","false");
-							mail.addProperty("name",vcn[0]);
-							mail.addProperty("partecipant","N");
-							mail.addProperty("response","none");
-
-
-							partecipant.add(mail);
-						}
-					}
-				}
-			}
-			if (description.length()>1024) description=description.substring(0,1024);
-
-			String sgeo="";
-			Geo geo=ir.getVEvent().getGeographicPos();
-			if (geo!=null) sgeo=geo.getValue();
-			String defaulttimezone = wts.getServiceSetting("calendar", "defaulttimezone", null);
-			if (defaulttimezone==null){
-				defaulttimezone="Europe/Rome";
-			}
-			int syyyy=xcal.get(Calendar.YEAR);
-			int smm=xcal.get(Calendar.MONTH);
-			int sdd=xcal.get(Calendar.DAY_OF_MONTH);
-			int shhh=xcal.get(Calendar.HOUR_OF_DAY);
-			int smmm=xcal.get(Calendar.MINUTE);
-			int ssss=xcal.get(Calendar.SECOND);
-			xcal.setTime(ends);
-			int eyyyy=xcal.get(Calendar.YEAR);
-			int emm=xcal.get(Calendar.MONTH);
-			int edd=xcal.get(Calendar.DAY_OF_MONTH);
-			int ehhh=xcal.get(Calendar.HOUR_OF_DAY);
-			int emmm=xcal.get(Calendar.MINUTE);
-			int esss=xcal.get(Calendar.SECOND);
-
-
-			String organizer=ir.getOrganizerAddress();
-			JsonObject eventsout=new JsonObject();
-			sout.addProperty("result", event);
-			eventsout.addProperty("description", description);
-			eventsout.addProperty("summary", event);
-			eventsout.addProperty("location", location);
-			eventsout.addProperty("startyyyy",syyyy);
-			eventsout.addProperty("startmm",smm);
-			eventsout.addProperty("startdd",sdd);
-			eventsout.addProperty("starthh",shhh);
-			eventsout.addProperty("startmmm",smmm);
-			eventsout.addProperty("startssss",ssss);
-			eventsout.addProperty("endyyyy",eyyyy);
-			eventsout.addProperty("endmm",emm);
-			eventsout.addProperty("enddd",edd);
-			eventsout.addProperty("endhh",ehhh);
-			eventsout.addProperty("endmmm",emmm);
-			eventsout.addProperty("endssss",esss);
-			eventsout.addProperty("organizer", organizer);
-			eventsout.addProperty("geo", sgeo);
-			eventsout.addProperty("method",method);
-			eventsout.addProperty("uid", uid);
-			eventsout.addProperty("uid_lm_yyyy", uid_lm_yyyy);
-			eventsout.addProperty("uid_lm_mm", uid_lm_mm);
-			eventsout.addProperty("uid_lm_dd", uid_lm_dd);
-			eventsout.addProperty("uid_lm_hhh", uid_lm_hhh);
-			eventsout.addProperty("uid_lm_mmm", uid_lm_mmm);
-			eventsout.addProperty("uid_lm_sss", uid_lm_sss);
-			eventsout.addProperty("event_id",event_id);
-			eventsout.addProperty("recurrence",recurrence);
-			eventsout.addProperty("recurr_type",recurr_type);
-			eventsout.addProperty("until_date_dd",until_date_dd);
-			eventsout.addProperty("until_date_mm",until_date_mm);
-			eventsout.addProperty("until_date_yyyy",until_date_yyyy);
-			eventsout.addProperty("dayly_freq",dayly_freq);
-			eventsout.addProperty("weekly_freq",weekly_freq);
-			eventsout.addProperty("weekly_day1",weekly_day1);
-			eventsout.addProperty("weekly_day2",weekly_day2); 
-			eventsout.addProperty("weekly_day3",weekly_day3);
-			eventsout.addProperty("weekly_day4",weekly_day4);
-			eventsout.addProperty("weekly_day5",weekly_day5);
-			eventsout.addProperty("weekly_day6",weekly_day6);
-			eventsout.addProperty("weekly_day7",weekly_day7);
-			eventsout.addProperty("monthly_month",monthly_month);
-			eventsout.addProperty("monthly_day",monthly_day);
-			eventsout.addProperty("yearly_month",yearly_month);
-			eventsout.addProperty("yearly_day",yearly_day);
-			eventsout.addProperty("repeat",repeat);
-			eventsout.addProperty("permanent",permanent);
-			sout.add("event", eventsout);
-			JsonObject planninggrid=new JsonObject();
-			planninggrid.add("planning",partecipant);
-			sout.add("planninggrid",planninggrid);
-			
-			sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).getAddress(), PartStat.ACCEPTED, ir);
-        } catch(Exception exc) {
-            //sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
-            sout.addProperty("result", false);
-            sout.addProperty("text", Utils.jsEscape(exc.getMessage()));
-            
-			logger.error("Error getting calendar events", exc);
-        }
-        finally {
-            if (rset!=null) try { rset.close(); } catch(Exception exc) {}
-            if (stmt!=null) try { stmt.close(); } catch(Exception exc) {}
-            if (con!=null) try { con.close(); } catch(Exception exc) {}
-        }
-        
-        
-        out.println(sout);
-    }
-	*/
-	
     public void processDeclineInvitation(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         String pfoldername=request.getParameter("folder");
         String puidmessage=request.getParameter("idmessage");
@@ -8662,489 +6394,13 @@ public class Service extends BaseService {
         }
 	}
 	
-	// TODO: list filters!!!
-/*    public void processListFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile=environment.getProfile();
-	 Locale locale=profile.getLocale();
-	 //WebTopApp webtopapp=environment.getWebTopApp();
-	 Connection con=null;
-	 String context=request.getParameter("context");
-	 try {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-	 String table = "none";
-	 if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-	 else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
-			
-	 con=wtd.getConnection();
-	 com.sonicle.webtop.sieve.JSonGenerator jsg=new com.sonicle.webtop.sieve.JSonGenerator(context,this,locale,folderPrefix);
-	 MailFilters filters=getMailFilters(con, table, profile.getUser(), profile.getIDDomain());
-	 StringBuffer sb=jsg.generate(filters);
-	 String sout=sb.toString();
-	 out.println(sout);
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 } finally {
-	 if (con!=null) try { con.close(); } catch(Exception e) {}
-	 }
-	 }*/
-	// TODO: move filters!!!
-/*    public void processMoveFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile=environment.getProfile();
-	 //WebTopApp webtopapp=environment.getWebTopApp();
-	 String context=request.getParameter("context");
-	 //String table="none";
-	 //if (context.equals("INBOX")) table="mailfilters";
-	 //else if (context.equals("SENT")) table="mailsentfilters";
-	 String login=profile.getUserId();
-	 String pids[]=request.getParameterValues("ids");
-	 String ptoid=request.getParameter("toid");
-	 int toid=Integer.parseInt(ptoid);
-	 int ids[]=new int[pids.length];
-	 for(int i=0;i<pids.length;++i)  ids[i]=Integer.parseInt(pids[i]);
-	 Arrays.sort(ids);
-	 Connection con=null;
-	 Statement stmt=null;
-	 Statement ustmt=null;
-	 ResultSet rs=null;
-	 String sout;
-	 try {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-	 String table = "none";
-	 if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-	 else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
-			
-	 con=wtd.getConnection();
-	 stmt=con.createStatement();
-	 ustmt=con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	 String sql;
-	 //temporarily updates ids to -n,...,-1 where -n is first in ids
-	 for(int i=0;i<ids.length;++i) {
-	 sql="update "+table+" set idfilter="+(-ids.length+i)+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter="+ids[i];
-	 stmt.executeUpdate(sql);
-	 }
-	 //nstart is toid or next one depending on direction
-	 boolean backward=toid<ids[0];
-	 int nstart=(backward?toid:toid+1);
-	 //shift last ids to an impossible range, reversed (-10000 and over)
-	 sql="update "+table+" set idfilter=(-10000-idfilter) where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter>="+nstart;
-	 stmt.executeUpdate(sql);
-
-	 //renumber from first in ids to nstart-1 (in case selection is moved forward)
-	 if (!backward) {
-	 int n=ids[0];
-	 for(int i=ids[0];i<nstart;++i) {
-	 sql="update "+table+" set idfilter="+n+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter="+i;
-	 n+=stmt.executeUpdate(sql);
-	 }
-	 nstart=n;
-	 }
-	 //move temporary records to its new place
-	 for(int i=0;i<ids.length;++i) {
-	 sql="update "+table+" set idfilter="+(nstart+i)+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter="+(-ids.length+i);
-	 stmt.executeUpdate(sql);
-	 }
-	 //renumber last ids, select reversed to get original order
-	 rs=ustmt.executeQuery("select iddomain,idfilter,login from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter<=-10000 order by idfilter desc");
-	 int n=nstart+ids.length;
-	 while(rs.next()) {
-	 rs.updateInt("idfilter",n++);
-	 rs.updateRow();
-	 }
-	 rs.close();
-	 ustmt.close();
-	 stmt.close();
-	 con.commit();
-	 //suggest new selection indexes, 0 based
-	 int n1=nstart-1;
-	 int n2=(nstart+ids.length-1)-1;
-	 sout="{\nresult: true, n1:"+n1+", n2:"+n2+"\n}";
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
-	 } finally {
-	 if (rs!=null) try { rs.close(); } catch(Exception e) {}
-	 if (ustmt!=null) try { ustmt.close(); } catch(Exception e) {}
-	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-	 if (con!=null) try { con.close(); } catch(Exception e) {}
-	 }
-	 out.println(sout);
-	 }*/
-	// TODO: delete filters!!!
-/*    public void processDeleteFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile=environment.getProfile();
-	 //WebTopApp webtopapp=environment.getWebTopApp();
-	 String context=request.getParameter("context");
-	 //String table="none";
-	 //if (context.equals("INBOX")) table="mailfilters";
-	 //else if (context.equals("SENT")) table="mailsentfilters";
-	 String login=profile.getUserId();
-	 String pids[]=request.getParameterValues("ids");
-	 int ids[]=new int[pids.length];
-	 for(int i=0;i<pids.length;++i)  ids[i]=Integer.parseInt(pids[i]);
-	 Arrays.sort(ids);
-	 Connection con=null;
-	 Statement stmt=null;
-	 Statement ustmt=null;
-	 ResultSet rs=null;
-	 String sout;
-	 try {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-	 String table = "none";
-	 if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-	 else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
-			
-	 con=wtd.getConnection();
-	 stmt=con.createStatement();
-	 ustmt=con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
-	 String sql="delete from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter in (";
-	 for(int i=0;i<ids.length;++i) {
-	 if (i>0) sql+=",";
-	 sql+=ids[i];
-	 }
-	 sql+=")";
-	 stmt.executeUpdate(sql);
-	 //renumber from first deleted to last available
-	 int n=ids[0];
-	 rs=ustmt.executeQuery("select iddomain,idfilter,login from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter>"+n);
-	 while(rs.next()) {
-	 rs.updateInt("idfilter", n++);
-	 rs.updateRow();
-	 }
-	 rs.close();
-	 ustmt.close();
-	 stmt.close();
-	 con.commit();
-	 sout="{\nresult: true\n}";
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
-	 } finally {
-	 if (rs!=null) try { rs.close(); } catch(Exception e) {}
-	 if (ustmt!=null) try { ustmt.close(); } catch(Exception e) {}
-	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-	 if (con!=null) try { con.close(); } catch(Exception e) {}
-	 }
-	 out.println(sout);
-	 }*/
-	// TODO: set filters status
-/*    public void processSetFiltersStatus(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile=environment.getProfile();
-	 //WebTopApp webtopapp=environment.getWebTopApp();
-	 String context=request.getParameter("context");
-	 //String table="none";
-	 //if (context.equals("INBOX")) table="mailfilters";
-	 //else if (context.equals("SENT")) table="mailsentfilters";
-	 String login=profile.getUserId();
-	 String pids[]=request.getParameterValues("ids");
-	 String status=request.getParameter("status");
-	 Connection con=null;
-	 Statement stmt=null;
-	 ResultSet rs=null;
-	 String sout;
-	 try {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-	 String table = "none";
-	 if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-	 else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
-			
-	 con=wtd.getConnection();
-	 stmt=con.createStatement();
-	 String sql="update "+table+" set status='"+status+"' where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter in (";
-	 for(int i=0;i<pids.length;++i) {
-	 if (i>0) sql+=",";
-	 sql+=pids[i];
-	 }
-	 sql+=")";
-	 stmt.executeUpdate(sql);
-	 stmt.close();
-	 con.commit();
-	 sout="{\nresult: true\n}";
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
-	 } finally {
-	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-	 if (con!=null) try { con.close(); } catch(Exception e) {}
-	 }
-	 out.println(sout);
-	 }*/
-	// TODO: save filter
-/*    public void processSaveFilter(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile=environment.getProfile();
-	 //WebTopApp webtopapp=environment.getWebTopApp();
-	 String context=request.getParameter("context");
-	 //String table="none";
-	 //if (context.equals("INBOX")) table="mailfilters";
-	 //else if (context.equals("SENT")) table="mailsentfilters";
-	 String login=profile.getUserId();
-	 String sidfilter=request.getParameter("idfilter");
-	 int idfilter=0;
-	 if (sidfilter!=null && sidfilter.trim().length()>0) idfilter=Integer.parseInt(sidfilter);
-	 int newidfilter=0;
-	 String action=request.getParameter("filteraction").toUpperCase();
-	 String actionvalue=request.getParameter("actionvalue");
-
-	 Connection con=null;
-	 Statement stmt=null;
-	 ResultSet rs=null;
-	 String sout;
-	 try {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-	 String table = "none";
-	 if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-	 else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
-			
-	 con=wtd.getConnection();
-	 stmt=con.createStatement();
-
-	 String sql;
-	 if (idfilter>0) {
-	 sql="delete from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+profile.getUser()+"' and idfilter="+idfilter;
-	 stmt.executeUpdate(sql);
-	 newidfilter=idfilter;
-	 } else {
-	 sql="select max(idfilter) as newidfilter from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+profile.getUser()+"'";
-	 rs=stmt.executeQuery(sql);
-	 rs.next();
-	 newidfilter=rs.getInt("newidfilter")+1;
-	 rs.close();
-	 }
-
-	 sql="insert into "+table+" ("+
-	 "iddomain,login,idfilter,status,continue,keepcopy,condition,"+
-	 "fromvalue,tovalue,subjectvalue,"+
-	 "action,actionvalue"+
-	 ") values ("+
-	 "'"+wtd.getDataIDDomain()+"',"+
-	 "'"+profile.getUser()+"',"+
-	 newidfilter+","+
-	 "'E','N','N',"+
-	 "'"+request.getParameter("condition")+"',"+
-	 "'"+OldUtils.getSQLString(request.getParameter("fromvalue"))+"',"+
-	 "'"+OldUtils.getSQLString(request.getParameter("tovalue"))+"',"+
-	 "'"+OldUtils.getSQLString(request.getParameter("subjectvalue"))+"',"+
-	 "'"+action+"',"+
-	 "'"+OldUtils.getSQLString(actionvalue)+"'"+
-	 ")";
-	 stmt.executeUpdate(sql);
-
-	 stmt.close();
-	 con.commit();
-	 sout="{\nresult: true\n}";
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
-	 } finally {
-	 if (rs!=null) try { rs.close(); } catch(Exception e) {}
-	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-	 if (con!=null) try { con.close(); } catch(Exception e) {}
-	 }
-	 out.println(sout);
-	 }*/
-	// TODO: apply filters!
-/*    public void processApplyFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile=environment.getUserProfile();
-	 String login=profile.getUser();
-	 String iddomain=wtd.getDataIDDomain();
-	 String vactive=request.getParameter("vactive");
-	 String vmessage=request.getParameter("vmessage");
-	 String vaddresses=request.getParameter("vaddresses");
-	 Connection con=null;
-	 Statement stmt=null;
-		
-	 String sout;
-	 try {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-			
-	 con=wtd.getConnection();
-			
-	 try {
-	 con.setAutoCommit(false);
-	 InboxMailFiltersDb.deleteByDomainUser(con, profile.getIDDomain(), profile.getUser());
-	 SentMailFiltersDb.deleteByDomainUser(con, profile.getIDDomain(), profile.getUser());
-	 es.copyBackTempTable(con, "mailfilters");
-	 es.copyBackTempTable(con, "mailsentfilters");
-	 con.commit();
-	 } catch(Exception ex1) {
-	 con.rollback();
-	 throw ex1;
-	 }
-			
-	 con.setAutoCommit(true);
-	 stmt=con.createStatement();
-	 stmt.executeUpdate("delete from vacation where iddomain='"+iddomain+"' and login='"+profile.getUser()+"'");
-
-	 String sql="insert into vacation (iddomain,login,active,message,addresses) values ("+
-	 "'"+wtd.getLocalIDDomain()+"',"+
-	 "'"+login+"',"+
-	 "'"+vactive+"',"+
-	 "'"+OldUtils.getSQLString(vmessage)+"',"+
-	 "'"+OldUtils.getSQLString(vaddresses)+"'"+
-	 ")";
-	 stmt.executeUpdate(sql);
-	 con.commit();
-	 MailFilters filters=getMailFilters(con,"mailfilters",login,iddomain);
-	 if (filters!=null) sieve.saveScript(filters, true);
-
-	 String scf="";
-	 for(String foldername: foldersCache.keySet()) {
-	 FolderCache fc=foldersCache.get(foldername);
-	 boolean psfon=fc.isScanForcedOn();
-	 fc.updateScanFlags();
-	 boolean nsfon=fc.isScanForcedOn();
-	 if (psfon!=nsfon) {
-	 if (scf.length()>0) scf+=",";
-	 scf+="{ idfolder: '"+OldUtils.jsEscape(foldername)+"', sfon: "+nsfon+" }";
-	 }
-	 }
-
-	 sout="{\nresult: true, scf:["+scf+"]\n}";
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage().replaceAll("\n","<BR>"))+"'\n}";
-	 } finally {
-	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-	 if (con!=null) try { con.close(); } catch(Exception e) {}
-	 }
-	 out.println(sout);
-	 }*/
-	// TODO: manage mail filters!!!
-/*	public void processManageMailFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String crud = null;
-	 Connection con = null;
-	 UserProfile profile = environment.getUserProfile();
-	 //WebTopSession wts = environment.getWebTopSession();
-		
-	 try {
-	 crud = ServletUtils.getStringParameter(request, "crud", true);
-	 con = this.wtd.getConnection();
-			
-	 if(crud.equals(Crud.BEGIN)) {
-	 EditingSession es = wts.registerEditing(EditingSession.Scope.SESSION, "mailfilters", null, "Regole Messaggi");
-	 try {
-	 con.setAutoCommit(false);
-	 TempTable tt1 = es.addTempTable(con, "mailfilters");
-	 TempTable tt2 = es.addTempTable(con, "mailsentfilters");
-	 Service.logger.debug(es.getTempTable("mailfilters").tableName);
-	 InboxMailFiltersDb.copyToTemp(con, tt1.tableName, profile.getIDDomain(), profile.getUser());
-	 SentMailFiltersDb.copyToTemp(con, tt2.tableName, profile.getIDDomain(), profile.getUser());
-	 con.commit();
-	 new JsonResult(es.id).printTo(out);
-	 } catch(Exception ex1) {
-	 con.rollback();
-	 wts.unregisterEditing(es);
-	 throw ex1;
-	 }
-					
-				
-	 } else if(crud.equals(Crud.SAVE)) {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-				
-	 try {
-	 con.setAutoCommit(false);
-	 InboxMailFiltersDb.deleteByDomainUser(con, profile.getIDDomain(), profile.getUser());
-	 SentMailFiltersDb.deleteByDomainUser(con, profile.getIDDomain(), profile.getUser());
-	 es.copyBackTempTable(con, "mailfilters");
-	 es.copyBackTempTable(con, "mailsentfilters");
-	 con.commit();
-	 new JsonResult().printTo(out);
-	 } catch(Exception ex1) {
-	 con.rollback();
-	 throw ex1;
-	 }
-				
-	 } else if(crud.equals(Crud.END)) {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-				
-	 try {
-	 con.setAutoCommit(false);
-	 es.removeTempTable(con, "mailfilters");
-	 es.removeTempTable(con, "mailsentfilters");
-	 con.commit();
-	 wts.unregisterEditing(es);
-	 new JsonResult().printTo(out);
-	 } catch(Exception ex1) {
-	 con.rollback();
-	 throw ex1;
-	 }
-				
-				
-	 }
-	 } catch (EditingException ex) {
-	 logger.error("Error managing mail filters", ex);
-	 new JsonResult(false, ex.getMessage()).printTo(out);
-	 } catch (Exception ex) {
-	 logger.error("Error managing mail filters", ex);
-	 new JsonResult(false, "Error managing mail filters").printTo(out);
-	 }
-	 }*/
-	// TODO: edit filter
-/*    public void processEditFilter(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile=environment.getUserProfile();
-	 String login=profile.getUser();
-	 WebTopApp webtopapp=environment.getWebTopApp();
-	 String context=request.getParameter("context");
-	 String idfilter=request.getParameter("idfilter");
-	 //String table="none";
-	 //if (context.equals("INBOX")) table="mailfilters";
-	 //else if (context.equals("SENT")) table="mailsentfilters";
-	 String sout;
-	 Connection con=null;
-	 Statement stmt=null;
-	 ResultSet rs=null;
-	 try {
-	 String esid = ServletUtils.getStringParameter(request, "esid", true);
-	 EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-	 String table = "none";
-	 if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-	 else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
-			
-	 con=wtd.getConnection();
-	 sout="{\n";
-	 stmt=con.createStatement();
-	 String sql="select * from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter="+idfilter;
-	 rs=stmt.executeQuery(sql);
-	 if (rs.next()) {
-	 sout+="  condition: '"+rs.getString("condition")+"',\n";
-	 sout+="  sender: '"+OldUtils.jsEscape(rs.getString("fromvalue"))+"',\n";
-	 sout+="  recipient: '"+OldUtils.jsEscape(rs.getString("tovalue"))+"',\n";
-	 sout+="  subject: '"+OldUtils.jsEscape(rs.getString("subjectvalue"))+"',\n";
-	 sout+="  action: '"+rs.getString("action").toLowerCase()+"',\n";
-	 sout+="  actionvalue: '"+OldUtils.jsEscape(rs.getString("actionvalue"))+"',\n";
-	 }
-	 sout+="  result: true\n}";
-	 }  catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 sout="{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}";
-	 } finally {
-	 if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-	 if (con!=null) try { con.close(); } catch(Exception e) {}
-	 }
-	 out.println(sout);
-	 }*/
 	boolean checkFileRules(String foldername) {
 		boolean b = false;
 		Connection con = null;
-        //Statement stmt=null;
-		//ResultSet rs=null;
 		try {
 			UserProfile profile = environment.getProfile();
 			con = getConnection();
 			b = FilterDAO.getInstance().hasFileIntoFolder(con, profile.getDomainId(), profile.getUserId(), foldername);
-            //stmt=con.createStatement();
-			//rs=stmt.executeQuery(
-			//        "select idfilter from mailfilters where iddomain='"+profile.getDomainId()+"' and login='"+profile.getUserId()+"' and "+
-			//        " status='E' and action='FILE' and actionvalue='"+OldUtils.getSQLString(foldername)+"'"
-			//);
-			//b=rs.next();
 		} catch (SQLException exc) {
 			logger.error("Error checking File rules on folder {}", foldername, exc);
 		} finally {
@@ -9156,25 +6412,14 @@ public class Service extends BaseService {
 	boolean checkScanRules(String foldername) {
 		boolean b = false;
 		Connection con = null;
-        //Statement stmt=null;
-		//ResultSet rs=null;
 		try {
 			UserProfile profile = environment.getProfile();
 			con = getConnection();
 			b = ScanDAO.getInstance().isScanFolder(con, profile.getDomainId(), profile.getUserId(), foldername);
-            //stmt=con.createStatement();
-			//rs=stmt.executeQuery(
-			//        "select foldername from mailscan where iddomain='"+profile.getDomainId()+"' and login='"+profile.getUserId()+"' and "+
-			//        " foldername='"+OldUtils.getSQLString(foldername)+"'"
-			//);
-			//b=rs.next();
 		} catch (SQLException exc) {
 			logger.error("Error checking Scan rules on folder {}", foldername, exc);
 		} finally {
 			DbUtils.closeQuietly(con);
-            //if (rs!=null) try { rs.close(); } catch(SQLException exc) {}
-			//if (stmt!=null) try { stmt.close(); } catch(SQLException exc) {}
-			//if (con!=null) try { con.close(); } catch(SQLException exc) {}
 		}
 		return b;
 	}
@@ -9413,62 +6658,29 @@ public class Service extends BaseService {
 		}
 	}	
 	
-/*    public void processAutoSaveMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 try {
-	 String newmsgid=request.getParameter("newmsgid");
-	 String json=request.getParameter("json");
-	 autoSaveData(this.environment,"newmail",newmsgid, json);
-	 out.println("{\nresult: true\n}");
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 out.println("{\nresult: false, text:'"+OldUtils.jsEscape(exc.getMessage())+"'\n}");
-	 }
-	 }*/
-	// TODO: get sharing rights
-/*	public void processGetSharingRights(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 ArrayList<JsSharingRight> items = new ArrayList<JsSharingRight>();
-	 SettingsManager sm = wta.getSettingsManager();
-		
-	 try {
-	 String str = sm.getServiceSetting("mail", Settings.SHARING_RIGHTS);
-	 items = LangUtils.fromNameValueString(str, JsSharingRight.class);
-	 new JsonResult(items).printTo(out);
-			
-	 } catch (Exception ex) {
-	 new JsonResult(false, ex.getMessage()).printTo(out);
-	 logger.error("Error getting sharing rights!", ex);
-	 }
-	 }*/
 	public MailFilters getMailFilters(Connection con, String filtersTable, String login, String iddomain) throws Exception {
-		Statement stmt = null;
-		ResultSet rs = null;
-		
 		MailFilters rfilters = null;
 		
 		try {
-			stmt = con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
-			
-			String sql = "select * from " + filtersTable + " where iddomain='" + iddomain + "' and login='" + login + "' order by idfilter";
-			rs = stmt.executeQuery(sql);
+			List<OFilter> ofilters = FilterDAO.getInstance().selectById(con, iddomain, login);
 			
 			MailFilters filters = new MailFilters();
 
-			//Parse filters
-			int records = 0;
-			while (rs.next()) {
-				int idfilter = rs.getInt("idfilter");
-				String status = rs.getString("status");
-				boolean enabled = status.equals("E");
-				String action = rs.getString("action");
-				String actionvalue = rs.getString("actionvalue");
+			for (OFilter of: ofilters) {
+				long idfilter = of.getFilterId();
+				String status = of.getStatus();
+				//TODO: manage enabled/disabled filters
+				//boolean enabled = of.isEnabled();
+				String action = of.getAction();
+				String actionvalue = of.getActionValue();
 				String operator = "or";
-				if (rs.getString("condition").equals("ALL")) {
+				if (of.getCondition().equals("ALL")) {
 					operator = "and";
 				}
 				
-				MailFilterConditions mfcs = new MailFilterConditions(idfilter, enabled, action, actionvalue, operator);
+				MailFilterConditions mfcs = new MailFilterConditions(idfilter, true /*enabled*/, action, actionvalue, operator);
 				
-				String fromvalue = rs.getString("fromvalue");
+				String fromvalue = of.getFromValue();
 				if (fromvalue != null && fromvalue.trim().length() > 0) {
 					MailFilterCondition mfc = new MailFilterCondition();
 					mfc.setComparison(MailFilterCondition.CONTAINS);
@@ -9476,7 +6688,7 @@ public class Service extends BaseService {
 					mfc.setValues(fromvalue, true);
 					mfcs.add(mfc);
 				}
-				String tovalue = rs.getString("tovalue");
+				String tovalue = of.getToValue();
 				if (tovalue != null && tovalue.trim().length() > 0) {
 					MailFilterCondition mfc = new MailFilterCondition();
 					mfc.setComparison(MailFilterCondition.CONTAINS);
@@ -9484,7 +6696,7 @@ public class Service extends BaseService {
 					mfc.setValues(tovalue, true);
 					mfcs.add(mfc);
 				}
-				String subjectvalue = rs.getString("subjectvalue");
+				String subjectvalue = of.getSubjectValue();
 				if (subjectvalue != null && subjectvalue.trim().length() > 0) {
 					MailFilterCondition mfc = new MailFilterCondition();
 					mfc.setComparison(MailFilterCondition.CONTAINS);
@@ -9492,8 +6704,8 @@ public class Service extends BaseService {
 					mfc.setValues(subjectvalue, false);
 					mfcs.add(mfc);
 				}
-				String sizevalue = rs.getString("sizevalue");
-				String size = rs.getString("sizematch");
+				String sizevalue = of.getSizeValue().toString();
+				String size = of.getSizeMatch();
 				if (size != null && size.trim().length() > 0 && sizevalue != null && sizevalue.trim().length() > 0) {
 					MailFilterCondition mfc = new MailFilterCondition();
 					if (size.equals("+")) {
@@ -9505,8 +6717,8 @@ public class Service extends BaseService {
 					mfc.setValues(sizevalue, true);
 					mfcs.add(mfc);
 				}
-				String fieldvalue = rs.getString("fieldvalue");
-				String fieldname = rs.getString("fieldname");
+				String fieldvalue = of.getFieldValue();
+				String fieldname = of.getFieldName();
 				if (fieldname != null && fieldname.trim().length() > 0 && fieldvalue != null && fieldvalue.trim().length() > 0) {
 					MailFilterCondition mfc = new MailFilterCondition();
 					mfc.setComparison(MailFilterCondition.CONTAINS);
@@ -9517,10 +6729,10 @@ public class Service extends BaseService {
 				
 				filters.add(mfcs);
 			}
-			rs.close();
+			//rs.close();
 
-			//Parse vacation
-			sql = "select * from vacation where iddomain='" + iddomain + "' and login='" + login + "'";
+			//TODO: Parse vacation
+			/*sql = "select * from vacation where iddomain='" + iddomain + "' and login='" + login + "'";
 			rs = stmt.executeQuery(sql);
 			if (rs.next()) {
 				boolean vactive = rs.getString("active").equals("Y");
@@ -9531,25 +6743,13 @@ public class Service extends BaseService {
 				}
 			}
 			rs.close();
-			stmt.close();
+			stmt.close();*/
 			
 			rfilters = filters;
 			
-		} catch (SQLException exc) {
+		} catch (DAOException exc) {
 			logger.error("Error saving Sieve script", exc);
 		} finally {
-			if (rs != null) {
-				try {
-					rs.close();
-				} catch (SQLException exc2) {
-				}
-			}
-			if (stmt != null) {
-				try {
-					stmt.close();
-				} catch (SQLException exc2) {
-				}
-			}
 		}
 		
 		return rfilters;

@@ -39,6 +39,7 @@ import com.sonicle.webtop.mail.bol.OFilter;
 import java.sql.Connection;
 import org.jooq.DSLContext;
 import static com.sonicle.webtop.mail.jooq.Tables.*;
+import java.util.List;
 
 /**
  *
@@ -67,5 +68,17 @@ public class FilterDAO extends BaseDAO {
 			.fetchOneInto(OFilter.class)!=null;
 	}
 	
+	public List<OFilter> selectById(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(FILTERS)
+			.where(
+				FILTERS.DOMAIN_ID.equal(domainId)
+				.and(FILTERS.USER_ID.equal(userId))
+			)
+			.orderBy(FILTERS.FILTER_ID)
+			.fetchInto(OFilter.class);
+	}
 	
 }
