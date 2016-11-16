@@ -211,7 +211,7 @@ public class JobService extends BaseJobService {
 					Folder un=uns[i];
 					char sep=un.getSeparator();
 					String fname=mu.getMailUser()+sep+foldername;
-					if (domain.getAuthUri().startsWith("ldapWebTop:")) fname+="@"+domain.getDomainName();
+					if (domain.getAuthUri().startsWith("ldapWebTop:")) fname+="@"+domain.getInternetName();
 					outgoings[i]=un.getFolder(fname);
 				}
 			} else {
@@ -235,7 +235,7 @@ public class JobService extends BaseJobService {
 					Folder un=uns[0];
 					char sep=un.getSeparator();
 					String fname=mu.getMailUser()+sep+foldername;
-					if (domain.getAuthUri().startsWith("ldapWebTop:")) fname+="@"+domain.getDomainName();
+					if (domain.getAuthUri().startsWith("ldapWebTop:")) fname+="@"+domain.getInternetName();
 					sent=un.getFolder(fname);
 				}
 			} else {
@@ -316,7 +316,7 @@ public class JobService extends BaseJobService {
 							MailUtils.htmlescape(recipients),
 							MailUtils.htmlescape(nmsubject));
 					String email=WT.getUserData(pid).getEmail().toString();
-					WT.sendEmail(pid, true, "webtop@"+domain.getDomainName(), email, subject, html);
+					WT.sendEmail(pid, true, "webtop@"+domain.getInternetName(), email, subject, html);
 				}
 			} catch(Throwable t) {
 				logger.error("Exception",t);
