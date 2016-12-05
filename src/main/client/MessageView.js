@@ -33,7 +33,7 @@
  */
 
 Ext.define('Sonicle.webtop.mail.MessageViewModel', {
-    extend: 'WT.model.Base',
+    extend: 'WTA.model.Base',
     idProperty: 'id',
     fields: [
 		{ name: "id", type: 'int' },
@@ -395,7 +395,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 for(var i=0;i<len;++i) {
                     var att=atts[i];
                     var name=att.name;
-                    var imgclass=WTF.fileTypeCssIconCls(WT.Util.getFileExtension(name),"xs");
+                    var imgclass=WTF.fileTypeCssIconCls(WTA.Util.getFileExtension(name),"xs");
                     var aparams;
                     if (!provider) {
                         aparams={
@@ -568,7 +568,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     xif.onreadystatechange=me.iframeState.bind(xif);
                 }
                 
-                var data=WT.Util.getIFrameData(xifname),
+                var data=WTA.Util.getIFrameData(xifname),
 					doc=data.doc,
 					donedoc=false;
                 if (doc) {
@@ -866,7 +866,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
     adjustIframe: function(xifname,task) {
 		var me=this;
-        var data=WT.Util.getIFrameData(xifname),
+        var data=WTA.Util.getIFrameData(xifname),
 			doc=data.doc,
 			xif=data.iframe;
         if (!doc || !doc.body) {
@@ -1008,7 +1008,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             var len=me.iframes.length;
             for(var i=0;i<len;++i) {
                 var xif=me.iframes[i];
-                var data=WT.Util.getIFrameData(xif.name);
+                var data=WTA.Util.getIFrameData(xif.name);
                 var thebody=data.doc.body;
                 var newheight=thebody.scrollHeight;
                 var newwidth=thebody.scrollWidth;

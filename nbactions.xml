@@ -7,8 +7,11 @@
             </packagings>
             <goals>
                 <goal>clean</goal>
-                <goal>jooq-codegen:generate</goal>
                 <goal>install</goal>
             </goals>
+            <activatedProfiles>
+                <activatedProfile>generate-db-classes</activatedProfile>
+                <activatedProfile>build-reports</activatedProfile>
+            </activatedProfiles>
         </action>
     </actions>

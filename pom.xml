@@ -1,23 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com.sonicle.webtop</groupId>
-    <artifactId>webtop-mail</artifactId>
-    <version>1.0.0</version>
-    <packaging>jar</packaging>
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.sonicle.webtop</groupId>
+	<artifactId>webtop-mail</artifactId>
+	<version>1.0.0</version>
+	<packaging>jar</packaging>
 	<name>webtop-mail</name>
 	
 	<parent>
 		<groupId>com.sonicle.webtop</groupId>
-		<artifactId>webtop-sdk-service-project</artifactId>
+		<artifactId>webtop-superpom-service-sdk</artifactId>
 		<version>1.0</version>
 	</parent>
 	
 	<properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
-    </properties>
+		<maven.compiler.source>1.7</maven.compiler.source>
+		<maven.compiler.target>1.7</maven.compiler.target>
+		<!-- WEBTOP SERVICE CONFIGURATION -->
+		<webtop.service.package>com.sonicle.webtop.mail</webtop.service.package>
+		<webtop.service.jsPackage>Sonicle.webtop.mail</webtop.service.jsPackage>
+	</properties>
 	
 	<dependencies>
 		<dependency>
@@ -41,62 +43,4 @@
 			<version>0.9.4</version>
 		</dependency>
 	</dependencies>
-	
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>com.sonicle.maven</groupId>
-				<artifactId>jasperreports-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<phase>process-sources</phase>
-						<goals>
-							<goal>jasper</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>com.sonicle.maven</groupId>
-				<artifactId>minify-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>minify-debug</id>
-						<goals>
-							<goal>minify</goal>
-						</goals>
-						<configuration>
-							<suffix>.debug</suffix>
-							<jsEngine>CLEANER</jsEngine>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.jooq</groupId>
-				<artifactId>jooq-codegen-maven</artifactId>
-				<configuration>
-					<jdbc>
-						<driver>org.postgresql.Driver</driver>
-						<url>jdbc:postgresql://www.sonicle.com/webtop5</url>
-						<user>sonicle</user>
-						<password>sonicle</password>
-					</jdbc>
-					<generator>
-						<database>
-							<inputSchema>mail</inputSchema>
-						</database>
-						<target>
-							<packageName>com.sonicle.webtop.mail.jooq</packageName>
-						</target>
-					</generator>
-				</configuration>
-				<executions>
-					<execution>
-						<goals><!-- the plugin should hook into the generate goal --></goals>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
 </project>

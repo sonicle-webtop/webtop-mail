@@ -6678,7 +6678,7 @@ public class Service extends BaseService {
 					operator = "and";
 				}
 				
-				MailFilterConditions mfcs = new MailFilterConditions(idfilter, true /*enabled*/, action, actionvalue, operator);
+				MailFilterConditions mfcs = new MailFilterConditions((int)idfilter, true /*enabled*/, action, actionvalue, operator);
 				
 				String fromvalue = of.getFromValue();
 				if (fromvalue != null && fromvalue.trim().length() > 0) {

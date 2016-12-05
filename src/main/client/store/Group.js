@@ -1,5 +1,5 @@
 /*
- * webtop-mail is a WebTop Service developed by Sonicle S.r.l.
+ * webtop-calendar is a WebTop Service developed by Sonicle S.r.l.
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -32,25 +32,19 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.model.ImapTreeModel', {
-    extend: 'Ext.data.TreeModel',
-    idProperty: 'id',
-    fields: [
-		{ name: "id" },
-		{ name: "text" },
-		{ name: "folder" },
-		{ name: "leaf" },
-		{ name: "iconCls" },
-		{ name: "unread" },
-		{ name: "hasUnread" },
-		{ name: "isInbox" },
-		{ name: "isDrafts" },
-		{ name: "isSent" },
-		{ name: "isTrash" },
-		{ name: "isSpam" },
-		{ name: "scanOff" },
-		{ name: "scanOn" },
-		{ name: "scanEnabled" }
-    ]
+Ext.define('Sonicle.webtop.mail.store.Group', {
+	extend: 'WTA.ux.data.ArrayStore',
+	
+	sid: 'com.sonicle.webtop.mail', 
+	resKeyPrefix: 'store.group.',
+	
+	model: 'WTA.ux.data.SimpleModel',
+	data: [
+		['none'],
+		['gdate'],
+		['from'],
+		['to'],
+		['threadId']
+	]
+	
 });
-

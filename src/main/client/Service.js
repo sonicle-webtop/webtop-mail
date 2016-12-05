@@ -33,7 +33,7 @@
  */
 
 Ext.define('Sonicle.webtop.mail.Service', {
-	extend: 'WT.sdk.Service',
+	extend: 'WTA.sdk.Service',
 	requires: [
 		'Sonicle.webtop.mail.ImapTree',
 		'Sonicle.webtop.mail.MessagesPanel',

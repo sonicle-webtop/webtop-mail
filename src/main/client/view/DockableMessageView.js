@@ -33,7 +33,7 @@
  */
 
 Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
-	extend: 'WT.sdk.DockableView',
+	extend: 'WTA.sdk.DockableView',
 	
 	dockableConfig: {
 		iconCls: 'wt-icon-message-xs',
