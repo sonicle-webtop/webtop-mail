@@ -6970,7 +6970,7 @@ public class Service extends BaseService {
 	private void loadMainIdentityMailcard(Identity id) {
 		Mailcard mc = getMailcard();
 		try {
-			UserPersonalInfo upi=WT.getCoreManager().getUserPersonalInfo(mailManager.getTargetProfileId());
+			UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(mailManager.getTargetProfileId());
 			mc.substitutePlaceholders(upi);			
 		} catch(WTException exc) {
 			logger.error("cannot load user personal info",exc);
@@ -7000,7 +7000,7 @@ public class Service extends BaseService {
 				}
 
 				try {
-					UserPersonalInfo upi=WT.getCoreManager().getUserPersonalInfo(opid);
+					UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(opid);
 					mc.substitutePlaceholders(upi);
 				} catch (Exception ex) {
 					logger.error("Unable to get auto identity personal info [{}]", id.getEmail(), ex);

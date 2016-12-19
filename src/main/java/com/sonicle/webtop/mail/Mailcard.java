@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sonicle.webtop.core.sdk.UserPersonalInfo;
+import com.sonicle.webtop.core.sdk.UserProfile;
 import java.util.regex.Pattern;
 
 /**
@@ -73,11 +73,11 @@ public class Mailcard {
 		this.html = html;
 	}
 	
-	public void substitutePlaceholders(UserPersonalInfo personalInfo) {
+	public void substitutePlaceholders(UserProfile.PersonalInfo personalInfo) {
 		this.html = Mailcard.replaceTemplateFields(this.html, personalInfo);
 	}
 	
-	public static String replaceTemplateFields(String html, UserPersonalInfo personalInfo) {
+	public static String replaceTemplateFields(String html, UserProfile.PersonalInfo personalInfo) {
 		if(personalInfo != null) {
 			String title=personalInfo.getTitle();
 			String firstName=personalInfo.getFirstName();
