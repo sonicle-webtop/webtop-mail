@@ -1712,7 +1712,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						stateId: 'stid-atts',
 						hidden: scol.hidden,
 						xtype: 'soiconcolumn',
-						iconField: function(value,rec) {
+						getIconCls: function(value,rec) {
 							return Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'attachment', 'xs');
 						},
 						iconSize: WTU.imgSizeToPx('xs'),
