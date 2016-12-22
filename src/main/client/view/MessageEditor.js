@@ -410,6 +410,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableLists: true,
 				enableSourceEdit: true,
 				enableClean: true,
+				enableImageUrls: true,
 				listeners: {
 					init: function() {
 						var xdoc=me.htmlEditor.getDoc(),
