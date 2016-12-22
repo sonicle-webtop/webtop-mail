@@ -3897,7 +3897,8 @@ public class Service extends BaseService {
 								" fileSize: "+upfile.getSize()+" "+
 								" }";
 						first = false;
-						html = StringUtils.replace(html, "cid:" + cid, "service-request?service="+SERVICE_ID+"&csrf="+RunContext.getCSRFToken()+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+						//TODO: change this weird matching of cids2urls!
+						html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+RunContext.getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 					}
 				}
 				sout += "\n ],\n";
@@ -4112,7 +4113,8 @@ public class Service extends BaseService {
                             " fileSize: "+upfile.getSize()+" "+
                             " }";
                     first = false;
-                    html = StringUtils.replace(html, "cid:" + cid, "service-request?service="+SERVICE_ID+"&csrf="+RunContext.getCSRFToken()+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+					//TODO: change this weird matching of cids2urls!
+                    html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+RunContext.getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
                 }
             }
             sout += "\n ],\n";
@@ -4621,21 +4623,22 @@ public class Service extends BaseService {
 			msg.setContent(jsmsg.content);
 		} else {
 			if (jsmsg.mime.equalsIgnoreCase("text/html")) {
-
+				//TODO: change this weird matching of cids2urls!
+				
 				//CIDs
                 String content=jsmsg.content;
-                String pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&amp;csrf="+RunContext.getCSRFToken()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
+                String pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+RunContext.getCSRFToken()+"&amp;service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
                 String pattern2=RegexUtils.escapeRegexSpecialChars("&amp;cid=");
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "cid:");
-                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&csrf="+RunContext.getCSRFToken()+"&action=PreviewAttachment&nowriter=true&uploadId=");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+RunContext.getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&cid=");
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "cid:");
 				
                 //URLs
-                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&amp;csrf="+RunContext.getCSRFToken()+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+RunContext.getCSRFToken()+"&amp;service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&amp;url=");
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
-                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?service="+SERVICE_ID+"&csrf="+RunContext.getCSRFToken()+"&action=PreviewAttachment&nowriter=true&uploadId=");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+RunContext.getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&url=");
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
                 

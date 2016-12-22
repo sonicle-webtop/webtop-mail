@@ -246,8 +246,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
                     dropElement: me.getId()
 				}),
 				listeners: {
-					/*uploadstarted: function(s) {
-					},*/
 					beforeupload: function(s,file) {
 						me.htmlEditor.showProgress(file.name);
 					},
@@ -396,6 +394,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				me.subject
 			]
 		}));
+		
+		
 		me.add(
 			me.htmlEditor=Ext.create({
 				xtype: 'sohtmleditor',
@@ -411,6 +411,57 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableSourceEdit: true,
 				enableClean: true,
 				enableImageUrls: true,
+				customButtons: [
+					{
+						xtype:'souploadbutton',
+						tooltip: {
+							title: me.mys.res('editor.btn-insertimagefile.tit'),
+							text: me.mys.res('editor.btn-insertimagefile.tip'),
+							cls: Ext.baseCSSPrefix + 'html-editor-tip'
+						},
+						iconCls: 'wtmail-icon-format-insertimagefile-xs',
+						uploaderConfig: WTF.uploader(me.mys.ID,'UploadCid',{
+							extraParams: {
+								tag: me.msgId,
+							}
+						}),
+						listeners: {
+							beforeupload: function(s,file) {
+								me.htmlEditor.showProgress(file.name);
+							},
+							uploadprogress: function(s,file) {
+								me.htmlEditor.setProgress(file.percent);
+							},
+							fileuploaded: function(s,file,resp) {
+								var uid=resp.data.uploadId;
+								me.htmlEditor.hideProgress();
+								me.attlist.addAttachment(
+										{ 
+											msgId: me.msgId, 
+											uploadId: uid, 
+											fileName: file.name, 
+											cid: file.name,
+											inline: true,
+											fileSize: file.size 
+										}
+								);
+								me.htmlEditor.execCommand('insertimage', false, 
+									WTF.processBinUrl(me.mys.ID,"PreviewAttachment",{
+										uploadId: uid,
+										cid: file.name
+									})
+								);
+							},
+							uploaderror: function(s,file,msg) {
+								me.htmlEditor.hideProgress();
+								WT.error(msg);
+							},
+							uploadcomplete: function(s,fok,ffailed) {
+								//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
+							}
+						}
+					}
+				],
 				listeners: {
 					init: function() {
 						var xdoc=me.htmlEditor.getDoc(),
