@@ -600,7 +600,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return ident;
 	},
 	
-	actionAdvancedSearch: function() {},
+	actionAdvancedSearch: function() {
+		var me=this,fn=me.imapTree.getSelection()[0];
+		if (!me.advsdialog) {
+			me.advsdialog=WT.createView(me.ID,'view.AdvancedSearchDialog',{
+				viewCfg: {
+					mys: me,
+					folder: fn.get("id"),
+					folderText: fn.get("text"),
+					folderHasChildren: fn.hasChildNodes()
+				}
+			});
+		} else {
+			me.advsdialog.folder=me.imapTree.getSelection();
+		}
+		
+		me.advsdialog.show();
+	},
 	
 	actionEmptyFolder: function(s,e) {
 		var me=this,
