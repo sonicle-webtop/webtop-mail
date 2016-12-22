@@ -473,358 +473,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.tbar=me.ptoolbar;
 		}
 */		
-        n=0;
-        var dcols=new Array();
-        if (me.multifolder) {
-            dcols[n++]={//Folder
-                header: '',
-                width: 100,
-                sortable: true,
-                dataIndex: 'folder',
-                hidden: true,
-				filter: { xtype: 'textfield'}
-            };
-            dcols[n++]={//Folder Descripion
-                header: me.res("column-folder"),
-                width: 100,
-                sortable: true,
-                dataIndex: 'folderdesc',
-				filter: { xtype: 'textfield'}
-            };
-        }
-        me.priIndex=n;
-/*		dcols[n++]={
-			text : 'row',
-			dataIndex: 'rowIndex',
-			width: 50,
-			sortable : false,
-			// other config you need..
-			renderer : function(value, metaData, record, rowIndex)
-			{
-				return rowIndex+1;
-			}
-		};*/
-        dcols[n++]={//Priority
-            header: '<i class="wtmail-icon-header-priority-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
-			cls: 'wtmail-header-text-clip',
-            width: 35,
-            sortable: true,
-            menuDisabled: true,
-            dataIndex: 'priority',
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-					var tag;
-					var others="border=0"
-					if (value<3) tag=WTF.imageTag(me.mys.ID,'priorityhigh_16.gif',others);
-					else tag=WTF.globalImageTag('empty.gif',7,16,others);
-					return tag;
-			},
-			scope: me,
-			filter: {
-				xtype: 'soiconcombobox',
-				editable: false,
-				width: 24,
-				listConfig: {
-					minWidth: 42
-				},
-				hideTrigger: true,
-				store: [
-					['','\u00a0',''],
-					['1','\u00a0','wtmail-icon-priority-high-xs']
-				]
-			}
-        };
-        dcols[n++]={//Status
-            //xtype: 'soiconcolumn',
-            xtype:'actioncolumn',
-            header: WTF.headerWithGlyphIcon('fa fa-eye'),
-			//cls: 'wtmail-header-text-clip',
-            width: 28,
-            sortable: true,
-            menuDisabled: true,
-            dataIndex: 'unread',
-            hidden: false,
-            items: [{
-                getClass: function(v,md,r,rix,cix,s) {
-                    return 'wtmail-icon-status-'+(v?'seen':'unseen')+'-xs';
-                },
-                handler: function(grid, rix, cix, item, e, rec) {
-                    var newunread=!rec.get('unread');
-                    me.markMessageSeenState(rec,!newunread);
-                }
-            }],
-            /*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-					//var sdate=record.get("scheddate");
-					//if (sdate) value="scheduled";
-					var imgname=Ext.String.format("status{0}_16.png",value?'unread':'read');
-					var imgtag=WTF.imageTag(me.mys.ID,imgname,16,16);
-					//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
-					//else tag=imgtag;
-					return imgtag;
-			},*/
-			scope: me,
-/*			filter: {
-				xtype: 'soiconcombobox',
-				editable: false,
-				width: 24,
-				listConfig: {
-					minWidth: 42
-				},
-				hideTrigger: true,
-				store: [
-					['','\u00a0',''],
-					['unread','\u00a0','wtmail-icon-status-unread-xs'],
-					['read','\u00a0','wtmail-icon-status-read-xs']
-				]
-			}*/
-        };
-        dcols[n++]={//From
-            header: me.res("column-from"),
-            width: 200,
-            sortable: true,
-            dataIndex: 'from',
-            filter: { xtype: 'textfield'}
-        };
-        dcols[n++]={//To
-            header: me.res("column-to"),
-            width: 200,
-            sortable: true,
-            dataIndex: 'to',
-            hidden: !me.multifolder,
-            filter: { xtype: 'textfield'}
-        };
-        dcols[n++]={//Subject
-            header: me.res("column-subject"),
-            width: 400,
-            sortable: true,
-            dataIndex: 'subject',
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-                var status=record.get("status"),
-					tid=record.get("threadId"),
-					tindent=record.get("threadIndent"),
-					topen=record.get("threadOpen"),
-					tchildren=record.get("threadHasChildren"),
-                    imgtag="";
-			
-				if (me.threaded) {                    
-					if (tindent===0 && tchildren) {
-						var cls=topen?"":"x-grid-group-hd-collapsed";
-						imgtag="<div class='x-grid-group-hd-collapsible "+cls+"'>"+
-								"<span class='x-grid-group-title wtmail-element-toclick'"+
-								  " onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+");'"+
-								">&nbsp;</span>";
-						var tuc=record.get("threadUnseenChildren")
-						if (!topen && tuc && tuc>0) imgtag+="<b>+"+tuc+"</b>&nbsp;";
-					} else {
-						imgtag="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
-					}
-					for(var i=0;i<tindent;++i) imgtag+="&nbsp;&nbsp;&nbsp;";
-				}
-                if (status!=="read" && status!=="unread") {
-                    var imgname=Ext.String.format("status{0}_16.png",status);
-                    imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";
-                }
-				imgtag+=value;
-				if (me.threaded && tindent===0) {
-					imgtag+="</div>";
-				}
-                return imgtag;
-			},
-            filter: { xtype: 'textfield'}
-        };
-        dcols[n++]={//Date
-            header: me.res("column-date"),
-            width: 80,
-            sortable: true,
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-                var tdy=record.get("istoday"),
-					fmtd=record.get("fmtd"),
-					tag;
-                if (!fmtd && (tdy || store.groupField=='gdate')) tag="<span ext:qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
-                else tag="<span ext:qtip='"+Ext.util.Format.date(value,'H:i:s')+"'>"+Ext.util.Format.date(value,'d-M-Y')+"</span>";
-                return tag;
-            },
-            dataIndex: 'date',
-            filter: { xtype: 'textfield'}
-        };
-        dcols[n++]={//Date
-            header: me.res("column-date"),
-            hidden: true,
-            dataIndex: 'gdate',
-            filter: {}
-        };
-        dcols[n++]={//Date
-            header: me.res("column-date"),
-            hidden: true,
-            dataIndex: 'sdate',
-            filter: {}
-        };
-        dcols[n++]={//Date
-            header: me.res("column-date"),
-            hidden: true,
-            dataIndex: 'xdate',
-            filter: {}
-        };
-        dcols[n++]={//Dimension
-            xtype: 'sobytescolumn',
-            header: me.res("column-size"),
-            width: 50,
-            sortable: true,
-            dataIndex: 'size',
-            hidden: me.multifolder,
-/*            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-                return WTU.humanReadableSize(parseInt(value));
-            },*/
-            filter: { xtype: 'textfield'}
-        };
-        dcols[n++]={//Attachment
-            header: '<i class="wtmail-icon-header-attach-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
-			cls: 'wtmail-header-text-clip',
-            width: 30,
-            sortable: false,
-            menuDisabled: true,
-            dataIndex: 'atts',
-			xtype: 'soiconcolumn',
-			iconField: function(value,rec) {
-				return Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'attachment', 'xs');
-			},
-			iconSize: WTU.imgSizeToPx('xs'),
-			scope: me,
-            filter: { xtype: 'textfield'}
-            
-        };
-        dcols[n++]={//Flag
-            header: '<i class="wtmail-icon-header-flag-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
-			cls: 'wtmail-header-text-clip',
-            width: 30,
-            sortable: true,
-            menuDisabled: true,
-            dataIndex: 'flag',
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-					var tag;
-					var others="border=0";
-					if (value!=='') tag=WTF.imageTag(me.mys.ID,"flag"+value+"_16.gif",16,16,others);
-					else tag=WTF.globalImageTag('empty.gif',16,16,others);
-					return tag;
-			},
-			scope: me,
-			filter: {
-				xtype: 'soiconcombobox',
-				editable: false,
-				width: 24,
-				listConfig: {
-					minWidth: 42
-				},
-				hideTrigger: true,
-				store: [
-					['','\u00a0',''],
-					['red','\u00a0','wtmail-icon-flagred-xs'],
-					['blue','\u00a0','wtmail-icon-flagblue-xs'],
-					['yellow','\u00a0','wtmail-icon-flagyellow-xs'],
-					['green','\u00a0','wtmail-icon-flaggreen-xs'],
-					['orange','\u00a0','wtmail-icon-flagorange-xs'],
-					['purple','\u00a0','wtmail-icon-flagpurple-xs'],
-					['black','\u00a0','wtmail-icon-flagblack-xs'],
-					['gray','\u00a0','wtmail-icon-flaggray-xs'],
-					['white','\u00a0','wtmail-icon-flagwhite-xs'],
-					['brown','\u00a0','wtmail-icon-flagbrown-xs'],
-					['azure','\u00a0','wtmail-icon-flagazure-xs'],
-					['pink','\u00a0','wtmail-icon-flagpink-xs']
-				]
-			}
-            /*filter: {
-                fieldEvents: ["select"],
-                field: {
-                    xtype: "iconcombo",
-                    editable: false,
-                    mode: 'local',
-                    width: 24,
-//                        autoCreate: {tag: "input", type: "text", size: "8", autocomplete: "off", disabled: 'disabled'},
-//                        triggerConfig: {tag: "img", src: 'webtop/themes/win/minitrigger.gif', cls: "x-form-minitrigger ", width: 5},
-                    store: new Ext.data.ArrayStore({
-                      //id: 0,
-                      fields: ['value','text','icon'],
-                      data: [
-                          ['','\u00a0',''],
-                          ['red',me.res('flagred'),'iconFlagRed'],
-                          ['blue',me.res('flagblue'),'iconFlagBlue'],
-                          ['yellow',me.res('flagyellow'),'iconFlagYellow'],
-                          ['green',me.res('flaggreen'),'iconFlagGreen'],
-                          ['orange',me.res('flagorange'),'iconFlagOrange'],
-                          ['purple',me.res('flagpurple'),'iconFlagPurple'],
-                          ['black',me.res('flagblack'),'iconFlagBlack'],
-                          ['gray',me.res('flaggray'),'iconFlagGray'],
-                          ['white',me.res('flagwhite'),'iconFlagWhite'],
-                          ['brown',me.res('flagbrown'),'iconFlagBrown'],
-                          ['azure',me.res('flagazure'),'iconFlagAzure'],
-                          ['pink',me.res('flagpink'),'iconFlagPink']
-                      ]
-                    }),
-                    valueField: 'value',
-                    displayField: 'text',
-                    iconClsField: 'icon',
-                    triggerAction: 'all',
-                    value: ""
-                }
-            }*/
-            
-        };
-        dcols[n++]={//Mail note
-            header: '<i class="wtmail-icon-header-note-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
-			cls: 'wtmail-header-text-clip',
-            width: 30,
-            sortable: true,
-            menuDisabled: true,
-            dataIndex: 'note',
-            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-					var tag;
-					if (value) tag=WTF.imageTag(me.mys.ID,'mailnote_16.gif',16,16,"border=0 style='cursor: pointer'");
-					else tag=WTF.globalImageTag('empty.gif',16,16,"border=0");
-					return tag;
-			},
-			scope: me,
-            filter: { xtype: 'textfield'}
-            
-        };
-        
-        if (me.arch) {
-            dcols[n++]={//Archived
-				header: '<i class="wtmail-icon-header-docmgt-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
-				cls: 'wtmail-header-text-clip',
-                width: 30,
-                sortable: true,
-                menuDisabled: true,
-                dataIndex: 'arch',
-                hidden: me.multifolder,
-                renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-						var tag;
-						var others="border=0";
-						if (value) tag=WTF.imageTag(me.mys.ID,"docmgt_16.png",16,16,others);
-						else tag=WTF.globalImageTag('empty.gif',16,16,others);
-						return tag;
-				},
-				scope: me,
-	            filter: { xtype: 'textfield'}
-            };
-        }
-        //me.cm=new Ext.grid.ColumnModel(dcols);
-		me.columns=dcols;
-		//TODO: selection and events
-		/*
-        me.selModel=new WT.GridSelectionModel({singleSelect:false});
-		*/
+
+		//me.columns=me.createColumnsFromState(
+		//		me.createDefaultState()
+		//);
+		
         me.store.on('beforeload',function() {
 			me.storeLoading=true;
 		});
-		//me.store.on('load',me.loaded,me);
+		
         me.store.on('load',function(s,r,o) {
 			me.storeLoading=false;
 			me.loaded(s,r,o);
 		});
-		/*
-        me.on('afterrender',function() {
-            //this.filterRow.hideFilterRow();
-        }, me);*/
-		
 		
         me.callParent(arguments);
     },
@@ -901,35 +562,93 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.threaded=groupField==='threadId';
 			s.unblockLoad(false);
 		}
-		s.load();
 		me.currentFolder = folder_id;
+		me.initFolderState();
+		s.load();
 	},
+	
+    /**
+     * Initializes the state of the object upon construction.
+     * @private
+     */
+    initFolderState: function(reset){
+        var me = this,
+            id = me.stateful && me.getStateId(),
+            hasListeners = me.hasListeners,
+            state,
+            combinedState,
+            i, len,
+            plugins,
+            plugin,
+            pluginType;
+ 
+        if (id) {
+            if (reset) Ext.state.Manager.clear(id);
+			else combinedState = Ext.state.Manager.get(id);
+			
+            if (combinedState) {
+                state = Ext.apply({}, combinedState);
+                if (!hasListeners.beforestaterestore || me.fireEvent('beforestaterestore', me, combinedState) !== false) {
+ 
+                    //Notify all plugins FIRST (if interested) in new state 
+                    plugins = me.getPlugins() || [];
+                    for (i = 0, len = plugins.length; i < len; i++) {
+                        plugin = plugins[i];
+                        if (plugin) {
+                            pluginType = plugin.ptype;
+                            if (plugin.applyState) {
+                                plugin.applyState(state[pluginType], combinedState);
+                            }
+                            delete state[pluginType];  //clean to prevent unwanted props on the component in final phase 
+                        }
+                    }
+ 
+                }
+            } else {
+				state=me.createDefaultState();
+			}
+			
+			var node=me.mys.getFolderNodeById(me.currentFolder),
+				issentfolder=node.data.isSent||node.data.isUnderSent;
+
+			if (state.storeState) {
+				delete state.storeState.sorters;
+				delete state.storeState.filters;
+				delete state.storeState.grouper;
+			}
+			Ext.each(state.columns,function(col) {
+				switch(col.id) {
+					case 'stid-from':
+						me._updateColHiddenState(col,issentfolder);
+						break;
+					case 'stid-to':
+						me._updateColHiddenState(col,!issentfolder);
+						break;
+				}
+			});
+			me.reconfigure(me.createColumnsFromState(state));
+			me.applyState(state);
+			if (hasListeners.staterestore) {
+				me.fireEvent('staterestore', me, state);
+			}
+			
+        }
+    },
+	
+	//add hidden only if not already set and new state true
+	//if already set and false, delete it
+	_updateColHiddenState: function(col,hidden) {
+		if (!Ext.isDefined(col.hidden) && hidden) col.hidden=hidden;
+		else if (!col.hidden) delete col.hidden;
+	},
+ 	
 	
     loaded: function(s,r,o) {
 		var me=this,
 			meta=s.getProxy().getReader().metaData;
 
 		me.fireEvent('load',me,me.currentFolder,s.proxy.reader.rawData);
-/*		var me=this,
-			meta=me.store.proxy.reader.metaData,
-			ci2=meta.colsInfo2;
-        if (ci2) {
-			me.updatingColumns = true;
-			me.suspendEvents(false);
-            for(var i=0; i<ci2.length; i++) {
-				var col2=ci2[i],
-					cm=me.columnManager,
-					ix=cm.getHeaderByDataIndex(col2.dataIndex).getIndex(),
-					col=cm.columns[ix];
-                if(ix && ix>=0) {
-					var ix2=col2.index;
-					col.setHidden(col2.hidden);
-					if(ix2 && ix2!==-1 && ix!==ix2 && col.isVisible()) me.headerCt.move(ix, ix2);
-				}
-            }
-			me.updatingColumns = false;
-			me.resumeEvents();
-        }*/
+		
 		//TODO: autoedit
 		/*
         var ae=meta.autoedit;
@@ -1192,6 +911,24 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.focus();
 	},
 	
+	actionMoveToFolder: function() {
+		var me=this;
+		if (!me.mcmdialog) {
+			me.mcmdialog=WT.createView(me.mys.ID,'view.MoveCopyMessagesDialog',{
+				viewCfg: {
+					mys: me,
+					fromFolder: me.currentFolder,
+					grid: me
+				}
+			});
+		} else {
+			me.mcmdialog.fromFolder=me.currentFolder;
+			me.mcmdialog.grid=me;
+		}
+		
+		me.mcmdialog.show();
+	},
+	
 	changePageSize: function() {
 		var me=this;
 		WT.prompt(me.res("changepagesizetext"),{
@@ -1370,6 +1107,49 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 		});							
     },
+	
+    operateAllFiltered: function(action,from,to,handler,scope) {
+		var me=this,oparams=me.store.proxy.extraParams,
+			params={
+				action: action,
+				fromfolder: from,
+				tofolder: to,
+				allfiltered: true
+			};
+		if (oparams.sort) {
+			params.sort=oparams.sort.property;
+			params.dir=oparams.sort.dir;
+		}
+        if (oparams.quickfilter) params.quickfilter=oparams.quickfilter;
+        if (oparams.searchfield) params.searchfield=oparams.searchfield;
+        if (oparams.pattern) params.pattern=oparams.pattern;
+		
+		WT.ajaxReq(me.mys.ID, action, {
+			params: params,
+			callback: function(success,json) {
+				if (handler) Ext.callback(handler,scope||me,[json.result]);
+				if (json.result) {
+					//if (options.win) {
+					//	options.win.enable();
+					//	options.win.tree.bfiltered.setValue(false);
+					//	options.win.hide();
+					//}
+					me.store.reload();
+					//var tree=this.ms.imapTree;
+					//var n=tree.getNodeById(options.tofolder);
+					//if (n) {
+					//	var info=n.attributes;
+					//	info.unread=o.unread;
+					//	info.millis=o.millis;
+					//	this.ms.updateUnreads(options.tofolder,info,false);
+					//}
+				} else {
+					WT.error(json.text);
+				}
+			}
+
+		});							
+    },	
 	
     markSelectionSeenState: function(from,selection,seen) {
         var me=this, 
@@ -1569,6 +1349,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         window.open(url);
 	},
 	
+    actionResetColumns: function() {
+        this.initFolderState(true);
+		this.store.load();
+    },
+
     actionViewHeaders: function() {
         this.actionViewSource(true);
     },
@@ -1658,6 +1443,463 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         );
         return {selection: selection, ids: ids, seen: seen, multifolder: mf};
     },
+	
+    /**
+     * Override: Gets the state id against the current folder.
+     * @return {String} The 'stateId' or the implicit 'id' specified by component configuration.
+     * @private
+     */
+    getStateId: function() {
+        var me = this;
+        return (me.baseStateId || (me.baseStateId=me.mys.buildStateId('messagegrid')))+"@"+me.currentFolder;
+    },
+	
+	createColumnsFromState: function(state) {
+		var me=this,n=0,dcols=new Array();
+		
+		Ext.each(state.columns,function(scol) {
+		
+			switch(scol.id) {
+				
+				case 'stid-folder':
+					dcols[n++]={//Folder
+						header: '',
+						width: 100,
+						sortable: true,
+						dataIndex: 'folder',
+						stateId: 'stid-folder',
+						hidden: scol.hidden, //true,
+						filter: { xtype: 'textfield'}
+					};
+					break;
+					
+				case 'stid-folderdesc':
+					dcols[n++]={//Folder Descripion
+						header: me.res("column-folder"),
+						width: 100,
+						sortable: true,
+						dataIndex: 'folderdesc',
+						stateId: 'stid-folderdesc',
+						hidden: scol.hidden,
+						filter: { xtype: 'textfield'}
+					};
+					break;
+					
+				case 'stid-priority':
+					dcols[n++]={//Priority
+						header: '<i class="wtmail-icon-header-priority-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						cls: 'wtmail-header-text-clip',
+						width: 35,
+						sortable: true,
+						menuDisabled: true,
+						dataIndex: 'priority',
+						stateId: 'stid-priority',
+						hidden: scol.hidden,
+						renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+								var tag;
+								var others="border=0"
+								if (value<3) tag=WTF.imageTag(me.mys.ID,'priorityhigh_16.gif',others);
+								else tag=WTF.globalImageTag('empty.gif',7,16,others);
+								return tag;
+						},
+						scope: me,
+						filter: {
+							xtype: 'soiconcombobox',
+							editable: false,
+							width: 24,
+							listConfig: {
+								minWidth: 42
+							},
+							hideTrigger: true,
+							store: [
+								['','\u00a0',''],
+								['1','\u00a0','wtmail-icon-priority-high-xs']
+							]
+						}
+					};
+					break;
+					
+				case 'stid-unread':
+					dcols[n++]={//Status
+						//xtype: 'soiconcolumn',
+						xtype:'actioncolumn',
+						header: WTF.headerWithGlyphIcon('fa fa-eye'),
+						//cls: 'wtmail-header-text-clip',
+						width: 28,
+						sortable: true,
+						menuDisabled: true,
+						dataIndex: 'unread',
+						stateId: 'stid-unread',
+						hidden: scol.hidden, //false,
+						items: [{
+							getClass: function(v,md,r,rix,cix,s) {
+								return 'wtmail-icon-status-'+(v?'seen':'unseen')+'-xs';
+							},
+							handler: function(grid, rix, cix, item, e, rec) {
+								var newunread=!rec.get('unread');
+								me.markMessageSeenState(rec,!newunread);
+							}
+						}],
+						/*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+								//var sdate=record.get("scheddate");
+								//if (sdate) value="scheduled";
+								var imgname=Ext.String.format("status{0}_16.png",value?'unread':'read');
+								var imgtag=WTF.imageTag(me.mys.ID,imgname,16,16);
+								//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
+								//else tag=imgtag;
+								return imgtag;
+						},*/
+						scope: me,
+			/*			filter: {
+							xtype: 'soiconcombobox',
+							editable: false,
+							width: 24,
+							listConfig: {
+								minWidth: 42
+							},
+							hideTrigger: true,
+							store: [
+								['','\u00a0',''],
+								['unread','\u00a0','wtmail-icon-status-unread-xs'],
+								['read','\u00a0','wtmail-icon-status-read-xs']
+							]
+						}*/
+					};
+					break;
+					
+				case 'stid-from':
+					dcols[n++]={//From
+						header: me.res("column-from"),
+						width: 200,
+						sortable: true,
+						dataIndex: 'from',
+						stateId: 'stid-from',
+						hidden: scol.hidden,
+						filter: { xtype: 'textfield'}
+					};
+					break;
+					
+				case 'stid-to':
+					dcols[n++]={//To
+						header: me.res("column-to"),
+						width: 200,
+						sortable: true,
+						dataIndex: 'to',
+						stateId: 'stid-to',
+						hidden: scol.hidden, //!me.multifolder,
+						filter: { xtype: 'textfield'}
+					};
+					break;
+					
+				case 'stid-subject':
+					dcols[n++]={//Subject
+						header: me.res("column-subject"),
+						width: 400,
+						sortable: true,
+						dataIndex: 'subject',
+						stateId: 'stid-subject',
+						hidden: scol.hidden, 
+						renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+							var status=record.get("status"),
+								tid=record.get("threadId"),
+								tindent=record.get("threadIndent"),
+								topen=record.get("threadOpen"),
+								tchildren=record.get("threadHasChildren"),
+								imgtag="";
+
+							if (me.threaded) {                    
+								if (tindent===0 && tchildren) {
+									var cls=topen?"":"x-grid-group-hd-collapsed";
+									imgtag="<div class='x-grid-group-hd-collapsible "+cls+"'>"+
+											"<span class='x-grid-group-title wtmail-element-toclick'"+
+											  " onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+");'"+
+											">&nbsp;</span>";
+									var tuc=record.get("threadUnseenChildren")
+									if (!topen && tuc && tuc>0) imgtag+="<b>+"+tuc+"</b>&nbsp;";
+								} else {
+									imgtag="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
+								}
+								for(var i=0;i<tindent;++i) imgtag+="&nbsp;&nbsp;&nbsp;";
+							}
+							if (status!=="read" && status!=="unread") {
+								var imgname=Ext.String.format("status{0}_16.png",status);
+								imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";
+							}
+							imgtag+=value;
+							if (me.threaded && tindent===0) {
+								imgtag+="</div>";
+							}
+							return imgtag;
+						},
+						filter: { xtype: 'textfield'}
+					};
+					break;
+					
+				case 'stid-date':
+					dcols[n++]={//Date
+						header: me.res("column-date"),
+						width: 80,
+						sortable: true,
+						renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+							var tdy=record.get("istoday"),
+								fmtd=record.get("fmtd"),
+								tag;
+							if (!fmtd && (tdy || store.groupField=='gdate')) tag="<span ext:qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
+							else tag="<span ext:qtip='"+Ext.util.Format.date(value,'H:i:s')+"'>"+Ext.util.Format.date(value,'d-M-Y')+"</span>";
+							return tag;
+						},
+						dataIndex: 'date',
+						stateId: 'stid-date',
+						hidden: scol.hidden,
+						filter: { xtype: 'textfield'}
+					};
+					break;
+					
+				case 'stid-gdate':
+					dcols[n++]={//Date
+						header: me.res("column-date"),
+						hidden: true,
+						dataIndex: 'gdate',
+						stateId: 'stid-gdate',
+						filter: {}
+					};
+					break;
+					
+				case 'stid-sdate':
+					dcols[n++]={//Date
+						header: me.res("column-date"),
+						hidden: true,
+						dataIndex: 'sdate',
+						stateId: 'stid-sdate',
+						filter: {}
+					};
+					break;
+					
+				case 'stid-xdate':
+					dcols[n++]={//Date
+						header: me.res("column-date"),
+						hidden: true,
+						dataIndex: 'xdate',
+						stateId: 'stid-xdate',
+						filter: {}
+					};
+					break;
+					
+				case 'stid-size':
+					dcols[n++]={//Dimension
+						xtype: 'sobytescolumn',
+						header: me.res("column-size"),
+						width: 50,
+						sortable: true,
+						dataIndex: 'size',
+						stateId: 'stid-size',
+						hidden: scol.hidden, //me.multifolder,
+			/*            renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+							return WTU.humanReadableSize(parseInt(value));
+						},*/
+						filter: { xtype: 'textfield'}
+					};
+					break;
+					
+				case 'stid-atts':
+					dcols[n++]={//Attachment
+						header: '<i class="wtmail-icon-header-attach-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						cls: 'wtmail-header-text-clip',
+						width: 30,
+						sortable: false,
+						menuDisabled: true,
+						dataIndex: 'atts',
+						stateId: 'stid-atts',
+						hidden: scol.hidden,
+						xtype: 'soiconcolumn',
+						iconField: function(value,rec) {
+							return Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'attachment', 'xs');
+						},
+						iconSize: WTU.imgSizeToPx('xs'),
+						scope: me,
+						filter: { xtype: 'textfield'}
+
+					};
+					break;
+					
+				case 'stid-flag':
+					dcols[n++]={//Flag
+						header: '<i class="wtmail-icon-header-flag-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						cls: 'wtmail-header-text-clip',
+						width: 30,
+						sortable: true,
+						menuDisabled: true,
+						dataIndex: 'flag',
+						stateId: 'stid-flag',
+						hidden: scol.hidden,
+						renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+								var tag;
+								var others="border=0";
+								if (value!=='') tag=WTF.imageTag(me.mys.ID,"flag"+value+"_16.gif",16,16,others);
+								else tag=WTF.globalImageTag('empty.gif',16,16,others);
+								return tag;
+						},
+						scope: me,
+						filter: {
+							xtype: 'soiconcombobox',
+							editable: false,
+							width: 24,
+							listConfig: {
+								minWidth: 42
+							},
+							hideTrigger: true,
+							store: [
+								['','\u00a0',''],
+								['red','\u00a0','wtmail-icon-flagred-xs'],
+								['blue','\u00a0','wtmail-icon-flagblue-xs'],
+								['yellow','\u00a0','wtmail-icon-flagyellow-xs'],
+								['green','\u00a0','wtmail-icon-flaggreen-xs'],
+								['orange','\u00a0','wtmail-icon-flagorange-xs'],
+								['purple','\u00a0','wtmail-icon-flagpurple-xs'],
+								['black','\u00a0','wtmail-icon-flagblack-xs'],
+								['gray','\u00a0','wtmail-icon-flaggray-xs'],
+								['white','\u00a0','wtmail-icon-flagwhite-xs'],
+								['brown','\u00a0','wtmail-icon-flagbrown-xs'],
+								['azure','\u00a0','wtmail-icon-flagazure-xs'],
+								['pink','\u00a0','wtmail-icon-flagpink-xs']
+							]
+						}
+						/*filter: {
+							fieldEvents: ["select"],
+							field: {
+								xtype: "iconcombo",
+								editable: false,
+								mode: 'local',
+								width: 24,
+			//                        autoCreate: {tag: "input", type: "text", size: "8", autocomplete: "off", disabled: 'disabled'},
+			//                        triggerConfig: {tag: "img", src: 'webtop/themes/win/minitrigger.gif', cls: "x-form-minitrigger ", width: 5},
+								store: new Ext.data.ArrayStore({
+								  //id: 0,
+								  fields: ['value','text','icon'],
+								  data: [
+									  ['','\u00a0',''],
+									  ['red',me.res('flagred'),'iconFlagRed'],
+									  ['blue',me.res('flagblue'),'iconFlagBlue'],
+									  ['yellow',me.res('flagyellow'),'iconFlagYellow'],
+									  ['green',me.res('flaggreen'),'iconFlagGreen'],
+									  ['orange',me.res('flagorange'),'iconFlagOrange'],
+									  ['purple',me.res('flagpurple'),'iconFlagPurple'],
+									  ['black',me.res('flagblack'),'iconFlagBlack'],
+									  ['gray',me.res('flaggray'),'iconFlagGray'],
+									  ['white',me.res('flagwhite'),'iconFlagWhite'],
+									  ['brown',me.res('flagbrown'),'iconFlagBrown'],
+									  ['azure',me.res('flagazure'),'iconFlagAzure'],
+									  ['pink',me.res('flagpink'),'iconFlagPink']
+								  ]
+								}),
+								valueField: 'value',
+								displayField: 'text',
+								iconClsField: 'icon',
+								triggerAction: 'all',
+								value: ""
+							}
+						}*/
+
+					};
+					break;
+					
+				case 'stid-note':
+					dcols[n++]={//Mail note
+						header: '<i class="wtmail-icon-header-note-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						cls: 'wtmail-header-text-clip',
+						width: 30,
+						sortable: true,
+						menuDisabled: true,
+						dataIndex: 'note',
+						stateId: 'stid-note',
+						hidden: scol.hidden,
+						renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+								var tag;
+								if (value) tag=WTF.imageTag(me.mys.ID,'mailnote_16.gif',16,16,"border=0 style='cursor: pointer'");
+								else tag=WTF.globalImageTag('empty.gif',16,16,"border=0");
+								return tag;
+						},
+						scope: me,
+						filter: { xtype: 'textfield'}
+
+					};
+					break;
+					
+				case 'stid-arch':
+					dcols[n++]={//Archived
+						header: '<i class="wtmail-icon-header-docmgt-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						cls: 'wtmail-header-text-clip',
+						width: 30,
+						sortable: true,
+						menuDisabled: true,
+						dataIndex: 'arch',
+						stateId: 'stid-arch',
+						hidden: scol.hidden, //me.multifolder,
+						renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+								var tag;
+								var others="border=0";
+								if (value) tag=WTF.imageTag(me.mys.ID,"docmgt_16.png",16,16,others);
+								else tag=WTF.globalImageTag('empty.gif',16,16,others);
+								return tag;
+						},
+						scope: me,
+						filter: { xtype: 'textfield'}
+					};
+					break;
+			}
+		});
+		
+		return dcols;
+	},
+	
+	createDefaultState: function() {
+        var me=this,n=0,stcols=new Array();
+		
+/*		a={"columns":[
+				{"id":"stid-priority","width":40},
+				{"id":"stid-unread","width":40},
+				{"id":"stid-from","width":198},
+				{"id":"stid-subject","width":675},
+				{"id":"stid-to","width":375,"hidden":true},
+				{"id":"stid-date","width":96},
+				{"id":"stid-gdate","width":100},
+				{"id":"stid-sdate","width":100},
+				{"id":"stid-xdate","width":100},
+				{"id":"stid-size","width":89},
+				{"id":"stid-atts","width":40},
+				{"id":"stid-flag","width":47},
+				{"id":"stid-note","width":40}],
+			"weight":0
+		}*/
+        if (me.multifolder) {
+            stcols[n++]={ id: 'stid-folder', width: 100 };
+            stcols[n++]={ id: 'stid-folderdesc', width: 100 };
+        }
+        stcols[n++]={ id: 'stid-priority', width: 40 };
+        stcols[n++]={ id: 'stid-unread', width: 40 };
+        stcols[n++]={ id: 'stid-from', width: 198 };
+        stcols[n++]={ id: 'stid-to', width: 198 };
+        stcols[n++]={ id: 'stid-subject', width: 675 };
+        stcols[n++]={ id: 'stid-date', width: 96 };
+        stcols[n++]={ id: 'stid-gdate', width: 96 };
+        stcols[n++]={ id: 'stid-sdate', width: 96 };
+        stcols[n++]={ id: 'stid-xdate', width: 96 };
+        stcols[n++]={ id: 'stid-size', width: 89 };
+        stcols[n++]={ id: 'stid-atts', width: 40 };
+        stcols[n++]={ id: 'stid-flag', width: 47 };
+        stcols[n++]={ id: 'stid-note', width: 40 };
+        
+        if (me.arch) {
+            stcols[n++]={ id: 'stid-arch', width: 40 };
+        }
+		
+		
+		state={
+			"columns": stcols,
+			"weight":0
+		};
+		return state;
+	},
 	
     res: function(s) {
         return this.mys.res(s);

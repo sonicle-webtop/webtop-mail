@@ -1114,7 +1114,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             e.on('click', function() {
 				var email=(e.recDesc==e.recEmail)?e.recEmail:e.recDesc+" <"+e.recEmail+">";
 				me.mys.startNewMessage(me.folder,{
-					recipients: [ { rtype: 'to', email: email } ]
+					recipients: [ { rtype: 'to', email: email } ],
+					mime: 'text/html'
 				});
 			});
         }

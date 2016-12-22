@@ -32,54 +32,51 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.ImapTree', {
-	extend: 'Sonicle.webtop.mail.SimpleImapTree',
+Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
+	extend: 'Ext.tree.Panel',
+	requires: [
+		'Sonicle.webtop.mail.model.ImapTreeModel'
+	],
 	
-	plugins: {
-        ptype: 'cellediting',
-		pluginId: 'cellediting',
-        clicksToEdit: 2
-    },	
+	autoScroll: true,
+	
+	selModel: {
+		ignoreRightMouseSelection: true
+	},
+		
+	columns: {
+		items: [
+			{
+				xtype: 'treecolumn', //this is so we know which column will show the tree
+				text: 'Folder',
+				dataIndex: 'folder',
+				flex: 3,
+				renderer: function(v,p,r) {
+					var unr=r.get('unread'),
+						hunr=r.get('hasUnread');
+					return (unr!==0||hunr?'<b>'+v+'</b>':v);
+				},
+				editor: 'textfield'
+			},
+			{
+				text: 'Unread', 
+				dataIndex: 'unread',
+				align: 'right',
+				flex: 1,
+				renderer: function(v,p,r) {
+					return (v===0?'':'<b>'+v+'</b>');
+				}
+			}
+	  ]
+	},
+	
+	useArrows: true,
+	rootVisible: false,
 
 	constructor: function(cfg) {
 		var me = this;
 		
-		Ext.apply(cfg,{
-			viewConfig: {
-				plugins: { 
-					ptype: 'imaptreeviewdragdrop' ,
-					moveFolder: function(src,dst) {
-						cfg.mys.moveFolder(src,dst);
-					},
-					moveMessages: function(data,dst) {
-						data.view.grid.moveSelection(data.srcFolder,dst,data.records);
-					},
-					copyMessages: function(data,dst) {
-						data.view.grid.copySelection(data.srcFolder,dst,data.records);
-					}
-				},
-				markDirty: false,
-				loadMask: false,
-				animate: true
-			},
-			
-			store: Ext.create('Ext.data.TreeStore', {
-				model: 'Sonicle.webtop.mail.model.ImapTreeModel',
-				proxy: WTF.proxy(cfg.mys.ID,'GetImapTree'),
-				root: {
-					text: 'Imap Tree',
-					expanded: true
-				},
-				rootVisible: false
-			})
-		});
-
-		
 		me.callParent([cfg]);
-	},
-	
-	startEdit: function(record,c) {
-		this.getPlugin('cellediting').startEdit(record, this.getView().ownerCt.getColumnManager().getHeaderAtIndex(c));
 	}
 	
 });

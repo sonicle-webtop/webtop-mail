@@ -256,9 +256,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					},
 					fileuploaded: function(s,file,resp) {
 						me.htmlEditor.hideProgress();
-						me.setDirty(true);
-						//me.attlist.addAttachItem(file.name,resp.data.uploadId,file.size);
-						me.attlist.getStore().add(
+						me.attlist.addAttachment(
 								{ 
                                     msgId: me.msgId, 
                                     uploadId: resp.data.uploadId, 
@@ -708,6 +706,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     isAutosaveDirty: function() {
 		var me=this;
         return me.recgrid.isRecipientComboAutosaveDirty() || 
+			me.attlist.isAutosaveDirty() ||
             (me.autosaveSubjectValue!=me.subject.getValue()) || 
             me.htmlEditor.isAutosaveDirty() || 
             me.getModel().isAutosaveDirty();
@@ -716,6 +715,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     clearAutosaveDirty: function() {
 		var me=this;
         me.recgrid.clearAutosaveDirty();
+		me.attlist.clearAutosaveDirty();
         me.autosaveSubjectValue=me.subject.getValue();
         me.htmlEditor.clearAutosaveDirty();
         me.getModel().clearAutosaveDirty();
@@ -731,6 +731,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 	itemSelector: 'table.wtmail-table-editor-attachment',
 	
 	mys: null,
+	autosaveDirty: false,
 	
 	tpl: new Ext.XTemplate(
 		"<tpl for='.'>",
@@ -761,6 +762,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 				//me.ownerCt.remove(this);
 				//me.fireEvent('remove',me);
 				me.getStore().remove(r);
+				me.autosaveDirty=true;
 			}
 			else {
 				var href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",{
@@ -769,6 +771,19 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 				Sonicle.URLMgr.open(href,true,"location=no,menubar=no,resizable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=no,top=10,left=10,width=770,height=480");
 			}
 		}
+	},
+	
+	addAttachment: function(config) {
+		this.getStore().add(config);
+		this.autosaveDirty=true;
+	},
+	
+	isAutosaveDirty: function() {
+		return this.autosaveDirty;
+	},
+	
+	clearAutosaveDirty: function() {
+		this.autosaveDirty=false;
 	}
 	
 });

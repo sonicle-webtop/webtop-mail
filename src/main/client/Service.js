@@ -111,7 +111,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		var tool = Ext.create({
 				xtype: 'panel',
-				title: 'Mail Toolbox',
+				//title: 'Mail Toolbox',
 				width: 200,
 				layout: 'fit',
 				items: [
@@ -282,6 +282,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("movetofolder",{ handler: me.gridAction(me,'MoveToFolder') });
         me.addAction("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh-xs' });
         me.addAction("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save-xs' });
+        me.addAction("resetcolumns",{ handler: me.gridAction(me,'ResetColumns'), iconCls: '' });
         me.addAction("viewheaders",{ handler: me.gridAction(me,'ViewHeaders'), iconCls: '' });
         me.addAction("viewsource",{ handler: me.gridAction(me,'ViewSource'), iconCls: '' });
 		
@@ -375,6 +376,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
             cxmGrid.add(me.getAction('docmgtwt'));
         }*/
 		
+        cxmGrid.add('-');
+        cxmGrid.add(me.getAction('resetcolumns'));
         cxmGrid.add('-');
         cxmGrid.add(me.getAction('viewheaders'));
         cxmGrid.add(me.getAction('viewsource'));
@@ -739,6 +742,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	getFolderTrash: function() {
 		return this.getVar('folderTrash');
+	},
+	
+	getFolderNodeById: function(foldername) {
+		return this.imapTree.getStore().getNodeById(foldername);
 	},
 
     downloadMails: function(folder) {

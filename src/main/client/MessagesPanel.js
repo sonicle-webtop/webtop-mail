@@ -71,7 +71,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			pageSize: 50,//me.pageSize,
 			mys: me.mys,
 			mp: me,
-			createPagingToolbar: true
+			createPagingToolbar: true,
+			stateful: true,
+			baseStateId: me.mys.buildStateId('messagegrid')
         });
 		if (me.gridMenu) {
 			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
@@ -148,9 +150,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			tooltip: me.res('filtertext.tip'),
 			listeners: {
 				enterkey: function(tf,e) {
+					console.log("enterkey");
 					me.filterAction(tf);
 				},
 				select: function(tf,r,eopts) {
+					console.log("select");
 					me.filterAction(tf);
 				}
 			}

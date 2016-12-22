@@ -2811,6 +2811,9 @@ public class Service extends BaseService {
 			if (mc.isSent()) {
 				ss += ",isSent: true";
 			}
+			if (isUnderSentFolder(mc.getFolderName())) {
+				ss += ",isUnderSent: true";
+			}
 			if (mc.isDrafts()) {
 				ss += ",isDrafts: true";
 			}
@@ -5147,6 +5150,8 @@ public class Service extends BaseService {
 			logger.error("Exception",exc);
 		}
 		
+		if (threaded && (!psortfield.equals("date")||!psortdir.equals("DESC"))) threaded=false;
+		
 		int sortby = MessageComparator.SORT_BY_NONE;
 		if (psortfield.equals("messageid")) {
 			sortby = MessageComparator.SORT_BY_MSGIDX;
@@ -5603,8 +5608,8 @@ public class Service extends BaseService {
 							+ "to:'" + to + "',"
 							+ "from:'" + from + "',"
 							+ "subject:'" + subject + "',"
-							+ "threadId: "+tId+","
-							+ "threadIndent:"+tIndent+","
+							+ (threaded?"threadId: "+tId+",":"")
+							+ (threaded?"threadIndent:"+tIndent+",":"")
 							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
 							+ "gdate: '" + gdate + "',"
 							+ "sdate: '" + sdate + "',"
@@ -5660,11 +5665,11 @@ public class Service extends BaseService {
                         + "  threaded: "+threaded+",\n"
 						+ "  groupField: '" + (threaded?"threadId":group) + "',\n";
 				
-				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
+/*				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
 				ColumnsOrderSetting cos = us.getColumnsOrderSetting();
 				// Apply grid defaults
 				//ColumnVisibilitySetting.applyDefaults(mcache.isSent(), cvs);
-				ColumnVisibilitySetting.applyDefaults(isundersent, cvs);
+				ColumnVisibilitySetting.applyDefaults(issent||isundersent, cvs);
 
 				if (autoeditList.size()>0) {
 					sout+="autoedit: [";
@@ -5683,7 +5688,7 @@ public class Service extends BaseService {
 				if (StringUtils.right(sout, 1).equals(",")) {
 					sout = StringUtils.left(sout, sout.length() - 1);
 				}
-				sout += "]\n";
+				sout += "]\n";*/
 				
 				sout += "},\n";
 				sout += "threaded: "+(threaded?"1":"0")+",\n";
