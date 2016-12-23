@@ -6439,11 +6439,13 @@ public class Service extends BaseService {
 			}
 			
 			String folder = request.getParameter("folder");
+            String strashspam=request.getParameter("trashspam");
 			String ssubfolders = request.getParameter("subfolders");
 			String sandor = request.getParameter("andor");
 			String sentries[] = request.getParameterValues("entries");
 			
 			boolean subfolders = ssubfolders.equals("true");
+			boolean trashspam=strashspam.equals("true");
 			boolean and = sandor.equals("and");
 			
 			AdvancedSearchEntry entries[] = new AdvancedSearchEntry[sentries.length];
@@ -6453,12 +6455,12 @@ public class Service extends BaseService {
 			
 			if (folder.startsWith("folder:")) {
 				folder = folder.substring(7);
-				ast = new AdvancedSearchThread(this, folder, subfolders, and, entries);
+				ast = new AdvancedSearchThread(this, folder, trashspam, subfolders, and, entries);
 			} else {
 				int folderType = folder.equals("personal") ? AdvancedSearchThread.FOLDERTYPE_PERSONAL
 						: folder.equals("shared") ? AdvancedSearchThread.FOLDERTYPE_SHARED
 								: AdvancedSearchThread.FOLDERTYPE_ALL;
-				ast = new AdvancedSearchThread(this, folderType, subfolders, and, entries);
+				ast = new AdvancedSearchThread(this, folderType, trashspam, subfolders, and, entries);
 			}
 			ast.start();
 			out.println("{\nresult: true\n}");

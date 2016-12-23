@@ -428,26 +428,47 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			smodel='Sonicle.webtop.mail.MultiFolderMessagesModel';
         }
 
-        me.store = Ext.create('Sonicle.data.BufferedStore',{
-			proxy: {
-				type: 'ajax',
-				url: WTF.requestBaseUrl(),
-				extraParams: {
-					action: me.reloadAction,
-					service: me.mys.ID
+		if (me.useNormalStore) {
+			me.store = Ext.create('Ext.data.Store',{
+				proxy: {
+					type: 'ajax',
+					url: WTF.requestBaseUrl(),
+					extraParams: {
+						action: me.reloadAction,
+						service: me.mys.ID
+					},
+					reader: {
+						rootProperty: 'messages',
+						totalProperty: 'total',
+						idProperty: 'idmessage'
+					}
 				},
-				reader: {
-					rootProperty: 'messages',
-					totalProperty: 'total',
-					idProperty: 'idmessage'
-				}
-			},
-			//purgePageCount: 3,
-			leadingBufferZone: 50,
-			trailingBufferZone: 50,
-			model: smodel,
-			pageSize: me.pageSize,
-		});
+				model: smodel,
+				pageSize: me.pageSize
+			});
+		} else {
+			me.store = Ext.create('Sonicle.data.BufferedStore',{
+				proxy: {
+					type: 'ajax',
+					url: WTF.requestBaseUrl(),
+					extraParams: {
+						action: me.reloadAction,
+						service: me.mys.ID
+					},
+					reader: {
+						rootProperty: 'messages',
+						totalProperty: 'total',
+						idProperty: 'idmessage'
+					}
+				},
+				//purgePageCount: 3,
+				leadingBufferZone: 50,
+				trailingBufferZone: 50,
+				model: smodel,
+				pageSize: me.pageSize
+			});
+
+		}
 		
 /*		if (me.createPagingToolbar) {
 			var tb=me.ptoolbar=Ext.create('Ext.toolbar.Paging',{
@@ -473,10 +494,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.tbar=me.ptoolbar;
 		}
 */		
-
-		//me.columns=me.createColumnsFromState(
-		//		me.createDefaultState()
-		//);
+		if (!me.stateful) {
+			me.columns=me.createColumnsFromState(
+					me.createDefaultState()
+			);
+		}
 		
         me.store.on('beforeload',function() {
 			me.storeLoading=true;
@@ -1468,7 +1490,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						sortable: true,
 						dataIndex: 'folder',
 						stateId: 'stid-folder',
-						hidden: scol.hidden, //true,
+						hidden: true,
 						filter: { xtype: 'textfield'}
 					};
 					break;

@@ -123,11 +123,11 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchGrid',{
     },
 
     getAndOr: function() {
-        return this.andorGroup.getValue().el.dom.value;
+        return this.andorGroup.getValue().andor;
     },
 
     getEntries: function() {
-        return this.items;
+        return this.items.items;
     }
 
 });
@@ -137,10 +137,13 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
 	
     border: false,
     bodyBorder: false,
-    layout: 'hbox',
-    padding: 10,
+    layout: {
+        type: 'hbox',
+        align: 'middle'
+    },
+	padding: 10,
     width: 600,
-    height: 40,
+    height: 60,
 
     searchfields: null,
     searchdata: null,
@@ -197,11 +200,11 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
 		
             if (d) {
                 var conf={};
-                Ext.apply(conf,d,{ id: me.id+"-"+f, allowBlank: false });
+                Ext.apply(conf,d,{ id: me.id+"-ase-"+f, allowBlank: false, margin: 5 });
                 comp=Ext.create(conf);
                 comp.setWidth(200);
             } else {
-                comp=Ext.create('Ext.form.TextField',{ id: me.id+"-"+f, width: 200, value: '', allowBlank: false });
+                comp=Ext.create('Ext.form.TextField',{ id: me.id+"-ase-"+f, width: 200, value: '', allowBlank: false, margin: 5 });
             }
             comps[i]=comp;
         }
@@ -224,6 +227,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
         me.cbField=Ext.create('Ext.form.ComboBox',{
             forceSelection: true,
             width: 150,
+			margin: 5,
             mode: 'local',
             displayField: 'desc',
             triggerAction: 'all',
@@ -240,6 +244,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
         me.cbMethod=Ext.create('Ext.form.ComboBox',{
             forceSelection: true,
             width: 100,
+			margin: 5,
             mode: 'local',
             displayField: 'desc',
             triggerAction: 'all',
@@ -254,11 +259,13 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
         });
 
         me.plusButton=Ext.create('Ext.Button',{ 
+			margin: 5,
 			text:'+', width: 30, handler: function() {
 				me.fireEvent('plus',me);
 			}
 		});
         me.minusButton=Ext.create('Ext.Button',{ 
+			margin: 5,
 			text:'-', width: 30, handler: function() {
 				me.fireEvent('minus',me);
 			}
@@ -298,7 +305,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
     fieldSelected: function(cb,r,i) {
 		var me=this;
 			id=r.get("id");
-        me.pValue.layout.setActiveItem(this.id+"-"+id);
+        me.pValue.layout.setActiveItem(this.id+"-ase-"+id);
         var sd=me.searchdata[id];
         if (sd!=null && (sd.xtype=='combo'||sd.xtype=='soiconcombo') && sd.forceSelection) {
             me.cbMethod.getStore().loadData(this.mdatashort,false);

@@ -53,6 +53,7 @@ public class AdvancedSearchThread extends Thread {
     private Service ms;
     private int folderType;
     private boolean subfolders;
+	private boolean trashspam;
     private boolean and;
     private AdvancedSearchEntry entries[];
 
@@ -66,10 +67,11 @@ public class AdvancedSearchThread extends Thread {
     ArrayList<FolderCache> folders=new ArrayList<FolderCache>();
     ArrayList<Message> result=new ArrayList<Message>();
 
-    public AdvancedSearchThread(Service ms, String folder, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
+    public AdvancedSearchThread(Service ms, String folder, boolean trashspam, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
         this.ms=ms;
         this.folderType=FOLDERTYPE_SPECIFIC;
         this.subfolders=subfolders;
+		this.trashspam=trashspam;
         this.and=and;
         this.entries=entries;
 
@@ -78,10 +80,11 @@ public class AdvancedSearchThread extends Thread {
         if (subfolders) addChildren(fc);
     }
 
-    public AdvancedSearchThread(Service ms, int folderType, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
+    public AdvancedSearchThread(Service ms, int folderType, boolean trashspam, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
         this.ms=ms;
         this.folderType=folderType;
         this.subfolders=subfolders;
+		this.trashspam=trashspam;
         this.and=and;
         this.entries=entries;
 
@@ -177,18 +180,19 @@ public class AdvancedSearchThread extends Thread {
     }
 
     private void addChildren(FolderCache fc) {
-        for(FolderCache fcc: fc.getChildren()) {
-			
-			/* TODO: decide what to do with this
-			
-			//skip trash and spam from advanced search
-			if (fcc.isTrash()||fcc.isSpam()) continue;
-			
-			*/
-			
-	            folders.add(fcc);
-            if (fcc.hasChildren()) addChildren(fcc);
-        }
+		ArrayList<FolderCache> children=fc.getChildren();
+		if (children!=null) {
+			for(FolderCache fcc: fc.getChildren()) {
+
+				if (!trashspam) {
+					//skip trash and spam from advanced search
+					if (fcc.isTrash()||fcc.isSpam()) continue;
+				}
+
+				folders.add(fcc);
+				if (fcc.hasChildren()) addChildren(fcc);
+			}
+		}
     }
 
     public int getProgress() {
