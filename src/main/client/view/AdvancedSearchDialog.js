@@ -285,6 +285,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 	
 
     runstopSearch: function() {
+		var me=this;
+		
         if (!this.searchRunning) this.runSearch();
         else {
 			WT.confirm(
