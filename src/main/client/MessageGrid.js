@@ -311,29 +311,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	pageSize: 50,	
     frame: false,
-    enableColumnMove: true,
-	viewConfig: {
-		//preserveScrollOnRefresh: true,
-		preserveScrollOnReload: true,
-        markDirty: false,
-		navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
-		getRowClass: function(record, index, rowParams, store ) {
-			var unread=record.get('unread');
-			var tdy=record.get('istoday');
-			//var ti=record.get('threadIndent');
-			cls1=unread?'wtmail-row-unread':'';
-			cls2=tdy?'wtmail-row-today':'';
-			//cls3=ti>0?'wtmail-row-hidden':'';
-			return cls1+' '+cls2/*+' '+cls3*/;
-		},
-		plugins: [
-			{
-				ptype: 'messagegridviewdragdrop'
-			}
-		]
-		
-	},
-	
+
+	enableColumnMove: true,
 	plugins: [
 		{
 			ptype: 'filterbar',
@@ -421,7 +400,28 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     initComponent: function() {
         var me=this;
 
-		me.viewConfig.loadMask={ msg: WT.res("loading") };
+		me.viewConfig={
+			//preserveScrollOnRefresh: true,
+			preserveScrollOnReload: true,
+			markDirty: false,
+			navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
+			loadMask: { msg: WT.res("loading") },
+			getRowClass: function(record, index, rowParams, store ) {
+				var unread=record.get('unread');
+				var tdy=record.get('istoday');
+				//var ti=record.get('threadIndent');
+				cls1=unread?'wtmail-row-unread':'';
+				cls2=tdy?'wtmail-row-today':'';
+				//cls3=ti>0?'wtmail-row-hidden':'';
+				return cls1+' '+cls2/*+' '+cls3*/;
+			},
+			plugins: [
+				{
+					ptype: 'messagegridviewdragdrop'
+				}
+			]
+
+		};
 
 		var smodel='Sonicle.webtop.mail.MessagesModel';
         if (this.multifolder) {
@@ -507,6 +507,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.store.on('load',function(s,r,o) {
 			me.storeLoading=false;
 			me.loaded(s,r,o);
+		});
+		
+		
+        me.on('rowdblclick',function(grid, r, tr, rowIndex, e, eopts) {
+			var folder=me.multifolder?r.get("folder"):me.currentFolder;
+			if (me.mys.isDrafts(folder)) me.editMessage(r);
+			else me.openMessage(r);
+		});
+		me.on('cellclick',function(grid, td, cellIndex, r, rowIndex, e, eopts) {
+			if (me.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {
+				if (r.get("note")) {
+					var folder=me.multifolder?r.get("folder"):me.currentFolder;
+					me.editNote(r.get("idmessage"),folder);
+				}
+			}
 		});
 		
         me.callParent(arguments);
@@ -939,6 +954,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.mcmdialog=WT.createView(me.mys.ID,'view.MoveCopyMessagesDialog',{
 				viewCfg: {
 					mys: me,
+					multifolder: me.multifolder,
 					fromFolder: me.currentFolder,
 					grid: me
 				}
@@ -1192,9 +1208,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     
     markMessageSeenState: function(r,seen) {
         var me=this,
-            folder=me.multifolder?r.get("fromfolder"):me.currentFolder,
+			idmsg=r.get("idmessage"),
+			folder=me.multifolder?r.get("folder"):me.currentFolder,
+            id=me.multifolder?folder+"|"+idmsg:idmsg,
             data={ 
-                ids: [ r.get("idmessage") ],
+                ids: [ id ],
                 multifolder: me.multifolder,
                 cb: function() {
                     me.updateRecordSeenState(r,seen);
@@ -1460,7 +1478,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
               if (mf) id=r.get("folder")+"|"+id;
               ids[index]=id;
               seen[index]=(r.get("unread")?false:true);
-              
           }
         );
         return {selection: selection, ids: ids, seen: seen, multifolder: mf};

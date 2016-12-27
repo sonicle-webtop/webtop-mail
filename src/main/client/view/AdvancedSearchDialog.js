@@ -127,7 +127,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 				' ',
 				Ext.create('Ext.Button',{
 					width: 100, 
-					text: WT.res('act-cancel.lbl'), 
+					text: WT.res('act-close.lbl'), 
 					handler: function() {
 						me.closeView();
 					}
@@ -254,6 +254,11 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 		});
 		me.add(me.messageGrid);
 		
+		if (me.gridMenu) {
+			me.messageGrid.on("itemcontextmenu",function(s, rec, itm, i, e) {
+				WT.showContextMenu(e, me.gridMenu, { rec: rec, row: i, grid: me.messageGrid });
+			});
+		}
 		
 	},
 	

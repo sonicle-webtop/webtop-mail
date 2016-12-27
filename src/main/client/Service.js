@@ -607,6 +607,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		WT.createView(me.ID,'view.AdvancedSearchDialog',{
 			viewCfg: {
 				mys: me,
+				gridMenu: me.getRef('cxmGrid'),
 				folder: fn.get("id"),
 				folderText: fn.get("text"),
 				folderHasChildren: true //fn.hasChildNodes()

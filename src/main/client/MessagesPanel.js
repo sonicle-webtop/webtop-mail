@@ -86,8 +86,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.folderList.on('keydelete',me.actionDelete,me);
 		me.folderList.on('deleting',me.clearMessageView,me);
 		me.folderList.on('moving',me.clearMessageView,me);
-        me.folderList.on('rowdblclick',me.rowDblClicked,me);
-        me.folderList.on('cellclick',me.cellClicked,me);
+        //me.folderList.on('rowdblclick',me.rowDblClicked,me);
+        //me.folderList.on('cellclick',me.cellClicked,me);
+
 		//trick to reset unreads on empty folders' nodes
 		me.folderList.on('load',function(g,foldername,data) {
 			if (data && data.total && data.total===0)
@@ -97,12 +98,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				},true);
 		},me);
 
-        if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
-		if (me.saveColumnVisibility) {
-			me.folderList.on('columnhide', function(ct,col) { me.columnHiddenChange(ct,col,true); });
-			me.folderList.on('columnshow', function(ct,col) { me.columnHiddenChange(ct,col,false); });
-		}
-		if (me.saveColumnOrder) me.folderList.on('columnmove', me.columnMoved, me);
+        //if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
+		//if (me.saveColumnVisibility) {
+		//	me.folderList.on('columnhide', function(ct,col) { me.columnHiddenChange(ct,col,true); });
+		//	me.folderList.on('columnshow', function(ct,col) { me.columnHiddenChange(ct,col,false); });
+		//}
+		//if (me.saveColumnOrder) me.folderList.on('columnmove', me.columnMoved, me);
 
         me.messageView=Ext.create('Sonicle.webtop.mail.MessageView',{
 			mys: me.mys,
@@ -551,7 +552,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
 	*/
    
-    rowDblClicked: function(grid, r, tr, rowIndex, e, eopts) {
+    /*rowDblClicked: function(grid, r, tr, rowIndex, e, eopts) {
 		var me=this;
         if (this.mys.isDrafts(this.currentFolder)) me.folderList.editMessage(r);
         else me.folderList.openMessage(r);
@@ -564,7 +565,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
                 me.folderList.editNote(r.get("idmessage"),me.currentFolder);
             }
         }
-    },    
+    },*/    
 	
     res: function(name) {
 		return this.mys.res(name);
