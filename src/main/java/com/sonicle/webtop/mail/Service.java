@@ -5218,8 +5218,13 @@ public class Service extends BaseService {
 						psearchfield+="|";
 						ppattern+="|";
 					}
-					psearchfield+=filter.property;
-					ppattern+=filter.value;
+					if (filter.property.equals("unread")) {
+						psearchfield+="status";
+						ppattern+=filter.value.equals("true")?"unread":"read";
+					} else {
+						psearchfield+=filter.property;
+						ppattern+=filter.value;
+					}
 					first=false;
 				}
 			}

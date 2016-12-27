@@ -315,7 +315,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	enableColumnMove: true,
 	plugins: [
 		{
-			ptype: 'filterbar',
+			ptype: 'sofilterbar',
 			pluginId: 'gridfilterbar',
 			hidden: true
 		}
@@ -625,22 +625,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
             if (combinedState) {
                 state = Ext.apply({}, combinedState);
-                if (!hasListeners.beforestaterestore || me.fireEvent('beforestaterestore', me, combinedState) !== false) {
- 
-                    //Notify all plugins FIRST (if interested) in new state 
-                    plugins = me.getPlugins() || [];
-                    for (i = 0, len = plugins.length; i < len; i++) {
-                        plugin = plugins[i];
-                        if (plugin) {
-                            pluginType = plugin.ptype;
-                            if (plugin.applyState) {
-                                plugin.applyState(state[pluginType], combinedState);
-                            }
-                            delete state[pluginType];  //clean to prevent unwanted props on the component in final phase 
-                        }
-                    }
- 
-                }
             } else {
 				state=me.createDefaultState();
 			}
@@ -664,6 +648,29 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				}
 			});
 			me.reconfigure(me.createColumnsFromState(state));
+			
+			if (!hasListeners.beforestaterestore || me.fireEvent('beforestaterestore', me, state) !== false) {
+
+				//Notify all plugins FIRST (if interested) in new state 
+				plugins = me.getPlugins() || [];
+				for (i = 0, len = plugins.length; i < len; i++) {
+					plugin = plugins[i];
+					if (plugin) {
+						pluginType = plugin.ptype;
+						if (plugin.applyState) {
+							plugin.applyState(state[pluginType], state);
+						}
+						delete state[pluginType];  //clean to prevent unwanted props on the component in final phase 
+						
+						if (plugin.configureColumns) {
+							plugin.configureColumns(me.getColumns());
+						}
+					}
+				}
+
+			}
+			
+			
 			me.applyState(state);
 			if (hasListeners.staterestore) {
 				me.fireEvent('staterestore', me, state);
@@ -1543,7 +1550,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						},
 						scope: me,
 						filter: {
-							xtype: 'soiconcombobox',
+							xtype: 'soicononlycombobox',
 							editable: false,
 							width: 24,
 							listConfig: {
@@ -1560,37 +1567,24 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					
 				case 'stid-unread':
 					dcols[n++]={//Status
-						//xtype: 'soiconcolumn',
-						xtype:'actioncolumn',
+						xtype: 'soiconcolumn',
 						header: WTF.headerWithGlyphIcon('fa fa-eye'),
-						//cls: 'wtmail-header-text-clip',
 						width: 28,
 						sortable: true,
 						menuDisabled: true,
 						dataIndex: 'unread',
 						stateId: 'stid-unread',
-						hidden: scol.hidden, //false,
-						items: [{
-							getClass: function(v,md,r,rix,cix,s) {
-								return 'wtmail-icon-status-'+(v?'seen':'unseen')+'-xs';
-							},
-							handler: function(grid, rix, cix, item, e, rec) {
-								var newunread=!rec.get('unread');
-								me.markMessageSeenState(rec,!newunread);
-							}
-						}],
-						/*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-								//var sdate=record.get("scheddate");
-								//if (sdate) value="scheduled";
-								var imgname=Ext.String.format("status{0}_16.png",value?'unread':'read');
-								var imgtag=WTF.imageTag(me.mys.ID,imgname,16,16);
-								//if (sdate) tag="<span ext:qtip='"+Ext.util.Format.date(sdate,'d-M-Y')+" "+Ext.util.Format.date(sdate,'H:i:s')+"'>"+imgtag+"</span>";
-								//else tag=imgtag;
-								return imgtag;
-						},*/
+						hidden: scol.hidden,
+						getIconCls: function(value,rec) {
+							return Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'status-'+(value?"seen":"unseen"), 'xs');
+						},
+						handler: function(grid, rix, cix, e, rec) {
+							var newunread=!rec.get('unread');
+							me.markMessageSeenState(rec,!newunread);
+						},
 						scope: me,
-			/*			filter: {
-							xtype: 'soiconcombobox',
+						filter: {
+							xtype: 'soicononlycombobox',
 							editable: false,
 							width: 24,
 							listConfig: {
@@ -1599,10 +1593,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							hideTrigger: true,
 							store: [
 								['','\u00a0',''],
-								['unread','\u00a0','wtmail-icon-status-unread-xs'],
-								['read','\u00a0','wtmail-icon-status-read-xs']
+								["true",'\u00a0',WTF.cssIconCls(me.mys.XID, 'status-seen', 'xs')],
+								["false",'\u00a0',WTF.cssIconCls(me.mys.XID, 'status-unseen', 'xs')]
 							]
-						}*/
+						}
 					};
 					break;
 					
@@ -1780,7 +1774,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						},
 						scope: me,
 						filter: {
-							xtype: 'soiconcombobox',
+							xtype: 'soicononlycombobox',
 							editable: false,
 							width: 24,
 							listConfig: {
