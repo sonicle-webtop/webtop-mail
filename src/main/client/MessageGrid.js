@@ -601,6 +601,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
 		me.currentFolder = folder_id;
 		me.initFolderState();
+		me.hideFilterBar();
+		me.getStore().clearFilter(true);
 		s.load();
 	},
 	
@@ -647,7 +649,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						break;
 				}
 			});
-			me.reconfigure(me.createColumnsFromState(state));
+			
+			var newcols=me.createColumnsFromState(state);
 			
 			if (!hasListeners.beforestaterestore || me.fireEvent('beforestaterestore', me, state) !== false) {
 
@@ -663,13 +666,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						delete state[pluginType];  //clean to prevent unwanted props on the component in final phase 
 						
 						if (plugin.configureColumns) {
-							plugin.configureColumns(me.getColumns());
+							plugin.configureColumns(newcols);
 						}
 					}
 				}
 
 			}
 			
+			me.reconfigure(newcols);
 			
 			me.applyState(state);
 			if (hasListeners.staterestore) {
@@ -1460,13 +1464,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	showFilterBar: function() {
-		this.getPlugin('gridfilterbar').setHidden(false);
+		var me=this;
+		me.getPlugin('gridfilterbar').setHidden(false);
+		me.fireEvent('showfilterbar', me);
 	},
 	
 	hideFilterBar: function() {
-		this.getPlugin('gridfilterbar').setHidden(true);
+		var me=this;
+		me.getPlugin('gridfilterbar').setHidden(true);
+		me.fireEvent('hidefilterbar', me);
 	},
 	
+	clearFilterBar: function() {
+		this.getPlugin('gridfilterbar').clearFilterFields();
+		this.getStore().clearFilter();
+	},
 	
 	indexOfMessage: function(id) {
 		return this.store.findExact('idmessage',id);
@@ -1508,7 +1520,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			switch(scol.id) {
 				
 				case 'stid-folder':
-					dcols[n++]={//Folder
+					dcols[n++]=Ext.create({//Folder
+						xtype: 'gridcolumn',
 						header: '',
 						width: 100,
 						sortable: true,
@@ -1516,11 +1529,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						stateId: 'stid-folder',
 						hidden: true,
 						filter: { xtype: 'textfield'}
-					};
+					});
 					break;
 					
 				case 'stid-folderdesc':
-					dcols[n++]={//Folder Descripion
+					dcols[n++]=Ext.create({//Folder Descripion
+						xtype: 'gridcolumn',
 						header: me.res("column-folder"),
 						width: 100,
 						sortable: true,
@@ -1528,11 +1542,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						stateId: 'stid-folderdesc',
 						hidden: scol.hidden,
 						filter: { xtype: 'textfield'}
-					};
+					});
 					break;
 					
 				case 'stid-priority':
-					dcols[n++]={//Priority
+					dcols[n++]=Ext.create({//Priority
+						xtype: 'gridcolumn',
 						header: '<i class="wtmail-icon-header-priority-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
 						cls: 'wtmail-header-text-clip',
 						width: 35,
@@ -1562,11 +1577,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								['1','\u00a0','wtmail-icon-priority-high-xs']
 							]
 						}
-					};
+					});
 					break;
 					
 				case 'stid-unread':
-					dcols[n++]={//Status
+					dcols[n++]=Ext.create({//Status
 						xtype: 'soiconcolumn',
 						header: WTF.headerWithGlyphIcon('fa fa-eye'),
 						width: 28,
@@ -1597,11 +1612,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								["false",'\u00a0',WTF.cssIconCls(me.mys.XID, 'status-unseen', 'xs')]
 							]
 						}
-					};
+					});
 					break;
 					
 				case 'stid-from':
-					dcols[n++]={//From
+					dcols[n++]=Ext.create({//From
+						xtype: 'gridcolumn',
 						header: me.res("column-from"),
 						width: 200,
 						sortable: true,
@@ -1609,11 +1625,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						stateId: 'stid-from',
 						hidden: scol.hidden,
 						filter: { xtype: 'textfield'}
-					};
+					});
 					break;
 					
 				case 'stid-to':
-					dcols[n++]={//To
+					dcols[n++]=Ext.create({//To
+						xtype: 'gridcolumn',
 						header: me.res("column-to"),
 						width: 200,
 						sortable: true,
@@ -1621,11 +1638,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						stateId: 'stid-to',
 						hidden: scol.hidden, //!me.multifolder,
 						filter: { xtype: 'textfield'}
-					};
+					});
 					break;
 					
 				case 'stid-subject':
-					dcols[n++]={//Subject
+					dcols[n++]=Ext.create({//Subject
+						xtype: 'gridcolumn',
 						header: me.res("column-subject"),
 						width: 400,
 						sortable: true,
@@ -1665,11 +1683,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							return imgtag;
 						},
 						filter: { xtype: 'textfield'}
-					};
+					});
 					break;
 					
 				case 'stid-date':
-					dcols[n++]={//Date
+					dcols[n++]=Ext.create({//Date
+						xtype: 'gridcolumn',
 						header: me.res("column-date"),
 						width: 80,
 						sortable: true,
@@ -1685,41 +1704,44 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						stateId: 'stid-date',
 						hidden: scol.hidden,
 						filter: { xtype: 'textfield'}
-					};
+					});
 					break;
 					
 				case 'stid-gdate':
-					dcols[n++]={//Date
+					dcols[n++]=Ext.create({//Date
+						xtype: 'gridcolumn',
 						header: me.res("column-date"),
 						hidden: true,
 						dataIndex: 'gdate',
 						stateId: 'stid-gdate',
 						filter: {}
-					};
+					});
 					break;
 					
 				case 'stid-sdate':
-					dcols[n++]={//Date
+					dcols[n++]=Ext.create({//Date
+						xtype: 'gridcolumn',
 						header: me.res("column-date"),
 						hidden: true,
 						dataIndex: 'sdate',
 						stateId: 'stid-sdate',
 						filter: {}
-					};
+					});
 					break;
 					
 				case 'stid-xdate':
-					dcols[n++]={//Date
+					dcols[n++]=Ext.create({//Date
+						xtype: 'gridcolumn',
 						header: me.res("column-date"),
 						hidden: true,
 						dataIndex: 'xdate',
 						stateId: 'stid-xdate',
 						filter: {}
-					};
+					});
 					break;
 					
 				case 'stid-size':
-					dcols[n++]={//Dimension
+					dcols[n++]=Ext.create({//Dimension
 						xtype: 'sobytescolumn',
 						header: me.res("column-size"),
 						width: 50,
@@ -1731,11 +1753,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							return WTU.humanReadableSize(parseInt(value));
 						},*/
 						filter: { xtype: 'textfield'}
-					};
+					});
 					break;
 					
 				case 'stid-atts':
-					dcols[n++]={//Attachment
+					dcols[n++]=Ext.create({//Attachment
+						xtype: 'gridcolumn',
 						header: '<i class="wtmail-icon-header-attach-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
 						cls: 'wtmail-header-text-clip',
 						width: 30,
@@ -1752,11 +1775,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						scope: me,
 						filter: { xtype: 'textfield'}
 
-					};
+					});
 					break;
 					
 				case 'stid-flag':
-					dcols[n++]={//Flag
+					dcols[n++]=Ext.create({//Flag
+						xtype: 'gridcolumn',
 						header: '<i class="wtmail-icon-header-flag-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
 						cls: 'wtmail-header-text-clip',
 						width: 30,
@@ -1833,11 +1857,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							}
 						}*/
 
-					};
+					});
 					break;
 					
 				case 'stid-note':
-					dcols[n++]={//Mail note
+					dcols[n++]=Ext.create({//Mail note
+						xtype: 'gridcolumn',
 						header: '<i class="wtmail-icon-header-note-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
 						cls: 'wtmail-header-text-clip',
 						width: 30,
@@ -1855,11 +1880,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						scope: me,
 						filter: { xtype: 'textfield'}
 
-					};
+					});
 					break;
 					
 				case 'stid-arch':
-					dcols[n++]={//Archived
+					dcols[n++]=Ext.create({//Archived
+						xtype: 'gridcolumn',
 						header: '<i class="wtmail-icon-header-docmgt-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
 						cls: 'wtmail-header-text-clip',
 						width: 30,
@@ -1877,7 +1903,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						},
 						scope: me,
 						filter: { xtype: 'textfield'}
-					};
+					});
 					break;
 			}
 		});

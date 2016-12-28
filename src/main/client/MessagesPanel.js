@@ -86,8 +86,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.folderList.on('keydelete',me.actionDelete,me);
 		me.folderList.on('deleting',me.clearMessageView,me);
 		me.folderList.on('moving',me.clearMessageView,me);
-        //me.folderList.on('rowdblclick',me.rowDblClicked,me);
-        //me.folderList.on('cellclick',me.cellClicked,me);
 
 		//trick to reset unreads on empty folders' nodes
 		me.folderList.on('load',function(g,foldername,data) {
@@ -97,6 +95,19 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 					unread: 0
 				},true);
 		},me);
+		
+		me.folderList.on('showfilterbar',function() {
+			if (me.bMultiSearch && !me.bMultiSearch.pressed) {
+				me.bMultiSearch.toggle();
+			}
+		});
+
+		me.folderList.on('hidefilterbar',function() {
+			if (me.bMultiSearch && me.bMultiSearch.pressed) {
+				me.bMultiSearch.toggle();
+			}
+		});
+
 
         //if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
 		//if (me.saveColumnVisibility) {
@@ -423,7 +434,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     actionMultiSearch: function() {
 		var me=this;
         if (me.bMultiSearch.pressed) me.folderList.showFilterBar();
-        else me.folderList.hideFilterBar();
+        else {
+			me.folderList.clearFilterBar();
+			me.folderList.hideFilterBar();
+		}
     },
 
 /*	actionThreaded: function() {
