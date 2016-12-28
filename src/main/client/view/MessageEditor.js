@@ -120,6 +120,22 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             ]
         });
 		
+        me.attcontainer.on('afterrender',function() {
+            new Ext.dd.DropZone( me.attcontainer.getEl(), {
+                ddGroup : 'attachment', 
+                getTargetFromEvent: function( e ) {
+                    return  me.attcontainer;
+                },
+                onNodeOver : function(target, dd, e, data){ 
+                    return Ext.dd.DropZone.prototype.dropAllowed;
+                },                
+                onNodeDrop : function(target, dd, e, data){
+                    me.attachFromMail(data.params);
+                    return true;
+                }
+            });		
+        });
+		
 		me.recgrid=Ext.create({
 			xtype: 'wtrecipientsgrid',
 			height: 90,

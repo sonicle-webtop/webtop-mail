@@ -815,40 +815,37 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         this.setEmailElement(e,desc,email,type);
     },
 
-    _setAttachElements: function(e,vparams) {
-        var i=0;
-        while(e) {
-            var href=e.first().dom.href;
+    _setAttachElements: function(el,vparams) {
+        var me=this,i=0;
+        while(el) {
+            var href=el.first().dom.href;
 			//TODO isIE saveas=1?
             //if (!Ext.isIE) href+="&saveas=1";
-            this.setAttachElement(e,href,this.divAttach.first().first().dom.href);
+            me.setAttachElement(el,href,me.divAttach.first().first().dom.href);
             
-			//TOTO set DD
-            //this._setDD(e,vparams[i]);
+            me._setDD(el,vparams[i]);
             
-            e=e.next();
+            el=el.next();
             ++i;
         }
     }, 
     
-	//TODO set DD
-	/*
-    _setDD: function(e,params) {
-          new Ext.dd.DragZone(e,{
+    _setDD: function(el,params) {
+		var me=this;
+		new Ext.dd.DragZone(el,{
             params: params,
             ddGroup : 'attachment', 
-            getDragData: function(e) {
-				var ddel=this.getEl();
-				if (ddel.contains(e.getTarget())) {
+            getDragData: function(ev) {
+				var ddel=el;
+				if (ddel.contains(ev.getTarget())) {
 					return {
-						ddel: ddel.cloneNode(true),
-						params: this.params
+						ddel: ddel.dom.cloneNode(true),
+						params: me.params
 					};
 				}
             }
-			
-          });
-    },*/
+		});
+    },
 
     iframeState: function() { //called in the context of the iframe element
 		var xif=this;
