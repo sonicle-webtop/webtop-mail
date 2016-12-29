@@ -741,6 +741,36 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.autosaveTask.delay(me.autosaveDelay);
 	},
 	
+    attachFromMail: function(params) {
+		var me=this;
+		
+		WT.ajaxReq(me.mys.ID, "AttachFromMail", {
+			params: {
+				tag: me.msgId,
+                folder: params.folder,
+                idmessage: params.idmessage,
+                idattach: params.idattach
+			},
+			callback: function(success,json) {
+				if (success) {
+					var d=json.data;
+					me.attlist.addAttachment(
+						{ 
+							msgId: me.msgId, 
+							uploadId: d.uploadId, 
+							fileName: d.name, 
+							cid: null,
+							inline: false,
+							fileSize: d.size 
+						}
+					);
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});
+    },	
+	
     onDiscard: function() {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, "DiscardMessage", {

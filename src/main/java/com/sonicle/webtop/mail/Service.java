@@ -112,6 +112,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
@@ -4671,16 +4672,11 @@ public class Service extends BaseService {
 		}
 	}
 	
-	// TODO: Attachments
-/*	
 	public void processAttachFromMail(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
-		String sout = null;
 		try {
 			checkStoreConnected();
-            //WebTopApp webtopapp=environment.getWebTopApp();
 			
-			int msgid = Integer.parseInt(request.getParameter("newmsgid"));
+			String tag = request.getParameter("tag");
 			String pfoldername = request.getParameter("folder");
 			String puidmessage = request.getParameter("idmessage");
 			String pidattach = request.getParameter("idattach");
@@ -4706,28 +4702,24 @@ public class Service extends BaseService {
 			} catch (Exception exc) {
 			}
 			
-			ix = filename.lastIndexOf(".");
-			if (ix > 0) {
-				String ext = filename.substring(ix + 1);
-				String xctype = WT.getContentType(ext);
-				if (xctype != null) {
-					ctype = xctype;
-				}
-			}
+			ctype = ServletHelper.guessMediaType(filename,ctype);
+
+			File file = WT.createTempFile();
+			int filesize=IOUtils.copy(part.getInputStream(), new FileOutputStream(file));
+			WebTopSession.UploadedFile uploadedFile = new WebTopSession.UploadedFile(false, this.SERVICE_ID, file.getName(), tag, filename, filesize, ctype);
+			environment.getWebTopSession().addUploadedFile(uploadedFile);
 			
-			File file = File.createTempFile("strts", null, new File(css.getTempPath()));
-			long size = file.length();
-			createFile(part.getInputStream(), file);
-			Attachment attachment = attachFile(msgid, file, filename, ctype, null, false);
-			String tempname = attachment.getFile().getName();
-			sout = "{ result:true, name: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', tempname: '" + StringEscapeUtils.escapeEcmaScript(tempname) + "', size: '" + size + "' }";
+			MapItem data = new MapItem(); // Empty response data
+			data.add("uploadId", uploadedFile.getUploadId());
+			data.add("name", uploadedFile.getFilename());
+			data.add("size", uploadedFile.getSize());
+			new JsonResult(data).printTo(out);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
-			sout = "{ result:false }";
+			new JsonResult(false, exc.getMessage()).printTo(out);
 		}
-		out.println(sout);
 	}
-*/
+	
 	// TODO: Cloud integration
 /*    public void processUploadCloudAttachments(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 	 doUploadCloudAttachments(request, response, out);
