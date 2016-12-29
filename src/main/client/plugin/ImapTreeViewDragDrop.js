@@ -52,10 +52,6 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
      * Override to implement moveMessages
 	 *  
      * @param {Object} data The drag data from MessageGrid
-     * @param {Ext.event.Event} data.event The origin event
-     * @param {Ext.view.Table} data.view The origin grid view (contains grid object)
-     * @param {Sonicle.webtop.mail.MessagesModel} data.records The origin model records
-     * @param {String} data.srcFolder The origin folder id.
      * @param {String} dst The destination folder id.
      */
 	moveMessages: Ext.emptyFn,
@@ -64,35 +60,52 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
      * Override to implement copyMessages
 	 *  
      * @param {Object} data The drag data from MessageGrid
-     * @param {Ext.event.Event} data.event The origin event
-     * @param {Ext.view.Table} data.view The origin grid view (contains grid object)
-     * @param {Sonicle.webtop.mail.MessagesModel} data.records The origin model records
-     * @param {String} data.srcFolder The origin folder id.
      * @param {String} dst The destination folder id.
      */
 	copyMessages: Ext.emptyFn,
 	
+    /**
+     * Override to implement copyAttachment
+	 *  
+     * @param {Object} data The drag data from MessageView
+     * @param {String} dst The destination folder id.
+     */
+	copyAttachment: Ext.emptyFn,
+	
 	dropZone: {
-		handleNodeDrop : function(data, targetNode, position) {
+		onNodeDrop : function(targetNode, dragZone, e, data) {
 			var me=this;
-			if (data.records[0].isNode) {
-				//data.event.dropStatus=true;
-				me.ownerPlugin.moveFolder(data.records[0].id,targetNode.id);
-			} else {
-				if (!data.copy) {
-					me.ownerPlugin.moveMessages(data, targetNode.id);
-				} else {
-					me.ownerPlugin.copyMessages(data, targetNode.id);
-				}
-				//data.event.cancel=false;
+			
+			targetNode=me.view.getRecord(targetNode); //from el node to record node
+			
+			switch(dragZone.ddGroup) {
+				case "mail":
+					if (data.records[0].isNode) {
+						//data.event.dropStatus=true;
+						me.ownerPlugin.moveFolder(data.records[0].id,targetNode.id);
+					} else {
+						if (!data.copy) {
+							me.ownerPlugin.moveMessages(data, targetNode.id);
+						} else {
+							me.ownerPlugin.copyMessages(data, targetNode.id);
+						}
+						//data.event.cancel=false;
+					}
+					break;
+					
+				case "attachment":
+					me.ownerPlugin.copyAttachment(data, targetNode.id);
+					break;
 			}
 			return true;
 		},
 		
 		onNodeOver : function(node, dragZone, e, data) {
+			var ctrlKey=dragZone.ddGroup!=="attachment"?e.ctrlKey:false;
+			
 			Ext.tree.ViewDropZone.prototype.onNodeOver.call(this,node,dragZone,e,data);
-			data.copy=e.ctrlKey;
-			var returnCls=e.ctrlKey? Ext.baseCSSPrefix + 'tree-drop-ok-append': Ext.baseCSSPrefix + 'dd-drop-ok';
+			data.copy=ctrlKey;
+			var returnCls=ctrlKey? Ext.baseCSSPrefix + 'tree-drop-ok-append': Ext.baseCSSPrefix + 'dd-drop-ok';
 			this.currentCls=returnCls;
 			return returnCls;
 		}
@@ -105,6 +118,7 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 		me.callParent(arguments);
 		if (me.enableDrop) {
 			me.dropZone.ownerPlugin=me;
+			me.dropZone.addToGroup("attachment");
 		}
     }	
 	

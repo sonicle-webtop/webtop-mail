@@ -1004,6 +1004,27 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 	},
 	
+    copyAttachment: function(from,to,idmessage,idattach) {
+		var me=this;
+		WT.ajaxReq(me.ID, "CopyAttachment", {
+			params: {
+				fromfolder: from,
+				tofolder: to,
+				idmessage: idmessage,
+				idattach: idattach
+			},
+			callback: function(success,json) {
+				if (success) {
+					if (to===me.currentFolder) {
+						me.reloadFolderList();
+					}
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});							
+    },	
+	
 	isDrafts: function(folder) {
 		return this.imapTree.getStore().getById(folder).get("isDrafts");
 	},

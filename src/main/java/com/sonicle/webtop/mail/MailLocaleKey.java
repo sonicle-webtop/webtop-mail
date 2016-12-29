@@ -84,6 +84,7 @@ public class MailLocaleKey {
 	public static final String ICAL_CANCELED="ical.canceled";
 	public static final String ICAL_REPLY_ACCEPTED="ical.reply.accepted";
 	public static final String ICAL_REPLY_DECLINED="ical.reply.declined";
+    public static final String ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED="error.attachment.type.not.supported";
 
     public static String FILTERS_OPERATOR(String operator) {
         return "filters."+operator;

@@ -56,6 +56,9 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 					},
 					copyMessages: function(data,dst) {
 						data.view.grid.copySelection(data.srcFolder,dst,data.records);
+					},
+					copyAttachment: function(data,dst) {
+						cfg.mys.copyAttachment(data.params.folder,dst,data.params.idmessage,data.params.idattach);
 					}
 				},
 				markDirty: false,

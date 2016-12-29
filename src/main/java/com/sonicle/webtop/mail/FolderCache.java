@@ -913,6 +913,12 @@ public class FolderCache {
         open();
         return ((UIDFolder)folder).getMessagesByUID(1,UIDFolder.LASTUID);
     }
+	
+	public void appendMessage(Message msg) throws MessagingException {
+		Message msgs[]=new Message[1];
+		msgs[0]=msg;
+		folder.appendMessages(msgs);
+	}
     
     public void moveMessages(long uids[], FolderCache to) throws MessagingException {
         Message mmsgs[]=getMessages(uids);

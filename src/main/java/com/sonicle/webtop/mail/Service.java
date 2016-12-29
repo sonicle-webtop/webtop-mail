@@ -44,6 +44,7 @@ import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
+import com.sonicle.commons.web.json.MapItemList;
 import com.sonicle.commons.web.json.Payload;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
@@ -4714,6 +4715,91 @@ public class Service extends BaseService {
 			data.add("name", uploadedFile.getFilename());
 			data.add("size", uploadedFile.getSize());
 			new JsonResult(data).printTo(out);
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			new JsonResult(false, exc.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processAttachFromMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			checkStoreConnected();
+			
+			String tag = request.getParameter("tag");
+			String pfoldername = request.getParameter("folder");
+			String suids[] = request.getParameterValues("ids");
+			String multifolder = request.getParameter("multifolder");
+			boolean mf = multifolder != null && multifolder.equals("true");
+			
+			String ctype="message/rfc822";
+			
+			ArrayList<WebTopSession.UploadedFile> ufiles=new ArrayList<>();
+			for(String suid: suids) {
+				String foldername=pfoldername;
+				
+				if (mf) {
+					int ix=suid.indexOf("|");
+					foldername=suid.substring(0,ix);
+					suid=suid.substring(ix+1);
+				}
+				long uid=Long.parseLong(suid);
+				FolderCache mcache = getFolderCache(foldername);
+				
+				Message msg=mcache.getMessage(uid);
+				File file = WT.createTempFile();
+				FileOutputStream fos=new FileOutputStream(file);
+				msg.writeTo(fos);
+				fos.close();
+				long filesize=file.length();
+				String filename=msg.getSubject()+".eml";
+			
+				WebTopSession.UploadedFile uploadedFile = new WebTopSession.UploadedFile(false, this.SERVICE_ID, file.getName(), tag, filename, filesize, ctype);
+				environment.getWebTopSession().addUploadedFile(uploadedFile);
+				ufiles.add(uploadedFile);
+			}			
+			
+			MapItemList data=new MapItemList();
+			for(WebTopSession.UploadedFile ufile: ufiles) {
+				MapItem mi = new MapItem();
+				mi.add("uploadId", ufile.getUploadId());
+				mi.add("name", ufile.getFilename());
+				mi.add("size", ufile.getSize());
+				data.add(mi);
+			}
+			new JsonResult(data).printTo(out);
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			new JsonResult(false, exc.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processCopyAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			checkStoreConnected();
+			UserProfile profile=environment.getProfile();
+			Locale locale=profile.getLocale();
+			
+			String pfromfolder = request.getParameter("fromfolder");
+			String ptofolder = request.getParameter("tofolder");
+			String puidmessage = request.getParameter("idmessage");
+			String pidattach = request.getParameter("idattach");
+			
+			FolderCache frommcache = getFolderCache(pfromfolder);
+			FolderCache tomcache = getFolderCache(ptofolder);
+			long uidmessage = Long.parseLong(puidmessage);
+			Message m = frommcache.getMessage(uidmessage);
+			
+			HTMLMailData mailData = frommcache.getMailData((MimeMessage) m);
+			Object content = mailData.getAttachmentPart(Integer.parseInt(pidattach)).getContent();
+			if (content instanceof MimeMessage) {
+				MimeMessage msg=new MimeMessage((MimeMessage)content);
+				msg.setFlag(Flags.Flag.SEEN, true);
+				tomcache.appendMessage(msg);
+				new JsonResult().printTo(out);
+			} else {
+				new JsonResult(false, lookupResource(locale, MailLocaleKey.ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED)).printTo(out);
+			}
+			IMAPNestedMessage impn;
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			new JsonResult(false, exc.getMessage()).printTo(out);

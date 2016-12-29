@@ -1587,6 +1587,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						width: 28,
 						sortable: true,
 						menuDisabled: true,
+						stopSelection: true,
 						dataIndex: 'unread',
 						stateId: 'stid-unread',
 						hidden: scol.hidden,

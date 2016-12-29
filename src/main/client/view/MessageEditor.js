@@ -121,7 +121,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         });
 		
         me.attcontainer.on('afterrender',function() {
-            new Ext.dd.DropZone( me.attcontainer.getEl(), {
+            var dz=new Ext.dd.DropZone( me.attcontainer.getEl(), {
                 ddGroup : 'attachment', 
                 getTargetFromEvent: function( e ) {
                     return  me.attcontainer;
@@ -130,10 +130,18 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
                     return Ext.dd.DropZone.prototype.dropAllowed;
                 },                
                 onNodeDrop : function(target, dd, e, data){
-                    me.attachFromMail(data.params);
+                    switch(dd.ddGroup) {
+						case "attachment":
+							me.attachFromMail(data.params);
+							break;
+						
+						case "mail":
+							me.attachFromMessages(data.grid,data.srcFolder,data.records);
+					}
                     return true;
                 }
             });		
+			dz.addToGroup("mail");
         });
 		
 		me.recgrid=Ext.create({
@@ -764,6 +772,38 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 							fileSize: d.size 
 						}
 					);
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});
+    },	
+	
+    attachFromMessages: function(grid,folder,recs) {
+		var me=this,
+		    data=grid.sel2ids(recs);
+		
+		WT.ajaxReq(me.mys.ID, "AttachFromMessages", {
+			params: {
+				tag: me.msgId,
+                folder: folder,
+				ids: data.ids,
+				multifolder: data.multifolder
+			},
+			callback: function(success,json) {
+				if (success) {
+					Ext.each(json.data,function(item) {
+						me.attlist.addAttachment(
+							{ 
+								msgId: me.msgId, 
+								uploadId: item.uploadId, 
+								fileName: item.name, 
+								cid: null,
+								inline: false,
+								fileSize: item.size 
+							}
+						);
+					});
 				} else {
 					WT.error(json.text);
 				}

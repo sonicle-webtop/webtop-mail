@@ -53,6 +53,7 @@ Ext.define('Sonicle.webtop.mail.plugin.MessageGridViewDragDrop', {
 			if (o) {
 				o.srcFolder=o.view.grid.currentFolder;
 				o.copy=e.ctrlKey;
+				o.grid=o.view.grid;
 			}
 			return o;
 		}
