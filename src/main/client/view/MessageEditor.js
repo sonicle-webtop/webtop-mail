@@ -51,7 +51,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	dockableConfig: {
 		title: '{message.tit}',
 		iconCls: 'wtmail-icon-newmsg-xs',
-		width: 800,
+		width: 830,
 		height: 500
 	},
 	modelName: 'Sonicle.webtop.mail.model.MessageModel',
@@ -184,13 +184,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbx=0;
 		
 		var smenu=[],sx=0;
-		smenu[sx++]={ text: me.mys.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-send-xs', handler: me.actionSend, scope: me };
+		smenu[sx++]={ text: me.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-send-xs', handler: me.actionSend, scope: me };
 		if (!me.mys.getVar("schedDisabled"))
-			smenu[sx++]={ text: me.mys.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me };
+			smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me };
 		tbitems[tbx++]={
 			xtype: 'splitbutton',
-			text: me.mys.res('editor.send.btn-send.lbl'),
-			tooltip: me.mys.res('editor.send.btn-send.lbl'),
+			text: me.res('editor.send.btn-send.lbl'),
+			tooltip: me.res('editor.send.btn-send.lbl'),
 			iconCls: 'wtmail-icon-send-xs',
 			handler: me.actionSend,
 			scope: me,
@@ -201,7 +201,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if (me.showSave) {
 			tbitems[tbx++]={
 				xtype: 'button',
-				tooltip: me.mys.res('editor.btn-save.tip'),
+				tooltip: me.res('editor.btn-save.tip'),
 				iconCls: 'wt-icon-save-xs',
 				handler: me.actionSave,
 				scope: me
@@ -212,7 +212,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if (me.showAddressBook) {
 			tbitems[tbx++]={
 				xtype: 'button',
-				tooltip: me.mys.res('editor.btn-addressbook.tip'),
+				tooltip: me.res('editor.btn-addressbook.tip'),
 				iconCls: 'wtmail-icon-addressbook-xs',
 				handler: me.actionAddressBook,
 				scope: me
@@ -225,7 +225,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbitems[tbx++]={
 				xtype: 'button',
 				enableToggle: true,
-				tooltip: me.mys.res('editor.btn-receipt.tip'),
+				tooltip: me.res('editor.btn-receipt.tip'),
 				iconCls: 'wtmail-icon-receipt-xs',
 				handler: me.actionReceipt,
 				scope: me
@@ -236,7 +236,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbitems[tbx++]={
 				xtype: 'button',
 				enableToggle: true,
-				tooltip: me.mys.res('editor.btn-priority.tip'),
+				tooltip: me.res('editor.btn-priority.tip'),
 				iconCls: 'wtmail-icon-priority-high-xs',
 				handler: me.actionPriority,
 				scope: me
@@ -247,7 +247,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbitems[tbx++]={
 				xtype: 'button',
 				enableToggle: true,
-				tooltip: me.mys.res('editor.btn-reminder.tip'),
+				tooltip: me.res('editor.btn-reminder.tip'),
 				iconCls: 'wtcal-icon-newEvent-xs',
 				handler: me.actionReminder,
 				scope: me
@@ -261,7 +261,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         if (me.showAttach) {
 			tbitems[tbx++]={
 				xtype:'souploadbutton',
-				tooltip: me.mys.res('editor.btn-attach.tip'),
+				tooltip: me.res('editor.btn-attach.tip'),
 				iconCls: 'wtmail-icon-attachment-xs',
 				uploaderConfig: WTF.uploader(me.mys.ID,'UploadAttachment',{
 					extraParams: {
@@ -326,7 +326,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				tbitems[tbx++]={
 					xtype:'combo',
 					bind: '{record.identityId}',
-					tooltip: me.mys.res('editor.cbo-identities.tip'),
+					tooltip: me.res('editor.cbo-identities.tip'),
 					queryMode: 'local',
 					displayField: 'description',
 					valueField: 'identityId',
@@ -371,14 +371,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					tbitems[tbx++]='-';
 					tbitems[tbx++]={
 						xtype: 'button',
-						tooltip: me.mys.res('editor.btn-cloud-download.tip'),
+						tooltip: me.res('editor.btn-cloud-download.tip'),
 						iconCls: 'wtmail-icon-cloud-download-xs',
 						handler: me.actionCloudDownload,
 						scope: me
 					};
 					tbitems[tbx++]={
 						xtype: 'button',
-						tooltip: me.mys.res('editor.btn-cloud-upload.tip'),
+						tooltip: me.res('editor.btn-cloud-upload.tip'),
 						iconCls: 'wtmail-icon-cloud-upload-xs',
 						handler: me.actionCloudUpload,
 						scope: me
@@ -439,8 +439,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					{
 						xtype:'souploadbutton',
 						tooltip: {
-							title: me.mys.res('editor.btn-insertimagefile.tit'),
-							text: me.mys.res('editor.btn-insertimagefile.tip'),
+							title: me.res('editor.btn-insertimagefile.tit'),
+							text: me.res('editor.btn-insertimagefile.tip'),
 							cls: Ext.baseCSSPrefix + 'html-editor-tip'
 						},
 						iconCls: 'wtmail-icon-format-insertimagefile-xs',
@@ -484,7 +484,83 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
 							}
 						}
-					}
+					},
+					me.addRef('btnQuickp', {
+						xtype:'splitbutton',
+						tabIndex: -1,
+						iconCls: 'wtmail-icon-format-quickpart-xs',
+						tooltip: {
+							title: me.res('editor.btn-quickpart.tit'),
+							text: me.res('editor.btn-quickpart.tip'),
+							cls: Ext.baseCSSPrefix + 'html-editor-tip'
+						},
+						listeners: {
+							click: {
+								fn: function() {
+									var sel = me.htmlEditor.getSelection(false);
+									if(Ext.isEmpty(sel.textContent)) {
+										WT.error(me.res('editor.quickpart.error.selection'));
+										return;
+									}
+									WT.prompt(me.res('editor.quickpart.prompt.id'), {
+										title: me.res('editor.quickpart.f-id.lbl'),
+										fn: function(bid, id) {
+											if(bid === 'ok') {
+												if(Ext.isEmpty(id)) {
+													WT.error(me.res('editor.quickpart.error.id'));
+												} else {
+													WT.createView(me.mys.ID,'view.QuickPartEditor',{
+														viewCfg: {
+															mys: me.mys,
+															html: sel.html,
+															fn: function(html) {
+																me.addQuickPart(id,html)
+															}
+														}
+													}).show();
+												}
+											}
+										}
+									});
+								}
+							},
+							afterrender: {
+								fn: function(s) {
+									me.reloadQuickParts();
+								}
+							}
+						},
+						menu: new Ext.menu.Menu({
+							items: [
+								new Ext.menu.Item({
+									itemId: 'manage',
+									text: me.res('editor.quickpart.b-manage.lbl'),
+									handler: function() {
+										WT.createView(me.mys.ID,'view.QuickPartsManager',{
+											viewCfg: {
+												mys: me.mys,
+												listeners: {
+													viewclose: function() {
+														me.reloadQuickParts();
+													}
+												}
+											}
+										}).show();
+									},
+									scope: this
+								}),
+								'-'
+							],
+							listeners: {
+								click: {
+									fn: function(menu,item,e) {
+										if (item && item.getItemId()!=='manage') me.htmlEditor.execCommand('inserthtml', false, item.tag);
+									}
+								}
+							}
+						})
+					})
+					
 				],
 				listeners: {
 					init: function() {
@@ -684,7 +760,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			if (htmlMcEl == htmlOmc) {
 				mcEl.dom.innerHTML = nmc;
 			} else {
-				WT.error(this.mys.res('editor.mailcard.replace.no'));
+				WT.error(this.res('editor.mailcard.replace.no'));
 			}
 			return htmlEl.dom.innerHTML;
 		} else {
@@ -773,7 +849,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						}
 					);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});
@@ -805,11 +881,66 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						);
 					});
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});
     },	
+	
+	reloadQuickParts: function() {
+		var me=this;
+		
+		WT.ajaxReq(me.mys.ID, "ManageQuickParts", {
+			params: {
+				crud: 'read'
+			},
+			callback: function(success,json) {
+				if (success) {
+					me.fillQPMenu(json.data);
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});
+	},
+	
+	addQuickPart: function(id, html) {
+		var me=this;
+		
+		WT.ajaxReq(me.mys.ID, "ManageQuickParts", {
+			params: {
+				crud: 'create', 
+				id: id, 
+				html: html
+			},
+			callback: function(success,json) {
+				if (success) {
+					me.fillQPMenu(json.data);
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});
+	},
+	
+	fillQPMenu: function(items) {
+		var me=this,
+			menu = me.getRef('btnQuickp').menu,
+			menuitems=menu.items.items;
+	
+		for(var i=menuitems.length-1;i>=2;--i)
+			menu.remove(menuitems[i]);
+		
+		Ext.each(items,function(item) {
+			menu.add(Ext.create({
+				xtype: 'menuitem',
+				itemId: item.id,
+				text: item.id,
+				tag: item.html
+			}));
+		});
+		menu.doLayout();
+	},
 	
     onDiscard: function() {
 		var me=this;
@@ -857,7 +988,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.autosaveSubjectValue=me.subject.getValue();
         me.htmlEditor.clearAutosaveDirty();
         me.getModel().clearAutosaveDirty();
-    }
+    },
+	
+	res: function(key) {
+		return this.mys.res(key);
+	}	
 	
 });
 

@@ -41,6 +41,7 @@ import java.nio.channels.*;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
@@ -70,6 +71,7 @@ import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
+import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSort;
 import com.sonicle.webtop.mail.bol.model.Identity;
@@ -4913,38 +4915,34 @@ public class Service extends BaseService {
 		out.println(sout);
 	}
 
-	// TODO: manage quick parts!!!!!
-/*	public void processManageQuickParts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String crud = null;
-	 UserProfile profile = environment.getProfile();
-	 SettingsManager sm = wta.getSettingsManager();
-	 ArrayList<OServiceSetting> items = null;
-		
-	 try {
-	 crud = ServletUtils.getStringParameter(request, "crud", true);
-	 if(crud.equals(Crud.LIST)) {
-	 items = sm.getUserSettings(profile, "mail", Settings.MESSAGE_QUICKPART+"%");
-	 new JsonResult(JsQuickPart.asList(items)).printTo(out);
-				
-	 } else if(crud.equals(Crud.CREATE)) {
-	 String id = ServletUtils.getStringParameter(request, "id", true);
-	 String html = ServletUtils.getStringParameter(request, "html", true);
-	 sm.setUserSetting(profile, "mail", Settings.MESSAGE_QUICKPART+"@"+id, html);
-				
-	 items = sm.getUserSettings(profile, "mail", Settings.MESSAGE_QUICKPART+"%");
-	 new JsonResult(JsQuickPart.asList(items)).printTo(out);
-				
-	 } else if(crud.equals(Crud.DELETE)) {
-	 String id = JsonResult.gson.fromJson(request.getParameter("data"), String.class); // Data contains key field defined in grid
-	 sm.deleteUserSetting(profile, "mail", Settings.MESSAGE_QUICKPART+"@"+id);
-				
-	 new JsonResult().printTo(out);
-	 }
-	 } catch (Exception ex) {
-	 logger.error("Error managing quickparts", ex);
-	 new JsonResult(false, "Error managing quickparts").printTo(out);
-	 }
-	 }*/
+	public void processManageQuickParts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String crud = null;
+			HashMap<String,String> items;
+		try {
+			crud = ServletUtils.getStringParameter(request, "crud", true);
+			if (crud.equals(Crud.READ)) {
+				items = us.getMessageQuickParts();
+				new JsonResult(JsQuickPart.asList(items)).printTo(out);
+
+			} else if (crud.equals(Crud.CREATE)) {
+				String id = ServletUtils.getStringParameter(request, "id", true);
+				String html = ServletUtils.getStringParameter(request, "html", true);
+				us.setMessageQuickPart(id, html);
+
+				items = us.getMessageQuickParts();
+				new JsonResult(JsQuickPart.asList(items)).printTo(out);
+
+			} else if (crud.equals(Crud.DELETE)) {
+				Payload<MapItem, JsQuickPart> pl = ServletUtils.getPayload(request, JsQuickPart.class);
+				us.deleteMessageQuickPart(pl.data.id);
+
+				new JsonResult().printTo(out);
+			}
+		} catch (Exception ex) {
+		   logger.error("Error managing quickparts", ex);
+		   new JsonResult(false, "Error managing quickparts").printTo(out);
+		}
+	}
 	
 /*	public void processListPublicImages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		SettingsManager sm = wta.getSettingsManager();

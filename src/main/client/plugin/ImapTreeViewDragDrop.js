@@ -74,7 +74,7 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 	
 	dropZone: {
 		onNodeDrop : function(targetNode, dragZone, e, data) {
-			var me=this;
+			var me=this,done=false;
 			
 			targetNode=me.view.getRecord(targetNode); //from el node to record node
 			
@@ -91,11 +91,18 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 						}
 						//data.event.cancel=false;
 					}
+					done=true;
 					break;
 					
 				case "attachment":
 					me.ownerPlugin.copyAttachment(data, targetNode.id);
+					done=true;
 					break;
+			}
+			
+			if (done) {
+				targetNode.animate(
+				);
 			}
 			return true;
 		},
