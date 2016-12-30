@@ -34,6 +34,9 @@
 
 Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 	extend: 'WTA.sdk.DockableView',
+	requires: [
+		'Sonicle.webtop.core.ux.field.HTMLEditor'
+	],
 	
 	dockableConfig: {
 		title: '{editor.btn-quickpart.tit}',
@@ -70,7 +73,7 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 		me.callParent(arguments);
 		
 		me.htmlEditor=Ext.create({
-			xtype: 'sohtmleditor',
+			xtype: 'wthtmleditor',
 			region: 'center',
 			enableFont: true,
 			enableFontSize: true,

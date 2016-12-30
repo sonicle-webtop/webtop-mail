@@ -37,7 +37,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	requires: [
 		'Sonicle.webtop.core.ux.RecipientsGrid',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
-		'Sonicle.form.field.HTMLEditor',
+		'Sonicle.webtop.core.ux.field.HTMLEditor',
 		'Sonicle.webtop.mail.model.MessageModel',
 		'Sonicle.upload.Button'
 	],
@@ -422,7 +422,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		me.add(
 			me.htmlEditor=Ext.create({
-				xtype: 'sohtmleditor',
+				xtype: 'wthtmleditor',
 				region: 'center',
 				bind: '{record.content}',
 				enableFont: true,
