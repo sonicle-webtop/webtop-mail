@@ -187,7 +187,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 xb[xx++]=me._TB("markseen"),
                 xb[xx++]=me._TB("markunseen"),
                 "-",
-                xb[xx++]=me._TB("filters")
+                xb[xx++]=me._TB("rules")
             ]
         );
 		//TODO FAX
@@ -252,7 +252,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("replyall",{ handler: me.gridAction(me,'ReplyAll') });
         me.addAction("forward",{ handler: me.gridAction(me,'Forward') });
         me.addAction("forwardeml",{ handler: me.gridAction(me,'ForwardEml') });
-        me.addAction("filters",{ handler: me.gridAction(me,'Filters'), iconCls: 'wt-icon-filter-xs' });
+        me.addAction("rules",{ handler: me.actionRules, scope: me, iconCls: 'wt-icon-rules-xs' });
         
 		me.addAction("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi-xs', enableToggle: true });
 		
@@ -611,6 +611,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				folder: fn.get("id"),
 				folderText: fn.get("text"),
 				folderHasChildren: true //fn.hasChildNodes()
+			}
+		}).show();
+	},
+	
+	actionRules: function() {
+		var me=this;
+		
+		WT.createView(me.ID,'view.RulesManager',{
+			viewCfg: {
+				mys: me,
+				context: 'INBOX'
 			}
 		}).show();
 	},
