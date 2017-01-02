@@ -415,6 +415,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				//cls3=ti>0?'wtmail-row-hidden':'';
 				return cls1+' '+cls2/*+' '+cls3*/;
 			},
+			
 			plugins: [
 				{
 					ptype: 'messagegridviewdragdrop'
@@ -1012,7 +1013,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.getSelectionModel().removeSelection(data.selection);
 			}
 		}
-        me.deleteMessages(from,data)
+        me.deleteMessages(from,data);
     },
     
     deleteMessages: function(folder,data) {
@@ -1070,7 +1071,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.getSelectionModel().removeSelection(data.selection);
 			}
 		}
-        me.moveMessages(from,to,data)
+        me.moveMessages(from,to,data);
     },
 	
     copySelection: function(from,to,selection) {

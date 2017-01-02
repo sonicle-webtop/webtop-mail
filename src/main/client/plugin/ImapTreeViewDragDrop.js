@@ -101,8 +101,8 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 			}
 			
 			if (done) {
-				targetNode.animate(
-				);
+				//targetNode.animate(
+				//);
 			}
 			return true;
 		},
