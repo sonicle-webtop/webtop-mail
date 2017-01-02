@@ -1056,7 +1056,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					me.deleteMessages(folder,data);
 					dview.closeView();
 				}
-			},me);
+			});
 		} else {
 			me.moveMessages(folder,ftrash,data);
 			dview.closeView();

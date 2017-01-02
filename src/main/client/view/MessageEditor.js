@@ -643,15 +643,30 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
     
     actionSend: function() {
-        var me=this;
+        var me=this,
+			_sbj=me.subject.getValue(),
+			sbj=Ext.isEmpty(_sbj)?'':_sbj.trim();
+	
         me.recgrid.completeEdit();
+		if (sbj.length>0) me._actionSend();
+		else {
+			WT.confirm(me.res('warn-empty-subject'),function(bid) {
+				if (bid==='yes') {
+					me._actionSend();
+				}
+			});
+		}
+    },
+	
+	_actionSend: function() {
+        var me=this;
         me.disableControls(/*false,*/true);
         if (me.fireEvent('beforesend',me)) {
             me.sendMessage();
         } else {
             this.enableControls(false,true);
         }
-    },
+	},
 	
 	sendMessage: function() {
         var me=this;
