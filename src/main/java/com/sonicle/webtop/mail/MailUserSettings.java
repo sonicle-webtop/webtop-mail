@@ -38,7 +38,9 @@ import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  *
@@ -83,6 +85,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String FONT_SIZE = "font.size";
 	public static final String RECEIPT = "receipt";
 	public static final String PRIORITY = "priority";
+	
     
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
@@ -187,6 +190,22 @@ public class MailUserSettings extends BaseUserSettings {
     
 	public boolean clearColumnVisibilitySetting(String foldername) {
 		return clear(MessageFormat.format(COLUMN_VISIBLE, foldername));
+	}
+	
+	public HashMap<String,String> getMessageQuickParts() {
+		return getStrings(MessageFormat.format(MESSAGE_QUICKPART, ""));
+	}
+	
+	public String getMessageQuickPart(String name) {
+		return getString(MessageFormat.format(MESSAGE_QUICKPART, name),"");
+	}
+	
+	public boolean setMessageQuickPart(String name, String value) {
+		return setString(MessageFormat.format(MESSAGE_QUICKPART, name),value);
+	}
+	
+	public boolean deleteMessageQuickPart(String name) {
+		return clear(MessageFormat.format(MESSAGE_QUICKPART, name));
 	}
 	
 	public String getMessageListSort(String foldername) {

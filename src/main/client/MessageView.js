@@ -840,10 +840,16 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				if (ddel.contains(ev.getTarget())) {
 					return {
 						ddel: ddel.dom.cloneNode(true),
-						params: params
+						params: params,
+						sourceEl: el,
+						repairXY: Ext.fly(el).getXY()
 					};
 				}
-            }
+            },
+			
+			getRepairXY: function() {
+				return this.dragData.repairXY;
+			}			
 		});
     },
 
