@@ -31,54 +31,18 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.dal;
+package com.sonicle.webtop.mail.bol;
 
-import com.sonicle.webtop.core.dal.BaseDAO;
-import com.sonicle.webtop.core.dal.DAOException;
-import com.sonicle.webtop.mail.bol.OFilter;
-import java.sql.Connection;
-import org.jooq.DSLContext;
-import static com.sonicle.webtop.mail.jooq.Tables.*;
-import java.util.List;
+import com.sonicle.webtop.mail.jooq.tables.pojos.Rules;
 
 /**
  *
  * @author gbulfon
  */
-public class FilterDAO extends BaseDAO {
+public class ORule extends Rules {
 	
-	private final static FilterDAO INSTANCE = new FilterDAO();
-	public static FilterDAO getInstance() {
-		return INSTANCE;
-	}
-	
-	public boolean hasFileIntoFolder(Connection con, String domainId, String userId, String foldername) throws DAOException {
-		DSLContext dsl = getDSL(con);
-		return dsl
-			.select()
-			.from(FILTERS)
-			.where(
-				FILTERS.DOMAIN_ID.equal(domainId)
-				.and(FILTERS.USER_ID.equal(userId)
-				.and(FILTERS.STATUS.equal("E")
-				.and(FILTERS.ACTION.equal("FILE")
-				.and(FILTERS.ACTION_VALUE.equal(foldername)))))
-			)
-			.limit(1)
-			.fetchOneInto(OFilter.class)!=null;
-	}
-	
-	public List<OFilter> selectById(Connection con, String domainId, String userId) throws DAOException {
-		DSLContext dsl = getDSL(con);
-		return dsl
-			.select()
-			.from(FILTERS)
-			.where(
-				FILTERS.DOMAIN_ID.equal(domainId)
-				.and(FILTERS.USER_ID.equal(userId))
-			)
-			.orderBy(FILTERS.FILTER_ID)
-			.fetchInto(OFilter.class);
+	public ORule() {
+		
 	}
 	
 }

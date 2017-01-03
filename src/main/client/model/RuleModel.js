@@ -37,7 +37,7 @@ Ext.define('Sonicle.webtop.mail.model.RuleModel', {
     idProperty: 'row',
 	
 	fields: [
-		{name:'row', type:'int'},
+		{name:'rule_id', type:'int'},
 		{name:'active', type:'boolean'},
 		'description',
 		'action',

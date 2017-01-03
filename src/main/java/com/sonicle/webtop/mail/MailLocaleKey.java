@@ -55,21 +55,21 @@ public class MailLocaleKey {
     public static final String FOLDERS_TRASH="folders.trash";
     public static final String FOLDERS_SPAM="folders.spam";
     public static final String FOLDERS_SHARED="folders.shared";
-    public static final String FILTERS_FILE="filters.file";
-    public static final String FILTERS_DISCARD="filters.discard";
-    public static final String FILTERS_FORWARD="filters.forward";
-    public static final String FILTERS_REJECT="filters.reject";
-    public static final String FILTERS_IF="filters.if";
-    public static final String FILTERS_OR="filters.or";
-    public static final String FILTERS_AND="filters.and";
-    public static final String FILTERS_CONTAINS="filters.contains";
-    public static final String FILTERS_GREATERTHAN="filters.greaterthan";
-    public static final String FILTERS_LESSTHAN="filters.lessthan";
-    public static final String FILTERS_FROM="filters.from";
-    public static final String FILTERS_TO="filters.to";
-    public static final String FILTERS_SUBJECT="filters.subject";
-    public static final String FILTERS_SIZE="filters.size";
-    public static final String FILTERS_FIELD="filters.field";
+    public static final String RULES_FILE="rules.file";
+    public static final String RULES_DISCARD="rules.discard";
+    public static final String RULES_FORWARD="rules.forward";
+    public static final String RULES_REJECT="rules.reject";
+    public static final String RULES_IF="rules.if";
+    public static final String RULES_OR="rules.or";
+    public static final String RULES_AND="rules.and";
+    public static final String RULES_CONTAINS="rules.contains";
+    public static final String RULES_GREATERTHAN="rules.greaterthan";
+    public static final String RULES_LESSTHAN="rules.lessthan";
+    public static final String RULES_FROM="rules.from";
+    public static final String RULES_TO="rules.to";
+    public static final String RULES_SUBJECT="rules.subject";
+    public static final String RULES_SIZE="rules.size";
+    public static final String RULES_FIELD="rules.field";
     public static final String ADDRESS_ERROR="address.error";
 	public static final String FAX_ADDRESS_ERROR="fax.address.error";
 	public static final String FAX_MAXADDRESS_ERROR="fax.maxaddress.error";
@@ -86,20 +86,20 @@ public class MailLocaleKey {
 	public static final String ICAL_REPLY_DECLINED="ical.reply.declined";
     public static final String ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED="error.attachment.type.not.supported";
 
-    public static String FILTERS_OPERATOR(String operator) {
-        return "filters."+operator;
+    public static String RULES_OPERATOR(String operator) {
+        return "rules."+operator;
     }
 
-    public static String FILTERS_FIELD(String field) {
-        return "filters."+field;
+    public static String RULES_FIELD(String field) {
+        return "rules."+field;
     }
 
-    public static String FILTERS_COMPARISON(String comparison) {
-        return "filters."+comparison;
+    public static String RULES_COMPARISON(String comparison) {
+        return "rules."+comparison;
     }
 
-    public static String FILTERS_ACTION(String action) {
-        return "filters."+action;
+    public static String RULES_ACTION(String action) {
+        return "rules."+action;
     }
 
 

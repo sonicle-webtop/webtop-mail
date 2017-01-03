@@ -64,7 +64,7 @@ import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.UserProfile.Data;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICalendarUtils;
-import com.sonicle.webtop.mail.bol.OFilter;
+import com.sonicle.webtop.mail.bol.ORule;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OScan;
 import com.sonicle.webtop.mail.bol.OUserMap;
@@ -75,7 +75,7 @@ import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSort;
 import com.sonicle.webtop.mail.bol.model.Identity;
-import com.sonicle.webtop.mail.dal.FilterDAO;
+import com.sonicle.webtop.mail.dal.RuleDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
@@ -6484,23 +6484,20 @@ public class Service extends BaseService {
 	}
 	
 	
-/*    public void processListRules(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getUserProfile();
+    public void processListRules(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+        UserProfile profile=environment.getProfile();
         Locale locale=profile.getLocale();
-        WebTopApp webtopapp=environment.getWebTopApp();
         Connection con=null;
         String context=request.getParameter("context");
         try {
-			String esid = ServletUtils.getStringParameter(request, "esid", true);
-			EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
 			String table = "none";
-			if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-			else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
+			if (context.equals("INBOX")) table = "mail.rules";
+			else if (context.equals("SENT")) table = "mail.sentrules";
 			
-            con=wtd.getConnection();
-            com.sonicle.webtop.sieve.JSonGenerator jsg=new com.sonicle.webtop.sieve.JSonGenerator(context,this,locale,folderPrefix);
-			MailFilters filters=getMailFilters(con, table, profile.getUser(), profile.getIDDomain());
-            StringBuffer sb=jsg.generate(filters);
+            con=getConnection();
+            com.sonicle.webtop.mail.SieveJSonGenerator jsg=new com.sonicle.webtop.mail.SieveJSonGenerator(context,this,locale,folderPrefix);
+			MailRules rules=getMailRules(con, table, profile.getUserId(), profile.getDomainId());
+            StringBuffer sb=jsg.generate(rules);
             String sout=sb.toString();
             out.println(sout);
         } catch(Exception exc) {
@@ -6510,7 +6507,7 @@ public class Service extends BaseService {
         }
     }
 
-    public void processMoveFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+/*    public void processMoveFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         UserProfile profile=environment.getUserProfile();
         WebTopApp webtopapp=environment.getWebTopApp();
         String context=request.getParameter("context");
@@ -6958,7 +6955,7 @@ public class Service extends BaseService {
 		try {
 			UserProfile profile = environment.getProfile();
 			con = getConnection();
-			b = FilterDAO.getInstance().hasFileIntoFolder(con, profile.getDomainId(), profile.getUserId(), foldername);
+			b = RuleDAO.getInstance().hasFileIntoFolder(con, profile.getDomainId(), profile.getUserId(), foldername);
 		} catch (SQLException exc) {
 			logger.error("Error checking File rules on folder {}", foldername, exc);
 		} finally {
@@ -7221,70 +7218,71 @@ public class Service extends BaseService {
 		}
 	}	
 	
-	public MailFilters getMailFilters(Connection con, String filtersTable, String login, String iddomain) throws Exception {
-		MailFilters rfilters = null;
+	public MailRules getMailRules(Connection con, String filtersTable, String login, String iddomain) throws Exception {
+		MailRules rfilters = null;
 		
 		try {
-			List<OFilter> ofilters = FilterDAO.getInstance().selectById(con, iddomain, login);
+			List<ORule> orules = RuleDAO.getInstance().selectById(con, iddomain, login);
 			
-			MailFilters filters = new MailFilters();
+			MailRules filters = new MailRules();
 
-			for (OFilter of: ofilters) {
-				long idfilter = of.getFilterId();
-				String status = of.getStatus();
+			for (ORule or: orules) {
+				long idfilter = or.getRuleId();
+				String status = or.getStatus();
 				//TODO: manage enabled/disabled filters
 				//boolean enabled = of.isEnabled();
-				String action = of.getAction();
-				String actionvalue = of.getActionValue();
+				String action = or.getAction();
+				String actionvalue = or.getActionValue();
 				String operator = "or";
-				if (of.getCondition().equals("ALL")) {
+				if (or.getCondition().equals("ALL")) {
 					operator = "and";
 				}
 				
-				MailFilterConditions mfcs = new MailFilterConditions((int)idfilter, true /*enabled*/, action, actionvalue, operator);
+				MailRuleConditions mfcs = new MailRuleConditions((int)idfilter, true /*enabled*/, action, actionvalue, operator);
 				
-				String fromvalue = of.getFromValue();
+				String fromvalue = or.getFromValue();
 				if (fromvalue != null && fromvalue.trim().length() > 0) {
-					MailFilterCondition mfc = new MailFilterCondition();
-					mfc.setComparison(MailFilterCondition.CONTAINS);
+					MailRuleCondition mfc = new MailRuleCondition();
+					mfc.setComparison(MailRuleCondition.CONTAINS);
 					mfc.setField("from");
 					mfc.setValues(fromvalue, true);
 					mfcs.add(mfc);
 				}
-				String tovalue = of.getToValue();
+				String tovalue = or.getToValue();
 				if (tovalue != null && tovalue.trim().length() > 0) {
-					MailFilterCondition mfc = new MailFilterCondition();
-					mfc.setComparison(MailFilterCondition.CONTAINS);
+					MailRuleCondition mfc = new MailRuleCondition();
+					mfc.setComparison(MailRuleCondition.CONTAINS);
 					mfc.setField("to");
 					mfc.setValues(tovalue, true);
 					mfcs.add(mfc);
 				}
-				String subjectvalue = of.getSubjectValue();
+				String subjectvalue = or.getSubjectValue();
 				if (subjectvalue != null && subjectvalue.trim().length() > 0) {
-					MailFilterCondition mfc = new MailFilterCondition();
-					mfc.setComparison(MailFilterCondition.CONTAINS);
+					MailRuleCondition mfc = new MailRuleCondition();
+					mfc.setComparison(MailRuleCondition.CONTAINS);
 					mfc.setField("subject");
 					mfc.setValues(subjectvalue, false);
 					mfcs.add(mfc);
 				}
-				String sizevalue = of.getSizeValue().toString();
-				String size = of.getSizeMatch();
+				String sizevalue = null;
+				if (or.getSizeValue()!=null) sizevalue=or.getSizeValue().toString();
+				String size = or.getSizeMatch();
 				if (size != null && size.trim().length() > 0 && sizevalue != null && sizevalue.trim().length() > 0) {
-					MailFilterCondition mfc = new MailFilterCondition();
+					MailRuleCondition mfc = new MailRuleCondition();
 					if (size.equals("+")) {
-						mfc.setComparison(MailFilterCondition.GREATERTHAN);
+						mfc.setComparison(MailRuleCondition.GREATERTHAN);
 					} else {
-						mfc.setComparison(MailFilterCondition.LESSTHAN);
+						mfc.setComparison(MailRuleCondition.LESSTHAN);
 					}
 					mfc.setField("size");
 					mfc.setValues(sizevalue, true);
 					mfcs.add(mfc);
 				}
-				String fieldvalue = of.getFieldValue();
-				String fieldname = of.getFieldName();
+				String fieldvalue = or.getFieldValue();
+				String fieldname = or.getFieldName();
 				if (fieldname != null && fieldname.trim().length() > 0 && fieldvalue != null && fieldvalue.trim().length() > 0) {
-					MailFilterCondition mfc = new MailFilterCondition();
-					mfc.setComparison(MailFilterCondition.CONTAINS);
+					MailRuleCondition mfc = new MailRuleCondition();
+					mfc.setComparison(MailRuleCondition.CONTAINS);
 					mfc.setField(fieldname);
 					mfc.setValues(fieldvalue, true);
 					mfcs.add(mfc);

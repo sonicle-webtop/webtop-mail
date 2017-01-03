@@ -102,7 +102,13 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 					valueField: 'id',
 					listeners: {
 						select: {
-							select: { fn: me.contextSelected, scope: me }
+							fn: function(c,r,i) {
+								if (r.get("id")!=me.context) {
+									me.context=r.get("id");
+									me.reloadContext();
+								}
+							}, 
+							scope: me 
 						}
 					}
 				}
@@ -126,7 +132,11 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 			store: {
 				autoLoad: true,
 				model: 'Sonicle.webtop.mail.model.RuleModel',
-				proxy: WTF.apiProxy(me.ID, 'ListRules', 'rules')
+				proxy: WTF.apiProxy(me.mys.ID, 'ListRules', 'rules',{
+					extraParams: {
+						context: me.context
+					}
+				})
 			},
             columns: [
                 {//Row

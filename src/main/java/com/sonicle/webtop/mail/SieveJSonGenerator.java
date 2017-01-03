@@ -46,7 +46,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
  *
  * @author gbulfon
  */
-public class SieveJSonGenerator implements MailFiltersParserListener {
+public class SieveJSonGenerator implements MailRulesParserListener {
 
         String context;
         StringBuffer json=new StringBuffer();
@@ -61,37 +61,37 @@ public class SieveJSonGenerator implements MailFiltersParserListener {
             this.prefix=folderPrefix;
         }
 
-        public StringBuffer generate(MailFilters filters) throws SQLException {
+        public StringBuffer generate(MailRules rules) throws SQLException {
             json.append("{\n");
-            MailFiltersParser.parse(filters,this);
+            MailRulesParser.parse(rules,this);
             return json;
         }
 
-        public void filtersStart() {
-            json.append("  filters: [\n");
+        public void rulesStart() {
+            json.append("  rules: [\n");
         }
 
-        public void filter(int row, MailFilterConditions mfcs) {
+        public void rule(int row, MailRuleConditions mrcs) {
             if (row>0) json.append(",\n");
             
-			long idfilter=mfcs.getIDFilter();
-			boolean enabled=mfcs.isEnabled();
-			String operator=mfcs.getOperator();
-			String action=mfcs.getAction();
-			String actionvalue=mfcs.getActionValue();
+			long rule_id=mrcs.getRuleId();
+			boolean enabled=mrcs.isEnabled();
+			String operator=mrcs.getOperator();
+			String action=mrcs.getAction();
+			String actionvalue=mrcs.getActionValue();
 			
-            int mfcssize=mfcs.size();
-            String condition=ms.lookupResource(locale,MailLocaleKey.FILTERS_IF)+" ";
+            int mfcssize=mrcs.size();
+            String condition=ms.lookupResource(locale,MailLocaleKey.RULES_IF)+" ";
             for(int i=0;i<mfcssize;++i) {
-                if (i>0) condition+=" "+ms.lookupResource(locale,MailLocaleKey.FILTERS_OPERATOR(operator))+" ";
-                MailFilterCondition mfc=mfcs.get(i);
-                condition+=ms.lookupResource(locale,MailLocaleKey.FILTERS_FIELD(mfc.getField()))+" ";
-                condition+=ms.lookupResource(locale,MailLocaleKey.FILTERS_COMPARISON(mfc.getStringComparison()))+" ";
-                ArrayList<String> values=mfc.getValues();
+                if (i>0) condition+=" "+ms.lookupResource(locale,MailLocaleKey.RULES_OPERATOR(operator))+" ";
+                MailRuleCondition mrc=mrcs.get(i);
+                condition+=ms.lookupResource(locale,MailLocaleKey.RULES_FIELD(mrc.getField()))+" ";
+                condition+=ms.lookupResource(locale,MailLocaleKey.RULES_COMPARISON(mrc.getStringComparison()))+" ";
+                ArrayList<String> values=mrc.getValues();
                 int vsize=values.size();
                 if (vsize>1) condition+="(";
                 for(int v=0;v<vsize;++v) {
-                    if (v>0) condition+=" "+ms.lookupResource(locale,MailLocaleKey.FILTERS_OR)+" ";
+                    if (v>0) condition+=" "+ms.lookupResource(locale,MailLocaleKey.RULES_OR)+" ";
                     String value=values.get(v);
                     condition+="\""+value+"\"";
                 }
@@ -99,7 +99,7 @@ public class SieveJSonGenerator implements MailFiltersParserListener {
             }
             condition=StringEscapeUtils.escapeEcmaScript(condition);
 
-            String saction=StringEscapeUtils.escapeEcmaScript(ms.lookupResource(locale, MailLocaleKey.FILTERS_ACTION(action.toLowerCase())));
+            String saction=StringEscapeUtils.escapeEcmaScript(ms.lookupResource(locale, MailLocaleKey.RULES_ACTION(action.toLowerCase())));
             String sactionvalue=" ";
             if (actionvalue!=null && actionvalue.trim().length()>0) {
                 if (action.equals("FILE")) {
@@ -110,10 +110,10 @@ public class SieveJSonGenerator implements MailFiltersParserListener {
             }
             sactionvalue=StringEscapeUtils.escapeEcmaScript(sactionvalue);
 
-            json.append("    { idfilter: "+idfilter+", row: "+(row+1)+", active: "+enabled+", description: '"+condition+"', action: '"+saction+"', value: '"+sactionvalue+"'}");
+            json.append("    { rule_id: "+rule_id+", active: "+enabled+", description: '"+condition+"', action: '"+saction+"', value: '"+sactionvalue+"'}");
         }
 
-        public void filtersEnd(int rows) {
+        public void rulesEnd(int rows) {
             json.append("  ],\n");
             json.append("  totalCount: "+rows+"\n");
             json.append("}\n");
