@@ -32,6 +32,72 @@
  * the words "Powered by Sonicle WebTop".
  */
 
+
+Ext.define('Sonicle.webtop.mail.TreeCombo', {
+	extend: 'Ext.form.field.ComboBox',
+	alias: ['widget.sotreecombo', 'widget.sotreecombobox'],
+	
+	tree: null,
+	
+	createPicker: function() {
+		var me = this;
+
+		if (!me.tree) {
+			var store = new Ext.data.TreeStore({
+				root: {
+					expanded: true,
+					children: [
+						{ text: "Numbers", expanded: false, children: [
+							{ text: '1', leaf: true },
+							{ text: '2', leaf: true },
+							{ text: '3', leaf: true },
+							{ text: '4', leaf: true },
+							{ text: '5', leaf: true },
+						] },
+						{ text: "Letters", expanded: true, children: [
+							{ text: 'A', leaf: true },
+							{ text: 'B', leaf: true },
+							{ text: 'C', leaf: true },
+							{ text: 'D', leaf: true },
+							{ text: 'E', leaf: true },
+						] },
+						{ text: "Colors", expanded: false, children: [
+							{ text: 'Red', leaf: true },
+							{ text: 'Green', leaf: true },
+							{ text: 'Blue', leaf: true }
+						] }
+					]
+				}
+			});
+
+			me.tree = new Ext.tree.Panel({
+				width:  100,
+				//height: 'auto',
+				store:  store,
+
+				rootVisible: false,
+				floating: true,
+				hidden: true,
+				viewConfig: { focusOnToFront: true }
+			});
+
+		}
+		
+		me.tree.pickerField=me;
+		me.tree.refresh=function() {
+			me.tree.store.reload();
+		}
+
+		me.mon(me.tree, {
+			afteritemexpand: me.alignPicker,
+			afteritemcollapse: me.alignPicker,
+			scope:  me
+		});
+
+		return me.tree;
+	}
+});
+
 Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 	extend: 'WTA.sdk.DockableView',
 	requires: [
@@ -41,20 +107,49 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 	dockableConfig: {
 		title: '{rule-editor.tit}',
 		iconCls: 'wt-icon-rules-xs',
+		modal: true,
 		width: 600,
 		height: 450
 	},
 	promptConfirm: false,
 	full: true,
-	modal: true,
 	
 	mys: null,
 	onSender: '',
 	onRecipient: '',
+	action: 'file',
+	condition: 'ANY',
 
 	initComponent: function() {
 		var me = this;
 		Ext.apply(me, {
+			tbar: [
+				{
+					xtype: 'combo',
+					store: new Ext.data.SimpleStore({
+						fields: ['id','desc'],
+						data: [
+							['ANY',me.res("rule-editor-condition-ANY")],
+							['ALL',me.res("rule-editor-condition-ALL")]
+						]
+					}),
+					editable: false,
+					mode: 'local',
+					width:400,
+					listWidth: 400,
+					displayField: 'desc',
+					triggerAction: 'all',
+					value: this.condition,
+					valueField: 'id',
+					listeners: {
+						select: {
+							fn: function(c,r,i) {
+								this.condition=r.get("id");
+							}
+						}
+					}
+				}	
+			],
 			buttons: [
 				{
 					xtype: 'button',
@@ -101,14 +196,26 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 						labelAlign: 'right'
 					},
 					items: [
-						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-from'), width: 300, value: (me.onSender?me.onSender:'') },
-						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-to'), width: 300, value: (me.onRecipient?me.onRecipient:'') },
-						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-subject'), width: 300 }
+						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-from'), width: 500, value: (me.onSender?me.onSender:'') },
+						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-to'), width: 500, value: (me.onRecipient?me.onRecipient:'') },
+						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-subject'), width: 500 }
 					]
 
 				},
                 { border: false, bodyStyle: 'font-size: 20px;', width: 200, html: me.res('rule-editor-then') }, {
-					
+					xtype: 'form',
+					bodyPadding: 10,
+					fieldDefaults: {
+						labelWidth: 150,
+						labelAlign: 'right'
+					},
+					items: [
+						{ xtype: 'sotreecombo', fieldLabel: me.res('rule-editor-fileinto'), width: 550 },
+						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-forward'), width: 550 },
+						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-discard'), width: 550 },
+						{ xtype: 'textarea', fieldLabel: me.res('rule-editor-reject'), width: 550, height: 80 }
+					]
+
 				}
             ]
 			

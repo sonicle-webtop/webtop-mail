@@ -513,8 +513,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 														viewCfg: {
 															mys: me.mys,
 															html: sel.html,
-															fn: function(html) {
-																me.addQuickPart(id,html)
+															listeners: {
+																viewok: function(s,html) {
+																	me.addQuickPart(id,html);
+																}
 															}
 														}
 													}).show();

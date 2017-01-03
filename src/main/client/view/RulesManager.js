@@ -217,8 +217,8 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 							listeners: {
 								change: {
 									fn: function(r,v) {
-										me.getRef("vtextmsg").setDisabled(!v);
-										me.getRef("vtextaddr").setDisabled(!v);
+										me.lref("vtextmsg").setDisabled(!v);
+										me.lref("vtextaddr").setDisabled(!v);
 										me.vactive=v;
 									}
 								}
@@ -232,21 +232,23 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 						}
 					]
                 },
-                me.addRef("vtextmsg",Ext.create({
+                {
 					xtype: 'textarea',
-					width: 400,
+					reference: "vtextmsg",
+					width: 600,
 					height: 80,
 					fieldLabel: me.res('rules-manager-vacation-message'),
 					value: me.vmessage,
 					disabled: !me.vactive
-				})),
-                me.addRef("vtextaddr",Ext.create({
+				},
+                {
 					xtype: 'textfield',
-					width: 400,
+					reference: "vtextaddr",
+					width: 600,
 					fieldLabel: me.res('rules-manager-vacation-addresses'),
 					value: me.vaddresses,
 					disabled: !me.vactive
-				})),
+				},
             ]
 		});
 	},

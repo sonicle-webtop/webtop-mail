@@ -41,20 +41,16 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 	dockableConfig: {
 		title: '{editor.btn-quickpart.tit}',
 		iconCls: 'wtmail-icon-format-quickpart-xs',
+		modal: true,
 		width: 400,
 		height: 300
 	},
 	promptConfirm: false,
 	full: true,
-	modal: true,
 	
 	mys: null,
 	html: '',
-	fn: null,
-	scope: null,
 	
-	htmlEditor: null,
-
 	initComponent: function() {
 		var me = this;
 		Ext.apply(me, {
@@ -63,7 +59,7 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 					text: 'Ok',
 					width: 100,
 					handler: function() {
-						if (me.fn) me.fn.call(me.scope||me,me.htmlEditor.getValue());
+						me.fireEvent('viewok', me,me.lref("fldhtmleditor").getValue());
 						me.closeView(false);
 					}
 				})
@@ -72,8 +68,9 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 		
 		me.callParent(arguments);
 		
-		me.htmlEditor=Ext.create({
+		me.add({
 			xtype: 'wthtmleditor',
+			reference: 'fldhtmleditor',
 			region: 'center',
 			enableFont: true,
 			enableFontSize: true,
@@ -86,7 +83,6 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 			enableClean: false,
 			initialContent: me.html
 		});
-		me.add(me.htmlEditor);
 	}
 	
 });
