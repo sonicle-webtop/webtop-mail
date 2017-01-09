@@ -80,37 +80,53 @@ public class SieveJSonGenerator implements MailRulesParserListener {
 			String action=mrcs.getAction();
 			String actionvalue=mrcs.getActionValue();
 			
-            int mfcssize=mrcs.size();
-            String condition=ms.lookupResource(locale,MailLocaleKey.RULES_IF)+" ";
+            //String saction=StringEscapeUtils.escapeEcmaScript(ms.lookupResource(locale, MailLocaleKey.RULES_ACTION(action.toLowerCase())));
+            //String sactionvalue=" ";
+            //if (actionvalue!=null && actionvalue.trim().length()>0) {
+            //    if (action.equals("FILE")) {
+            //        if (actionvalue.startsWith(prefix)) sactionvalue=actionvalue.substring(prefix.length());
+            //    } else if (action.equals("REJECT")) {
+            //        sactionvalue=actionvalue;
+            //    }
+            //}
+            //sactionvalue=StringEscapeUtils.escapeEcmaScript(sactionvalue);
+			
+			String condition=mrcs.getOperator().equals("or")?"ANY":"ALL";
+
+			String rjson="    {"+
+					" rule_id: "+rule_id+","+
+					" active: "+enabled+","+
+					" condition: '"+condition+"',"+
+					" action: '"+action+"',"+
+					" value: '"+actionvalue+"',";
+			
+			int mfcssize=mrcs.size();
+            String description=ms.lookupResource(locale,MailLocaleKey.RULES_IF)+" ";
             for(int i=0;i<mfcssize;++i) {
-                if (i>0) condition+=" "+ms.lookupResource(locale,MailLocaleKey.RULES_OPERATOR(operator))+" ";
+                if (i>0) description+=" "+ms.lookupResource(locale,MailLocaleKey.RULES_OPERATOR(operator))+" ";
                 MailRuleCondition mrc=mrcs.get(i);
-                condition+=ms.lookupResource(locale,MailLocaleKey.RULES_FIELD(mrc.getField()))+" ";
-                condition+=ms.lookupResource(locale,MailLocaleKey.RULES_COMPARISON(mrc.getStringComparison()))+" ";
+				String field=mrc.getField();
+				String stringComparison=mrc.getStringComparison();
+                description+=ms.lookupResource(locale,MailLocaleKey.RULES_FIELD(field))+" ";
+                description+=ms.lookupResource(locale,MailLocaleKey.RULES_COMPARISON(stringComparison))+" ";
                 ArrayList<String> values=mrc.getValues();
                 int vsize=values.size();
-                if (vsize>1) condition+="(";
+                if (vsize>1) description+="(";
                 for(int v=0;v<vsize;++v) {
-                    if (v>0) condition+=" "+ms.lookupResource(locale,MailLocaleKey.RULES_OR)+" ";
+                    if (v>0) description+=" "+ms.lookupResource(locale,MailLocaleKey.RULES_OR)+" ";
                     String value=values.get(v);
-                    condition+="\""+value+"\"";
+                    description+="\""+value+"\"";
                 }
-                if (vsize>1) condition+=")";
+                if (vsize>1) description+=")";
+				
+				rjson+=" "+field+": '"+StringEscapeUtils.escapeEcmaScript(mrc.getStringValues())+"',";
             }
-            condition=StringEscapeUtils.escapeEcmaScript(condition);
+            description=StringEscapeUtils.escapeEcmaScript(description);
+			
+			rjson+=" description: '"+description+"' }";
 
-            String saction=StringEscapeUtils.escapeEcmaScript(ms.lookupResource(locale, MailLocaleKey.RULES_ACTION(action.toLowerCase())));
-            String sactionvalue=" ";
-            if (actionvalue!=null && actionvalue.trim().length()>0) {
-                if (action.equals("FILE")) {
-                    if (actionvalue.startsWith(prefix)) sactionvalue=actionvalue.substring(prefix.length());
-                } else if (action.equals("REJECT")) {
-                    sactionvalue=actionvalue;
-                }
-            }
-            sactionvalue=StringEscapeUtils.escapeEcmaScript(sactionvalue);
 
-            json.append("    { rule_id: "+rule_id+", active: "+enabled+", description: '"+condition+"', action: '"+saction+"', value: '"+sactionvalue+"'}");
+            json.append(rjson);
         }
 
         public void rulesEnd(int rows) {

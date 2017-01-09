@@ -80,7 +80,7 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 					tooltip: WT.res('act-delete.lbl'),
 					handler: me.actionDelete,
 					scope: me
-				},
+				}/*,
 				'-',
 				me.res('rules-manager-context-label'),
 				{
@@ -111,7 +111,7 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 							scope: me 
 						}
 					}
-				}
+				}*/
 			]
 		});
 		
@@ -119,6 +119,7 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 		
         me.add({
 			xtype: 'gridpanel',
+			reference: 'grdRules',
 			selModel: {
 				type: 'sorowmodel',
 				mode: 'MULTI',
@@ -128,7 +129,25 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 			},
 			multiColumnSort: false,
             region: "center",
-            //plugins: [gddro],
+			viewConfig: {
+				plugins: {
+					ptype: 'gridviewdragdrop',
+					dragGroup: 'ddRules',
+					dropGroup: 'ddRules'
+				}/*,
+				listeners: {
+					drop: function(node, data, dropRec, dropPosition) {
+						if (dropRec) {
+							var s=dropRec.store,
+								ix=s.indexOf(dropRec);
+							if (dropPosition==='after') ++ix;
+							
+							dropRec.store.remove(data.records);
+							dropRec.store.insert(ix,data.records);
+						}
+					}
+				}*/
+			},
 			store: {
 				autoLoad: true,
 				model: 'Sonicle.webtop.mail.model.RuleModel',
@@ -143,14 +162,24 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
                     header: ' ',
                     width: 24,
                     sortable: false,
-                    dataIndex: 'row',
-                    align: 'right'
+                    dataIndex: 'rule_id',
+                    align: 'right',
+					hidden: true
                 },{//Active
+					xtype: 'soiconcolumn',
+					stopSelection: true,
                     header: ' ',
-                    width: 24,
+                    width: 30,
                     sortable: false,
                     menuDisabled: true,
                     dataIndex: 'active',
+					getIconCls: function(value,rec) {
+						return WTF.cssIconCls(WT.XID, 'traffic-light-'+(value?'green':'red'), 'xs');
+					},
+					handler: function(grid, rix, cix, e, rec) {
+						var active=!rec.get('active');
+						rec.set("active",active);
+					}
                     /*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
                         metadata.css=value?"iconOn":"iconOff";
                         return " ";
@@ -159,12 +188,21 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
                     header: me.res("rules-manager-column-description"),
                     width: 325,
                     sortable: false,
-                    dataIndex: 'description'
+					renderer: function(v,md,r,ri,ci,s) {
+						var val=me._appendConditionDescription(r,"from","",true);
+						val=me._appendConditionDescription(r,"to",val,true);
+						val=me._appendConditionDescription(r,"subject",val,false);
+						
+						return val;
+					}
                 },{//Action
                     header: me.res("rules-manager-column-action"),
-                    width: 60,
+                    width: 80,
                     sortable: false,
-                    dataIndex: 'action'
+                    dataIndex: 'action',
+					renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+						return me.res("rule-editor-"+value.toLowerCase());
+					}
                 },{//Value
                     header: me.res("rules-manager-column-value"),
                     width: 225,
@@ -173,10 +211,14 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
                 }
             ],
 			listeners: {
-				cellclick: { fn: me.cellClicked, scope: me },
-				rowdblclick: { fn: me.rowDblClicked, scope: me },
-				render: function(g,opts) {
-					var map = new Ext.util.KeyMap({
+				rowdblclick: {
+					fn: function(g,r) {
+						me.actionEdit(r);
+					}
+				},
+				render: {
+					fn: function(g,opts) {
+						var map = new Ext.util.KeyMap({
 							target: g.getEl(),
 							binding: [
 								{
@@ -187,8 +229,10 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 									}
 								}
 							]
-						});		
+						});
+					}
 				}
+				
 			}
         });
         me.add({
@@ -268,9 +312,66 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 		
 		WT.createView(me.mys.ID,'view.RuleEditor',{
 			viewCfg: {
-				mys: me
+				mys: me,
+				store: me.lref('grdRules').getStore()
 			}
 		}).show();
+	},
+	
+	actionEdit: function(r) {
+		var me=this;
+		
+		WT.createView(me.mys.ID,'view.RuleEditor',{
+			viewCfg: {
+				mys: me,
+				record: r
+			}
+		}).show();
+	},
+	
+	actionDelete: function() {
+		var me=this,
+			grid=me.lref("grdRules"),
+			sel=grid.getSelection();
+	
+		if (sel) {
+			grid.getStore().remove(sel);
+		}
+	},
+	
+	_appendConditionDescription: function(r,f,v,spaces) {
+		var me=this,fv=r.get(f);
+		if (fv && !Ext.isEmpty(fv)) {
+			if (Ext.isEmpty(v)) v=me.res("rule-editor-if")+" ";
+			else v+=" "+(r.get("condition")==='ANY'?me.res("rule-editor-or"):me.res("rule-editor-and"))+" ";
+		
+			v+=me.res("rules-manager-"+f)+" ";
+			
+			var regex="[\\s,\\,\\;]";
+			if (!spaces) regex="\\z";
+			if (fv.indexOf('"')>=0) regex="\"";
+			var tokens=fv.split(regex),
+			    brkts=tokens.length>1;
+			if (brkts) v+="(";
+			
+			var vv="";
+			Ext.each(tokens,function(ttoken,ix) {
+				ttoken=ttoken.trim();
+				if (ttoken.length>0) {
+				  if (ttoken.charAt(0)===',' || ttoken.charAt(0)===';')
+					ttoken=ttoken.substring(1);
+				  if (ttoken.length>0) {
+					  if (!Ext.isEmpty(vv)) vv+=" "+me.res("rule-editor-or")+" ";
+					  vv+='"'+ttoken+'"';
+				  }
+				}
+			});
+			v+=vv;
+			if (brkts) v+=")";
+			
+		}
+		
+		return v;
 	},
 	
 	res: function(key) {

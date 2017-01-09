@@ -7230,7 +7230,7 @@ public class Service extends BaseService {
 				long idfilter = or.getRuleId();
 				String status = or.getStatus();
 				//TODO: manage enabled/disabled filters
-				//boolean enabled = of.isEnabled();
+				boolean enabled = status.equals("E");
 				String action = or.getAction();
 				String actionvalue = or.getActionValue();
 				String operator = "or";
@@ -7238,7 +7238,7 @@ public class Service extends BaseService {
 					operator = "and";
 				}
 				
-				MailRuleConditions mfcs = new MailRuleConditions((int)idfilter, true /*enabled*/, action, actionvalue, operator);
+				MailRuleConditions mfcs = new MailRuleConditions((int)idfilter, enabled, action, actionvalue, operator);
 				
 				String fromvalue = or.getFromValue();
 				if (fromvalue != null && fromvalue.trim().length() > 0) {

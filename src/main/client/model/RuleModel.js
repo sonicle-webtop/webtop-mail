@@ -34,14 +34,18 @@
 
 Ext.define('Sonicle.webtop.mail.model.RuleModel', {
     extend: 'WTA.model.Base',
-    idProperty: 'row',
+//    idProperty: 'rule_id',
 	
 	fields: [
-		{name:'rule_id', type:'int'},
+//		{name:'rule_id', type:'int'},
 		{name:'active', type:'boolean'},
-		'description',
+		'condition',
 		'action',
-		'value'
+		'value',
+		'from',
+		'to',
+		'subject',
+		'description'
 	]
 });
 

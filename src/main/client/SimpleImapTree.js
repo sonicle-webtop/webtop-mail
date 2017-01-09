@@ -59,7 +59,8 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 				editor: 'textfield'
 			},
 			{
-				text: 'Unread', 
+				//text: 'Unread', 
+				header: WTF.headerWithGlyphIcon('fa fa-eye'),
 				dataIndex: 'unread',
 				align: 'right',
 				flex: 1,
