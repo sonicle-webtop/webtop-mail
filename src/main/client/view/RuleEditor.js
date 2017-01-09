@@ -51,10 +51,8 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 	full: true,
 	
 	mys: null,
-	onSender: '',
-	onRecipient: '',
-	action: 'file',
-	condition: 'ANY',
+	record: null,
+	store: null,
 
 	initComponent: function() {
 		var me = this;
@@ -62,6 +60,7 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 			tbar: [
 				{
 					xtype: 'combo',
+					reference: "cboCondition",
 					store: new Ext.data.SimpleStore({
 						fields: ['id','desc'],
 						data: [
@@ -75,7 +74,7 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 					listWidth: 400,
 					displayField: 'desc',
 					triggerAction: 'all',
-					value: this.condition,
+					value: me.record?me.record.get("condition"):'ANY',
 					valueField: 'id',
 					listeners: {
 						select: {
@@ -92,7 +91,33 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 					text: WT.res('act-ok.lbl'),
 					width: 100,
 					handler: function() {
+						var r=me.record,s=me.store;
+							action=me.lref("grpActions").getValue().ruleaction,
+							value=me.lref("fld"+action).getValue(),
+							condition=me.lref('cboCondition').getValue(),
+							from=me.lref('fldFrom').getValue(),
+							to=me.lref('fldTo').getValue(),
+							subject=me.lref('fldSubject').getValue();
+							
 						if (me.fn) me.fn.call(me.scope||me,true);
+						if (r) {
+							r.set('condition',condition);
+							r.set('action',action);
+							r.set('value',value);
+							r.set('from',from);
+							r.set('to',to);
+							r.set('subject',subject);
+						} else {
+							s.add({
+								active: true,
+								condition: condition,
+								action: action,
+								value: value,
+								from: from,
+								to: to,
+								subject: subject
+							});
+						}
 						me.closeView(false);
 					}
 				},
@@ -124,48 +149,163 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
                 }
 			},
             items: [
-                { border: false, bodyStyle: 'font-size: 20px;', width: 150, html: me.res('rule-editor-if') }, {
+                { border: false, bodyStyle: 'font-size: 20px;', width: 100, html: me.res('rule-editor-if') }, {
 					xtype: 'form',
+					border: true,
 					bodyPadding: 10,
 					fieldDefaults: {
 						labelWidth: 150,
 						labelAlign: 'right'
 					},
 					items: [
-						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-from'), width: 400, value: (me.onSender?me.onSender:'') },
-						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-to'), width: 400, value: (me.onRecipient?me.onRecipient:'') },
-						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-subject'), width: 400 }
+						{ xtype: 'textfield', reference: 'fldFrom', fieldLabel: me.res('rule-editor-from'), width: 400, value: (me.record?me.record.get("from"):'') },
+						{ xtype: 'textfield', reference: 'fldTo', fieldLabel: me.res('rule-editor-to'), width: 400, value: (me.record?me.record.get("to"):'') },
+						{ xtype: 'textfield', reference: 'fldSubject', fieldLabel: me.res('rule-editor-subject'), width: 400, value: (me.record?me.record.get("subject"):'') }
 					]
 
 				},
-                { border: false, bodyStyle: 'font-size: 20px;', width: 150, html: me.res('rule-editor-then') }, {
-					xtype: 'form',
-					bodyPadding: 10,
-					fieldDefaults: {
-						labelWidth: 150,
-						labelAlign: 'right'
-					},
+                { border: false, bodyStyle: 'font-size: 20px;', width: 100, html: me.res('rule-editor-then') }, {
+					xtype: 'radiogroup',
+					reference: 'grpActions',
+					border: true,
+					padding: 10,
+					columns: [300],
 					items: [
-						{ xtype: 'sotreecombo', fieldLabel: me.res('rule-editor-fileinto'), width: 450,
-							store: Ext.create('Ext.data.TreeStore', {
-								model: 'Sonicle.webtop.mail.model.ImapTreeModel',
-								proxy: WTF.proxy(me.mys.ID,'GetImapTree'),
-								root: {
-									text: 'Imap Tree',
-									expanded: true
+						{
+							xtype: 'fieldcontainer',
+							layout: 'hbox',
+							padding: 10,
+							getFormId: function() { return null; },
+							items: [	
+								{
+									xtype: 'radio',
+									reference: 'rdoFile',
+									checked: true,
+									boxLabel: me.res('rule-editor-file'),
+									name: "ruleaction",
+									inputValue: 'FILE',
+									width: 100
 								},
-								rootVisible: false
-							})
+								{ 
+									xtype: 'sotreecombo',
+									reference: 'fldFILE',
+									width: 300,
+									store: Ext.create('Ext.data.TreeStore', {
+										model: 'Sonicle.webtop.mail.model.ImapTreeModel',
+										proxy: WTF.proxy(me.mys.ID,'GetImapTree'),
+										root: {
+											text: 'Imap Tree',
+											expanded: true
+										},
+										rootVisible: false
+									}),
+									value: '',
+									listeners: {
+										focus: {
+											fn: function() {
+												me.lref('rdoFile').setValue(true);
+											}
+										}
+									}
+								}
+							]
 						},
-						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-forward'), width: 450 },
-						{ xtype: 'textfield', fieldLabel: me.res('rule-editor-discard'), width: 450 },
-						{ xtype: 'textarea', fieldLabel: me.res('rule-editor-reject'), width: 450, height: 80 }
+						{
+							xtype: 'fieldcontainer',
+							layout: 'hbox',
+							padding: 10,
+							getFormId: function() { return null; },
+							items: [
+								{
+									xtype: 'radio',
+									reference: 'rdoForward',
+									checked: false,
+									boxLabel: me.res('rule-editor-forward'),
+									name: "ruleaction",
+									inputValue: 'FORWARD',
+									width: 100
+								},
+								{
+									xtype: 'textfield', 
+									reference: 'fldFORWARD',
+									value: '',
+									width: 300 ,
+									listeners: {
+										focus: {
+											fn: function() {
+												me.lref('rdoForward').setValue(true);
+											}
+										}
+									}
+								}
+							]
+						},
+						{
+							xtype: 'fieldcontainer',
+							layout: 'hbox',
+							padding: 10,
+							getFormId: function() { return null; },
+							items: [
+								{
+									xtype: 'radio',
+									checked: false,
+									boxLabel: me.res('rule-editor-discard'),
+									name: "ruleaction",
+									inputValue: 'DISCARD',
+									width: 100
+								},
+								{
+									xtype: 'textfield', 
+									reference: 'fldDISCARD',
+									value: '',
+									width: 300,
+									hidden: true
+								}
+							]
+						},
+						{
+							xtype: 'fieldcontainer',
+							layout: 'hbox',
+							padding: 10,
+							getFormId: function() { return null; },
+							items: [
+								{
+									xtype: 'radio',
+									reference: 'rdoReject',
+									checked: false,
+									boxLabel: me.res('rule-editor-reject'),
+									name: "ruleaction",
+									inputValue: 'REJECT',
+									width: 100
+								},
+								{
+									xtype: 'textarea', 
+									reference: 'fldREJECT',
+									value: '',
+									width: 300,
+									height: 80,
+									listeners: {
+										focus: {
+											fn: function() {
+												me.lref('rdoReject').setValue(true);
+											}
+										}
+									}
+								}
+							]
+						}
 					]
 
 				}
             ]
 			
 		});
+		
+		if (me.record) {
+			var action=me.record.get('action');
+			me.lref("grpActions").setValue({ ruleaction: action });
+			me.lref("fld"+action).setValue(me.record.get("value"));
+		}
 	},
 	
 	res: function(key) {
