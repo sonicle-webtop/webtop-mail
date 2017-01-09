@@ -128,7 +128,7 @@ public class MailUserProfile {
 				if (mailHost==null) mailHost=mss.getDefaultHost();
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
-				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId()+"@"+ad.getInternetDomain();
+				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId()+"@"+ad.getInternetName();
 				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
 			}
 			
