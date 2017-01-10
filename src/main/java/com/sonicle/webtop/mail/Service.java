@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.google.gson.Gson;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.CoreLocaleKey;
 import com.sonicle.commons.LangUtils;
@@ -68,17 +69,20 @@ import com.sonicle.webtop.mail.bol.ORule;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OScan;
 import com.sonicle.webtop.mail.bol.OUserMap;
+import com.sonicle.webtop.mail.bol.OVacation;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
+import com.sonicle.webtop.mail.bol.js.JsRule;
 import com.sonicle.webtop.mail.bol.js.JsSort;
 import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.RuleDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
+import com.sonicle.webtop.mail.dal.VacationDAO;
 // TODO: Fix imported classes
 //import com.sonicle.webtop.Mailcard;
 //import com.sonicle.webtop.EditingSession;
@@ -6506,266 +6510,57 @@ public class Service extends BaseService {
             if (con!=null) try { con.close(); } catch(Exception e) {}
         }
     }
-
-/*    public void processMoveFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getUserProfile();
-        WebTopApp webtopapp=environment.getWebTopApp();
-        String context=request.getParameter("context");
-        //String table="none";
-        //if (context.equals("INBOX")) table="mailfilters";
-        //else if (context.equals("SENT")) table="mailsentfilters";
-        String login=profile.getUser();
-        String pids[]=request.getParameterValues("ids");
-        String ptoid=request.getParameter("toid");
-        int toid=Integer.parseInt(ptoid);
-        int ids[]=new int[pids.length];
-        for(int i=0;i<pids.length;++i)  ids[i]=Integer.parseInt(pids[i]);
-        Arrays.sort(ids);
+	
+	public void processSaveRules(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+        UserProfile profile=environment.getProfile();
         Connection con=null;
-        Statement stmt=null;
-        Statement ustmt=null;
-        ResultSet rs=null;
-        String sout;
+		
         try {
-			String esid = ServletUtils.getStringParameter(request, "esid", true);
-			EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-			String table = "none";
-			if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-			else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
+            con=WT.getConnection(this.SERVICE_ID,false);
 			
-            con=wtd.getConnection();
-            stmt=con.createStatement();
-            ustmt=con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
-            String sql;
-            //temporarily updates ids to -n,...,-1 where -n is first in ids
-            for(int i=0;i<ids.length;++i) {
-                sql="update "+table+" set idfilter="+(-ids.length+i)+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter="+ids[i];
-                stmt.executeUpdate(sql);
-            }
-            //nstart is toid or next one depending on direction
-            boolean backward=toid<ids[0];
-            int nstart=(backward?toid:toid+1);
-            //shift last ids to an impossible range, reversed (-10000 and over)
-            sql="update "+table+" set idfilter=(-10000-idfilter) where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter>="+nstart;
-            stmt.executeUpdate(sql);
-
-            //renumber from first in ids to nstart-1 (in case selection is moved forward)
-            if (!backward) {
-                int n=ids[0];
-                for(int i=ids[0];i<nstart;++i) {
-                    sql="update "+table+" set idfilter="+n+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter="+i;
-                    n+=stmt.executeUpdate(sql);
-                }
-                nstart=n;
-            }
-            //move temporary records to its new place
-            for(int i=0;i<ids.length;++i) {
-                sql="update "+table+" set idfilter="+(nstart+i)+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter="+(-ids.length+i);
-                stmt.executeUpdate(sql);
-            }
-            //renumber last ids, select reversed to get original order
-            rs=ustmt.executeQuery("select iddomain,idfilter,login from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter<=-10000 order by idfilter desc");
-            int n=nstart+ids.length;
-            while(rs.next()) {
-                rs.updateInt("idfilter",n++);
-                rs.updateRow();
-            }
-            rs.close();
-            ustmt.close();
-            stmt.close();
-            con.commit();
-            //suggest new selection indexes, 0 based
-            int n1=nstart-1;
-            int n2=(nstart+ids.length-1)-1;
-            sout="{\nresult: true, n1:"+n1+", n2:"+n2+"\n}";
-        } catch(Exception exc) {
-            logger.error("Exception",exc);
-            sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
-        } finally {
-            if (rs!=null) try { rs.close(); } catch(Exception e) {}
-            if (ustmt!=null) try { ustmt.close(); } catch(Exception e) {}
-            if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-            if (con!=null) try { con.close(); } catch(Exception e) {}
-        }
-        out.println(sout);
-    }
-
-    public void processDeleteFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getUserProfile();
-        WebTopApp webtopapp=environment.getWebTopApp();
-        String context=request.getParameter("context");
-        //String table="none";
-        //if (context.equals("INBOX")) table="mailfilters";
-        //else if (context.equals("SENT")) table="mailsentfilters";
-        String login=profile.getUser();
-        String pids[]=request.getParameterValues("ids");
-        int ids[]=new int[pids.length];
-        for(int i=0;i<pids.length;++i)  ids[i]=Integer.parseInt(pids[i]);
-        Arrays.sort(ids);
-        Connection con=null;
-        Statement stmt=null;
-        Statement ustmt=null;
-        ResultSet rs=null;
-        String sout;
-        try {
-			String esid = ServletUtils.getStringParameter(request, "esid", true);
-			EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-			String table = "none";
-			if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-			else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
+			JsRule.List jsrules=JsonResult.GSON.fromJson(ServletUtils.getStringParameter(request,"rules",true), JsRule.List.class);
+			OVacation vitem=new OVacation();
+			vitem.setDomainId(profile.getDomainId());
+			vitem.setUserId(profile.getUserId());
+			vitem.setActive(ServletUtils.getBooleanParameter(request, "venabled", false));
+			vitem.setMessage(ServletUtils.getStringParameter(request, "vmessage", ""));
+			vitem.setAddresses(ServletUtils.getStringParameter(request, "vaddresses", profile.getEmailAddress()));
 			
-            con=wtd.getConnection();
-            stmt=con.createStatement();
-            ustmt=con.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE,ResultSet.CONCUR_UPDATABLE);
-            String sql="delete from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter in (";
-            for(int i=0;i<ids.length;++i) {
-                if (i>0) sql+=",";
-                sql+=ids[i];
-            }
-            sql+=")";
-            stmt.executeUpdate(sql);
-            //renumber from first deleted to last available
-            int n=ids[0];
-            rs=ustmt.executeQuery("select iddomain,idfilter,login from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter>"+n);
-            while(rs.next()) {
-                rs.updateInt("idfilter", n++);
-                rs.updateRow();
-            }
-            rs.close();
-            ustmt.close();
-            stmt.close();
-            con.commit();
-            sout="{\nresult: true\n}";
-        } catch(Exception exc) {
-            logger.error("Exception",exc);
-            sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
-        } finally {
-            if (rs!=null) try { rs.close(); } catch(Exception e) {}
-            if (ustmt!=null) try { ustmt.close(); } catch(Exception e) {}
-            if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-            if (con!=null) try { con.close(); } catch(Exception e) {}
-        }
-        out.println(sout);
-    }
+			RuleDAO.getInstance().deleteByUserId(con, profile.getDomainId(), profile.getUserId());
+			long rule_id=0;
+			for(JsRule jsrule: jsrules) {
+				ORule orule=new ORule();
+				orule.setDomainId(profile.getDomainId());
+				orule.setUserId(profile.getUserId());
+				orule.setRuleId(++rule_id);
+				orule.setAction(jsrule.action);
+				orule.setActionValue(jsrule.value);
+				orule.setCondition(jsrule.condition);
+				orule.setFromValue(jsrule.from);
+				orule.setStatus(jsrule.active?"E":"D");
+				orule.setSubjectValue(jsrule.subject);
+				orule.setToValue(jsrule.to);
+				orule.setContinue("N");
+				orule.setKeepCopy("N");
+				RuleDAO.getInstance().insert(con, orule);
+			}
 
-    public void processSetFiltersStatus(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getUserProfile();
-        WebTopApp webtopapp=environment.getWebTopApp();
-        String context=request.getParameter("context");
-        //String table="none";
-        //if (context.equals("INBOX")) table="mailfilters";
-        //else if (context.equals("SENT")) table="mailsentfilters";
-        String login=profile.getUser();
-        String pids[]=request.getParameterValues("ids");
-        String status=request.getParameter("status");
-        Connection con=null;
-        Statement stmt=null;
-        ResultSet rs=null;
-        String sout;
-        try {
-			String esid = ServletUtils.getStringParameter(request, "esid", true);
-			EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-			String table = "none";
-			if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-			else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
+			VacationDAO.getInstance().deleteByUserId(con, profile.getDomainId(), profile.getUserId());
+			VacationDAO.getInstance().insert(con, vitem);
 			
-            con=wtd.getConnection();
-            stmt=con.createStatement();
-            String sql="update "+table+" set status='"+status+"' where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter in (";
-            for(int i=0;i<pids.length;++i) {
-                if (i>0) sql+=",";
-                sql+=pids[i];
-            }
-            sql+=")";
-            stmt.executeUpdate(sql);
-            stmt.close();
-            con.commit();
-            sout="{\nresult: true\n}";
+			DbUtils.commitQuietly(con);
+
+            new JsonResult().printTo(out);
         } catch(Exception exc) {
+			DbUtils.rollbackQuietly(con);
+            new JsonResult(exc).printTo(out);
             logger.error("Exception",exc);
-            sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
         } finally {
-            if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-            if (con!=null) try { con.close(); } catch(Exception e) {}
+			DbUtils.closeQuietly(con);
         }
-        out.println(sout);
-    }
-
-    public void processSaveFilter(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getUserProfile();
-        WebTopApp webtopapp=environment.getWebTopApp();
-        String context=request.getParameter("context");
-        //String table="none";
-        //if (context.equals("INBOX")) table="mailfilters";
-        //else if (context.equals("SENT")) table="mailsentfilters";
-        String login=profile.getUser();
-        String sidfilter=request.getParameter("idfilter");
-        int idfilter=0;
-        if (sidfilter!=null && sidfilter.trim().length()>0) idfilter=Integer.parseInt(sidfilter);
-        int newidfilter=0;
-        String action=request.getParameter("filteraction").toUpperCase();
-        String actionvalue=request.getParameter("actionvalue");
-
-        Connection con=null;
-        Statement stmt=null;
-        ResultSet rs=null;
-        String sout;
-        try {
-			String esid = ServletUtils.getStringParameter(request, "esid", true);
-			EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-			String table = "none";
-			if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-			else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
-			
-            con=wtd.getConnection();
-            stmt=con.createStatement();
-
-            String sql;
-            if (idfilter>0) {
-              sql="delete from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+profile.getUser()+"' and idfilter="+idfilter;
-              stmt.executeUpdate(sql);
-              newidfilter=idfilter;
-            } else {
-              sql="select max(idfilter) as newidfilter from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+profile.getUser()+"'";
-              rs=stmt.executeQuery(sql);
-              rs.next();
-              newidfilter=rs.getInt("newidfilter")+1;
-              rs.close();
-            }
-
-            sql="insert into "+table+" ("+
-               "iddomain,login,idfilter,status,continue,keepcopy,condition,"+
-               "fromvalue,tovalue,subjectvalue,"+
-               "action,actionvalue"+
-              ") values ("+
-               "'"+wtd.getDataIDDomain()+"',"+
-               "'"+profile.getUser()+"',"+
-               newidfilter+","+
-               "'E','N','N',"+
-               "'"+request.getParameter("condition")+"',"+
-               "'"+Utils.getSQLString(request.getParameter("fromvalue"))+"',"+
-               "'"+Utils.getSQLString(request.getParameter("tovalue"))+"',"+
-               "'"+Utils.getSQLString(request.getParameter("subjectvalue"))+"',"+
-               "'"+action+"',"+
-               "'"+Utils.getSQLString(actionvalue)+"'"+
-              ")";
-            stmt.executeUpdate(sql);
-
-            stmt.close();
-            con.commit();
-            sout="{\nresult: true\n}";
-        } catch(Exception exc) {
-            logger.error("Exception",exc);
-            sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
-        } finally {
-            if (rs!=null) try { rs.close(); } catch(Exception e) {}
-            if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-            if (con!=null) try { con.close(); } catch(Exception e) {}
-        }
-        out.println(sout);
-    }
-
-    public void processApplyFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+	}
+	
+/*    public void processApplyFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         UserProfile profile=environment.getUserProfile();
         String login=profile.getUser();
 		String iddomain=wtd.getDataIDDomain();
@@ -6832,122 +6627,7 @@ public class Service extends BaseService {
         }
         out.println(sout);
     }
-	
-	public void processManageMailFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String crud = null;
-		Connection con = null;
-		UserProfile profile = environment.getUserProfile();
-		//WebTopSession wts = environment.getWebTopSession();
-		
-		try {
-			crud = ServletUtils.getStringParameter(request, "crud", true);
-			con = this.wtd.getConnection();
-			
-			if(crud.equals(Crud.BEGIN)) {
-				EditingSession es = wts.registerEditing(EditingSession.Scope.SESSION, "mailfilters", null, "Regole Messaggi");
-				try {
-					con.setAutoCommit(false);
-					TempTable tt1 = es.addTempTable(con, "mailfilters");
-					TempTable tt2 = es.addTempTable(con, "mailsentfilters");
-					InboxMailFiltersDb.copyToTemp(con, tt1.tableName, profile.getIDDomain(), profile.getUser());
-					SentMailFiltersDb.copyToTemp(con, tt2.tableName, profile.getIDDomain(), profile.getUser());
-					con.commit();
-					new JsonResult(es.id).printTo(out);
-				} catch(Exception ex1) {
-					con.rollback();
-					wts.unregisterEditing(es);
-					throw ex1;
-				}
-					
-			} else if(crud.equals(Crud.SAVE)) {
-				String esid = ServletUtils.getStringParameter(request, "esid", true);
-				EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-				
-				try {
-					con.setAutoCommit(false);
-					InboxMailFiltersDb.deleteByDomainUser(con, profile.getIDDomain(), profile.getUser());
-					SentMailFiltersDb.deleteByDomainUser(con, profile.getIDDomain(), profile.getUser());
-					es.copyBackTempTable(con, "mailfilters");
-					es.copyBackTempTable(con, "mailsentfilters");
-					con.commit();
-					new JsonResult().printTo(out);
-				} catch(Exception ex1) {
-					con.rollback();
-					throw ex1;
-				}
-				
-			} else if(crud.equals(Crud.END)) {
-				String esid = ServletUtils.getStringParameter(request, "esid", true);
-				EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-				
-				try {
-					con.setAutoCommit(false);
-					es.removeTempTable(con, "mailfilters");
-					es.removeTempTable(con, "mailsentfilters");
-					con.commit();
-					wts.unregisterEditing(es);
-					new JsonResult().printTo(out);
-				} catch(Exception ex1) {
-					con.rollback();
-					throw ex1;
-				}
-				
-				
-			}
-		} catch (EditingException ex) {
-			logger.error("Error managing mail filters", ex);
-			new JsonResult(false, ex.getMessage()).printTo(out);
-		} catch (Exception ex) {
-			logger.error("Error managing mail filters", ex);
-			new JsonResult(false, "Error managing mail filters").printTo(out);
-		} finally {
-			DbUtils.closeQuietly(con);
-		}
-	}
-
-    public void processEditFilter(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getUserProfile();
-        String login=profile.getUser();
-        WebTopApp webtopapp=environment.getWebTopApp();
-        String context=request.getParameter("context");
-        String idfilter=request.getParameter("idfilter");
-        //String table="none";
-        //if (context.equals("INBOX")) table="mailfilters";
-        //else if (context.equals("SENT")) table="mailsentfilters";
-        String sout;
-        Connection con=null;
-        Statement stmt=null;
-        ResultSet rs=null;
-        try {
-			String esid = ServletUtils.getStringParameter(request, "esid", true);
-			EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-			String table = "none";
-			if (context.equals("INBOX")) table = es.getTempTable("mailfilters").tableName;
-			else if (context.equals("SENT")) table = es.getTempTable("mailsentfilters").tableName;
-			
-            con=wtd.getConnection();
-            sout="{\n";
-            stmt=con.createStatement();
-            String sql="select * from "+table+" where iddomain='"+wtd.getDataIDDomain()+"' and login='"+login+"' and idfilter="+idfilter;
-            rs=stmt.executeQuery(sql);
-            if (rs.next()) {
-                sout+="  condition: '"+rs.getString("condition")+"',\n";
-                sout+="  sender: '"+Utils.jsEscape(rs.getString("fromvalue"))+"',\n";
-                sout+="  recipient: '"+Utils.jsEscape(rs.getString("tovalue"))+"',\n";
-                sout+="  subject: '"+Utils.jsEscape(rs.getString("subjectvalue"))+"',\n";
-                sout+="  action: '"+rs.getString("action").toLowerCase()+"',\n";
-                sout+="  actionvalue: '"+Utils.jsEscape(rs.getString("actionvalue"))+"',\n";
-            }
-            sout+="  result: true\n}";
-        }  catch(Exception exc) {
-            logger.error("Exception",exc);
-            sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
-        } finally {
-            if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-            if (con!=null) try { con.close(); } catch(Exception e) {}
-        }
-        out.println(sout);
-    }*/
+*/
 	
 	boolean checkFileRules(String foldername) {
 		boolean b = false;
@@ -7222,14 +6902,13 @@ public class Service extends BaseService {
 		MailRules rfilters = null;
 		
 		try {
-			List<ORule> orules = RuleDAO.getInstance().selectById(con, iddomain, login);
+			List<ORule> orules = RuleDAO.getInstance().selectByUserId(con, iddomain, login);
 			
 			MailRules filters = new MailRules();
 
 			for (ORule or: orules) {
 				long idfilter = or.getRuleId();
 				String status = or.getStatus();
-				//TODO: manage enabled/disabled filters
 				boolean enabled = status.equals("E");
 				String action = or.getAction();
 				String actionvalue = or.getActionValue();
@@ -7290,21 +6969,14 @@ public class Service extends BaseService {
 				
 				filters.add(mfcs);
 			}
-			//rs.close();
-
-			//TODO: Parse vacation
-			/*sql = "select * from vacation where iddomain='" + iddomain + "' and login='" + login + "'";
-			rs = stmt.executeQuery(sql);
-			if (rs.next()) {
-				boolean vactive = rs.getString("active").equals("Y");
-				String message = rs.getString("message");
-				String addresses = rs.getString("addresses");
-				if (vactive) {
-					filters.setVacation(message, addresses);
+			
+			OVacation ovacation = VacationDAO.getInstance().selectByUserId(con, iddomain, login);
+			
+			if (ovacation!=null) {
+				if (ovacation.getActive()) {
+					filters.setVacation(ovacation.getMessage(), ovacation.getAddresses());
 				}
 			}
-			rs.close();
-			stmt.close();*/
 			
 			rfilters = filters;
 			
@@ -7520,7 +7192,21 @@ public class Service extends BaseService {
 			co.put("messageViewCollapsed",us.getMessageViewCollapsed());
 			co.put("messageViewMaxTos",ss.getMessageViewMaxTos());
 			co.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
-			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes())); //json obj
+			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes()));
+			
+			UserProfile profile = environment.getProfile();
+			OVacation vacation=VacationDAO.getInstance().selectByUserId(getConnection(), profile.getDomainId(), profile.getUserId());
+			boolean vactive=false;
+			String vmessage="";
+			String vaddresses=profile.getEmailAddress();
+			if (vacation!=null) {
+				vactive=vacation.getActive();
+				vmessage=vacation.getMessage();
+				vaddresses=vacation.getAddresses();
+			}
+			co.put("vacationActive",vactive);
+			co.put("vacationMessage",vmessage);
+			co.put("vacationAddresses",vaddresses);
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	

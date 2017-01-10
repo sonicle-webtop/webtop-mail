@@ -50,9 +50,11 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 	mys: null,
 	
 	context: 'INBOX',
-	vactive: false,
-	vmessage: '',
-	vaddress: '',
+	vacation: {
+		active: true,
+		message: '',
+		addresses: '',		
+	},
 	
 	initComponent: function() {
 		var me = this;
@@ -266,14 +268,14 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 						{
 							xtype: 'radio',
 							boxLabel: WT.res('word.yes'),
-							checked: me.vactive,
+							checked: me.vacation.active,
 							name: "vactive",
 							listeners: {
 								change: {
 									fn: function(r,v) {
 										me.lref("vtextmsg").setDisabled(!v);
 										me.lref("vtextaddr").setDisabled(!v);
-										me.vactive=v;
+										me.vacation.active=v;
 									}
 								}
 							}
@@ -281,7 +283,7 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 						{
 							xtype: 'radio',
 							boxLabel: WT.res('word.no'),
-							checked: !me.vactive,
+							checked: !me.vacation.active,
 							name: "vactive"
 						}
 					]
@@ -292,16 +294,16 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 					width: 600,
 					height: 80,
 					fieldLabel: me.res('rules-manager-vacation-message'),
-					value: me.vmessage,
-					disabled: !me.vactive
+					value: me.vacation.message,
+					disabled: !me.vacation.active
 				},
                 {
 					xtype: 'textfield',
 					reference: "vtextaddr",
 					width: 600,
 					fieldLabel: me.res('rules-manager-vacation-addresses'),
-					value: me.vaddresses,
-					disabled: !me.vactive
+					value: me.vacation.addresses,
+					disabled: !me.vacation.active
 				},
             ]
 		});
@@ -337,6 +339,27 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 		if (sel) {
 			grid.getStore().remove(sel);
 		}
+	},
+	
+	actionSave: function() {
+		var me=this;
+	
+		WT.ajaxReq(me.mys.ID, 'SaveRules', {
+			params: {
+				rules: Ext.util.JSON.encode(Ext.Array.pluck(me.lref("grdRules").store.getRange(),'data')),
+				vactive: me.vacation.active,
+				vmessage: me.lref("vtextmsg").getValue(),
+				vaddresses: me.lref("vtextaddr").getValue()
+			},
+			callback: function(success,json) {
+				if (success) {
+					me.closeView(false);
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});					
+		
 	},
 	
 	_appendConditionDescription: function(r,f,v,spaces) {

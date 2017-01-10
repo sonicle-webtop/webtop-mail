@@ -39,6 +39,7 @@ import com.sonicle.webtop.mail.bol.ORule;
 import java.sql.Connection;
 import org.jooq.DSLContext;
 import static com.sonicle.webtop.mail.jooq.Tables.*;
+import com.sonicle.webtop.mail.jooq.tables.records.RulesRecord;
 import java.util.List;
 
 /**
@@ -68,7 +69,7 @@ public class RuleDAO extends BaseDAO {
 			.fetchOneInto(ORule.class)!=null;
 	}
 	
-	public List<ORule> selectById(Connection con, String domainId, String userId) throws DAOException {
+	public List<ORule> selectByUserId(Connection con, String domainId, String userId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
@@ -79,6 +80,25 @@ public class RuleDAO extends BaseDAO {
 			)
 			.orderBy(RULES.RULE_ID)
 			.fetchInto(ORule.class);
+	}
+	
+	public int insert(Connection con, ORule item) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		RulesRecord record = dsl.newRecord(RULES, item);
+		return dsl
+			.insertInto(RULES)
+			.set(record)
+			.execute();
+	}	
+
+	public int deleteByUserId(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.delete(RULES)
+			.where(RULES.DOMAIN_ID.equal(domainId)
+					.and(RULES.USER_ID.equal(userId))
+			)
+			.execute();
 	}
 	
 }

@@ -31,23 +31,36 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.bol;
+package com.sonicle.webtop.mail.bol.js;
 
-import com.sonicle.webtop.mail.jooq.tables.pojos.Rules;
+import com.sonicle.commons.web.json.JsonResult;
 import java.util.ArrayList;
 
 /**
  *
- * @author gbulfon
+ * @author gabriele.bulfon
  */
-public class ORule extends Rules {
+public class JsRule {
 	
-	public ORule() {
-		
+	public boolean active;
+	public String condition;
+	public String action;
+	public String value;
+	public String from;
+	public String to;
+	public String subject;
+	
+
+	public JsRule(boolean active, String condition, String action, String value, String from, String to, String subject) {
+		this.active=active;
+		this.condition=condition;
+		this.action=action;
+		this.value=value;
+		this.from=from;
+		this.to=to;
+		this.subject=subject;
 	}
 	
-	public static class List extends ArrayList<ORule> {
-	
+	public static class List extends ArrayList<JsRule> {
 	}
-	
 }

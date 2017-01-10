@@ -33,21 +33,16 @@
  */
 package com.sonicle.webtop.mail.bol;
 
-import com.sonicle.webtop.mail.jooq.tables.pojos.Rules;
-import java.util.ArrayList;
+import com.sonicle.webtop.mail.jooq.tables.pojos.Vacation;
 
 /**
  *
  * @author gbulfon
  */
-public class ORule extends Rules {
+public class OVacation extends Vacation {
 	
-	public ORule() {
+	public OVacation() {
 		
-	}
-	
-	public static class List extends ArrayList<ORule> {
-	
 	}
 	
 }

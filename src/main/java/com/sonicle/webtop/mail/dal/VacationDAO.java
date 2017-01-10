@@ -31,23 +31,55 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.bol;
+package com.sonicle.webtop.mail.dal;
 
-import com.sonicle.webtop.mail.jooq.tables.pojos.Rules;
-import java.util.ArrayList;
+import com.sonicle.webtop.core.dal.BaseDAO;
+import com.sonicle.webtop.core.dal.DAOException;
+import com.sonicle.webtop.mail.bol.OVacation;
+import java.sql.Connection;
+import org.jooq.DSLContext;
+import static com.sonicle.webtop.mail.jooq.Tables.*;
+import com.sonicle.webtop.mail.jooq.tables.records.VacationRecord;
 
 /**
  *
  * @author gbulfon
  */
-public class ORule extends Rules {
+public class VacationDAO extends BaseDAO {
 	
-	public ORule() {
-		
+	private final static VacationDAO INSTANCE = new VacationDAO();
+	public static VacationDAO getInstance() {
+		return INSTANCE;
 	}
 	
-	public static class List extends ArrayList<ORule> {
-	
+	public OVacation selectByUserId(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(VACATION)
+			.where(
+				VACATION.DOMAIN_ID.equal(domainId)
+				.and(VACATION.USER_ID.equal(userId))
+			)
+			.fetchOneInto(OVacation.class);
 	}
 	
+	public int insert(Connection con, OVacation item) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		VacationRecord record = dsl.newRecord(VACATION, item);
+		return dsl
+			.insertInto(VACATION)
+			.set(record)
+			.execute();
+	}
+
+	public int deleteByUserId(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.delete(VACATION)
+			.where(VACATION.DOMAIN_ID.equal(domainId)
+					.and(VACATION.USER_ID.equal(userId))
+			)
+			.execute();
+	}
 }

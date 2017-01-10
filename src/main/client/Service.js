@@ -621,7 +621,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		WT.createView(me.ID,'view.RulesManager',{
 			viewCfg: {
 				mys: me,
-				context: 'INBOX'
+				context: 'INBOX',
+				vacation: {
+					active: me.varsData.vacationActive,
+					message: me.varsData.vacationMessage,
+					addresses: me.varsData.vacationAddresses
+				}
 			}
 		}).show();
 	},
