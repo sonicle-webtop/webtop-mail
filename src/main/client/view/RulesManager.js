@@ -44,8 +44,10 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 		width: 700,
 		height: 500
 	},
-	promptConfirm: false,
 	full: true,
+	confirm: 'yn',
+	
+	dirty: false,
 	
 	mys: null,
 	
@@ -276,6 +278,7 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 										me.lref("vtextmsg").setDisabled(!v);
 										me.lref("vtextaddr").setDisabled(!v);
 										me.vacation.active=v;
+										me.dirty=true;
 									}
 								}
 							}
@@ -318,6 +321,7 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 				store: me.lref('grdRules').getStore()
 			}
 		}).show();
+		me.dirty=true;
 	},
 	
 	actionEdit: function(r) {
@@ -329,6 +333,7 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 				record: r
 			}
 		}).show();
+		me.dirty=true;
 	},
 	
 	actionDelete: function() {
@@ -338,28 +343,41 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 	
 		if (sel) {
 			grid.getStore().remove(sel);
+			me.dirty=true;
 		}
 	},
 	
 	actionSave: function() {
-		var me=this;
-	
-		WT.ajaxReq(me.mys.ID, 'SaveRules', {
-			params: {
+		var me=this,
+			params={
 				rules: Ext.util.JSON.encode(Ext.Array.pluck(me.lref("grdRules").store.getRange(),'data')),
 				vactive: me.vacation.active,
 				vmessage: me.lref("vtextmsg").getValue(),
 				vaddresses: me.lref("vtextaddr").getValue()
-			},
+			};
+			
+		me.mask(WT.res("saving"));
+	
+		WT.ajaxReq(me.mys.ID, 'SaveRules', {
+			params: params,
 			callback: function(success,json) {
 				if (success) {
+					me.mys.varsData.vacationActive=params.vactive;
+					me.mys.varsData.vacationMessage=params.vmessage;
+					me.mys.varsData.vacationAddresses=params.vaddresses;
 					me.closeView(false);
 				} else {
+					me.unmask();
 					WT.error(json.message);
 				}
 			}
 		});					
 		
+	},
+	
+	canCloseView: function() {
+		var me=this;
+		return !me.dirty && !me.lref("vtextmsg").dirty && !me.lref("vtextaddr").dirty;
 	},
 	
 	_appendConditionDescription: function(r,f,v,spaces) {

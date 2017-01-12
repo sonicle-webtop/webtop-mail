@@ -385,20 +385,19 @@ public class Service extends BaseService {
 							if (!foundWebtopScript) rebuildScript=true;
 						}
 						
-						//TODO: rebuild sieve script
-						//if (rebuildScript) {
-						//	logger.debug("No Sieve scripts for {}. Creating from database.", profile.getUserId());
-						//	Connection con=null;
-						//	try {
-						//		con=getConnection();
-						//		MailFilters filters=getMailFilters(con,"mailfilters",profile.getUserId(), profile.getDomainId());
-						//		if (filters!=null) sieve.saveScript(filters, true);
-						//	} catch(SQLException exc) {
-						//		logger.error("Error getting connection while trying to save Sieve script", exc);
-						//	} finally {
-						//		DbUtils.closeQuietly(con);
-						//	}
-						//}						
+						if (rebuildScript) {
+							logger.debug("No Sieve scripts for {}. Creating from database.", profile.getUserId());
+							Connection con=null;
+							try {
+								con=getConnection();
+								MailRules rules=getMailRules(con,"rules",profile.getUserId(), profile.getDomainId());
+								if (rules!=null) sieve.saveScript(rules, true);
+							} catch(SQLException exc) {
+								logger.error("Error getting connection while trying to save Sieve script", exc);
+							} finally {
+								DbUtils.closeQuietly(con);
+							}
+						}						
 					} catch (Exception exc) {
 						Service.logger.error("Exception",exc);
 					}
@@ -6522,7 +6521,7 @@ public class Service extends BaseService {
 			OVacation vitem=new OVacation();
 			vitem.setDomainId(profile.getDomainId());
 			vitem.setUserId(profile.getUserId());
-			vitem.setActive(ServletUtils.getBooleanParameter(request, "venabled", false));
+			vitem.setActive(ServletUtils.getBooleanParameter(request, "vactive", false));
 			vitem.setMessage(ServletUtils.getStringParameter(request, "vmessage", ""));
 			vitem.setAddresses(ServletUtils.getStringParameter(request, "vaddresses", profile.getEmailAddress()));
 			
@@ -6549,6 +6548,23 @@ public class Service extends BaseService {
 			VacationDAO.getInstance().insert(con, vitem);
 			
 			DbUtils.commitQuietly(con);
+			
+            MailRules rules=getMailRules(con,"rules",profile.getUserId(),profile.getDomainId());
+			if (rules!=null) sieve.saveScript(rules, true);
+
+			//TODO: update scan folders
+/*            String scf="";
+            for(String foldername: foldersCache.keySet()) {
+                FolderCache fc=foldersCache.get(foldername);
+                boolean psfon=fc.isScanForcedOn();
+                fc.updateScanFlags();
+                boolean nsfon=fc.isScanForcedOn();
+                if (psfon!=nsfon) {
+                    if (scf.length()>0) scf+=",";
+                    scf+="{ idfolder: '"+Utils.jsEscape(foldername)+"', sfon: "+nsfon+" }";
+                }
+            }
+			*/
 
             new JsonResult().printTo(out);
         } catch(Exception exc) {
