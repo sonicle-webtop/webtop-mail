@@ -6035,6 +6035,18 @@ public class Service extends BaseService {
 					++recs;
 				}
 			}
+            Address bccs[]=m.getRecipients(RecipientType.BCC);
+            if (bccs!=null)
+                for(Address bcc: bccs) {
+                    InternetAddress ia=(InternetAddress)bcc;
+                    String bccName=ia.getPersonal();
+                    String bccEmail=adjustEmail(ia.getAddress());
+                    if (bccName==null) {
+						bccName=bccEmail;
+					}
+                    sout+="{iddata:'bcc',value1:'"+StringEscapeUtils.escapeEcmaScript(bccName)+"',value2:'"+StringEscapeUtils.escapeEcmaScript(bccEmail)+"',value3:0},\n";
+                    ++recs;
+                }
 			ArrayList<String> htmlparts = null;
 			if (providername == null) {
 				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false);

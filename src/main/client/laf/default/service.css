@@ -106,6 +106,7 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 .wtmail-mv-hlabeldate {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelto {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelbcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelattach {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 50px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelattach A {text-decoration: none; color: black; }
 .wtmail-mv-hlabelattach A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
@@ -118,6 +119,9 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 .wtmail-mv-hcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
 .wtmail-mv-hcc SPAN A {text-decoration: none; color: black; }
 .wtmail-mv-hcc SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hbcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
+.wtmail-mv-hbcc SPAN A {text-decoration: none; color: black; }
+.wtmail-mv-hbcc SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
 .wtmail-mv-hattach {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: black; }
 .wtmail-mv-hattach SPAN A {text-decoration: none; color: black; }
 .wtmail-mv-hattach SPAN A IMG { border: none; vertical-align: middle; }

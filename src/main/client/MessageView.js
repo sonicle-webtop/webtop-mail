@@ -60,6 +60,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     divDate: null,
     divFromName: null,
     divTos: null,
+    divBccs: null,
     divCcs: null,
     divAttach: null,
 	divICal: null,
@@ -82,6 +83,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     toNames: null,
     toEmails: null,
     ccNames: null,
+    bccNames: null,
     ccEmails: null,
     ntos: 0,
     nccs: 0,
@@ -190,6 +192,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
             me.removeElement(me.divTos);
             me.removeElement(me.divCcs);
+            me.removeElement(me.divBccs);
             me.removeElement(me.divAttach);
 			me.removeElement(me.divICal);
             me.removeElement(me.divLine);
@@ -248,12 +251,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.toNames=null;
             me.toEmails=null;
             me.ccNames=null;
+            me.bccNames=null;
             me.ccEmails=null;
             me.attachments=null;
             me.receipt=null;
             me.scheddate=null;
             me.ntos=0;
             me.nccs=0;
+            me.nbccs=0;
 			me.workflow=false;
 			me.messageid=null;
             Ext.each(r,me.evalRecord,me);
@@ -276,6 +281,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
 			me.divCcs=Ext.get(document.createElement("div"));
 			me.divCcs.addCls("wtmail-mv-hcc");
+
+			me.divBccs=Ext.get(document.createElement("div"));
+			me.divBccs.addCls("wtmail-mv-hbcc");
 
 			me.divAttach=Ext.get(document.createElement("div"));
 			me.divAttach.addCls("wtmail-mv-hattach");
@@ -515,6 +523,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				},me);
 				//TODO setAttachElements
                 me._setAttachElements(me.divAttach.first().next(),vparams);
+            }
+            if (me.bccNames) {
+                me.divBccs.update("<span class='wtmail-mv-hlabelbcc'>"+me.mys.res('bcc')+":&nbsp;</span>"+me.bccNames);
+                tdh.insertFirst(me.divBccs);
+                me._setEmailElements(me.divBccs.first().next(),'bcc');
             }
             if (me.ccNames) {
                 me.divCcs.update("<span class='wtmail-mv-hlabelcc'>"+me.mys.res('cc')+":&nbsp;</span>"+me.ccNames);
@@ -924,7 +937,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		var me=this,
 			iddata=item.get('iddata'),
 			maxtos=me.mys.viewmaxtos||20,
-			maxccs=me.mys.viewmaxccs||20;
+			maxccs=me.mys.viewmaxccs||20,
+			maxbccs=me.mys.viewmaxccs;
+	
         //alert("iddata="+iddata);
         if (iddata=='subject') me.subject=item.get('value1');
         else if (iddata=='messageid') {me.messageid=item.get('value1');} 
@@ -946,6 +961,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 me.ccNames=me.appendEmail(me.ccNames,'...','...');
             }
             ++me.nccs;
+        }
+        else if (iddata=='bcc') {
+            if (me.nbccs<maxbccs) {
+                me.bccNames=me.appendEmail(me.bccNames,item.get('value1'),item.get('value2'));
+            } else if (me.nbccs==maxbccs) {
+                me.bccNames=me.appendEmail(me.bccNames,'...','...');
+            }
+            ++me.nbccs;
         }
         else if (iddata=='attach' || iddata=='eml') {
             if (!me.attachments) me.attachments=new Array();
