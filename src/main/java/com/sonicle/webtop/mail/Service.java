@@ -59,6 +59,7 @@ import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
+import com.sonicle.webtop.core.bol.model.InternetRecipient;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
@@ -4510,27 +4511,57 @@ public class Service extends BaseService {
 					String faxpattern = ss.getFaxPattern();
 					String faxemail = faxpattern.replace("{number}", email).replace("{username}", profile.getUserId());
 					email = faxemail;
-				} else {
-					email = email.trim();
-					String name = null;
-					int ix0 = email.indexOf('<');
-					if (ix0 < 0) {
-						name = email;
-					} else {
-						name = email.substring(0, ix0).trim();
-					}
-					String dmid = null;
-					int ix1 = email.indexOf('[');
-					int ix2 = email.indexOf(']');
-					if (ix1 >= 0 && ix2 > ix1) {
-						name = email.substring(ix0 + 1, ix1 - 1);
-						dmid = email.substring(ix1 + 1, ix2);
-					} else {
-						dmid = "privatedb: " + profile.getUserId();
-					}
+				}
+			} else {
+				//check for list if one email with domain equals one allowed service id
+				InternetAddress ia=null;
+				try {
+					ia=new InternetAddress(email);
+				} catch(AddressException exc) {
+					
+				}
+				if (ia!=null) {
+					String iamail=ia.getAddress();
+					String dom=iamail.substring(iamail.indexOf("@")+1);
+					CoreManager core=WT.getCoreManager();
+					if (environment.getWebTopSession().isServiceAllowed(dom)) {
+						List<InternetRecipient> rcpts=core.expandToInternetRecipients(iamail);
+						for (InternetRecipient rcpt: rcpts) {
+							String xemail=rcpt.getAddress();
+							String xpersonal=rcpt.getPersonal();
+							String xrtype=rcpt.getRecipientType().toString();
 
-				// TODO: list integration!!!!
+							if (xpersonal!=null) xemail=xpersonal+" <"+xemail+">";
 
+							try {
+							  checkEmail(xemail);
+							  InternetAddress.parse(xemail.replace(',', ' '),true);
+							} catch(AddressException exc) {
+								throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR)+" : "+xemail);
+							}
+							if (rtypes[i].equals("to")) {
+								if (xrtype.equals("to")) {
+								  if (to==null) to=xemail;
+								  else to+="; "+xemail;
+								} else if (xrtype.equals("cc")) {
+								  if (cc==null) cc=xemail;
+								  else cc+="; "+xemail;
+								} else if (xrtype.equals("bcc")) {
+								  if (bcc==null) bcc=xemail;
+								  else bcc+="; "+xemail;
+								}
+							} else if (rtypes[i].equals("cc")) {
+							  if (cc==null) cc=xemail;
+							  else cc+="; "+xemail;
+							} else if (rtypes[i].equals("bcc")) {
+							  if (bcc==null) bcc=xemail;
+							  else bcc+="; "+xemail;
+							}
+
+							listdone=true;
+							checkemail=false;
+						}
+					}
 				}
 			}
 			if (listdone) {
