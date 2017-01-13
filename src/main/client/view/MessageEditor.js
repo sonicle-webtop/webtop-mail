@@ -39,6 +39,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.webtop.core.ux.field.HTMLEditor',
 		'Sonicle.webtop.mail.model.MessageModel',
+		'Sonicle.webtop.mail.view.AddressBookView',
 		'Sonicle.upload.Button'
 	],
 	
@@ -709,6 +710,32 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         });
         me.saveView(true);
     },
+	
+	actionAddressBook: function() {
+		var me=this,
+			rcpts=[];
+		
+		Ext.each(me.recgrid.store.getRange(),function(r) {
+			rcpts[rcpts.length]={ type: r.get("rtype"), email: r.get("email") };
+		});
+		
+		WT.createView(me.mys.ID,'view.AddressBookView',{
+			viewCfg: {
+				mys: me.mys,
+				recipients: rcpts,
+				listeners: {
+					save: {
+						fn: function(abv) {
+							me.recgrid.clear();
+							Ext.each(abv.getRecipients(),function(r) {
+								me.recgrid.addRecipient(r.type,r.email);
+							});
+						}
+					}
+				}
+			}
+		}).show();
+	},
     
     actionSchedule: function() {
         var me=this;
