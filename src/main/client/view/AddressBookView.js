@@ -72,7 +72,7 @@ Ext.define('Sonicle.webtop.mail.view.AddressBookView', {
 					scope: me
 				},
 				'-',
-				WT.res("word.contacts")+":",
+				me.mys.res('addressbook.contacts')+':',
 				{
 					xtype: 'combo',
 					reference: "cboContacts",
