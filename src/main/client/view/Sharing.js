@@ -48,6 +48,8 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 	},
 	promptConfirm: false,
 	full: true,
+	
+	fullRights: 'lrswipkxtea',
 
 	initComponent: function() {
 		var me = this;
@@ -120,86 +122,164 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 				],
 				listeners: {
 					selectionchange: function(s,recs) {
+						if (recs.length==1) {
+							var rights="",
+								cbo=me.lref('cboRights');
+							for(var i=0;i<me.fullRights.length;++i) {
+								var c=me.fullRights.charAt(i);
+								if (recs[0].get(c)) rights+=c;
+							}
+							if (rights.length>0 && cbo.store.findExact('rights',rights)>=0) cbo.setValue(rights);
+							else cbo.setValue("");
+						}
 						me.getAction('deleteRights').setDisabled(!recs.length);
-						me.lref('elementsperms').setDisabled(!recs.length);
+						me.lref('permspanel').setDisabled(!recs.length);
 					}
 				}
 			}]
 		});
 		me.add({
 			region: 'south',
-			xtype: 'wtfieldspanel',
-			height: 150,
-			items: [{
-				xtype: 'fieldcontainer',
-				reference: 'elementsperms',
-				disabled: true,
-				layout: {
-					type: 'table',
-					columns: 3
+			xtype: 'panel',
+			reference: 'permspanel',
+			height: 170,
+			layout: 'border',
+			items: [
+				{
+					xtype: 'toolbar',
+					region: 'north',
+					items: [{
+						xtype: 'combo',
+						reference: "cboRights",
+						fieldLabel: me.mys.res("sharing.fld-rights.lbl"),
+						store: new Ext.data.SimpleStore({
+							fields: ['rights','desc'],
+							data: [
+								[me.fullRights,me.mys.res("sharing.rights-full")],
+								['lrs',me.mys.res("sharing.rights-ro")],
+								['',me.mys.res("sharing.rights-custom")],
+							]
+						}),
+						editable: false,
+						mode: 'local',
+						width:300,
+						listWidth: 300,
+						displayField: 'desc',
+						triggerAction: 'all',
+						valueField: 'rights',
+						listeners: {
+							select: {
+								fn: function(c,r,i) {
+									var id=r.get('rights');
+									if (id.length>0) {
+										var rec = me.lref('gprights').getSelection()[0];
+										for(var i=0;i<me.fullRights.length;++i) {
+											var c=me.fullRights.charAt(i);
+											rec.set(c,id.indexOf(c)>=0);
+										}
+									} 
+								}
+							}
+						}
+					},'->',{
+						xtype: 'checkbox',
+						boxLabel: me.mys.res('sharing.fld-advanced.lbl'),
+						checked: false,
+						width: 200,
+						listeners: {
+							change: {
+								fn: function(c,ov,nv,eopts) {
+									var v=c.getValue(),
+										p=me.lref("elementsperms");
+									p.setHidden(!v);
+									if (v) p.setDisabled(false);
+								}
+							}
+						}
+					}]
 				},
-				items: [{
-					xtype: 'checkbox',
-					bind: '{gprights.selection.l}',
-					boxLabel: me.mys.res('sharing.fld-l.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.r}',
-					boxLabel: me.mys.res('sharing.fld-r.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.s}',
-					boxLabel: me.mys.res('sharing.fld-s.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.w}',
-					boxLabel: me.mys.res('sharing.fld-w.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.i}',
-					boxLabel: me.mys.res('sharing.fld-i.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.p}',
-					boxLabel: me.mys.res('sharing.fld-p.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.k}',
-					boxLabel: me.mys.res('sharing.fld-k.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.a}',
-					boxLabel: me.mys.res('sharing.fld-a.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.x}',
-					boxLabel: me.mys.res('sharing.fld-x.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.t}',
-					boxLabel: me.mys.res('sharing.fld-t.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.n}',
-					boxLabel: me.mys.res('sharing.fld-n.lbl'),
-					width: 200
-				}, {
-					xtype: 'checkbox',
-					bind: '{gprights.selection.e}',
-					boxLabel: me.mys.res('sharing.fld-e.lbl'),
-					width: 200
-				}]
-			}]
+				{
+					xtype: 'fieldcontainer',
+					reference: 'elementsperms',
+					region: 'center',
+					disabled: true,
+					hidden: true,
+					layout: {
+						type: 'table',
+						columns: 3
+					},
+					defaults: {
+						listeners: {
+							afterrender: function() {
+								this.getEl().on('click', function() {
+									me.lref('cboRights').setValue('');
+								});
+							}
+						}
+					},
+					items: [{
+						xtype: 'checkbox',
+						bind: '{gprights.selection.l}',
+						boxLabel: me.mys.res('sharing.fld-l.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.r}',
+						boxLabel: me.mys.res('sharing.fld-r.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.s}',
+						boxLabel: me.mys.res('sharing.fld-s.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.w}',
+						boxLabel: me.mys.res('sharing.fld-w.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.i}',
+						boxLabel: me.mys.res('sharing.fld-i.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.p}',
+						boxLabel: me.mys.res('sharing.fld-p.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.k}',
+						boxLabel: me.mys.res('sharing.fld-k.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.a}',
+						boxLabel: me.mys.res('sharing.fld-a.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.x}',
+						boxLabel: me.mys.res('sharing.fld-x.lbl'),
+						width: 200
+					}, {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.t}',
+						boxLabel: me.mys.res('sharing.fld-t.lbl'),
+						width: 200
+					}, /*{
+						xtype: 'checkbox',
+						bind: '{gprights.selection.n}',
+						boxLabel: me.mys.res('sharing.fld-n.lbl'),
+						width: 200
+					},*/ {
+						xtype: 'checkbox',
+						bind: '{gprights.selection.e}',
+						boxLabel: me.mys.res('sharing.fld-e.lbl'),
+						width: 200
+					}]
+				}
+			]
 		});
 		me.on('viewload', me.onViewLoad);
 	},
