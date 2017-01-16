@@ -288,6 +288,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
         //me.addAction("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
         me.addAction("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv-xs' });
+        me.addAction("sharing",{ handler: me.actionSharing, scope: me, iconCls: 'wt-icon-sharing-xs' });
         me.addAction("threaded",{ handler: function() { me.messagesPanel.actionThreaded(); }, iconCls: 'wtmail-icon-threaded-xs', enableToggle: true });
         me.addAction("emptyfolder",{ handler: me.actionEmptyFolder, scope: me });
         me.addAction("deletefolder",{ handler: me.actionDeleteFolder, scope: me, iconCls: 'wt-icon-delete-xs' });
@@ -399,6 +400,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 '-',
                 me.getAction('refresh'),
                 '-',
+                me.getAction('sharing'),
+				'-',
 				mscan=Ext.create('Ext.menu.CheckItem',me.getAction('scanfolder')),
                 '-',
                 me.getAction('downloadmails'),
@@ -416,7 +419,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
             items: [
                 this.getAction('newmainfolder'),
                 '-',
-                this.getAction('refresh')
+                this.getAction('refresh'),
+                '-',
+                me.getAction('sharing')
             ]
         }));
 	},
@@ -613,6 +618,24 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				folderHasChildren: true //fn.hasChildNodes()
 			}
 		}).show();
+	},
+	
+	actionSharing: function(s,e) {
+		var me=this,
+			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0],
+			vw=WT.createView(me.ID,'view.Sharing',{
+				viewCfg: {
+					mys: me
+				}
+			});
+	
+		vw.show(false, function() {
+			vw.getView().begin('edit', {
+				data: {
+					id: fn.get("id")
+				}
+			});
+		});
 	},
 	
 	actionRules: function() {
