@@ -37,6 +37,8 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 	proxy: WT.optionsProxy('com.sonicle.webtop.mail'),
 	fields: [
 		
+		WTF.roField('canChangeAccountSettings', 'boolean'),
+		
 		WTF.field('simpleArchivingMailFolder', 'string', true),
 		WTF.field('archivingMethod', 'string', true),
 		WTF.field('sharedSeen', 'boolean', false),

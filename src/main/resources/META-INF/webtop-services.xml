@@ -85,6 +85,7 @@
 		<permissions>
 			<permission group="DOCUMENT_MANAGEMENT" actions="ACCESS" />
 			<permission group="MAIL_WORKFLOW" actions="ACCESS" />
+			<permission group="ACCOUNT_SETTINGS" actions="CHANGE" />
 		</permissions>
 	</service>
 </services>

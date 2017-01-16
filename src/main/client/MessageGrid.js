@@ -633,7 +633,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 			
 			var node=me.mys.getFolderNodeById(me.currentFolder),
-				issentfolder=node.data.isSent||node.data.isUnderSent;
+				issentfolder=node?(node.data.isSent||node.data.isUnderSent):false;
 
 			if (state.storeState) {
 				delete state.storeState.sorters;

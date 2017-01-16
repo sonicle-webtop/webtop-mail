@@ -42,7 +42,10 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			priority: WTF.checkboxBind('record', 'priority'),
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
-			manualSeen: WTF.checkboxBind('record', 'manualSeen')
+			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
+			canChangeAccountSettings: function(get) {
+				return get("record.canChangeAccountSettings");
+			}
 		}
 	},
 	
@@ -62,7 +65,10 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				width: 400,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, WTF.lookupCombo('id', 'desc', {
-				bind: '{record.protocol}',
+				bind: {
+					value: '{record.protocol}',
+					disabled: '{!canChangeAccountSettings}'
+				},
 				store: Ext.create('WTA.store.MailboxProtocols', {
 					autoLoad: true
 				}),
@@ -72,14 +78,20 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}), {
 				xtype: 'textfield',
-				bind: '{record.host}',
+				bind: {
+					value: '{record.host}',
+					disabled: '{!canChangeAccountSettings}'
+				},
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-host.lbl'),
 				width: 400,
 				needReload: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'numberfield',
-				bind: '{record.port}',
+				bind: {
+					value: '{record.port}',
+					disabled: '{!canChangeAccountSettings}'
+				},
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-port.lbl'),
 				width: 200,
 				needReload: true,
@@ -89,50 +101,77 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
-				bind: '{record.username}',
+				bind: {
+					value: '{record.username}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				plugins: 'sonoautocomplete',
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-username.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
+				emptyText: WT.res(me.ID, 'opts.main.fld-username-empty.lbl'),
+				submitEmptyText: false,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
-				xtype: 'textfield',
-				bind: '{record.password}',
-				inputType: 'password',
+				xtype: 'sopasswordfield',
+				bind: {
+					value: '{record.password}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				plugins: 'sonoautocomplete',
+				//inputType: 'password',
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-password.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
+				emptyText: WT.res(me.ID, 'opts.main.fld-password-empty.lbl'),
+				submitEmptyText: false,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
-				bind: '{record.folderPrefix}',
+				bind: {
+					value: '{record.folderPrefix}',
+					disabled: '{!canChangeAccountSettings}'
+				},
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderPrefix.lbl'),
 				width: 400,
 				needReload: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
-				bind: '{record.folderSent}',
+				bind: {
+					value: '{record.folderSent}',
+					disabled: '{!canChangeAccountSettings}'
+				},
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderSent.lbl'),
 				width: 400,
 				needReload: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
-				bind: '{record.folderDrafts}',
+				bind: {
+					value: '{record.folderDrafts}',
+					disabled: '{!canChangeAccountSettings}'
+				},
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderDrafts.lbl'),
 				width: 400,
 				needReload: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
-				bind: '{record.folderTrash}',
+				bind: {
+					value: '{record.folderTrash}',
+					disabled: '{!canChangeAccountSettings}'
+				},
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderTrash.lbl'),
 				width: 400,
 				needReload: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
-				bind: '{record.folderSpam}',
+				bind: {
+					value: '{record.folderSpam}',
+					disabled: '{!canChangeAccountSettings}'
+				},
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-folderSpam.lbl'),
 				width: 400,
 				needReload: true,

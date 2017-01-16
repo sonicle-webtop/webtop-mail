@@ -5367,8 +5367,11 @@ public class Service extends BaseService {
 		
 		String sout = "{\n";
 		Folder folder = null;
+		boolean connected=false;
 		try {
-			checkStoreConnected();
+			connected=checkStoreConnected();
+			if (!connected) throw new Exception("Connection exception");
+				
 			int funread = 0;
 			if (pfoldername == null) {
 				folder = getDefaultFolder();
@@ -5818,6 +5821,7 @@ public class Service extends BaseService {
 			}
 			out.println(sout);
 		} catch (Exception exc) {
+			new JsonResult(exc).printTo(out);
 			Service.logger.error("Exception",exc);
 		}
 	}

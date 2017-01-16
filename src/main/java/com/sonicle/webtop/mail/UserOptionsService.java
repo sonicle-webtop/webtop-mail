@@ -38,6 +38,7 @@ import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.Payload;
+import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseUserOptionsService;
 import com.sonicle.webtop.mail.bol.js.JsUserOptions;
@@ -65,6 +66,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 			
 			if(crud.equals(Crud.READ)) {
 				JsUserOptions jso = new JsUserOptions(getTargetProfileId().toString());
+				jso.canChangeAccountSettings=RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS","CHANGE");
 				jso.simpleArchivingMailFolder=mus.getSimpleArchivingMailFolder();
 				jso.archivingMethod=mus.getArchivingMethod();
 				jso.sharedSeen=mus.isSharedSeen();
