@@ -2647,10 +2647,12 @@ public class Service extends BaseService {
 	//Client service requests
 	public void processGetImapTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String pfoldername = request.getParameter("node");
-		out.print("{ data:[");
 		Folder folder = null;
 		try {
-			checkStoreConnected();
+			boolean connected=checkStoreConnected();
+			if (!connected) throw new Exception("Mail account authentication error");
+			
+			out.print("{ data:[");
 			boolean isroot=pfoldername.equals("root");
             if (isroot) folder=getDefaultFolder();
 			else folder = getFolder(pfoldername);
@@ -2681,6 +2683,7 @@ public class Service extends BaseService {
 			out.println("], message: '' }");
 			
 		} catch (Exception exc) {
+			new JsonResult(exc).printTo(out);
 			Service.logger.error("Exception",exc);
 		}
 	}
@@ -5370,7 +5373,8 @@ public class Service extends BaseService {
 		boolean connected=false;
 		try {
 			connected=checkStoreConnected();
-			if (!connected) throw new Exception("Connection exception");
+			if (!connected) throw new Exception("Mail account authentication error");
+
 				
 			int funread = 0;
 			if (pfoldername == null) {
