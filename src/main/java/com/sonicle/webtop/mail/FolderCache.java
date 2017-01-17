@@ -37,6 +37,10 @@ import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.mail.imap.*;
 import com.sonicle.mail.tnef.internet.*;
+import com.sonicle.webtop.core.CoreManager;
+import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.mail.ws.UnreadChangedMessage;
 import com.sun.mail.imap.*;
@@ -105,6 +109,7 @@ public class FolderCache {
     private boolean isDrafts=false;
     private boolean isDocMgt=false;
     private boolean isSharedFolder=false;
+    private boolean isUnderSharedFolder=false;
     private boolean scanNeverDone=true;
     private boolean scanForcedOff=false;
     private boolean scanForcedOn=false;
@@ -210,6 +215,7 @@ public class FolderCache {
 			
 		}
 		else if (ms.isUnderSharedFolder(foldername)) {
+			isUnderSharedFolder=true;
 			char sep=ms.getFolderSeparator();
             int ix=foldername.indexOf(sep);
             String subname=foldername.substring(ix+1);
@@ -299,6 +305,27 @@ public class FolderCache {
 		);
 		IdleThread ithread=new IdleThread();
 		ithread.start();
+	}
+	
+	protected boolean isSharedToSomeone() throws MessagingException, WTException {
+		if (isSharedFolder||isSharedInbox||isUnderSharedFolder) return false;
+		
+		boolean retval=false;
+		for(ACL acl : ((IMAPFolder)folder).getACL()) {
+			String aclUserId=acl.getName();
+			String userId=ms.aclUserIdToWebtopUserId(aclUserId);
+			if (userId==null) continue;
+
+			CoreManager core=WT.getCoreManager();
+			UserProfile.Id pid=new UserProfile.Id(environment.getProfile().getDomainId(),userId);
+			String roleUid=core.getUserUid(pid);
+			if (roleUid==null) { 
+				if (!RunContext.isPermitted(ms.SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+			}
+			retval=true;
+			break;
+		}
+		return retval;
 	}
     
     protected void setStartupLeaf(boolean b) {

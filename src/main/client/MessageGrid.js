@@ -1559,7 +1559,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						hidden: scol.hidden,
 						renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 								var tag;
-								var others="border=0"
+								var others="border=0";
 								if (value<3) tag=WTF.imageTag(me.mys.ID,'priorityhigh_16.gif',others);
 								else tag=WTF.globalImageTag('empty.gif',7,16,others);
 								return tag;

@@ -67,7 +67,18 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 				renderer: function(v,p,r) {
 					return (v===0?'':'<b>'+v+'</b>');
 				}
+			},
+			{
+				text: 'Shared', 
+				//header: WTF.headerWithGlyphIcon('fa fa-eye'),
+				dataIndex: 'isSharedToSomeone',
+				flex: 1,
+				hidden: true,
+				renderer: function(v,p,r) {
+					return (v?WTF.imageTag(this.mys.ID,'shared_16.png',"border=0"):'');
+				}
 			}
+			
 	  ]
 	},
 	

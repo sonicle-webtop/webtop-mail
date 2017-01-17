@@ -2818,6 +2818,13 @@ public class Service extends BaseService {
 					+ ",hasUnread:" + hasUnread
 					+ ",group: '"+group+"'";
 
+			boolean isSharedToSomeone=false;
+			try {
+				isSharedToSomeone=mc.isSharedToSomeone();
+			} catch(Exception exc) {
+				
+			}
+			if (isSharedToSomeone) ss+=",isSharedToSomeone: true";
 			if (mc.isSharedFolder()) ss+=",isSharedRoot: true";
 			if (mc.isInbox()) {
 				ss += ",isInbox: true";
@@ -7078,6 +7085,32 @@ public class Service extends BaseService {
 		return false;
 	}
 	
+	String aclUserIdToWebtopUserId(String aclUserId) {
+		String userId=aclUserId;
+		//imap user includes domain only if ldap or AD, not including nethserver 6
+		Principal principal=(Principal)RunContext.getSubject().getPrincipal();
+		AuthenticationDomain ad=(principal).getAuthenticationDomain();
+		String scheme=ad.getAuthUri().getScheme();
+		boolean imapUserIncludesDomain=scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
+		//strip domain if needed
+		if (imapUserIncludesDomain) {
+			int ix=aclUserId.indexOf("@");
+			if (ix>0) {
+				String domain=aclUserId.substring(ix+1).toLowerCase();
+				if (ad.getInternetName().toLowerCase().equals(domain)) userId=aclUserId.substring(0,ix);
+				else {
+					//skip if non domain users not permitted
+					if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
+				}
+			} else {
+				if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
+			}
+		}
+		if (principal.getUserId().equals(userId)) userId=null;
+		
+		return userId;
+	}
+	
 	
 	public void processManageSharing(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		
@@ -7091,36 +7124,17 @@ public class Service extends BaseService {
 				String description=folder.getName();
 				ArrayList<JsSharing.SharingRights> rights = new ArrayList<>();
 				for(ACL acl : folder.getACL()) {
-					String aclName=acl.getName();
-					String userId=aclName;
-					Principal principal=(Principal)RunContext.getSubject().getPrincipal();
-					AuthenticationDomain ad=(principal).getAuthenticationDomain();
-					String scheme=ad.getAuthUri().getScheme();
-					//imap user includes domain only if ldap or AD, not including nethserver 6
-					boolean imapUserIncludesDomain=scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
-					//strip domain if needed
-					if (imapUserIncludesDomain) {
-						int ix=aclName.indexOf("@");
-						if (ix>0) {
-							String domain=aclName.substring(ix+1).toLowerCase();
-							if (ad.getInternetName().toLowerCase().equals(domain)) userId=aclName.substring(0,ix);
-							else {
-								//skip if non domain users not permitted
-								if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
-							}
-						} else {
-							if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
-						}
-					}
-					if (principal.getUserId().equals(userId)) continue;
+					String aclUserId=acl.getName();
+					String userId=aclUserIdToWebtopUserId(aclUserId);
+					if (userId==null) continue;
 					
 					CoreManager core=WT.getCoreManager();
-					UserProfile.Id pid=new UserProfile.Id(ad.getDomainId(),userId);
+					UserProfile.Id pid=new UserProfile.Id(environment.getProfile().getDomainId(),userId);
 					String roleUid=core.getUserUid(pid);
 					String roleDescription=null;
 					if (roleUid==null) { 
 						if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
-						roleUid=aclName; 
+						roleUid=aclUserId; 
 						roleDescription=roleUid; 
 					} else {
 						String dn;
@@ -7138,7 +7152,7 @@ public class Service extends BaseService {
 							id, 
 							roleUid,
 							roleDescription,
-							aclName,
+							aclUserId,
 							ar.contains(Rights.Right.getInstance('l')),
 							ar.contains(Rights.Right.getInstance('r')),
 							ar.contains(Rights.Right.getInstance('s')),
