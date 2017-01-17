@@ -51,6 +51,8 @@ import com.sonicle.commons.web.json.Payload;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.sieve.*;
+import com.sonicle.security.AuthenticationDomain;
+import com.sonicle.security.Principal;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
@@ -77,6 +79,7 @@ import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsRule;
+import com.sonicle.webtop.mail.bol.js.JsSharing;
 import com.sonicle.webtop.mail.bol.js.JsSort;
 import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.RuleDAO;
@@ -7076,6 +7079,108 @@ public class Service extends BaseService {
 	}
 	
 	
+	public void processManageSharing(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			String id = ServletUtils.getStringParameter(request, "id", true);
+			boolean recursive = ServletUtils.getBooleanParameter(request, "recursive", false);
+			FolderCache fc = getFolderCache(id);
+			SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
+			if(crud.equals(Crud.READ)) {
+				String description=folder.getName();
+				ArrayList<JsSharing.SharingRights> rights = new ArrayList<>();
+				for(ACL acl : folder.getACL()) {
+					String aclName=acl.getName();
+					String userId=aclName;
+					Principal principal=(Principal)RunContext.getSubject().getPrincipal();
+					AuthenticationDomain ad=(principal).getAuthenticationDomain();
+					String scheme=ad.getAuthUri().getScheme();
+					//imap user includes domain only if ldap or AD, not including nethserver 6
+					boolean imapUserIncludesDomain=scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
+					//strip domain if needed
+					if (imapUserIncludesDomain) {
+						int ix=aclName.indexOf("@");
+						if (ix>0) {
+							String domain=aclName.substring(ix+1).toLowerCase();
+							if (ad.getInternetName().toLowerCase().equals(domain)) userId=aclName.substring(0,ix);
+							else {
+								//skip if non domain users not permitted
+								if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+							}
+						} else {
+							if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+						}
+					}
+					if (principal.getUserId().equals(userId)) continue;
+					
+					CoreManager core=WT.getCoreManager();
+					UserProfile.Id pid=new UserProfile.Id(ad.getDomainId(),userId);
+					String roleUid=core.getUserUid(pid);
+					String roleDescription=null;
+					if (roleUid==null) { 
+						if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+						roleUid=aclName; 
+						roleDescription=roleUid; 
+					} else {
+						String dn;
+						try {
+							OUser ouser=core.getUser(pid);
+							dn=ouser.getDisplayName();
+						} catch(WTException exc) {
+							dn="no description available";
+						}
+						roleDescription=userId+" ["+dn+"]";
+					}
+					
+					Rights ar=acl.getRights();
+					rights.add(new JsSharing.SharingRights(
+							id, 
+							roleUid,
+							roleDescription,
+							aclName,
+							ar.contains(Rights.Right.getInstance('l')),
+							ar.contains(Rights.Right.getInstance('r')),
+							ar.contains(Rights.Right.getInstance('s')),
+							ar.contains(Rights.Right.getInstance('w')),
+							ar.contains(Rights.Right.getInstance('i')),
+							ar.contains(Rights.Right.getInstance('p')),
+							ar.contains(Rights.Right.getInstance('k')),
+							ar.contains(Rights.Right.getInstance('a')),
+							ar.contains(Rights.Right.getInstance('x')),
+							ar.contains(Rights.Right.getInstance('t')),
+							ar.contains(Rights.Right.getInstance('n')),
+							ar.contains(Rights.Right.getInstance('e'))
+					));
+				}
+				JsSharing sharing=new JsSharing(id,description,rights);
+				new JsonResult(sharing).printTo(out);
+			} else if(crud.equals(Crud.UPDATE)) {
+				Payload<MapItem, JsSharing> pl = ServletUtils.getPayload(request, JsSharing.class);
+				//first delete all removed roles
+/*				for(ACL acl: folder.getACL()) {
+					if (!pl.data.hasRole(acl.getName())) {
+						_removeFolderSharing(folder,acl.getName(),recursive);
+					}
+				}*/
+				new JsonResult().printTo(out);
+			}
+			
+		} catch(Exception ex) {
+			logger.error("Error in action ManageSharing", ex);
+			new JsonResult(false, "Error").printTo(out);
+		}
+	}
+	
+	private void _removeFolderSharing(IMAPFolder folder, String acluser, boolean recursive) throws MessagingException {
+		if (recursive && !isLeaf(folder)) {
+		   Folder children[]=folder.list();
+		   for(Folder child: children)
+		   _removeFolderSharing((IMAPFolder)child, acluser, true);
+		}
+		folder.removeACL(acluser);
+	}
+	
 	// TODO: set folder sharing!
 	
 /*	public void setFolderSharing(String targetUser, String resource, String params) throws MessagingException {
@@ -7143,15 +7248,8 @@ public class Service extends BaseService {
 				
 	}
 	
-	private void _removeFolderSharing(IMAPFolder folder, String acluser) throws MessagingException {
-	 if (!isLeaf(folder)) {
-	 Folder children[]=folder.list();
-	 for(Folder child: children)
-	 _removeFolderSharing((IMAPFolder)child, acluser);
-	 }
-	 logger.debug("remove sharing from {} to {}",folder.getFullName(),acluser);
-	 folder.removeACL(acluser);
-	 }*/
+
+	*/
 	public SharedPrincipal getSharedPrincipal(String domainId, String mailUserId) {
 		SharedPrincipal p = null;
 		Connection con = null;

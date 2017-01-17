@@ -31,36 +31,86 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.mail.model.SharingRights', {
-	alternateClassName: 'WTA.sdk.model.SharingRights',
-	extend: 'WTA.model.Base',
+package com.sonicle.webtop.mail.bol.js;
+
+import java.util.List;
+
+/**
+ *
+ * @author malbinola
+ */
+public class JsSharing {
+	public String id;
+	public String description;
+	public List<SharingRights> rights;
 	
-	identifier: 'negativestring',
-	idProperty: 'roleUid',
-	fields: [
-		/*
-		WTF.field('_fk', 'string', true, {
-			reference: {
-				parent: 'Sonicle.webtop.core.sdk.model.Sharing',
-				inverse: 'rights'
+	public JsSharing() {}
+	
+	public JsSharing(String id, String description, List<SharingRights> rights) {
+		this.id = id;
+		this.description = description;
+		this.rights = rights;
+	}
+	
+	public boolean hasRoleUid(String roleUid) {
+		boolean found=false;
+		for(SharingRights sr: rights) {
+			if (sr.roleUid.equals(roleUid)) {
+				found=true;
+				break;
 			}
-		}),
-		*/
-		WTF.fkField('string'),
-		WTF.field('roleUid', 'string', false),
-		WTF.field('roleDescription', 'string', false),
-		WTF.field('imapId', 'string', false),
-		WTF.field('l', 'boolean', false, {defaultValue: true}),
-		WTF.field('r', 'boolean', false, {defaultValue: true}),
-		WTF.field('s', 'boolean', false, {defaultValue: true}),
-		WTF.field('w', 'boolean', false, {defaultValue: true}),
-		WTF.field('i', 'boolean', false, {defaultValue: true}),
-		WTF.field('p', 'boolean', false, {defaultValue: true}),
-		WTF.field('k', 'boolean', false, {defaultValue: true}),
-		WTF.field('a', 'boolean', false, {defaultValue: true}),
-		WTF.field('x', 'boolean', false, {defaultValue: true}),
-		WTF.field('t', 'boolean', false, {defaultValue: true}),
-		WTF.field('n', 'boolean', false, {defaultValue: true}),
-		WTF.field('e', 'boolean', false, {defaultValue: true})
-	]
-});
+		}
+		return found;
+	}
+	
+	public boolean hasImapId(String imapId) {
+		boolean found=false;
+		for(SharingRights sr: rights) {
+			if (sr.imapId.equals(imapId)) {
+				found=true;
+				break;
+			}
+		}
+		return found;
+	}
+	
+	public static class SharingRights {
+		public String _fk;
+		public String roleUid;
+		public String roleDescription;
+		public String imapId;
+		public Boolean l;
+		public Boolean r;
+		public Boolean s;
+		public Boolean w;
+		public Boolean i;
+		public Boolean p;
+		public Boolean k;
+		public Boolean a;
+		public Boolean x;
+		public Boolean t;
+		public Boolean n;
+		public Boolean e;
+		
+		public SharingRights() {}
+		
+		public SharingRights(String _fk, String ruid, String rdesc, String imapId, boolean l, boolean r, boolean s, boolean w, boolean i, boolean p, boolean k, boolean a, boolean x, boolean t, boolean n, boolean e) {
+			this._fk = _fk;
+			roleUid = ruid;
+			roleDescription = rdesc;
+			this.imapId=imapId;
+			this.l=l;
+			this.r=r;
+			this.s=s;
+			this.w=w;
+			this.i=i;
+			this.p=p;
+			this.k=k;
+			this.a=a;
+			this.x=x;
+			this.t=t;
+			this.n=n;
+			this.e=e;
+		}
+	}
+}
