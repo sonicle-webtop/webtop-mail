@@ -44,51 +44,57 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		ignoreRightMouseSelection: true
 	},
 		
-	columns: {
-		items: [
-			{
-				xtype: 'treecolumn', //this is so we know which column will show the tree
-				text: 'Folder',
-				dataIndex: 'folder',
-				flex: 3,
-				renderer: function(v,p,r) {
-					var unr=r.get('unread'),
-						hunr=r.get('hasUnread');
-					return (unr!==0||hunr?'<b>'+v+'</b>':v);
-				},
-				editor: 'textfield'
-			},
-			{
-				//text: 'Unread', 
-				header: WTF.headerWithGlyphIcon('fa fa-eye'),
-				dataIndex: 'unread',
-				align: 'right',
-				flex: 1,
-				renderer: function(v,p,r) {
-					return (v===0?'':'<b>'+v+'</b>');
-				}
-			},
-			{
-				text: 'Shared', 
-				//header: WTF.headerWithGlyphIcon('fa fa-eye'),
-				dataIndex: 'isSharedToSomeone',
-				flex: 1,
-				hidden: true,
-				renderer: function(v,p,r) {
-					return (v?WTF.imageTag(this.mys.ID,'shared_16.png',"border=0"):'');
-				}
-			}
-			
-	  ]
-	},
-	
 	useArrows: true,
 	rootVisible: false,
 
 	constructor: function(cfg) {
 		var me = this;
 		
+		cfg=cfg||{};
+
+		Ext.apply(cfg,{
+			columns: {
+				items: [
+					{
+						xtype: 'treecolumn', //this is so we know which column will show the tree
+						text: cfg.mys.res("column-folder"),
+						dataIndex: 'folder',
+						flex: 3,
+						renderer: function(v,p,r) {
+							var unr=r.get('unread'),
+								hunr=r.get('hasUnread');
+							return (unr!==0||hunr?'<b>'+v+'</b>':v);
+						},
+						editor: 'textfield'
+					},
+					{
+						header: WTF.headerWithGlyphIcon('fa fa-eye'),
+						dataIndex: 'unread',
+						align: 'right',
+						flex: 1,
+						renderer: function(v,p,r) {
+							return (v===0?'':'<b>'+v+'</b>');
+						}
+					},
+					{
+						header: WTF.headerWithGlyphIcon('fa fa-share-alt'),
+						dataIndex: 'isSharedToSomeone',
+						flex: 1,
+						hidden: true,
+						renderer: function(v,p,r) {
+							return (v?WTF.imageTag(this.mys.ID,'shared_16.png',"border=0"):'');
+						}
+					}
+
+			  ]
+			}
+		});
+		
 		me.callParent([cfg]);
+	},
+	
+	showSharings: function(b) {
+		this.getColumns()[2].setHidden(!b);
 	}
 	
 });

@@ -1549,7 +1549,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				case 'stid-priority':
 					dcols[n++]=Ext.create({//Priority
 						xtype: 'gridcolumn',
-						header: '<i class="wtmail-icon-header-priority-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						//header: '<i class="wtmail-icon-header-priority-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						header: WTF.headerWithGlyphIcon('fa fa-exclamation'),
 						cls: 'wtmail-header-text-clip',
 						width: 35,
 						sortable: true,
@@ -1761,7 +1762,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				case 'stid-atts':
 					dcols[n++]=Ext.create({//Attachment
 						xtype: 'gridcolumn',
-						header: '<i class="wtmail-icon-header-attach-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						//header: '<i class="wtmail-icon-header-attach-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						header: WTF.headerWithGlyphIcon('fa fa-paperclip'),
 						cls: 'wtmail-header-text-clip',
 						width: 30,
 						sortable: false,
@@ -1783,7 +1785,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				case 'stid-flag':
 					dcols[n++]=Ext.create({//Flag
 						xtype: 'gridcolumn',
-						header: '<i class="wtmail-icon-header-flag-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						//header: '<i class="wtmail-icon-header-flag-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						header: WTF.headerWithGlyphIcon('fa fa-flag-o'),
 						cls: 'wtmail-header-text-clip',
 						width: 30,
 						sortable: true,
@@ -1865,7 +1868,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				case 'stid-note':
 					dcols[n++]=Ext.create({//Mail note
 						xtype: 'gridcolumn',
-						header: '<i class="wtmail-icon-header-note-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						//header: '<i class="wtmail-icon-header-note-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						header: WTF.headerWithGlyphIcon('fa fa-sticky-note-o'),
 						cls: 'wtmail-header-text-clip',
 						width: 30,
 						sortable: true,
@@ -1888,7 +1892,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				case 'stid-arch':
 					dcols[n++]=Ext.create({//Archived
 						xtype: 'gridcolumn',
-						header: '<i class="wtmail-icon-header-docmgt-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						//header: '<i class="wtmail-icon-header-docmgt-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
+						header: WTF.headerWithGlyphIcon('fa fa-archive'),
 						cls: 'wtmail-header-text-clip',
 						width: 30,
 						sortable: true,

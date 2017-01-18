@@ -313,11 +313,9 @@ public class FolderCache {
 		boolean retval=false;
 		for(ACL acl : ((IMAPFolder)folder).getACL()) {
 			String aclUserId=acl.getName();
-			String userId=ms.aclUserIdToWebtopUserId(aclUserId);
-			if (userId==null) continue;
-
+			UserProfile.Id pid=ms.aclUserIdToUserId(aclUserId);
+			if (pid==null) continue;
 			CoreManager core=WT.getCoreManager();
-			UserProfile.Id pid=new UserProfile.Id(environment.getProfile().getDomainId(),userId);
 			String roleUid=core.getUserUid(pid);
 			if (roleUid==null) { 
 				if (!RunContext.isPermitted(ms.SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;

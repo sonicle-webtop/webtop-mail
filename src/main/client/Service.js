@@ -79,14 +79,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
     
 
 	init: function() {
-		//Ext.require('Sonicle.webtop.mail.MessagesPanel');
 		var me=this;
 		
 		me.initActions();
 		me.initCxm();
-		
-		//TODO load settings
-		//this.loadSettings();
 		
 		me.viewmaxtos=me.getVar('messageViewMaxTos');
 		me.viewmaxccs=me.getVar('messageViewMaxCcs');
@@ -107,7 +103,43 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.messagesPanel=mp;
 		me.setMainComponent(me.messagesPanel);
 		
-		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{ mys: me });
+		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
+			mys: me,
+			listeners: {
+				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
+					me.updateCxmTree(rec);
+					WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
+				},
+				containercontextmenu: function(v, e, eopts) {
+					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
+				},
+				rowclick: function(t, r, tr, ix, e, eopts) {
+					me.folderClicked(t, r, tr, ix, e, eopts);
+				},
+				load: function(t,r,s,o,n) {
+					if (n.id==='root') {
+						me.selectInbox();
+						Ext.each(n.childNodes,function(cn,cx,an) {
+							if (cn.get("isSharedRoot")) {
+								cn.expand();
+							}
+						});
+					}
+				},
+				edit: function(ed, e) {
+					if (e.colIdx===0)
+						me.renameFolder(e.record,e.originalValue,e.value);
+				},
+				columnshow: function(ct,c) {
+					if (c.getIndex()==2)
+						me.getRef("mnuShowSharings").setChecked(true,true);
+				},
+				columnhide: function(ct,c) {
+					if (c.getIndex()==2)
+						me.getRef("mnuShowSharings").setChecked(false,true);
+				}
+			}
+		});
 
 		var tool = Ext.create({
 				xtype: 'panel',
@@ -120,58 +152,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		me.setToolComponent(tool);
 
-		//TODO: tree editor
-        //this.treeEditor=new WT.ImapTreeEditor(this.imapTree);
-        //this.treeEditor.on('beforecomplete',this.renamingFolder,this);
-
-		me.imapTree.on("itemcontextmenu",function(v, rec, itm, i, e, eopts) {
-			me.updateCxmTree(rec);
-			WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
-		});
-		me.imapTree.on("containercontextmenu",function(v, e, eopts) {
-			WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
-		});
-
-        //this.imapTree.on('contextmenu',this.treeContextMenu,this);
-		
-        //me.imapTree.on('select',me.folderSelected,me);
-		me.imapTree.on('rowclick',me.folderClicked,me);
-		//TODO: drag&drop
-        //this.imapTree.on('nodedragover',this.draggingOver,this);
-        //this.imapTree.on('beforenodedrop',this.dropping,this);
-		//TODO: tree on load
-        me.imapTree.on('load',function(t,r,s,o,n) {
-            //if (n.id=='imaproot') {
-            //    setTimeout(this.actionCheck.createDelegate(this),1000);
-            //    WT.addServerEventListener("recents",this);
-            //    //setTimeout(this.checkFolders.createDelegate(this),1000);
-            //}
-			if (n.id==='root') {
-				me.selectInbox();
-				Ext.each(n.childNodes,function(cn,cx,an) {
-					if (cn.get("isSharedRoot")) {
-						cn.expand();
-					}
-				},me);
-			}
-        },this);
-		//TODO: context menu
-        /*this.imapTree.on('render',function(t) {
-            t.body.on('contextmenu',this.treeBodyContextMenu,this);
-        },this);*/
-		
-		me.imapTree.on('edit', function(ed, e) {
-			if (e.colIdx===0)
-				me.renameFolder(e.record,e.originalValue,e.value);
-		});
-		
-		
 		me.onMessage('unread',me.unreadChanged,me);
-
-		me.toolbar=mp.toolbar;
-        //var xb1,xb2,xb3,xb4,xb5,xb6,xb7;
+		
         var xb=new Array();
-        var xx=0;
+			xx=0;
+		me.toolbar=mp.toolbar;
         me.toolbar.insert(0,[
                 xb[xx++]=me._TB("print"),
                 xb[xx++]=me._TB("delete"),
@@ -195,10 +180,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		//TODO DOCMGT
         //if (WT.docmgt) this.toolbar.insertButton(4,xb[xx++]=new Ext.Button(this.getAction('docmgt')));
         //else if (WT.docmgtwt) this.toolbar.insertButton(4,xb[xx++]=new Ext.Button(this.getAction('docmgtwt')));
-		
-		//NOT NEEDED ANYMORE
-        //for(xx=0;xx<xb.length;++xx) xb[xx].setText('');
-
 		
         mp.folderList.on("viewready",me.resizeColumns,me);
 		
@@ -289,6 +270,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         //me.addAction("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
         me.addAction("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv-xs' });
         me.addAction("sharing",{ handler: me.actionSharing, scope: me, iconCls: 'wt-icon-sharing-xs' });
+        me.addAction("showsharings",{ handler: null, iconCls: '' });
         me.addAction("threaded",{ handler: function() { me.messagesPanel.actionThreaded(); }, iconCls: 'wtmail-icon-threaded-xs', enableToggle: true });
         me.addAction("emptyfolder",{ handler: me.actionEmptyFolder, scope: me });
         me.addAction("deletefolder",{ handler: me.actionDeleteFolder, scope: me, iconCls: 'wt-icon-delete-xs' });
@@ -384,7 +366,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         cxmGrid.add(me.getAction('viewsource'));
 		
 		//tree menu
-		var mscan;
+		var mscan,mshowsharings;
 		var cxmTree=me.addRef('cxmTree', Ext.create({
 			xtype: 'menu',
 			items: [
@@ -401,6 +383,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 me.getAction('refresh'),
                 '-',
                 me.getAction('sharing'),
+				mshowsharings=Ext.create('Ext.menu.CheckItem',me.getAction('showsharings')),
 				'-',
 				mscan=Ext.create('Ext.menu.CheckItem',me.getAction('scanfolder')),
                 '-',
@@ -412,6 +395,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         //mscan.on('checkchange',me.actionScanFolder,me);
 		mscan.on('click',me.actionScanFolder,me);
 		me.addRef("mnuScan",mscan);
+		mshowsharings.on('click',me.actionShowSharings,me);
+		me.addRef("mnuShowSharings",mshowsharings);
         //cxmTree.on('hide',this.treeMenuHidden,this);
 		
 		var cxmBackTree=me.addRef('cxmBackTree', Ext.create({
@@ -419,9 +404,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
             items: [
                 this.getAction('newmainfolder'),
                 '-',
-                this.getAction('refresh'),
+                this.getAction('refresh')/*,
                 '-',
-                me.getAction('sharing')
+                me.getAction('sharing')*/
             ]
         }));
 	},
@@ -629,6 +614,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			});
 	
+		vw.getView().on("modelsave",function(v, op, success,r) {
+			if (success) {
+				var s=me.imapTree.getStore(),
+					n=s.getNodeById(r.get("id")),
+					m=r.get("method"),
+					pn=m==="all"?s.getRootNode():n.parentNode;
+					
+				
+				s.load({
+					node: pn,
+					callback: function() {
+						if (m==="branch") s.getNodeById(r.get("id")).expand();
+					}
+				});
+			}
+		},me,{ single: true });
+	
 		vw.show(false, function() {
 			vw.getView().begin('edit', {
 				data: {
@@ -636,6 +638,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			});
 		});
+	},
+	
+	actionShowSharings: function(mi,e) {
+		this.imapTree.showSharings(mi.checked);
 	},
 	
 	actionRules: function() {

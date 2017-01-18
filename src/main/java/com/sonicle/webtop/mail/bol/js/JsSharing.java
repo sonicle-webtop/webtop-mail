@@ -42,13 +42,15 @@ import java.util.List;
 public class JsSharing {
 	public String id;
 	public String description;
+	public String method;
 	public List<SharingRights> rights;
 	
 	public JsSharing() {}
 	
-	public JsSharing(String id, String description, List<SharingRights> rights) {
+	public JsSharing(String id, String description, String method, List<SharingRights> rights) {
 		this.id = id;
 		this.description = description;
+		this.method = method;
 		this.rights = rights;
 	}
 	
@@ -111,6 +113,23 @@ public class JsSharing {
 			this.t=t;
 			this.n=n;
 			this.e=e;
+		}
+		
+		public String toString() {
+			StringBuffer sb=new StringBuffer();
+			if (l) sb.append('l');
+			if (r) sb.append('r');
+			if (s) sb.append('s');
+			if (w) sb.append('w');
+			if (i) sb.append('i');
+			if (p) sb.append('p');
+			if (k) sb.append('k');
+			if (a) sb.append('a');
+			if (x) sb.append('x');
+			if (t) sb.append('t');
+			if (n) sb.append('n');
+			if (e) sb.append('e');
+			return sb.toString();
 		}
 	}
 }

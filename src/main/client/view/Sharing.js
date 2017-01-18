@@ -46,20 +46,81 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 		width: 600,
 		height: 500
 	},
-	promptConfirm: false,
+	//promptConfirm: false,
 	full: true,
+	
+	//dirty: false,
 	
 	fullRights: 'lrswipkxtea',
 
+	constructor: function(cfg) {
+		var me = this;
+		me.methodName = Ext.id(null, 'method-');
+		me.callParent([cfg]);
+		
+		WTU.applyFormulas(me.getVM(), {
+			foMethod: WTF.radioGroupBind('record', 'method', me.methodName)
+		});
+	},
+	
 	initComponent: function() {
 		var me = this;
+		Ext.apply(me, {
+			tbar: [
+				'-',' ',me.mys.res('sharing.apply-to.lbl')+': ',
+				{
+					xtype: 'radiogroup',
+					bind: {
+						value: '{foMethod}'
+					},
+					layout: 'hbox',
+					defaults: {
+						name: me.methodName,
+						margin: '0 20 0 0',
+						listeners: {
+							afterrender: function() {
+								this.getEl().on('click', function() {
+									//me.dirty=true;
+								});
+							}
+						}
+					},
+					items: [
+						{
+							boxLabel: me.mys.res('sharing.chk-this.lbl'),
+							inputValue: 'this'
+						},
+						{
+							boxLabel: me.mys.res('sharing.chk-branch.lbl'),
+							inputValue: 'branch'
+						},
+						{
+							boxLabel: me.mys.res('sharing.chk-all.lbl'),
+							inputValue: 'all'
+						}
+					]
+				}
+			]
+		});
+		
 		me.callParent(arguments);
 		
 		me.add({
 			region: 'north',
 			xtype: 'wtfieldspanel',
-			height: 30,
+			height: 60,
+			layout: {
+				type: 'vbox',
+				align: 'stretch'
+			},
 			items: [
+				{
+					xtype: 'label',
+					height: 24,
+					bind: {
+						text: me.mys.res("column-folder")+': {record.id}'
+					}
+				},
 				WTF.localCombo('id', 'desc', {
 					xtype: 'sosourcecombo',
 					reference: 'fldrole',
@@ -74,13 +135,13 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 						})
 					},
 					sourceField: 'sourceLabel',
-					anchor: '100%',
 					emptyText: WT.res('sharing.fld-role.lbl'),
 					listeners: {
 						select: function(s, rec) {
-							var model = me.addRights(rec.get('id'));
+							var model = me.addRights(rec.get('id'),rec.get('desc'));
 							me.lref('gprights').setSelection(model);
 							s.setValue(null);
+							//me.dirty=true;
 						}
 					}
 				})]
@@ -161,17 +222,16 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 						triggerAction: 'all',
 						valueField: 'rights',
 						listeners: {
-							select: {
-								fn: function(c,r,i) {
-									var id=r.get('rights');
-									if (id.length>0) {
-										var rec = me.lref('gprights').getSelection()[0];
-										for(var i=0;i<me.fullRights.length;++i) {
-											var c=me.fullRights.charAt(i);
-											rec.set(c,id.indexOf(c)>=0);
-										}
-									} 
-								}
+							select: function(c,r,i) {
+								var id=r.get('rights');
+								if (id.length>0) {
+									var rec = me.lref('gprights').getSelection()[0];
+									for(var i=0;i<me.fullRights.length;++i) {
+										var c=me.fullRights.charAt(i);
+										rec.set(c,id.indexOf(c)>=0);
+									}
+								} 
+								//me.dirty=true;
 							}
 						}
 					},'->',{
@@ -210,6 +270,7 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 									afterrender: function() {
 										this.getEl().on('click', function() {
 											me.lref('cboRights').setValue('');
+											//me.dirty=true;
 										});
 									}
 								}
@@ -289,7 +350,7 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 		me.lref('fldrole').focus(true);
 	},
 	
-	addRights: function(roleUid) {
+	addRights: function(roleUid,roleDescription) {
 		var me = this,
 				grid = me.lref('gprights'),
 				sto = grid.getStore(),
@@ -298,6 +359,7 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 		if(sto.indexOfId(roleUid) !== -1) return null;
 		rec = sto.add({
 			roleUid: roleUid,
+			roleDescription: roleDescription,
 			folderRead: true
 		})[0];
 		return rec;
