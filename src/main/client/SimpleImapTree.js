@@ -77,13 +77,18 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 						}
 					},
 					{
+						xtype: 'soiconcolumn',
 						header: WTF.headerWithGlyphIcon('fa fa-share-alt'),
 						dataIndex: 'isSharedToSomeone',
 						flex: 1,
 						hidden: true,
-						renderer: function(v,p,r) {
-							return (v?WTF.imageTag(this.mys.ID,'shared_16.png',"border=0"):'');
-						}
+						getIconCls: function(value,rec) {
+							return value?WTF.cssIconCls(me.mys.XID, 'status-shared', 'xs'):WTF.cssIconCls(WT.XID, 'empty', 'xs');
+						},
+						handler: function(grid, rix, cix, e, rec) {
+							me.mys.showSharingView(rec);
+						},
+						scope: me
 					}
 
 			  ]

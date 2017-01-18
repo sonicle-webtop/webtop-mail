@@ -607,7 +607,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionSharing: function(s,e) {
 		var me=this,
-			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0],
+			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0];
+	
+		me.showSharingView(fn);
+	},
+	
+	showSharingView: function(node) {
+		var me=this,
 			vw=WT.createView(me.ID,'view.Sharing',{
 				viewCfg: {
 					mys: me
@@ -634,7 +640,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		vw.show(false, function() {
 			vw.getView().begin('edit', {
 				data: {
-					id: fn.get("id")
+					id: node.get("id")
 				}
 			});
 		});

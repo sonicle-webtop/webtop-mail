@@ -56,6 +56,8 @@
 .wtmail-icon-status-forwarded-xs { background-image: url('statusforwarded_16.png') !important; }
 .wtmail-icon-status-replied-forwarded-xs { background-image: url('statusrepfwd_16.png') !important; }
 
+.wtmail-icon-status-shared-xs { background-image: url('shared_16.png') !important; }
+
 .wtmail-icon-header-attach-xs { background-image: url('headerattach_16.gif') !important; background-repeat: no-repeat; background-position: center; }
 .wtmail-icon-header-flag-xs { background-image: url('headerflag_16.gif') !important; background-repeat: no-repeat; background-position: center; }
 .wtmail-icon-header-note-xs { background-image: url('headermailnote_16.gif') !important; background-repeat: no-repeat; background-position: center; }
