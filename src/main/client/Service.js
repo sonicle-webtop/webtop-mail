@@ -228,7 +228,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("open",{ handler: me.gridAction(me,'Open'), iconCls: '' });
         me.addAction("opennew",{ handler: me.gridAction(me,'OpenNew'), iconCls: '' });
         
-        me.addAction("print",{ handler: me.gridAction(me,'Print'), iconCls: 'wt-icon-print-xs' });
+        me.addAction("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print-xs' });
         me.addAction("reply",{ handler: me.gridAction(me,'Reply') });
         me.addAction("replyall",{ handler: me.gridAction(me,'ReplyAll') });
         me.addAction("forward",{ handler: me.gridAction(me,'Forward') });
@@ -588,6 +588,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
         }
 		
 		return ident;
+	},
+	
+	getIdentity: function(index) {
+		return this.varsData.identities[index];
 	},
 	
 	actionAdvancedSearch: function(s,e) {

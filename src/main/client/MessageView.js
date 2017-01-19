@@ -1063,25 +1063,34 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		});					
     },
 
-	// TODO print
-	/*
     print: function() {
-        var html='<html><head><link rel="stylesheet" type="text/css" href="webtop/themes/'+WT.theme+'/mail/mail.css" /></head><body>';
-        html+="<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+this.ms.identities[0].displayname+"</b></font></div><br>"
-        html+=this.tdHeader.dom.innerHTML;
-        if (this.iframes) {
-            var len=this.iframes.length;
+        var me=this,
+			//html='<html><head><link rel="stylesheet" type="text/css" href="webtop/themes/'+WT.theme+'/mail/mail.css" /></head><body>'+
+			html="<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+me.mys.getIdentity(0).displayName+"</b></font></div><br>"
+        html+=me.tdHeader.dom.innerHTML;
+        if (me.iframes) {
+            var len=me.iframes.length;
             for(var i=0;i<len;++i) {
                 if (i>0) html+="<hr><br>";
-                var xif=this.iframes[i];
-                var data=WT.getFrameData(xif.name);
+                var xif=me.iframes[i];
+                var data=me.getFrameData(xif.name);
                 var thebody=data.doc.body;
                 html+='<span>'+thebody.innerHTML+"</span><br>";
             }
-            html+='</body></html>';
-            WT.app.print(html);
+            //html+='</body></html>';
+            Sonicle.PrintMgr.print(html);
         }
-    },*/
+    },
+	
+	getFrameData: function(xifname) {
+		var data={doc: null, xif: document.getElementById(xifname)};
+		if (Ext.isIE) {
+			if (window.frames[xifname]) data.doc=window.frames[xifname].document;
+		} else {
+			data.doc=data.xif.contentDocument;
+		}
+		return data;
+	},
     
     showEml: function(t,urlparams) {
         var params=Ext.Object.fromQueryString(urlparams);

@@ -356,11 +356,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             this.doLayout();
         }
     },
+*/
     
     printMessageView: function() {
         this.messageView.print();
     },
-	
+/*	
     gridContextMenu: function(e,t) {
         var grid=this.folderList;
         WT.MessageGrid.setContextGrid(grid);

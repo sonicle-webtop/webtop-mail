@@ -718,6 +718,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		*/
     },
 	
+	actionPrint: function() {
+		
+	},
+	
     actionOpen: function(rowIndex) {
         var me=this,
 			recs=(rowIndex>=0)?
