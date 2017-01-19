@@ -62,6 +62,11 @@ import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.bol.model.InternetRecipient;
+import com.sonicle.webtop.core.bol.model.SharePerms;
+import com.sonicle.webtop.core.bol.model.SharePermsElements;
+import com.sonicle.webtop.core.bol.model.SharePermsFolder;
+import com.sonicle.webtop.core.bol.model.SharePermsRoot;
+import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
@@ -181,6 +186,9 @@ public class Service extends BaseService {
         new ThunderbirdFlag("$label5",5)	//purple
 		
     };*/
+	
+	private static final String IDENTITY_SHARING_GROUPNAME = "IDENTITY";
+	private static final String IDENTITY_SHARING_ID = "0";
 	
 	public static Flags flagsAll = new Flags();
 	public static Flags oldFlagsAll = new Flags();
@@ -7133,6 +7141,7 @@ public class Service extends BaseService {
 			FolderCache fc = getFolderCache(id);
 			SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
 			CoreManager core=WT.getCoreManager();
+			Sharing wtsharing=core.getSharing(SERVICE_ID, IDENTITY_SHARING_GROUPNAME, IDENTITY_SHARING_ID);
 			String description=folder.getName();
 			ArrayList<JsSharing.SharingRights> rights = new ArrayList<>();
 			for(ACL acl : folder.getACL()) {
@@ -7141,11 +7150,18 @@ public class Service extends BaseService {
 				if (pid==null) continue;
 				String roleUid=core.getUserUid(pid);
 				String roleDescription=null;
+				boolean useMyPersonalInfo=false;
+				boolean forceMyMailcard=false;
 				if (roleUid==null) { 
 					if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 					roleUid=aclUserId; 
 					roleDescription=roleUid; 
 				} else {
+					Sharing.RoleRights wtrr=wtsharing.getRoleRights(roleUid);
+					if (wtrr!=null) {
+						useMyPersonalInfo=wtrr.folderRead;
+						forceMyMailcard=wtrr.folderUpdate;
+					}
 					String dn;
 					try {
 						OUser ouser=core.getUser(pid);
@@ -7162,6 +7178,8 @@ public class Service extends BaseService {
 						roleUid,
 						roleDescription,
 						aclUserId,
+						useMyPersonalInfo,
+						forceMyMailcard,
 						ar.contains(Rights.Right.getInstance('l')),
 						ar.contains(Rights.Right.getInstance('r')),
 						ar.contains(Rights.Right.getInstance('s')),
@@ -7214,6 +7232,7 @@ public class Service extends BaseService {
 					if (!pl.data.hasImapId(sr.imapId)) {
 						System.out.println("Folder ["+foldername+"] - remove acl for "+sr.imapId+" recursive="+recursive);
 						removeFolderSharing(foldername,sr.imapId,recursive);
+						updateIdentitySharing(sr.roleUid,false,false);
 					}
 				}
 				//now apply new acls
@@ -7222,8 +7241,10 @@ public class Service extends BaseService {
 						String srights=sr.toString();
 						System.out.println("Folder ["+foldername+"] - add acl "+srights+" for "+sr.imapId+" recursive="+recursive);
 						setFolderSharing(foldername, sr.imapId, srights, recursive);
+						updateIdentitySharing(sr.roleUid,sr.useMyPersonalInfo,sr.forceMyMailcard);
 					}
 				}
+				
 				new JsonResult().printTo(out);
 			}
 			
@@ -7231,6 +7252,21 @@ public class Service extends BaseService {
 			logger.error("Error in action ManageSharing", ex);
 			new JsonResult(false, "Error").printTo(out);
 		}
+	}
+	
+	private void updateIdentitySharing(String roleUid, boolean useMyPersonalInfo, boolean forceMyMailcard) throws WTException {
+		//update sharing settings
+		Sharing wtsharing=new Sharing();
+		wtsharing.setId(IDENTITY_SHARING_ID);
+		ArrayList<Sharing.RoleRights> wtrights=new ArrayList<>();
+		SharePermsFolder spf=new SharePermsFolder();
+		if (useMyPersonalInfo||forceMyMailcard) {
+			if (useMyPersonalInfo) spf.add(SharePermsFolder.READ);
+			if (forceMyMailcard) spf.add(SharePermsFolder.UPDATE);
+			wtrights.add(new Sharing.RoleRights(roleUid,null,spf,new SharePermsElements()));
+		}
+		wtsharing.setRights(wtrights);
+		WT.getCoreManager().updateSharing(SERVICE_ID, IDENTITY_SHARING_GROUPNAME, wtsharing);
 	}
 	
 	private void removeFolderSharing(String foldername, String acluser, boolean recursive) throws MessagingException {

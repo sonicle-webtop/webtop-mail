@@ -160,6 +160,16 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 				columns: [{
 					dataIndex: 'roleDescription',
 					header: WT.res('sharing.gp-rights.role.lbl'),
+					flex: 2
+				},{
+					xtype: 'checkcolumn',
+					header: me.mys.res('sharing.rights-use-my-personal-info.lbl'),
+					dataIndex: 'useMyPersonalInfo',
+					flex: 1
+				},{
+					xtype: 'checkcolumn',
+					header: me.mys.res('sharing.rights-force-my-mailcard.lbl'),
+					dataIndex: 'forceMyMailcard',
 					flex: 1
 				}],
 				tbar: [
