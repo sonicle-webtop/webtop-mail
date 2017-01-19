@@ -281,8 +281,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						header: WT.res(me.ID, 'opts.ident.fax.lbl'),
 						flex: 1
 					}, {
-						dataIndex: 'useMyPersonalInfos',
-						header: WT.res(me.ID, 'opts.ident.useMyPersonalInfos.lbl'),
+						dataIndex: 'forceMailcard',
+						header: WT.res(me.ID, 'opts.ident.force-mailcard.lbl'),
 						flex: 1
 					}],
 					tbar: [

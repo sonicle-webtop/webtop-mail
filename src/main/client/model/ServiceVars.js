@@ -58,7 +58,7 @@ Ext.define('Sonicle.webtop.mail.model.Identity', {
 		{ name: "displayName" },
 		{ name: "mainFolder" },
 		{ name: "fax", type: 'boolean' },
-		{ name: "useMyPersonalInfos", type: 'boolean' },
+		{ name: "forceMailcard", type: 'boolean' },
 		{ name: "lockMailcard", type: 'boolean' },
 		WTF.calcField("description","string",["email","displayName"], function(v,r) {
 			return r.get("displayName")+" - "+r.get("email");

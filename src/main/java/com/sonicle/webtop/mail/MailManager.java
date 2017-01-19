@@ -36,10 +36,11 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.webtop.core.CoreManager;
-import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.bol.OShare;
 import com.sonicle.webtop.core.bol.model.IncomingShareRoot;
+import com.sonicle.webtop.core.bol.model.SharePerms;
+import com.sonicle.webtop.core.bol.model.SharePermsFolder;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.sdk.BaseManager;
 import com.sonicle.webtop.core.sdk.UserProfile;
@@ -52,7 +53,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.commons.beanutils.BeanUtils;
 import org.slf4j.Logger;
 
 /**
@@ -62,7 +62,9 @@ import org.slf4j.Logger;
 public class MailManager extends BaseManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
-	public static final String RESOURCE_IMAPFOLDER = "IMAPFOLDER";
+	public static final String IDENTITY_SHARING_GROUPNAME = "IDENTITY";
+	public static final String IDENTITY_SHARING_ID = "0";
+	
 	
 	List<Identity> identities=null;
 	
@@ -86,19 +88,6 @@ public class MailManager extends BaseManager {
         return identities.get(0);
     }
 	
-	public static class ImapFolderData {
-		boolean useMyPersonalInfo;
-		boolean forceMyMailcard;
-		
-		public static ImapFolderData fromJson(String s) {
-			return JsonResult.gson.fromJson(s, ImapFolderData.class);
-		}
-		
-		public static String toJson(ImapFolderData ifd) {
-			return JsonResult.gson.toJson(ifd);
-		}
-	}
-	
 	private List<Identity> buildIdentities() throws WTException {
 		Connection con=null;
 		List<Identity> idents=new ArrayList();
@@ -120,14 +109,20 @@ public class MailManager extends BaseManager {
 			
 			//add automatic shared identities
 			CoreManager core=WT.getCoreManager(getTargetProfileId());
-			for(IncomingShareRoot share: core.listIncomingShareRoots(SERVICE_ID, RESOURCE_IMAPFOLDER)) {
-				for(OShare folder: core.listIncomingShareFolders(share.getShareId(), RESOURCE_IMAPFOLDER)) {
-					UserProfile.Id opid=share.getOriginPid();
-					udata=WT.getUserData(opid);
-					ImapFolderData ifd=core.getIncomingShareFolderData(folder.getShareId().toString(),ImapFolderData.class);
-					id = new Identity(Identity.TYPE_AUTO,udata.getEmail().getAddress(), udata.getDisplayName(), folder.getInstance(), false, ifd.useMyPersonalInfo);
-					id.setOriginPid(opid);
-					idents.add(id);
+			for(IncomingShareRoot share: core.listIncomingShareRoots(SERVICE_ID, IDENTITY_SHARING_GROUPNAME)) {
+				UserProfile.Id opid=share.getOriginPid();
+				udata=WT.getUserData(opid);
+				List<OShare> folders=core.listIncomingShareFolders(share.getShareId(), IDENTITY_SHARING_GROUPNAME);
+				if (folders!=null && folders.size()>0) {
+					OShare folder=folders.get(0);
+					SharePermsFolder spf=core.getShareFolderPermissions(folder.getShareId().toString());
+					boolean shareIdentity=spf.implies("READ");
+					boolean forceMailcard=spf.implies("UPDATE");
+					if (shareIdentity) {
+						id = new Identity(Identity.TYPE_AUTO,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard);
+						id.setOriginPid(opid);
+						idents.add(id);
+					}
 				}
 			}
 		} catch(SQLException | DAOException ex) {

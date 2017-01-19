@@ -187,9 +187,6 @@ public class Service extends BaseService {
 		
     };*/
 	
-	private static final String IDENTITY_SHARING_GROUPNAME = "IDENTITY";
-	private static final String IDENTITY_SHARING_ID = "0";
-	
 	public static Flags flagsAll = new Flags();
 	public static Flags oldFlagsAll = new Flags();
 	public static Flags tbFlagsAll=new Flags();
@@ -293,8 +290,8 @@ public class Service extends BaseService {
 
 		this.environment = getEnv();
 		
-		mailManager=new MailManager(false, this.environment.getProfileId());
-		
+		mailManager=(MailManager)WT.getServiceManager(SERVICE_ID);
+
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
 		us = new MailUserSettings(profile.getId(),ss);
@@ -7141,7 +7138,7 @@ public class Service extends BaseService {
 			FolderCache fc = getFolderCache(id);
 			SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
 			CoreManager core=WT.getCoreManager();
-			Sharing wtsharing=core.getSharing(SERVICE_ID, IDENTITY_SHARING_GROUPNAME, IDENTITY_SHARING_ID);
+			Sharing wtsharing=core.getSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, MailManager.IDENTITY_SHARING_ID);
 			String description=folder.getName();
 			ArrayList<JsSharing.SharingRights> rights = new ArrayList<>();
 			for(ACL acl : folder.getACL()) {
@@ -7150,8 +7147,8 @@ public class Service extends BaseService {
 				if (pid==null) continue;
 				String roleUid=core.getUserUid(pid);
 				String roleDescription=null;
-				boolean useMyPersonalInfo=false;
-				boolean forceMyMailcard=false;
+				boolean shareIdentity=false;
+				boolean forceMailcard=false;
 				if (roleUid==null) { 
 					if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 					roleUid=aclUserId; 
@@ -7159,8 +7156,8 @@ public class Service extends BaseService {
 				} else {
 					Sharing.RoleRights wtrr=wtsharing.getRoleRights(roleUid);
 					if (wtrr!=null) {
-						useMyPersonalInfo=wtrr.folderRead;
-						forceMyMailcard=wtrr.folderUpdate;
+						shareIdentity=wtrr.folderRead;
+						forceMailcard=wtrr.folderUpdate;
 					}
 					String dn;
 					try {
@@ -7178,8 +7175,8 @@ public class Service extends BaseService {
 						roleUid,
 						roleDescription,
 						aclUserId,
-						useMyPersonalInfo,
-						forceMyMailcard,
+						shareIdentity,
+						forceMailcard,
 						ar.contains(Rights.Right.getInstance('l')),
 						ar.contains(Rights.Right.getInstance('r')),
 						ar.contains(Rights.Right.getInstance('s')),
@@ -7241,7 +7238,7 @@ public class Service extends BaseService {
 						String srights=sr.toString();
 						System.out.println("Folder ["+foldername+"] - add acl "+srights+" for "+sr.imapId+" recursive="+recursive);
 						setFolderSharing(foldername, sr.imapId, srights, recursive);
-						updateIdentitySharing(sr.roleUid,sr.useMyPersonalInfo,sr.forceMyMailcard);
+						updateIdentitySharing(sr.roleUid,sr.shareIdentity,sr.forceMailcard);
 					}
 				}
 				
@@ -7254,19 +7251,19 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void updateIdentitySharing(String roleUid, boolean useMyPersonalInfo, boolean forceMyMailcard) throws WTException {
+	private void updateIdentitySharing(String roleUid, boolean shareIdentity, boolean forceMailcard) throws WTException {
 		//update sharing settings
 		Sharing wtsharing=new Sharing();
-		wtsharing.setId(IDENTITY_SHARING_ID);
+		wtsharing.setId(MailManager.IDENTITY_SHARING_ID);
 		ArrayList<Sharing.RoleRights> wtrights=new ArrayList<>();
 		SharePermsFolder spf=new SharePermsFolder();
-		if (useMyPersonalInfo||forceMyMailcard) {
-			if (useMyPersonalInfo) spf.add(SharePermsFolder.READ);
-			if (forceMyMailcard) spf.add(SharePermsFolder.UPDATE);
+		if (shareIdentity||forceMailcard) {
+			if (shareIdentity) spf.add(SharePermsFolder.READ);
+			if (forceMailcard) spf.add(SharePermsFolder.UPDATE);
 			wtrights.add(new Sharing.RoleRights(roleUid,null,spf,new SharePermsElements()));
 		}
 		wtsharing.setRights(wtrights);
-		WT.getCoreManager().updateSharing(SERVICE_ID, IDENTITY_SHARING_GROUPNAME, wtsharing);
+		WT.getCoreManager().updateSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, wtsharing);
 	}
 	
 	private void removeFolderSharing(String foldername, String acluser, boolean recursive) throws MessagingException {
@@ -7479,7 +7476,10 @@ public class Service extends BaseService {
 			
 			List<Identity> jsidents=new ArrayList();
 			jsidents.addAll(identities);
-			for(Identity jsid: jsidents) {
+			for(Identity jsid: jsidents) {	
+				//if (jsid.isType(Identity.TYPE_AUTO)) {
+				//	jsid.setMainFolder(getSharedFolderName(jsid.getOriginPid().getUserId(), "INBOX"));
+				//}
 				if (jsid.isMainIdentity()) loadMainIdentityMailcard(jsid);
 				else loadIdentityMailcard(jsid);
 			}
@@ -7544,17 +7544,20 @@ public class Service extends BaseService {
 				// In case of auto identities we need to build real mainfolder
 				try {
 					String mailUser = getMailUsername(opid);
-					String mainfolder = getSharedFolderName(mailUser, id.getMainFolder());
+					String mainfolder = getSharedFolderName(mailUser, "INBOX" /*id.getMainFolder()*/);
 					id.setMainFolder(mainfolder);
 					if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, id.getMainFolder()));
 				} catch (Exception ex) {
 					logger.error("Unable to get auto identity foldername [{}]", id.getEmail(), ex);
 				}
 
+				/*
 				// Avoids default mailcard display for automatic identities
 				if(mc.source.equals(Mailcard.TYPE_DEFAULT) && !StringUtils.isEmpty(id.getMainFolder())) {
 					mc = getMailcard();
-				}
+				}*/
+				
+				if (!id.isForceMailcard()) mc=getMailcard();
 
 				try {
 					UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(opid);

@@ -163,14 +163,34 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 					flex: 2
 				},{
 					xtype: 'checkcolumn',
-					header: me.mys.res('sharing.rights-use-my-personal-info.lbl'),
-					dataIndex: 'useMyPersonalInfo',
-					flex: 1
+					header: me.mys.res('sharing.rights-share-identity.lbl'),
+					dataIndex: 'shareIdentity',
+					flex: 1,
+					listeners: {
+						checkchange: function(c , ri , v) {
+							if (!v) {
+								var grid = me.lref('gprights'),
+									sto = grid.getStore(),
+									r = sto.getAt(ri);
+								r.set("forceMailcard",false);
+							};
+						}
+					}
 				},{
 					xtype: 'checkcolumn',
-					header: me.mys.res('sharing.rights-force-my-mailcard.lbl'),
-					dataIndex: 'forceMyMailcard',
-					flex: 1
+					header: me.mys.res('sharing.rights-force-mailcard.lbl'),
+					dataIndex: 'forceMailcard',
+					flex: 1,
+					listeners: {
+						checkchange: function(c , ri , v) {
+							if (v) { 
+								var grid = me.lref('gprights'),
+									sto = grid.getStore(),
+									r = sto.getAt(ri);
+								r.set("shareIdentity",true); 
+							}
+						}
+					}
 				}],
 				tbar: [
 					me.addAction('deleteRights', {

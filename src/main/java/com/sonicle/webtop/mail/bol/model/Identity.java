@@ -56,13 +56,13 @@ public class Identity {
 	protected UserProfile.Id originPid;
 
 	protected boolean fax;
-	protected boolean useMyPersonalInfos;
+	protected boolean forceMailcard;
 	protected boolean lockMailcard = false;
 	
 	protected boolean isMainIdentity=false;
 	
 	public Identity(OIdentity oi) {
-        this(Identity.TYPE_USER, oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), oi.getUseMyPersonalInfos());
+        this(Identity.TYPE_USER, oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), oi.getForceMailcard());
 	}
 
 	public Identity(String displayName, String email, String mainFolder) {
@@ -73,13 +73,13 @@ public class Identity {
 		this(type,displayName,email,mainFolder,false,false);
 	}
 	
-	public Identity(String type, String displayName, String email, String mainFolder, boolean fax, boolean useMyPersonalInfos) {
+	public Identity(String type, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard) {
 		this.type = type;
 		this.displayName=displayName;
 		this.email=email;
 		this.mainFolder=mainFolder;
 		this.fax=fax;
-		this.useMyPersonalInfos=useMyPersonalInfos;
+		this.forceMailcard=forceMailcard;
         this.identityId=buildId(displayName,email);
 	}
     
@@ -159,12 +159,12 @@ public class Identity {
 		this.fax = fax;
 	}
 
-	public boolean isUseMyPersonalInfos() {
-		return useMyPersonalInfos;
+	public boolean isForceMailcard() {
+		return forceMailcard;
 	}
 
-	public void setUseMyPersonalInfos(boolean useMyPersonalInfos) {
-		this.useMyPersonalInfos = useMyPersonalInfos;
+	public void setForceMailcard(boolean forceMailcard) {
+		this.forceMailcard = forceMailcard;
 	}
 	
 	public boolean isType(String type) {

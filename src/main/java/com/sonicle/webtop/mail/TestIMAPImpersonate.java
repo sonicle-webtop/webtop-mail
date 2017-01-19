@@ -33,10 +33,10 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sun.mail.imap.IMAPStore;
 import java.util.Properties;
 import javax.mail.Folder;
 import javax.mail.Session;
-import javax.mail.Store;
 
 /**
  *
@@ -44,14 +44,13 @@ import javax.mail.Store;
  */
 public class TestIMAPImpersonate {
 	
-	static char c0=0;
-
 	public static void main(String args[]) throws Exception {
 		Properties props=System.getProperties();
+		props.setProperty("mail.imap.sasl.authorizationid","mailbox@domain.tld" );
 		Session session=Session.getInstance(props);
 		session.setDebug(true);
-		Store store=session.getStore("imap");
-		store.connect("host",143,"mailboxuser"+c0+"adminuser","adminpass");
+		IMAPStore store=(IMAPStore)session.getStore("imap");
+		store.connect("host",143,"adminuser","adminpass");
 		Folder df=store.getDefaultFolder();
 		for(Folder f: df.list()) {
 			System.out.println(f.getName());
