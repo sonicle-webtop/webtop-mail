@@ -33,6 +33,9 @@
  */
 Ext.define('Sonicle.webtop.mail.model.ServiceVars', {
 	extend: 'WTA.sdk.model.ServiceVars',
+	requires: [
+		'Sonicle.webtop.mail.model.Identity'
+	],
 	
 	fields: [
 		{ name: 'receipt', type: 'boolean' },
@@ -47,21 +50,4 @@ Ext.define('Sonicle.webtop.mail.model.ServiceVars', {
 		name: 'identities',
 		model: 'Sonicle.webtop.mail.model.Identity'
 	}]
-});
-
-Ext.define('Sonicle.webtop.mail.model.Identity', {
-    extend: 'WTA.model.Base',
-    fields: [
-        { name: "identityId" },
-		{ name: "type" },
-		{ name: "email" },
-		{ name: "displayName" },
-		{ name: "mainFolder" },
-		{ name: "fax", type: 'boolean' },
-		{ name: "forceMailcard", type: 'boolean' },
-		{ name: "lockMailcard", type: 'boolean' },
-		WTF.calcField("description","string",["email","displayName"], function(v,r) {
-			return r.get("displayName")+" - "+r.get("email");
-		})
-	]
 });

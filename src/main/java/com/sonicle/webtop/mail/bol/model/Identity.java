@@ -62,7 +62,7 @@ public class Identity {
 	protected boolean isMainIdentity=false;
 	
 	public Identity(OIdentity oi) {
-        this(Identity.TYPE_USER, oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), oi.getForceMailcard());
+        this(Identity.TYPE_USER, oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false);
 	}
 
 	public Identity(String displayName, String email, String mainFolder) {

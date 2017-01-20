@@ -28,6 +28,21 @@ WITH (OIDS=TRUE)
 ;
 
 -- ----------------------------
+-- Table structure for vacation
+-- ----------------------------
+DROP TABLE IF EXISTS "mail"."vacation";
+CREATE TABLE "mail"."vacation" (
+"domain_id" varchar(20) NOT NULL,
+"user_id" varchar(100) NOT NULL,
+"active" bool DEFAULT true NOT NULL,
+"message" varchar(4000),
+"addresses" varchar(4000) NOT NULL
+)
+WITH (OIDS=TRUE)
+
+;
+
+-- ----------------------------
 -- Table structure for identities
 -- ----------------------------
 DROP TABLE IF EXISTS "mail"."identities";
@@ -38,8 +53,7 @@ CREATE TABLE "mail"."identities" (
 "main_folder" varchar(100),
 "mailcard_user_id" varchar(15),
 "domain_id" varchar(20) DEFAULT ''::character varying NOT NULL,
-"fax" bool DEFAULT false,
-"use_my_personal_infos" bool DEFAULT false
+"fax" bool DEFAULT false
 )
 WITH (OIDS=TRUE)
 
@@ -96,6 +110,11 @@ WITH (OIDS=FALSE)
 -- Primary Key structure for table rules
 -- ----------------------------
 ALTER TABLE "mail"."rules" ADD PRIMARY KEY ("domain_id", "user_id", "filter_id");
+
+-- ----------------------------
+-- Primary Key structure for table vacation
+-- ----------------------------
+ALTER TABLE "mail"."vacation" ADD PRIMARY KEY ("domain_id", "user_id", "active");
 
 -- ----------------------------
 -- Indexes structure for table identities

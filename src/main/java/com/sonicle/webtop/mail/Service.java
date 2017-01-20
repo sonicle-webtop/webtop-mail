@@ -2831,6 +2831,7 @@ public class Service extends BaseService {
 			}
 			if (isSharedToSomeone) ss+=",isSharedToSomeone: true";
 			if (mc.isSharedFolder()) ss+=",isSharedRoot: true";
+			if (isUnderSharedFolder(foldername)) ss+=",isUnderShared: true";
 			if (mc.isInbox()) {
 				ss += ",isInbox: true";
 			}

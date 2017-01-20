@@ -34,6 +34,8 @@
 Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	extend: 'WTA.sdk.UserOptionsView',
 	requires: [
+		'Sonicle.webtop.mail.model.ServiceVars',
+		'Sonicle.webtop.mail.model.Identity'
 	],
 	
 	viewModel: {
@@ -260,6 +262,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						proxy: WTF.apiProxy(me.ID, 'ListIdentities', 'identities', {
 							extraParams: {
 								id: me.profileId,
+								type: 'user',
 								options: true
 							}
 						})
@@ -267,24 +270,26 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					columns: [{
 						dataIndex: 'displayName',
 						header: WT.res(me.ID, 'opts.ident.displayName.lbl'),
-						flex: 1
+						flex: 2
 					}, {
 						dataIndex: 'email',
 						header: WT.res(me.ID, 'opts.ident.email.lbl'),
-						flex: 1
+						flex: 2
 					}, {
 						dataIndex: 'mainFolder',
 						header: WT.res(me.ID, 'opts.ident.mainFolder.lbl'),
-						flex: 1
+						flex: 2
 					}, {
+						xtype: 'checkcolumn',
 						dataIndex: 'fax',
 						header: WT.res(me.ID, 'opts.ident.fax.lbl'),
 						flex: 1
 					}, {
+						xtype: 'checkcolumn',
 						dataIndex: 'forceMailcard',
 						header: WT.res(me.ID, 'opts.ident.force-mailcard.lbl'),
 						flex: 1
-					}],
+						}],
 					tbar: [
 						me.addAction('addIdentity', {
 							text: WT.res('act-add.lbl'),
@@ -310,6 +315,40 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							me.getAction('deleteIdentity').setDisabled(!recs.length);
 						}
 					}
+				},{					
+					region: 'south',
+					xtype: 'gridpanel',
+					reference: 'gpautoidents',
+					height: 200,
+					store: {
+						autoLoad: true,
+						model: 'Sonicle.webtop.mail.model.Identity',
+						proxy: WTF.apiProxy(me.ID, 'ListIdentities', 'identities', {
+							extraParams: {
+								id: me.profileId,
+								type: 'auto',
+								options: true
+							}
+						})
+					},
+					columns: [{
+						dataIndex: 'displayName',
+						header: WT.res(me.ID, 'opts.ident.displayName.lbl'),
+						flex: 2
+					}, {
+						dataIndex: 'email',
+						header: WT.res(me.ID, 'opts.ident.email.lbl'),
+						flex: 2
+					}, {
+						xtype: 'checkcolumn',
+						dataIndex: 'forceMailcard',
+						header: WT.res(me.ID, 'opts.ident.force-mailcard.lbl'),
+						flex: 1,
+						disabled: true
+					}],
+					tbar: [
+						WT.res(me.ID, 'opts.autoident.tit')+":"
+					]
 				}]	
 			}]
 		});
@@ -376,18 +415,18 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					width: 100,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
-					xtype: 'textfield',
-					bind: '{record.defaultFolder}',
-					fieldLabel: WT.res(me.ID, 'opts.main.fld-defaultFolder.lbl'),
-					width: 400,
-					needReload: true,
-					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-				}, {
 					xtype: 'checkbox',
 					bind: '{manualSeen}',
 					fieldLabel: WT.res(me.ID, 'opts.adv.fld-manualSeen.lbl'),
 					width: 100,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'textfield',
+					bind: '{record.defaultFolder}',
+					fieldLabel: WT.res(me.ID, 'opts.adv.fld-defaultFolder.lbl'),
+					width: 400,
+					needReload: true,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 				}
 			]
 		});

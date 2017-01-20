@@ -1086,6 +1086,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	updateCxmTree: function(r) {
 		var me=this,
+			d=r.getData(),
 			id=r.get("id"),
 			rootid=me.imapTree.getRootNode().get("id");
 	
@@ -1094,6 +1095,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.getAction('deletefolder').setDisabled(me.specialFolders[id]);
 		me.getAction('renamefolder').setDisabled(me.specialFolders[id]);
 		me.getAction('movetomain').setDisabled(me.specialFolders[id]?true:(r.parentNode.get("id")===rootid));
+		me.getAction('sharing').setDisabled(d.isUnderShared||d.isSharedRoot);
 
 		var as=me.getAction('scanfolder');
 		var mi=me.getRef("mnuScan");
