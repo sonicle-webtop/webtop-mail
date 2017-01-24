@@ -88,6 +88,77 @@ public class MailManager extends BaseManager {
         return identities.get(0);
     }
 	
+	public void addIdentity(Identity ident) throws WTException {
+		Connection con=null;
+		try {
+			UserProfile.Id pid=getTargetProfileId();
+			con=WT.getConnection(SERVICE_ID);
+			IdentityDAO idao=IdentityDAO.getInstance();
+			OIdentity oident=new OIdentity();
+			oident.setDisplayName(ident.getDisplayName());
+			oident.setDomainId(pid.getDomainId());
+			oident.setEmail(ident.getEmail());
+			oident.setFax(ident.isFax());
+			oident.setMainFolder(ident.getMainFolder());
+			oident.setUserId(pid.getUserId());
+			idao.insert(con, oident);
+			identities.add(ident);
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void deleteIdentity(Identity ident) throws WTException {
+		Connection con=null;
+		try {
+			con=WT.getConnection(SERVICE_ID);
+			IdentityDAO idao=IdentityDAO.getInstance();
+			idao.deleteById(con, ident.getIdentityId());
+			Identity dident=findIdentity(ident.getIdentityId());
+			identities.remove(dident);
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void updateIdentity(int identityId, Identity ident) throws WTException {
+		Connection con=null;
+		try {
+			UserProfile.Id pid=getTargetProfileId();
+			con=WT.getConnection(SERVICE_ID);
+			IdentityDAO idao=IdentityDAO.getInstance();
+			OIdentity oident=new OIdentity();
+			oident.setDisplayName(ident.getDisplayName());
+			oident.setDomainId(pid.getDomainId());
+			oident.setEmail(ident.getEmail());
+			oident.setFax(ident.isFax());
+			oident.setMainFolder(ident.getMainFolder());
+			oident.setUserId(pid.getUserId());
+			idao.update(con, identityId, oident);
+			Identity uident=findIdentity(ident.getIdentityId());
+			uident.setDisplayName(ident.getDisplayName());
+			uident.setEmail(ident.getEmail());
+			uident.setFax(ident.isFax());
+			uident.setMainFolder(ident.getMainFolder());
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	private Identity findIdentity(int id) {
+		for(Identity ident: identities) {
+			if (ident.getIdentityId()==id) 
+				return ident;
+		}
+		return null;
+	}
+	
 	private List<Identity> buildIdentities() throws WTException {
 		Connection con=null;
 		List<Identity> idents=new ArrayList();
@@ -95,14 +166,14 @@ public class MailManager extends BaseManager {
 			UserProfile.Id pid=getTargetProfileId();
 			//first add main identity
 			Data udata=WT.getUserData(pid);
-			Identity id=new Identity(udata.getDisplayName(),udata.getEmail().getAddress(),null);
+			Identity id=new Identity(0,udata.getDisplayName(),udata.getEmail().getAddress(),null);
 			id.setIsMainIdentity(true);
 			idents.add(id);
 			
 			//add configured additional identities
 			con=WT.getConnection(SERVICE_ID);
 			IdentityDAO idao=IdentityDAO.getInstance();
-			List<OIdentity> items=idao.selectById(con, pid.getDomainId(),pid.getUserId());
+			List<OIdentity> items=idao.selectByDomainUser(con, pid.getDomainId(),pid.getUserId());
 			for(OIdentity oi: items) {
 				idents.add(new Identity(oi));
 			}
@@ -119,7 +190,7 @@ public class MailManager extends BaseManager {
 					boolean shareIdentity=spf.implies("READ");
 					boolean forceMailcard=spf.implies("UPDATE");
 					if (shareIdentity) {
-						id = new Identity(Identity.TYPE_AUTO,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard);
+						id = new Identity(Identity.TYPE_AUTO,-1,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard);
 						id.setOriginPid(opid);
 						idents.add(id);
 					}

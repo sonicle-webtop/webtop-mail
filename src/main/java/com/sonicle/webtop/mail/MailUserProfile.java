@@ -77,7 +77,6 @@ public class MailUserProfile {
 	private String mailPassword;
 	private String replyTo;
 	private Identity identities[];
-    private HashMap<String,Identity> hidentities=new HashMap<>();
 	private String sharedSort;
 	private boolean includeMessageInReply;
 	private int numMessageList;
@@ -128,7 +127,8 @@ public class MailUserProfile {
 				if (mailHost==null) mailHost=mss.getDefaultHost();
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
-				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId()+"@"+ad.getInternetName();
+				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
+				if (ms.schemeWantsUserWithDomain(ad)) mailUsername+="@"+ad.getInternetName();
 				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
 			}
 			
@@ -158,7 +158,7 @@ public class MailUserProfile {
 			//	if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
 			//		mailPassword=Encryption.decipher(mailPassword,encpassword);
 			//}
-
+			
 			logger.info("  accessing "+mailProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+mailPort);
 
 			folderPrefix=mus.getFolderPrefix();
@@ -174,13 +174,12 @@ public class MailUserProfile {
 			includeMessageInReply=mus.isIncludeMessageInReply();
 			numMessageList=mus.getPageRows();
 			
-			List<OIdentity> oids=IdentityDAO.getInstance().selectById(con, profile.getDomainId(), profile.getUserId());
+			List<OIdentity> oids=IdentityDAO.getInstance().selectByDomainUser(con, profile.getDomainId(), profile.getUserId());
 			identities=new Identity[oids.size()];
 			int i=0;
 			for(OIdentity oid: oids) {
-                Identity ident=new Identity(oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
+                Identity ident=new Identity(oid.getIdentityId(),oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
 				identities[i++]=ident;
-                hidentities.put(ident.getIdentityId(), ident);
 			}
 			
 		} catch(Exception exc) {
@@ -250,13 +249,25 @@ public class MailUserProfile {
 		return identities;
 	}
 	
-	public Identity getIdentity(int index) {
+	public Identity getIdentityAt(int index) {
 		return identities[index];
 	}
+	
+	public Identity getIdentity(String displayName, String email) {
+		for(Identity ident: identities) {
+			if (ident.getDisplayName().equals(displayName) && ident.getEmail().equals(email))
+				return ident;
+		}
+		return null;
+	}
     
-    public Identity getIdentityFromKey(String key) {
-        return hidentities.get(key);
-    }
+	public Identity getIdentity(int identityId) {
+		for(Identity ident: identities) {
+			if (ident.getIdentityId()==identityId)
+				return ident;
+		}
+		return null;
+	}
 	
 	public Identity getIdentity(String foldername) {
 		for(Identity ident: identities) {

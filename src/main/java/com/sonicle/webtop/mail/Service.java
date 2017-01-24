@@ -3834,7 +3834,7 @@ public class Service extends BaseService {
 				first = false;
 			}
 			sout += "\n ],\n";
-            sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
+            sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
 			String html = smsg.getContent();
 			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
@@ -3948,7 +3948,7 @@ public class Service extends BaseService {
 						" }";
 				sout += "\n ],\n";
 			}
-            sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
+            sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
 			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
             sout += " mime:'text/html'\n";
@@ -4045,7 +4045,7 @@ public class Service extends BaseService {
 				String displayname=ia.getPersonal();
 				if (displayname==null) displayname=email;
 				//sout+=" from: { email: '"+StringEscapeUtils.escapeEcmaScript(email)+"', displayname: '"+StringEscapeUtils.escapeEcmaScript(displayname)+"' },\n";
-                ident=mprofile.getIdentityFromKey(Identity.buildId(displayname, email));
+                ident=mprofile.getIdentity(displayname, email);
 			}
 			
 			sout += " recipients: [\n";
@@ -4146,7 +4146,7 @@ public class Service extends BaseService {
             }
             sout += "\n ],\n";
             
-            if (ident!=null) sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
+            if (ident!=null) sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
 			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
             sout += " mime:'text/html'\n";
@@ -4626,7 +4626,7 @@ public class Service extends BaseService {
 		if (idx >= 0) {
 			from = mprofile.getIdentity(idx);
 		}*/
-        Identity from=mprofile.getIdentityFromKey(jsmsg.identityId);
+        Identity from=mprofile.getIdentity(jsmsg.identityId);
 		msg.setFrom(from);
 		msg.setTo(to);
 		msg.setCc(cc);
@@ -5171,9 +5171,8 @@ public class Service extends BaseService {
 		// Clear mailUser removing any domain info (ldap auth contains 
 		// domain suffix), we don't want it!
 		String user = StringUtils.split(mailUser, "@")[0];
-		
 		// INBOX is a fake name, it's equals to user's direct folder
-		String name = (folder.equals("INBOX")) ? user : folder;
+		boolean isInbox=folder.equals("INBOX");
 		
 		FolderCache[] sharedCache = getSharedFoldersCache();
 		for(FolderCache sharedFolder : sharedCache) {
@@ -5182,6 +5181,9 @@ public class Service extends BaseService {
 			for(Folder fo : folderCache.getFolder().list()) {
 				folderName = fo.getFullName(); 
 				char sep=fo.getSeparator();
+				//if is a shared mailbox, and it contains an @, match it with mail user (NS7)
+				//or just user instead (XStream and NS6)
+				String name = isInbox? (fo.getName().indexOf('@')>0?mailUser:user): folder;
 				if(folderName.equals(sharedFolderName + sep + name)) return folderName;
 			}
 		}
@@ -7091,9 +7093,10 @@ public class Service extends BaseService {
 		return false;
 	}
 	
-	boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
+	protected boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
 		String scheme=ad.getAuthUri().getScheme();
-		return scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
+		//return scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
+		return scheme.equals("ad")||scheme.startsWith("ldap");
 	}
 	
 	UserProfile.Id  aclUserIdToUserId(String aclUserId) {
@@ -7411,11 +7414,19 @@ public class Service extends BaseService {
 				ouser=UserDAO.getInstance().selectByDomainUser(con, domainId, mailUserId);
 			}
 			
+			String desc=null;
 			if (ouser!=null) {
-				String desc=LangUtils.value(ouser.getDisplayName(),"");
-				desc=desc.trim();
+				desc=LangUtils.value(ouser.getDisplayName(),"");
+			} else {
+				String email=mailUserId;
+				if (email.indexOf("@")<0) email+="@"+WT.getDomainInternetName(domainId);
+				UserProfile.Data udata=WT.guessUserData(email);
+				if (udata!=null) desc=LangUtils.value(udata.getDisplayName(),"");
+			}
+			
+			if (desc!=null) {
 				logger.debug("webtop user found, desc={}",desc);
-				p = new SharedPrincipal(mailUserId, desc);
+				p = new SharedPrincipal(mailUserId, desc.trim());
 			} else {
 				logger.debug("webtop user not found, creating unmapped principal");
 				p = new SharedPrincipal(mailUserId, mailUserId);
@@ -7585,7 +7596,7 @@ public class Service extends BaseService {
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
-		return username;
+		return username+"@"+WT.getDomainInternetName(userProfileId.getDomainId());
 	}	
 	
 	public Mailcard getMailcard() {

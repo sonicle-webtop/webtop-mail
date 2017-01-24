@@ -36,15 +36,18 @@
 
 Ext.define('Sonicle.webtop.mail.model.Identity', {
     extend: 'WTA.model.Base',
+	
+	identifier: 'negative',
+	idProperty: 'identityId',
     fields: [
-        { name: "identityId" },
-		{ name: "type" },
-		{ name: "email" },
-		{ name: "displayName" },
-		{ name: "mainFolder" },
-		{ name: "fax", type: 'boolean' },
-		{ name: "forceMailcard", type: 'boolean' },
-		{ name: "lockMailcard", type: 'boolean' },
+		WTF.field('identityId', 'int', false),
+		WTF.field('type', 'string', false),
+		WTF.field('email', 'string', false),
+		WTF.field('displayName', 'string', false),
+		WTF.field('mainFolder', 'string', true),
+		WTF.field('fax', 'boolean', true),
+		WTF.field('forceMailcard', 'boolean', true),
+		WTF.field('lockMailcard', 'boolean', true),
 		WTF.calcField("description","string",["email","displayName"], function(v,r) {
 			return r.get("displayName")+" - "+r.get("email");
 		})

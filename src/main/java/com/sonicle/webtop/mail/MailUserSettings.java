@@ -311,7 +311,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public String getReplyTo() {
 		String s=getString(REPLY_TO, null);
 		if (s==null) {
-			s=WT.getUserData(profileId).getEmail().toString();
+			s=WT.getUserData(profileId).getEmailAddress();
 		}
 		return s;
 	}

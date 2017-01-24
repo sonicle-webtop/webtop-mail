@@ -60,13 +60,14 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			xtype: 'wtopttabsection',
 			title: WT.res(me.ID, 'opts.main.tit'),
 			items: [
-			{
+/*			{
 				xtype: 'textfield',
 				bind: '{record.replyTo}',
 				fieldLabel: WT.res(me.ID, 'opts.main.fld-replyTo.lbl'),
 				width: 400,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, WTF.lookupCombo('id', 'desc', {
+			},*/
+			WTF.lookupCombo('id', 'desc', {
 				bind: {
 					value: '{record.protocol}',
 					disabled: '{!canChangeAccountSettings}'
@@ -258,36 +259,51 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					reference: 'gpidents',
 					store: {
 						autoLoad: true,
+						//autoSync: true,
 						model: 'Sonicle.webtop.mail.model.Identity',
-						proxy: WTF.apiProxy(me.ID, 'ListIdentities', 'identities', {
+						proxy: WTF.apiProxy(me.ID, 'ManageIdentities', 'identities', {
 							extraParams: {
 								id: me.profileId,
 								type: 'user',
 								options: true
 							}
-						})
+						}),
+						listeners: {
+							beforesync: function() {
+								console.log( 'syncing!!!');
+							}
+						},
+					},
+					plugins: {
+						ptype: 'cellediting',
+						clicksToEdit: 1
 					},
 					columns: [{
 						dataIndex: 'displayName',
 						header: WT.res(me.ID, 'opts.ident.displayName.lbl'),
+						editor: { xtype: 'textfield' },
 						flex: 2
 					}, {
 						dataIndex: 'email',
 						header: WT.res(me.ID, 'opts.ident.email.lbl'),
+						editor: { xtype: 'textfield' },
 						flex: 2
 					}, {
 						dataIndex: 'mainFolder',
 						header: WT.res(me.ID, 'opts.ident.mainFolder.lbl'),
+						editor: { xtype: 'textfield' },
 						flex: 2
 					}, {
 						xtype: 'checkcolumn',
 						dataIndex: 'fax',
 						header: WT.res(me.ID, 'opts.ident.fax.lbl'),
+						editor: { xtype: 'checkbox' },
 						flex: 1
 					}, {
 						xtype: 'checkcolumn',
 						dataIndex: 'forceMailcard',
 						header: WT.res(me.ID, 'opts.ident.force-mailcard.lbl'),
+						editor: { xtype: 'checkbox' },
 						flex: 1
 						}],
 					tbar: [
@@ -296,7 +312,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							tooltip: null,
 							iconCls: 'wt-icon-add-xs',
 							handler: function() {
-								me.addIdentity();
+								me.lref('gpidents').store.add({})[0].beginEdit();
 							}
 						}),
 						me.addAction('deleteIdentity', {
@@ -304,8 +320,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							tooltip: null,
 							iconCls: 'wt-icon-delete-xs',
 							handler: function() {
-								var sm = me.lref('gpidents').getSelectionModel();
-								me.deleteIdentity(sm.getSelection());
+								var sel = me.lref('gpidents').getSelection();
+								if (sel.length>0)
+									me.lref('gpidents').store.remove(sel[0]);
 							},
 							disabled: true
 						})
@@ -347,7 +364,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						disabled: true
 					}],
 					tbar: [
-						WT.res(me.ID, 'opts.autoident.tit')+":"
+						WT.res(me.ID, 'opts.autoident.tit')
 					]
 				}]	
 			}]

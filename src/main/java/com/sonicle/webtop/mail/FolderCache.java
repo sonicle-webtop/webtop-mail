@@ -629,14 +629,12 @@ public class FolderCache {
         try {
             if (checkUnreads || scanForcedOn || scanEnabled) refreshUnreadMessagesCount();
         } catch(MessagingException exc) {
-            Service.logger.debug("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            Service.logger.error("Exception on folder "+foldername,exc);
+            Service.logger.debug("Exception on folder "+foldername,exc);
         }
         try {
             if (checkRecents || scanForcedOn || scanEnabled) refreshRecentMessagesCount();
         } catch(MessagingException exc) {
-            Service.logger.debug("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            Service.logger.error("Exception on folder "+foldername,exc);
+            Service.logger.debug("Exception on folder "+foldername,exc);
         }
         return (unread>0);
     }

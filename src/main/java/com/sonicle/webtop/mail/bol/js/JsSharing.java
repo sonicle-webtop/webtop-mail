@@ -131,7 +131,7 @@ public class JsSharing {
 			if (a) sb.append('a');
 			if (x) sb.append('x');
 			if (t) sb.append('t');
-			if (n) sb.append('n');
+			//if (n) sb.append('n');
 			if (e) sb.append('e');
 			return sb.toString();
 		}

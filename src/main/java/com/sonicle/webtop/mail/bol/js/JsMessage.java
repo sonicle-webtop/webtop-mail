@@ -47,7 +47,7 @@ public class JsMessage {
     public String subject;
     public String content;
     public String mime;
-    public String identityId;
+    public int identityId;
     public List<JsAttachment> attachments;
     public List<JsRecipient> recipients;
     //Reply data
