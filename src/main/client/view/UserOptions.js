@@ -259,7 +259,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					reference: 'gpidents',
 					store: {
 						autoLoad: true,
-						//autoSync: true,
+						autoSync: true,
 						model: 'Sonicle.webtop.mail.model.Identity',
 						proxy: WTF.apiProxy(me.ID, 'ManageIdentities', 'identities', {
 							extraParams: {
@@ -270,13 +270,14 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						}),
 						listeners: {
 							beforesync: function() {
-								console.log( 'syncing!!!');
+								me.needReload=true;
 							}
-						},
+						}
 					},
 					plugins: {
-						ptype: 'cellediting',
-						clicksToEdit: 1
+						ptype: 'rowediting',
+						clicksToEdit: 1,
+						pluginId: 'gpidentseditor'
 					},
 					columns: [{
 						dataIndex: 'displayName',
@@ -291,7 +292,18 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					}, {
 						dataIndex: 'mainFolder',
 						header: WT.res(me.ID, 'opts.ident.mainFolder.lbl'),
-						editor: { xtype: 'textfield' },
+						editor: {
+							xtype: 'sotreecombo',
+							store: Ext.create('Ext.data.TreeStore', {
+								model: 'Sonicle.webtop.mail.model.ImapTreeModel',
+								proxy: WTF.proxy(me.ID,'GetImapTree'),
+								root: {
+									text: 'Imap Tree',
+									expanded: true
+								},
+								rootVisible: false
+							})
+						},
 						flex: 2
 					}, {
 						xtype: 'checkcolumn',
@@ -299,20 +311,22 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						header: WT.res(me.ID, 'opts.ident.fax.lbl'),
 						editor: { xtype: 'checkbox' },
 						flex: 1
-					}, {
-						xtype: 'checkcolumn',
-						dataIndex: 'forceMailcard',
-						header: WT.res(me.ID, 'opts.ident.force-mailcard.lbl'),
-						editor: { xtype: 'checkbox' },
-						flex: 1
-						}],
+					}],
 					tbar: [
 						me.addAction('addIdentity', {
 							text: WT.res('act-add.lbl'),
 							tooltip: null,
 							iconCls: 'wt-icon-add-xs',
 							handler: function() {
-								me.lref('gpidents').store.add({})[0].beginEdit();
+								var g=me.lref('gpidents'),
+									r=g.store.add({
+										type: 'user',
+										email: '',
+										displayName: '',
+										mainFolder: '',
+										fax: false
+									})[0];
+								g.getPlugin('gpidentseditor').startEdit(r);
 							}
 						}),
 						me.addAction('deleteIdentity', {

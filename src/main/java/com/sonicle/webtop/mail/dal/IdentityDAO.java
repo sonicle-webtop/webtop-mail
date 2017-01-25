@@ -67,10 +67,14 @@ public class IdentityDAO extends BaseDAO {
 	
 	public int insert(Connection con, OIdentity item) throws DAOException {
 		DSLContext dsl = getDSL(con);
-		IdentitiesRecord record = dsl.newRecord(IDENTITIES, item);
 		return dsl
 			.insertInto(IDENTITIES)
-			.set(record)
+			.set(IDENTITIES.DOMAIN_ID, item.getDomainId())
+			.set(IDENTITIES.USER_ID, item.getUserId())
+			.set(IDENTITIES.DISPLAY_NAME, item.getDisplayName())
+			.set(IDENTITIES.EMAIL, item.getEmail())
+			.set(IDENTITIES.MAIN_FOLDER, item.getMainFolder())
+			.set(IDENTITIES.FAX, item.getFax())
 			.execute();
 	}
 	
