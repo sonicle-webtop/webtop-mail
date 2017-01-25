@@ -5794,7 +5794,8 @@ public class Service extends BaseService {
 				 funread=mcache.getUnreadMessagesCount();
 				 }*/
 				if (mcache.isScanForcedOrEnabled()) {
-					mcache.refreshUnreads();
+					//Send message only if first page
+					if (start==0) mcache.refreshUnreads();
 					funread=mcache.getUnreadMessagesCount();
 				}
 				else funread=0;
