@@ -489,7 +489,8 @@ public class Service extends BaseService {
 			
 			//warning: debug mode shows credentials
 			//Service.logger.debug("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
-			Service.logger.info("  accessing "+storeProtocol+"://"+mailUsername+":******@"+mailHost+":"+port);
+			Service.logger.info("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
+			//Service.logger.info("  accessing "+storeProtocol+"://"+mailUsername+":******@"+mailHost+":"+port);
 			if (isImpersonated)
 				Service.logger.info(" impersonating "+authorizationId);
 			
@@ -5034,147 +5035,6 @@ public class Service extends BaseService {
 		}
 	}	*/
 	
-	// TODO: manage mailcard !!!!
-/*	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 UserProfile profile = environment.getProfile();
-	 ProfilePersonalInfo ppi = null;
-	 String crud = null;
-	 Mailcard mc = null;
-	 JsMailcard jsmc = null;
-		
-	 try {
-	 crud = ServletOldUtils.getStringParameter(request, "crud", true);
-	 String id = ServletUtils.getStringParameter(request, "id", true);
-			
-	 if(crud.equals(Crud.READ)) {
-	 if(id.equals("emaildomain")) {
-	 mc = wtd.getEmailDomainMailcard(profile);
-					
-	 } else if(StringUtils.startsWith(id, "identity")) {
-	 String[] tokens = StringUtils.split(id, '|');
-	 int index = Integer.parseInt(tokens[1]);
-	 if(index == 0) {
-	 mc = wtd.getMailcard(profile);
-	 } else {
-	 Identity ide = profile.getIdentities().get(index-1);
-	 mc = wtd.getMailcard(ide.email);
-	 }
-	 }
-	 new JsonResult(new JsMailcard(id, mc)).printTo(out);
-				
-	 } else if(crud.equals(Crud.UPDATE)) {
-	 String html = ServletUtils.getStringParameter(request, "html", true);
-	 if(id.equals("emaildomain")) {
-	 wtd.setEmailDomainMailcard(profile.getEmailAddress(), html);
-	 mc = wtd.getEmailDomainMailcard(profile);
-					
-	 } else if(StringUtils.startsWith(id, "identity")) {
-	 String[] tokens = StringUtils.split(id, '|');
-	 int index = Integer.parseInt(tokens[1]);
-	 if(index == 0) {
-	 String target = ServletUtils.getStringParameter(request, "target", true);
-	 if(target.equals(Mailcard.TYPE_EMAIL)) {
-	 wtd.setEmailMailcard(profile.getEmailAddress(), html);
-	 wtd.setUserMailcard(profile.getUser(), null);
-	 } else {
-	 wtd.setUserMailcard(profile.getUser(), html);
-	 wtd.setEmailMailcard(profile.getEmailAddress(), null);
-	 }
-	 mc = wtd.getMailcard(profile);
-	 ppi = profile.getPersonalInfo();
-	 } else {
-	 Identity ide = profile.getIdentities().get(index-1);
-	 wtd.setEmailMailcard(ide.email, html);
-	 mc = wtd.getMailcard(ide.email);
-	 ppi = getPersonalInfo(ide);
-	 }
-	 mc.substitutePlaceholders(ppi);
-	 }
-	 new JsonResult(new JsMailcard(id, mc)).printTo(out);
-					
-	 } else if(crud.equals(Crud.DELETE)) {
-	 if(id.equals("emaildomain")) {
-	 wtd.setEmailDomainMailcard(profile.getEmailAddress(), null);
-	 mc = wtd.getEmailDomainMailcard(profile);
-					
-	 } else if(StringUtils.startsWith(id, "identity")) {
-	 String[] tokens = StringUtils.split(id, '|');
-	 int index = Integer.parseInt(tokens[1]);
-	 if(index == 0) {
-	 wtd.setEmailMailcard(profile.getEmailAddress(), null);
-	 wtd.setUserMailcard(profile.getUser(), null);
-	 mc = wtd.getMailcard(profile);
-	 ppi = profile.getPersonalInfo();
-	 } else {
-	 Identity ide = profile.getIdentities().get(index-1);
-	 wtd.setEmailMailcard(ide.email, null);
-	 mc = wtd.getMailcard(ide.email);
-	 ppi = getPersonalInfo(ide);
-	 }
-	 mc.substitutePlaceholders(ppi);
-	 }
-	 new JsonResult(new JsMailcard(id, mc)).printTo(out);
-	 }
-	 } catch (Exception ex) {
-	 logger.error("Error managing mailcard.", ex);
-	 new JsonResult(false, "Unable to manage mailcard.").printTo(out);
-	 }
-	 }
-	
-	 private ProfilePersonalInfo getPersonalInfo(Identity identity) {
-	 Connection con = null;
-	 try {
-	 con = wta.getMainConnection();
-	 UserProfile up = environment.getUserProfile();
-	 logger.debug("Getting profile info by identity. [{}, {}]", identity.type, identity.email);
-	 if(identity.type.equals(Identity.TYPE_AUTO)) {
-	 // Within AUTO type, identity belongs from a specific share 
-	 // initiated by a user. We have to evaluate the read-only 
-	 // property in order to force the sharing user's profile info.
-	 // In other cases, current profile info is returned back.
-	 ArrayList<OWorkgroup> wgs = WebTopDb.selectWorkgroupByDomainEmailLogin(con, up.getIDDomain(), identity.email, up.getUser());
-	 if(wgs.size() == 1) {
-	 OWorkgroup wg = wgs.get(0);
-	 if(wg.mail.equals("R")) {
-	 logger.debug("Forcing [{}] personal info.", wg.groupname);
-	 ProfileDataProviderBase pdp = wta.getProfileDataProvider(up.getIDDomain());
-	 return pdp.getPersonalInfo(wg.groupname);
-	 }
-	 }
-	 logger.debug("Returning my profile info.");
-	 return up.getPersonalInfo();
-				
-	 } else if(identity.type.equals(Identity.TYPE_USER)) {
-	  if (identity.usemypersonalinfos) {
-	   logger.debug("Returning my profile info.");
-	  } else {
-		// Within USER type, we have to look for a user using his email
-		// address (that in identity list). If more than one user is
-		// found we return back current profile info.
-		ArrayList<OUser> uss = WebTopDb.selectUserByDomainEmail(con, up.getIDDomain(), identity.email);
-		if(uss.size() == 1) {
-			OUser us = uss.get(0);
-			logger.debug("User found! Applying [{}] personal info.", us.login);
-			ProfileDataProviderBase pdp = wta.getProfileDataProvider(up.getIDDomain());
-			return pdp.getPersonalInfo(us.login);
-		} else if(uss.size() > 1) {
-			logger.debug("Many users found! Returning my profile info.");
-		} else {
-			logger.debug("Returning my profile info.");
-		}
-	  }
-	  return up.getPersonalInfo();
-				
-	 } else {
-	 return null;
-	 }
-	 } catch(Exception ex) {
-	 logger.error("Unable to determine profile's personal info.", ex);
-	 return null;
-	 } finally {
-		DbUtils.closeQuietly(con);
-	 }
-	 }*/
 	private String getSharedFolderName(String mailUser, String folder) throws MessagingException {
 		FolderCache folderCache = null;
 		String sharedFolderName = null;
@@ -7550,7 +7410,7 @@ public class Service extends BaseService {
 	}
 	
 	private void loadMainIdentityMailcard(Identity id) {
-		Mailcard mc = getMailcard();
+		Mailcard mc = mailManager.getMailcard();
 		try {
 			UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(mailManager.getTargetProfileId());
 			mc.substitutePlaceholders(upi);			
@@ -7562,7 +7422,7 @@ public class Service extends BaseService {
 	}
 	
 	private void loadIdentityMailcard(Identity id) {
-		Mailcard mc = getMailcard(id);
+		Mailcard mc = mailManager.getMailcard(id);
 		if (mc!=null) {
 			if(id.isType(Identity.TYPE_AUTO)) {
 				UserProfile.Id opid=id.getOriginPid();
@@ -7582,7 +7442,7 @@ public class Service extends BaseService {
 					mc = getMailcard();
 				}*/
 				
-				if (!id.isForceMailcard()) mc=getMailcard();
+				if (!id.isForceMailcard()) mc=mailManager.getMailcard();
 
 				try {
 					UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(opid);
@@ -7612,143 +7472,4 @@ public class Service extends BaseService {
 		return username+"@"+WT.getDomainInternetName(userProfileId.getDomainId());
 	}	
 	
-	public Mailcard getMailcard() {
-		UserProfile.Id pid=mailManager.getTargetProfileId();
-		Data udata=WT.getUserData(pid);
-		String email=udata.getEmail().getAddress();
-		Mailcard mc = readEmailMailcard(pid.getDomainId(),email);
-		if(mc != null) return mc;
-		mc = readUserMailcard(pid.getDomainId(),pid.getUserId());
-		if(mc != null) return mc;
-		mc = readEmailDomainMailcard(pid.getDomainId(),email);
-		if(mc != null) return mc;
-		return readDefaultMailcard(pid.getDomainId());
-    }
-	
-	public Mailcard getMailcard(Identity identity) {
-        UserProfile.Id pid=mailManager.getTargetProfileId();
-		Mailcard mc = readEmailMailcard(pid.getDomainId(),identity.getEmail());
-		if(mc != null) return mc;
-		UserProfile.Id fpid=identity.getOriginPid();
-		if (fpid!=null) mc = readUserMailcard(fpid.getDomainId(),fpid.getUserId());
-		if(mc != null) return mc;
-		mc = readEmailDomainMailcard(pid.getDomainId(),identity.getEmail());
-		if(mc != null) return mc;
-		return readDefaultMailcard(pid.getDomainId());
-    }
-	
-//	public Mailcard getMailcard() {
-//		return readDefaultMailcard();
-//    }
-	
-	public Mailcard getMailcard(String domainId, String emailAddress) {
-		Mailcard mc = readEmailMailcard(domainId, emailAddress);
-		if (mc != null) {
-			return mc;
-		}
-		mc = readEmailDomainMailcard(domainId, emailAddress);
-		if (mc != null) {
-			return mc;
-		}
-		return readDefaultMailcard(domainId);
-	}
-	
-	public Mailcard getEmailDomainMailcard(UserProfile profile) {
-		Mailcard mc = readEmailDomainMailcard(profile.getDomainId(), profile.getEmailAddress());
-		if (mc != null) {
-			return mc;
-		}
-		return getMailcard();
-	}
-
-	private Mailcard readEmailMailcard(String domainId, String email) {
-		String mailcard = readMailcard(domainId, "mailcard_" + email);
-		if (mailcard != null) {
-			return new Mailcard(Mailcard.TYPE_EMAIL, mailcard);
-		}
-		return null;
-	}
-
-	private Mailcard readEmailDomainMailcard(String domainId, String email) {
-		int index = email.indexOf("@");
-		if (index < 0) {
-			return null;
-		}
-		String mailcard = readMailcard(domainId, "mailcard_" + email.substring(index + 1));
-		if (mailcard != null) {
-			return new Mailcard(Mailcard.TYPE_EMAIL_DOMAIN, mailcard);
-		}
-		return null;
-	}
-
-	private Mailcard readUserMailcard(String domainId, String user) {
-		String mailcard = readMailcard(domainId, "mailcard_" + user);
-		if (mailcard != null) {
-			return new Mailcard(Mailcard.TYPE_USER, mailcard);
-		}
-		return null;
-	}
-
-	private Mailcard readDefaultMailcard(String domainId) {
-		String mailcard = readMailcard(domainId, "mailcard");
-		if (mailcard != null) {
-			return new Mailcard(Mailcard.TYPE_DEFAULT, mailcard);
-		}
-		return new Mailcard();
-	}
-
-	public void setEmailMailcard(String domainId, String email, String html) {
-		writeMailcard(domainId, "mailcard_" + email, html);
-	}
-
-	public void setEmailDomainMailcard(String domainId, String email, String html) {
-		int index = email.indexOf("@");
-		if (index < 0) {
-			return;
-		}
-		writeMailcard(domainId, "mailcard_" + email.substring(index + 1), html);
-	}
-
-	public void setUserMailcard(String domainId, String user, String html) {
-		writeMailcard(domainId, "mailcard_" + user, html);
-	}
-
-	private void writeMailcard(String domainId, String filename, String html) {
-		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(domainId), filename);
-
-		try {
-			File file = new File(pathname);
-			if (html != null) {
-				FileUtils.write(file, html, "ISO-8859-15");
-			} else {
-				FileUtils.forceDelete(file);
-			}
-
-		} catch (FileNotFoundException ex) {
-			logger.trace("Cleaning not necessary. Mailcard file not found. [{}]", pathname, ex);
-		} catch (IOException ex) {
-			logger.error("Unable to write/delete mailcard file. [{}]", pathname, ex);
-		}
-	}
-
-	private String readMailcard(String domainId, String filename) {
-		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(domainId), filename);
-
-		try {
-			File file = new File(pathname);
-			return FileUtils.readFileToString(file, "ISO-8859-15");
-
-		} catch (FileNotFoundException ex) {
-			logger.trace("Mailcard file not found. [{}]", pathname);
-			return null;
-		} catch (IOException ex) {
-			logger.error("Unable to read mailcard file. [{}]", pathname, ex);
-		}
-		return null;
-	}
-	
-	public String getModelPath(String domainId) {
-		return WebTopApp.getInstance().getHomePath(domainId)+"models";
-	}
-
 }
