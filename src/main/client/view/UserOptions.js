@@ -521,7 +521,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						buttonText: {
 							yes: me.res('opts.mailcard-editor.target.email'),
 							no: me.res('opts.mailcard-editor.target.user'),
-							cancel: WT.res('cancel')
+							cancel: WT.res('act-cancel.lbl')
 						},
 						icon: Ext.Msg.QUESTION,
 						fn: function(bid) {
