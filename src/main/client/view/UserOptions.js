@@ -277,7 +277,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					},
 					plugins: {
 						ptype: 'rowediting',
-						clicksToEdit: 1,
+						clicksToEdit: 2,
 						pluginId: 'gpidentseditor'
 					},
 					columns: [{
@@ -340,11 +340,43 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									me.lref('gpidents').store.remove(sel[0]);
 							},
 							disabled: true
+						}),
+						'-',
+						me.addAction('editIdentityMailcard',{
+							tooltip: me.res('opts.a-mailcardedit.tip'),
+							iconCls: 'wtmail-icon-mailcardedit-xs',
+							disabled: true,
+							handler: function(s) {
+								var grid=me.lref('gpidents'),
+									sel = grid.getSelection();
+								if (sel.length>0) {
+									var id = 'identity|'+sel[0].get("identityId");
+									me.editMailcard(id, null);
+								}
+							},
+							scope: this
+						}),
+						me.addAction('deleteIdentityMailcard',{
+							tooltip: me.res('opts.a-mailcardremove.tip'),
+							iconCls: 'wtmail-icon-mailcardremove-xs',
+							disabled: true,
+							handler: function(s) {
+								var grid=me.lref('gpidents'),
+									sel = grid.getSelection();
+								if (sel.length>0) {
+									var id = 'identity|'+sel[0].get("identityId");
+									me.delMailcard(id, null);
+								}
+							},
+							scope: this
 						})
+						
 					],
 					listeners: {
 						selectionchange: function(s,recs) {
 							me.getAction('deleteIdentity').setDisabled(!recs.length);
+							me.getAction('deleteIdentityMailcard').setDisabled(!recs.length);
+							me.getAction('editIdentityMailcard').setDisabled(!recs.length);
 						}
 					}
 				},{					
@@ -580,12 +612,13 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					callback: function(success,json) {
 						if (success) {
 							if(mailcardId === 'emaildomain')
-								btn.setDisabled(true);
+								if (btn) btn.setDisabled(true);
 							else {
 								var tokens = mailcardId.split('|');
 								if(tokens[0] === 'identity') {
 									var i = parseInt(tokens[1]);
-									if(i == 0) btn.setDisabled(true);
+									if(i == 0) 
+										if (btn) btn.setDisabled(true);
 								}
 							}
 							me.needReload=true;
