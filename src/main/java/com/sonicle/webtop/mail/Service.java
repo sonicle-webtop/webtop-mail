@@ -218,6 +218,7 @@ public class Service extends BaseService {
 	private MailManager mailManager;
 	private Session session;
 	private Store store;
+	private String storeProtocol;
 	private boolean disconnecting = false;
 	private String sharedPrefixes[] = null;
 	private char folderSeparator = 0;
@@ -299,7 +300,7 @@ public class Service extends BaseService {
 		fcProvided = new FolderCache(this, environment);
 		
 		folderPrefix = mprofile.getFolderPrefix();
-		String protocol = mprofile.getMailProtocol();
+		storeProtocol = mprofile.getMailProtocol();
 		
 		FP.add(FetchProfile.Item.ENVELOPE);
 		FP.add(FetchProfile.Item.FLAGS);
@@ -330,7 +331,6 @@ public class Service extends BaseService {
 		try {
 			session.setProvider(new Provider(Provider.Type.STORE,"imap","com.sonicle.mail.imap.SonicleIMAPStore","Sonicle","1.0"));
 			session.setProvider(new Provider(Provider.Type.STORE,"imaps","com.sonicle.mail.imap.SonicleIMAPSSLStore","Sonicle","1.0"));
-			store=session.getStore(protocol);
 		} catch (NoSuchProviderException exc) {
 			logger.error("Cannot create mail store for {}", profile.getUserId(), exc);
 		}
@@ -461,25 +461,37 @@ public class Service extends BaseService {
 	}
 	
 	private boolean connect() {
+		UserProfile profile = environment.getProfile();
+		int port = mprofile.getMailPort();
+		String mailHost = mprofile.getMailHost();
+		String mailUsername = mprofile.getMailUsername();
+		String mailPassword = mprofile.getMailPassword();
+		String authorizationId=mailUsername;
+		boolean isImpersonated=profile.getPrincipal().isImpersonated();
 		try {
-			if (store.isConnected()) {
+			if (store!=null && store.isConnected()) {
 				disconnecting = true;
 				store.close();
 			}
+			if (isImpersonated) {
+				session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
+				mailUsername=ss.getAdminUser();
+				mailPassword=ss.getAdminPassword();
+			}
+			
+			store=session.getStore(storeProtocol);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
 		boolean sucess = true;
 		disconnecting = false;
-		UserProfile profile = environment.getProfile();
 		try {
-			int port = mprofile.getMailPort();
-			String mailHost = mprofile.getMailHost();
-			String mailUsername = mprofile.getMailUsername();
-			String mailPassword = mprofile.getMailPassword();
 			
 			//warning: debug mode shows credentials
-			Service.logger.debug("Store.connect to "+mailHost+" as "+mailUsername+" / "+mailPassword);
+			//Service.logger.debug("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
+			Service.logger.info("  accessing "+storeProtocol+"://"+mailUsername+":******@"+mailHost+":"+port);
+			if (isImpersonated)
+				Service.logger.info(" impersonating "+authorizationId);
 			
 			if (port > 0) {
 				store.connect(mailHost, port, mailUsername, mailPassword);

@@ -159,8 +159,6 @@ public class MailUserProfile {
 			//		mailPassword=Encryption.decipher(mailPassword,encpassword);
 			//}
 			
-			logger.info("  accessing "+mailProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+mailPort);
-
 			folderPrefix=mus.getFolderPrefix();
 			scanAll=mus.isScanAll();
 			scanSeconds=mus.getScanSeconds();
