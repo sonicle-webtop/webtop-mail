@@ -37,6 +37,7 @@ import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.bol.OShare;
 import com.sonicle.webtop.core.bol.model.IncomingShareRoot;
 import com.sonicle.webtop.core.bol.model.SharePerms;
@@ -49,10 +50,15 @@ import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.IdentityDAO;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 
 /**
@@ -151,7 +157,7 @@ public class MailManager extends BaseManager {
 		}
 	}
 	
-	private Identity findIdentity(int id) {
+	public Identity findIdentity(int id) {
 		for(Identity ident: identities) {
 			if (ident.getIdentityId()==id) 
 				return ident;
@@ -204,4 +210,161 @@ public class MailManager extends BaseManager {
 		return idents;
 	}
 	
+	public Mailcard getMailcard() {
+		UserProfile.Id pid=getTargetProfileId();
+		Data udata=WT.getUserData(pid);
+		String domainId=pid.getDomainId();
+		String emailAddress=udata.getEmail().getAddress();
+		Mailcard mc = readEmailMailcard(domainId,emailAddress);
+		if(mc != null) return mc;
+		mc = readUserMailcard(domainId,pid.getUserId());
+		if(mc != null) return mc;
+		mc = readEmailDomainMailcard(domainId,emailAddress);
+		if(mc != null) return mc;
+		return readDefaultMailcard(domainId);
+    }
+	
+	public Mailcard getMailcard(UserProfile.Id pid) {
+		Data udata=WT.getUserData(pid);
+		String domainId=pid.getDomainId();
+		String emailAddress=udata.getEmail().getAddress();
+		Mailcard mc = readEmailMailcard(domainId,emailAddress);
+		if(mc != null) return mc;
+		mc = readUserMailcard(domainId,pid.getUserId());
+		if(mc != null) return mc;
+		mc = readEmailDomainMailcard(domainId,emailAddress);
+		if(mc != null) return mc;
+		return readDefaultMailcard(domainId);
+    }
+	
+	public Mailcard getMailcard(Identity identity) {
+        UserProfile.Id pid=getTargetProfileId();
+		Mailcard mc = readEmailMailcard(pid.getDomainId(),identity.getEmail());
+		if(mc != null) return mc;
+		UserProfile.Id fpid=identity.getOriginPid();
+		if (fpid!=null) mc = readUserMailcard(fpid.getDomainId(),fpid.getUserId());
+		if(mc != null) return mc;
+		mc = readEmailDomainMailcard(pid.getDomainId(),identity.getEmail());
+		if(mc != null) return mc;
+		return readDefaultMailcard(pid.getDomainId());
+    }
+	
+//	public Mailcard getMailcard() {
+//		return readDefaultMailcard();
+//    }
+	
+	public Mailcard getMailcard(String domainId, String emailAddress) {
+		Mailcard mc = readEmailMailcard(domainId, emailAddress);
+		if (mc != null) {
+			return mc;
+		}
+		mc = readEmailDomainMailcard(domainId, emailAddress);
+		if (mc != null) {
+			return mc;
+		}
+		return readDefaultMailcard(domainId);
+	}
+	
+	public Mailcard getEmailDomainMailcard(String domainId, String emailAddress) {
+		Mailcard mc = readEmailDomainMailcard(domainId, emailAddress);
+		if (mc != null) {
+			return mc;
+		}
+		return getMailcard();
+	}
+
+	private Mailcard readEmailMailcard(String domainId, String email) {
+		String mailcard = readMailcard(domainId, "mailcard_" + email);
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_EMAIL, mailcard);
+		}
+		return null;
+	}
+
+	private Mailcard readEmailDomainMailcard(String domainId, String email) {
+		int index = email.indexOf("@");
+		if (index < 0) {
+			return null;
+		}
+		String mailcard = readMailcard(domainId, "mailcard_" + email.substring(index + 1));
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_EMAIL_DOMAIN, mailcard);
+		}
+		return null;
+	}
+
+	private Mailcard readUserMailcard(String domainId, String user) {
+		String mailcard = readMailcard(domainId, "mailcard_" + user);
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_USER, mailcard);
+		}
+		return null;
+	}
+
+	private Mailcard readDefaultMailcard(String domainId) {
+		String mailcard = readMailcard(domainId, "mailcard");
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_DEFAULT, mailcard);
+		}
+		return new Mailcard();
+	}
+	
+	public void setEmailMailcard(Identity ident, String html) {
+		setEmailMailcard(getTargetProfileId().getDomainId(),ident.getEmail(),html);
+	}
+
+	public void setEmailMailcard(String domainId, String email, String html) {
+		writeMailcard(domainId, "mailcard_" + email, html);
+	}
+
+	public void setEmailDomainMailcard(String domainId, String email, String html) {
+		int index = email.indexOf("@");
+		if (index < 0) {
+			return;
+		}
+		writeMailcard(domainId, "mailcard_" + email.substring(index + 1), html);
+	}
+
+	public void setUserMailcard(String domainId, String user, String html) {
+		writeMailcard(domainId, "mailcard_" + user, html);
+	}
+
+	private void writeMailcard(String domainId, String filename, String html) {
+		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(domainId), filename);
+
+		try {
+			File file = new File(pathname);
+			if (html != null) {
+				FileUtils.write(file, html, "ISO-8859-15");
+			} else {
+				FileUtils.forceDelete(file);
+			}
+
+		} catch (FileNotFoundException ex) {
+			logger.trace("Cleaning not necessary. Mailcard file not found. [{}]", pathname, ex);
+		} catch (IOException ex) {
+			logger.error("Unable to write/delete mailcard file. [{}]", pathname, ex);
+		}
+	}
+
+	private String readMailcard(String domainId, String filename) {
+		String pathname = MessageFormat.format("{0}/{1}.html", getModelPath(domainId), filename);
+
+		try {
+			File file = new File(pathname);
+			return FileUtils.readFileToString(file, "ISO-8859-15");
+
+		} catch (FileNotFoundException ex) {
+			logger.trace("Mailcard file not found. [{}]", pathname);
+			return null;
+		} catch (IOException ex) {
+			logger.error("Unable to read mailcard file. [{}]", pathname, ex);
+		}
+		return null;
+	}
+	
+	public String getModelPath(String domainId) {
+		return WebTopApp.getInstance().getHomePath(domainId)+"models";
+	}
+
 }
