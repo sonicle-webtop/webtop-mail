@@ -211,7 +211,7 @@ public class JobService extends BaseJobService {
 					Folder un=uns[i];
 					char sep=un.getSeparator();
 					String fname=mu.getMailUser()+sep+foldername;
-					if (domain.getAuthUri().startsWith("ldapWebTop:")) fname+="@"+domain.getInternetName();
+					if (domain.getDirUri().startsWith("ldapWebTop:")) fname+="@"+domain.getInternetName();
 					outgoings[i]=un.getFolder(fname);
 				}
 			} else {
@@ -235,7 +235,7 @@ public class JobService extends BaseJobService {
 					Folder un=uns[0];
 					char sep=un.getSeparator();
 					String fname=mu.getMailUser()+sep+foldername;
-					if (domain.getAuthUri().startsWith("ldapWebTop:")) fname+="@"+domain.getInternetName();
+					if (domain.getDirUri().startsWith("ldapWebTop:")) fname+="@"+domain.getInternetName();
 					sent=un.getFolder(fname);
 				}
 			} else {
