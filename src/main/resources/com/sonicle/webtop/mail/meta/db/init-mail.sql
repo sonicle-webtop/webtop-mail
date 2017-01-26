@@ -2,6 +2,12 @@
 CREATE SCHEMA "mail";
 
 -- ----------------------------
+-- Sequence structure for seq_identities
+-- ----------------------------
+DROP SEQUENCE IF EXISTS "mail"."seq_identities";
+CREATE SEQUENCE "mail"."seq_identities";
+
+-- ----------------------------
 -- Table structure for rules
 -- ----------------------------
 DROP TABLE IF EXISTS "mail"."rules";
@@ -47,16 +53,15 @@ WITH (OIDS=TRUE)
 -- ----------------------------
 DROP TABLE IF EXISTS "mail"."identities";
 CREATE TABLE "mail"."identities" (
+"identity_id" int4 DEFAULT nextval('"mail".seq_identities'::regclass) NOT NULL,
+"domain_id" varchar(20) DEFAULT ''::character varying NOT NULL,
 "user_id" varchar(100) NOT NULL,
 "email" varchar(100) NOT NULL,
 "display_name" varchar(100) NOT NULL,
 "main_folder" varchar(100),
-"mailcard_user_id" varchar(15),
-"domain_id" varchar(20) DEFAULT ''::character varying NOT NULL,
 "fax" bool DEFAULT false
 )
 WITH (OIDS=TRUE)
-
 ;
 
 -- ----------------------------
@@ -124,7 +129,7 @@ CREATE INDEX "identities_index" ON "mail"."identities" USING btree ("user_id", "
 -- ----------------------------
 -- Primary Key structure for table identities
 -- ----------------------------
-ALTER TABLE "mail"."identities" ADD PRIMARY KEY ("domain_id", "user_id", "email", "display_name");
+ALTER TABLE "mail"."identities" ADD PRIMARY KEY ("identity_id");
 
 -- ----------------------------
 -- Primary Key structure for table notes

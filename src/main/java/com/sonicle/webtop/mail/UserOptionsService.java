@@ -144,8 +144,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 			List<Identity> idents=mman.listIdentities();
 			List<Identity> jsidents=new ArrayList<>();
 			for(Identity ident: idents) {
-				if (any || ident.getType().equals(type))
-					jsidents.add(ident);
+				if (!ident.isMainIdentity())
+					if (any || ident.getType().equals(type))
+						jsidents.add(ident);
 			}
 			new JsonResult("identities", jsidents).printTo(out);
 			
@@ -154,5 +155,32 @@ public class UserOptionsService extends BaseUserOptionsService {
 			new JsonResult(false,ex.getMessage()).printTo(out);
 		}
 	}
+	
+	public void processManageIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
+		String crud = null;
+		try {
+			MailManager mman=(MailManager)WT.getServiceManager(SERVICE_ID,getTargetProfileId());
+			crud = ServletUtils.getStringParameter(request, "crud", true);
+			if (crud.equals(Crud.READ)) {
+				processListIdentities(request, response, out, crud);
+			} else if (crud.equals(Crud.CREATE)) {
+				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
+				mman.addIdentity(pl.data);
+				new JsonResult().printTo(out);
+			} else if (crud.equals(Crud.DELETE)) {
+				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
+				mman.deleteIdentity(pl.data);
+				new JsonResult().printTo(out);
+			} else if (crud.equals(Crud.UPDATE)) {
+				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
+				mman.updateIdentity(pl.data.getIdentityId(),pl.data);
+				new JsonResult().printTo(out);
+			}
+		} catch (Exception ex) {
+		   logger.error("Error managing quickparts", ex);
+		   new JsonResult(false, "Error managing quickparts").printTo(out);
+		}
+	}
+	
 	
 }

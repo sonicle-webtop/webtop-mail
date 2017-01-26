@@ -42,6 +42,7 @@ import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.*;
+import com.sonicle.webtop.mail.ws.RecentMessage;
 import com.sonicle.webtop.mail.ws.UnreadChangedMessage;
 import com.sun.mail.imap.*;
 import java.io.*;
@@ -50,6 +51,8 @@ import java.util.*;
 import javax.mail.*;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
+import javax.mail.event.FolderEvent;
+import javax.mail.event.FolderListener;
 import javax.mail.event.MessageChangedEvent;
 import javax.mail.event.MessageChangedListener;
 import javax.mail.event.MessageCountEvent;
@@ -288,6 +291,13 @@ public class FolderCache {
 						try {
 							//Service.logger.debug("MessageAdded: {}",mce.getType());
 							refreshUnreads();
+							for(Message m: mce.getMessages()) {
+								String id=((IMAPMessage)m).getMessageID();
+								if (m.getFlags().contains(Flag.RECENT) && !recentNotified.contains(id)) {
+									recentNotified.add(id);
+									sendRecentMessage(((InternetAddress)m.getFrom()[0]).toString(),m.getSubject());
+								}
+							}
 						} catch(MessagingException exc) {
 						}
 					}
@@ -547,12 +557,16 @@ public class FolderCache {
     }    
 	
 	private void sendUnreadChangedMessage() {
-		//Service.logger.debug("sending unread changed on "+foldername);
 		this.environment.notify(
 				new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
 		);
 	}
 
+	private void sendRecentMessage(String from, String subject) {
+		this.environment.notify(new RecentMessage(foldername, from, subject)
+		);
+	}
+	
     protected void refreshUnreads() throws MessagingException {
         refreshUnreadMessagesCount();
         updateUnreads();
@@ -596,12 +610,15 @@ public class FolderCache {
                     if (!recentNotified.contains(id)) {
                         ++recent;
                         recentNotified.add(id);
+						sendRecentMessage(((InternetAddress)m.getFrom()[0]).toString(),m.getSubject());
                     }
 //                }
             }
             if (!wasOpen) folder.close(false);
             //if (!(oldrecent==0 && recent==0)) recentChanged=true;
-            if (recent>0) recentChanged=true;
+            if (recent>0) {
+				recentChanged=true;
+			}
         }
     }
 
@@ -629,14 +646,12 @@ public class FolderCache {
         try {
             if (checkUnreads || scanForcedOn || scanEnabled) refreshUnreadMessagesCount();
         } catch(MessagingException exc) {
-            Service.logger.debug("REFRESH COUNT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            Service.logger.error("Exception on folder "+foldername,exc);
+            Service.logger.debug("Exception on folder "+foldername,exc);
         }
         try {
             if (checkRecents || scanForcedOn || scanEnabled) refreshRecentMessagesCount();
         } catch(MessagingException exc) {
-            Service.logger.debug("REFRESH RECENT ERROR ON FOLDER: "+this.foldername+" ("+exc.getMessage()+")");
-            Service.logger.error("Exception on folder "+foldername,exc);
+            Service.logger.debug("Exception on folder "+foldername,exc);
         }
         return (unread>0);
     }

@@ -47,7 +47,7 @@ public class Identity {
 	public static final String TYPE_AUTO = "auto";
 	public static final String TYPE_USER = "user";
 
-    protected String identityId;
+    protected int identityId;
 	protected String type = null;
 	protected String email;
 	protected String displayName;
@@ -62,31 +62,27 @@ public class Identity {
 	protected boolean isMainIdentity=false;
 	
 	public Identity(OIdentity oi) {
-        this(Identity.TYPE_USER, oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false);
+        this(Identity.TYPE_USER, oi.getIdentityId(), oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false);
 	}
 
-	public Identity(String displayName, String email, String mainFolder) {
-		this(Identity.TYPE_USER, displayName, email, mainFolder);
+	public Identity(int identityId, String displayName, String email, String mainFolder) {
+		this(Identity.TYPE_USER, identityId, displayName, email, mainFolder);
 	}
 	
-	public Identity(String type, String displayName, String email, String mainFolder) {
-		this(type,displayName,email,mainFolder,false,false);
+	public Identity(String type, int identityId, String displayName, String email, String mainFolder) {
+		this(type,identityId,displayName,email,mainFolder,false,false);
 	}
 	
-	public Identity(String type, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard) {
+	public Identity(String type, int identityId, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard) {
 		this.type = type;
+		this.identityId = identityId;
 		this.displayName=displayName;
 		this.email=email;
 		this.mainFolder=mainFolder;
 		this.fax=fax;
 		this.forceMailcard=forceMailcard;
-        this.identityId=buildId(displayName,email);
 	}
     
-    public static String buildId(String displayName, String email) {
-        return new CompositeId(displayName,email).toString();
-    }
-
 	public String getType() {
 		return type;
 	}
@@ -171,7 +167,7 @@ public class Identity {
 		return this.type.equals(type);
 	}
     
-    public String getIdentityId() {
+    public int getIdentityId() {
         return identityId;
     }
 	

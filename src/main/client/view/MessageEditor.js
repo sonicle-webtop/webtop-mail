@@ -103,7 +103,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.identities=me.mys.getVar("identities");
 		//save hashed identities, by identityId
 		me.identHash={};
-		Ext.each(me.identities,function(ident) { me.identHash[ident.identityId]=ident},me);
+		Ext.each(me.identities,function(ident) { me.identHash[''+ident.identityId]=ident},me);
 		
         me.attcontainer=Ext.create('Ext.container.Container', {
             width: 250,

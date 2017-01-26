@@ -218,6 +218,7 @@ public class Service extends BaseService {
 	private MailManager mailManager;
 	private Session session;
 	private Store store;
+	private String storeProtocol;
 	private boolean disconnecting = false;
 	private String sharedPrefixes[] = null;
 	private char folderSeparator = 0;
@@ -299,7 +300,7 @@ public class Service extends BaseService {
 		fcProvided = new FolderCache(this, environment);
 		
 		folderPrefix = mprofile.getFolderPrefix();
-		String protocol = mprofile.getMailProtocol();
+		storeProtocol = mprofile.getMailProtocol();
 		
 		FP.add(FetchProfile.Item.ENVELOPE);
 		FP.add(FetchProfile.Item.FLAGS);
@@ -330,7 +331,6 @@ public class Service extends BaseService {
 		try {
 			session.setProvider(new Provider(Provider.Type.STORE,"imap","com.sonicle.mail.imap.SonicleIMAPStore","Sonicle","1.0"));
 			session.setProvider(new Provider(Provider.Type.STORE,"imaps","com.sonicle.mail.imap.SonicleIMAPSSLStore","Sonicle","1.0"));
-			store=session.getStore(protocol);
 		} catch (NoSuchProviderException exc) {
 			logger.error("Cannot create mail store for {}", profile.getUserId(), exc);
 		}
@@ -461,25 +461,37 @@ public class Service extends BaseService {
 	}
 	
 	private boolean connect() {
+		UserProfile profile = environment.getProfile();
+		int port = mprofile.getMailPort();
+		String mailHost = mprofile.getMailHost();
+		String mailUsername = mprofile.getMailUsername();
+		String mailPassword = mprofile.getMailPassword();
+		String authorizationId=mailUsername;
+		boolean isImpersonated=profile.getPrincipal().isImpersonated();
 		try {
-			if (store.isConnected()) {
+			if (store!=null && store.isConnected()) {
 				disconnecting = true;
 				store.close();
 			}
+			if (isImpersonated) {
+				session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
+				mailUsername=ss.getAdminUser();
+				mailPassword=ss.getAdminPassword();
+			}
+			
+			store=session.getStore(storeProtocol);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
 		boolean sucess = true;
 		disconnecting = false;
-		UserProfile profile = environment.getProfile();
 		try {
-			int port = mprofile.getMailPort();
-			String mailHost = mprofile.getMailHost();
-			String mailUsername = mprofile.getMailUsername();
-			String mailPassword = mprofile.getMailPassword();
 			
 			//warning: debug mode shows credentials
-			Service.logger.debug("Store.connect to "+mailHost+" as "+mailUsername+" / "+mailPassword);
+			//Service.logger.debug("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
+			Service.logger.info("  accessing "+storeProtocol+"://"+mailUsername+":******@"+mailHost+":"+port);
+			if (isImpersonated)
+				Service.logger.info(" impersonating "+authorizationId);
 			
 			if (port > 0) {
 				store.connect(mailHost, port, mailUsername, mailPassword);
@@ -3834,7 +3846,7 @@ public class Service extends BaseService {
 				first = false;
 			}
 			sout += "\n ],\n";
-            sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
+            sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
 			String html = smsg.getContent();
 			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
@@ -3948,7 +3960,7 @@ public class Service extends BaseService {
 						" }";
 				sout += "\n ],\n";
 			}
-            sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
+            sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
 			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
             sout += " mime:'text/html'\n";
@@ -4045,7 +4057,7 @@ public class Service extends BaseService {
 				String displayname=ia.getPersonal();
 				if (displayname==null) displayname=email;
 				//sout+=" from: { email: '"+StringEscapeUtils.escapeEcmaScript(email)+"', displayname: '"+StringEscapeUtils.escapeEcmaScript(displayname)+"' },\n";
-                ident=mprofile.getIdentityFromKey(Identity.buildId(displayname, email));
+                ident=mprofile.getIdentity(displayname, email);
 			}
 			
 			sout += " recipients: [\n";
@@ -4146,7 +4158,7 @@ public class Service extends BaseService {
             }
             sout += "\n ],\n";
             
-            if (ident!=null) sout += " identityId: '"+StringEscapeUtils.escapeEcmaScript(ident.getIdentityId())+"',\n";
+            if (ident!=null) sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
 			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
             sout += " mime:'text/html'\n";
@@ -4626,7 +4638,7 @@ public class Service extends BaseService {
 		if (idx >= 0) {
 			from = mprofile.getIdentity(idx);
 		}*/
-        Identity from=mprofile.getIdentityFromKey(jsmsg.identityId);
+        Identity from=mprofile.getIdentity(jsmsg.identityId);
 		msg.setFrom(from);
 		msg.setTo(to);
 		msg.setCc(cc);
@@ -5171,9 +5183,8 @@ public class Service extends BaseService {
 		// Clear mailUser removing any domain info (ldap auth contains 
 		// domain suffix), we don't want it!
 		String user = StringUtils.split(mailUser, "@")[0];
-		
 		// INBOX is a fake name, it's equals to user's direct folder
-		String name = (folder.equals("INBOX")) ? user : folder;
+		boolean isInbox=folder.equals("INBOX");
 		
 		FolderCache[] sharedCache = getSharedFoldersCache();
 		for(FolderCache sharedFolder : sharedCache) {
@@ -5182,6 +5193,9 @@ public class Service extends BaseService {
 			for(Folder fo : folderCache.getFolder().list()) {
 				folderName = fo.getFullName(); 
 				char sep=fo.getSeparator();
+				//if is a shared mailbox, and it contains an @, match it with mail user (NS7)
+				//or just user instead (XStream and NS6)
+				String name = isInbox? (fo.getName().indexOf('@')>0?mailUser:user): folder;
 				if(folderName.equals(sharedFolderName + sep + name)) return folderName;
 			}
 		}
@@ -5792,7 +5806,8 @@ public class Service extends BaseService {
 				 funread=mcache.getUnreadMessagesCount();
 				 }*/
 				if (mcache.isScanForcedOrEnabled()) {
-					mcache.refreshUnreads();
+					//Send message only if first page
+					if (start==0) mcache.refreshUnreads();
 					funread=mcache.getUnreadMessagesCount();
 				}
 				else funread=0;
@@ -7091,9 +7106,10 @@ public class Service extends BaseService {
 		return false;
 	}
 	
-	boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
+	protected boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
 		String scheme=ad.getAuthUri().getScheme();
-		return scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
+		//return scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
+		return scheme.equals("ad")||scheme.startsWith("ldap");
 	}
 	
 	UserProfile.Id  aclUserIdToUserId(String aclUserId) {
@@ -7411,11 +7427,19 @@ public class Service extends BaseService {
 				ouser=UserDAO.getInstance().selectByDomainUser(con, domainId, mailUserId);
 			}
 			
+			String desc=null;
 			if (ouser!=null) {
-				String desc=LangUtils.value(ouser.getDisplayName(),"");
-				desc=desc.trim();
+				desc=LangUtils.value(ouser.getDisplayName(),"");
+			} else {
+				String email=mailUserId;
+				if (email.indexOf("@")<0) email+="@"+WT.getDomainInternetName(domainId);
+				UserProfile.Data udata=WT.guessUserData(email);
+				if (udata!=null) desc=LangUtils.value(udata.getDisplayName(),"");
+			}
+			
+			if (desc!=null) {
 				logger.debug("webtop user found, desc={}",desc);
-				p = new SharedPrincipal(mailUserId, desc);
+				p = new SharedPrincipal(mailUserId, desc.trim());
 			} else {
 				logger.debug("webtop user not found, creating unmapped principal");
 				p = new SharedPrincipal(mailUserId, mailUserId);
@@ -7585,7 +7609,7 @@ public class Service extends BaseService {
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
-		return username;
+		return username+"@"+WT.getDomainInternetName(userProfileId.getDomainId());
 	}	
 	
 	public Mailcard getMailcard() {

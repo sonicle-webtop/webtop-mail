@@ -153,6 +153,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.setToolComponent(tool);
 
 		me.onMessage('unread',me.unreadChanged,me);
+		me.onMessage('recent',me.recentMessage,me);
 		
         var xb=new Array();
 			xx=0;
@@ -483,6 +484,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			node.set('unread',cfg.unread);
 			node.set('folder','');
 			node.set('folder',folder);
+
+		}
+	},
+	
+	recentMessage: function(cfg) {
+		if (cfg.foldername==='INBOX') {
+			//var msg=me.res('ntf.newmsg.inbox-has')+" "+cfg.unread+" ";
+			//if (cfg.unread===1) msg+=me.res('ntf.newmsg.new-message');
+			//else msg+=me.res('ntf.newmsg.new-messages');
+			//WT.showDesktopNotification(me.ID,{
+			//	title: me.res('ntf.newmsg.recent-messages'),
+			//	body: msg
+			//});
+			WT.showDesktopNotification(this.ID,{
+				title: Ext.String.ellipsis(cfg.from,30),
+				body: cfg.subject
+			});
 		}
 	},
 	

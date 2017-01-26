@@ -39,6 +39,7 @@ import com.sonicle.webtop.mail.bol.OIdentity;
 import java.sql.Connection;
 import org.jooq.DSLContext;
 import static com.sonicle.webtop.mail.jooq.Tables.IDENTITIES;
+import com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord;
 import java.util.List;
 
 /**
@@ -52,7 +53,7 @@ public class IdentityDAO extends BaseDAO {
 		return INSTANCE;
 	}
 	
-	public List<OIdentity> selectById(Connection con, String domainId, String userId) throws DAOException {
+	public List<OIdentity> selectByDomainUser(Connection con, String domainId, String userId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
@@ -64,4 +65,40 @@ public class IdentityDAO extends BaseDAO {
 			.fetchInto(OIdentity.class);
 	}
 	
+	public int insert(Connection con, OIdentity item) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.insertInto(IDENTITIES)
+			.set(IDENTITIES.DOMAIN_ID, item.getDomainId())
+			.set(IDENTITIES.USER_ID, item.getUserId())
+			.set(IDENTITIES.DISPLAY_NAME, item.getDisplayName())
+			.set(IDENTITIES.EMAIL, item.getEmail())
+			.set(IDENTITIES.MAIN_FOLDER, item.getMainFolder())
+			.set(IDENTITIES.FAX, item.getFax())
+			.execute();
+	}
+	
+	public int update(Connection con, int identityId, OIdentity item) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.update(IDENTITIES)
+			.set(IDENTITIES.DISPLAY_NAME, item.getDisplayName())
+			.set(IDENTITIES.EMAIL, item.getEmail())
+			.set(IDENTITIES.MAIN_FOLDER, item.getMainFolder())
+			.set(IDENTITIES.FAX, item.getFax())
+			.where(
+				IDENTITIES.IDENTITY_ID.equal(identityId)
+			)
+			.execute();
+	}
+	
+	public int deleteById(Connection con, int identityId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.delete(IDENTITIES)
+			.where(
+				IDENTITIES.IDENTITY_ID.equal(identityId)
+			)
+			.execute();
+	}
 }

@@ -31,32 +31,30 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.bol.js;
+package com.sonicle.webtop.mail.ws;
 
-import java.util.List;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.sdk.ServiceMessage;
+import com.sonicle.webtop.mail.Service;
 
 /**
  *
  * @author gbulfon
  */
-public class JsMessage {
-
-    public Boolean receipt;
-    public Boolean priority;
-    public String from;
-    public String subject;
-    public String content;
-    public String mime;
-    public int identityId;
-    public List<JsAttachment> attachments;
-    public List<JsRecipient> recipients;
-    //Reply data
-    public String replyfolder;
-    public String inreplyto;
-    public String references;
-    //Forward data
-    public String forwardedfolder;
-    public String forwardedfrom;
-    //Reply/Forward data
-    public long origuid;
+public class RecentMessage extends ServiceMessage {
+	
+	public static final String ACTION_RECENT="recent";
+	
+	String foldername;
+	String from;
+	String subject;
+	
+	public RecentMessage(String foldername, String from, String subject) {
+		super(WT.findServiceId(Service.class),ACTION_RECENT);
+		
+		this.foldername=foldername;
+		this.from=from;
+		this.subject=subject;
+	}
+	
 }
