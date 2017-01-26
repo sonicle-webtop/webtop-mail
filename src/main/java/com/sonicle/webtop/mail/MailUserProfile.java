@@ -121,7 +121,7 @@ public class MailUserProfile {
 			
 
 			//If LDAP overwrite any null value with specific LDAP default values
-			com.sonicle.security.auth.directory.AbstractDirectory dir=DirectoryManager.getManager().getDirectory(ad.getAuthUri().getScheme());
+			com.sonicle.security.auth.directory.AbstractDirectory dir=DirectoryManager.getManager().getDirectory(ad.getDirUri().getScheme());
 			if (ad!=null && dir!=null && dir instanceof com.sonicle.security.auth.directory.LdapDirectory) {
 				MailServiceSettings mss=ms.getMailServiceSettings();
 				if (mailHost==null) mailHost=mss.getDefaultHost();

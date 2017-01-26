@@ -7107,7 +7107,7 @@ public class Service extends BaseService {
 	}
 	
 	protected boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
-		String scheme=ad.getAuthUri().getScheme();
+		String scheme=ad.getDirUri().getScheme();
 		//return scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
 		return scheme.equals("ad")||scheme.startsWith("ldap");
 	}
