@@ -41,6 +41,7 @@ import com.sonicle.webtop.core.sdk.bol.js.JsUserOptionsBase;
  */
 public class JsUserOptions extends JsUserOptionsBase {
 	public boolean canChangeAccountSettings;	
+	public boolean canChangeMailcardSettings;	
 	public String simpleArchivingMailFolder;
 	public String archivingMethod;
 	public boolean sharedSeen;

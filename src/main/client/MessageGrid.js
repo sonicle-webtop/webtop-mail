@@ -1014,7 +1014,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         var me=this,data=me.sel2ids(selection);
 		data.cb=function(result) {
 			if (result) {
-				me.getSelectionModel().removeSelection(data.selection);
+				//me.getSelectionModel().removeSelection(data.selection);
+				me.getSelectionModel().removeIds(data.ids);
 			}
 		}
         me.deleteMessages(from,data);
@@ -1072,7 +1073,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             data=me.sel2ids(selection);
 		data.cb=function(result) {
 			if (result) {
-				me.getSelectionModel().removeSelection(data.selection);
+				//me.getSelectionModel().removeSelection(data.selection);
+				me.getSelectionModel().removeIds(data.ids);
 			}
 		}
         me.moveMessages(from,to,data);

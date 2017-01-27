@@ -76,6 +76,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 			if (crud.equals(Crud.READ)) {
 				JsUserOptions jso = new JsUserOptions(getTargetProfileId().toString());
 				jso.canChangeAccountSettings = RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE");
+				jso.canChangeMailcardSettings = RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE");
 				jso.simpleArchivingMailFolder = mus.getSimpleArchivingMailFolder();
 				jso.archivingMethod = mus.getArchivingMethod();
 				jso.sharedSeen = mus.isSharedSeen();

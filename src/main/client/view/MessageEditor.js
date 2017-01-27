@@ -593,6 +593,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.on('modelsave', function(s,op,success) {
 			if (!success) {
 				if (me.autosaveTask) me.autosaveTask.delay(me.autosaveDelay);
+				me.enableControls(false,true);
 			}
 		});
 	},
@@ -667,7 +668,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         if (me.fireEvent('beforesend',me)) {
             me.sendMessage();
         } else {
-            this.enableControls(false,true);
+            me.enableControls(false,true);
         }
 	},
 	
@@ -699,7 +700,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         if (me.fireEvent('beforesave',me)) {
             me.saveMessage();
         } else {
-            this.enableControls(false,true);
+            me.enableControls(false,true);
         }
     },
     

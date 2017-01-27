@@ -48,6 +48,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
 			canChangeAccountSettings: function(get) {
 				return get("record.canChangeAccountSettings");
+			},
+			canChangeMailcardSettings: function(get) {
+				return get("record.canChangeMailcardSettings");
 			}
 		}
 	},
@@ -229,6 +232,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'fieldcontainer',
 					fieldLabel: me.res('opts.editing.fld-emaildomainMailcard.lbl'),
 					layout: 'hbox',
+					bind: {
+						hidden: '{!canChangeMailcardSettings}'
+					},
 					items: [ 
 						{ xtype: 'button', text: WT.res('act-edit.lbl'), width: 100, handler: function(s) { me.editMailcard('emaildomain', s); } },
 						{ xtype: 'displayfield', text: '', width: 10 },
@@ -238,6 +244,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'fieldcontainer',
 					fieldLabel: me.res('opts.editing.fld-identity0Mailcard.lbl'),
 					layout: 'hbox',
+					bind: {
+						hidden: '{!canChangeMailcardSettings}'
+					},
 					items: [ 
 						{ xtype: 'button', text: WT.res('act-edit.lbl'), width: 100, handler: function(s) { me.editMailcard('identity|0', s); } },
 						{ xtype: 'displayfield', text: '', width: 10 },
@@ -254,7 +263,91 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			items: [{
 				xtype: 'wtpanel',
 				layout: 'border',
-				items: [{					
+				items: [{
+					region: 'north',
+					xtype: 'toolbar',
+					items: [
+						{
+							xtype: 'button',
+							reference: 'addIdentity',
+							text: WT.res('act-add.lbl'),
+							tooltip: null,
+							iconCls: 'wt-icon-add-xs',
+							handler: function() {
+								var g=me.lref('gpidents'),
+									r=g.store.add({
+										type: 'user',
+										email: '',
+										displayName: '',
+										mainFolder: '',
+										fax: false
+									})[0];
+								g.getPlugin('gpidentseditor').startEdit(r);
+							}
+						},
+						{
+							xtype: 'button',
+							reference: 'deleteIdentity',
+							text: WT.res('act-delete.lbl'),
+							tooltip: null,
+							iconCls: 'wt-icon-delete-xs',
+							handler: function() {
+								var sel = me.lref('gpidents').getSelection();
+								if (sel.length>0)
+									me.lref('gpidents').store.remove(sel[0]);
+							},
+							disabled: true
+						},
+						'-',
+						{
+							xtype: 'label',
+							text: ' Mailcard: ',
+							bind: {
+								hidden: '{!canChangeMailcardSettings}'
+							},
+						},
+						{
+							xtype: 'button',
+							reference: 'editIdentityMailcard',
+							tooltip: me.res('opts.a-mailcardedit.tip'),
+							iconCls: 'wtmail-icon-mailcardedit-xs',
+							bind: {
+								hidden: '{!canChangeMailcardSettings}'
+							},
+							disabled: true,
+							handler: function(s) {
+								var grid=me.lref('gpidents'),
+									sel = grid.getSelection();
+								if (sel.length>0) {
+									var id = 'identity|'+sel[0].get("identityId");
+									me.editMailcard(id, null);
+								}
+							},
+							scope: this
+						},
+						{
+							xtype: 'button',
+							reference: 'deleteIdentityMailcard',
+							tooltip: me.res('opts.a-mailcardremove.tip'),
+							iconCls: 'wtmail-icon-mailcardremove-xs',
+							bind: {
+								hidden: '{!canChangeMailcardSettings}'
+							},
+							disabled: true,
+							handler: function(s) {
+								var grid=me.lref('gpidents'),
+									sel = grid.getSelection();
+								if (sel.length>0) {
+									var id = 'identity|'+sel[0].get("identityId");
+									me.delMailcard(id, null);
+								}
+							},
+							scope: this
+						}
+						
+					]
+				},
+				{					
 					region: 'center',
 					xtype: 'gridpanel',
 					reference: 'gpidents',
@@ -313,70 +406,11 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						editor: { xtype: 'checkbox' },
 						flex: 1
 					}],
-					tbar: [
-						me.addAction('addIdentity', {
-							text: WT.res('act-add.lbl'),
-							tooltip: null,
-							iconCls: 'wt-icon-add-xs',
-							handler: function() {
-								var g=me.lref('gpidents'),
-									r=g.store.add({
-										type: 'user',
-										email: '',
-										displayName: '',
-										mainFolder: '',
-										fax: false
-									})[0];
-								g.getPlugin('gpidentseditor').startEdit(r);
-							}
-						}),
-						me.addAction('deleteIdentity', {
-							text: WT.res('act-delete.lbl'),
-							tooltip: null,
-							iconCls: 'wt-icon-delete-xs',
-							handler: function() {
-								var sel = me.lref('gpidents').getSelection();
-								if (sel.length>0)
-									me.lref('gpidents').store.remove(sel[0]);
-							},
-							disabled: true
-						}),
-						'-',
-						me.addAction('editIdentityMailcard',{
-							tooltip: me.res('opts.a-mailcardedit.tip'),
-							iconCls: 'wtmail-icon-mailcardedit-xs',
-							disabled: true,
-							handler: function(s) {
-								var grid=me.lref('gpidents'),
-									sel = grid.getSelection();
-								if (sel.length>0) {
-									var id = 'identity|'+sel[0].get("identityId");
-									me.editMailcard(id, null);
-								}
-							},
-							scope: this
-						}),
-						me.addAction('deleteIdentityMailcard',{
-							tooltip: me.res('opts.a-mailcardremove.tip'),
-							iconCls: 'wtmail-icon-mailcardremove-xs',
-							disabled: true,
-							handler: function(s) {
-								var grid=me.lref('gpidents'),
-									sel = grid.getSelection();
-								if (sel.length>0) {
-									var id = 'identity|'+sel[0].get("identityId");
-									me.delMailcard(id, null);
-								}
-							},
-							scope: this
-						})
-						
-					],
 					listeners: {
 						selectionchange: function(s,recs) {
-							me.getAction('deleteIdentity').setDisabled(!recs.length);
-							me.getAction('deleteIdentityMailcard').setDisabled(!recs.length);
-							me.getAction('editIdentityMailcard').setDisabled(!recs.length);
+							me.lref('deleteIdentity').setDisabled(!recs.length);
+							me.lref('deleteIdentityMailcard').setDisabled(!recs.length);
+							me.lref('editIdentityMailcard').setDisabled(!recs.length);
 						}
 					}
 				},{					

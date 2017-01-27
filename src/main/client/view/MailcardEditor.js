@@ -158,17 +158,21 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 						title: me.mys.res('editor.pubimg.tit'),
 						text: me.mys.res('editor.pubimg.tip')
 					},
-					menu: Ext.create("Ext.menu.Menu",{
+					menu: {
+						xtype: 'sostoremenu',
+						store: Ext.create('WTA.store.PublicImages', {
+							autoLoad: true
+						}),
+						textField: 'desc',
 						listeners: {
-							itemclick: {
-								fn: function(itm) {
-									me.lref("fldhtmleditor").execCommand('insertimage', '');
+							click: {
+								fn: function(mnu,itm) {
+									if (itm) me.lref("fldhtmleditor").execCommand('insertimage', false, WT.getPublicImagesUrl()+"/"+itm.text);
 								},
 								scope: this
 							}
-						},
-						items: []
-					})
+						}
+					}
 				})
 			]			
 		});

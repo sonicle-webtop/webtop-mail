@@ -87,6 +87,7 @@
 			<permission group="MAIL_WORKFLOW" actions="ACCESS" />
 			<permission group="ACCOUNT_SETTINGS" actions="CHANGE" />
 			<permission group="SHARING_UNKNOWN_ROLES" actions="SHOW" />
+			<permission group="MAILCARD_SETTINGS" actions="CHANGE" />
 		</permissions>
 	</service>
 </services>
