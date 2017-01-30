@@ -350,7 +350,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								//var ov = s.lastValue || s.startValue;
 								//var nv = r.get('id');
 								if(!nv || !ov || ov === nv) return;
-								
+								me.selectedIdentity=me.identHash[nv];
                                 var mime='text/html';
 								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),mime,me.identHash[nv].mailcard),mime);
 								else me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),mime);
@@ -837,13 +837,22 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     },	
 
     doAutosave: function() {
-		var me=this;
+		var me=this,o=me.opts.data;
         if (me.isAutosaveDirty()) {
             var mailparams={
-              subject: me.subject.getValue(),
-              content: me.htmlEditor.getEditingValue(),
-              recipients: [],
-              rtypes: []
+				folder: o.folder,
+				subject: me.subject.getValue(),
+				content: me.htmlEditor.getEditingValue(),
+				identityId: me.selectedIdentity.identityId,
+				mime: o.mime,
+				replyfolder: o.replyfolder,
+				inreplyto: o.inreplyto,
+				references: o.references,
+				origuid: o.origuid,
+				forwardedfolder: o.forwardedfolder,
+				forwardedfrom: o.forwardedfrom,
+				recipients: [],
+				rtypes: []
             };
             me.fillRecipients(mailparams.recipients,mailparams.rtypes);
 
