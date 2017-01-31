@@ -400,7 +400,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 //			bodyCls: 'wt-theme-bg-2',
             border: false,
             bodyBorder: false,
-			height: 150,
+			height: 160,
 			layout: 'anchor',
 			items: [
 				me.toolbar,
@@ -629,6 +629,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	startNew: function(data) {
 		var me=this;
 		if (!data.contentReady) data.content=me.prepareContent(data.content,data.mime);
+		if (data.mime==="text/html") me.htmlEditor.enableHtmlMode();
+		else if (data.mime==="text/plain") me.htmlEditor.enableTextMode();
 		me.beginNew({
 			data: data
 		});
@@ -764,8 +766,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			if (ident.mailcard) mc=ident.mailcard;
 		}
 		
-		if (mc) content='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+content;
-        content='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+content+'</div>';
+		if (mime==="text/html") {
+			if (mc) content='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+content;
+			content='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+content+'</div>';
+		}
+		else if (mime==="text/plain") {
+			if (mc) content='\n\n'+mc.text+'\n'+content;
+		}
         return content;
     },
 	

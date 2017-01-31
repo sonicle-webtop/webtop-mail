@@ -447,7 +447,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 							txtupdate=me.res("ical.update");
 						if (me.icalmethod==="REQUEST") {
 							if (me.icalwebtopid<0) {
-								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.invite.topmessage")+".&nbsp;&nbsp;&nbsp;"+
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.invite.top.message")+".&nbsp;&nbsp;&nbsp;"+
 										"<a ext:qtip='"+txtaccept+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='accept'>&nbsp;"+txtaccept+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
 										"<a ext:qtip='"+txtdecline+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='decline'>&nbsp;"+txtdecline+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
 										//"<a ext:qtip='"+txtconfirm+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='later'>&nbsp;"+txtconfirm+"&nbsp;</a>"+
@@ -457,7 +457,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 										"<a ext:qtip='"+txtupdate+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='update'>&nbsp;"+txtupdate+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
 										"</DIV>";
 							} else {
-								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.processed.topmessage")+"."+
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.processed.top.message")+"."+
 										"</DIV>";
 							}
 						} else if (me.icalmethod==="REPLY") {
@@ -466,7 +466,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 										"<a ext:qtip='"+txtupdate+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='updatereply'>&nbsp;"+txtupdate+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
 										"</DIV>";
 							} else if (this.icalwebtopid>0) {
-								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.reply.topmessage")+"."+
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.reply.top.message")+"."+
 										"</DIV>";
 							}
 						} else if (me.icalmethod==="CANCEL") {

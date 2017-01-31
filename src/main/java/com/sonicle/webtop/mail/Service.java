@@ -53,6 +53,9 @@ import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.sieve.*;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
+import com.sonicle.webtop.calendar.CalendarManager;
+import com.sonicle.webtop.calendar.bol.model.Event;
+import com.sonicle.webtop.calendar.bol.model.EventBase;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
@@ -6039,7 +6042,14 @@ public class Service extends BaseService {
 				//CalendarService cs=(CalendarService)wts.getServiceByName("calendar");
 				//if (cs!=null) {
 				//	int eid=cs.getEventIDFromPlanningUID(ir.getUID(), ir.getLastModified());
-					sout+="{iddata:'ical',value1:'"+ir.getMethod()+"',value2:'"+ir.getUID()+"',value3:'"+0/*TODO : eid*/+"'},\n";
+					CalendarManager cm=(CalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+					if (cm!=null) {
+						EventBase ev=cm.getEventByPublicUid(ir.getUID());
+						int eid=-1;
+						if (ev!=null)
+							eid=ev.getEventId();
+						sout+="{iddata:'ical',value1:'"+ir.getMethod()+"',value2:'"+ir.getUID()+"',value3:'"+eid+"'},\n";
+					}
 				//}
 			}
 			

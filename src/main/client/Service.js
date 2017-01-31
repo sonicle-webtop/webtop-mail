@@ -559,7 +559,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionNew: function() {
-		this.startNewMessage(this.currentFolder, { mime: 'text/html' });
+		this.startNewMessage(this.currentFolder, { mime: 'text/plain' });
 	},
 	
 	/**
