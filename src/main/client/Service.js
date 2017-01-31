@@ -1172,8 +1172,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         }*/
 	},
 	
-	getCalendarAPI: function() {
-		return WT.getServiceAPI("com.sonicle.webtop.calendar");
+	getCalendarApi: function() {
+		return WT.getServiceApi("com.sonicle.webtop.calendar");
 	}
 	
 });
