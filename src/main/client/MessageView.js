@@ -453,7 +453,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 										//"<a ext:qtip='"+txtconfirm+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='later'>&nbsp;"+txtconfirm+"&nbsp;</a>"+
 										"</DIV>";
 							} else if (me.icalwebtopid===0) {
-								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.modified.topmessage")+".&nbsp;&nbsp;&nbsp;"+
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.modified.top.message")+".&nbsp;&nbsp;&nbsp;"+
 										"<a ext:qtip='"+txtupdate+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='update'>&nbsp;"+txtupdate+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
 										"</DIV>";
 							} else {

@@ -31,23 +31,22 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.ws;
-
-import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.sdk.ServiceMessage;
-import com.sonicle.webtop.mail.Service;
-import com.sonicle.webtop.mail.bol.js.JsUnreadChangedMessage;
+package com.sonicle.webtop.mail.bol.js;
 
 /**
  *
  * @author gbulfon
  */
-public class UnreadChangedMessage extends ServiceMessage {
+public class JsUnreadChangedMessage {
 	
-	public static final String ACTION_UNREAD="unread";
+	String foldername;
+	int unread;
+	boolean hasUnreadChildren;
 	
-	public UnreadChangedMessage(String foldername, int unread, boolean hasUnreadChildren) {
-		super(WT.findServiceId(Service.class),ACTION_UNREAD,new JsUnreadChangedMessage(foldername,unread,hasUnreadChildren));
+	public JsUnreadChangedMessage(String foldername, int unread, boolean hasUnreadChildren) {
+		this.foldername=foldername;
+		this.unread=unread;
+		this.hasUnreadChildren=hasUnreadChildren;
 	}
 	
 }

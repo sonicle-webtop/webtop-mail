@@ -1791,6 +1791,7 @@ public class FolderCache {
       String msgTo;
       String msgCc;
       Locale locale=profile.getLocale();
+	  String laf=ms.getCoreUserSettings().getLookAndFeel();
 	  boolean icalhtmlview=false;
       for(int i=0;i<mailData.getDisplayPartCount();++i) {
         Part dispPart=mailData.getDisplayPart(i);
@@ -1849,11 +1850,10 @@ public class FolderCache {
 			} else if (dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
 				if (dispPart.getContentType().contains("method=")) {
 					try {
-						String laf="default"; //TODO: get it from user setting
 						ICalendarRequest ir=new ICalendarRequest(istream);
 						mailData.setICalRequest(ir);
 						if (!icalhtmlview) {
-							String irhtml=ir.getHtmlView(locale,laf,java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
+							String irhtml=ir.getHtmlView(locale,ms.getManifest().getVersion().toString(),laf,java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
 							htmlparts.add(0,irhtml);
 							icalhtmlview=true;
 						}

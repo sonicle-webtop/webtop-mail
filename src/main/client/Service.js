@@ -475,21 +475,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
         mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2});
 	}, 
 	
-	unreadChanged: function(cfg,unreadOnly) {
+	unreadChanged: function(msg,unreadOnly) {
 		var me=this,
-			node=me.imapTree.getStore().getById(cfg.foldername);
+			pl=msg.payload;
+			node=me.imapTree.getStore().getById(pl.foldername);
 		if (node) {
 			var folder=node.get("folder");
-			if (!unreadOnly) node.set('hasUnread',cfg.hasUnreadChildren);
-			node.set('unread',cfg.unread);
+			if (!unreadOnly) node.set('hasUnread',pl.hasUnreadChildren);
+			node.set('unread',pl.unread);
 			node.set('folder','');
 			node.set('folder',folder);
 
 		}
 	},
 	
-	recentMessage: function(cfg) {
-		if (cfg.foldername==='INBOX') {
+	recentMessage: function(msg) {
+		var pl=msg.payload;
+		if (pl.foldername==='INBOX') {
 			//var msg=me.res('ntf.newmsg.inbox-has')+" "+cfg.unread+" ";
 			//if (cfg.unread===1) msg+=me.res('ntf.newmsg.new-message');
 			//else msg+=me.res('ntf.newmsg.new-messages');
@@ -498,8 +500,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//	body: msg
 			//});
 			WT.showDesktopNotification(this.ID,{
-				title: Ext.String.ellipsis(cfg.from,30),
-				body: cfg.subject
+				title: Ext.String.ellipsis(pl.from,30),
+				body: pl.subject
 			});
 		}
 	},

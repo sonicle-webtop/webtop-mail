@@ -228,6 +228,7 @@ public class Service extends BaseService {
 	private MailUserProfile mprofile;
 	private MailServiceSettings ss = null;
 	private MailUserSettings us = null;
+	private CoreUserSettings cus = null;
 	private boolean validated = false;
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
@@ -292,6 +293,7 @@ public class Service extends BaseService {
 		this.environment = getEnv();
 		
 		mailManager=(MailManager)WT.getServiceManager(SERVICE_ID);
+		cus = new CoreUserSettings(getEnv().getProfileId());
 
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
@@ -426,6 +428,10 @@ public class Service extends BaseService {
 	
 	public MailUserSettings getMailUserSettings() {
 		return this.us;	
+	}
+	
+	public CoreUserSettings getCoreUserSettings() {
+		return this.cus;
 	}
 	
 	public boolean hasDifferentDefaultFolder() {
@@ -4282,7 +4288,7 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			Exception exc = sendMessage(msg, jsmsg.attachments);
 			if (exc == null) {
-				coreMgr.deleteAutosaveData(SERVICE_ID, "newmail", ""+msgId);
+				coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
 				// TODO: Cloud integration!!!
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
 				 for(String hash: hashlinks) {
@@ -4416,7 +4422,7 @@ public class Service extends BaseService {
 			}
 			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
 			if (exc == null) {
-				coreMgr.deleteAutosaveData(SERVICE_ID, "newmail", ""+msgId);
+				coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -4457,7 +4463,7 @@ public class Service extends BaseService {
 			}
 			Exception exc = scheduleMessage(msg, jsmsg.attachments, fc, scheddate, schedtime, schednotify);
 			if (exc == null) {
-				coreMgr.deleteAutosaveData(SERVICE_ID, "newmail", ""+msgId);
+				coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -4478,7 +4484,7 @@ public class Service extends BaseService {
 		try {
 			long msgId=ServletUtils.getLongParameter(request, "msgId", true);
 			clearAttachments(msgId);
-			coreMgr.deleteAutosaveData(SERVICE_ID, "newmail", ""+msgId);
+			coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
 			json=new JsonResult();
 		} catch(Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -5833,7 +5839,6 @@ public class Service extends BaseService {
 	DateFormat df = null;
 	
 	public void processGetMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreUserSettings cus = new CoreUserSettings(getEnv().getProfileId());
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
@@ -7356,7 +7361,9 @@ public class Service extends BaseService {
 	@Override
 	public ServiceVars returnServiceVars() {
 		ServiceVars co = new ServiceVars();
+		Connection con=null;
 		try {
+			con=getConnection();
 			List<Identity> identities=mailManager.listIdentities();
 			
 			List<Identity> jsidents=new ArrayList();
@@ -7390,7 +7397,7 @@ public class Service extends BaseService {
 			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes()));
 			
 			UserProfile profile = environment.getProfile();
-			OVacation vacation=VacationDAO.getInstance().selectByUserId(getConnection(), profile.getDomainId(), profile.getUserId());
+			OVacation vacation=VacationDAO.getInstance().selectByUserId(con, profile.getDomainId(), profile.getUserId());
 			boolean vactive=false;
 			String vmessage="";
 			String vaddresses=profile.getEmailAddress();
@@ -7405,6 +7412,8 @@ public class Service extends BaseService {
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	
+		} finally {
+			DbUtils.closeQuietly(con);
 		}
 		return co;
 	}

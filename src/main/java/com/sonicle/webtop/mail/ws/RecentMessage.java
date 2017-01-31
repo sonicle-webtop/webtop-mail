@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail.ws;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sonicle.webtop.mail.Service;
+import com.sonicle.webtop.mail.bol.js.JsRecentMessage;
 
 /**
  *
@@ -45,16 +46,8 @@ public class RecentMessage extends ServiceMessage {
 	
 	public static final String ACTION_RECENT="recent";
 	
-	String foldername;
-	String from;
-	String subject;
-	
 	public RecentMessage(String foldername, String from, String subject) {
-		super(WT.findServiceId(Service.class),ACTION_RECENT);
-		
-		this.foldername=foldername;
-		this.from=from;
-		this.subject=subject;
+		super(WT.findServiceId(Service.class),ACTION_RECENT,new JsRecentMessage(foldername,from,subject));
 	}
 	
 }

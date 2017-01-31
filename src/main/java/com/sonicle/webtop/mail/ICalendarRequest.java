@@ -261,7 +261,7 @@ public class ICalendarRequest {
 		return "TENTATIVE"; 
 	}
 	
-	public String getHtmlView(Locale locale, String laf, ResourceBundle bundle) {
+	public String getHtmlView(Locale locale, String serviceVersion, String laf, ResourceBundle bundle) {
 		
 		String htmlsummary=StringEscapeUtils.escapeHtml4(summary);
 		String htmllocation=StringEscapeUtils.escapeHtml4(location);
@@ -300,8 +300,7 @@ public class ICalendarRequest {
 		return String.format(
 			locale,
 			"<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'>"+
-					"http://localhost:8084/webtop/resources/com.sonicle.webtop.mail/laf/default/statusunread_16.png"+
-					"<link rel=\"stylesheet\" type=\"text/css\" href=\"resources/com.sonicle.webtop.mail/laf/"+laf+"/service.css\" />"+
+					"<link rel=\"stylesheet\" type=\"text/css\" href=\"resources/com.sonicle.webtop.mail/"+serviceVersion+"/laf/"+laf+"/service.css\" />"+
 			"</head><body>"+
 					
 			"<table border=0 cellpadding=4 class=wtmail-ical-tabletitle>"+
