@@ -98,6 +98,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.password = mus.getPassword();
 				jso.protocol = mus.getProtocol();
 				jso.defaultFolder = mus.getDefaultFolder();
+				jso.format = mus.getFormat();
 				jso.font = mus.getFontName();
 				jso.fontSize = mus.getFontSize();
 				jso.receipt = mus.isReceipt();
@@ -171,6 +172,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 				}
 				if (pl.map.has("defaultFolder")) {
 					mus.setDefaultFolder(pl.data.defaultFolder);
+				}
+				if (pl.map.has("format")) {
+					mus.setFormat(pl.data.format);
 				}
 				if (pl.map.has("font")) {
 					mus.setFontName(pl.data.font);

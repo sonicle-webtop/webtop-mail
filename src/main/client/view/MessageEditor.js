@@ -351,7 +351,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								//var nv = r.get('id');
 								if(!nv || !ov || ov === nv) return;
 								me.selectedIdentity=me.identHash[nv];
-                                var mime='text/html';
+                                var format=me.mys.varsData.format;
 								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),mime,me.identHash[nv].mailcard),mime);
 								else me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),mime);
 							},
@@ -628,9 +628,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	startNew: function(data) {
 		var me=this;
-		if (!data.contentReady) data.content=me.prepareContent(data.content,data.mime);
-		if (data.mime==="text/html") me.htmlEditor.enableHtmlMode();
-		else if (data.mime==="text/plain") me.htmlEditor.enableTextMode();
+		if (!data.contentReady) data.content=me.prepareContent(data.content,data.format);
+		//default of html editor is html, so no need to enable html mode
+		//also calling it seems to break binding
+		/*if (data.format==="html") me.htmlEditor.enableHtmlMode();
+		else */if (data.format==="plain") me.htmlEditor.enableTextMode();
 		me.beginNew({
 			data: data
 		});
@@ -759,28 +761,28 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.saveView(true);
 	},
     
-    prepareContent: function(content,mime,mc) {
+    prepareContent: function(content,format,mc) {
 		var me=this;
 		if (!mc) {
 			var ident=me.identities[me.identityIndex];
 			if (ident.mailcard) mc=ident.mailcard;
 		}
 		
-		if (mime==="text/html") {
+		if (format==="html") {
 			if (mc) content='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+content;
 			content='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+content+'</div>';
 		}
-		else if (mime==="text/plain") {
+		else if (format==="plain") {
 			if (mc) content='\n\n'+mc.text+'\n'+content;
 		}
         return content;
     },
 	
-    setContent: function(content,mime) {
+    setContent: function(content,format) {
 		var me=this;
         //me.htmlEditor.initHtmlValue(html);
 		me.getModel().set("content",content);
-        me.getModel().set("mime",mime);
+        me.getModel().set("format",format);
 /*        var w=this.htmlEditor.getWin();
         var d=w.document;
         var n=d.body.firstChild;
@@ -851,7 +853,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				subject: me.subject.getValue(),
 				content: me.htmlEditor.getEditingValue(),
 				identityId: me.selectedIdentity.identityId,
-				mime: o.mime,
+				format: o.format,
 				replyfolder: o.replyfolder,
 				inreplyto: o.inreplyto,
 				references: o.references,

@@ -50,7 +50,7 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
 		{ name: "from", type: 'string' },
 		{ name: "subject", type: 'string' },
 		{ name: "content", type: 'string' },
-        { name: "mime", type: 'string' },
+        { name: "format", type: 'string' },
         { name: "identityId", type: 'int' },
         //Reply data
         { name: "replyfolder", type: 'string' },

@@ -36,6 +36,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	requires: [
 		'Sonicle.webtop.mail.model.ServiceVars',
 		'Sonicle.webtop.mail.model.Identity',
+		'Sonicle.webtop.mail.store.EditingFormat',
 		'Sonicle.webtop.mail.view.MailcardEditor'
 	],
 	
@@ -200,6 +201,17 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			title: me.res('opts.editing.tit'),
 			items: [
 				WTF.lookupCombo('id', 'desc', {
+					bind: {
+						value: '{record.format}'
+					},
+					store: Ext.create('Sonicle.webtop.mail.store.EditingFormat', {
+						autoLoad: true
+					}),
+					fieldLabel: me.res('opts.editing.fld-format.lbl'),
+					width: 350,
+					needReload: true,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				}), WTF.lookupCombo('id', 'desc', {
 					bind: '{record.font}',
 					store: Ext.create('WTA.store.TxtFont', {
 						autoLoad: true

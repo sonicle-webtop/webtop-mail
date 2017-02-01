@@ -46,7 +46,7 @@ public class JsMessage {
     public String from;
     public String subject;
     public String content;
-    public String mime;
+    public String format;
     public int identityId;
     public List<JsAttachment> attachments;
     public List<JsRecipient> recipients;

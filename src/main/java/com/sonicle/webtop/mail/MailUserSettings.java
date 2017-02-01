@@ -81,6 +81,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String MESSAGE_VIEW_WIDTH = "message.view.width";
 	public static final String MESSAGE_VIEW_HEIGHT = "message.view.height";
 	public static final String MESSAGE_VIEW_COLLAPSED = "message.view.collapsed";
+	public static final String FORMAT = "format";
 	public static final String FONT_NAME = "font.name";
 	public static final String FONT_SIZE = "font.size";
 	public static final String RECEIPT = "receipt";
@@ -436,6 +437,16 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public HashMap<String,Integer> getColumnSizes() {
 		return getIntegers(COLUMN_SIZE_PREFIX);
+	}
+	
+	public String getFormat() {
+		String s=getString(FORMAT,null);
+		if (s==null) s=mss.getDefaultFormat();
+		return s;
+	}
+	
+	public boolean setFormat(String format) {
+		return setString(FORMAT, format);
 	}
 	
 	public String getFontName() {

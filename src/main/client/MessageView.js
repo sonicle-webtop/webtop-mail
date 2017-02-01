@@ -126,12 +126,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				var email=el.recEmail;
 				if (desc==email) desc=null;
 				cs.beginNewContact(desc,email);
-			}, iconCls: 'wtcontacts-icon-newcontact-xs'});
+			}, iconCls: 'wtcon-icon-newContact-xs'});
 		}
-		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createfilter"), handler: function() {
+		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createrule"), handler: function() {
 			var ae=me.emailMenu.activeElement;
-			me.createFilter(ae.recEmail,ae.recType);
-		}, iconCls: 'wt-icon-new-filter-xs'});
+			me.createRule(ae.recEmail,ae.recType);
+		}, iconCls: 'wt-icon-new-rule-xs'});
 		me.emailMenu=new Ext.menu.Menu({
 			items: actions
 		});
@@ -615,6 +615,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
 	
+    createRule: function(email,type) {
+		var me=this,context="INBOX";
+		//if (ms.currentFolder==ms.folderSent) context="SENT";
+		me.mys.addRule(type,email);
+    },
+
     
 	//TODO Workflow
 	/*
@@ -1055,7 +1061,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 folder: me.folder
 			},
 			callback: function(success,json) {
-				if (json.result) {
+				if (success) {
 				} else {
 					WT.error(json.text);
 				}
@@ -1150,7 +1156,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				var email=(e.recDesc==e.recEmail)?e.recEmail:e.recDesc+" <"+e.recEmail+">";
 				me.mys.startNewMessage(me.folder,{
 					recipients: [ { rtype: 'to', email: email } ],
-					mime: 'text/html'
+					format: me.mys.varsData.format
 				});
 			});
         }
@@ -1216,7 +1222,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			params=Ext.Object.fromQueryString(qsparams);
 		WT.confirm(me.res('ical.'+act+'.message'),function(bid) {
 			if (bid==='yes') {				   
-				if (act==='accept'||act==='update'||act==='cancel') me._importCalendarEvent(act, params);
+				if (act==='accept'||act==='update'||act==='cancel') me._actionCalendarEvent(act, params);
 				else if (act==='updatereply') me._updateCalendarReply(params);
 				else if (act==='decline') me._declineCalendarEvent(params);
 			}
@@ -1231,28 +1237,26 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         },this);	
     },	
 	
-	_importCalendarEvent: function(act, params) {
+	_actionCalendarEvent: function(act, params) {
 		var me=this;
-		WT.ajaxReq(me.mys.ID, 'GetCalendarEvent', {
+		params.calaction=act;
+		WT.ajaxReq(me.mys.ID, 'CalendarRequest', {
 			params: params,
 			callback: function(success,json) {
-				if (json.result) {
-					var ev=json.event,
-						pg=json.planninggrid,
-						scal=WT.getApp().getService('com.sonicle.webtop.calendar');
-					ev.ical_action=act;
-					if (ev.event_id!==undefined && ev.event_id===""){
-						scal.actionNewByAttachment(ev,pg);
-					} else {
-						if (ev.method==="CANCEL"){
-							scal.actionDeleteByAttachment(ev.event_id);
-						} else {
-							scal.actionEditEventByAttachment(ev.event_id,ev,pg);
-						}
+				if (success) {
+					if (act==="accept"){
+						var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
+						capi.editEvent({ ekey: json.data });
+					}
+					else if (act==="cancel") {
+						//scal.actionDeleteByAttachment(ev.event_id);
+					}
+					else if (act==="update") {
+						//scal.actionEditEventByAttachment(ev.event_id,ev,pg);
 					}
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -1263,7 +1267,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		WT.ajaxReq(g.mys.ID, 'UpdateCalendarReply', {
 			params: params,
 			callback: function(success,json) {
-				if (json.result) {
+				if (success) {
 					WT.getApp().getService('com.sonicle.webtop.calendar').scheduler.editEvent(json.event_id);
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
@@ -1275,10 +1279,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	
     _declineCalendarEvent: function(params) {
 		var me=this;
-		WT.ajaxReq(g.mys.ID, 'DeclineInvitation', {
+		WT.ajaxReq(me.mys.ID, 'DeclineInvitation', {
 			params: params,
 			callback: function(success,json) {
-				if (json.result) {
+				if (success) {
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
 					WT.error(json.text);

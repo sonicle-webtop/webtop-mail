@@ -55,7 +55,6 @@ import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
 import com.sonicle.webtop.calendar.CalendarManager;
 import com.sonicle.webtop.calendar.bol.model.Event;
-import com.sonicle.webtop.calendar.bol.model.EventBase;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
@@ -135,6 +134,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -3805,6 +3805,8 @@ public class Service extends BaseService {
 		}
 		String sout = null;
 		try {
+			String format=us.getFormat();
+			boolean isHtml=format.equals("html");
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
 			Message m=mcache.getMessage(Long.parseLong(puidmessage));
@@ -3812,7 +3814,7 @@ public class Service extends BaseService {
 				throw new MessagingException("Message " + puidmessage + " expunged");
 			}
 			SimpleMessage smsg = getReplyMsg(
-					getNewMessageID(), m, replyAll, isSentFolder(pfoldername), true,
+					getNewMessageID(), m, replyAll, isSentFolder(pfoldername), isHtml,
 					profile.getEmailAddress(), mprofile.isIncludeMessageInReply(),
 					lookupResource(MailLocaleKey.MSG_FROMTITLE),
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
@@ -3858,9 +3860,14 @@ public class Service extends BaseService {
 			sout += "\n ],\n";
             sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
-			String html = smsg.getContent();
-			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
-            sout += " mime:'text/html'\n";
+			if (isHtml) {
+				String html = smsg.getContent();
+				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
+			} else {
+				String text = smsg.getTextContent();
+				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(text) + "',\n";
+			}
+            sout += " format:'"+format+"'\n";
 			sout += "\n}";
 		} catch (MessagingException exc) {
 			Service.logger.error("Exception",exc);
@@ -3881,6 +3888,8 @@ public class Service extends BaseService {
 		long newmsgid = Long.parseLong(pnewmsgid);
 		String sout = null;
 		try {
+			String format=us.getFormat();
+			boolean isHtml=format.equals("html");
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
 			Message m=mcache.getMessage(Long.parseLong(puidmessage));
@@ -3888,7 +3897,7 @@ public class Service extends BaseService {
 				throw new MessagingException("Message " + puidmessage + " expunged");
 			}
 			SimpleMessage smsg = getForwardMsg(
-					newmsgid, m, true,
+					newmsgid, m, isHtml,
 					lookupResource(MailLocaleKey.MSG_FROMTITLE),
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
 					lookupResource(MailLocaleKey.MSG_CCTITLE),
@@ -3907,7 +3916,8 @@ public class Service extends BaseService {
 			String subject = smsg.getSubject();
 			sout += " subject: '" + StringEscapeUtils.escapeEcmaScript(subject) + "',\n";
 			
-			String html = smsg.getContent();
+			String html=smsg.getContent();
+			String text=smsg.getTextContent();
 			if (!attached) {
 				HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
 				boolean first = true;
@@ -3972,8 +3982,12 @@ public class Service extends BaseService {
 			}
             sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
-			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
-            sout += " mime:'text/html'\n";
+			if (isHtml) {
+				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
+			} else {
+				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(text) + "',\n";
+			}
+            sout += " format:'"+format+"'\n";
 			sout += "\n}";
 			out.println(sout);
 		} catch (Exception exc) {
@@ -4698,10 +4712,10 @@ public class Service extends BaseService {
 		
 		msg.setReceipt(jsmsg.receipt);
 		msg.setPriority(jsmsg.priority ? 1 : 3);
-		if (jsmsg.mime == null || jsmsg.mime.equals("text/plain")) {
+		if (jsmsg.format == null || jsmsg.format.equals("plain")) {
 			msg.setContent(jsmsg.content);
 		} else {
-			if (jsmsg.mime.equalsIgnoreCase("text/html")) {
+			if (jsmsg.format.equalsIgnoreCase("html")) {
 				//TODO: change this weird matching of cids2urls!
 				
 				//CIDs
@@ -4723,9 +4737,9 @@ public class Service extends BaseService {
                 
 				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
 				String htmlcontent = MailUtils.htmlescapefixsource(content);
-				msg.setContent(htmlcontent, textcontent, jsmsg.mime);
+				msg.setContent(htmlcontent, textcontent, "text/html");
 			} else {
-				msg.setContent(jsmsg.content, null, jsmsg.mime);
+				msg.setContent(jsmsg.content, null, "text/"+jsmsg.format);
 			}
 			
 		}
@@ -5996,7 +6010,8 @@ public class Service extends BaseService {
 				}
 				
 				String imgname = null;
-				if (ctype.equalsIgnoreCase("text/calendar")||ctype.equalsIgnoreCase("text/icalendar")) {
+				boolean isCalendar=ctype.equalsIgnoreCase("text/calendar")||ctype.equalsIgnoreCase("text/icalendar");
+				if (isCalendar) {
 					imgname = "resources/" + getManifest().getId() + "/laf/" + cus.getLookAndFeel() + "/ical_16.png";
 				}
 				
@@ -6014,6 +6029,7 @@ public class Service extends BaseService {
 					//} else {
 					//	pname = fname + "." + ext;
 					//}
+					if (isCalendar) pname+=".ics";
 				}
 				int size = p.getSize();
 				int lines = (size / 76);
@@ -6038,19 +6054,17 @@ public class Service extends BaseService {
 			
 			ICalendarRequest ir=mailData.getICalRequest();
 			if (ir!=null) {
-				//TODO: Calendar integration
-				//CalendarService cs=(CalendarService)wts.getServiceByName("calendar");
-				//if (cs!=null) {
-				//	int eid=cs.getEventIDFromPlanningUID(ir.getUID(), ir.getLastModified());
-					CalendarManager cm=(CalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
-					if (cm!=null) {
-						EventBase ev=cm.getEventByPublicUid(ir.getUID());
-						int eid=-1;
-						if (ev!=null)
-							eid=ev.getEventId();
-						sout+="{iddata:'ical',value1:'"+ir.getMethod()+"',value2:'"+ir.getUID()+"',value3:'"+eid+"'},\n";
+				CalendarManager cm=(CalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+				if (cm!=null) {
+					Event ev=cm.getEvent(ir.getUID());
+					int eid=-1;
+					if (ev!=null) {
+						DateTime rts=ev.getRevisionTimestamp();
+						if (ir.getLastModified().after(rts.toDate())) eid=0;
+						else eid=ev.getEventId();
 					}
-				//}
+					sout+="{iddata:'ical',value1:'"+ir.getMethod()+"',value2:'"+ir.getUID()+"',value3:'"+eid+"'},\n";
+				}
 			}
 			
 			sout += "{iddata:'date',value1:'" + StringEscapeUtils.escapeEcmaScript(date) + "',value2:'',value3:0},\n";
@@ -6129,7 +6143,7 @@ public class Service extends BaseService {
 		new JsonResult(result, message).printTo(out);
 	}
 
-	private String adjustEmail(String email) {
+	protected String adjustEmail(String email) {
 		if (email != null) {
 			email = email.trim();
 			if (email.startsWith("'")) {
@@ -6358,7 +6372,38 @@ public class Service extends BaseService {
 		calendarout.setTimeInMillis(calendar.getTimeInMillis());
 		return calendarout;
 	}
+	
+    public void processCalendarRequest(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+        String pcalaction=request.getParameter("calaction");
+        String pfoldername=request.getParameter("folder");
+        String puidmessage=request.getParameter("idmessage");
+        String pidattach=request.getParameter("idattach");
+        try {
+            checkStoreConnected();
+			if (pcalaction.equals("accept")) {
+				FolderCache mcache=getFolderCache(pfoldername);
+				long newmsguid=Long.parseLong(puidmessage);
+				Message m=mcache.getMessage(newmsguid);
+				HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
+				Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
 
+				ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
+				CalendarManager cm=(CalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+				Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
+				String ekey=cm.getEventInstanceKey(ev.getEventId());
+
+				sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).toString(), PartStat.ACCEPTED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
+				new JsonResult(ekey).printTo(out);
+			} else {
+				throw new Exception("Unsupported calendar request action : "+pcalaction);
+			}
+        } catch(Exception exc) {
+            new JsonResult(exc).printTo(out);
+			logger.error("Error sending decline", exc);
+        }        
+        
+	}
+	
     public void processDeclineInvitation(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         String pfoldername=request.getParameter("folder");
         String puidmessage=request.getParameter("idmessage");
@@ -6372,7 +6417,7 @@ public class Service extends BaseService {
             Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
             
 			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).getAddress(), PartStat.DECLINED, ir);
+			sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).getAddress(), PartStat.DECLINED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
 			new JsonResult().printTo(out);
         } catch(Exception exc) {
             new JsonResult(false,exc.getMessage()).printTo(out);
@@ -6381,7 +6426,7 @@ public class Service extends BaseService {
         
 	}
 	
-	private void sendICalendarReply(String forAddress, PartStat response, ICalendarRequest ir) throws Exception {
+	private void sendICalendarReply(String forAddress, PartStat response, net.fortuna.ical4j.model.Calendar cal, String summary, String organizerAddress) throws Exception {
 		UserProfile profile=environment.getProfile();
 		Locale locale=profile.getLocale();
 		String action_string=response.equals(PartStat.ACCEPTED)?
@@ -6389,28 +6434,31 @@ public class Service extends BaseService {
 				lookupResource(locale, MailLocaleKey.ICAL_REPLY_DECLINED);
 		SimpleMessage smsg = new SimpleMessage(999999);
 		
-		String subject = action_string + " " + ir.getSummary();
+		String subject = action_string + " " + summary;
         smsg.setSubject(subject);
-        smsg.setTo(ir.getOrganizerAddress());
+		InternetAddress to[]=new InternetAddress[1];
+		to[0]=new InternetAddress(organizerAddress);
+        smsg.setTo(to);
 		smsg.setContent("");
 
-		net.fortuna.ical4j.model.Calendar reply=ICalendarUtils.buildInvitationReply(ir.getCalendar(), forAddress, response);
+		net.fortuna.ical4j.model.Calendar reply=ICalendarUtils.buildInvitationReply(cal, forAddress, response);
 		//If forAddress is not on any of the intended iCal attendee, don't send a reply (e.g. forwarded ics)
 		if (reply!=null) {
 			String content=reply.toString();
 
-			javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
-			part1.setText(content, "UTF8", "application/ics");
-			part1.setHeader("Content-type", "application/ics");
-			part1.setFileName("webtop-reply.ics");
 			javax.mail.internet.MimeBodyPart part2 = new javax.mail.internet.MimeBodyPart();
 			part2.setText(content, "UTF8", "text/calendar");
-			part2.setHeader("Content-type", "text/calendar; charset=UTF-8; method=REPLY");
-			part2.setFileName("webtop-reply.ics");
+			part2.setHeader("Content-type", "text/calendar; charset=UTF-8; method=\"REPLY\"");
+			//part2.setFileName("webtop-reply.ics");
+			/*javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
+			part1.setText(content, "UTF8", "application/ics");
+			part1.setHeader("Content-type", "application/ics");
+			part1.setFileName("webtop-reply.ics");*/
 
-			smsg.setAttachments(new javax.mail.Part[]{part1,part2});
+			smsg.setAttachments(new javax.mail.Part[]{/*part1,*/part2});
 
-			sendMsg(profile.getEmailAddress(), smsg, null);
+			Exception exc=sendMsg(profile.getEmailAddress(), smsg, null);
+			if (exc!=null) throw exc;
 		}
 		
 	}
@@ -7390,6 +7438,7 @@ public class Service extends BaseService {
 			co.put("folderSent", us.getFolderSent());
 			co.put("folderSpam", us.getFolderSpam());
 			co.put("folderTrash", us.getFolderTrash());
+			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
 			co.put("fontSize", us.getFontSize());
 			co.put("receipt", us.isReceipt());

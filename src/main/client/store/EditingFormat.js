@@ -1,5 +1,5 @@
 /*
- * webtop-mail is a WebTop Service developed by Sonicle S.r.l.
+ * webtop-calendar is a WebTop Service developed by Sonicle S.r.l.
  * Copyright (C) 2014 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
@@ -31,45 +31,17 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.mail.model.UserOptions', {
-	extend: 'WTA.sdk.model.UserOptions',
+
+Ext.define('Sonicle.webtop.mail.store.EditingFormat', {
+	extend: 'WTA.ux.data.ArrayStore',
 	
-	proxy: WT.optionsProxy('com.sonicle.webtop.mail'),
-	fields: [
-		
-		WTF.roField('canChangeAccountSettings', 'boolean'),
-		WTF.roField('canChangeMailcardSettings', 'boolean'),
-		
-		WTF.field('simpleArchivingMailFolder', 'string', true),
-		WTF.field('archivingMethod', 'string', true),
-		WTF.field('sharedSeen', 'boolean', false),
-		WTF.field('manualSeen', 'boolean', false),
-		WTF.field('scanAll', 'boolean', false),
-		WTF.field('scanSeconds', 'int', false),
-		WTF.field('scanCycles', 'int', false),
-		WTF.calcField('scanSecondsOthers', 'int', ['scanSeconds','scanCycles'], function(v, rec) {
-			var ss = rec.get('scanSeconds')||0,
-			    sc = rec.get('scanCycles')||0;
-			return ss*sc;
-		}),
-		WTF.field('folderPrefix', 'string', true),
-		WTF.field('folderSent', 'string', true),
-		WTF.field('folderDrafts', 'string', true),
-		WTF.field('folderTrash', 'string', true),
-		WTF.field('folderSpam', 'string', true),
-		WTF.field('replyTo', 'string', true),
-		WTF.field('sharedSort', 'string', false),
-		WTF.field('includeMessageInReply', 'boolean', false),
-		WTF.field('host', 'string', true),
-		WTF.field('port', 'int', true),
-		WTF.field('username', 'string', true),
-		WTF.field('password', 'string', true),
-		WTF.field('protocol', 'string', true),
-		WTF.field('defaultFolder', 'string', true),
-		WTF.field('format', 'string', true),
-		WTF.field('font', 'string', true),
-		WTF.field('fontSize', 'int', true),
-		WTF.field('receipt', 'boolean', false),
-		WTF.field('priority', 'boolean', false)
+	sid: 'com.sonicle.webtop.mail', 
+	resKeyPrefix: 'store.editing-format.',
+	
+	model: 'WTA.ux.data.SimpleModel',
+	data: [
+		['html'],
+		['plain']
 	]
+	
 });

@@ -521,14 +521,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 		
 		me.startNewMessage(me.getFolderInbox(), { 
-			mime: 'text/html',
+			format: data.format,
 			subject: data.subject,
 			content: data.content,
 			recipients: rcpts,
 			contentReady: true,
 			folder: data.folder,
 			identityId: data.identityId,
-			mime: data.mime,
 			replyfolder: data.replyfolder,
 			inreplyto: data.inreplyto,
 			references: data.references,
@@ -559,7 +558,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionNew: function() {
-		this.startNewMessage(this.currentFolder, { mime: 'text/plain' });
+		var me=this;
+		me.startNewMessage(me.currentFolder, { format: me.varsData.format });
 	},
 	
 	/**
@@ -572,7 +572,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	 * @param {Object[]} [opts.recipients] Array of recipient objects with rtype/email pairs
 	 * @param {Object[]} [opts.attachments] Array of attachment objects with uploadId/fileName/fileSize data
 	 * @param {String} [opts.content] Initial content
-	 * @param {String} [opts.mime] Content mime type
+	 * @param {String} [opts.format] Content format type
 	 */
 	startNewMessage: function(idfolder, opts) {
 		opts=opts||{};
@@ -617,7 +617,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				attachments: opts.attachments,
 				content: opts.content||'',
                 contentReady: opts.contentReady,
-                mime: opts.mime,
+                format: opts.format,
                 replyfolder: opts.replyfolder,
                 inreplyto: opts.inreplyto,
                 references: opts.references,
@@ -710,9 +710,24 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionRules: function() {
-		var me=this;
+		var me=this,
+			vw=_createRulesManager();
+			
+		vw.show();
+	},
+	
+	//type: from/to/cc/bcc/subject
+	addRule: function(type,value) {
+		var me=this,
+			vw=_createRulesManager();
 		
-		WT.createView(me.ID,'view.RulesManager',{
+		vw.show(false,function() {
+			
+		});
+	},
+	
+	_createRulesManager: function() {
+		var vw=WT.createView(me.ID,'view.RulesManager',{
 			viewCfg: {
 				mys: me,
 				context: 'INBOX',
@@ -722,7 +737,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					addresses: me.varsData.vacationAddresses
 				}
 			}
-		}).show();
+		});
+		return vw;
 	},
 	
 	actionEmptyFolder: function(s,e) {

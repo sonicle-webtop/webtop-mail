@@ -160,13 +160,20 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			suggestionContext: 'filtersubject',
             width: 150,
 			tooltip: me.res('filtertext.tip'),
+			triggers: {
+				search: {
+					hidden: false,
+					cls: Ext.baseCSSPrefix + 'form-search-trigger',
+					handler: function(tf) {
+						me.filterAction(tf);
+					}
+				}
+			},
 			listeners: {
 				enterkey: function(tf,e) {
-					console.log("enterkey");
 					me.filterAction(tf);
 				},
 				select: function(tf,r,eopts) {
-					console.log("select");
 					me.filterAction(tf);
 				}
 			}

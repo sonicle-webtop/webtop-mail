@@ -295,7 +295,19 @@ public class FolderCache {
 								String id=((IMAPMessage)m).getMessageID();
 								if (m.getFlags().contains(Flag.RECENT) && !recentNotified.contains(id)) {
 									recentNotified.add(id);
-									sendRecentMessage(((InternetAddress)m.getFrom()[0]).toString(),m.getSubject());
+									String fromName="";
+									Address as[]=m.getFrom();
+									if (as!=null && as.length>0) {
+										InternetAddress ia=(InternetAddress)as[0];
+										fromName = ia.getPersonal();
+										String fromEmail = ms.adjustEmail(ia.getAddress());
+										if (fromName == null) {
+											fromName = fromEmail;
+										} else {
+											fromName = fromName+" <"+fromEmail+">";
+										}
+									}
+									sendRecentMessage(fromName,m.getSubject());
 								}
 							}
 						} catch(MessagingException exc) {
