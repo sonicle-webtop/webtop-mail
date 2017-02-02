@@ -128,6 +128,7 @@ import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.parameter.PartStat;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -1169,8 +1170,10 @@ public class Service extends BaseService {
 					} else {
 //                Service.logger.debug("Attachment is not a message");
 						content = oldParts[r].getContent();
-						contentType = oldParts[r].getContentType();
-						contentFileName = oldParts[r].getFileName();
+						if (!(content instanceof MimeMultipart)) {
+							contentType = oldParts[r].getContentType();
+							contentFileName = oldParts[r].getFileName();
+						}
 					}
 					MimeBodyPart mbp = new MimeBodyPart();
 					if (contentFileName != null) {
@@ -1178,7 +1181,8 @@ public class Service extends BaseService {
 //              Service.logger.debug("adding attachment mime "+contentType+" filename "+contentFileName);
 						contentType += "; name=\"" + contentFileName + "\"";
 					}
-					mbp.setDataHandler(new DataHandler(content, contentType));
+					if (content instanceof MimeMultipart) mbp.setContent((MimeMultipart)content);
+					else mbp.setDataHandler(new DataHandler(content, contentType));
 					mp.addBodyPart(mbp);
 				}
 				
@@ -6432,32 +6436,45 @@ public class Service extends BaseService {
 		String action_string=response.equals(PartStat.ACCEPTED)?
 				lookupResource(locale, MailLocaleKey.ICAL_REPLY_ACCEPTED):
 				lookupResource(locale, MailLocaleKey.ICAL_REPLY_DECLINED);
-		SimpleMessage smsg = new SimpleMessage(999999);
 		
-		String subject = action_string + " " + summary;
-        smsg.setSubject(subject);
-		InternetAddress to[]=new InternetAddress[1];
-		to[0]=new InternetAddress(organizerAddress);
-        smsg.setTo(to);
-		smsg.setContent("");
-
-		net.fortuna.ical4j.model.Calendar reply=ICalendarUtils.buildInvitationReply(cal, forAddress, response);
+		net.fortuna.ical4j.model.Calendar reply=ICalendarUtils.buildInvitationReply(cal, ICalendarUtils.buildProdId(WT.getPlatformName()+" Mail"),forAddress, response);
+		
 		//If forAddress is not on any of the intended iCal attendee, don't send a reply (e.g. forwarded ics)
 		if (reply!=null) {
-			String content=reply.toString();
+			//String icalContent=reply.toString();
+			String icalContent=ICalendarUtils.calendarToString(reply);
+
+			String icalContentType="text/calendar; charset=UTF-8; method=REPLY";
+			SimpleMessage smsg = new SimpleMessage(999999);
+
+			String subject = action_string + " " + summary;
+			smsg.setSubject(subject);
+			InternetAddress to[]=new InternetAddress[1];
+			to[0]=new InternetAddress(organizerAddress);
+			smsg.setTo(to);
+
+			//smsg.setContent(icalContent,"this is a meeting invitation",icalContentType);
+			smsg.setContent("");
 
 			javax.mail.internet.MimeBodyPart part2 = new javax.mail.internet.MimeBodyPart();
-			part2.setText(content, "UTF8", "text/calendar");
-			part2.setHeader("Content-type", "text/calendar; charset=UTF-8; method=\"REPLY\"");
+			part2.setText(icalContent, "UTF-8");
+			part2.setHeader("Content-type", icalContentType);
+			part2.setHeader("Content-Transfer-Encoding", "8BIT");
 			//part2.setFileName("webtop-reply.ics");
 			/*javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
 			part1.setText(content, "UTF8", "application/ics");
 			part1.setHeader("Content-type", "application/ics");
 			part1.setFileName("webtop-reply.ics");*/
 
-			smsg.setAttachments(new javax.mail.Part[]{/*part1,*/part2});
+			MimeMultipart mp = new MimeMultipart("mixed");
+			mp.addBodyPart(part2);
+			MimeBodyPart mbp=new MimeBodyPart();
+			mbp.setHeader("Content-type", "multipart/mixed");
+			mbp.setContent(mp);
 
-			Exception exc=sendMsg(profile.getEmailAddress(), smsg, null);
+			smsg.setAttachments(new javax.mail.Part[]{mbp});
+
+			Exception exc=sendMsg(profile.getFullEmailAddress(), smsg, null);
 			if (exc!=null) throw exc;
 		}
 		

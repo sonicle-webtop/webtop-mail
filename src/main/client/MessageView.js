@@ -1230,11 +1230,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     },
     
     importCalendarEvent: function(params) {
-        WT.confirm(this.res('ical.import.message'), function(bid) {
+		var me=this;
+        WT.confirm(me.res('ical.import.message'), function(bid) {
 			if (bid==='yes') {
-				this._importCalendarEvent('accept',params);
+				me._importCalendarEvent('accept',params);
 			}
-        },this);	
+        });	
     },	
 	
 	_actionCalendarEvent: function(act, params) {
@@ -1245,8 +1246,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			callback: function(success,json) {
 				if (success) {
 					if (act==="accept"){
-						var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
-						capi.editEvent({ ekey: json.data });
+						WT.confirm(me.res('ical.import.confirm.edit'), function(bid) {
+							if (bid==='yes') {
+								var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
+								capi.editEvent({ ekey: json.data });
+							}
+						},this);	
 					}
 					else if (act==="cancel") {
 						//scal.actionDeleteByAttachment(ev.event_id);
