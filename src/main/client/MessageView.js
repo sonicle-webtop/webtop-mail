@@ -1245,19 +1245,20 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			params: params,
 			callback: function(success,json) {
 				if (success) {
+					var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
+					capi.reloadEvents();
 					if (act==="accept"){
 						WT.confirm(me.res('ical.import.confirm.edit'), function(bid) {
 							if (bid==='yes') {
-								var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
 								capi.editEvent({ ekey: json.data });
 							}
 						},this);	
 					}
 					else if (act==="cancel") {
-						//scal.actionDeleteByAttachment(ev.event_id);
+						//canceled
 					}
 					else if (act==="update") {
-						//scal.actionEditEventByAttachment(ev.event_id,ev,pg);
+						//updated
 					}
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {

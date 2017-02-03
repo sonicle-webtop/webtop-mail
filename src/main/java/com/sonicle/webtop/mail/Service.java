@@ -4996,16 +4996,15 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			Exception exc = sendReceipt(from, to, subject, body);
 			if (exc == null) {
-				sout = "{\nresult: true\n}";
+				new JsonResult().printTo(out);
 			} else {
 				Service.logger.error("Exception",exc);
-				sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+				new JsonResult(exc).printTo(out);
 			}
 		} catch (MessagingException exc) {
 			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			new JsonResult(exc).printTo(out);
 		}
-		out.println(sout);
 	}
 
 	public void processManageQuickParts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -6384,20 +6383,26 @@ public class Service extends BaseService {
         String pidattach=request.getParameter("idattach");
         try {
             checkStoreConnected();
-			if (pcalaction.equals("accept")) {
-				FolderCache mcache=getFolderCache(pfoldername);
-				long newmsguid=Long.parseLong(puidmessage);
-				Message m=mcache.getMessage(newmsguid);
-				HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
-				Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
+			FolderCache mcache=getFolderCache(pfoldername);
+			long newmsguid=Long.parseLong(puidmessage);
+			Message m=mcache.getMessage(newmsguid);
+			HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
+			Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
 
-				ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-				CalendarManager cm=(CalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
+			CalendarManager cm=(CalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+			if (pcalaction.equals("accept")) {
 				Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
 				String ekey=cm.getEventInstanceKey(ev.getEventId());
 
 				sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).toString(), PartStat.ACCEPTED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
 				new JsonResult(ekey).printTo(out);
+			} else if (pcalaction.equals("cancel")) {
+				//Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
+				new JsonResult().printTo(out);
+			} else if (pcalaction.equals("update")) {
+				//Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
+				new JsonResult().printTo(out);
 			} else {
 				throw new Exception("Unsupported calendar request action : "+pcalaction);
 			}
