@@ -462,7 +462,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 							}
 						} else if (me.icalmethod==="REPLY") {
 							if (this.icalwebtopid==0) {
-								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.reply.topmessage")+".&nbsp;&nbsp;&nbsp;"+
+								icalhtml="<DIV class='wtmail-mv-hicalmessage'>"+me.res("ical.reply.top.message")+".&nbsp;&nbsp;&nbsp;"+
 										"<a ext:qtip='"+txtupdate+"' ext:qtitle='"+txtaction+"' href='javascript:Ext.emptyFn()' ical='updatereply'>&nbsp;"+txtupdate+"&nbsp;</a>&nbsp;&nbsp;&nbsp;"+
 										"</DIV>";
 							} else if (this.icalwebtopid>0) {
@@ -1223,7 +1223,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		WT.confirm(me.res('ical.'+act+'.message'),function(bid) {
 			if (bid==='yes') {				   
 				if (act==='accept'||act==='update'||act==='cancel') me._actionCalendarEvent(act, params);
-				else if (act==='updatereply') me._updateCalendarReply(params);
+				else if (act==='updatereply') me._actionCalendarEvent('update',params);
 				else if (act==='decline') me._declineCalendarEvent(params);
 			}
 		},me);
@@ -1270,7 +1270,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	
     _updateCalendarReply: function(params) {
 		var me=this;
-		WT.ajaxReq(g.mys.ID, 'UpdateCalendarReply', {
+		WT.ajaxReq(me.mys.ID, 'UpdateCalendarReply', {
 			params: params,
 			callback: function(success,json) {
 				if (success) {

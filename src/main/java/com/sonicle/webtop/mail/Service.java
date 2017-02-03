@@ -6397,18 +6397,15 @@ public class Service extends BaseService {
 
 				sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).toString(), PartStat.ACCEPTED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
 				new JsonResult(ekey).printTo(out);
-			} else if (pcalaction.equals("cancel")) {
-				//Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
-				new JsonResult().printTo(out);
-			} else if (pcalaction.equals("update")) {
-				//Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
+			} else if (pcalaction.equals("cancel")||pcalaction.equals("update")) {
+				cm.updateEventFromICal(ir.getCalendar());
 				new JsonResult().printTo(out);
 			} else {
 				throw new Exception("Unsupported calendar request action : "+pcalaction);
 			}
         } catch(Exception exc) {
             new JsonResult(exc).printTo(out);
-			logger.error("Error sending decline", exc);
+			logger.error("Error sending "+pcalaction, exc);
         }        
         
 	}
