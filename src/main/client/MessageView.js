@@ -618,7 +618,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     createRule: function(email,type) {
 		var me=this,context="INBOX";
 		//if (ms.currentFolder==ms.folderSent) context="SENT";
-		me.mys.addRule(type,email);
+		me.mys.addRule({
+			from: type==="from"?email:null,
+			to: type==="to"||type==="cc"||type==="bcc"?email:null
+		});
     },
 
     

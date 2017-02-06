@@ -711,33 +711,40 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionRules: function() {
 		var me=this,
-			vw=_createRulesManager();
+			vw=me._createRulesManager();
 			
 		vw.show();
 	},
 	
-	//type: from/to/cc/bcc/subject
-	addRule: function(type,value) {
+	//data : {
+	//	from: "frompattern",
+	//	to: "topattern",
+	//	subject: "subjectpattern",
+	//	action: FILE/FORWARD/DISCARD/REJECT,
+	//	actionvalue: "actionvalue"
+	//};
+	addRule: function(data) {
 		var me=this,
-			vw=_createRulesManager();
+			vw=me._createRulesManager();
 		
 		vw.show(false,function() {
-			
+			vw.getView().showRuleEditor(data);
 		});
 	},
 	
 	_createRulesManager: function() {
-		var vw=WT.createView(me.ID,'view.RulesManager',{
-			viewCfg: {
-				mys: me,
-				context: 'INBOX',
-				vacation: {
-					active: me.varsData.vacationActive,
-					message: me.varsData.vacationMessage,
-					addresses: me.varsData.vacationAddresses
+		var me=this,
+			vw=WT.createView(me.ID,'view.RulesManager',{
+				viewCfg: {
+					mys: me,
+					context: 'INBOX',
+					vacation: {
+						active: me.varsData.vacationActive,
+						message: me.varsData.vacationMessage,
+						addresses: me.varsData.vacationAddresses
+					}
 				}
-			}
-		});
+			});
 		return vw;
 	},
 	

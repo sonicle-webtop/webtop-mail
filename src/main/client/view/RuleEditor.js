@@ -95,9 +95,9 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 							action=me.lref("grpActions").getValue().ruleaction,
 							value=me.lref("fld"+action).getValue(),
 							condition=me.lref('cboCondition').getValue(),
-							from=me.lref('fldFrom').getValue(),
-							to=me.lref('fldTo').getValue(),
-							subject=me.lref('fldSubject').getValue();
+							from=me.lref('fldfrom').getValue(),
+							to=me.lref('fldto').getValue(),
+							subject=me.lref('fldsubject').getValue();
 							
 						if (me.fn) me.fn.call(me.scope||me,true);
 						if (r) {
@@ -158,9 +158,9 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 						labelAlign: 'right'
 					},
 					items: [
-						{ xtype: 'textfield', reference: 'fldFrom', fieldLabel: me.res('rule-editor-from'), width: 400, value: (me.record?me.record.get("from"):'') },
-						{ xtype: 'textfield', reference: 'fldTo', fieldLabel: me.res('rule-editor-to'), width: 400, value: (me.record?me.record.get("to"):'') },
-						{ xtype: 'textfield', reference: 'fldSubject', fieldLabel: me.res('rule-editor-subject'), width: 400, value: (me.record?me.record.get("subject"):'') }
+						{ xtype: 'textfield', reference: 'fldfrom', fieldLabel: me.res('rule-editor-from'), width: 400/*, value: (me.record?me.record.get("from"):'')*/ },
+						{ xtype: 'textfield', reference: 'fldto', fieldLabel: me.res('rule-editor-to'), width: 400/*, value: (me.record?me.record.get("to"):'')*/ },
+						{ xtype: 'textfield', reference: 'fldsubject', fieldLabel: me.res('rule-editor-subject'), width: 400/*, value: (me.record?me.record.get("subject"):'')*/ }
 					]
 
 				},
@@ -302,9 +302,26 @@ Ext.define('Sonicle.webtop.mail.view.RuleEditor', {
 		});
 		
 		if (me.record) {
-			var action=me.record.get('action');
-			me.lref("grpActions").setValue({ ruleaction: action });
-			me.lref("fld"+action).setValue(me.record.get("value"));
+			var r=me.record,
+				data={
+					from: r.get("from"),
+					to: r.get("to"),
+					subject: r.get("subject"),
+					action: r.get("action"),
+					actionvalue: r.get("value")
+				};
+			me.setData(data);
+		}
+	},
+	
+	setData: function(data) {
+		var me=this;
+		if (data.from) me.lref("fldfrom").setValue(data.from);
+		if (data.to) me.lref("fldto").setValue(data.to);
+		if (data.subject) me.lref("fldsubject").setValue(data.subject);
+		if (data.action) {
+			me.lref("grpActions").setValue({ ruleaction: data.action });
+			if (data.actionvalue) me.lref("fld"+data.action).setValue(data.actionvalue);
 		}
 	},
 	

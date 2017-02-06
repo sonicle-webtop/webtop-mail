@@ -307,32 +307,44 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 					fieldLabel: me.res('rules-manager-vacation-addresses'),
 					value: me.vacation.addresses,
 					disabled: !me.vacation.active
-				},
+				}
             ]
 		});
 	},
 	
 	actionNew: function() {
-		var me=this;
-		
-		WT.createView(me.mys.ID,'view.RuleEditor',{
-			viewCfg: {
-				mys: me,
-				store: me.lref('grdRules').getStore()
-			}
-		}).show();
+		var me=this,
+			vw=me.createRuleEditor();
+		vw.show();
 		me.dirty=true;
 	},
 	
-	actionEdit: function(r) {
-		var me=this;
+	createRuleEditor: function(record) {
+		var me=this,
+			vw=WT.createView(me.mys.ID,'view.RuleEditor',{
+				viewCfg: {
+					mys: me.mys,
+					store: me.lref('grdRules').getStore(),
+					record: record
+				}
+			});
+		return vw;
+	},
+	
+	showRuleEditor: function(data) {
+		var me=this,
+			re=this.createRuleEditor();
+		re.show(false,function(){
+			re.getView().setData(data);
+		});
+		me.dirty=true;
+	},
+	
+	actionEdit: function(record) {
+		var me=this,
+			vw=me.createRuleEditor(record);
 		
-		WT.createView(me.mys.ID,'view.RuleEditor',{
-			viewCfg: {
-				mys: me,
-				record: r
-			}
-		}).show();
+		vw.show();
 		me.dirty=true;
 	},
 	
