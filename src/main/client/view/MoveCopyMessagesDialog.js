@@ -55,6 +55,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		var me = this;
 		
 		var tree=Ext.create("Sonicle.webtop.mail.SimpleImapTree",{
+			mys: me.mys,
 			store: me.mys.imapTree.getStore()
 		});			
 

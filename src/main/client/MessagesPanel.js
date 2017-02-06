@@ -156,6 +156,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         }));
         me.filterTextField=Ext.create({
 			xtype: 'wtsuggestcombo',
+			preventEnterFiringOnPickerExpanded: false,
 			sid: me.mys.ID,
 			suggestionContext: 'filtersubject',
             width: 150,

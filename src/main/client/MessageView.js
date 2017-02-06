@@ -842,7 +842,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         while(el) {
             var href=el.first().dom.href;
 			//TODO isIE saveas=1?
-            //if (!Ext.isIE) href+="&saveas=1";
+            if (!Ext.isIE) href+="&saveas=1";
             me.setAttachElement(el,href,me.divAttach.first().first().dom.href);
             
             me._setDD(el,vparams[i]);
