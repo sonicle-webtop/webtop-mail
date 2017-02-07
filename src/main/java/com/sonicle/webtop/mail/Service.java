@@ -1735,7 +1735,7 @@ public class Service extends BaseService {
 		Address ad[] = msg.getFrom();
 		String msgFrom = "";
 		if (ad != null) {
-			msgFrom = getHTMLDecodedAddress(ad[0]);
+			msgFrom = isHtml?getHTMLDecodedAddress(ad[0]):getDecodedAddress(ad[0]);
 		}
 		java.util.Date dt = msg.getSentDate();
 		String msgDate = "";
@@ -1747,7 +1747,7 @@ public class Service extends BaseService {
 		if (ad != null) {
 			msgTo = "";
 			for (int j = 0; j < ad.length; ++j) {
-				msgTo += getHTMLDecodedAddress(ad[j]) + " ";
+				msgTo += isHtml?getHTMLDecodedAddress(ad[j]):getDecodedAddress(ad[j]) + " ";
 			}
 		}
 		ad = msg.getRecipients(Message.RecipientType.CC);
@@ -1755,12 +1755,12 @@ public class Service extends BaseService {
 		if (ad != null) {
 			msgCc = "";
 			for (int j = 0; j < ad.length; ++j) {
-				msgCc += getHTMLDecodedAddress(ad[j]) + " ";
+				msgCc += isHtml?getHTMLDecodedAddress(ad[j]):getDecodedAddress(ad[j]) + " ";
 			}
 		}
 
 		//
-		String sfrom = "";
+		/*String sfrom = "";
 		try {
 			if (msg.getFrom() != null) {
 				InternetAddress ia = (InternetAddress) msg.getFrom()[0];
@@ -1774,7 +1774,7 @@ public class Service extends BaseService {
 			}
 		} catch (Exception exc) {
 			
-		}
+		}*/
 		StringBuffer sb = new StringBuffer();
 		String cr = "\n";
 		if (format != SimpleMessage.FORMAT_TEXT) {
@@ -1833,7 +1833,8 @@ public class Service extends BaseService {
 						if (format == SimpleMessage.FORMAT_TEXT) {
 							sb.append("> ");
 						}
-						sb.append(MailUtils.htmlescape(token));
+						//sb.append(MailUtils.htmlescape(token));
+						sb.append(token);
 					}
 				}
 				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
