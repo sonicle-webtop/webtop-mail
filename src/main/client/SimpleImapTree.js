@@ -60,6 +60,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 						text: cfg.mys.res("column-folder"),
 						dataIndex: 'folder',
 						flex: 3,
+						sortable: false,
 						renderer: function(v,p,r) {
 							var unr=r.get('unread'),
 								hunr=r.get('hasUnread');
@@ -72,6 +73,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 						dataIndex: 'unread',
 						align: 'right',
 						flex: 1,
+						sortable: false,
 						renderer: function(v,p,r) {
 							return (v===0?'':'<b>'+v+'</b>');
 						}
@@ -81,6 +83,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 						header: WTF.headerWithGlyphIcon('fa fa-share-alt'),
 						dataIndex: 'isSharedToSomeone',
 						flex: 1,
+						sortable: false,
 						hidden: true,
 						getIconCls: function(value,rec) {
 							return value?WTF.cssIconCls(me.mys.XID, 'status-shared', 'xs'):WTF.cssIconCls(WT.XID, 'empty', 'xs');

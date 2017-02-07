@@ -62,7 +62,7 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 					}
 				},
 				markDirty: false,
-				loadMask: false,
+				loadMask: true,
 				animate: true
 			},
 			

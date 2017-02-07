@@ -118,6 +118,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				},
 				load: function(t,r,s,o,n) {
 					if (n.id==='root') {
+						//keep enabled loadMask only for root loading
+						me.imapTree.getView().loadMask=false;
 						me.selectInbox();
 						Ext.each(n.childNodes,function(cn,cx,an) {
 							if (cn.get("isSharedRoot")) {
@@ -264,6 +266,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAction("movetofolder",{ handler: me.gridAction(me,'MoveToFolder') });
         me.addAction("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh-xs' });
         me.addAction("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save-xs' });
+        me.addAction("createreminder",{ handler: me.gridAction(me,'CreateReminder'), iconCls: 'wtcal-icon-newEvent-xs' });
         me.addAction("resetcolumns",{ handler: me.gridAction(me,'ResetColumns'), iconCls: '' });
         me.addAction("viewheaders",{ handler: me.gridAction(me,'ViewHeaders'), iconCls: '' });
         me.addAction("viewsource",{ handler: me.gridAction(me,'ViewSource'), iconCls: '' });
@@ -343,7 +346,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				me.getAction('delete'),
 				'-',
 				me.getAction('movetofolder'),
-				me.getAction('savemail')
+				me.getAction('savemail'),
+				me.getAction('createreminder')
 			],
 			listeners: {
 				beforeshow: function() {
