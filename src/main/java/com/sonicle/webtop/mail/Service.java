@@ -330,7 +330,7 @@ public class Service extends BaseService {
 		
 		hasDifferentDefaultFolder=us.getDefaultFolder()!=null;
 		
-		session=WT.getMailSession(profile.getDomainId());
+		session=environment.getWebTopSession().getMailSession();
 		//session=Session.getDefaultInstance(props, null);
 		session.setDebug(imapDebug);
 

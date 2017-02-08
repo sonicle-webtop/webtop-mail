@@ -124,7 +124,7 @@ public class JobService extends BaseJobService {
 				List<ODomain> domains=cm.listDomains(true);
 				for(ODomain domain: domains) {
 					String domainId=domain.getDomainId();
-					Session session=WT.getMailSession(domainId);
+					Session session=WT.getGlobalMailSession(domainId);
 					MailServiceSettings mss = getMailServiceSettings(domainId);
 					if (mss.isScheduledEmailsDisabled()) {
 						logger.debug(" skipping domain "+domainId+" : scheduled-emails disabled");
@@ -147,7 +147,7 @@ public class JobService extends BaseJobService {
 							MailUserSettings mus=getMailUserSettings(pid, mss);
 							Folder outgoings[]=getOutgoingFolders(store, domain, muser, vmailSecret, mus);
 							Folder folderSent=getSentFolder(store, muser, domain, vmailSecret, mus);
-							sendScheduledMails(pid,domain,outgoings,folderSent,WT.getUserData(pid).getLocale());
+							sendScheduledMails(session,pid,domain,outgoings,folderSent,WT.getUserData(pid).getLocale());
 							store.close();
 							store=null;
 						} catch(Exception exc) {
@@ -167,7 +167,7 @@ public class JobService extends BaseJobService {
 			}
 		}
 		
-		public void sendScheduledMails(UserProfile.Id pid, ODomain domain, Folder outgoings[], Folder folderSent, Locale locale) {
+		public void sendScheduledMails(Session session, UserProfile.Id pid, ODomain domain, Folder outgoings[], Folder folderSent, Locale locale) {
 			for(Folder targetfolder: outgoings) {
 				try {
 					targetfolder.open(Folder.READ_WRITE);
@@ -181,7 +181,7 @@ public class JobService extends BaseJobService {
 								String sendtime=getSingleHeaderValue(m,"Sonicle-send-time");
 								boolean sendnotify=getSingleHeaderValue(m,"Sonicle-notify-delivery").equals("true");
 								if (isTimeToSend(senddate,sendtime)) {
-									sendScheduledMessage(pid, domain, folderSent, locale, m, sendnotify);
+									sendScheduledMessage(session, pid, domain, folderSent, locale, m, sendnotify);
 								}
 								//scheduleSendTask(mu, mid, senddate, sendtime, sendnotify);
 							}
@@ -281,7 +281,7 @@ public class JobService extends BaseJobService {
 			return cal;
 		}
 		
-		private void sendScheduledMessage(UserProfile.Id pid, ODomain domain, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
+		private void sendScheduledMessage(Session session, UserProfile.Id pid, ODomain domain, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
 			try {
 				MimeMessage nm=new MimeMessage((MimeMessage)m);
 				nm.removeHeader("Sonicle-send-scheduled");
@@ -316,7 +316,7 @@ public class JobService extends BaseJobService {
 							MailUtils.htmlescape(recipients),
 							MailUtils.htmlescape(nmsubject));
 					String email=WT.getUserData(pid).getEmail().toString();
-					WT.sendEmail(pid, true, "webtop@"+domain.getInternetName(), email, subject, html);
+					WT.sendEmail(session, true, "webtop@"+domain.getInternetName(), email, subject, html);
 				}
 			} catch(Throwable t) {
 				logger.error("Exception",t);
