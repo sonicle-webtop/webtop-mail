@@ -5474,16 +5474,20 @@ public class Service extends BaseService {
 						int sss=cal.get(java.util.Calendar.SECOND);
 						//From
 						String from="";
+						String fromemail="";
 						Address ia[]=xm.getFrom();
 						if (ia!=null) {
 							InternetAddress iafrom=(InternetAddress)ia[0];
 							from=iafrom.getPersonal();
 							if (from==null) from=iafrom.getAddress();
+							fromemail=iafrom.getAddress();
 						}
-						if (from==null) from="";
+						from=(from==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from)));
+						fromemail=(fromemail==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(fromemail)));
 
 						//To
 						String to="";
+						String toemail="";
 						ia=xm.getRecipients(Message.RecipientType.TO);
 						//if not sent and not shared, show me first if in TO
 						if (ia!=null) {
@@ -5499,8 +5503,11 @@ public class Service extends BaseService {
 							}
 							to=iato.getPersonal();
 							if (to==null) to=iato.getAddress();
+							toemail=iato.getAddress();
 						}
 						to=(to==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
+						toemail=(toemail==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(toemail)));
+						
 						//Subject
 						String subject=xm.getSubject();
 						if (subject!=null) {
@@ -5522,7 +5529,6 @@ public class Service extends BaseService {
 
 						boolean hasAttachments=hasAttachements(xm);
 
-						from=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from));
 						subject=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject));
 
 						//Unread
@@ -5649,7 +5655,9 @@ public class Service extends BaseService {
 							+ "priority:" + priority + ","
 							+ "status:'" + status + "',"
 							+ "to:'" + to + "',"
+							+ "toemail:'" + toemail + "',"
 							+ "from:'" + from + "',"
+							+ "fromemail:'" + fromemail + "',"
 							+ "subject:'" + subject + "',"
 							+ (threaded?"threadId: "+tId+",":"")
 							+ (threaded?"threadIndent:"+tIndent+",":"")

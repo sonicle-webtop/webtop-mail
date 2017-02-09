@@ -212,7 +212,9 @@ Ext.define('Sonicle.webtop.mail.MessagesModel',{
         { name: 'priority', type: 'int' },
         { name: 'status' },
         { name: 'from' },
+        { name: 'fromemail' },
         { name: 'to' },
+        { name: 'toemail' },
         { name: 'subject' },
         { name: "threadId", type: 'int' },
         { name: "threadIndent", type: 'int' },
@@ -246,7 +248,9 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
         { name: 'priority', type: 'int' },
         { name: 'status' },
         { name: 'from' },
+        { name: 'fromemail' },
         { name: 'to' },
+        { name: 'toemail' },
         { name: 'subject' },
         { name: "threadId", type: 'int' },
         { name: "threadIndent", type: 'int' },
@@ -1391,6 +1395,36 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 		});					
     },	
+	
+	actionCreateReminder: function() {
+		var me=this,
+			r=me.getSelectionModel().getSelection()[0],
+			capi=WT.getServiceApi("com.sonicle.webtop.calendar"),
+			from=me.decodeEntities(r.get("from"))+" <"+r.get("fromemail")+">",
+			to=me.decodeEntities(r.get("to"))+" <"+r.get("toemail")+">",
+			subject=me.decodeEntities(r.get("subject")),
+			date=r.get("date"),
+			description=
+				me.res("column-date")+": "+Ext.util.Format.date(date,'d-M-Y')+"\n"+
+				me.res("column-from")+": "+from+"\n"+
+				me.res("column-to")+": "+to+"\n",
+			tomorrow=Sonicle.Date.add(new Date(),{ days: 1 });
+			
+			capi.addEvent({
+				startDate: tomorrow,
+				endDate: Sonicle.Date.add(tomorrow, { minutes: 30 }),
+				title: subject,
+				description: description,
+				reminder: 5	
+			});
+		
+	},
+	
+	decodeEntities : function(str) {
+	   var temp_div = document.createElement('div');
+	   temp_div.innerHTML = str;
+	   return temp_div.firstChild.nodeValue;
+	},	
 	
 	actionSaveMail: function() {
 		var r=this.getSelectionModel().getSelection()[0];

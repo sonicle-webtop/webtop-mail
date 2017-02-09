@@ -683,14 +683,28 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			sendAction: 'send'
         });
 		if (me.getModel().get("reminder")) {
+			today=new Date(),
+			tomorrow=new Date(),
+			from=me.selectedIdentity.displayName+" <"+me.selectedIdentity.email+">",
+			to=me.recgrid.store.getAt(0).get("email"),
+			subject=me.subject.getValue(),
+			description=
+				me.mys.res("column-date")+": "+Ext.util.Format.date(today,'d-M-Y')+"\n"+
+				me.mys.res("column-from")+": "+from+"\n"+
+				me.mys.res("column-to")+": "+to+"\n";
 			me.on("modelsave",function(me, op, success) {
 				if (success) {
-					var api=me.mys.getCalendarAPI();
-					if (api) {
-						api.newCalendarEvent({
-							//TODO: new reminder
-						});
-					}
+					var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
+					
+					capi.addEvent({
+						startDate: tomorrow,
+						endDate: Sonicle.Date.add(tomorrow, { minutes: 30 }),
+						title: subject,
+						description: description,
+						reminder: 5
+					},{
+						dirty: true
+					});
 				}
 			},me,{ single: true });
 		}
