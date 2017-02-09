@@ -63,8 +63,8 @@
 		<package>com.sonicle.webtop.mail</package>
 		<jsPackage>Sonicle.webtop.mail</jsPackage>
 		<shortName>wtmail</shortName>
-		<version>1.0.0</version>
-		<buildDate>03/11/2014</buildDate>
+		<version>@@webtop.service.version@@</version>
+		<buildDate>@@webtop.service.buildDate@@</buildDate>
 		
 		<company>Sonicle S.r.l.</company>
 		<companyEmail>sonicle@sonicle.com</companyEmail>
