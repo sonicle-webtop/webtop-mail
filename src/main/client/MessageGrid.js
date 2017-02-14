@@ -1433,6 +1433,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				title: subject,
 				description: description,
 				reminder: 5	
+			},{
+				dirty: true
 			});
 		
 	},

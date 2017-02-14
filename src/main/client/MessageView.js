@@ -113,19 +113,39 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         me.addListener('resize',me.viewResized,me);
 
 		//create email menu
-		var cs=WT.app.getService('com.sonicle.webtop.contacts');
+		var capi=WT.getServiceApi("com.sonicle.webtop.contacts");
 		var i=0;
         var actions=new Array();
 		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.writeemail"), handler: function() {
 			me.mys.beginNewMessage(me._getEmailFromElement(me.emailMenu.activeElement));
 		}, iconCls: 'wtmail-icon-newmsg-xs'});
-		if (cs) {
+		if (capi) {
 			actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.addcontact"), handler: function() {
-				var el=me.emailMenu.activeElement;
-				var desc=el.recDesc;
-				var email=el.recEmail;
+				var el=me.emailMenu.activeElement,
+					desc=el.recDesc,
+					email=el.recEmail,
+					firstName=null,
+					lastName=null;
+					
 				if (desc==email) desc=null;
-				cs.beginNewContact(desc,email);
+				
+				firstName=desc;
+				
+				if (desc!=null) {
+					var ix=desc.lastIndexOf(' ');
+					if (ix>0) {
+						firstName=desc.substring(0,ix);
+						lastName=desc.substring(ix+1);
+					}
+				}
+				
+				capi.addContact({
+					firstName: firstName,
+					lastName: lastName,
+					workEmail: email
+				}, {
+					dirty: true
+				});
 			}, iconCls: 'wtcon-icon-newContact-xs'});
 		}
 		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createrule"), handler: function() {
