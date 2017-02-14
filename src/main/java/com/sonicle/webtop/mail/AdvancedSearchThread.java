@@ -131,7 +131,13 @@ public class AdvancedSearchThread extends Thread {
                 }
 
                 Service.logger.debug("ADVANCED SEARCH IN "+fc.getFolderName());
-                Message msgs[]=fc.advancedSearchMessages(entries, and, FolderCache.SORT_BY_DATE, false);
+				Message msgs[]=null;
+				//some folders (e.g. NS7 Public) may not allow search
+				try {
+					msgs=fc.advancedSearchMessages(entries, and, FolderCache.SORT_BY_DATE, false);
+				} catch(MessagingException mexc) {
+				}
+                
                 if (msgs!=null && msgs.length>0) {
                     fc.fetch(msgs, ms.getMessageFetchProfile());
                     for(int n=0;n<msgs.length && result.size()<MAXRESULTS;++n) result.add(msgs[n]);
@@ -179,18 +185,22 @@ public class AdvancedSearchThread extends Thread {
         return result;
     }
 
-    private void addChildren(FolderCache fc) {
-		ArrayList<FolderCache> children=fc.getChildren();
+    private void addChildren(FolderCache fc) throws MessagingException {
+		Folder children[]=fc.getFolder().list();
 		if (children!=null) {
-			for(FolderCache fcc: fc.getChildren()) {
+			ArrayList<Folder> achildren=ms.sortFolders(children);
+			for(Folder folder: achildren) {
+				FolderCache fcc=ms.getFolderCache(folder.getFullName());
+				if (fcc!=null) {
+					if (!trashspam) {
+						//skip trash and spam from advanced search
+						if (fcc.isTrash()||fcc.isSpam()) continue;
+					}
 
-				if (!trashspam) {
-					//skip trash and spam from advanced search
-					if (fcc.isTrash()||fcc.isSpam()) continue;
+					folders.add(fcc);
+					if (fcc.hasChildren()) addChildren(fcc);				
 				}
 
-				folders.add(fcc);
-				if (fcc.hasChildren()) addChildren(fcc);
 			}
 		}
     }

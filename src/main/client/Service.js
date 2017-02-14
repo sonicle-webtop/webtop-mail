@@ -938,31 +938,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						n=(parent?s.getNodeById(parent):s.getRoot()),
 						newname=name,
 						newfullname=json.fullname;
-					n.expand(false,function(nodes) {
-						var newnode=n.findChild("text",newname);
-						if (!newnode) {
-							newnode=n.createNode({
-								id: newfullname,
-								text: newname,
-								folder: newname,
-								leaf: true,
-								iconCls: 'wtmail-icon-imap-folder-xs',
-								unread:0,
-								hasUnread:false
-							});
-							var cn=n.childNodes;
-							var before=null;
-							for(var c=0;before==null && c<cn.length;++c) {
-								var cid=cn[c].id;
-								if (me.specialFolders[cid]) continue;
-								if (cid>newfullname) before=cn[c];
-							}
-							if (before) n.insertBefore(newnode,before);
-							else n.appendChild(newnode);
-						}
-						v.setSelection(newnode);
-						me.folderClicked(tr,newnode);
-					});
+						me._createNode(n,newfullname,newname);
+						n.expand(false,function(nodes) {
+							var newnode=n.findChild("text",newname);
+							v.setSelection(newnode);
+							me.folderClicked(tr,newnode);
+						});
 				} else {
 					WT.error(json.text);
 				}
@@ -970,6 +951,30 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		
     },
+	
+	_createNode: function(n,newfullname,newname) {
+		var me=this,
+			newnode=n.createNode({
+				id: newfullname,
+				text: newname,
+				folder: newname,
+				leaf: true,
+				iconCls: 'wtmail-icon-imap-folder-xs',
+				unread:0,
+				hasUnread:false
+			}),
+			cn=n.childNodes,
+			before=null;
+	
+		for(var c=0;before==null && c<cn.length;++c) {
+			var cid=cn[c].id;
+			if (me.specialFolders[cid]) continue;
+			if (cid>newfullname) before=cn[c];
+		}
+		if (before) n.insertBefore(newnode,before);
+		else n.appendChild(newnode);
+		return newnode;
+	},
 	
 	renameFolder: function(n,oldName,newName) {
 		var me=this;

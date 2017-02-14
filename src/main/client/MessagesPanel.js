@@ -51,7 +51,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     filterCombo: null,
     groupCombo: null,
     bMultiSearch: null,
-    //bThreaded: null,
+	labelMessages: null,
     folderList: null,
     messageView: null,
     messageViewContainer: null,
@@ -89,12 +89,20 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
 		//trick to reset unreads on empty folders' nodes
 		me.folderList.on('load',function(g,foldername,data) {
-			if (data && data.total && data.total===0)
+			if (data && data.total && data.total===0) {
 				me.mys.unreadChanged({
 					foldername: foldername,
 					unread: 0
 				},true);
-		},me);
+			} 
+		});
+		
+		me.folderList.on('totals',function(g,total,realTotal) {
+			var text=''+total;
+			if (me.folderList.threaded && realTotal)
+				text+=" ["+realTotal+"]";
+			me.labelMessages.setText(text);
+		});
 		
 		me.folderList.on('showfilterbar',function() {
 			if (me.bMultiSearch && !me.bMultiSearch.pressed) {
@@ -196,6 +204,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				}
 			}
         }));
+		
+		me.labelMessages=Ext.create({
+			xtype: 'tbtext',
+			text: '0'
+		});
+		
         me.folderList.store.on("metachange",function(s,meta) {
             var gg=meta.groupField;
 			if (gg==='') gg='none';
@@ -204,7 +218,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         });
         
         me.toolbar=Ext.create('Ext.toolbar.Toolbar',{ 
-			items:[
+/*			items:[
 				me.bMultiSearch=me.mys._TB("multisearch"),
 				"-",
 				me.quickFilterCombo,
@@ -214,8 +228,22 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				me.mys._TB("advsearch"),
                 "-",
                 me.res("groupby")+":",
-                me.groupCombo/*,
-                me.bThreaded=me.mys._TB("threaded")*/
+                me.groupCombo
+            ]*/
+			items:[
+				me.bMultiSearch=me.mys._TB("multisearch"),
+				"->",
+				me.res('messages')+":",
+				me.labelMessages,
+				'-',
+				me.mys._TB("advsearch"),
+                "-",
+                me.res("groupby")+":",
+                me.groupCombo,
+                "-",
+				me.quickFilterCombo,
+				me.filterCombo,
+                me.filterTextField
             ]
 		});
 

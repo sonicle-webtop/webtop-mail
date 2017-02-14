@@ -1514,6 +1514,21 @@ public class FolderCache {
 				open();
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,term,fp);
 			}
+			
+			//recalculate open threads and total open children
+			if (tmsgs!=null) {
+				totalOpenThreadChildren=0;
+				HashMap<Long,Integer> newOpenThreads=new HashMap<>();
+				for(SonicleIMAPMessage tmsg: tmsgs) {
+					long tuid=tmsg.getUID();
+					int tchildren=tmsg.getThreadChildren();
+					if (openThreads.containsKey(tuid)) {
+						newOpenThreads.put(tuid, tchildren);
+						totalOpenThreadChildren+=tchildren;
+					}
+				}
+				openThreads=newOpenThreads;
+			}
 		}
 		
 		return tmsgs;

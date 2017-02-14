@@ -1011,7 +1011,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		Ext.each(items,function(item) {
 			menu.add(Ext.create({
 				xtype: 'menuitem',
-				itemId: item.id,
+				//itemId: item.id,
 				text: item.id,
 				tag: item.html
 			}));

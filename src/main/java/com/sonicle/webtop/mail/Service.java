@@ -53,6 +53,7 @@ import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.sieve.*;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
+import com.sonicle.security.auth.directory.LdapNethDirectory;
 import com.sonicle.webtop.calendar.CalendarManager;
 import com.sonicle.webtop.calendar.bol.model.Event;
 import com.sonicle.webtop.core.CoreManager;
@@ -420,7 +421,8 @@ public class Service extends BaseService {
 			});
 			t.start();
 			
-			setSharedSeen(us.isSharedSeen());
+			if (!profile.getPrincipal().getAuthenticationDomain().getDirUri().getScheme().equals(LdapNethDirectory.SCHEME))
+				setSharedSeen(us.isSharedSeen());
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
@@ -484,9 +486,16 @@ public class Service extends BaseService {
 				store.close();
 			}
 			if (isImpersonated) {
-				session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
-				mailUsername=ss.getAdminUser();
-				mailPassword=ss.getAdminPassword();
+				String vmailSecret=ss.getNethTopVmailSecret();
+				//use sasl rfc impersonate if no vmailSecret
+				if (vmailSecret==null) {
+					session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
+					mailUsername=ss.getAdminUser();
+					mailPassword=ss.getAdminPassword();
+				} else {
+					mailUsername+="*vmail";
+					mailPassword=vmailSecret;
+				}
 			}
 			
 			store=session.getStore(storeProtocol);
@@ -497,10 +506,8 @@ public class Service extends BaseService {
 		disconnecting = false;
 		try {
 			
-			//warning: debug mode shows credentials
-			//Service.logger.debug("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
-			Service.logger.info("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
-			//Service.logger.info("  accessing "+storeProtocol+"://"+mailUsername+":******@"+mailHost+":"+port);
+			//warning: trace mode shows credentials
+			Service.logger.trace("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
 			if (isImpersonated)
 				Service.logger.info(" impersonating "+authorizationId);
 			
@@ -2635,7 +2642,7 @@ public class Service extends BaseService {
 	}
 	
 	protected FolderCache addFoldersCache(FolderCache parent, Folder child) throws MessagingException {
-		//logger.debug("adding {} to {}",child.getName(),parent.getFolderName());
+		logger.debug("adding {} to {}",child.getName(),parent.getFolderName());
 		FolderCache fcChild = addSingleFoldersCache(parent, child);
 		boolean leaf = fcChild.isStartupLeaf();
 		if (!leaf) {
@@ -2893,7 +2900,7 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private ArrayList<Folder> sortFolders(Folder folders[]) {
+	protected ArrayList<Folder> sortFolders(Folder folders[]) {
 		ArrayList<Folder> afolders = new ArrayList<Folder>();
 		ArrayList<Folder> sfolders=new ArrayList<Folder>();
 		HashMap<String,Folder> mfolders=new HashMap<String,Folder>();
@@ -5124,6 +5131,7 @@ public class Service extends BaseService {
 		String ppattern = request.getParameter("pattern");
 		String pquickfilter=request.getParameter("quickfilter");
 		String prefresh = request.getParameter("refresh");
+		String ptimestamp = request.getParameter("timestamp");
         String pthreaded=request.getParameter("threaded");
 		String pthreadaction=request.getParameter("threadaction");
 		String pthreadactionuid=request.getParameter("threadactionuid");
@@ -5143,6 +5151,8 @@ public class Service extends BaseService {
 		//} else {
 		//	us.setMessageListThreaded(pfoldername, threaded);
 		//}
+		//System.out.println("timestamp="+ptimestamp);
+		long timestamp=Long.parseLong(ptimestamp);
 		
 		if (isSpecialFolder(pfoldername) || isSharedFolder(pfoldername)) {
 			logger.debug("folder is special or shared, refresh forced");
@@ -5317,32 +5327,67 @@ public class Service extends BaseService {
 			String ctn = Thread.currentThread().getName();
 			String key = folder.getFullName();
 			FolderCache mcache = getFolderCache(key);
+			if (mcache.toBeRefreshed()) refresh=true;
 			//Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,refresh);
 			if (ppattern != null && psearchfield != null) {
 				key += "|" + ppattern + "|" + psearchfield;
 			}
-			MessageListThread mlt = mlThreads.get(key);
-			if (mlt == null) {
-				mlThreads.put(key, mlt = new MessageListThread(mcache,pquickfilter,ppattern,psearchfield,sortby,ascending,refresh,sort_group,groupascending,threaded));
+			if (psortfield !=null && psortdir != null) {
+				key += "|" + psortdir + "|" + psortfield;
 			}
-			String tname = Thread.currentThread().getName();			
-			long millis = System.currentTimeMillis();
+			
+			MessageListThread mlt = null;
+			synchronized(mlThreads) {
+				mlt = mlThreads.get(key);
+				if (mlt == null || (mlt.lastRequest!=timestamp && refresh)) {
+					mlt = new MessageListThread(mcache,pquickfilter,ppattern,psearchfield,sortby,ascending,refresh,sort_group,groupascending,threaded);
+					mlt.lastRequest = timestamp;
+					//System.out.println(page+": new list thread necessary");
+					mlThreads.put(key, mlt);
+				}
+				//else System.out.println(page+": reusing list thread");
+				
+				//remove old requests
+				ArrayList<String> rkeys=null;
+				for(String xkey: mlThreads.keySet()) {
+					MessageListThread xmlt = mlThreads.get(xkey);
+					//remove if older than one minute
+					long age=timestamp - xmlt.lastRequest;
+					if (xmlt!=null && age>60000) {
+						if (rkeys==null) rkeys=new ArrayList<>();
+						rkeys.add(xkey);
+					}
+				}
+				if (rkeys!=null) {
+					for(String xkey: rkeys) {
+						//MessageListThread xmlt = mlThreads.get(xkey);
+						//long age=timestamp - xmlt.lastRequest;
+						//System.out.println("removing ["+xkey+"] - age: "+age);
+						mlThreads.remove(xkey);
+					}
+				}
+				
+				//System.out.println("mlThreads size is now "+mlThreads.size());
+			}
+			
             Message xmsgs[]=null;
 			synchronized (mlt.lock) {
-				mlt.lastRequest = millis;
 				if (!mlt.started) {
+					//System.out.println(page+": starting list thread");
 					Thread t = new Thread(mlt);
 					t.start();
 				}
 				if (!mlt.finished) {
+					//System.out.println(page+": waiting list thread to finish");
 					try {
 						mlt.lock.wait();
 					} catch (InterruptedException exc) {
 						Service.logger.error("Exception",exc);
 					}
-					mlThreads.remove(key);
+					//mlThreads.remove(key);
 				}
-				if (mlt.lastRequest==millis) {
+				if (mlt.lastRequest==timestamp) {
+					//System.out.println(page+": got list thread result");
 					xmsgs=mlt.msgs;
 				}
 			}
@@ -5376,7 +5421,7 @@ public class Service extends BaseService {
 			}
 
 			int max = start + limit;
-			if (max>xmsgs.length) max=xmsgs.length;
+			if (xmsgs!=null && max>xmsgs.length) max=xmsgs.length;
 			ArrayList<Long> autoeditList=new ArrayList<Long>();
 			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
 				long actuid=Long.parseLong(pthreadactionuid);
@@ -5384,6 +5429,12 @@ public class Service extends BaseService {
 			}
             if (xmsgs!=null) {
                 int total=0;
+				int expunged=0;
+				
+				//calculate expunged
+				//for(Message xmsg: xmsgs) {
+				//	if (xmsg.isExpunged()) ++expunged;
+				//}
 				
 				sout+="messages: [\n";
 
@@ -5709,7 +5760,9 @@ public class Service extends BaseService {
 				else funread=0;
 				
 				sout += "\n],\n";
-				sout += "total: "+total+",\n";
+				sout += "total: "+(total-expunged)+",\n";
+				sout += "realTotal: "+(xmsgs.length-expunged)+",\n";
+				sout += "expunged: "+(expunged)+",\n";
 				sout += "metaData: {\n"
 						+ "  root: 'messages', total: 'total', idProperty: 'idmessage',\n"
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
@@ -7196,7 +7249,7 @@ public class Service extends BaseService {
 				//first delete all removed roles
 				for(JsSharing.SharingRights sr: sharing.rights) {
 					if (!pl.data.hasImapId(sr.imapId)) {
-						System.out.println("Folder ["+foldername+"] - remove acl for "+sr.imapId+" recursive="+recursive);
+						logger.debug("Folder ["+foldername+"] - remove acl for "+sr.imapId+" recursive="+recursive);
 						removeFolderSharing(foldername,sr.imapId,recursive);
 						updateIdentitySharing(sr.roleUid,false,false);
 					}
@@ -7205,7 +7258,7 @@ public class Service extends BaseService {
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					if (!StringUtils.isEmpty(sr.imapId)) {
 						String srights=sr.toString();
-						System.out.println("Folder ["+foldername+"] - add acl "+srights+" for "+sr.imapId+" recursive="+recursive);
+						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+sr.imapId+" recursive="+recursive);
 						setFolderSharing(foldername, sr.imapId, srights, recursive);
 						updateIdentitySharing(sr.roleUid,sr.shareIdentity,sr.forceMailcard);
 					}

@@ -337,7 +337,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	multiColumnSort: false,
 	
-	
     clickTimeoutId: 0,
     clickEvent: null,
 	//TODO: DocMgt
@@ -404,7 +403,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
     initComponent: function() {
         var me=this;
-
+		
 		me.viewConfig={
 			//preserveScrollOnRefresh: true,
 			preserveScrollOnReload: true,
@@ -551,7 +550,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.store.reload({ 
 			params: {
 				threadaction: r.get("threadOpen")?'close':'open',
-				threadactionuid: r.get("idmessage")
+				threadactionuid: r.get("idmessage"),
+				timestamp: Date.now()
 			}
 		});
 	},
@@ -578,7 +578,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			start: 0,
 			limit: me.pageSize,
 			refresh: 1,
-			folder: folder_id
+			folder: folder_id,
+			timestamp: Date.now()
 		});
 
 		//TODO: sort info && threaded
@@ -696,12 +697,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		else if (!col.hidden) delete col.hidden;
 	},
  	
+	updateTotals: function(total,realTotal) {
+		var me=this;
+		me.msgsTotal=total;
+		me.msgsRealTotal=realTotal;
+		me.fireEvent('totals',me,me.msgsTotal,me.msgsRealTotal);
+	},
 	
     loaded: function(s,r,o) {
 		var me=this,
-			meta=s.getProxy().getReader().metaData;
+			//meta=s.getProxy().getReader().metaData,
+			json=s.proxy.reader.rawData;
 
-		me.fireEvent('load',me,me.currentFolder,s.proxy.reader.rawData);
+		me.updateTotals(json.total,json.realTotal);
+		
+		me.fireEvent('load',me,me.currentFolder,json);
 		
 		//TODO: autoedit
 		/*
@@ -1000,7 +1010,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					} else {
 						me.setPageSize(n);
 						me.store.reload({
-						  params: {start:0,limit:n}
+						  params: {start:0,limit:n,timestamp: Date.now()}
 						});
 						WT.ajaxReq(me.mys.ID, 'SavePageRows', {
 							params: {
@@ -1015,12 +1025,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});
 	},
 	
+	removeRecords: function(ids) {
+		var me=this;
+		me.getSelectionModel().removeIds(ids,{ timestamp: Date.now() });
+	},
+	
     deleteSelection: function(from,selection) {
         var me=this,data=me.sel2ids(selection);
 		data.cb=function(result) {
 			if (result) {
-				//me.getSelectionModel().removeSelection(data.selection);
-				me.getSelectionModel().removeIds(data.ids);
+				me.removeRecords(data.ids);
 			}
 		}
         me.deleteMessages(from,data);
@@ -1053,7 +1067,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				multifolder: false,
 				cb: function(result) {
 					if (result) {
-						me.getSelectionModel().removeIds(data.ids);
+						me.removeRecords(data.ids);
 					}
 				}
 			},
@@ -1078,8 +1092,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             data=me.sel2ids(selection);
 		data.cb=function(result) {
 			if (result) {
-				//me.getSelectionModel().removeSelection(data.selection);
-				me.getSelectionModel().removeIds(data.ids);
+				me.removeRecords(data.ids);
 			}
 		}
         me.moveMessages(from,to,data);
@@ -1195,7 +1208,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//	options.win.tree.bfiltered.setValue(false);
 					//	options.win.hide();
 					//}
-					me.store.reload();
+					me.store.reload({ 
+						params: {
+							timestamp: Date.now()
+						}
+					});
 					//var tree=this.ms.imapTree;
 					//var n=tree.getNodeById(options.tofolder);
 					//if (n) {
@@ -1444,6 +1461,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
     actionResetColumns: function() {
         this.initFolderState(true);
+		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), { timestamp: Date.now() }));
 		this.store.load();
     },
 
@@ -1478,7 +1496,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	reload: function() {
-		this.store.reload();
+		this.store.reload({ 
+			params: {
+				timestamp: Date.now()
+			}
+		});
 	},
 	
 	changeGrouping: function(newgroup) {
@@ -1689,7 +1711,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					dcols[n++]=Ext.create({//Subject
 						xtype: 'gridcolumn',
 						header: me.res("column-subject"),
-						width: 400,
+						width: 300,
 						sortable: true,
 						dataIndex: 'subject',
 						stateId: 'stid-subject',

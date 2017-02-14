@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.webtop.core.CoreManager;
@@ -364,7 +365,8 @@ public class MailManager extends BaseManager {
 	}
 	
 	public String getModelPath(String domainId) {
-		return WebTopApp.getInstance().getHomePath(domainId)+"models";
+		String path=PathUtils.concatPathParts(WT.getServiceHomePath(domainId, SERVICE_ID),"models");
+		return path;
 	}
 
 }
