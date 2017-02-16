@@ -145,7 +145,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		var tool = Ext.create({
 				xtype: 'panel',
-				//title: 'Mail Toolbox',
+				title: me.getName(),
 				width: 200,
 				layout: 'fit',
 				items: [
