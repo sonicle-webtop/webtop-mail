@@ -352,8 +352,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								if(!nv || !ov || ov === nv) return;
 								me.selectedIdentity=me.identHash[nv];
                                 var format=me.mys.varsData.format;
-								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),mime,me.identHash[nv].mailcard),mime);
-								else me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),mime);
+								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,me.identHash[nv].mailcard),format);
+								else me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
 							},
 							scope: this
 						}
@@ -680,6 +680,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         var me=this;
 		console.log("sendMessage");
         me.getModel().setExtraParams({
+            action: 'SendMessage',
 			sendAction: 'send'
         });
 		if (me.getModel().get("reminder")) {

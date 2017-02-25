@@ -4018,6 +4018,9 @@ public class Service extends BaseService {
 		long newmsgid = Long.parseLong(pnewmsgid);
 		String sout = null;
 		try {
+			String format=us.getFormat();
+			boolean isHtml=format.equals("html");
+			
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
 			Message m = mcache.getMessage(Long.parseLong(puidmessage));
@@ -4197,8 +4200,8 @@ public class Service extends BaseService {
             
             if (ident!=null) sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
-			sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
-            sout += " mime:'text/html'\n";
+			sout += " content:'" + (isHtml?StringEscapeUtils.escapeEcmaScript(html):StringEscapeUtils.escapeEcmaScript(MailUtils.htmlToText(MailUtils.htmlunescapesource(html)))) + "',\n";
+            sout += " format:'"+(isHtml?"html":"text")+"'\n";
 			sout += "\n}";
             
 

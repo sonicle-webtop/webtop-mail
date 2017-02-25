@@ -142,6 +142,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			}
 		});
+		me.imapTree.getPlugin('cellediting').on("beforeedit",function(editor , context , eOpts) {
+			var r=context.record;
+			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
+		});
 
 		var tool = Ext.create({
 				xtype: 'panel',
