@@ -113,22 +113,22 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         me.addListener('resize',me.viewResized,me);
 
 		//create email menu
-		var capi=WT.getServiceApi("com.sonicle.webtop.contacts");
-		var i=0;
-        var actions=new Array();
+		var capi=WT.getServiceApi("com.sonicle.webtop.contacts"),
+			i=0,
+			actions=new Array();
+	
 		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.writeemail"), handler: function() {
-			me.mys.beginNewMessage(me._getEmailFromElement(me.emailMenu.activeElement));
+			var el=me.emailMenu.activeElement;
+			me._startNewMessage(el.recDesc,el.recEmail);
 		}, iconCls: 'wtmail-icon-newmsg-xs'});
 		if (capi) {
 			actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.addcontact"), handler: function() {
 				var el=me.emailMenu.activeElement,
-					desc=el.recDesc,
 					email=el.recEmail,
+					desc=(el.recDesc===el.recEmail)?null:el.recDesc;
 					firstName=null,
 					lastName=null;
 					
-				if (desc==email) desc=null;
-				
 				firstName=desc;
 				
 				if (desc!=null) {
@@ -1176,14 +1176,20 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             e.mys=me;
             me.setElementContextMenu(e,me.emailMenu);
             e.on('click', function() {
-				var email=(e.recDesc==e.recEmail)?e.recEmail:e.recDesc+" <"+e.recEmail+">";
-				me.mys.startNewMessage(me.folder,{
-					recipients: [ { rtype: 'to', email: email } ],
-					format: me.mys.varsData.format
-				});
+				me._startNewMessage(e.recDesc,e.recEmail);
 			});
         }
     },
+	
+	_startNewMessage: function(desc, email) {
+		var me=this,
+			email=(desc===email)?email:desc+" <"+email+">";
+	
+		me.mys.startNewMessage(me.folder,{
+			recipients: [ { rtype: 'to', email: email } ],
+			format: me.mys.varsData.format
+		});
+	},
 
     setAttachElement: function(e,linkSave,linkSaveAll) {
 		var me=this;

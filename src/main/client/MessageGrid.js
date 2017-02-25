@@ -925,6 +925,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			sm=me.getSelectionModel(),
 			selection=sm.getSelection(),
 			ftrash=me.mys.getFolderTrash();
+	
+		if (!selection || selection.length==0) return;
 		
         if (ftrash) {
 			if (!me.multifolder && curfolder===ftrash) {
@@ -953,6 +955,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			selection=sm.getSelection(),
 			fspam=me.mys.getFolderSpam();
 	
+		if (!selection || selection.length==0) return;
+		
         if (fspam) {
 			me.moveSelection(curfolder,fspam,selection);
 			me.focus();

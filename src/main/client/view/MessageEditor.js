@@ -364,7 +364,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             }
 		}
 		
-		if (me.showCloud) {
+		//TODO complete implementation
+		/*if (me.showCloud) {
 			//TODO: check for vfs service
             //var vfs=WT.app.getServiceByName("vfs");
             //if (vfs) {
@@ -386,7 +387,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					};
 			//	}
 			//}
-		}
+		}*/
 		
 		me.toolbar=Ext.create({
 			xtype: 'toolbar',
