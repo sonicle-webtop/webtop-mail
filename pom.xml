@@ -9,20 +9,22 @@
 	
 	<parent>
 		<groupId>com.sonicle.webtop</groupId>
-		<artifactId>webtop-superpom-service-sdk</artifactId>
-		<version>1.0</version>
+		<artifactId>webtop-superpom-service</artifactId>
+		<version>1</version>
 	</parent>
 	
 	<properties>
-		<maven.compiler.source>1.7</maven.compiler.source>
-		<maven.compiler.target>1.7</maven.compiler.target>
-		
 		<!-- WEBTOP SERVICE CONFIGURATION -->
 		<webtop.service.package>com.sonicle.webtop.mail</webtop.service.package>
 		<webtop.service.jsPackage>Sonicle.webtop.mail</webtop.service.jsPackage>
 	</properties>
 	
 	<dependencies>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>webtop-calendar-api</artifactId>
+			<version>5.0.0</version>
+		</dependency>
 		<dependency>
 			<groupId>com.sonicle.mail</groupId>
 			<artifactId>sonicle-mail</artifactId>
@@ -43,10 +45,5 @@
 			<artifactId>nekohtml</artifactId>
 			<version>0.9.4</version>
 		</dependency>
-	 <dependency>
-	  <groupId>${project.groupId}</groupId>
-	  <artifactId>webtop-calendar</artifactId>
-	  <version>${project.version}</version>
-	 </dependency>
 	</dependencies>
 </project>

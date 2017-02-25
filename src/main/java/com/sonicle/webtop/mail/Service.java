@@ -54,8 +54,8 @@ import com.sonicle.mail.sieve.*;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
-import com.sonicle.webtop.calendar.CalendarManager;
-import com.sonicle.webtop.calendar.bol.model.Event;
+import com.sonicle.webtop.calendar.ICalendarManager;
+import com.sonicle.webtop.calendar.model.Event;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
@@ -6123,7 +6123,7 @@ public class Service extends BaseService {
 			
 			ICalendarRequest ir=mailData.getICalRequest();
 			if (ir!=null) {
-				CalendarManager cm=(CalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+				ICalendarManager cm=(ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
 				if (cm!=null) {
 					Event ev=cm.getEvent(ir.getUID());
 					int eid=-1;
@@ -6456,7 +6456,7 @@ public class Service extends BaseService {
 			Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
 
 			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			CalendarManager cm=(CalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+			ICalendarManager cm=(ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
 			if (pcalaction.equals("accept")) {
 				Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
 				String ekey=cm.getEventInstanceKey(ev.getEventId());
