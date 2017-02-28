@@ -37,8 +37,8 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 	
 	dockableConfig: {
 		iconCls: 'wt-icon-message-xs',
-		width: 600,
-		height: 500
+		width: 830,
+		height: 600
 	},
 	promptConfirm: false,
 	full: true,
