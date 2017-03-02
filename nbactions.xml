@@ -10,7 +10,6 @@
                 <goal>install</goal>
             </goals>
             <activatedProfiles>
-                <activatedProfile>generate-db-classes</activatedProfile>
                 <activatedProfile>build-reports</activatedProfile>
             </activatedProfiles>
         </action>
