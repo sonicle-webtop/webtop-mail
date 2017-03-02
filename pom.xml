@@ -26,14 +26,14 @@
 			<version>5.0.0</version>
 		</dependency>
 		<dependency>
-			<groupId>com.sonicle.mail</groupId>
+			<groupId>com.sonicle.libraries</groupId>
 			<artifactId>sonicle-mail</artifactId>
-			<version>1.0</version>
+			<version>LATEST</version>
 		</dependency>
 		<dependency>
-			<groupId>com.sonicle.security</groupId>
+			<groupId>com.sonicle.libraries</groupId>
 			<artifactId>sonicle-security</artifactId>
-			<version>1.0</version>
+			<version>LATEST</version>
 		</dependency>
 		<dependency>
 			<groupId>org.mnode.ical4j</groupId>

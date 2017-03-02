@@ -38,14 +38,11 @@ import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.Payload;
-import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.sdk.BaseUserOptionsService;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.UserProfile.PersonalInfo;
-import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.mail.bol.js.JsUserOptions;
 import com.sonicle.webtop.mail.bol.js.JsMailcard;
 import com.sonicle.webtop.mail.bol.model.Identity;
@@ -249,7 +246,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
 
 		try {
-			UserProfile.Id profileId=getTargetProfileId();
+			UserProfileId profileId=getTargetProfileId();
 			String domainId=profileId.getDomainId();
 			String userId=profileId.getUserId();
 			String emailAddress=WT.getUserData(profileId).getEmailAddress();
@@ -334,7 +331,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 	}
 
 	private PersonalInfo getPersonalInfo(Identity identity) {
-		UserProfile.Id pid=identity.getOriginPid();
+		UserProfileId pid=identity.getOriginPid();
 		if (pid!=null) {
 			return WT.getUserPersonalInfo(pid);
 		}

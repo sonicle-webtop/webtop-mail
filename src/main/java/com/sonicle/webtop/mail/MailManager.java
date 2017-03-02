@@ -47,6 +47,7 @@ import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.sdk.BaseManager;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.UserProfile.Data;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.model.Identity;
@@ -75,7 +76,7 @@ public class MailManager extends BaseManager {
 	
 	List<Identity> identities=null;
 	
-	public MailManager(boolean fastInit, UserProfile.Id targetProfileId) {
+	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
 	}
 	
@@ -98,7 +99,7 @@ public class MailManager extends BaseManager {
 	public void addIdentity(Identity ident) throws WTException {
 		Connection con=null;
 		try {
-			UserProfile.Id pid=getTargetProfileId();
+			UserProfileId pid=getTargetProfileId();
 			con=WT.getConnection(SERVICE_ID);
 			IdentityDAO idao=IdentityDAO.getInstance();
 			OIdentity oident=new OIdentity();
@@ -135,7 +136,7 @@ public class MailManager extends BaseManager {
 	public void updateIdentity(int identityId, Identity ident) throws WTException {
 		Connection con=null;
 		try {
-			UserProfile.Id pid=getTargetProfileId();
+			UserProfileId pid=getTargetProfileId();
 			con=WT.getConnection(SERVICE_ID);
 			IdentityDAO idao=IdentityDAO.getInstance();
 			OIdentity oident=new OIdentity();
@@ -170,7 +171,7 @@ public class MailManager extends BaseManager {
 		Connection con=null;
 		List<Identity> idents=new ArrayList();
 		try {
-			UserProfile.Id pid=getTargetProfileId();
+			UserProfileId pid=getTargetProfileId();
 			//first add main identity
 			Data udata=WT.getUserData(pid);
 			Identity id=new Identity(0,udata.getDisplayName(),udata.getEmail().getAddress(),null);
@@ -188,7 +189,7 @@ public class MailManager extends BaseManager {
 			//add automatic shared identities
 			CoreManager core=WT.getCoreManager(getTargetProfileId());
 			for(IncomingShareRoot share: core.listIncomingShareRoots(SERVICE_ID, IDENTITY_SHARING_GROUPNAME)) {
-				UserProfile.Id opid=share.getOriginPid();
+				UserProfileId opid=share.getOriginPid();
 				udata=WT.getUserData(opid);
 				List<OShare> folders=core.listIncomingShareFolders(share.getShareId(), IDENTITY_SHARING_GROUPNAME);
 				if (folders!=null && folders.size()>0) {
@@ -212,7 +213,7 @@ public class MailManager extends BaseManager {
 	}
 	
 	public Mailcard getMailcard() {
-		UserProfile.Id pid=getTargetProfileId();
+		UserProfileId pid=getTargetProfileId();
 		Data udata=WT.getUserData(pid);
 		String domainId=pid.getDomainId();
 		String emailAddress=udata.getEmail().getAddress();
@@ -225,7 +226,7 @@ public class MailManager extends BaseManager {
 		return readDefaultMailcard(domainId);
     }
 	
-	public Mailcard getMailcard(UserProfile.Id pid) {
+	public Mailcard getMailcard(UserProfileId pid) {
 		Data udata=WT.getUserData(pid);
 		String domainId=pid.getDomainId();
 		String emailAddress=udata.getEmail().getAddress();
@@ -239,10 +240,10 @@ public class MailManager extends BaseManager {
     }
 	
 	public Mailcard getMailcard(Identity identity) {
-        UserProfile.Id pid=getTargetProfileId();
+        UserProfileId pid=getTargetProfileId();
 		Mailcard mc = readEmailMailcard(pid.getDomainId(),identity.getEmail());
 		if(mc != null) return mc;
-		UserProfile.Id fpid=identity.getOriginPid();
+		UserProfileId fpid=identity.getOriginPid();
 		if (fpid!=null) mc = readUserMailcard(fpid.getDomainId(),fpid.getUserId());
 		if(mc != null) return mc;
 		mc = readEmailDomainMailcard(pid.getDomainId(),identity.getEmail());

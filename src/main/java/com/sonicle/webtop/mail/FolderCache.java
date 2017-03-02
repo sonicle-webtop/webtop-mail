@@ -335,7 +335,7 @@ public class FolderCache {
 		boolean retval=false;
 		for(ACL acl : ((IMAPFolder)folder).getACL()) {
 			String aclUserId=acl.getName();
-			UserProfile.Id pid=ms.aclUserIdToUserId(aclUserId);
+			UserProfileId pid=ms.aclUserIdToUserId(aclUserId);
 			if (pid==null) continue;
 			CoreManager core=WT.getCoreManager();
 			String roleUid=core.getUserUid(pid);

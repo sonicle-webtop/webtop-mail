@@ -36,11 +36,9 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 /**
  *
@@ -90,11 +88,11 @@ public class MailUserSettings extends BaseUserSettings {
     
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
-	public MailUserSettings(UserProfile.Id profileId) {
+	public MailUserSettings(UserProfileId profileId) {
 		super("com.sonicle.webtop.mail",profileId);
 	}
 	
-	public MailUserSettings(UserProfile.Id profileId, MailServiceSettings mss) {
+	public MailUserSettings(UserProfileId profileId, MailServiceSettings mss) {
 		super("com.sonicle.webtop.mail",profileId);
 		this.mss=mss;
 	}

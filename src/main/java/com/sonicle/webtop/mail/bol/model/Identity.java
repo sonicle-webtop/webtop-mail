@@ -33,8 +33,7 @@
  */
 package com.sonicle.webtop.mail.bol.model;
 
-import com.sonicle.commons.web.json.CompositeId;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.Mailcard;
 import com.sonicle.webtop.mail.bol.OIdentity;
 
@@ -53,7 +52,7 @@ public class Identity {
 	protected String displayName;
 	protected String mainFolder;
 	protected Mailcard mailcard;
-	protected UserProfile.Id originPid;
+	protected UserProfileId originPid;
 
 	protected boolean fax;
 	protected boolean forceMailcard;
@@ -139,11 +138,11 @@ public class Identity {
 		this.mailcard = mailcard;
 	}
 	
-	public UserProfile.Id getOriginPid() {
+	public UserProfileId getOriginPid() {
 		return originPid;
 	}
 
-	public void setOriginPid(UserProfile.Id originPid) {
+	public void setOriginPid(UserProfileId originPid) {
 		this.originPid = originPid;
 	}
 

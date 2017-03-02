@@ -7120,7 +7120,7 @@ public class Service extends BaseService {
 		return scheme.equals("ad")||scheme.startsWith("ldap");
 	}
 	
-	UserProfile.Id  aclUserIdToUserId(String aclUserId) {
+	UserProfileId  aclUserIdToUserId(String aclUserId) {
 		String userId=aclUserId;
 		//imap user includes domain only if ldap or AD, not including nethserver 6
 		//strip domain if needed
@@ -7141,8 +7141,8 @@ public class Service extends BaseService {
 		}
 		if (principal.getUserId().equals(userId)) userId=null;
 		
-		UserProfile.Id pid=null;
-		if (userId!=null) pid=new UserProfile.Id(environment.getProfile().getDomainId(),userId);
+		UserProfileId pid=null;
+		if (userId!=null) pid=new UserProfileId(environment.getProfile().getDomainId(),userId);
 		return pid;
 	}
 
@@ -7168,7 +7168,7 @@ public class Service extends BaseService {
 			ArrayList<JsSharing.SharingRights> rights = new ArrayList<>();
 			for(ACL acl : folder.getACL()) {
 				String aclUserId=acl.getName();
-				UserProfile.Id pid=aclUserIdToUserId(aclUserId);
+				UserProfileId pid=aclUserIdToUserId(aclUserId);
 				if (pid==null) continue;
 				String roleUid=core.getUserUid(pid);
 				String roleDescription=null;
@@ -7224,7 +7224,7 @@ public class Service extends BaseService {
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					//try to fill in the imapId where empty
 					if (StringUtils.isEmpty(sr.imapId)) {
-						UserProfile.Id pid=core.userUidToProfileId(sr.roleUid);
+						UserProfileId pid=core.userUidToProfileId(sr.roleUid);
 						String imapId=null;
 						//look for any custom mail user
 						OUserMap userMap=UserMapDAO.getInstance().selectById(getConnection(), pid.getDomainId(), pid.getUserId());
@@ -7578,7 +7578,7 @@ public class Service extends BaseService {
 		Mailcard mc = mailManager.getMailcard(id);
 		if (mc!=null) {
 			if(id.isType(Identity.TYPE_AUTO)) {
-				UserProfile.Id opid=id.getOriginPid();
+				UserProfileId opid=id.getOriginPid();
 				// In case of auto identities we need to build real mainfolder
 				try {
 					String mailUser = getMailUsername(opid);
@@ -7609,7 +7609,7 @@ public class Service extends BaseService {
 		id.setMailcard(mc);
 	}
 	
-	private String getMailUsername(UserProfile.Id userProfileId) {
+	private String getMailUsername(UserProfileId userProfileId) {
 		Connection con=null;
 		String username=null;
 		try {

@@ -40,7 +40,7 @@ import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.bol.ODomain;
 import com.sonicle.webtop.core.sdk.BaseJobService;
 import com.sonicle.webtop.core.sdk.BaseJobServiceTask;
-import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import java.sql.Connection;
@@ -99,7 +99,7 @@ public class JobService extends BaseJobService {
 		private CoreManager cm=null;
 		
 		private HashMap<String,MailServiceSettings> hmss=new HashMap();
-		private HashMap<UserProfile.Id,MailUserSettings> hmus=new HashMap();
+		private HashMap<UserProfileId,MailUserSettings> hmus=new HashMap();
 
 		private boolean findSendTasksExceptionTraced=false;
 
@@ -136,7 +136,7 @@ public class JobService extends BaseJobService {
 						Store store=null;
 						try {
 							String userId=muser.getUserId();
-							UserProfile.Id pid=new UserProfile.Id(domainId,userId);
+							UserProfileId pid=new UserProfileId(domainId,userId);
 							if (vmailSecret==null) {
 								String adminUser=mss.getAdminUser();
 								String adminPassword=mss.getAdminPassword();
@@ -167,7 +167,7 @@ public class JobService extends BaseJobService {
 			}
 		}
 		
-		public void sendScheduledMails(Session session, UserProfile.Id pid, ODomain domain, Folder outgoings[], Folder folderSent, Locale locale) {
+		public void sendScheduledMails(Session session, UserProfileId pid, ODomain domain, Folder outgoings[], Folder folderSent, Locale locale) {
 			for(Folder targetfolder: outgoings) {
 				try {
 					targetfolder.open(Folder.READ_WRITE);
@@ -281,7 +281,7 @@ public class JobService extends BaseJobService {
 			return cal;
 		}
 		
-		private void sendScheduledMessage(Session session, UserProfile.Id pid, ODomain domain, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
+		private void sendScheduledMessage(Session session, UserProfileId pid, ODomain domain, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
 			try {
 				MimeMessage nm=new MimeMessage((MimeMessage)m);
 				nm.removeHeader("Sonicle-send-scheduled");
@@ -350,7 +350,7 @@ public class JobService extends BaseJobService {
 		/*
 		* Implement mail user settings object cache
 		*/
-		private MailUserSettings getMailUserSettings(UserProfile.Id pid, MailServiceSettings mss) {
+		private MailUserSettings getMailUserSettings(UserProfileId pid, MailServiceSettings mss) {
 			MailUserSettings mus=hmus.get(pid);
 			if (mus==null) {
 				mus=new MailUserSettings(pid,mss);
