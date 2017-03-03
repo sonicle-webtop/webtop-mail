@@ -541,7 +541,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			references: data.references,
 			origuid: data.origuid,
 			forwardedfolder: data.forwardedfolder,
-			forwardedfrom: data.forwardedfrom,
+			forwardedfrom: data.forwardedfrom
 		});
 
 		return true;

@@ -55,7 +55,7 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 	vacation: {
 		active: true,
 		message: '',
-		addresses: '',		
+		addresses: ''	
 	},
 	
 	initComponent: function() {

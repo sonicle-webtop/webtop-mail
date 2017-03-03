@@ -266,7 +266,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				iconCls: 'wtmail-icon-attachment-xs',
 				uploaderConfig: WTF.uploader(me.mys.ID,'UploadAttachment',{
 					extraParams: {
-						tag: me.msgId,
+						tag: me.msgId
 					},
                     dropElement: me.getId()
 				}),
@@ -448,7 +448,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						iconCls: 'wtmail-icon-format-insertimagefile-xs',
 						uploaderConfig: WTF.uploader(me.mys.ID,'UploadCid',{
 							extraParams: {
-								tag: me.msgId,
+								tag: me.msgId
 							}
 						}),
 						listeners: {

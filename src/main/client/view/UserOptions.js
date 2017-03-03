@@ -316,7 +316,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							text: ' Mailcard: ',
 							bind: {
 								hidden: '{!canChangeMailcardSettings}'
-							},
+							}
 						},
 						{
 							xtype: 'button',

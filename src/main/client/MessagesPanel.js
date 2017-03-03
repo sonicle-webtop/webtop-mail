@@ -564,7 +564,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				folder: this.currentFolder,
 				name: col.dataIndex,
 				visible: !h
-			},
+			}
 		});
 	},
 	
