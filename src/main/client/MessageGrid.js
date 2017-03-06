@@ -443,6 +443,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						service: me.mys.ID
 					},
 					reader: {
+						keepRawData: true,
 						rootProperty: 'messages',
 						totalProperty: 'total',
 						idProperty: 'idmessage'
@@ -461,6 +462,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						service: me.mys.ID
 					},
 					reader: {
+						keepRawData: true,
 						rootProperty: 'messages',
 						totalProperty: 'total',
 						idProperty: 'idmessage'
@@ -595,16 +597,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			meta=s.getProxy().getReader().metaData;
 		if (groupField && groupField!=='none' && groupField!=='threadId' && groupField!=='') {
 			var dir=meta?meta.sortInfo.direction:'ASC';
-			s.blockLoad();
+			//s.blockLoad(); //TODO: We are using ExtJs 6.2, is this still necessary?
 			s.group(null, null);
 			s.group(groupField, dir);
 			me.threaded=groupField==='threadId';
-			s.unblockLoad(false);
+			//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 		} else {
-			s.blockLoad();
+			//s.blockLoad(); //TODO: We are using ExtJs 6.2, is this still necessary?
 			s.group(null, null);
 			me.threaded=groupField==='threadId';
-			s.unblockLoad(false);
+			//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 		}
 		me.currentFolder = folder_id;
 		me.initFolderState();

@@ -264,14 +264,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			tbar: Ext.create('Ext.toolbar.Toolbar',{
 				hidden: true,
 				items: [
-					me.getAction("delete"),
+					me.getAct("delete"),
 					'-',
-					me.getAction("reply"),
-					me.getAction("replyall"),
-					me.getAction("forward"),
+					me.getAct("reply"),
+					me.getAct("replyall"),
+					me.getAct("forward"),
 					'-',
-					me.getAction("markseen"),
-					me.getAction("markunseen")
+					me.getAct("markseen"),
+					me.getAct("markunseen")
 				]
 			}),
             items: [ me.messageView ]
@@ -313,8 +313,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
     },
 	
-	getAction: function(name) {
-		return this.mys.getAction(name);
+	getAct: function(name) {
+		return this.mys.getAct(name);
 	},
 	
 	getViewRegion: function() {

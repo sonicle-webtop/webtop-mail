@@ -60,7 +60,7 @@ Ext.define('Sonicle.webtop.mail.view.EmlMessageView', {
 		
 		Ext.apply(me, {
 			tbar: [
-				me.createAction("print",{
+				me.createAct("print",{
 					handler: function() {
 						mv.print();
 					},

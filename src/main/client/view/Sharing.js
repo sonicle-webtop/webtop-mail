@@ -193,7 +193,7 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 					}
 				}],
 				tbar: [
-					me.addAction('deleteRights', {
+					me.addAct('deleteRights', {
 						text: WT.res('act-delete.lbl'),
 						tooltip: null,
 						iconCls: 'wt-icon-delete-xs',
@@ -216,7 +216,7 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 							if (rights.length>0 && cbo.store.findExact('rights',rights)>=0) cbo.setValue(rights);
 							else cbo.setValue("");
 						}
-						me.getAction('deleteRights').setDisabled(!recs.length);
+						me.getAct('deleteRights').setDisabled(!recs.length);
 						me.lref('permspanel').setDisabled(!recs.length);
 					}
 				}
