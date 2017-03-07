@@ -92,7 +92,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchGrid',{
 
     addEntry: function(se) {
 		var me=this;
-		if (me.items && me.items.getCount()==1) {
+		if (me.items && me.items.getCount()===1) {
 			me.items.first().enableMinusButton();
 		}
 		var id=me.searchfields[0][0];
@@ -107,7 +107,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchGrid',{
 		newse.on('minus',me.delEntry,me);
 
 		me.add(newse);
-		me.doLayout();
+		me.updateLayout();
 
 		return newse;
     },
@@ -115,11 +115,11 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchGrid',{
     delEntry: function(se) {
 		var me=this;
 		
-		me.remove(se,true)
-		if (me.items && me.items.getCount()==1) {
+		me.remove(se,true);
+		if (me.items && me.items.getCount()===1) {
 			me.items.first().disableMinusButton();
 		}
-		me.doLayout();
+		me.updateLayout();
     },
 
     getAndOr: function() {

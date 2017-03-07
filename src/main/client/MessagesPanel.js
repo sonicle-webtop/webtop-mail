@@ -389,7 +389,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         if (this.ownerCt) {
             var h=parseInt(this.ownerCt.getSize().height*hperc/100);
             this.messageViewContainer.setHeight(h);
-            this.doLayout();
+            this.updateLayout();
         }
     },
 */

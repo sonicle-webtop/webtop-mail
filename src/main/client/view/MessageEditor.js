@@ -1018,7 +1018,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				tag: item.html
 			}));
 		});
-		menu.doLayout();
+		menu.updateLayout();
 	},
 	
     onDiscard: function() {
