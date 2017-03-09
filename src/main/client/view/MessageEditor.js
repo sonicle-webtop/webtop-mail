@@ -591,7 +591,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.on('beforemodelsave', function() {
 			if (me.autosaveTask) me.autosaveTask.cancel();
 		});
-		me.on('modelsave', function(s,op,success) {
+		me.on('modelsave', function(s,success) {
 			if (!success) {
 				if (me.autosaveTask) me.autosaveTask.delay(me.autosaveDelay);
 				me.enableControls(false,true);
@@ -694,7 +694,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				me.mys.res("column-date")+": "+Ext.util.Format.date(today,'d-M-Y')+"\n"+
 				me.mys.res("column-from")+": "+from+"\n"+
 				me.mys.res("column-to")+": "+to+"\n";
-			me.on("modelsave",function(me, op, success) {
+			me.on("modelsave",function(me, success) {
 				if (success) {
 					var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
 					

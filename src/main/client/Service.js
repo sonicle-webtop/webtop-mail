@@ -687,7 +687,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			});
 	
-		vw.getView().on("modelsave",function(v, op, success,r) {
+		vw.getView().on("modelsave",function(v, success,r) {
 			if (success) {
 				var s=me.imapTree.getStore(),
 					n=s.getNodeById(r.get("id")),

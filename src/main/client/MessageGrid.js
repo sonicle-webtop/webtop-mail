@@ -1522,9 +1522,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				if (success) {
 					if (newgroup && newgroup!=='' && newgroup!=='none') {
 						var s=me.store;
-						s.blockLoad();
+						//s.blockLoad(); //TODO: We are using ExtJs 6.2, is this still necessary?
 						s.sort('date', 'DESC');
-						s.unblockLoad(false);
+						//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 					}
 					me.mys.setFolderGroup(me.currentFolder,newgroup);
 					me.mys.showFolder(me.currentFolder);
