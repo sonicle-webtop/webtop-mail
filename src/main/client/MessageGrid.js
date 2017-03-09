@@ -328,7 +328,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
 	features: [
 		{
-			ftype:'mailgrouping',
+			ftype:'mailgrouping'
 		}
 	],
 	selModel: { 
@@ -846,7 +846,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				folder: idfolder,
 				idmessage: idmessage,
 				attached: eml?1:0,
-				newmsgid: msgId,
+				newmsgid: msgId
 			},
 			callback: function(success,json) {
 				if (json.result) {

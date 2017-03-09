@@ -241,7 +241,7 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 							data: [
 								[me.fullRights,me.mys.res("sharing.rights-full")],
 								['lrs',me.mys.res("sharing.rights-ro")],
-								['',me.mys.res("sharing.rights-custom")],
+								['',me.mys.res("sharing.rights-custom")]
 							]
 						}),
 						editable: false,

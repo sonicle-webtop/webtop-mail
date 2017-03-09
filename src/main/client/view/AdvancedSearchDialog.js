@@ -274,7 +274,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
                         me.closeView();
                     }
                 },{ 
-					title: me.res('advsearch-stopsearch'),
+					title: me.res('advsearch-stopsearch')
 				}
 			);
         } else {
@@ -296,7 +296,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
                         me.stopSearch();
                     }
                 },{ 
-					title: me.res('advsearch-stopsearch'),
+					title: me.res('advsearch-stopsearch')
 				}
 			);
         }
