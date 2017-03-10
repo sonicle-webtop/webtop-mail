@@ -5677,14 +5677,16 @@ public class Service extends BaseService {
 							String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
 							if (h!=null && h.equals("true")) {
 								java.util.Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
-								syyyy=scal.get(java.util.Calendar.YEAR);
-								smm=scal.get(java.util.Calendar.MONTH);
-								sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
-								shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
-								smmm=scal.get(java.util.Calendar.MINUTE);
-								ssss=scal.get(java.util.Calendar.SECOND);
-								issched=true;
-								status="scheduled";
+								if (scal!=null) {
+									syyyy=scal.get(java.util.Calendar.YEAR);
+									smm=scal.get(java.util.Calendar.MONTH);
+									sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
+									shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
+									smmm=scal.get(java.util.Calendar.MINUTE);
+									ssss=scal.get(java.util.Calendar.SECOND);
+									issched=true;
+									status="scheduled";
+								}
 							} 
 
 							h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
@@ -5825,6 +5827,8 @@ public class Service extends BaseService {
 	private java.util.Calendar parseScheduleHeader(String senddate, String sendtime) {
 		String sdp[] = senddate.split("/");
 		String sdt[] = sendtime.split(":");
+		if (sdp.length<3 || sdt.length<2) return null;
+		
 		String sschedday = sdp[0];
 		String sschedmonth = sdp[1];
 		String sschedyear = sdp[2];
@@ -6116,9 +6120,11 @@ public class Service extends BaseService {
 			String h = getSingleHeaderValue(m, "Sonicle-send-scheduled");
 			if (h != null && h.equals("true")) {
 				java.util.Calendar scal = parseScheduleHeader(getSingleHeaderValue(m, "Sonicle-send-date"), getSingleHeaderValue(m, "Sonicle-send-time"));
-				java.util.Date sd = scal.getTime();
-				String sdate = df.format(sd).replaceAll("\\.", ":");
-				sout += "{iddata:'scheddate',value1:'" + StringEscapeUtils.escapeEcmaScript(sdate) + "',value2:'',value3:0},\n";
+				if (scal!=null) {
+					java.util.Date sd = scal.getTime();
+					String sdate = df.format(sd).replaceAll("\\.", ":");
+					sout += "{iddata:'scheddate',value1:'" + StringEscapeUtils.escapeEcmaScript(sdate) + "',value2:'',value3:0},\n";
+				}
 			}			
 			
 			ICalendarRequest ir=mailData.getICalRequest();

@@ -727,7 +727,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     saveMessage: function() {
         var me=this;
         me.getModel().setExtraParams({
-            action: 'SaveMessage'
+            action: 'SaveMessage',
+			sendAction: 'save'
         });
         me.saveView(true);
     },
@@ -761,18 +762,31 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     actionSchedule: function() {
         var me=this;
         me.recgrid.completeEdit();
-        me.disableControls(/*false,*/true);
-        if (me.fireEvent('beforeschedule',me)) {
-            me.schedule();
-        } else {
-            this.enableControls(false,true);
-        }
+		WT.createView(me.mys.ID,'view.ScheduleDialog',{
+			viewCfg: {
+				mys: me.mys,
+				listeners: {
+					viewok: function(v,date,time,notify) {
+						me.disableControls(/*false,*/true);
+						if (me.fireEvent('beforeschedule',me)) {
+							me.schedule(date,time,notify);
+						} else {
+							this.enableControls(false,true);
+						}
+					}
+				}
+			}
+		}).show();
     },
 	
-	schedule: function() {
+	schedule: function(date,time,notify) {
         var me=this;
         me.getModel().setExtraParams({
-			sendAction: 'schedule'
+            action: 'ScheduleMessage',
+			sendAction: 'schedule',
+			scheddate: Ext.Date.format(date,'d/m/Y'),
+			schedtime: Ext.Date.format(time,'H:i'),
+			schednotify: notify?'true':'false'
         });
         me.saveView(true);
 	},
