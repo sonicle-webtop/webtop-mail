@@ -238,6 +238,7 @@ public class Service extends BaseService {
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
 	private Sieve sieve = null;
+	private boolean hasAnnotations=false;
 	
 	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
 	private FolderCache fcRoot = null;
@@ -354,7 +355,9 @@ public class Service extends BaseService {
 		try {
 			mft.abort();
 			checkStoreConnected();
-
+			
+			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
+			
 			//prepare special folders if not existant
 			if (ss.isAutocreateSpecialFolders()) {
 				checkCreateFolder(mprofile.getFolderSent());
@@ -7101,12 +7104,15 @@ public class Service extends BaseService {
 	}
 	
 	public boolean isSharedSeen() throws MessagingException {
+		if (!hasAnnotations) return false;
+		
 		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) store.getFolder("INBOX");
 		String annot = xfolder.getAnnotation("/vendor/cmu/cyrus-imapd/sharedseen", true);
 		return annot.equals("true");
 	}
 	
 	public void setSharedSeen(boolean b) throws MessagingException {
+		if (!hasAnnotations) return;
 		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) store.getFolder("INBOX");
 		xfolder.setAnnotation("/vendor/cmu/cyrus-imapd/sharedseen", true, b ? "true" : "false");
 	}
