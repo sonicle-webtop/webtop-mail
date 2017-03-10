@@ -5341,11 +5341,14 @@ public class Service extends BaseService {
 			if (psortfield !=null && psortdir != null) {
 				key += "|" + psortdir + "|" + psortfield;
 			}
+			if (pquickfilter !=null) {
+				key +="|" + pquickfilter;
+			}
 			
 			MessageListThread mlt = null;
 			synchronized(mlThreads) {
 				mlt = mlThreads.get(key);
-				if (mlt == null || (mlt.lastRequest!=timestamp && refresh)) {
+				if (mlt == null || mlt.lastRequest!=timestamp || refresh) {
 					mlt = new MessageListThread(mcache,pquickfilter,ppattern,psearchfield,sortby,ascending,refresh,sort_group,groupascending,threaded);
 					mlt.lastRequest = timestamp;
 					//System.out.println(page+": new list thread necessary");
