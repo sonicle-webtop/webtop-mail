@@ -1748,7 +1748,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							}
 							if (status!=="read" && status!=="unread") {
 								var imgname=Ext.String.format("status{0}_16.png",status);
-								imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16)+"&nbsp;";
+								imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16,"valign=top")+"&nbsp;";
 							}
 							imgtag+=value;
 							if (me.threaded && tindent===0) {
