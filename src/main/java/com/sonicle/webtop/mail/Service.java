@@ -5348,13 +5348,16 @@ public class Service extends BaseService {
 			MessageListThread mlt = null;
 			synchronized(mlThreads) {
 				mlt = mlThreads.get(key);
-				if (mlt == null || mlt.lastRequest!=timestamp || refresh) {
+				if (mlt == null || (mlt.lastRequest!=timestamp && refresh)) {
+					if (mlt!=null)
+						System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
+					else
+						System.out.println(page+": mlt not found");
 					mlt = new MessageListThread(mcache,pquickfilter,ppattern,psearchfield,sortby,ascending,refresh,sort_group,groupascending,threaded);
 					mlt.lastRequest = timestamp;
-					//System.out.println(page+": new list thread necessary");
 					mlThreads.put(key, mlt);
 				}
-				//else System.out.println(page+": reusing list thread");
+				else System.out.println(page+": reusing list thread");
 				
 				//remove old requests
 				ArrayList<String> rkeys=null;
@@ -5382,12 +5385,12 @@ public class Service extends BaseService {
             Message xmsgs[]=null;
 			synchronized (mlt.lock) {
 				if (!mlt.started) {
-					//System.out.println(page+": starting list thread");
+					System.out.println(page+": starting list thread");
 					Thread t = new Thread(mlt);
 					t.start();
 				}
 				if (!mlt.finished) {
-					//System.out.println(page+": waiting list thread to finish");
+					System.out.println(page+": waiting list thread to finish");
 					try {
 						mlt.lock.wait();
 					} catch (InterruptedException exc) {
@@ -5395,10 +5398,11 @@ public class Service extends BaseService {
 					}
 					//mlThreads.remove(key);
 				}
-				if (mlt.lastRequest==timestamp) {
-					//System.out.println(page+": got list thread result");
+				//TODO: see if we can check first request from buffered store
+				//if (mlt.lastRequest==timestamp) {
+					System.out.println(page+": got list thread result");
 					xmsgs=mlt.msgs;
-				}
+				//}
 			}
 			
 			//if threaded, look for the start considering roots and opened children
