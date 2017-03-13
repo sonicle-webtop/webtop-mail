@@ -253,6 +253,8 @@ public class JobService extends BaseJobService {
 		
 		private boolean isTimeToSend(String senddate, String sendtime) {
 			Calendar cal=parseCalendar(senddate,sendtime);
+			if (cal==null) return false;
+			
 			Calendar calnow=Calendar.getInstance();
 			calnow.setTime(new Date());
 			boolean itts=cal.before(calnow);
@@ -262,9 +264,11 @@ public class JobService extends BaseJobService {
 		private Calendar parseCalendar(String senddate, String sendtime) {
 			String sdp[]=senddate.split("/");
 			String sdt[]=sendtime.split(":");
-			String sschedday=sdp[0];
-			String sschedmonth=sdp[1];
-			String sschedyear=sdp[2];
+			if (sdp.length<3 || sdt.length<2) return null;
+
+			String sschedday = sdp[0];
+			String sschedmonth = sdp[1];
+			String sschedyear = sdp[2];
 			String sschedhour=sdt[0];
 			String sschedmins=sdt[1];
 			int schedday=Integer.parseInt(sschedday);
@@ -299,8 +303,8 @@ public class JobService extends BaseJobService {
 				sentFolder.close(true);
 				m.setFlag(Flags.Flag.DELETED, true);
 
-				if (notify) {
-					Calendar cal=parseCalendar(getSingleHeaderValue(m,"Sonicle-send-date"),getSingleHeaderValue(m,"Sonicle-send-time"));
+				Calendar cal=parseCalendar(getSingleHeaderValue(m,"Sonicle-send-date"),getSingleHeaderValue(m,"Sonicle-send-time"));
+				if (notify && cal!=null) {
 					String recipients="";
 					for(Address ia: nm.getRecipients(Message.RecipientType.TO)) {
 						if (recipients.length()>0) recipients+=" - ";

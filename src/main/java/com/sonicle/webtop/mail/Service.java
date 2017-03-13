@@ -238,6 +238,7 @@ public class Service extends BaseService {
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
 	private Sieve sieve = null;
+	private boolean hasAnnotations=false;
 	
 	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
 	private FolderCache fcRoot = null;
@@ -354,7 +355,9 @@ public class Service extends BaseService {
 		try {
 			mft.abort();
 			checkStoreConnected();
-
+			
+			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
+			
 			//prepare special folders if not existant
 			if (ss.isAutocreateSpecialFolders()) {
 				checkCreateFolder(mprofile.getFolderSent());
@@ -2788,7 +2791,6 @@ public class Service extends BaseService {
 			if (mc == null) {
 				//continue;
 				FolderCache fcparent=getFolderCache(parent.getFullName());
-				//Service.logger.debug("==folder not ready, adding now==");
 				mc=addSingleFoldersCache(fcparent, f);
 			}
 			//String shortfoldername=getShortFolderName(foldername);
@@ -5338,14 +5340,20 @@ public class Service extends BaseService {
 			if (psortfield !=null && psortdir != null) {
 				key += "|" + psortdir + "|" + psortfield;
 			}
+			if (pquickfilter !=null) {
+				key +="|" + pquickfilter;
+			}
 			
 			MessageListThread mlt = null;
 			synchronized(mlThreads) {
 				mlt = mlThreads.get(key);
 				if (mlt == null || (mlt.lastRequest!=timestamp && refresh)) {
+					//if (mlt!=null)
+					//	System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
+					//else
+					//	System.out.println(page+": mlt not found");
 					mlt = new MessageListThread(mcache,pquickfilter,ppattern,psearchfield,sortby,ascending,refresh,sort_group,groupascending,threaded);
 					mlt.lastRequest = timestamp;
-					//System.out.println(page+": new list thread necessary");
 					mlThreads.put(key, mlt);
 				}
 				//else System.out.println(page+": reusing list thread");
@@ -5389,10 +5397,11 @@ public class Service extends BaseService {
 					}
 					//mlThreads.remove(key);
 				}
-				if (mlt.lastRequest==timestamp) {
+				//TODO: see if we can check first request from buffered store
+				//if (mlt.lastRequest==timestamp) {
 					//System.out.println(page+": got list thread result");
 					xmsgs=mlt.msgs;
-				}
+				//}
 			}
 			
 			//if threaded, look for the start considering roots and opened children
@@ -5677,14 +5686,16 @@ public class Service extends BaseService {
 							String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
 							if (h!=null && h.equals("true")) {
 								java.util.Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
-								syyyy=scal.get(java.util.Calendar.YEAR);
-								smm=scal.get(java.util.Calendar.MONTH);
-								sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
-								shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
-								smmm=scal.get(java.util.Calendar.MINUTE);
-								ssss=scal.get(java.util.Calendar.SECOND);
-								issched=true;
-								status="scheduled";
+								if (scal!=null) {
+									syyyy=scal.get(java.util.Calendar.YEAR);
+									smm=scal.get(java.util.Calendar.MONTH);
+									sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
+									shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
+									smmm=scal.get(java.util.Calendar.MINUTE);
+									ssss=scal.get(java.util.Calendar.SECOND);
+									issched=true;
+									status="scheduled";
+								}
 							} 
 
 							h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
@@ -5825,6 +5836,8 @@ public class Service extends BaseService {
 	private java.util.Calendar parseScheduleHeader(String senddate, String sendtime) {
 		String sdp[] = senddate.split("/");
 		String sdt[] = sendtime.split(":");
+		if (sdp.length<3 || sdt.length<2) return null;
+		
 		String sschedday = sdp[0];
 		String sschedmonth = sdp[1];
 		String sschedyear = sdp[2];
@@ -6116,9 +6129,11 @@ public class Service extends BaseService {
 			String h = getSingleHeaderValue(m, "Sonicle-send-scheduled");
 			if (h != null && h.equals("true")) {
 				java.util.Calendar scal = parseScheduleHeader(getSingleHeaderValue(m, "Sonicle-send-date"), getSingleHeaderValue(m, "Sonicle-send-time"));
-				java.util.Date sd = scal.getTime();
-				String sdate = df.format(sd).replaceAll("\\.", ":");
-				sout += "{iddata:'scheddate',value1:'" + StringEscapeUtils.escapeEcmaScript(sdate) + "',value2:'',value3:0},\n";
+				if (scal!=null) {
+					java.util.Date sd = scal.getTime();
+					String sdate = df.format(sd).replaceAll("\\.", ":");
+					sout += "{iddata:'scheddate',value1:'" + StringEscapeUtils.escapeEcmaScript(sdate) + "',value2:'',value3:0},\n";
+				}
 			}			
 			
 			ICalendarRequest ir=mailData.getICalRequest();
@@ -7095,12 +7110,15 @@ public class Service extends BaseService {
 	}
 	
 	public boolean isSharedSeen() throws MessagingException {
+		if (!hasAnnotations) return false;
+		
 		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) store.getFolder("INBOX");
 		String annot = xfolder.getAnnotation("/vendor/cmu/cyrus-imapd/sharedseen", true);
 		return annot.equals("true");
 	}
 	
 	public void setSharedSeen(boolean b) throws MessagingException {
+		if (!hasAnnotations) return;
 		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) store.getFolder("INBOX");
 		xfolder.setAnnotation("/vendor/cmu/cyrus-imapd/sharedseen", true, b ? "true" : "false");
 	}
