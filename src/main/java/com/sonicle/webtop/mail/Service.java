@@ -7165,8 +7165,9 @@ public class Service extends BaseService {
 	}
 
 	public void processManageSharing(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		
+		Connection con=null;
 		try {
+			con=getConnection();
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			String id=null;
 			Payload<MapItem, JsSharing> pl=null;
@@ -7245,7 +7246,7 @@ public class Service extends BaseService {
 						UserProfileId pid=core.userUidToProfileId(sr.roleUid);
 						String imapId=null;
 						//look for any custom mail user
-						OUserMap userMap=UserMapDAO.getInstance().selectById(getConnection(), pid.getDomainId(), pid.getUserId());
+						OUserMap userMap=UserMapDAO.getInstance().selectById(con, pid.getDomainId(), pid.getUserId());
 						if (userMap!=null && !StringUtils.isEmpty(userMap.getMailUser())) {
 							if (userMap.getMailHost().equals(mprofile.getMailHost()) && 
 									userMap.getMailPort().equals(mprofile.getMailPort()) && 
@@ -7291,6 +7292,8 @@ public class Service extends BaseService {
 		} catch(Exception ex) {
 			logger.error("Error in action ManageSharing", ex);
 			new JsonResult(false, "Error").printTo(out);
+		} finally {
+			DbUtils.closeQuietly(con);
 		}
 	}
 	

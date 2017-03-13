@@ -183,6 +183,7 @@ public class MailManager extends BaseManager {
 			}
 			
 			//add automatic shared identities
+			int autoid=-1;
 			CoreManager core=WT.getCoreManager(getTargetProfileId());
 			for(IncomingShareRoot share: core.listIncomingShareRoots(SERVICE_ID, IDENTITY_SHARING_GROUPNAME)) {
 				UserProfileId opid=share.getOriginPid();
@@ -194,7 +195,7 @@ public class MailManager extends BaseManager {
 					boolean shareIdentity=spf.implies("READ");
 					boolean forceMailcard=spf.implies("UPDATE");
 					if (shareIdentity) {
-						id = new Identity(Identity.TYPE_AUTO,-1,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard);
+						id = new Identity(Identity.TYPE_AUTO,autoid--,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard);
 						id.setOriginPid(opid);
 						idents.add(id);
 					}
