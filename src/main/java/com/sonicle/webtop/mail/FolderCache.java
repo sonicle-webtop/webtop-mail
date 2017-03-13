@@ -1113,8 +1113,9 @@ public class FolderCache {
         Message mmsgs[]=getMessages(uids);
         int changed=setMessagesSeen(mmsgs,true);
         if (changed>0) {
-            unread-=changed;
-            updateUnreads();
+            //unread-=changed;
+            //updateUnreads();
+			refreshUnreadMessagesCount();
         }
     }
     
@@ -1122,8 +1123,9 @@ public class FolderCache {
         Message mmsgs[]=getMessages(uids);
         int changed=setMessagesSeen(mmsgs,false);
         if (changed>0) {
-            unread+=changed;
-            updateUnreads();
+            //unread+=changed;
+            //updateUnreads();
+			refreshUnreadMessagesCount();
         }
     }
 

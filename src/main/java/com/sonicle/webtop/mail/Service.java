@@ -2791,7 +2791,6 @@ public class Service extends BaseService {
 			if (mc == null) {
 				//continue;
 				FolderCache fcparent=getFolderCache(parent.getFullName());
-				//Service.logger.debug("==folder not ready, adding now==");
 				mc=addSingleFoldersCache(fcparent, f);
 			}
 			//String shortfoldername=getShortFolderName(foldername);
@@ -5349,15 +5348,15 @@ public class Service extends BaseService {
 			synchronized(mlThreads) {
 				mlt = mlThreads.get(key);
 				if (mlt == null || (mlt.lastRequest!=timestamp && refresh)) {
-					if (mlt!=null)
-						System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
-					else
-						System.out.println(page+": mlt not found");
+					//if (mlt!=null)
+					//	System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
+					//else
+					//	System.out.println(page+": mlt not found");
 					mlt = new MessageListThread(mcache,pquickfilter,ppattern,psearchfield,sortby,ascending,refresh,sort_group,groupascending,threaded);
 					mlt.lastRequest = timestamp;
 					mlThreads.put(key, mlt);
 				}
-				else System.out.println(page+": reusing list thread");
+				//else System.out.println(page+": reusing list thread");
 				
 				//remove old requests
 				ArrayList<String> rkeys=null;
@@ -5385,12 +5384,12 @@ public class Service extends BaseService {
             Message xmsgs[]=null;
 			synchronized (mlt.lock) {
 				if (!mlt.started) {
-					System.out.println(page+": starting list thread");
+					//System.out.println(page+": starting list thread");
 					Thread t = new Thread(mlt);
 					t.start();
 				}
 				if (!mlt.finished) {
-					System.out.println(page+": waiting list thread to finish");
+					//System.out.println(page+": waiting list thread to finish");
 					try {
 						mlt.lock.wait();
 					} catch (InterruptedException exc) {
@@ -5400,7 +5399,7 @@ public class Service extends BaseService {
 				}
 				//TODO: see if we can check first request from buffered store
 				//if (mlt.lastRequest==timestamp) {
-					System.out.println(page+": got list thread result");
+					//System.out.println(page+": got list thread result");
 					xmsgs=mlt.msgs;
 				//}
 			}
