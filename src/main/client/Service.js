@@ -634,6 +634,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				attachments: opts.attachments,
 				content: opts.content||'',
                 contentReady: opts.contentReady,
+                contentAfter: opts.contentAfter,
                 format: opts.format,
                 replyfolder: opts.replyfolder,
                 inreplyto: opts.inreplyto,
