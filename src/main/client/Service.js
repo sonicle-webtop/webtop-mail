@@ -826,6 +826,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			rec=me.getCtxNode(e);
 	
 		if (rec) me.refreshFolder(rec);
+		else {
+			me.imapTree.getStore().reload();
+		}
 	},
 	
 	actionScanFolder: function(mi,e) {
