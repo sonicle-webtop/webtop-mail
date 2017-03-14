@@ -352,7 +352,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								if(!nv || !ov || ov === nv) return;
 								me.selectedIdentity=me.identHash[nv];
                                 var format=me.mys.varsData.format;
-								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,me.identHash[nv].mailcard),format);
+								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
 								else me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
 							},
 							scope: this
@@ -629,7 +629,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	startNew: function(data) {
 		var me=this;
-		if (!data.contentReady) data.content=me.prepareContent(data.content,data.format);
+		if (!data.contentReady) data.content=me.prepareContent(data.content,data.format,(data.contentAfter===undefined?true:data.contentAfter));
 		//default of html editor is html, so no need to enable html mode
 		//also calling it seems to break binding
 		/*if (data.format==="html") me.htmlEditor.enableHtmlMode();
@@ -791,7 +791,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.saveView(true);
 	},
     
-    prepareContent: function(content,format,mc) {
+    prepareContent: function(content,format,contentAfter,mc) {
 		var me=this;
 		if (!mc) {
 			var ident=me.identities[me.identityIndex];
@@ -799,11 +799,19 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		
 		if (format==="html") {
-			if (mc) content='<br><br><div id="wt-mailcard">'+mc.html+'</div>'+content;
+			if (mc) {
+				var mchtml='<br><br><div id="wt-mailcard">'+mc.html+'</div>';
+				if (contentAfter) content=mchtml+content;
+				else content+=mchtml;
+			}
 			content='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+content+'</div>';
 		}
 		else if (format==="plain") {
-			if (mc) content='\n\n'+mc.text+'\n'+content;
+			if (mc) {
+				var mctext='\n\n'+mc.text+'\n';
+				if (contentAfter) content=mctext+content;
+				else content+=mctext;
+			}
 		}
         return content;
     },

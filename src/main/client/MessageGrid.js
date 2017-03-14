@@ -232,6 +232,8 @@ Ext.define('Sonicle.webtop.mail.MessagesModel',{
         { name: 'arch', type:'boolean' },
         { name: 'atts', type:'boolean' },
 		{ name: 'threadOpen', type:'boolean' },
+		{ name: 'threadHasChildren', type:'boolean' },
+        { name: 'threadUnseenChildren', type:'int' },
         { name: 'scheddate', type:'date' },
 		{ name: 'autoedit', type:'boolean' }
 	]
@@ -268,6 +270,8 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
         { name: 'arch', type:'boolean' },
         { name: 'atts', type:'boolean' },
 		{ name: 'threadOpen', type:'boolean' },
+		{ name: 'threadHasChildren', type:'boolean' },
+        { name: 'threadUnseenChildren', type:'int' },
         { name: 'scheddate', type:'date' },
 		{ name: 'autoedit', type:'boolean' }
 	]
@@ -1043,17 +1047,24 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.removeRecords(data.ids);
 			}
 		}
-        me.deleteMessages(from,data);
+        me.deleteMessages(from,data,selection);
     },
-    
-    deleteMessages: function(folder,data) {
+
+    deleteMessages: function(folder,data,selection) {
+		me.checkBrokenThreads(selection,function(fullThreads) {
+			me._deleteMessages(folder,data,fullThreads);
+		});
+	},
+	
+    _deleteMessages: function(folder,data,fullThreads) {
 		var me=this;
 			me.fireEvent('deleting',me);
 		WT.ajaxReq(me.mys.ID, 'DeleteMessages', {
 			params: {
 				fromfolder: folder,
 				ids: data.ids,
-				multifolder: data.multifolder
+				multifolder: data.multifolder,
+				fullthreads: fullThreads
 			},
 			callback: function(success,json) {
 				if (json.result) {
@@ -1101,30 +1112,38 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.removeRecords(data.ids);
 			}
 		}
-        me.moveMessages(from,to,data);
+        me.moveMessages(from,to,data,selection);
     },
 	
     copySelection: function(from,to,selection) {
         var me=this, 
             data=me.sel2ids(selection);
-        me.copyMessages(from,to,data)
+        me.copyMessages(from,to,data,selection)
     },
 	
-    moveMessages: function(from,to,data) {
+    moveMessages: function(from,to,data,selection) {
 		var me=this;
 		
         me.fireEvent('moving',me);
 		
-        me.operateMessages("MoveMessages",from,to,data);
+        me.operateMessages("MoveMessages",from,to,data,selection);
     },	
 	
-    copyMessages: function(from,to,data) {
-        this.operateMessages("CopyMessages",from,to,data);
+    copyMessages: function(from,to,data,selection) {
+        this.operateMessages("CopyMessages",from,to,data,selection);
     },
 
 	//TODO: customer,causal
 	//operateMessages: function(action,from,to,data,customer_id,causal_id) {
-    operateMessages: function(action,from,to,data) {
+    operateMessages: function(action,from,to,data,selection) {
+		var me=this;
+		
+		me.checkBrokenThreads(selection,function(fullThreads) {
+			me._operateMessages(action,from,to,data,fullThreads);
+		});
+    },
+	
+	_operateMessages: function(action,from,to,data,fullThreads) {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, action, {
 			params: {
@@ -1133,7 +1152,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				fromfolder: from,
 				ids: data.ids,
 				tofolder: to,
-				multifolder: data.multifolder
+				multifolder: data.multifolder,
+				fullthreads: fullThreads,
 			},
 			callback: function(success,json) {
 				Ext.callback(data.cb,data.scope||me,[json.result]);
@@ -1186,8 +1206,43 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				}
 			}
 		});							
-    },
-	
+	},
+
+	checkBrokenThreads: function(selection,cb,scope) {
+		var me=this;
+		if (me.threaded) {
+			var brokenThread=false;
+			Ext.each(
+			  selection,
+			  function(r,index,allItems) {
+				  if (r.get("threadIndent")===0 && r.get("threadHasChildren")) {
+						brokenThread=true;
+						return false;
+				  }
+			  }
+			);
+			if (brokenThread) {
+				Ext.Msg.show({
+					title: WT.res('warning'),
+					msg: me.res("confirm.full-threads"),
+					buttons: Ext.MessageBox.YESNOCANCEL,
+					buttonText: {
+						yes: WT.res('word.yes'),
+						no: WT.res('word.no'),
+						cancel: WT.res('act-cancel.lbl')
+					},
+					icon: Ext.Msg.QUESTION,
+					fn: function(bid) {
+						if(bid === 'cancel') return;
+						Ext.callback(cb,scope||me,[bid==='yes']);
+					}
+				});
+				return;
+			}
+		}
+		Ext.callback(cb,scope||me,false);
+	},
+		
     operateAllFiltered: function(action,from,to,handler,scope) {
 		var me=this,oparams=me.store.proxy.extraParams,
 			params={

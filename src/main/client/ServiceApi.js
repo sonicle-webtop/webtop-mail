@@ -47,6 +47,8 @@ Ext.define('Sonicle.webtop.mail.ServiceApi', {
      *       { rtype: 'bcc', email: 'example3@domain.tld' }
      *     ]	 
 	 * @param {Object} opts An object containing configuration.
+	 * @param {Boolean} [opts.contentReady] True if content is ready without any need of processing (e.g. mailcard).
+	 * @param {Boolean} [opts.appendContent] When contentReady=false, append content to processing (e.g. mailcard).
 	 * @param {Function} [opts.callback] Callback method for 'viewsave' event.
 	 * @param {Object} [opts.scope] The callback method scope.
 	 * @param {Boolean} [opts.dirty] The dirty state of the model.
@@ -59,7 +61,8 @@ Ext.define('Sonicle.webtop.mail.ServiceApi', {
 			subject: data.subject,
 			content: data.content,
 			recipients: data.recipients,
-			contentReady: true,
+			contentReady: opts.contentReady,
+			contentAfter: opts.appendContent,
 			folder: folder
 		});
 	}
