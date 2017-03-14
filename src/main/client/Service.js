@@ -38,7 +38,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		'Sonicle.webtop.mail.ImapTree',
 		'Sonicle.webtop.mail.MessagesPanel',
 		'Sonicle.webtop.mail.view.MessageEditor',
-		'Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop'
+		'Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop',
+		'Sonicle.webtop.mail.ServiceApi'
 	],
 
 	imapTree: null,
@@ -78,6 +79,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	protPorts: null,
     
 
+	api: null,
+	
+	getApiInstance: function() {
+		var me = this;
+		if (!me.api) me.api = Ext.create('Sonicle.webtop.mail.ServiceApi', {service: me});
+		return me.api;
+	},
+	
 	init: function() {
 		var me=this;
 		
