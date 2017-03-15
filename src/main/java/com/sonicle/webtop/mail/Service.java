@@ -643,7 +643,7 @@ public class Service extends BaseService {
 		return folderPrefix;
 	}
 	
-	public void archiveMessages(FolderCache from, long nuids[], String idcategory, String idsubcategory) throws MessagingException, FileNotFoundException, IOException {
+	public void archiveMessages(FolderCache from, long nuids[], String idcategory, String idsubcategory, boolean fullthreads) throws MessagingException, FileNotFoundException, IOException {
 		UserProfile profile = environment.getProfile();
 		String archiveto = ss.getArchivePath();
 		for (long nuid: nuids) {
@@ -700,19 +700,19 @@ public class Service extends BaseService {
 				pw.close();
 			}
 		}
-		from.markArchivedMessages(nuids);
+		from.markArchivedMessages(nuids,fullthreads);
 	}
 	
-	public void moveMessages(FolderCache from, FolderCache to, long uids[]) throws MessagingException {
-		from.moveMessages(uids, to);
+	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
+		from.moveMessages(uids, to, fullthreads);
 	}
 	
-	public void copyMessages(FolderCache from, FolderCache to, long uids[]) throws MessagingException, IOException {
-		from.copyMessages(uids, to);
+	public void copyMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException, IOException {
+		from.copyMessages(uids, to, fullthreads);
 	}
 	
-	public void deleteMessages(FolderCache from, long uids[]) throws MessagingException {
-		from.deleteMessages(uids);
+	public void deleteMessages(FolderCache from, long uids[], boolean fullthreads) throws MessagingException {
+		from.deleteMessages(uids,fullthreads);
 	}
 	
 	public void flagMessages(FolderCache from, long uids[], String flag) throws MessagingException {
@@ -2968,8 +2968,10 @@ public class Service extends BaseService {
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
 		String allfiltered = request.getParameter("allfiltered");
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
+		String smultifolder = request.getParameter("multifolder");
+		boolean multifolder = smultifolder != null && smultifolder.equals("true");
+		String sfullthreads = request.getParameter("fullthreads");
+		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String uids[] = null;
 		String sout = null;
 		try {
@@ -2991,7 +2993,7 @@ public class Service extends BaseService {
 				boolean norows=false;
 				if (uids.length==1 && uids[0].length()==0) norows=true;
 				if (!norows) {
-					if (!mf) moveMessages(mcache, tomcache, toLongs(uids));
+					if (!multifolder) moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
 					else {
 						long iuids[]=new long[1];
 						for(String uid: uids) {
@@ -3000,7 +3002,7 @@ public class Service extends BaseService {
 							uid=uid.substring(ix+1);
 							mcache = getFolderCache(fromfolder);
 							iuids[0]=Long.parseLong(uid);
-							moveMessages(mcache, tomcache, iuids);
+							moveMessages(mcache, tomcache, iuids,fullthreads);
 						}
 					}
 				}
@@ -3008,7 +3010,7 @@ public class Service extends BaseService {
 				sout = "{\nresult: true, millis: " + millis + "\n}";
 			} else {
                 uids=getMessageUIDs(mcache,request);
-                moveMessages(mcache, tomcache, toLongs(uids));
+                moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
@@ -3025,8 +3027,10 @@ public class Service extends BaseService {
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
 		String allfiltered = request.getParameter("allfiltered");
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
+		String smultifolder = request.getParameter("multifolder");
+		boolean multifolder = smultifolder != null && smultifolder.equals("true");
+		String sfullthreads = request.getParameter("fullthreads");
+		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String sout = null;
 		String uids[]=null;
 		try {
@@ -3035,7 +3039,7 @@ public class Service extends BaseService {
 			FolderCache tomcache = getFolderCache(tofolder);
 			if (allfiltered == null) {
 				uids = request.getParameterValues("ids");
-				if (!mf) copyMessages(mcache, tomcache, toLongs(uids));
+				if (!multifolder) copyMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				else {
                     long iuids[]=new long[1];
                     for(String uid: uids) {
@@ -3044,14 +3048,14 @@ public class Service extends BaseService {
                         uid=uid.substring(ix+1);
 						mcache = getFolderCache(fromfolder);
                         iuids[0]=Long.parseLong(uid);
-                        copyMessages(mcache, tomcache, iuids);
+                        copyMessages(mcache, tomcache, iuids,fullthreads);
 					}
 				}
 				long millis = System.currentTimeMillis();
 				sout = "{\nresult: true, millis: " + millis + "\n}";
 			} else {
                 uids=getMessageUIDs(mcache,request);
-                copyMessages(mcache, tomcache, toLongs(uids));
+                copyMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
@@ -3070,15 +3074,17 @@ public class Service extends BaseService {
 		int ix = tofolder.indexOf("|");
 		String idcategory = tofolder.substring(0, ix);
 		String idsubcategory = tofolder.substring(ix + 1);
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
+		String smultifolder = request.getParameter("multifolder");
+		boolean multifolder = smultifolder != null && smultifolder.equals("true");
+		String sfullthreads = request.getParameter("fullthreads");
+		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String uids[]=null;
 		String sout = null;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			uids = request.getParameterValues("ids");
-			if (!mf) archiveMessages(mcache, toLongs(uids), idcategory, idsubcategory);
+			if (!multifolder) archiveMessages(mcache, toLongs(uids), idcategory, idsubcategory, fullthreads);
 			else {
                 long iuids[]=new long[1];
                 for(String uid: uids) {
@@ -3087,7 +3093,7 @@ public class Service extends BaseService {
                     uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
                     iuids[0]=Integer.parseInt(uid);
-                    archiveMessages(mcache, iuids, idcategory, idsubcategory);
+                    archiveMessages(mcache, iuids, idcategory, idsubcategory, fullthreads);
 				}
 			}
 			long millis = System.currentTimeMillis();
@@ -3190,14 +3196,16 @@ public class Service extends BaseService {
 	public void processDeleteMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
+		String smultifolder = request.getParameter("multifolder");
+		boolean multifolder = smultifolder != null && smultifolder.equals("true");
+		String sfullthreads = request.getParameter("fullthreads");
+		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String sout = null;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
-			if (!mf) {
-				deleteMessages(mcache, toLongs(uids));
+			if (!multifolder) {
+				deleteMessages(mcache, toLongs(uids),fullthreads);
 			} else {
                 long iuids[]=new long[1];
                 for(String uid: uids) {
@@ -3206,7 +3214,7 @@ public class Service extends BaseService {
                     uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
-                    deleteMessages(mcache, iuids);
+                    deleteMessages(mcache, iuids, fullthreads);
 				}
 			}
 			sout = "{\nresult: true\n}";

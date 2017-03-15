@@ -984,7 +984,7 @@ public class FolderCache {
 		folder.appendMessages(msgs);
 	}
     
-    public void moveMessages(long uids[], FolderCache to) throws MessagingException {
+    public void moveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException {
         Message mmsgs[]=getMessages(uids);
         folder.copyMessages(mmsgs, to.folder);
         folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
@@ -996,13 +996,13 @@ public class FolderCache {
         to.modified=true;
     }
 
-    public void copyMessages(long uids[], FolderCache to) throws MessagingException, IOException {
+    public void copyMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
 		
         if (ms.hasDocumentArchiving() &&
                 ms.isSimpleArchiving() &&
                 ms.getSimpleArchivingMailFolder()!=null &&
                 ms.getSimpleArchivingMailFolder().equals(to.foldername)) {
-            archiveMessages(uids, to);
+            archiveMessages(uids, to, fullthreads);
         } else {
             Message mmsgs[]=getMessages(uids);
             folder.copyMessages(mmsgs, to.folder);
@@ -1011,18 +1011,18 @@ public class FolderCache {
         }
     }
 
-    public void archiveMessages(long uids[], FolderCache to) throws MessagingException, IOException {
+    public void archiveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
         Message mmsgs[]=getMessages(uids);
         MimeMessage newmmsgs[]=getArchivedCopy(mmsgs);
-        moveMessages(uids,to);
+        moveMessages(uids,to,fullthreads);
         folder.appendMessages(newmmsgs);
         refresh();
     }
 
-    public void markArchivedMessages(long uids[]) throws MessagingException, IOException {
+    public void markArchivedMessages(long uids[], boolean fullthreads) throws MessagingException, IOException {
         MimeMessage newmmsgs[]=getArchivedCopy(uids);
         try {
-			deleteMessages(uids);
+			deleteMessages(uids,fullthreads);
 			folder.appendMessages(newmmsgs);
 		} catch(MessagingException exc) {
 			//can't delete, try with flag
@@ -1061,7 +1061,7 @@ public class FolderCache {
 		_deleteMessages(getAllMessages());
 	}
 	
-    public void deleteMessages(long uids[]) throws MessagingException {
+    public void deleteMessages(long uids[], boolean fullthreads) throws MessagingException {
         Message mmsgs[]=getMessages(uids);
 		_deleteMessages(mmsgs);
         removeDHash(uids);
