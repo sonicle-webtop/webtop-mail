@@ -3707,22 +3707,25 @@ public class Service extends BaseService {
 		String sout = null;
 		try {
 			checkStoreConnected();
-			StringBuffer sb = new StringBuffer("<pre>");
+			//StringBuffer sb = new StringBuffer("<pre>");
+			StringBuffer sb = new StringBuffer();
 			FolderCache mcache = getFolderCache(foldername);
 			Message msg = mcache.getMessage(Long.parseLong(uid));
 			//Folder folder=msg.getFolder();
 			for (Enumeration e = msg.getAllHeaders(); e.hasMoreElements();) {
 				Header header = (Header) e.nextElement();
-				sb.append(MailUtils.htmlescape(header.getName()) + ": " + MailUtils.htmlescape(header.getValue()) + "\n");
+				//sb.append(MailUtils.htmlescape(header.getName()) + ": " + MailUtils.htmlescape(header.getValue()) + "\n");
+				sb.append(header.getName() + ": " + header.getValue() + "\n");
 			}
 			if (!headers) {
 				BufferedReader br = new BufferedReader(new InputStreamReader(msg.getInputStream()));
 				String line = null;
 				while ((line = br.readLine()) != null) {
-					sb.append(MailUtils.htmlescape(line) + "\n");
+					//sb.append(MailUtils.htmlescape(line) + "\n");
+					sb.append(line + "\n");
 				}
 			}
-			sb.append("</pre>");
+			//sb.append("</pre>");
 			sout = "{\nresult: true, source: '" + StringEscapeUtils.escapeEcmaScript(sb.toString()) + "'\n}";
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);

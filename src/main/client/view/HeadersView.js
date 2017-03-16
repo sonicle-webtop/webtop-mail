@@ -51,13 +51,10 @@ Ext.define('Sonicle.webtop.mail.view.HeadersView', {
 		me.callParent(arguments);
 
 		me.add({
-				xtype: 'panel',
+				xtype: 'textarea',
 				region: 'center',
-				frame: false, 
-				border: false, 
-				bodyBorder: false, 
-				autoScroll: true, 
-				html: me.source
+				value: me.source,
+				editable: false
 		});
 	}
 	
