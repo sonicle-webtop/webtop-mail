@@ -968,10 +968,41 @@ public class FolderCache {
         setForceRefresh();
     }
     
-    private Message[] getMessages(long uids[]) throws MessagingException {
+    private Message[] getMessages(long uids[], boolean fullthreads) throws MessagingException {
         open();
-        return ((UIDFolder)folder).getMessagesByUID(uids);
+		Message[] msgs=((UIDFolder)folder).getMessagesByUID(uids);
+		if (threaded && fullthreads) {
+			ArrayList<Long> auids=new ArrayList<>(uids.length);
+			ArrayList<Message> newMsgs=new ArrayList<>();
+			for(long uid: uids) auids.add(uid);
+			Collections.sort(auids);
+			for(Message msg: msgs) {
+				SonicleIMAPMessage smsg=(SonicleIMAPMessage)msg;
+				if (smsg.getThreadIndent()==0 && smsg.getThreadChildren()>0) {
+					Message tmsgs[]=getReferences(smsg.getMessageID());
+					for(Message tmsg: tmsgs) {
+						SonicleIMAPMessage stmsg=(SonicleIMAPMessage)tmsg;
+						if (Collections.binarySearch(auids, stmsg.getUID())<0)
+							newMsgs.add(tmsg);
+					}
+				}
+			}
+			if (newMsgs.size()>0) {
+				Message[] newmsgs=new Message[newMsgs.size()];
+				newMsgs.toArray(newmsgs);
+				Message[] allmsgs=new Message[msgs.length+newmsgs.length];
+				System.arraycopy(msgs, 0, allmsgs, 0, msgs.length);
+				System.arraycopy(newmsgs, 0, allmsgs, msgs.length, newmsgs.length);
+				msgs=allmsgs;
+			}
+		}
+        return msgs;
     }
+	
+	protected Message[] getReferences(String msgid) throws MessagingException {
+		HeaderTerm ht=new HeaderTerm("References",msgid);
+		return folder.search(ht);
+	}
 
     protected Message[] getAllMessages() throws MessagingException {
         open();
@@ -985,7 +1016,7 @@ public class FolderCache {
 	}
     
     public void moveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException {
-        Message mmsgs[]=getMessages(uids);
+        Message mmsgs[]=getMessages(uids,fullthreads);
         folder.copyMessages(mmsgs, to.folder);
         folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
         removeDHash(uids);
@@ -1004,7 +1035,7 @@ public class FolderCache {
                 ms.getSimpleArchivingMailFolder().equals(to.foldername)) {
             archiveMessages(uids, to, fullthreads);
         } else {
-            Message mmsgs[]=getMessages(uids);
+            Message mmsgs[]=getMessages(uids,fullthreads);
             folder.copyMessages(mmsgs, to.folder);
             to.setForceRefresh();
             to.modified=true;
@@ -1012,7 +1043,7 @@ public class FolderCache {
     }
 
     public void archiveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
-        Message mmsgs[]=getMessages(uids);
+        Message mmsgs[]=getMessages(uids,fullthreads);
         MimeMessage newmmsgs[]=getArchivedCopy(mmsgs);
         moveMessages(uids,to,fullthreads);
         folder.appendMessages(newmmsgs);
@@ -1020,13 +1051,13 @@ public class FolderCache {
     }
 
     public void markArchivedMessages(long uids[], boolean fullthreads) throws MessagingException, IOException {
-        MimeMessage newmmsgs[]=getArchivedCopy(uids);
+        MimeMessage newmmsgs[]=getArchivedCopy(uids,fullthreads);
         try {
 			deleteMessages(uids,fullthreads);
 			folder.appendMessages(newmmsgs);
 		} catch(MessagingException exc) {
 			//can't delete, try with flag
-			Message msgs[]=getMessages(uids);
+			Message msgs[]=getMessages(uids,fullthreads);
 			for(Message m: msgs) 
 				m.setFlags(Service.flagArchived,true);
 		}
@@ -1034,8 +1065,8 @@ public class FolderCache {
         refresh();
     }
 
-    public MimeMessage[] getArchivedCopy(long uids[]) throws MessagingException {
-        Message mmsgs[]=getMessages(uids);
+    public MimeMessage[] getArchivedCopy(long uids[],boolean fullthreads) throws MessagingException {
+        Message mmsgs[]=getMessages(uids,fullthreads);
         return getArchivedCopy(mmsgs);
     }
 
@@ -1062,7 +1093,7 @@ public class FolderCache {
 	}
 	
     public void deleteMessages(long uids[], boolean fullthreads) throws MessagingException {
-        Message mmsgs[]=getMessages(uids);
+        Message mmsgs[]=getMessages(uids,fullthreads);
 		_deleteMessages(mmsgs);
         removeDHash(uids);
     }
@@ -1078,7 +1109,7 @@ public class FolderCache {
 
     public void flagMessages(long uids[], String flag) throws MessagingException {
 //        open();
-        Message mmsgs[]=getMessages(uids);
+        Message mmsgs[]=getMessages(uids,false);
         for(Message fmsg: mmsgs) {
 			if (flag.equals("special")) {
 				boolean wasspecial=fmsg.getFlags().contains(Service.flagFlagged);
@@ -1100,7 +1131,7 @@ public class FolderCache {
   
     public void clearMessagesFlag(long uids[]) throws MessagingException {
 //        open();
-        Message mmsgs[]=getMessages(uids);
+        Message mmsgs[]=getMessages(uids,false);
         for(Message fmsg: mmsgs) {
             fmsg.setFlags(Service.flagsAll, false);
             fmsg.setFlags(Service.oldFlagsAll, false);
@@ -1110,7 +1141,7 @@ public class FolderCache {
     }
 
     public void setMessagesSeen(long uids[]) throws MessagingException {
-        Message mmsgs[]=getMessages(uids);
+        Message mmsgs[]=getMessages(uids,false);
         int changed=setMessagesSeen(mmsgs,true);
         if (changed>0) {
             //unread-=changed;
@@ -1120,7 +1151,7 @@ public class FolderCache {
     }
     
     public void setMessagesUnseen(long uids[]) throws MessagingException {
-        Message mmsgs[]=getMessages(uids);
+        Message mmsgs[]=getMessages(uids,false);
         int changed=setMessagesSeen(mmsgs,false);
         if (changed>0) {
             //unread+=changed;
