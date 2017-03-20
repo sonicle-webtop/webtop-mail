@@ -7337,23 +7337,35 @@ public class Service extends BaseService {
 				String foldername=pl.data.method.equals("all")?"":id;
 				boolean recursive=pl.data.method.equals("all")||pl.data.method.equals("branch");
 				
+				//
+				//Prepare new sharing structure
+				//
+				
+				Sharing newwtsharing=new Sharing();
+				newwtsharing.setId(MailManager.IDENTITY_SHARING_ID);
+				ArrayList<Sharing.RoleRights> newwtrights=new ArrayList<>();
+				
 				//first delete all removed roles
 				for(JsSharing.SharingRights sr: sharing.rights) {
 					if (!pl.data.hasImapId(sr.imapId)) {
 						logger.debug("Folder ["+foldername+"] - remove acl for "+sr.imapId+" recursive="+recursive);
 						removeFolderSharing(foldername,sr.imapId,recursive);
-						updateIdentitySharing(sr.roleUid,false,false);
+						updateIdentitySharingRights(newwtrights,sr.roleUid,false,false);
 					}
 				}
+				
 				//now apply new acls
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					if (!StringUtils.isEmpty(sr.imapId)) {
 						String srights=sr.toString();
 						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+sr.imapId+" recursive="+recursive);
 						setFolderSharing(foldername, sr.imapId, srights, recursive);
-						updateIdentitySharing(sr.roleUid,sr.shareIdentity,sr.forceMailcard);
+						updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard);
 					}
 				}
+				
+				newwtsharing.setRights(newwtrights);
+				WT.getCoreManager().updateSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, newwtsharing);
 				
 				new JsonResult().printTo(out);
 			}
@@ -7366,19 +7378,14 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void updateIdentitySharing(String roleUid, boolean shareIdentity, boolean forceMailcard) throws WTException {
+	private void updateIdentitySharingRights(ArrayList<Sharing.RoleRights> wtrights, String roleUid, boolean shareIdentity, boolean forceMailcard) throws WTException {
 		//update sharing settings
-		Sharing wtsharing=new Sharing();
-		wtsharing.setId(MailManager.IDENTITY_SHARING_ID);
-		ArrayList<Sharing.RoleRights> wtrights=new ArrayList<>();
 		SharePermsFolder spf=new SharePermsFolder();
 		if (shareIdentity||forceMailcard) {
 			if (shareIdentity) spf.add(SharePermsFolder.READ);
 			if (forceMailcard) spf.add(SharePermsFolder.UPDATE);
 			wtrights.add(new Sharing.RoleRights(roleUid,null,spf,new SharePermsElements()));
 		}
-		wtsharing.setRights(wtrights);
-		WT.getCoreManager().updateSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, wtsharing);
 	}
 	
 	private void removeFolderSharing(String foldername, String acluser, boolean recursive) throws MessagingException {
