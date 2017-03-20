@@ -64,6 +64,7 @@ import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
+import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
 import com.sonicle.webtop.core.bol.model.InternetRecipient;
 import com.sonicle.webtop.core.model.SharePerms;
 import com.sonicle.webtop.core.model.SharePermsElements;
@@ -73,6 +74,7 @@ import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
+import com.sonicle.webtop.core.sdk.BaseUserSettings.HiddenFolders;
 import com.sonicle.webtop.core.sdk.UserProfile.Data;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICalendarUtils;
@@ -761,6 +763,13 @@ public class Service extends BaseService {
 			destroyFolderCache(getFolderCache(folder.getFullName()));
 		}
 		return retval;
+	}
+	
+	public void hideFolder(String foldername) throws MessagingException {
+		Folder folder=getFolder(foldername);
+		try { folder.close(false); } catch(Throwable exc) {}
+		destroyFolderCache(getFolderCache(foldername));
+		us.setFolderHidden(foldername, true);
 	}
 	
 	public boolean emptyFolder(String fullname) throws MessagingException {
@@ -2540,6 +2549,7 @@ public class Service extends BaseService {
 		Folder children[] = fcRoot.getFolder().list();
 		final ArrayList<FolderCache> rootParents = new ArrayList<FolderCache>();
 		for (Folder child : children) {
+			if (us.isFolderHidden(child.getFullName())) continue;
 			if (!fcRoot.hasChild(child.getName())) {
 				FolderCache fcc=addSingleFoldersCache(fcRoot,child);
 				if (!fcc.isStartupLeaf()) rootParents.add(fcc);
@@ -2582,6 +2592,7 @@ public class Service extends BaseService {
 		Folder children[] = f.list();
 		for (Folder child : children) {
 			String cname=child.getFullName();
+			if (us.isFolderHidden(cname)) continue;
 			if (hasDifferentDefaultFolder && cname.equals(fcRoot.getFolderName())) continue;
 			FolderCache fcc = addFoldersCache(fc, child);
 		}
@@ -2786,6 +2797,9 @@ public class Service extends BaseService {
 			String foldername = f.getFullName();
 			//in case of moved root, check not to duplicate root elsewhere
 			if (hasDifferentDefaultFolder && isSharedFolder(parent.getFullName()) && foldername.equals(getInboxFolderFullName())) continue;
+			//skip hidden
+			if (us.isFolderHidden(foldername)) continue;
+
 			
 			FolderCache mc = getFolderCache(foldername);
 			if (mc == null) {
@@ -3323,6 +3337,30 @@ public class Service extends BaseService {
 		out.println(sout);
 	}
 	
+	public void processManageHiddenFolders(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals(Crud.READ)) {
+				ArrayList<JsHiddenFolder> hfolders=new ArrayList<>();
+				for(String folderId: us.getHiddenFolders()) {
+					hfolders.add(new JsHiddenFolder(folderId,folderId));
+				}
+				new JsonResult(hfolders).printTo(out);
+			}
+			else if(crud.equals(Crud.DELETE)) {
+				ServletUtils.StringArray ids = ServletUtils.getObjectParameter(request, "ids", ServletUtils.StringArray.class, true);
+				
+				for(String id : ids) {
+					us.setFolderHidden(id, false);
+				}
+				new JsonResult().printTo(out);
+			}
+		} catch(Exception exc) {
+			logger.debug("Cannot restore hidden folders",exc);
+			new JsonResult("Cannot restore hidden folders", exc).printTo(out);
+		}
+	}
+	
 	public void processSetScanFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String folder = request.getParameter("folder");
 		boolean value = false;
@@ -3596,6 +3634,26 @@ public class Service extends BaseService {
 			name = name.replace(sep, "_");
 		}
 		return name;
+	}
+	
+	public void processHideFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String folder = request.getParameter("folder");
+		String sout = null;
+		try {
+			checkStoreConnected();
+			boolean result = true;
+			sout = "{\n";
+			if (isSpecialFolder(folder)) {
+				result = false;
+			} else {
+				hideFolder(folder);
+			}
+			sout += "result: " + result + "\n}";
+		} catch (MessagingException exc) {
+			Service.logger.error("Exception",exc);
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+		}
+		out.println(sout);
 	}
 	
 	public void processDeleteFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
