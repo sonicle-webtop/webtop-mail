@@ -366,7 +366,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		//TODO complete implementation
 		if (me.showCloud) {
-			var vfsapi=WT.getServiceApi("com.sonicle.webtop.vfs");
+/*			var vfsapi=WT.getServiceApi("com.sonicle.webtop.vfs");
             if (vfsapi) {
 				tbitems[tbx++]='-';
 				tbitems[tbx++]={
@@ -441,7 +441,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						
 					}
 				};
-			}
+			}*/
 		}
 		
 		me.toolbar=Ext.create({
