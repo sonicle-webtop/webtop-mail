@@ -33,7 +33,6 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.google.gson.Gson;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.CoreLocaleKey;
 import com.sonicle.commons.LangUtils;
@@ -42,6 +41,7 @@ import java.nio.channels.*;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
@@ -60,22 +60,18 @@ import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
 import com.sonicle.webtop.core.bol.model.InternetRecipient;
-import com.sonicle.webtop.core.model.SharePerms;
 import com.sonicle.webtop.core.model.SharePermsElements;
 import com.sonicle.webtop.core.model.SharePermsFolder;
-import com.sonicle.webtop.core.model.SharePermsRoot;
 import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
-import com.sonicle.webtop.core.sdk.BaseUserSettings.HiddenFolders;
-import com.sonicle.webtop.core.sdk.UserProfile.Data;
+import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ORule;
@@ -97,6 +93,7 @@ import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.dal.VacationDAO;
+import com.sonicle.webtop.vfs.IVfsManager;
 // TODO: Fix imported classes
 //import com.sonicle.webtop.Mailcard;
 //import com.sonicle.webtop.EditingSession;
@@ -131,9 +128,7 @@ import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.parameter.PartStat;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -257,6 +252,8 @@ public class Service extends BaseService {
 	private ArrayList<Attachment> emptyAttachments = new ArrayList<Attachment>();
 	
 	private AdvancedSearchThread ast = null;
+	
+	private IVfsManager vfsmanager=null;
 	
 	static {
 		inlineableMimes.add("image/gif");
@@ -425,6 +422,10 @@ public class Service extends BaseService {
 				}
 			});
 			t.start();
+			
+			vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs");
+			//cloud uploads goes here
+			registerUploadListener("UploadCloudFile", new OnUploadCloudFile());
 			
 			if (!profile.getPrincipal().getAuthenticationDomain().getDirUri().getScheme().equals(LdapNethDirectory.SCHEME))
 				setSharedSeen(us.isSharedSeen());
@@ -3514,6 +3515,29 @@ public class Service extends BaseService {
 		}
 		return pname;
 	}
+	
+    public void processRequestCloudFile(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+			try {
+				String subject=ServletUtils.getStringParameter(request, "subject", true);
+				String path="/Uploads";
+				int sid=vfsmanager.getMyDocumentsStoreId();
+				FileObject fo=vfsmanager.getStoreFile(sid,path);
+				if (!fo.exists()) fo.createFolder();
+				
+				String dirname=DateTimeUtils.createYmdHmsFormatter(environment.getProfile().getTimeZone()).print(DateTimeUtils.now()).replaceAll(":", "-")+" - "+subject;
+
+				FileObject dir=fo.resolveFile(dirname);
+				if (!dir.exists()) dir.createFolder();
+				
+				JsonResult jsres=new JsonResult();
+				jsres.put("storeId", sid);
+				jsres.put("filePath", path+"/"+dirname+"/");
+				jsres.printTo(out);
+			} catch(Exception ex) {
+				logger.error("Request cloud file failure", ex);
+				new JsonResult(ex).printTo(out);
+			}
+	}	
 
     public void processSaveColumnSize(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String name=request.getParameter("name");
@@ -7722,4 +7746,27 @@ public class Service extends BaseService {
 		return username+"@"+WT.getDomainInternetName(userProfileId.getDomainId());
 	}	
 	
+	private class OnUploadCloudFile implements IServiceUploadStreamListener {
+		@Override
+		public void onUpload(String context, HttpServletRequest request, HashMap<String, String> multipartParams, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
+			
+			try {
+				String path="/Emails";
+				int sid=vfsmanager.getMyDocumentsStoreId();
+				FileObject fo=vfsmanager.getStoreFile(sid,path);
+				if (!fo.exists()) fo.createFolder();
+				String filename=file.getFilename();
+				String newPath = vfsmanager.addStoreFileFromStream(sid, path, filename, is, false);
+				responseData.add("storeId", sid);
+				responseData.add("filePath", path+"/"+filename);
+
+			} catch(UploadException ex) {
+				logger.trace("Upload failure", ex);
+				throw ex;
+			} catch(Throwable t) {
+				logger.error("Upload failure", t);
+				throw new UploadException("Upload failure");
+			}
+		}
+	}
 }
