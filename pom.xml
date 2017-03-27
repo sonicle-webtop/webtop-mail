@@ -45,5 +45,10 @@
 			<artifactId>nekohtml</artifactId>
 			<version>0.9.4</version>
 		</dependency>
+	 <dependency>
+	  <groupId>${project.groupId}</groupId>
+	  <artifactId>webtop-vfs-api</artifactId>
+	  <version>${project.version}</version>
+	 </dependency>
 	</dependencies>
 </project>

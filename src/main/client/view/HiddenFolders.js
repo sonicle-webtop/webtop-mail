@@ -32,30 +32,13 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.view.HeadersView', {
-	extend: 'WTA.sdk.DockableView',
+Ext.define('Sonicle.webtop.mail.view.HiddenFolders', {
+	extend: 'WTA.sdk.HiddenFolders',
 	
 	dockableConfig: {
-		title: '{source}',
-		width: 600,
-		height: 500
-	},
-	promptConfirm: false,
-	full: true,
-
-	source: null,
-
-	initComponent: function() {
-		var me = this;
-		
-		me.callParent(arguments);
-
-		me.add({
-				xtype: 'textarea',
-				region: 'center',
-				value: me.source,
-				editable: false
-		});
+		title: '{act-managehiddenfolders.lbl}',
+		width: 400,
+		height: 300
 	}
 	
 });

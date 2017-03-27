@@ -365,29 +365,84 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		
 		//TODO complete implementation
-		/*if (me.showCloud) {
-			//TODO: check for vfs service
-            //var vfs=WT.app.getServiceByName("vfs");
-            //if (vfs) {
-            //    if (vfs.hasPersonalCloud()) {
-					tbitems[tbx++]='-';
-					tbitems[tbx++]={
-						xtype: 'button',
-						tooltip: me.res('editor.btn-cloud-download.tip'),
-						iconCls: 'wtmail-icon-cloud-download-xs',
-						handler: me.actionCloudDownload,
-						scope: me
-					};
-					tbitems[tbx++]={
-						xtype: 'button',
-						tooltip: me.res('editor.btn-cloud-upload.tip'),
-						iconCls: 'wtmail-icon-cloud-upload-xs',
-						handler: me.actionCloudUpload,
-						scope: me
-					};
-			//	}
-			//}
-		}*/
+		if (me.showCloud) {
+/*			var vfsapi=WT.getServiceApi("com.sonicle.webtop.vfs");
+            if (vfsapi) {
+				tbitems[tbx++]='-';
+				tbitems[tbx++]={
+					xtype: 'souploadbutton',
+					itemId: 'btncloudattach',
+					tooltip: me.res('editor.btn-cloud-download.tip'),
+					iconCls: 'wtmail-icon-cloud-download-xs',
+					uploaderConfig: WTF.uploader(me.mys.ID, 'UploadCloudFile', {
+						extraParams: {
+							tag: me.msgId
+						},
+						listeners: {
+							beforeupload: function(s,file) {
+								me.htmlEditor.showProgress(file.name);
+							},
+							uploadprogress: function(s,file) {
+								me.htmlEditor.setProgress(file.percent);
+							},
+							fileuploaded: function(s,file,resp) {
+								me.htmlEditor.hideProgress();
+								vfsapi.addSharingLinkForDownload({
+									fileId: vfsapi.buildFileId(0,resp.data.storeId,resp.data.filePath)
+								},{
+									callback: function(success,result) {
+										if (success)
+											me.htmlEditor.execCommand('inserthtml', false, "<br>"+result.embed+"<br>");
+									}
+								});
+							},
+							uploaderror: function(s,file,msg) {
+								me.htmlEditor.hideProgress();
+								WT.error(msg);
+							},
+							uploadcomplete: function(s,fok,ffailed) {
+								//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
+							}
+						}
+					})
+					
+				};
+				tbitems[tbx++]={
+					xtype: 'button',
+					tooltip: me.res('editor.btn-cloud-upload.tip'),
+					iconCls: 'wtmail-icon-cloud-upload-xs',
+					handler: function() {
+						var subject=me.subject.getValue().trim();
+						
+						if (Ext.isEmpty(subject)) {
+							WT.error(me.res("warn-empty-subject"));
+							return;
+						}
+						
+						WT.ajaxReq(me.mys.ID, "RequestCloudFile", {
+							params: {
+								subject: subject
+							},
+							callback: function(success,json) {
+								if (success) {
+									vfsapi.addSharingLinkForUpload({
+										fileId: vfsapi.buildFileId(0,json.storeId,json.filePath)
+									},{
+										callback: function(success,result) {
+											if (success)
+												me.htmlEditor.execCommand('inserthtml', false, "<br>"+result.embed+"<br>");
+										}
+									});
+								} else {
+									WT.error(json.text);
+								}
+							}
+						});					
+						
+					}
+				};
+			}*/
+		}
 		
 		me.toolbar=Ext.create({
 			xtype: 'toolbar',

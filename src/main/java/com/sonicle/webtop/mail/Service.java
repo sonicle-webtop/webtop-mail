@@ -33,7 +33,6 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.google.gson.Gson;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.CoreLocaleKey;
 import com.sonicle.commons.LangUtils;
@@ -42,6 +41,7 @@ import java.nio.channels.*;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
@@ -60,20 +60,18 @@ import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
+import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
 import com.sonicle.webtop.core.bol.model.InternetRecipient;
-import com.sonicle.webtop.core.model.SharePerms;
 import com.sonicle.webtop.core.model.SharePermsElements;
 import com.sonicle.webtop.core.model.SharePermsFolder;
-import com.sonicle.webtop.core.model.SharePermsRoot;
 import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
-import com.sonicle.webtop.core.sdk.UserProfile.Data;
+import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ORule;
@@ -95,6 +93,7 @@ import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.dal.VacationDAO;
+import com.sonicle.webtop.vfs.IVfsManager;
 // TODO: Fix imported classes
 //import com.sonicle.webtop.Mailcard;
 //import com.sonicle.webtop.EditingSession;
@@ -129,9 +128,7 @@ import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import net.fortuna.ical4j.data.CalendarOutputter;
 import net.fortuna.ical4j.model.parameter.PartStat;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -255,6 +252,8 @@ public class Service extends BaseService {
 	private ArrayList<Attachment> emptyAttachments = new ArrayList<Attachment>();
 	
 	private AdvancedSearchThread ast = null;
+	
+	private IVfsManager vfsmanager=null;
 	
 	static {
 		inlineableMimes.add("image/gif");
@@ -423,6 +422,10 @@ public class Service extends BaseService {
 				}
 			});
 			t.start();
+			
+			vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs");
+			//cloud uploads goes here
+			registerUploadListener("UploadCloudFile", new OnUploadCloudFile());
 			
 			if (!profile.getPrincipal().getAuthenticationDomain().getDirUri().getScheme().equals(LdapNethDirectory.SCHEME))
 				setSharedSeen(us.isSharedSeen());
@@ -643,7 +646,7 @@ public class Service extends BaseService {
 		return folderPrefix;
 	}
 	
-	public void archiveMessages(FolderCache from, long nuids[], String idcategory, String idsubcategory) throws MessagingException, FileNotFoundException, IOException {
+	public void archiveMessages(FolderCache from, long nuids[], String idcategory, String idsubcategory, boolean fullthreads) throws MessagingException, FileNotFoundException, IOException {
 		UserProfile profile = environment.getProfile();
 		String archiveto = ss.getArchivePath();
 		for (long nuid: nuids) {
@@ -700,19 +703,19 @@ public class Service extends BaseService {
 				pw.close();
 			}
 		}
-		from.markArchivedMessages(nuids);
+		from.markArchivedMessages(nuids,fullthreads);
 	}
 	
-	public void moveMessages(FolderCache from, FolderCache to, long uids[]) throws MessagingException {
-		from.moveMessages(uids, to);
+	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
+		from.moveMessages(uids, to, fullthreads);
 	}
 	
-	public void copyMessages(FolderCache from, FolderCache to, long uids[]) throws MessagingException, IOException {
-		from.copyMessages(uids, to);
+	public void copyMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException, IOException {
+		from.copyMessages(uids, to, fullthreads);
 	}
 	
-	public void deleteMessages(FolderCache from, long uids[]) throws MessagingException {
-		from.deleteMessages(uids);
+	public void deleteMessages(FolderCache from, long uids[], boolean fullthreads) throws MessagingException {
+		from.deleteMessages(uids,fullthreads);
 	}
 	
 	public void flagMessages(FolderCache from, long uids[], String flag) throws MessagingException {
@@ -761,6 +764,13 @@ public class Service extends BaseService {
 			destroyFolderCache(getFolderCache(folder.getFullName()));
 		}
 		return retval;
+	}
+	
+	public void hideFolder(String foldername) throws MessagingException {
+		Folder folder=getFolder(foldername);
+		try { folder.close(false); } catch(Throwable exc) {}
+		destroyFolderCache(getFolderCache(foldername));
+		us.setFolderHidden(foldername, true);
 	}
 	
 	public boolean emptyFolder(String fullname) throws MessagingException {
@@ -2540,6 +2550,7 @@ public class Service extends BaseService {
 		Folder children[] = fcRoot.getFolder().list();
 		final ArrayList<FolderCache> rootParents = new ArrayList<FolderCache>();
 		for (Folder child : children) {
+			if (us.isFolderHidden(child.getFullName())) continue;
 			if (!fcRoot.hasChild(child.getName())) {
 				FolderCache fcc=addSingleFoldersCache(fcRoot,child);
 				if (!fcc.isStartupLeaf()) rootParents.add(fcc);
@@ -2582,6 +2593,7 @@ public class Service extends BaseService {
 		Folder children[] = f.list();
 		for (Folder child : children) {
 			String cname=child.getFullName();
+			if (us.isFolderHidden(cname)) continue;
 			if (hasDifferentDefaultFolder && cname.equals(fcRoot.getFolderName())) continue;
 			FolderCache fcc = addFoldersCache(fc, child);
 		}
@@ -2786,6 +2798,9 @@ public class Service extends BaseService {
 			String foldername = f.getFullName();
 			//in case of moved root, check not to duplicate root elsewhere
 			if (hasDifferentDefaultFolder && isSharedFolder(parent.getFullName()) && foldername.equals(getInboxFolderFullName())) continue;
+			//skip hidden
+			if (us.isFolderHidden(foldername)) continue;
+
 			
 			FolderCache mc = getFolderCache(foldername);
 			if (mc == null) {
@@ -2968,8 +2983,10 @@ public class Service extends BaseService {
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
 		String allfiltered = request.getParameter("allfiltered");
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
+		String smultifolder = request.getParameter("multifolder");
+		boolean multifolder = smultifolder != null && smultifolder.equals("true");
+		String sfullthreads = request.getParameter("fullthreads");
+		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String uids[] = null;
 		String sout = null;
 		try {
@@ -2991,7 +3008,7 @@ public class Service extends BaseService {
 				boolean norows=false;
 				if (uids.length==1 && uids[0].length()==0) norows=true;
 				if (!norows) {
-					if (!mf) moveMessages(mcache, tomcache, toLongs(uids));
+					if (!multifolder) moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
 					else {
 						long iuids[]=new long[1];
 						for(String uid: uids) {
@@ -3000,7 +3017,7 @@ public class Service extends BaseService {
 							uid=uid.substring(ix+1);
 							mcache = getFolderCache(fromfolder);
 							iuids[0]=Long.parseLong(uid);
-							moveMessages(mcache, tomcache, iuids);
+							moveMessages(mcache, tomcache, iuids,fullthreads);
 						}
 					}
 				}
@@ -3008,7 +3025,7 @@ public class Service extends BaseService {
 				sout = "{\nresult: true, millis: " + millis + "\n}";
 			} else {
                 uids=getMessageUIDs(mcache,request);
-                moveMessages(mcache, tomcache, toLongs(uids));
+                moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
@@ -3025,8 +3042,10 @@ public class Service extends BaseService {
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
 		String allfiltered = request.getParameter("allfiltered");
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
+		String smultifolder = request.getParameter("multifolder");
+		boolean multifolder = smultifolder != null && smultifolder.equals("true");
+		String sfullthreads = request.getParameter("fullthreads");
+		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String sout = null;
 		String uids[]=null;
 		try {
@@ -3035,7 +3054,7 @@ public class Service extends BaseService {
 			FolderCache tomcache = getFolderCache(tofolder);
 			if (allfiltered == null) {
 				uids = request.getParameterValues("ids");
-				if (!mf) copyMessages(mcache, tomcache, toLongs(uids));
+				if (!multifolder) copyMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				else {
                     long iuids[]=new long[1];
                     for(String uid: uids) {
@@ -3044,14 +3063,14 @@ public class Service extends BaseService {
                         uid=uid.substring(ix+1);
 						mcache = getFolderCache(fromfolder);
                         iuids[0]=Long.parseLong(uid);
-                        copyMessages(mcache, tomcache, iuids);
+                        copyMessages(mcache, tomcache, iuids,fullthreads);
 					}
 				}
 				long millis = System.currentTimeMillis();
 				sout = "{\nresult: true, millis: " + millis + "\n}";
 			} else {
                 uids=getMessageUIDs(mcache,request);
-                copyMessages(mcache, tomcache, toLongs(uids));
+                copyMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
@@ -3070,15 +3089,17 @@ public class Service extends BaseService {
 		int ix = tofolder.indexOf("|");
 		String idcategory = tofolder.substring(0, ix);
 		String idsubcategory = tofolder.substring(ix + 1);
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
+		String smultifolder = request.getParameter("multifolder");
+		boolean multifolder = smultifolder != null && smultifolder.equals("true");
+		String sfullthreads = request.getParameter("fullthreads");
+		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String uids[]=null;
 		String sout = null;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			uids = request.getParameterValues("ids");
-			if (!mf) archiveMessages(mcache, toLongs(uids), idcategory, idsubcategory);
+			if (!multifolder) archiveMessages(mcache, toLongs(uids), idcategory, idsubcategory, fullthreads);
 			else {
                 long iuids[]=new long[1];
                 for(String uid: uids) {
@@ -3087,7 +3108,7 @@ public class Service extends BaseService {
                     uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
                     iuids[0]=Integer.parseInt(uid);
-                    archiveMessages(mcache, iuids, idcategory, idsubcategory);
+                    archiveMessages(mcache, iuids, idcategory, idsubcategory, fullthreads);
 				}
 			}
 			long millis = System.currentTimeMillis();
@@ -3190,14 +3211,16 @@ public class Service extends BaseService {
 	public void processDeleteMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
-		String multifolder = request.getParameter("multifolder");
-		boolean mf = multifolder != null && multifolder.equals("true");
+		String smultifolder = request.getParameter("multifolder");
+		boolean multifolder = smultifolder != null && smultifolder.equals("true");
+		String sfullthreads = request.getParameter("fullthreads");
+		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String sout = null;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
-			if (!mf) {
-				deleteMessages(mcache, toLongs(uids));
+			if (!multifolder) {
+				deleteMessages(mcache, toLongs(uids),fullthreads);
 			} else {
                 long iuids[]=new long[1];
                 for(String uid: uids) {
@@ -3206,7 +3229,7 @@ public class Service extends BaseService {
                     uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
-                    deleteMessages(mcache, iuids);
+                    deleteMessages(mcache, iuids, fullthreads);
 				}
 			}
 			sout = "{\nresult: true\n}";
@@ -3313,6 +3336,30 @@ public class Service extends BaseService {
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
 		out.println(sout);
+	}
+	
+	public void processManageHiddenFolders(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals(Crud.READ)) {
+				ArrayList<JsHiddenFolder> hfolders=new ArrayList<>();
+				for(String folderId: us.getHiddenFolders()) {
+					hfolders.add(new JsHiddenFolder(folderId,folderId));
+				}
+				new JsonResult(hfolders).printTo(out);
+			}
+			else if(crud.equals(Crud.DELETE)) {
+				ServletUtils.StringArray ids = ServletUtils.getObjectParameter(request, "ids", ServletUtils.StringArray.class, true);
+				
+				for(String id : ids) {
+					us.setFolderHidden(id, false);
+				}
+				new JsonResult().printTo(out);
+			}
+		} catch(Exception exc) {
+			logger.debug("Cannot restore hidden folders",exc);
+			new JsonResult("Cannot restore hidden folders", exc).printTo(out);
+		}
 	}
 	
 	public void processSetScanFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3468,6 +3515,29 @@ public class Service extends BaseService {
 		}
 		return pname;
 	}
+	
+    public void processRequestCloudFile(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+			try {
+				String subject=ServletUtils.getStringParameter(request, "subject", true);
+				String path="/Uploads";
+				int sid=vfsmanager.getMyDocumentsStoreId();
+				FileObject fo=vfsmanager.getStoreFile(sid,path);
+				if (!fo.exists()) fo.createFolder();
+				
+				String dirname=DateTimeUtils.createYmdHmsFormatter(environment.getProfile().getTimeZone()).print(DateTimeUtils.now()).replaceAll(":", "-")+" - "+subject;
+
+				FileObject dir=fo.resolveFile(dirname);
+				if (!dir.exists()) dir.createFolder();
+				
+				JsonResult jsres=new JsonResult();
+				jsres.put("storeId", sid);
+				jsres.put("filePath", path+"/"+dirname+"/");
+				jsres.printTo(out);
+			} catch(Exception ex) {
+				logger.error("Request cloud file failure", ex);
+				new JsonResult(ex).printTo(out);
+			}
+	}	
 
     public void processSaveColumnSize(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String name=request.getParameter("name");
@@ -3590,6 +3660,26 @@ public class Service extends BaseService {
 		return name;
 	}
 	
+	public void processHideFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String folder = request.getParameter("folder");
+		String sout = null;
+		try {
+			checkStoreConnected();
+			boolean result = true;
+			sout = "{\n";
+			if (isSpecialFolder(folder)) {
+				result = false;
+			} else {
+				hideFolder(folder);
+			}
+			sout += "result: " + result + "\n}";
+		} catch (MessagingException exc) {
+			Service.logger.error("Exception",exc);
+			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+		}
+		out.println(sout);
+	}
+	
 	public void processDeleteFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String folder = request.getParameter("folder");
 		String sout = null;
@@ -3699,22 +3789,25 @@ public class Service extends BaseService {
 		String sout = null;
 		try {
 			checkStoreConnected();
-			StringBuffer sb = new StringBuffer("<pre>");
+			//StringBuffer sb = new StringBuffer("<pre>");
+			StringBuffer sb = new StringBuffer();
 			FolderCache mcache = getFolderCache(foldername);
 			Message msg = mcache.getMessage(Long.parseLong(uid));
 			//Folder folder=msg.getFolder();
 			for (Enumeration e = msg.getAllHeaders(); e.hasMoreElements();) {
 				Header header = (Header) e.nextElement();
-				sb.append(MailUtils.htmlescape(header.getName()) + ": " + MailUtils.htmlescape(header.getValue()) + "\n");
+				//sb.append(MailUtils.htmlescape(header.getName()) + ": " + MailUtils.htmlescape(header.getValue()) + "\n");
+				sb.append(header.getName() + ": " + header.getValue() + "\n");
 			}
 			if (!headers) {
 				BufferedReader br = new BufferedReader(new InputStreamReader(msg.getInputStream()));
 				String line = null;
 				while ((line = br.readLine()) != null) {
-					sb.append(MailUtils.htmlescape(line) + "\n");
+					//sb.append(MailUtils.htmlescape(line) + "\n");
+					sb.append(line + "\n");
 				}
 			}
-			sb.append("</pre>");
+			//sb.append("</pre>");
 			sout = "{\nresult: true, source: '" + StringEscapeUtils.escapeEcmaScript(sb.toString()) + "'\n}";
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -7268,23 +7361,35 @@ public class Service extends BaseService {
 				String foldername=pl.data.method.equals("all")?"":id;
 				boolean recursive=pl.data.method.equals("all")||pl.data.method.equals("branch");
 				
+				//
+				//Prepare new sharing structure
+				//
+				
+				Sharing newwtsharing=new Sharing();
+				newwtsharing.setId(MailManager.IDENTITY_SHARING_ID);
+				ArrayList<Sharing.RoleRights> newwtrights=new ArrayList<>();
+				
 				//first delete all removed roles
 				for(JsSharing.SharingRights sr: sharing.rights) {
 					if (!pl.data.hasImapId(sr.imapId)) {
 						logger.debug("Folder ["+foldername+"] - remove acl for "+sr.imapId+" recursive="+recursive);
 						removeFolderSharing(foldername,sr.imapId,recursive);
-						updateIdentitySharing(sr.roleUid,false,false);
+						updateIdentitySharingRights(newwtrights,sr.roleUid,false,false);
 					}
 				}
+				
 				//now apply new acls
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					if (!StringUtils.isEmpty(sr.imapId)) {
 						String srights=sr.toString();
 						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+sr.imapId+" recursive="+recursive);
 						setFolderSharing(foldername, sr.imapId, srights, recursive);
-						updateIdentitySharing(sr.roleUid,sr.shareIdentity,sr.forceMailcard);
+						updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard);
 					}
 				}
+				
+				newwtsharing.setRights(newwtrights);
+				WT.getCoreManager().updateSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, newwtsharing);
 				
 				new JsonResult().printTo(out);
 			}
@@ -7297,19 +7402,14 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void updateIdentitySharing(String roleUid, boolean shareIdentity, boolean forceMailcard) throws WTException {
+	private void updateIdentitySharingRights(ArrayList<Sharing.RoleRights> wtrights, String roleUid, boolean shareIdentity, boolean forceMailcard) throws WTException {
 		//update sharing settings
-		Sharing wtsharing=new Sharing();
-		wtsharing.setId(MailManager.IDENTITY_SHARING_ID);
-		ArrayList<Sharing.RoleRights> wtrights=new ArrayList<>();
 		SharePermsFolder spf=new SharePermsFolder();
 		if (shareIdentity||forceMailcard) {
 			if (shareIdentity) spf.add(SharePermsFolder.READ);
 			if (forceMailcard) spf.add(SharePermsFolder.UPDATE);
 			wtrights.add(new Sharing.RoleRights(roleUid,null,spf,new SharePermsElements()));
 		}
-		wtsharing.setRights(wtrights);
-		WT.getCoreManager().updateSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, wtsharing);
 	}
 	
 	private void removeFolderSharing(String foldername, String acluser, boolean recursive) throws MessagingException {
@@ -7646,4 +7746,27 @@ public class Service extends BaseService {
 		return username+"@"+WT.getDomainInternetName(userProfileId.getDomainId());
 	}	
 	
+	private class OnUploadCloudFile implements IServiceUploadStreamListener {
+		@Override
+		public void onUpload(String context, HttpServletRequest request, HashMap<String, String> multipartParams, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
+			
+			try {
+				String path="/Emails";
+				int sid=vfsmanager.getMyDocumentsStoreId();
+				FileObject fo=vfsmanager.getStoreFile(sid,path);
+				if (!fo.exists()) fo.createFolder();
+				String filename=file.getFilename();
+				String newPath = vfsmanager.addStoreFileFromStream(sid, path, filename, is, false);
+				responseData.add("storeId", sid);
+				responseData.add("filePath", path+"/"+filename);
+
+			} catch(UploadException ex) {
+				logger.trace("Upload failure", ex);
+				throw ex;
+			} catch(Throwable t) {
+				logger.error("Upload failure", t);
+				throw new UploadException("Upload failure");
+			}
+		}
+	}
 }
