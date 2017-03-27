@@ -28,3 +28,13 @@ version 3, these Appropriate Legal Notices must retain the display of the
 Sonicle logo and Sonicle copyright notice. If the display of the logo is not
 reasonably feasible for technical reasons, the Appropriate Legal Notices must
 display the words "Copyright (C) 2014 Sonicle S.r.l.".
+
+
+Third Party Content
+-------------------------------------------------------------------------------
+The following third party software is distributed with this software and is 
+provided under other licenses and/or has source available from other locations.
+
+Name: Pure Flat 2013 Stock Icons
+License: Lifetime Commercial (http://www.axialis.com/stock-icons/license.html)
+Location: http://www.axialis.com/stock-icons/pure-flat-2013-toolbar.html
