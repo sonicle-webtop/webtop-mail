@@ -340,7 +340,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						model: 'Sonicle.webtop.mail.model.Identity',
 						data : idents
 					}),
-					value: selident.identityId,
+					//value: selident.identityId,
 					listeners: {
 						change: {
 							fn: function(s,nv,ov) {
