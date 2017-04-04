@@ -1051,6 +1051,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 
     deleteMessages: function(folder,data,selection) {
+		var me=this;
 		me.checkBrokenThreads(selection,function(fullThreads) {
 			me._deleteMessages(folder,data,fullThreads);
 		});
