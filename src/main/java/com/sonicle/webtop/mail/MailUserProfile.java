@@ -76,7 +76,7 @@ public class MailUserProfile {
 	private String mailUsername;
 	private String mailPassword;
 	private String replyTo;
-	private Identity identities[];
+	private List<Identity> identities;
 	private String sharedSort;
 	private boolean includeMessageInReply;
 	private int numMessageList;
@@ -172,13 +172,14 @@ public class MailUserProfile {
 			includeMessageInReply=mus.isIncludeMessageInReply();
 			numMessageList=mus.getPageRows();
 			
-			List<OIdentity> oids=IdentityDAO.getInstance().selectByDomainUser(con, profile.getDomainId(), profile.getUserId());
-			identities=new Identity[oids.size()];
-			int i=0;
-			for(OIdentity oid: oids) {
-                Identity ident=new Identity(oid.getIdentityId(),oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
-				identities[i++]=ident;
-			}
+			//List<OIdentity> oids=IdentityDAO.getInstance().selectByDomainUser(con, profile.getDomainId(), profile.getUserId());
+			//identities=new Identity[oids.size()];
+			//int i=0;
+			//for(OIdentity oid: oids) {
+            //    Identity ident=new Identity(oid.getIdentityId(),oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
+			//	identities[i++]=ident;
+			//}
+			identities=mman.listIdentities();
 			
 		} catch(Exception exc) {
 			logger.error("Error mapping mail user",exc);
@@ -244,11 +245,11 @@ public class MailUserProfile {
 	}
 	
 	public Identity[] getIdentities() {
-		return identities;
+		return identities.toArray(new Identity[0]);
 	}
 	
 	public Identity getIdentityAt(int index) {
-		return identities[index];
+		return identities.get(index);
 	}
 	
 	public Identity getIdentity(String displayName, String email) {
