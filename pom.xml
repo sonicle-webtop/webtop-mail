@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.sonicle.webtop</groupId>
 	<artifactId>webtop-mail</artifactId>
-	<version>5.0.0</version>
+	<version>5.0.1</version>
 	<packaging>jar</packaging>
 	<name>webtop-mail</name>
 	
@@ -45,10 +45,10 @@
 			<artifactId>nekohtml</artifactId>
 			<version>0.9.4</version>
 		</dependency>
-	 <dependency>
-	  <groupId>${project.groupId}</groupId>
-	  <artifactId>webtop-vfs-api</artifactId>
-	  <version>${project.version}</version>
-	 </dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>webtop-vfs-api</artifactId>
+			<version>LATEST</version>
+		</dependency>
 	</dependencies>
 </project>
