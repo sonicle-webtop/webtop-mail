@@ -620,8 +620,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				identityIndex: ident.index||0,
 				fontFace: me.getVar('fontName'),
 				fontSize: me.getVar('fontSize'),
-				autosave: true
-			}
+				autosave: true,
+				listeners: {
+					modelsave: function(s,success) {
+						if (success) {
+							var f=opts.forwardedfolder||opts.replyfolder;
+							if (me.getFolderNodeById(me.currentFolder).get("isSent") || (f && f===me.currentFolder)) {
+								me.messagesPanel.reloadGrid();
+							}
+						}
+					}
+				}
+			},
 		});
 	
 		v.show(false,function() {

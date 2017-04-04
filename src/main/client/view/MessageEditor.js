@@ -647,7 +647,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			if (me.autosaveTask) me.autosaveTask.cancel();
 		});
 		me.on('modelsave', function(s,success) {
-			if (!success) {
+			if (success) {
+				var r=me.getModel()
+					f=r.get("forwardedfolder")||r.get("replyfolder");
+				if (f) {
+					
+				}
+			} else {
 				if (me.autosaveTask) me.autosaveTask.delay(me.autosaveDelay);
 				me.enableControls(false,true);
 			}
