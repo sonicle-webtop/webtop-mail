@@ -39,6 +39,7 @@ import com.sonicle.commons.LangUtils;
 import java.nio.*;
 import java.nio.channels.*;
 import com.sonicle.commons.MailUtils;
+import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
@@ -247,9 +248,8 @@ public class Service extends BaseService {
 	
 	private static ArrayList<String> inlineableMimes = new ArrayList<String>();
 	
-	private HashMap<Long, ArrayList<Attachment>> msgattach = new HashMap<Long, ArrayList<Attachment>>();
-	private HashMap<Long, ArrayList<Attachment>> msgcloudattach = new HashMap<Long, ArrayList<Attachment>>();
-	private ArrayList<Attachment> emptyAttachments = new ArrayList<Attachment>();
+	private HashMap<Long, ArrayList<CloudAttachment>> msgcloudattach = new HashMap<Long, ArrayList<CloudAttachment>>();
+	private ArrayList<CloudAttachment> emptyAttachments = new ArrayList<CloudAttachment>();
 	
 	private AdvancedSearchThread ast = null;
 	
@@ -973,7 +973,7 @@ public class Service extends BaseService {
 			
 			retexc = sendMsg(sender, msg, attachments);
 			
-			if (retexc==null) clearAttachments(msg.getId());
+			if (retexc==null) clearCloudAttachments(msg.getId());
 		}
 
 		return retexc;
@@ -1351,7 +1351,7 @@ public class Service extends BaseService {
     //FolderCache fc=getFolderCache(profile.getFolderDrafts());
 		//newmsg.writeTo(new FileOutputStream("C:/Users/gbulfon/Desktop/TEST.eml"));
 		fc.save(newmsg);
-		clearAttachments(msg.getId());
+		clearCloudAttachments(msg.getId());
 		
 		return newmsg;
 	}
@@ -2114,7 +2114,6 @@ public class Service extends BaseService {
 		} catch (Exception e) {
 			Service.logger.error("Exception",e);
 		}
-		clearAllAttachments();
 		if (fcRoot != null) {
 			fcRoot.cleanup(true);
 		}
@@ -2126,11 +2125,8 @@ public class Service extends BaseService {
 		validated = false;
 	}
 	
-	protected void clearAllAttachments() {
-		for (Long id : msgattach.keySet()) {
-			clearAttachments(id.longValue());
-		}
-		msgattach.clear();
+	protected void clearAllCloudAttachments() {
+		msgcloudattach.clear();
 	}
 
 	private String getMessageID(Message m) throws MessagingException {
@@ -2412,35 +2408,17 @@ public class Service extends BaseService {
 		return ++newMessageID;
 	}
 	
-	public ArrayList<Attachment> getAttachments(long msgid) {
-		ArrayList<Attachment> attachments = msgattach.get(new Long(msgid));
+	public ArrayList<CloudAttachment> getCloudAttachments(long msgid) {
+		ArrayList<CloudAttachment> attachments = msgcloudattach.get(new Long(msgid));
 		if (attachments != null) {
 			return attachments;
 		}
 		return emptyAttachments;
 	}
 	
-	public ArrayList<Attachment> getCloudAttachments(long msgid) {
-		ArrayList<Attachment> attachments = msgcloudattach.get(new Long(msgid));
-		if (attachments != null) {
-			return attachments;
-		}
-		return emptyAttachments;
-	}
-	
-	public Attachment getAttachment(long msgid, String tempName) {
-		ArrayList<Attachment> attachments = getAttachments(msgid);
-		for (Attachment att : attachments) {
-			if (att.getFile().getName().equals(tempName)) {
-				return att;
-			}
-		}
-		return null;
-	}
-	
-	public Attachment getCloudAttachment(long msgid, String filename) {
-		ArrayList<Attachment> attachments = getCloudAttachments(msgid);
-		for (Attachment att : attachments) {
+	public CloudAttachment getCloudAttachment(long msgid, String filename) {
+		ArrayList<CloudAttachment> attachments = getCloudAttachments(msgid);
+		for (CloudAttachment att : attachments) {
 			if (att.getName().equals(filename)) {
 				return att;
 			}
@@ -2448,64 +2426,34 @@ public class Service extends BaseService {
 		return null;
 	}
 	
-	public Attachment getAttachmentByCid(long msgid, String cid) {
-		ArrayList<Attachment> attachments = getAttachments(msgid);
-		for (Attachment att : attachments) {
-			if (att.getCid().equals(cid)) {
-				return att;
+	public void clearCloudAttachments(long msgid) {
+		msgcloudattach.remove(msgid);
+	}
+	
+	public void deleteCloudAttachments(long msgid) {
+		ArrayList<CloudAttachment> attachments=getCloudAttachments(msgid);
+		for(CloudAttachment a: attachments) {
+			try {
+				vfsmanager.deleteStoreFile(a.getStoreId(), a.getPath());
+			} catch(Exception exc) {
+				exc.printStackTrace();
 			}
 		}
-		return null;
+		clearCloudAttachments(msgid);
 	}
 	
-	public void clearAttachments(long msgid) {
-		ArrayList<Attachment> attachments = getAttachments(msgid);
-		for (Attachment a : attachments) {
-			a.getFile().delete();
-		}
-		attachments.clear();
-
-	// TODO: remove cloud attachements
-/*    attachments=getCloudAttachments(msgid);
-		 for(Attachment a: attachments) {
-		 try {
-		 VFSService vfs=(VFSService)wts.getServiceByName("vfs");
-		 vfs.discard(a.getVFSUri());
-		 } catch(Exception exc) {
-		 Service.logger.error("Exception",exc);
-		 }
-		 }
-		 attachments.clear();*/
-	}
-	
-	public void putAttachments(long msgid, ArrayList<Attachment> attachments) {
-		msgattach.put(new Long(msgid), attachments);
-	}
-	
-	public void putCloudAttachments(long msgid, ArrayList<Attachment> attachments) {
+	public void putCloudAttachments(long msgid, ArrayList<CloudAttachment> attachments) {
 		msgcloudattach.put(new Long(msgid), attachments);
 	}
 	
-	public Attachment attachFile(long msgid, File file, String name, String contentType, String cid, boolean inline) {
-		Attachment attachment = null;
-		ArrayList<Attachment> attachments = getAttachments(msgid);
+	public CloudAttachment attachCloud(long msgid, int storeId, String path, String name) {
+		CloudAttachment attachment = null;
+		ArrayList<CloudAttachment> attachments = getCloudAttachments(msgid);
 		if (attachments == null || attachments == emptyAttachments) {
-			attachments = new ArrayList<Attachment>();
-			putAttachments(msgid, attachments);
-		}
-		attachment = new Attachment(file, name, contentType, cid, inline);
-		attachments.add(attachment);
-		return attachment;
-	}
-	
-	public Attachment attachCloud(long msgid, FileObject fileObject, String name, String contentType, String vfsuri) {
-		Attachment attachment = null;
-		ArrayList<Attachment> attachments = getCloudAttachments(msgid);
-		if (attachments == null || attachments == emptyAttachments) {
-			attachments = new ArrayList<Attachment>();
+			attachments = new ArrayList<CloudAttachment>();
 			putCloudAttachments(msgid, attachments);
 		}
-		attachment = new Attachment(fileObject, name, contentType, vfsuri);
+		attachment = new CloudAttachment(storeId,path,name);
 		attachments.add(attachment);
 		return attachment;
 	}
@@ -3524,7 +3472,7 @@ public class Service extends BaseService {
 				FileObject fo=vfsmanager.getStoreFile(sid,path);
 				if (!fo.exists()) fo.createFolder();
 				
-				String dirname=DateTimeUtils.createYmdHmsFormatter(environment.getProfile().getTimeZone()).print(DateTimeUtils.now()).replaceAll(":", "-")+" - "+subject;
+				String dirname=PathUtils.sanitizeFolderName(DateTimeUtils.createYmdHmsFormatter(environment.getProfile().getTimeZone()).print(DateTimeUtils.now())+" - "+subject);
 
 				FileObject dir=fo.resolveFile(dirname);
 				if (!dir.exists()) dir.createFolder();
@@ -4044,15 +3992,10 @@ public class Service extends BaseService {
 						}
                         String mime=part.getContentType();
 						UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
-						//File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
-						//createFile(part.getInputStream(), tempFile);
 						boolean inline = false;
 						if (part.getDisposition() != null) {
 							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
 						}
-						//maildata.setCidProperties(cid, new CidProperties(cid,inline,upfile));
-						//attachFile(newmsgid, tempFile, filename, part.getContentType(), cid, inline);
-						//String tempname = tempFile.getName();
 						if (!first) {
 							sout += ",\n";
 						}
@@ -4074,10 +4017,6 @@ public class Service extends BaseService {
 			} else {
 				String filename = m.getSubject() + ".eml";
 				UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, "message/rfc822", ((IMAPMessage)m).getMimeStream());
-				//File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
-				//m.writeTo(new FileOutputStream(tempFile));
-				//attachFile(newmsgid, tempFile, filename, "message/rfc822", null, false);
-				//String tempname = tempFile.getName();
 				sout += " attachments: [\n";
 				sout += "{ "+
 						" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
@@ -4267,15 +4206,10 @@ public class Service extends BaseService {
                     }
                     String mime=part.getContentType();
                     UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
-                    //File tempFile = File.createTempFile("strts", null, new File(css.getTempPath()));
-                    //createFile(part.getInputStream(), tempFile);
                     boolean inline = false;
                     if (part.getDisposition() != null) {
                         inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
                     }
-                    //maildata.setCidProperties(cid, new CidProperties(cid,inline,upfile));
-                    //attachFile(newmsgid, tempFile, filename, part.getContentType(), cid, inline);
-                    //String tempname = tempFile.getName();
                     if (!first) {
                         sout += ",\n";
                     }
@@ -4417,7 +4351,7 @@ public class Service extends BaseService {
 			Exception exc = sendMessage(msg, jsmsg.attachments);
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
-				// TODO: Cloud integration!!!
+				// TODO: Cloud integration!!! Destination emails added to share
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
 				 for(String hash: hashlinks) {
 				 Service.logger.debug("Adding emails to hash "+hash);
@@ -4611,7 +4545,7 @@ public class Service extends BaseService {
 		CoreManager coreMgr=WT.getCoreManager();
 		try {
 			long msgId=ServletUtils.getLongParameter(request, "msgId", true);
-			clearAttachments(msgId);
+			deleteCloudAttachments(msgId);
 			coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
 			json=new JsonResult();
 		} catch(Exception exc) {
@@ -5008,84 +4942,6 @@ public class Service extends BaseService {
 		}
 	}
 	
-	// TODO: Cloud integration
-/*    public void processUploadCloudAttachments(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 doUploadCloudAttachments(request, response, out);
-	 }
-
-	 private void doUploadCloudAttachments(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 try {
-	 checkStoreConnected();
-	 VFSService vfs=(VFSService)wts.getServiceByName("vfs");
-	 FileObject rfo=vfs.getEmailsCloudFolder();
-	 MultipartIterator iterator=new MultipartIterator(request,64*1024,vfs.getMaxInternalUploadSize(),rfo);
-	 MultipartElement element=null; 
-	 ArrayList<MultipartElement> elements=new ArrayList<MultipartElement>();
-	 int msgid=0;
-	 while((element=iterator.getNextElement())!=null) {
-	 if (element.isFileObject() && element.getFileName()!=null && element.getFileName().length()>0) {
-	 elements.add(element);
-	 } else {
-	 String name=element.getName();
-	 if (name.equals("newmsgid")) {
-	 msgid=Integer.parseInt(element.getValue());
-	 }
-	 }
-	 }
-	 if (msgid==0) {
-	 String smsgid=request.getParameter("newmsgid");
-	 if (smsgid!=null) msgid=Integer.parseInt(smsgid);
-	 }
-	 String sout="{ success: true, data: [\n";
-	 boolean first=true;
-	 for(MultipartElement el: elements) {
-	 String filename=el.getFileName();
-	 FileObject fileObject=el.getFileObject();
-	 String vfsuri="0,"+vfs.getEmailsCloudFolderName()+"/"+filename;
-                
-	 String ctype="binary/octet-stream";
-	 int ix=filename.lastIndexOf(".");
-	 if (ix>0) {
-	 String extension=filename.substring(ix+1);
-	 String xctype=wta.getContentType(extension);
-	 if (xctype!=null) ctype=xctype;
-	 }
-
-	 attachCloud(msgid,fileObject,filename,ctype,vfsuri);
-
-	 if (!first) sout+=",\n";
-	 sout+="{ name: '"+OldUtils.jsEscape(filename)+"', vfsuri: '"+OldUtils.jsEscape(vfsuri)+"' }";
-                
-	 first=false;
-	 }
-	 sout+="], result: null, id: 'id', jsonrpc: '2.0' }";
-	 out.println(sout);
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 }
-	 }
-
-	 public void processRequestCloudFile(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-	 String subject=request.getParameter("subject");
-	 try {
-	 checkStoreConnected();
-	 VFSService vfs=(VFSService)wts.getServiceByName("vfs");
-	 FileObject rfo=vfs.getUploadsCloudFolder();
-	 java.util.Date now=new java.util.Date();
-	 java.util.Calendar cal=java.util.Calendar.getInstance();
-	 cal.setTime(now);
-	 String dirname=cal.get(java.util.Calendar.YEAR)+"-"+(cal.get(java.util.Calendar.MONTH)+1)+"-"+cal.get(java.util.Calendar.DAY_OF_MONTH)+" "+cal.get(java.util.Calendar.HOUR)+":"+cal.get(java.util.Calendar.MINUTE)+":"+cal.get(java.util.alendar.SECOND)+" - "+subject;
-	 FileObject nfo=rfo.resolveFile(dirname);
-	 nfo.createFolder();
-	 String vfsuri="0,"+vfs.getUploadsCloudFolderName()+"/"+dirname;
-	 String sout="{ success: true, vfsuri: '"+OldUtils.jsEscape(vfsuri)+"', name: '"+OldUtils.jsEscape(dirname)+"' }";
-	 out.println(sout);
-	 } catch(Exception exc) {
-	 Service.logger.error("Exception",exc);
-	 String sout="{ success: false, message: '"+exc.getMessage()+"' }";
-	 out.println(sout);
-	 }
-	 }*/
 	public void processSendReceipt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
 		String subject = request.getParameter("subject");
@@ -7751,6 +7607,7 @@ public class Service extends BaseService {
 		public void onUpload(String context, HttpServletRequest request, HashMap<String, String> multipartParams, WebTopSession.UploadedFile file, InputStream is, MapItem responseData) throws UploadException {
 			
 			try {
+				long msgid=Long.parseLong(file.getTag());
 				String path="/Emails";
 				int sid=vfsmanager.getMyDocumentsStoreId();
 				FileObject fo=vfsmanager.getStoreFile(sid,path);
@@ -7759,7 +7616,7 @@ public class Service extends BaseService {
 				String newPath = vfsmanager.addStoreFileFromStream(sid, path, filename, is, false);
 				responseData.add("storeId", sid);
 				responseData.add("filePath", path+"/"+filename);
-
+				attachCloud(msgid,sid,newPath,filename);
 			} catch(UploadException ex) {
 				logger.trace("Upload failure", ex);
 				throw ex;

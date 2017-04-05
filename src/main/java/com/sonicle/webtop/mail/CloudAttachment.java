@@ -35,62 +35,29 @@
 package com.sonicle.webtop.mail;
 
 import java.io.File;
-import org.apache.commons.vfs2.FileObject;
 
-public class Attachment {
+public class CloudAttachment {
 
-  private File file=null;
-  private FileObject fileObject=null;
-  private String vfsuri=null;
-  private String name=null;
-  private String contentType=null;
-  private String cid=null;
-  private boolean inline=false;
+  private int storeId;
+  private String path;
+  private String name;
 
-  public Attachment(File file, String name, String contentType, String cid, boolean inline) {
-    this.file=file;
+  public CloudAttachment(int storeId, String path, String name) {
+    this.storeId=storeId;
+	this.path=path;
     this.name=name;
-    this.contentType=contentType;
-    this.cid=cid;
-    this.inline=inline;
   }
 
-  public Attachment(FileObject fileObject, String name, String contentType, String vfsuri) {
-    this.fileObject=fileObject;
-    this.name=name;
-    this.contentType=contentType;
-    this.vfsuri=vfsuri;
-  }
-
-  public File getFile() {
-    return file;
-  }
-
-  public FileObject getFileObject() {
-    return fileObject;
+  public int getStoreId() {
+    return storeId;
   }
   
-  public String getVFSUri() {
-      return vfsuri;
+  public String getPath() {
+      return path;
   }
 
   public String getName() {
     return name;
   }
 
-  public String getContentType() {
-    return contentType;
-  }
-
-  public String getCid() {
-    return cid;
-  }
-
-  public boolean isInline() {
-    return inline;
-  }
-
-  public String toString() {
-    return "filename="+file.getName()+" name="+name+" contentType="+contentType+" cid="+cid+" inline="+inline;
-  }
 }

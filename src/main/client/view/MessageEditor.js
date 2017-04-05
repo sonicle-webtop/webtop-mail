@@ -57,6 +57,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	modelName: 'Sonicle.webtop.mail.model.MessageModel',
 	
+	confirm: 'yn',
+	
 	autoToolbar: false,
 	identityIndex: 0,
 	selectedIdentity: null,
@@ -366,7 +368,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		//TODO complete implementation
 		if (me.showCloud) {
-/*			var vfsapi=WT.getServiceApi("com.sonicle.webtop.vfs");
+			var vfsapi=WT.getServiceApi("com.sonicle.webtop.vfs");
             if (vfsapi) {
 				tbitems[tbx++]='-';
 				tbitems[tbx++]={
@@ -415,7 +417,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						var subject=me.subject.getValue().trim();
 						
 						if (Ext.isEmpty(subject)) {
-							WT.error(me.res("warn-empty-subject"));
+							WT.error(me.res("warn-cloud-empty-subject"));
 							return;
 						}
 						
@@ -441,7 +443,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						
 					}
 				};
-			}*/
+			}
 		}
 		
 		me.toolbar=Ext.create({
