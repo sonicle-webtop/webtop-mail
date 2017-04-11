@@ -1,0 +1,14 @@
+[main]
+host = https://www.transifex.com
+
+[webtop-mail.server_locale]
+file_filter = src/main/resources/com/sonicle/webtop/mail/locale_<lang>.properties
+source_file = src/main/resources/com/sonicle/webtop/mail/locale_en.properties
+source_lang = en
+type = PROPERTIES
+
+[webtop-mail.client_locale]
+file_filter = src/main/client/locale_<lang>.properties
+source_file = src/main/client/locale_en.properties
+source_lang = en
+type = PROPERTIES
