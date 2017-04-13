@@ -5353,6 +5353,11 @@ public class Service extends BaseService {
 				//}
 			}
 			
+			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
+				long actuid=Long.parseLong(pthreadactionuid);
+				mcache.setThreadOpen(actuid, pthreadaction.equals("open"));
+			}
+			
 			//if threaded, look for the start considering roots and opened children
 			if (xmsgs!=null && threaded && page>1) {
 				int i=0,ni=0,np=1;
@@ -5384,10 +5389,6 @@ public class Service extends BaseService {
 			int max = start + limit;
 			if (xmsgs!=null && max>xmsgs.length) max=xmsgs.length;
 			ArrayList<Long> autoeditList=new ArrayList<Long>();
-			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
-				long actuid=Long.parseLong(pthreadactionuid);
-				mcache.setThreadOpen(actuid, pthreadaction.equals("open"));
-			}
             if (xmsgs!=null) {
                 int total=0;
 				int expunged=0;
