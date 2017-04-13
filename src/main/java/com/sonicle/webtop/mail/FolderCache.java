@@ -648,20 +648,20 @@ public class FolderCache {
 
     protected boolean checkSubfolders(boolean all) throws MessagingException {
         boolean pHasUnread=false;
-		//Service.logger.debug("working on "+getFolderName());
         for(FolderCache fcchild: getChildren()) {
             if (fcchild.isScanForcedOff()) continue;
             boolean hasUnread=false;
             if (all || fcchild.scanNeverDone || fcchild.isScanForcedOn() || fcchild.isScanEnabled()) {
                 fcchild.scanNeverDone=false;
                 hasUnread=fcchild.checkFolder();
-            }
+            } else {
+				hasUnread=fcchild.getUnreadMessagesCount()>0||fcchild.hasUnreadChildren;
+			}
             if (fcchild.children!=null) {
                 hasUnread|=fcchild.checkSubfolders(all);
             }
             fcchild.setHasUnreadChildren(hasUnread);
             pHasUnread|=hasUnread;
-
         }
         return pHasUnread;
     }

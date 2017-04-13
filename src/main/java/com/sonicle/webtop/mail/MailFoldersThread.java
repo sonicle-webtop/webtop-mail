@@ -95,7 +95,8 @@ public class MailFoldersThread extends Thread {
             while(!abort) {
                 //Service.logger.debug("MFT Synchronizing");
                     synchronized(this) {
-                        ms.checkStoreConnected();                      if (sleepCount>0) {
+                        ms.checkStoreConnected();                      
+						if (sleepCount>0) {
                             //Service.logger.debug("MailFolderThread: Checking inbox messages");
 							
 							//Don't check here inbox, it's in idle mode
