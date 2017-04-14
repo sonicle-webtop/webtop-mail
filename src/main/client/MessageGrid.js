@@ -715,9 +715,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//meta=s.getProxy().getReader().metaData,
 			json=s.proxy.reader.rawData;
 
-		me.updateTotals(json.total,json.realTotal);
+		if (json) { 
+			me.updateTotals(json.total,json.realTotal);
+			me.fireEvent('load',me,me.currentFolder,json);
+		}
 		
-		me.fireEvent('load',me,me.currentFolder,json);
 		
 		//TODO: autoedit
 		/*
