@@ -1270,6 +1270,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	_actionCalendarEvent: function(act, params) {
 		var me=this;
 		params.calaction=act;
+		delete params.nowriter;
 		WT.ajaxReq(me.mys.ID, 'CalendarRequest', {
 			params: params,
 			callback: function(success,json) {
