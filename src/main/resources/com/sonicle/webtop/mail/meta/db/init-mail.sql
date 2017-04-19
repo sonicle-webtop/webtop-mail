@@ -114,7 +114,7 @@ WITH (OIDS=FALSE)
 -- ----------------------------
 -- Primary Key structure for table rules
 -- ----------------------------
-ALTER TABLE "mail"."rules" ADD PRIMARY KEY ("domain_id", "user_id", "filter_id");
+ALTER TABLE "mail"."rules" ADD PRIMARY KEY ("domain_id", "user_id", "rule_id");
 
 -- ----------------------------
 -- Primary Key structure for table vacation
