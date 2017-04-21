@@ -740,7 +740,7 @@ public class Service extends BaseService {
 	
 	public String getShortFolderName(String fullname) {
 		String shortname = fullname;
-		if (fullname.startsWith(folderPrefix.toLowerCase()) || fullname.startsWith(folderPrefix.toUpperCase())) {
+		if (StringUtils.startsWithIgnoreCase(fullname, folderPrefix)) {
 			shortname = fullname.substring(folderPrefix.length());
 		}
 		return shortname;
