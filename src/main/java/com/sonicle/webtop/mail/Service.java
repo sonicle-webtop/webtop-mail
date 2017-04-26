@@ -55,6 +55,7 @@ import com.sonicle.mail.sieve.*;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
+import com.sonicle.webtop.calendar.GetEventScope;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
 import com.sonicle.webtop.core.CoreManager;
@@ -74,6 +75,7 @@ import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.core.util.ICal4jUtils;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ORule;
 import com.sonicle.webtop.mail.bol.ONote;
@@ -130,11 +132,13 @@ import javax.mail.internet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
+import net.fortuna.ical4j.model.property.Method;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -6088,14 +6092,60 @@ public class Service extends BaseService {
 			
 			ICalendarRequest ir=mailData.getICalRequest();
 			if (ir!=null) {
+				
+				/*
+				ICalendarManager calMgr = (ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+				if (calMgr != null) {
+					if (ir.getMethod().equals("REPLY")) {
+						calMgr.updateEventFromICalReply(ir.getCalendar());
+						//TODO: gestire lato client una notifica di avvenuto aggiornamento
+					} else {
+						Event evt = calMgr..getEvent(GetEventScope.PERSONAL_AND_INCOMING, false, ir.getUID())
+						if (evt != null) {
+							UserProfileId pid = getEnv().getProfileId();
+							UserProfile.Data ud = WT.getUserData(pid);
+							boolean iAmOrganizer = StringUtils.equalsIgnoreCase(evt.getOrganizerAddress(), ud.getEmailAddress());
+							boolean iAmOwner = pid.equals(calMgr.getCalendarOwner(evt.getCalendarId()));
+							
+							if (!iAmOrganizer && !iAmOwner) {
+								//TODO: gestire lato client l'aggiornamento: Accetta/Rifiuta, Aggiorna e20 dopo update/request
+							}
+						}
+					}
+				}
+				*/
+				
 				ICalendarManager cm=(ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
 				if (cm!=null) {
-					Event ev=cm.getEvent(ir.getUID());
 					int eid=-1;
-					if (ev!=null) {
-						DateTime rts=ev.getRevisionTimestamp();
-						if (ir.getLastModified().after(rts.toDate())) eid=0;
-						else eid=ev.getEventId();
+					//Event ev=cm.getEventByScope(EventScope.PERSONAL_AND_INCOMING, ir.getUID());
+					Event ev = null;
+					if (ir.getMethod().equals("REPLY")) {
+						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, true, ir.getUID());
+					} else {
+						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, false, ir.getUID());
+					}
+					
+					UserProfileId pid = getEnv().getProfileId();
+					UserProfile.Data ud = WT.getUserData(pid);
+					
+					if (ev != null) {
+						InternetAddress organizer = MailUtils.buildInternetAddress(ev.getOrganizer());
+						boolean iAmOwner = pid.equals(cm.getCalendarOwner(ev.getCalendarId()));
+						boolean iAmOrganizer = (organizer != null) && StringUtils.equalsIgnoreCase(organizer.getAddress(), ud.getEmailAddress());
+						
+						//TODO: in reply controllo se mail combacia con quella dell'attendee che risponde...
+						//TODO: rimuovere controllo su data? dovrebbe sempre aggiornare?
+						
+						if (iAmOwner || iAmOrganizer) {
+							DateTime dtEvt = ev.getRevisionTimestamp().withMillisOfSecond(0).withZone(DateTimeZone.UTC);
+							DateTime dtICal = ICal4jUtils.fromICal4jDate(ir.getLastModified(), ICal4jUtils.getTimeZone(DateTimeZone.UTC));
+							if (dtICal.isAfter(dtEvt)) {
+								eid = 0;
+							} else {
+								eid = ev.getEventId();
+							}
+						}
 					}
 					sout+="{iddata:'ical',value1:'"+ir.getMethod()+"',value2:'"+ir.getUID()+"',value3:'"+eid+"'},\n";
 				}
@@ -6426,7 +6476,7 @@ public class Service extends BaseService {
 				Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
 				String ekey=cm.getEventInstanceKey(ev.getEventId());
 
-				sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).toString(), PartStat.ACCEPTED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
+				sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
 				new JsonResult(ekey).printTo(out);
 			} else if (pcalaction.equals("cancel")||pcalaction.equals("update")) {
 				cm.updateEventFromICal(ir.getCalendar());
@@ -6454,7 +6504,7 @@ public class Service extends BaseService {
             Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
             
 			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]).getAddress(), PartStat.DECLINED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
+			sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.DECLINED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
 			new JsonResult().printTo(out);
         } catch(Exception exc) {
             new JsonResult(false,exc.getMessage()).printTo(out);
@@ -6463,7 +6513,7 @@ public class Service extends BaseService {
         
 	}
 	
-	private void sendICalendarReply(String forAddress, PartStat response, net.fortuna.ical4j.model.Calendar cal, String summary, String organizerAddress) throws Exception {
+	private void sendICalendarReply(InternetAddress forAddress, PartStat response, net.fortuna.ical4j.model.Calendar cal, String summary, String organizerAddress) throws Exception {
 		UserProfile profile=environment.getProfile();
 		Locale locale=profile.getLocale();
 		String action_string=response.equals(PartStat.ACCEPTED)?
