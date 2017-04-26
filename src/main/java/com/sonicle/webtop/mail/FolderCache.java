@@ -1009,6 +1009,19 @@ public class FolderCache {
         return ((UIDFolder)folder).getMessagesByUID(1,UIDFolder.LASTUID);
     }
 	
+	private boolean canDelete() throws MessagingException {
+		try {
+			ACL acls[]=((IMAPFolder)folder).getACL();
+			for(ACL acl: acls) {
+				if (acl.getRights().contains(Rights.Right.DELETE))
+					return true;
+			}
+		} catch(MessagingException exc) {
+			
+		}
+		return false;
+	}
+	
 	public void appendMessage(Message msg) throws MessagingException {
 		Message msgs[]=new Message[1];
 		msgs[0]=msg;
@@ -1016,15 +1029,18 @@ public class FolderCache {
 	}
     
     public void moveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException {
-        Message mmsgs[]=getMessages(uids,fullthreads);
-        folder.copyMessages(mmsgs, to.folder);
-        folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
-        removeDHash(uids);
-        folder.expunge();
-        setForceRefresh();
-        to.setForceRefresh();
-        modified=true;
-        to.modified=true;
+		if (canDelete()) {
+			Message mmsgs[]=getMessages(uids,fullthreads);
+			folder.copyMessages(mmsgs, to.folder);
+			folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
+			removeDHash(uids);
+			folder.expunge();
+			setForceRefresh();
+			to.setForceRefresh();
+			modified=true;
+			to.modified=true;
+		}
+		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
     }
 
     public void copyMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
@@ -1093,9 +1109,12 @@ public class FolderCache {
 	}
 	
     public void deleteMessages(long uids[], boolean fullthreads) throws MessagingException {
-        Message mmsgs[]=getMessages(uids,fullthreads);
-		_deleteMessages(mmsgs);
-        removeDHash(uids);
+		if (canDelete()) {
+			Message mmsgs[]=getMessages(uids,fullthreads);
+			_deleteMessages(mmsgs);
+			removeDHash(uids);
+		}
+		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
     }
 	
 	private void _deleteMessages(Message mmsgs[]) throws MessagingException {
