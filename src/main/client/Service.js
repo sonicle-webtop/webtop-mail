@@ -287,6 +287,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
         //me.addAct("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
         me.addAct("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv-xs' });
+        me.addAct("smartsearch",{ handler: me.actionSmartSearch, scope: me, iconCls: 'wtmail-icon-smartsearch-xs' });
         me.addAct("sharing",{ handler: me.actionSharing, scope: me, iconCls: 'wt-icon-sharing-xs' });
         me.addAct("showsharings",{ handler: null, iconCls: '' });
         me.addAct("threaded",{ handler: function() { me.messagesPanel.actionThreaded(); }, iconCls: 'wtmail-icon-threaded-xs', enableToggle: true });
@@ -693,6 +694,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				folderHasChildren: true //fn.hasChildNodes()
 			}
 		}).show();
+	},
+	
+	actionSmartSearch: function(s,e) {
+		var me=this,
+			pattern=me.messagesPanel.filterTextField.getValue(),
+			vw=WT.createView(me.ID,'view.SmartSearchDialog',{
+				viewCfg: {
+					mys: me,
+					pattern: pattern
+				}
+			});
+		
+		vw.show(false, function() {
+			if (pattern) vw.getView().runSearch();
+		});
 	},
 	
 	actionSharing: function(s,e) {

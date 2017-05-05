@@ -39,6 +39,7 @@
 .wtmail-icon-receipt-xs { background-image: url('receipt_16.png') !important; }
 .wtmail-icon-cloud-download-xs { background-image: url('cloud-download_16.png') !important; }
 .wtmail-icon-cloud-upload-xs { background-image: url('cloud-upload_16.png') !important; }
+.wtmail-icon-smartsearch-xs { background-image: url('smartsearch_16.png') !important; }
 
 .wtmail-icon-format-insertimagefile-xs { background-image: url('format-insertimagefile_16.png') !important; }
 .wtmail-icon-format-quickpart-xs { background-image: url('format-quickpart_16.png') !important; }
@@ -62,6 +63,11 @@
 .wtmail-icon-header-flag-xs { background-image: url('headerflag_16.gif') !important; background-repeat: no-repeat; background-position: center; }
 .wtmail-icon-header-note-xs { background-image: url('headermailnote_16.gif') !important; background-repeat: no-repeat; background-position: center; }
 .wtmail-icon-header-docmgt-xs { background-image: url('headerdocmgt_16.png') !important; background-repeat: no-repeat; background-position: center; }
+
+.x-tool-graph  { background-image: url('showgraph_50x23.png') !important; width: 50px; height: 24px; }
+.x-tool-empty  { background-image: none !important; background-color: transparent !important; }
+.wtmail-smartsearch-name-column { padding-left: 6px; font-size: 13px }
+.wtmail-smartsearch-total-column { color: gray; font-size: 13px }
 
 .wtmail-header-text-clip div div div div { text-overflow: clip; }
 

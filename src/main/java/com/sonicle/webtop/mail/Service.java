@@ -609,6 +609,8 @@ public class Service extends BaseService {
 		} else {
 			sieve = new Sieve(mailHost, mailUsername, mailPassword);
 		}
+		//TODO: check if this is still needed
+		//sieve.setSpamFolder(mprofile.getFolderSpam());
 		return sieve;
 		
 	}

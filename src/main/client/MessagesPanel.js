@@ -243,8 +243,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
                 "-",
 				me.quickFilterCombo,
 				me.filterCombo,
-                me.filterTextField
-            ]
+                me.filterTextField,
+				me.mys._TB("smartsearch")
+			]
 		});
 
         me.messageViewContainer=Ext.create({
