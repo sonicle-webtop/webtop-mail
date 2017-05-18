@@ -23,7 +23,7 @@
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>webtop-mail-api</artifactId>
-			<version>${project.version}</version>
+			<version>LATEST</version>
 		</dependency>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
@@ -55,5 +55,17 @@
 			<artifactId>nekohtml</artifactId>
 			<version>0.9.4</version>
 		</dependency>
+		<dependency>
+			<groupId>com.fluffypeople</groupId>
+			<artifactId>managesievej</artifactId>
+			<version>0.2.0</version>
+		</dependency>
+		<!--
+		<dependency>
+			<groupId>org.apache.james</groupId>
+			<artifactId>apache-jsieve-core</artifactId>
+			<version>0.6</version>
+		</dependency>
+		-->
 	</dependencies>
 </project>

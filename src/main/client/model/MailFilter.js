@@ -31,21 +31,19 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-
-Ext.define('Sonicle.webtop.mail.model.RuleModel', {
-    extend: 'WTA.model.Base',
-//    idProperty: 'rule_id',
+Ext.define('Sonicle.webtop.mail.model.MailFilter', {
+	extend: 'WTA.ux.data.BaseModel',
 	
+	identifier: 'negative',
+	idProperty: 'filterId',
 	fields: [
-//		{name:'rule_id', type:'int'},
-		{name:'active', type:'boolean'},
-		'condition',
-		'action',
-		'value',
-		'from',
-		'to',
-		'subject',
-		'description'
+		WTF.fkField('string'),
+		WTF.field('filterId', 'int', false),
+		WTF.field('enabled', 'boolean', false),
+		WTF.field('order', 'int', false),
+		WTF.field('name', 'string', false),
+		WTF.field('sieveMatch', 'string', false),
+		WTF.field('sieveRules', 'string', false),
+		WTF.field('sieveActions', 'string', false)
 	]
 });
-

@@ -40,7 +40,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		'Sonicle.webtop.mail.view.MessageEditor',
 		'Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop',
 		'Sonicle.webtop.mail.ServiceApi',
-		'Sonicle.webtop.mail.view.HiddenFolders'
+		'Sonicle.webtop.mail.view.HiddenFolders',
+		'Sonicle.webtop.mail.ux.SieveRuleGrid'
 	],
 
 	imapTree: null,
@@ -188,7 +189,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 xb[xx++]=me._TB("markseen"),
                 xb[xx++]=me._TB("markunseen"),
                 "-",
-                xb[xx++]=me._TB("rules")
+				xb[xx++]=me._TB("inMailFilters")
             ]
         );
 		//TODO FAX
@@ -249,8 +250,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll') });
         me.addAct("forward",{ handler: me.gridAction(me,'Forward') });
         me.addAct("forwardeml",{ handler: me.gridAction(me,'ForwardEml') });
-        me.addAct("rules",{ handler: me.actionRules, scope: me, iconCls: 'wt-icon-rules-xs' });
-        
+        me.addAct('inMailFilters', {
+			text: null,
+			handler: function() {
+				me.editInMailFilters();
+			}
+		});
+		
 		me.addAct("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi-xs', enableToggle: true });
 		
 		
@@ -320,6 +326,28 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				me.getAct('opennew'),
 				me.getAct('print'),
 				'-',
+				
+				{
+					text: 'TEST',
+					handler: function() {
+						var vct = WT.createView(me.ID,'view.MailFilter');
+						vct.show();
+					}
+				},
+				{
+					text: 'INFILTERS',
+					handler: function() {
+						var vct = WT.createView(me.ID, 'view.InMailFilters');
+						vct.show(false, function() {
+							vct.getView().begin('edit', {
+								data: {
+									id: 'in'
+								}
+							});
+						});
+					}
+				},
+								
 				me.getAct('reply'),
 				me.getAct('replyall'),
 				me.getAct('forward'),
@@ -761,45 +789,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionShowSharings: function(mi,e) {
 		this.imapTree.showSharings(mi.checked);
-	},
-	
-	actionRules: function() {
-		var me=this,
-			vw=me._createRulesManager();
-			
-		vw.show();
-	},
-	
-	//data : {
-	//	from: "frompattern",
-	//	to: "topattern",
-	//	subject: "subjectpattern",
-	//	action: FILE/FORWARD/DISCARD/REJECT,
-	//	actionvalue: "actionvalue"
-	//};
-	addRule: function(data) {
-		var me=this,
-			vw=me._createRulesManager();
-		
-		vw.show(false,function() {
-			vw.getView().showRuleEditor(data);
-		});
-	},
-	
-	_createRulesManager: function() {
-		var me=this,
-			vw=WT.createView(me.ID,'view.RulesManager',{
-				viewCfg: {
-					mys: me,
-					context: 'INBOX',
-					vacation: {
-						active: me.getVar("vacationActive"),
-						message: me.getVar("vacationMessage"),
-						addresses: me.getVar("vacationAddresses")
-					}
-				}
-			});
-		return vw;
 	},
 	
 	actionEmptyFolder: function(s,e) {
@@ -1303,6 +1292,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	getCalendarApi: function() {
 		return WT.getServiceApi("com.sonicle.webtop.calendar");
-	}
+	},
 	
+	editInMailFilters: function(opts) {
+		opts = opts || {};
+		var me = this,
+				vct = WT.createView(me.ID, 'view.InMailFilters');
+		
+		vct.getView().on('viewsave', function(s, success, model) {
+			Ext.callback(opts.callback, opts.scope || me, [success, model]);
+		});
+		vct.show(false, function() {
+			vct.getView().begin('edit', {
+				data: {
+					id: 'in'
+				},
+				addMailFilter: opts.addMailFilter
+			});
+		});
+	}
 });

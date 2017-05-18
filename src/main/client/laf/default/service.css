@@ -71,6 +71,12 @@
 
 .wtmail-header-text-clip div div div div { text-overflow: clip; }
 
+.wtmail-icon-inMailFilters-xs { background-image: url('inMailFilter_16.png') !important; }
+.wtmail-icon-outMailFilters-xs { background-image: url('outMailFilter_16.png') !important; }
+.wtmail-icon-addMailFilter-xs { background-image: url('mailFilter-add_16.png') !important; }
+.wtmail-icon-deleteMailFilter-xs { background-image: url('mailFilter-delete_16.png') !important; }
+.wtmail-icon-sieveFilter-xs { background-image: url('sieveFilter_16.png') !important; }
+
 /* tree */
 .wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox_16.png) !important; }
 .x-grid-tree-node-expanded .wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox-open_16.png) !important; }

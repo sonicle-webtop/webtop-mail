@@ -17,6 +17,11 @@ package com.sonicle.webtop.mail.jooq;
 public class Tables {
 
 	/**
+	 * The table mail.autoresponders
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables.Autoresponders AUTORESPONDERS = com.sonicle.webtop.mail.jooq.tables.Autoresponders.AUTORESPONDERS;
+
+	/**
 	 * The table mail.identities
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.Identities IDENTITIES = com.sonicle.webtop.mail.jooq.tables.Identities.IDENTITIES;
@@ -25,6 +30,11 @@ public class Tables {
 	 * The table mail.identities_old
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.IdentitiesOld IDENTITIES_OLD = com.sonicle.webtop.mail.jooq.tables.IdentitiesOld.IDENTITIES_OLD;
+
+	/**
+	 * The table mail.in_filters
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables.InFilters IN_FILTERS = com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS;
 
 	/**
 	 * The table mail.notes

@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.CoreLocaleKey;
 import com.sonicle.commons.LangUtils;
@@ -51,7 +52,6 @@ import com.sonicle.commons.web.json.MapItemList;
 import com.sonicle.commons.web.json.Payload;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
-import com.sonicle.mail.sieve.*;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
@@ -66,6 +66,7 @@ import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
+import com.sonicle.webtop.core.bol.js.JsSimple;
 import com.sonicle.webtop.core.bol.model.InternetRecipient;
 import com.sonicle.webtop.core.model.SharePermsElements;
 import com.sonicle.webtop.core.model.SharePermsFolder;
@@ -77,6 +78,7 @@ import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICal4jUtils;
 import com.sonicle.webtop.core.util.ICalendarUtils;
+import com.sonicle.webtop.core.util.LoggerUtils;
 import com.sonicle.webtop.mail.bol.ORule;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OScan;
@@ -84,6 +86,7 @@ import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.OVacation;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
+import com.sonicle.webtop.mail.bol.js.JsInMailFilters;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
@@ -97,6 +100,10 @@ import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.dal.VacationDAO;
+import com.sonicle.webtop.mail.model.AutoResponder;
+import com.sonicle.webtop.mail.model.InMailFilters;
+import com.sonicle.webtop.mail.model.MailFilter;
+import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.webtop.vfs.IVfsManager;
 // TODO: Fix imported classes
 //import com.sonicle.webtop.Mailcard;
@@ -134,7 +141,6 @@ import javax.mail.internet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
-import net.fortuna.ical4j.model.property.Method;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -241,7 +247,6 @@ public class Service extends BaseService {
 	private boolean validated = false;
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
-	private Sieve sieve = null;
 	private boolean hasAnnotations=false;
 	
 	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
@@ -311,6 +316,7 @@ public class Service extends BaseService {
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
 		us = new MailUserSettings(profile.getId(),ss);
 		mprofile = new MailUserProfile(environment,this);
+		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mprofile.getMailUsername(), mprofile.getMailPassword());
 		fcProvided = new FolderCache(this, environment);
 		
 		folderPrefix = mprofile.getFolderPrefix();
@@ -385,50 +391,6 @@ public class Service extends BaseService {
 			
 			loadFoldersCache();
 			if (!imapDebug) mft.start();
-
-			//check sieve script
-			Thread t = new Thread(new Runnable() {
-				public void run() {
-					try {
-						UserProfile profile = environment.getProfile();
-						Sieve sieve = getSieve();
-						
-						SieveScript[] scripts=sieve.getScripts();
-						boolean rebuildScript=scripts.length==0;
-						boolean foundWebtopScript=false;
-						if (scripts.length>0) {
-							for(SieveScript sscript:scripts) {
-								if (sscript.getName().equals("\"webtop\"")) {
-									foundWebtopScript=true;
-									String script=sieve.getScript("webtop");
-									if (script!=null) {
-										//script=script.toLowerCase();
-										if (!script.contains(SieveScriptGenerator.getVersionComment())) rebuildScript=true;
-									}
-								}
-							}
-							if (!foundWebtopScript) rebuildScript=true;
-						}
-						
-						if (rebuildScript) {
-							logger.debug("No Sieve scripts for {}. Creating from database.", profile.getUserId());
-							Connection con=null;
-							try {
-								con=getConnection();
-								MailRules rules=getMailRules(con,"rules",profile.getUserId(), profile.getDomainId());
-								if (rules!=null) sieve.saveScript(rules, true);
-							} catch(SQLException exc) {
-								logger.error("Error getting connection while trying to save Sieve script", exc);
-							} finally {
-								DbUtils.closeQuietly(con);
-							}
-						}						
-					} catch (Exception exc) {
-						Service.logger.error("Exception",exc);
-					}
-				}
-			});
-			t.start();
 			
 			vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs");
 			//cloud uploads goes here
@@ -597,26 +559,6 @@ public class Service extends BaseService {
 	public MailFoldersThread getMailFoldersThread() {
 		return mft;
 	}
-
-	public Sieve getSieve() {
-		String mailHost = mprofile.getMailHost();
-		String mailUsername = mprofile.getMailUsername();
-		String mailPassword = mprofile.getMailPassword();
-		if (mailHost == null || mailUsername == null || mailPassword == null) {
-			return null;
-		}
-		if (sieve != null) {
-			sieve.setHostname(mailHost);
-			sieve.setUsername(mailUsername);
-			sieve.setPassword(mailPassword);
-		} else {
-			sieve = new Sieve(mailHost, mailUsername, mailPassword);
-		}
-		//TODO: check if this is still needed
-		//sieve.setSpamFolder(mprofile.getFolderSpam());
-		return sieve;
-		
-	}
 	
 	public char getFolderSeparator() throws MessagingException {
 		return folderSeparator;
@@ -745,7 +687,7 @@ public class Service extends BaseService {
 	
 	public String getShortFolderName(String fullname) {
 		String shortname = fullname;
-		if (fullname.startsWith(folderPrefix.toLowerCase()) || fullname.startsWith(folderPrefix.toUpperCase())) {
+		if (StringUtils.startsWithIgnoreCase(fullname, folderPrefix)) {
 			shortname = fullname.substring(folderPrefix.length());
 		}
 		return shortname;
@@ -6759,165 +6701,6 @@ public class Service extends BaseService {
         }
 	}
 	
-	
-    public void processListRules(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getProfile();
-        Locale locale=profile.getLocale();
-        Connection con=null;
-        String context=request.getParameter("context");
-        try {
-			String table = "none";
-			if (context.equals("INBOX")) table = "mail.rules";
-			else if (context.equals("SENT")) table = "mail.sentrules";
-			
-            con=getConnection();
-            com.sonicle.webtop.mail.SieveJSonGenerator jsg=new com.sonicle.webtop.mail.SieveJSonGenerator(context,this,locale,folderPrefix);
-			MailRules rules=getMailRules(con, table, profile.getUserId(), profile.getDomainId());
-            StringBuffer sb=jsg.generate(rules);
-            String sout=sb.toString();
-            out.println(sout);
-        } catch(Exception exc) {
-            logger.error("Exception",exc);
-        } finally {
-            if (con!=null) try { con.close(); } catch(Exception e) {}
-        }
-    }
-	
-	public void processSaveRules(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getProfile();
-        Connection con=null;
-		
-        try {
-            con=WT.getConnection(this.SERVICE_ID,false);
-			
-			JsRule.List jsrules=JsonResult.GSON.fromJson(ServletUtils.getStringParameter(request,"rules",true), JsRule.List.class);
-			OVacation vitem=new OVacation();
-			vitem.setDomainId(profile.getDomainId());
-			vitem.setUserId(profile.getUserId());
-			vitem.setActive(ServletUtils.getBooleanParameter(request, "vactive", false));
-			vitem.setMessage(ServletUtils.getStringParameter(request, "vmessage", ""));
-			vitem.setAddresses(ServletUtils.getStringParameter(request, "vaddresses", profile.getEmailAddress()));
-			
-			RuleDAO.getInstance().deleteByUserId(con, profile.getDomainId(), profile.getUserId());
-			long rule_id=0;
-			for(JsRule jsrule: jsrules) {
-				ORule orule=new ORule();
-				orule.setDomainId(profile.getDomainId());
-				orule.setUserId(profile.getUserId());
-				orule.setRuleId(++rule_id);
-				orule.setAction(jsrule.action);
-				orule.setActionValue(jsrule.value);
-				orule.setCondition(jsrule.condition);
-				orule.setFromValue(jsrule.from);
-				orule.setStatus(jsrule.active?"E":"D");
-				orule.setSubjectValue(jsrule.subject);
-				orule.setToValue(jsrule.to);
-				orule.setContinue("N");
-				orule.setKeepCopy("N");
-				RuleDAO.getInstance().insert(con, orule);
-			}
-
-			VacationDAO.getInstance().deleteByUserId(con, profile.getDomainId(), profile.getUserId());
-			VacationDAO.getInstance().insert(con, vitem);
-			
-			DbUtils.commitQuietly(con);
-			
-            MailRules rules=getMailRules(con,"rules",profile.getUserId(),profile.getDomainId());
-			if (rules!=null) sieve.saveScript(rules, true);
-
-			//TODO: update scan folders
-/*            String scf="";
-            for(String foldername: foldersCache.keySet()) {
-                FolderCache fc=foldersCache.get(foldername);
-                boolean psfon=fc.isScanForcedOn();
-                fc.updateScanFlags();
-                boolean nsfon=fc.isScanForcedOn();
-                if (psfon!=nsfon) {
-                    if (scf.length()>0) scf+=",";
-                    scf+="{ idfolder: '"+Utils.jsEscape(foldername)+"', sfon: "+nsfon+" }";
-                }
-            }
-			*/
-
-            new JsonResult().printTo(out);
-        } catch(Exception exc) {
-			DbUtils.rollbackQuietly(con);
-            new JsonResult(exc).printTo(out);
-            logger.error("Exception",exc);
-        } finally {
-			DbUtils.closeQuietly(con);
-        }
-	}
-	
-/*    public void processApplyFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-        UserProfile profile=environment.getUserProfile();
-        String login=profile.getUser();
-		String iddomain=wtd.getDataIDDomain();
-        String vactive=request.getParameter("vactive");
-        String vmessage=request.getParameter("vmessage");
-        String vaddresses=request.getParameter("vaddresses");
-        Connection con=null;
-        Statement stmt=null;
-		
-        String sout;
-        try {
-			String esid = ServletUtils.getStringParameter(request, "esid", true);
-			EditingSession es = wts.getEditing(EditingSession.Scope.SESSION, esid);
-			
-			con=wtd.getConnection();
-			
-			try {
-				con.setAutoCommit(false);
-				InboxMailFiltersDb.deleteByDomainUser(con, profile.getIDDomain(), profile.getUser());
-				SentMailFiltersDb.deleteByDomainUser(con, profile.getIDDomain(), profile.getUser());
-				es.copyBackTempTable(con, "mailfilters");
-				es.copyBackTempTable(con, "mailsentfilters");
-				con.commit();
-			} catch(Exception ex1) {
-				con.rollback();
-				throw ex1;
-			}
-			
-            con.setAutoCommit(true);
-            stmt=con.createStatement();
-            stmt.executeUpdate("delete from vacation where iddomain='"+iddomain+"' and login='"+profile.getUser()+"'");
-
-            String sql="insert into vacation (iddomain,login,active,message,addresses) values ("+
-             "'"+wtd.getLocalIDDomain()+"',"+
-             "'"+login+"',"+
-             "'"+vactive+"',"+
-             "'"+Utils.getSQLString(vmessage)+"',"+
-             "'"+Utils.getSQLString(vaddresses)+"'"+
-             ")";
-            stmt.executeUpdate(sql);
-            con.commit();
-            MailFilters filters=getMailFilters(con,"mailfilters",login,iddomain);
-			if (filters!=null) sieve.saveScript(filters, true);
-
-            String scf="";
-            for(String foldername: foldersCache.keySet()) {
-                FolderCache fc=foldersCache.get(foldername);
-                boolean psfon=fc.isScanForcedOn();
-                fc.updateScanFlags();
-                boolean nsfon=fc.isScanForcedOn();
-                if (psfon!=nsfon) {
-                    if (scf.length()>0) scf+=",";
-                    scf+="{ idfolder: '"+Utils.jsEscape(foldername)+"', sfon: "+nsfon+" }";
-                }
-            }
-
-            sout="{\nresult: true, scf:["+scf+"]\n}";
-        } catch(Exception exc) {
-            logger.error("Exception",exc);
-            sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage().replaceAll("\n","<BR>"))+"'\n}";
-        } finally {
-            if (stmt!=null) try { stmt.close(); } catch(Exception e) {}
-            if (con!=null) try { con.close(); } catch(Exception e) {}
-        }
-        out.println(sout);
-    }
-*/
-	
 	boolean checkFileRules(String foldername) {
 		boolean b = false;
 		Connection con = null;
@@ -7246,96 +7029,6 @@ public class Service extends BaseService {
 			logger.error("Error executing action SetToolComponentWidth", ex);
 			new JsonResult(false, "Unable to save with").printTo(out);
 		}
-	}	
-	
-	public MailRules getMailRules(Connection con, String filtersTable, String login, String iddomain) throws Exception {
-		MailRules rfilters = null;
-		
-		try {
-			List<ORule> orules = RuleDAO.getInstance().selectByUserId(con, iddomain, login);
-			
-			MailRules filters = new MailRules();
-
-			for (ORule or: orules) {
-				long idfilter = or.getRuleId();
-				String status = or.getStatus();
-				boolean enabled = status.equals("E");
-				String action = or.getAction();
-				String actionvalue = or.getActionValue();
-				String operator = "or";
-				if (or.getCondition().equals("ALL")) {
-					operator = "and";
-				}
-				
-				MailRuleConditions mfcs = new MailRuleConditions((int)idfilter, enabled, action, actionvalue, operator);
-				
-				String fromvalue = or.getFromValue();
-				if (fromvalue != null && fromvalue.trim().length() > 0) {
-					MailRuleCondition mfc = new MailRuleCondition();
-					mfc.setComparison(MailRuleCondition.CONTAINS);
-					mfc.setField("from");
-					mfc.setValues(fromvalue, true);
-					mfcs.add(mfc);
-				}
-				String tovalue = or.getToValue();
-				if (tovalue != null && tovalue.trim().length() > 0) {
-					MailRuleCondition mfc = new MailRuleCondition();
-					mfc.setComparison(MailRuleCondition.CONTAINS);
-					mfc.setField("to");
-					mfc.setValues(tovalue, true);
-					mfcs.add(mfc);
-				}
-				String subjectvalue = or.getSubjectValue();
-				if (subjectvalue != null && subjectvalue.trim().length() > 0) {
-					MailRuleCondition mfc = new MailRuleCondition();
-					mfc.setComparison(MailRuleCondition.CONTAINS);
-					mfc.setField("subject");
-					mfc.setValues(subjectvalue, false);
-					mfcs.add(mfc);
-				}
-				String sizevalue = null;
-				if (or.getSizeValue()!=null) sizevalue=or.getSizeValue().toString();
-				String size = or.getSizeMatch();
-				if (size != null && size.trim().length() > 0 && sizevalue != null && sizevalue.trim().length() > 0) {
-					MailRuleCondition mfc = new MailRuleCondition();
-					if (size.equals("+")) {
-						mfc.setComparison(MailRuleCondition.GREATERTHAN);
-					} else {
-						mfc.setComparison(MailRuleCondition.LESSTHAN);
-					}
-					mfc.setField("size");
-					mfc.setValues(sizevalue, true);
-					mfcs.add(mfc);
-				}
-				String fieldvalue = or.getFieldValue();
-				String fieldname = or.getFieldName();
-				if (fieldname != null && fieldname.trim().length() > 0 && fieldvalue != null && fieldvalue.trim().length() > 0) {
-					MailRuleCondition mfc = new MailRuleCondition();
-					mfc.setComparison(MailRuleCondition.CONTAINS);
-					mfc.setField(fieldname);
-					mfc.setValues(fieldvalue, true);
-					mfcs.add(mfc);
-				}
-				
-				filters.add(mfcs);
-			}
-			
-			OVacation ovacation = VacationDAO.getInstance().selectByUserId(con, iddomain, login);
-			
-			if (ovacation!=null) {
-				if (ovacation.getActive()) {
-					filters.setVacation(ovacation.getMessage(), ovacation.getAddresses());
-				}
-			}
-			
-			rfilters = filters;
-			
-		} catch (DAOException exc) {
-			logger.error("Error saving Sieve script", exc);
-		} finally {
-		}
-		
-		return rfilters;
 	}
 	
 	public boolean isSharedSeen() throws MessagingException {
@@ -7881,7 +7574,95 @@ public class Service extends BaseService {
 			DbUtils.closeQuietly(con);
 		}
 		return username+"@"+WT.getDomainInternetName(userProfileId.getDomainId());
-	}	
+	}
+	
+	public void processLookupSieveScripts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailManager manager = (MailManager)WT.getServiceManager(SERVICE_ID, getEnv().getProfileId());
+		ArrayList<JsSimple> items = new ArrayList<>();
+		
+		try {
+			items.add(new JsSimple(MailManager.SIEVE_WEBTOP_SCRIPT, "(" + WT.getPlatformName() + ")"));
+			
+			try {
+				List<com.fluffypeople.managesieve.SieveScript> scripts = manager.listSieveScripts();
+				for(com.fluffypeople.managesieve.SieveScript script : scripts) {
+					if (!StringUtils.equals(script.getName(), MailManager.SIEVE_WEBTOP_SCRIPT)) {
+						items.add(new JsSimple(script.getName(), script.getName()));
+					}
+				}
+			} catch(WTException ex1) {
+				logger.warn("Unable to read scripts", ex1);
+			}
+				
+			new JsonResult(items, items.size()).printTo(out);
+			
+		} catch(Exception ex) {
+			logger.error("Error in LookupSieveScripts", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processManageMailFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailManager manager = (MailManager)WT.getServiceManager(SERVICE_ID, getEnv().getProfileId());
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if(crud.equals(Crud.READ)) {
+				String id = ServletUtils.getStringParameter(request, "id", true);
+				
+				int scriptCount = 0;
+				String activeScript = null;
+				try {
+					List<com.fluffypeople.managesieve.SieveScript> scripts = manager.listSieveScripts();
+					scriptCount = scripts.size();
+					activeScript = findActiveScriptName(scripts);
+				} catch(WTException ex1) {
+					logger.warn("Error reading active script", ex1);
+				}
+				if (StringUtils.isBlank(activeScript)) activeScript = MailManager.SIEVE_WEBTOP_SCRIPT;
+				
+				AutoResponder autoResp = manager.getAutoResponder();
+				MailFiltersType type = EnumUtils.forSerializedName(id, MailFiltersType.class);
+				List<MailFilter> filters = manager.getMailFilters(type);
+				
+				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, autoResp, filters);
+				
+				new JsonResult(js).printTo(out);
+				
+			} else if(crud.equals(Crud.UPDATE)) {
+				Payload<MapItem, JsInMailFilters> pl = ServletUtils.getPayload(request, JsInMailFilters.class);
+				
+				if (EnumUtils.equals(pl.data.id, MailFiltersType.INCOMING)) {
+					List<MailFilter> filters = JsInMailFilters.createMailFilterList(pl.data);
+					manager.updateAutoResponder(JsInMailFilters.createAutoResponder(pl.data));
+					manager.updateMailFilters(pl.data.id, filters);
+					
+					boolean isWTScript = StringUtils.equals(pl.data.activeScript, MailManager.SIEVE_WEBTOP_SCRIPT);
+					if (!isWTScript && !StringUtils.isBlank(pl.data.activeScript)) {
+						try {
+							manager.activateSieveScript(pl.data.activeScript);
+						} catch(WTException ex1) {
+							logger.warn("Error activating chosen script", ex1);
+						}
+					}
+					manager.applySieveScript(isWTScript);
+				}	
+				
+				new JsonResult().printTo(out);
+			}
+			
+		} catch(Exception ex) {
+			logger.error("Error in ManageFilters", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	private String findActiveScriptName(List<com.fluffypeople.managesieve.SieveScript> scripts) throws WTException {
+		for (com.fluffypeople.managesieve.SieveScript script : scripts) {
+			if (script.isActive()) return script.getName();
+		}
+		return null;
+	}
 	
 	private class OnUploadCloudFile implements IServiceUploadStreamListener {
 		@Override

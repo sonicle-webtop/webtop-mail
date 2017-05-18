@@ -20,4 +20,9 @@ public class Sequences {
 	 * The sequence <code>mail.seq_identities</code>
 	 */
 	public static final org.jooq.Sequence<java.lang.Long> SEQ_IDENTITIES = new org.jooq.impl.SequenceImpl<java.lang.Long>("seq_identities", com.sonicle.webtop.mail.jooq.Mail.MAIL, org.jooq.impl.SQLDataType.BIGINT.nullable(false));
+
+	/**
+	 * The sequence <code>mail.seq_in_filters</code>
+	 */
+	public static final org.jooq.Sequence<java.lang.Long> SEQ_IN_FILTERS = new org.jooq.impl.SequenceImpl<java.lang.Long>("seq_in_filters", com.sonicle.webtop.mail.jooq.Mail.MAIL, org.jooq.impl.SQLDataType.BIGINT.nullable(false));
 }
