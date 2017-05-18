@@ -89,6 +89,7 @@ import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsRule;
 import com.sonicle.webtop.mail.bol.js.JsSharing;
+import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
 import com.sonicle.webtop.mail.bol.js.JsSort;
 import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.RuleDAO;
@@ -121,6 +122,7 @@ import com.sun.mail.util.PropUtil;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
+import java.text.DateFormatSymbols;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -258,6 +260,7 @@ public class Service extends BaseService {
 	private AdvancedSearchThread ast = null;
 	
 	private IVfsManager vfsmanager=null;
+	private SmartSearchThread sst;
 	
 	static {
 		inlineableMimes.add("image/gif");
@@ -5819,7 +5822,7 @@ public class Service extends BaseService {
 				|| (part.getDisposition() == null && part.getFileName() != null);
 	}
 	
-	private boolean hasAttachements(Part p) throws MessagingException, IOException {
+	protected boolean hasAttachements(Part p) throws MessagingException, IOException {
 		boolean retval = false;
 
 		//String disp=p.getDisposition();
@@ -7001,6 +7004,67 @@ public class Service extends BaseService {
 		out.println("{\nresult: true\n}");
 	}
 
+	public void processRunSmartSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			if (sst!=null && sst.isRunning())
+				sst.cancel();
+			
+			String pattern=ServletUtils.getStringParameter(request, "pattern", true);
+			boolean fromme=ServletUtils.getBooleanParameter(request, "fromme", false);
+			boolean tome=ServletUtils.getBooleanParameter(request, "tome", false);
+			boolean attachments=ServletUtils.getBooleanParameter(request, "attachments", false);
+			int year=ServletUtils.getIntParameter(request, "year", 0);
+			int month=ServletUtils.getIntParameter(request, "month", 0);
+			int day=ServletUtils.getIntParameter(request, "day", 0);
+			ArrayList<String> ispersonfilters=ServletUtils.getStringParameters(request, "ispersonfilters");
+			ArrayList<String> isnotpersonfilters=ServletUtils.getStringParameters(request, "isnotpersonfilters");
+			ArrayList<String> isfolderfilters=ServletUtils.getStringParameters(request, "isfolderfilters");
+			ArrayList<String> isnotfolderfilters=ServletUtils.getStringParameters(request, "isnotfolderfilters");
+			Set<String> _folderIds=foldersCache.keySet();
+			
+			//sort folders, placing first interesting ones
+			ArrayList<String> folderIds=new ArrayList<>();
+			Collections.sort(folderIds);
+			String firstFolders[]={"INBOX", us.getFolderSent()};
+			for(String folderId: firstFolders) folderIds.add(folderId);
+			for(String folderId: _folderIds) {
+				boolean skip=false;
+				for(String skipfolder: firstFolders) {
+					if (skipfolder.equals(folderId)) {
+						skip=true;
+						break;
+					}
+				}
+				if (!skip) folderIds.add(folderId);
+			}
+			
+			sst=new SmartSearchThread(this,pattern,folderIds,fromme,tome,attachments,
+				ispersonfilters,isnotpersonfilters,isfolderfilters,isnotfolderfilters,
+				year,month,day);
+			sst.start();
+			new JsonResult().printTo(out);
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			new JsonResult(false,exc.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processPollSmartSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			if (sst!=null) {
+				JsSmartSearchTotals jssst=sst.getSmartSearchTotals();
+				synchronized(jssst.lock) {
+					JsonResult jsr=new JsonResult(jssst);
+					jsr.printTo(out);
+				}
+			}
+			else new JsonResult(false,"Smart search is not available").printTo(out);
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			new JsonResult(false,exc.getMessage()).printTo(out);
+		}
+	}
+	
 	public void processSetMessageView(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			String region = ServletUtils.getStringParameter(request, "region", true);

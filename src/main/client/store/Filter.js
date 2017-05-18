@@ -40,6 +40,7 @@ Ext.define('Sonicle.webtop.mail.store.Filter', {
 	
 	model: 'WTA.ux.data.SimpleModel',
 	data: [
+		['smart'],
 		['any'],
 		['subject'],
 		['from'],

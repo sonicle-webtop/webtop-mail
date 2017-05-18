@@ -775,7 +775,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});
 			
     },
-
+	
     actionReply: function(rowIndex) {
         this._actionReply(rowIndex,false);
     },

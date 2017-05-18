@@ -287,7 +287,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
         //me.addAct("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
         me.addAct("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv-xs' });
-        me.addAct("smartsearch",{ handler: me.actionSmartSearch, scope: me, iconCls: 'wtmail-icon-smartsearch-xs' });
         me.addAct("sharing",{ handler: me.actionSharing, scope: me, iconCls: 'wt-icon-sharing-xs' });
         me.addAct("showsharings",{ handler: null, iconCls: '' });
         me.addAct("threaded",{ handler: function() { me.messagesPanel.actionThreaded(); }, iconCls: 'wtmail-icon-threaded-xs', enableToggle: true });
@@ -472,7 +471,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		this.showFolder(folderid);
 	},
 	
-	showFolder: function(folderid) {
+	//if uid, try to select specific uid
+	showFolder: function(folderid,uid) {
         var me=this,
 			mp=me.messagesPanel;
 		//TODO: folder clicked
@@ -493,7 +493,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
         mp.filterTextField.setValue('');
 		mp.quickFilterCombo.setValue('any');
         
-        mp.reloadFolder(folderid,{start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2});
+		var params={start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2};
+		if (uid) params.finduid=uid;
+        mp.reloadFolder(folderid,params);
 	}, 
 	
 	unreadChanged: function(msg,unreadOnly) {
@@ -696,7 +698,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}).show();
 	},
 	
-	actionSmartSearch: function(s,e) {
+	actionSharing: function(s,e) {
+		var me=this,
+			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0];
+	
+		me.showSharingView(fn);
+	},
+	
+	runSmartSearch: function() {
 		var me=this,
 			pattern=me.messagesPanel.filterTextField.getValue(),
 			vw=WT.createView(me.ID,'view.SmartSearchDialog',{
@@ -707,15 +716,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			});
 		
 		vw.show(false, function() {
-			if (pattern) vw.getView().runSearch();
+			if (pattern && pattern.length>0) vw.getView().runSearch();
 		});
-	},
-	
-	actionSharing: function(s,e) {
-		var me=this,
-			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0];
-	
-		me.showSharingView(fn);
 	},
 	
 	showSharingView: function(node) {

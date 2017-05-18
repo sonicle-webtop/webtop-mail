@@ -180,7 +180,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			},
 			listeners: {
 				enterkey: function(tf,e) {
-					me.filterAction(tf);
+					me.filterAction(tf,e.ctrlKey);
 				},
 				select: function(tf,r,eopts) {
 					me.filterAction(tf);
@@ -243,8 +243,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
                 "-",
 				me.quickFilterCombo,
 				me.filterCombo,
-                me.filterTextField,
-				me.mys._TB("smartsearch")
+                me.filterTextField
 			]
 		});
 
@@ -425,9 +424,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			fl.updateRecordSeenStateAtIndex(fl.indexOfMessage(idmessage),true);
     },
    
-    filterAction: function(tf) {
-        var me=this;
-		me.reloadFiltered(me.quickFilterCombo.getValue(),me.filterCombo.getValue(),tf.getValue());
+    filterAction: function(tf,smart) {
+        var me=this,
+			filterType=me.filterCombo.getValue();
+		if (smart||filterType==="smart") me.mys.runSmartSearch();
+		else me.reloadFiltered(me.quickFilterCombo.getValue(),filterType,tf.getValue());
     },
 	
     quickFilterChanged: function(nv) {
