@@ -1187,7 +1187,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	
 		me.mys.startNewMessage(me.folder,{
 			recipients: [ { rtype: 'to', email: email } ],
-			format: me.mys.varsData.format
+			format: me.mys.varsData.getVar("format")
 		});
 	},
 

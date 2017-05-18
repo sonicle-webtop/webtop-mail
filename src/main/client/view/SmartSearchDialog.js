@@ -327,7 +327,34 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 						{ xtype: 'label', reference: 'labelResultTotals', html: me.mys.res('smartsearch-resulttotals',0,0) },
 						' ',
 						' ',
-						{ xtype: 'button', reference: 'buttonOpenInFolder', text: me.mys.res('smartsearch-act-openinfolder'), disabled: true }/*,
+						{
+							xtype: 'button', 
+							reference: 'buttonOpenInFolder', 
+							text: me.mys.res('smartsearch-act-openinfolder'), 
+							disabled: true,
+							handler: function() {
+								var s=me.lref('gridMessages').getSelection();
+								if (s&&s.length>0) {
+									var uid=s[0].get("uid"),
+										folderid=s[0].get("folderid");
+									
+										WT.ajaxReq(me.mys.ID, 'GetMessagePage', {
+											params: {
+												folder: folderid,
+												uid: uid,
+												rowsperpage: 50
+											},
+											callback: function(success,json) {
+												if (success) {
+													me.mys.selectAndShowFolder(folderid,uid,json.page,json.threadid);
+												} else {
+													WT.error(json.message);
+												}
+											}
+										});					
+								}
+							}
+						}/*,
 						'->',
 						me.mys.res('smartsearch-sortby.lbl')*/
 					],
@@ -340,8 +367,6 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 							store: {
 								fields: [	{ name: 'uid', type: 'int' }, 'folderid', 'subject', 'from', 'to', 'date', 'text' ],
 								data: [
-//									{ uid: 1, folderid: "Clienti/Encodata", subject: "Fwd: verifica utenti", from: 'Gabriele Bulfon', date: '10/05/2013' },
-//									{ uid: 2, folderid: "Sonicle", subject: "Re: push wt5", from: 'Matteo Albinola', date: '13/09/2016' }
 								]
 							},
 							columns: [
@@ -383,15 +408,15 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 	
 	runSearch: function(clear,timedata) {
 		var me=this,
-			minlen=3,
+			//minlen=3,
 			pattern=me.lref("fldSearch").getValue(),
 			personfilters=clear?{ is: [], isnot: [] }:me.getFilters("gridPersons","email"),
 			folderfilters=clear?{ is: [], isnot: [] }:me.getFilters("gridMailFolders","id");
 	
-		if (pattern.length<minlen) {
-			WT.error(me.mys.res("smartsearch.error.shortword"),minlen);
-			return;
-		}
+		//if (pattern.length<minlen) {
+		//	WT.error(me.mys.res("smartsearch.error.shortword"),minlen);
+		//	return;
+		//}
 	
 		me.lref("panelGraph").setTitle(me.mys.res('smartsearch-search.tit',pattern+" (...0%...)"));
 		//me.wait(WT.res("loading"));
@@ -416,7 +441,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					if (!me.polltask) me.polltask=new Ext.util.DelayedTask();
 					me.polltask.delay(1000, me.doPolling, me);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -438,7 +463,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 						pg.setTitle(me.mys.res('smartsearch-search.tit',pattern));
 					}
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					

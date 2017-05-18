@@ -5078,7 +5078,149 @@ public class Service extends BaseService {
 		mprofile.setNumMsgList(pagerows);
 		new JsonResult(true,"").printTo(out);
 	}	
- 	
+	
+	class MessagesInfo {
+		Message messages[];
+		long millis;
+		
+		MessagesInfo(Message msgs[], long millis) {
+			this.messages=msgs;
+			this.millis=millis;
+		}
+	}
+	
+	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, String pattern, String searchfield, SortGroupInfo sgi, String pquickfilter, long timestamp) throws MessagingException {
+		MessageListThread mlt = null;
+		synchronized(mlThreads) {
+			mlt = mlThreads.get(key);
+			if (mlt == null || (mlt.lastRequest!=timestamp && refresh)) {
+				//if (mlt!=null)
+				//	System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
+				//else
+				//	System.out.println(page+": mlt not found");
+				mlt = new MessageListThread(mcache,pquickfilter,pattern,searchfield,sgi.sortby,sgi.sortascending,refresh,sgi.sortgroup,sgi.groupascending,sgi.threaded);
+				mlt.lastRequest = timestamp;
+				mlThreads.put(key, mlt);
+			}
+			//else System.out.println(page+": reusing list thread");
+
+			//remove old requests
+			ArrayList<String> rkeys=null;
+			for(String xkey: mlThreads.keySet()) {
+				MessageListThread xmlt = mlThreads.get(xkey);
+				//remove if older than one minute
+				long age=timestamp - xmlt.lastRequest;
+				if (xmlt!=null && age>60000) {
+					if (rkeys==null) rkeys=new ArrayList<>();
+					rkeys.add(xkey);
+				}
+			}
+			if (rkeys!=null) {
+				for(String xkey: rkeys) {
+					//MessageListThread xmlt = mlThreads.get(xkey);
+					//long age=timestamp - xmlt.lastRequest;
+					//System.out.println("removing ["+xkey+"] - age: "+age);
+					mlThreads.remove(xkey);
+				}
+			}
+
+			//System.out.println("mlThreads size is now "+mlThreads.size());
+		}
+
+		Message xmsgs[]=null;
+		synchronized (mlt.lock) {
+			if (!mlt.started) {
+				//System.out.println(page+": starting list thread");
+				Thread t = new Thread(mlt);
+				t.start();
+			}
+			if (!mlt.finished) {
+				//System.out.println(page+": waiting list thread to finish");
+				try {
+					mlt.lock.wait();
+				} catch (InterruptedException exc) {
+					Service.logger.error("Exception",exc);
+				}
+				//mlThreads.remove(key);
+			}
+			//TODO: see if we can check first request from buffered store
+			//if (mlt.lastRequest==timestamp) {
+				//System.out.println(page+": got list thread result");
+				xmsgs=mlt.msgs;
+			//}
+		}
+
+		return new MessagesInfo(xmsgs,mlt.millis);
+	}
+	
+	class SortGroupInfo {
+		int sortby;
+		boolean sortascending;
+		int sortgroup;
+		boolean groupascending;
+		boolean threaded;
+		
+		SortGroupInfo(int sortby, boolean sortascending, int sortgroup, boolean groupascending, boolean threaded) {
+			this.sortby=sortby;
+			this.sortascending=sortascending;
+			this.sortgroup=sortgroup;
+			this.groupascending=groupascending;
+			this.threaded=threaded;
+		}
+	}
+	
+	private SortGroupInfo getSortGroupInfo(String psortfield, String psortdir, String group) {
+		int sortby = MessageComparator.SORT_BY_NONE;
+		if (psortfield.equals("messageid")) {
+			sortby = MessageComparator.SORT_BY_MSGIDX;
+		} else if (psortfield.equals("date")) {
+			sortby = MessageComparator.SORT_BY_DATE;
+		} else if (psortfield.equals("priority")) {
+			sortby = MessageComparator.SORT_BY_PRIORITY;
+		} else if (psortfield.equals("to")) {
+			sortby = MessageComparator.SORT_BY_RCPT;
+		} else if (psortfield.equals("from")) {
+			sortby = MessageComparator.SORT_BY_SENDER;
+		} else if (psortfield.equals("size")) {
+			sortby = MessageComparator.SORT_BY_SIZE;
+		} else if (psortfield.equals("subject")) {
+			sortby = MessageComparator.SORT_BY_SUBJECT;
+		} else if (psortfield.equals("status")||psortfield.equals("unread")) {
+			sortby = MessageComparator.SORT_BY_STATUS;
+		} else if (psortfield.equals("flag")) {
+			sortby = MessageComparator.SORT_BY_FLAG;
+		}
+		
+		int sortgroup = MessageComparator.SORT_BY_NONE;
+		boolean groupascending = true;
+		if (group.equals("messageid")) {
+			sortgroup = MessageComparator.SORT_BY_MSGIDX;
+		} else if (group.equals("gdate")) {
+			sortgroup = MessageComparator.SORT_BY_DATE;
+			groupascending = false;
+		} else if (group.equals("priority")) {
+			sortgroup = MessageComparator.SORT_BY_PRIORITY;
+		} else if (group.equals("to")) {
+			sortgroup = MessageComparator.SORT_BY_RCPT;
+		} else if (group.equals("from")) {
+			sortgroup = MessageComparator.SORT_BY_SENDER;
+		} else if (group.equals("size")) {
+			sortgroup = MessageComparator.SORT_BY_SIZE;
+		} else if (group.equals("subject")) {
+			sortgroup = MessageComparator.SORT_BY_SUBJECT;
+		} else if (group.equals("status")) {
+			sortgroup = MessageComparator.SORT_BY_STATUS;
+		} else if (group.equals("flag")) {
+			sortgroup = MessageComparator.SORT_BY_FLAG;
+		}
+		
+		boolean threaded=group.equals("threadId");
+		
+		if (threaded && (!psortfield.equals("date")||!psortdir.equals("DESC"))) threaded=false;
+		
+		return new SortGroupInfo(sortby,psortdir.equals("ASC"),sortgroup,groupascending,threaded);
+	}
+	
 	public void processListMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		CoreManager core = WT.getCoreManager();
 		UserProfile profile = environment.getProfile();
@@ -5126,7 +5268,6 @@ public class Service extends BaseService {
 		if (group == null) {
 			group = "";
 		}
-		boolean threaded=group.equals("threadId");
 
 		String psortfield = "date";
 		String psortdir = "DESC";
@@ -5157,53 +5298,8 @@ public class Service extends BaseService {
 			logger.error("Exception",exc);
 		}
 		
-		if (threaded && (!psortfield.equals("date")||!psortdir.equals("DESC"))) threaded=false;
+		SortGroupInfo sgi=getSortGroupInfo(psortfield,psortdir,group);
 		
-		int sortby = MessageComparator.SORT_BY_NONE;
-		if (psortfield.equals("messageid")) {
-			sortby = MessageComparator.SORT_BY_MSGIDX;
-		} else if (psortfield.equals("date")) {
-			sortby = MessageComparator.SORT_BY_DATE;
-		} else if (psortfield.equals("priority")) {
-			sortby = MessageComparator.SORT_BY_PRIORITY;
-		} else if (psortfield.equals("to")) {
-			sortby = MessageComparator.SORT_BY_RCPT;
-		} else if (psortfield.equals("from")) {
-			sortby = MessageComparator.SORT_BY_SENDER;
-		} else if (psortfield.equals("size")) {
-			sortby = MessageComparator.SORT_BY_SIZE;
-		} else if (psortfield.equals("subject")) {
-			sortby = MessageComparator.SORT_BY_SUBJECT;
-		} else if (psortfield.equals("status")||psortfield.equals("unread")) {
-			sortby = MessageComparator.SORT_BY_STATUS;
-		} else if (psortfield.equals("flag")) {
-			sortby = MessageComparator.SORT_BY_FLAG;
-		}
-		boolean ascending = psortdir.equals("ASC");
-		
-		int sort_group = MessageComparator.SORT_BY_NONE;
-		boolean groupascending = true;
-		if (group.equals("messageid")) {
-			sort_group = MessageComparator.SORT_BY_MSGIDX;
-		} else if (group.equals("gdate")) {
-			sort_group = MessageComparator.SORT_BY_DATE;
-			groupascending = false;
-		} else if (group.equals("priority")) {
-			sort_group = MessageComparator.SORT_BY_PRIORITY;
-		} else if (group.equals("to")) {
-			sort_group = MessageComparator.SORT_BY_RCPT;
-		} else if (group.equals("from")) {
-			sort_group = MessageComparator.SORT_BY_SENDER;
-		} else if (group.equals("size")) {
-			sort_group = MessageComparator.SORT_BY_SIZE;
-		} else if (group.equals("subject")) {
-			sort_group = MessageComparator.SORT_BY_SUBJECT;
-		} else if (group.equals("status")) {
-			sort_group = MessageComparator.SORT_BY_STATUS;
-		} else if (group.equals("flag")) {
-			sort_group = MessageComparator.SORT_BY_FLAG;
-		}
-
 		//Save search requests
 		if (psearchfield != null && psearchfield.trim().length() > 0 && ppattern != null && ppattern.trim().length() > 0) {
 			// TODO: save filter!!!!
@@ -5302,65 +5398,8 @@ public class Service extends BaseService {
 				key +="|" + pquickfilter;
 			}
 			
-			MessageListThread mlt = null;
-			synchronized(mlThreads) {
-				mlt = mlThreads.get(key);
-				if (mlt == null || (mlt.lastRequest!=timestamp && refresh)) {
-					//if (mlt!=null)
-					//	System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
-					//else
-					//	System.out.println(page+": mlt not found");
-					mlt = new MessageListThread(mcache,pquickfilter,ppattern,psearchfield,sortby,ascending,refresh,sort_group,groupascending,threaded);
-					mlt.lastRequest = timestamp;
-					mlThreads.put(key, mlt);
-				}
-				//else System.out.println(page+": reusing list thread");
-				
-				//remove old requests
-				ArrayList<String> rkeys=null;
-				for(String xkey: mlThreads.keySet()) {
-					MessageListThread xmlt = mlThreads.get(xkey);
-					//remove if older than one minute
-					long age=timestamp - xmlt.lastRequest;
-					if (xmlt!=null && age>60000) {
-						if (rkeys==null) rkeys=new ArrayList<>();
-						rkeys.add(xkey);
-					}
-				}
-				if (rkeys!=null) {
-					for(String xkey: rkeys) {
-						//MessageListThread xmlt = mlThreads.get(xkey);
-						//long age=timestamp - xmlt.lastRequest;
-						//System.out.println("removing ["+xkey+"] - age: "+age);
-						mlThreads.remove(xkey);
-					}
-				}
-				
-				//System.out.println("mlThreads size is now "+mlThreads.size());
-			}
-			
-            Message xmsgs[]=null;
-			synchronized (mlt.lock) {
-				if (!mlt.started) {
-					//System.out.println(page+": starting list thread");
-					Thread t = new Thread(mlt);
-					t.start();
-				}
-				if (!mlt.finished) {
-					//System.out.println(page+": waiting list thread to finish");
-					try {
-						mlt.lock.wait();
-					} catch (InterruptedException exc) {
-						Service.logger.error("Exception",exc);
-					}
-					//mlThreads.remove(key);
-				}
-				//TODO: see if we can check first request from buffered store
-				//if (mlt.lastRequest==timestamp) {
-					//System.out.println(page+": got list thread result");
-					xmsgs=mlt.msgs;
-				//}
-			}
+			MessagesInfo messagesInfo=listMessages(mcache,key,refresh,ppattern,psearchfield,sgi,pquickfilter,timestamp);
+            Message xmsgs[]=messagesInfo.messages;
 			
 			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
 				long actuid=Long.parseLong(pthreadactionuid);
@@ -5368,7 +5407,7 @@ public class Service extends BaseService {
 			}
 			
 			//if threaded, look for the start considering roots and opened children
-			if (xmsgs!=null && threaded && page>1) {
+			if (xmsgs!=null && sgi.threaded && page>1) {
 				int i=0,ni=0,np=1;
 				long tId=0;
 				while(np < page && ni < xmsgs.length ) {
@@ -5419,7 +5458,7 @@ public class Service extends BaseService {
 				 }
 				 }
 				 }*/
-				total=threaded?mcache.getThreadedCount():xmsgs.length;
+				total=sgi.threaded?mcache.getThreadedCount():xmsgs.length;
 				if (start<max) {
 					
 					Folder fsent=getFolder(mprofile.getFolderSent());
@@ -5452,7 +5491,7 @@ public class Service extends BaseService {
 
 						int tIndent=xm.getThreadIndent();
 						if (tIndent==0) tId=nuid;
-						else if (threaded) {
+						else if (sgi.threaded) {
 							if (!mcache.isThreadOpen(tId)) {
 								--i;
 								continue;
@@ -5460,7 +5499,7 @@ public class Service extends BaseService {
 						}
 						boolean tChildren=false;
 						int tUnseenChildren=0;
-						if (threaded) {
+						if (sgi.threaded) {
 							int cnx=nx+1;
 							while(cnx<xmsgs.length) {
 								SonicleIMAPMessage cxm=(SonicleIMAPMessage)xmsgs[cnx];
@@ -5567,7 +5606,7 @@ public class Service extends BaseService {
 						String sdate = "";
 						String xdate = "";
 						if (d!=null) {
-							java.util.Date gd=threaded?xm.getMostRecentThreadDate():d;
+							java.util.Date gd=sgi.threaded?xm.getMostRecentThreadDate():d;
 
 							cal1.setTime(today);
 							cal2.setTime(gd);
@@ -5683,8 +5722,8 @@ public class Service extends BaseService {
 							+ "from:'" + from + "',"
 							+ "fromemail:'" + fromemail + "',"
 							+ "subject:'" + subject + "',"
-							+ (threaded?"threadId: "+tId+",":"")
-							+ (threaded?"threadIndent:"+tIndent+",":"")
+							+ (sgi.threaded?"threadId: "+tId+",":"")
+							+ (sgi.threaded?"threadIndent:"+tIndent+",":"")
 							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
 							+ "gdate: '" + gdate + "',"
 							+ "sdate: '" + sdate + "',"
@@ -5697,11 +5736,11 @@ public class Service extends BaseService {
 							+ (isToday ? ",istoday:true" : "")
 							+ (hasAttachments ? ",atts:true" : "")
 							+ (issched ? ",scheddate: new Date(" + syyyy + "," + smm + "," + sdd + "," + shhh + "," + smmm + "," + ssss + ")" : "")
-							+ (threaded&&tIndent==0 ? ",threadOpen: "+mcache.isThreadOpen(nuid) : "")
-							+ (threaded&&tIndent==0 ? ",threadHasChildren: "+tChildren : "")
-							+ (threaded&&tIndent==0 ? ",threadUnseenChildren: "+tUnseenChildren : "")
-							+ (threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")
-							+ (threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")
+							+ (sgi.threaded&&tIndent==0 ? ",threadOpen: "+mcache.isThreadOpen(nuid) : "")
+							+ (sgi.threaded&&tIndent==0 ? ",threadHasChildren: "+tChildren : "")
+							+ (sgi.threaded&&tIndent==0 ? ",threadUnseenChildren: "+tUnseenChildren : "")
+							+ (sgi.threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")
+							+ (sgi.threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")
 							+ "}";
 
 						if (autoedit) {
@@ -5740,8 +5779,8 @@ public class Service extends BaseService {
 						+ "  root: 'messages', total: 'total', idProperty: 'idmessage',\n"
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
-                        + "  threaded: "+threaded+",\n"
-						+ "  groupField: '" + (threaded?"threadId":group) + "',\n";
+                        + "  threaded: "+sgi.threaded+",\n"
+						+ "  groupField: '" + (sgi.threaded?"threadId":group) + "',\n";
 				
 /*				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
 				ColumnsOrderSetting cos = us.getColumnsOrderSetting();
@@ -5769,8 +5808,8 @@ public class Service extends BaseService {
 				sout += "]\n";*/
 				
 				sout += "},\n";
-				sout += "threaded: "+(threaded?"1":"0")+",\n";
-				sout += "unread: " + funread + ", issent: " + issent + ", millis: " + mlt.millis + " }\n";
+				sout += "threaded: "+(sgi.threaded?"1":"0")+",\n";
+				sout += "unread: " + funread + ", issent: " + issent + ", millis: " + messagesInfo.millis + " }\n";
 				
 			} else {
 				sout += "total:0,\nstart:0,\nlimit:0,\nmessages: [\n";
@@ -5780,6 +5819,130 @@ public class Service extends BaseService {
 		} catch (Exception exc) {
 			new JsonResult(exc).printTo(out);
 			Service.logger.error("Exception",exc);
+		}
+	}
+	
+	public void processGetMessagePage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String pfoldername = request.getParameter("folder");
+		String puid = request.getParameter("uid");
+		String prowsperpage = request.getParameter("rowsperpage");
+		//String psearchfield = request.getParameter("searchfield");
+		//String ppattern = request.getParameter("pattern");
+		//String pquickfilter=request.getParameter("quickfilter");
+		//String prefresh = request.getParameter("refresh");
+		//String ptimestamp = request.getParameter("timestamp");
+		//if (psearchfield != null && psearchfield.trim().length() == 0) {
+		//	psearchfield = null;
+		//}
+		//if (ppattern != null && ppattern.trim().length() == 0) {
+		//	ppattern = null;
+		//}
+		//if (pquickfilter!=null && pquickfilter.trim().length()==0) pquickfilter=null;
+		//boolean refresh = (prefresh != null && prefresh.equals("true"));
+		//long timestamp=Long.parseLong(ptimestamp);
+		boolean refresh=true;
+		long uid=Long.parseLong(puid);		
+		long rowsperpage=Long.parseLong(prowsperpage);		
+		
+		String group = us.getMessageListGroup(pfoldername);
+		if (group == null) {
+			group = "";
+		}
+
+		String psortfield = "date";
+		String psortdir = "DESC";
+		try {
+			boolean nogroup=group.equals("");
+			if (nogroup) {
+				String s = us.getMessageListSort(pfoldername);
+				int ix = s.indexOf("|");
+				psortfield = s.substring(0, ix);
+				psortdir = s.substring(ix + 1);
+			} else {
+				psortfield = "date";
+				psortdir = "DESC";
+			}
+		} catch(Exception exc) {
+			logger.error("Exception",exc);
+		}
+		
+		SortGroupInfo sgi=getSortGroupInfo(psortfield,psortdir,group);
+		
+		Folder folder = null;
+		boolean connected=false;
+		try {
+			connected=checkStoreConnected();
+			if (!connected) throw new Exception("Mail account authentication error");
+
+				
+			if (pfoldername == null) {
+				folder = getDefaultFolder();
+			} else {
+				folder = getFolder(pfoldername);
+			}
+			
+			String key = folder.getFullName();
+			FolderCache mcache = getFolderCache(key);
+			if (mcache.toBeRefreshed()) refresh=true;
+//			if (ppattern != null && psearchfield != null) {
+//				key += "|" + ppattern + "|" + psearchfield;
+//			}
+			if (psortfield !=null && psortdir != null) {
+				key += "|" + psortdir + "|" + psortfield;
+			}
+//			if (pquickfilter !=null) {
+//				key +="|" + pquickfilter;
+//			}
+			
+			MessagesInfo messagesInfo=listMessages(mcache,key,refresh,null,null,sgi,null,0);
+            Message xmsgs[]=messagesInfo.messages;
+			if (xmsgs!=null) {
+				boolean found=false;
+				int start=0;
+				int startx=0;
+				long tId=0;
+				for (int i = 0, ni = 0; i < xmsgs.length; ++ni, ++i) {
+					int ix = start + i;
+					int nx = start + ni;
+					if (nx>=xmsgs.length) break;
+
+					SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];
+					if (xm.isExpunged()) {
+						--i;
+						continue;
+					}
+
+					long nuid=mcache.getUID(xm);
+					int tIndent=xm.getThreadIndent();
+					
+					if (nuid==uid) {
+						found=true;
+						if (tIndent==0) tId=0;
+						//else tId contains the last thread root id
+						break;
+					}
+					
+					if (tIndent==0) tId=nuid;
+					else if (sgi.threaded) {
+						if (!mcache.isThreadOpen(tId)) {
+							--i;
+							continue;
+						}
+					}
+					
+					++startx;
+				}
+				if (found) {
+					JsonResult jsr=new JsonResult();
+					jsr.set("page", ((int)(startx/rowsperpage)+1));
+					if (tId>0) jsr.set("threadid", tId);
+					jsr.printTo(out);
+				}
+				else new JsonResult(false,"Message not found");
+			}
+			else new JsonResult(false,"No messages");
+		} catch(Exception exc) {
+			new JsonResult(exc).printTo(out);
 		}
 	}
 	
@@ -7617,6 +7780,7 @@ public class Service extends BaseService {
 			co.put("folderSent", us.getFolderSent());
 			co.put("folderSpam", us.getFolderSpam());
 			co.put("folderTrash", us.getFolderTrash());
+			co.put("folderSeparator", folderSeparator);
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
 			co.put("fontSize", us.getFontSize());

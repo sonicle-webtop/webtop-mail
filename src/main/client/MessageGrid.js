@@ -539,10 +539,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	collapseClicked: function(rowIndex) {
+		var me=this;
+		
+		me.collapseThread(me.store.getAt(rowIndex));
+	},
+	
+	collapseThread: function(r) {
 		var me=this,
-			sel=me.getSelection(),
-			s=me.store,
-		    r=s.getAt(rowIndex);
+			sel=me.getSelection();
 	
 		if (sel) {
 			me.selectOnLoad=me.store.indexOf(sel[0]);
@@ -572,7 +576,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		return this.pageSize;
 	},
 	
-	reloadFolder: function(folder_id, config){
+	reloadFolder: function(folder_id, config, uid, page, tid){
 		var me = this,
 			proxy = me.store.getProxy();
 	
@@ -616,6 +620,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.initFolderState();
 		me.hideFilterBar();
 		me.getStore().clearFilter(true);
+		if (uid) {
+			me.autoselectUid=uid;
+			me.autoselectPage=page;
+			me.autoselectTid=tid;
+		} else {
+			me.autoselectUid=null;
+			me.autoselectPage=null;
+			me.autoselectTid=null;
+		}
 		s.load();
 	},
 	
@@ -720,7 +733,38 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.fireEvent('load',me,me.currentFolder,json);
 		}
 		
-		
+		//autoselect
+		if (me.autoselectUid) {
+			me.store.prefetchPage(me.autoselectPage, {
+				callback: function() {
+					var fr;
+					if (me.autoselectTid) {
+						//try to find uid if thread is open
+						fr=me.store.findRecord('idmessage',me.autoselectUid);
+						if (fr) {
+							me.selModel.select(fr);
+							Ext.defer(function() { me.ensureVisible(fr); },1000);
+							me.autoSelectUid=null;
+							me.autoSelectPage=null;
+							me.autoSelectTid=null;
+						} else {
+							//if not found, open thread, causing another load with thread open
+							fr=me.store.findRecord('idmessage',me.autoselectTid);
+							me.collapseThread(fr);
+						}
+					} else {
+						fr=me.store.findRecord('idmessage',me.autoselectUid);
+						me.selModel.select(fr);
+						Ext.defer(function() { me.ensureVisible(fr); },1000);
+						me.autoSelectUid=null;
+						me.autoSelectPage=null;
+						me.autoSelectTid=null;
+					}
+					
+				}
+			});
+			
+		}
 		//TODO: autoedit
 		/*
         var ae=meta.autoedit;

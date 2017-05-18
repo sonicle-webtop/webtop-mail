@@ -374,9 +374,9 @@ Ext.define('Sonicle.webtop.mail.view.RulesManager', {
 			params: params,
 			callback: function(success,json) {
 				if (success) {
-					me.mys.varsData.vacationActive=params.vactive;
-					me.mys.varsData.vacationMessage=params.vmessage;
-					me.mys.varsData.vacationAddresses=params.vaddresses;
+					me.mys.setVar("vacationActive",params.vactive);
+					me.mys.setVar("vacationMessage",params.vmessage);
+					me.mys.setVar("vacationAddresses",params.vaddresses);
 					me.closeView(false);
 				} else {
 					me.unmask();

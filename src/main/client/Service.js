@@ -70,7 +70,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	differentDefaultFolder: null,
 	uncheckedFolders: {},
 	specialFolders: {},
-	separator: '.',
 	askreceipt: false,
 
 	//state vars
@@ -471,8 +470,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		this.showFolder(folderid);
 	},
 	
+	selectAndShowFolder: function(folderid,uid,page,tid) {
+		var me=this;
+		
+		me.imapTree.expandAndSelectNode(folderid,me.getVar("folderSeparator"));
+		me.showFolder(folderid,uid,page,tid);
+	},
+	
 	//if uid, try to select specific uid
-	showFolder: function(folderid,uid) {
+	showFolder: function(folderid,uid,page,tid) {
         var me=this,
 			mp=me.messagesPanel;
 		//TODO: folder clicked
@@ -494,8 +500,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		mp.quickFilterCombo.setValue('any');
         
 		var params={start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2};
-		if (uid) params.finduid=uid;
-        mp.reloadFolder(folderid,params);
+        mp.reloadFolder(folderid,params,uid,page,tid);
 	}, 
 	
 	unreadChanged: function(msg,unreadOnly) {
@@ -582,7 +587,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionNew: function() {
 		var me=this;
-		me.startNewMessage(me.currentFolder, { format: me.varsData.format });
+		me.startNewMessage(me.currentFolder, { format: me.getVar("format") });
 	},
 	
 	/**
@@ -664,7 +669,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	getFolderIdentity: function(idfolder) {
 		var me=this,
-			identities=me.varsData.identities,
+			identities=me.getVar("identities"),
             ident=identities[0];
 	
         for(var i=1;i<identities.length;++i) {
@@ -680,7 +685,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	getIdentity: function(index) {
-		return this.varsData.identities[index];
+		return this.getVar("identities")[index];
 	},
 	
 	actionAdvancedSearch: function(s,e) {
@@ -788,9 +793,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					mys: me,
 					context: 'INBOX',
 					vacation: {
-						active: me.varsData.vacationActive,
-						message: me.varsData.vacationMessage,
-						addresses: me.varsData.vacationAddresses
+						active: me.getVar("vacationActive"),
+						message: me.getVar("vacationMessage"),
+						addresses: me.getVar("vacationAddresses")
 					}
 				}
 			});

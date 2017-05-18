@@ -103,6 +103,21 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 	
 	showSharings: function(b) {
 		this.getColumns()[2].setHidden(!b);
+	},
+	
+	expandAndSelectNode: function(id,sep,node) {
+		var me=this;
+	
+		if (!node) node=me.getRootNode();
+		
+		Ext.each(node.childNodes,function(cn,cx,an) {
+			if (id.startsWith(cn.id+sep)) {
+				cn.expand(false,function() {
+					me.expandAndSelectNode(id,sep,cn);
+				});
+			}
+			else if (id===cn.id) me.selModel.select(cn);
+		});
 	}
 	
 });

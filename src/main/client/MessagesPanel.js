@@ -491,9 +491,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         this.folderList.getSelectionModel().deselectAll();
     },
     
-    reloadFolder: function(folderid,config) {
+    reloadFolder: function(folderid,config,uid,page,tid) {
         this.currentFolder=folderid;
-        this.folderList.reloadFolder(folderid,config);
+        this.folderList.reloadFolder(folderid,config,uid,page,tid);
     },
 
     reloadCurrentFolder: function(config) {
