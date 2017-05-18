@@ -27,8 +27,10 @@ public class Keys {
 	// UNIQUE and PRIMARY KEY definitions
 	// -------------------------------------------------------------------------
 
+	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.AutorespondersRecord> AUTORESPONDER_PKEY = UniqueKeys0.AUTORESPONDER_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord> IDENTITIES_PKEY1 = UniqueKeys0.IDENTITIES_PKEY1;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesOldRecord> IDENTITIES_PKEY = UniqueKeys0.IDENTITIES_PKEY;
+	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord> FILTERS_IN_PKEY = UniqueKeys0.FILTERS_IN_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.NotesRecord> NOTES_PKEY = UniqueKeys0.NOTES_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.RulesRecord> FILTERS_PKEY = UniqueKeys0.FILTERS_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord> MAILSCAN_PKEY = UniqueKeys0.MAILSCAN_PKEY;
@@ -49,8 +51,10 @@ public class Keys {
 	}
 
 	private static class UniqueKeys0 extends org.jooq.impl.AbstractKeys {
+		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.AutorespondersRecord> AUTORESPONDER_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Autoresponders.AUTORESPONDERS, com.sonicle.webtop.mail.jooq.tables.Autoresponders.AUTORESPONDERS.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.Autoresponders.AUTORESPONDERS.USER_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord> IDENTITIES_PKEY1 = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Identities.IDENTITIES, com.sonicle.webtop.mail.jooq.tables.Identities.IDENTITIES.IDENTITY_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesOldRecord> IDENTITIES_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.IdentitiesOld.IDENTITIES_OLD, com.sonicle.webtop.mail.jooq.tables.IdentitiesOld.IDENTITIES_OLD.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.IdentitiesOld.IDENTITIES_OLD.USER_ID, com.sonicle.webtop.mail.jooq.tables.IdentitiesOld.IDENTITIES_OLD.EMAIL, com.sonicle.webtop.mail.jooq.tables.IdentitiesOld.IDENTITIES_OLD.DISPLAY_NAME);
+		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord> FILTERS_IN_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS, com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS.IN_FILTER_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.NotesRecord> NOTES_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Notes.NOTES, com.sonicle.webtop.mail.jooq.tables.Notes.NOTES.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.Notes.NOTES.MESSAGE_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.RulesRecord> FILTERS_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Rules.RULES, com.sonicle.webtop.mail.jooq.tables.Rules.RULES.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.Rules.RULES.USER_ID, com.sonicle.webtop.mail.jooq.tables.Rules.RULES.RULE_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord> MAILSCAN_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Scan.SCAN, com.sonicle.webtop.mail.jooq.tables.Scan.SCAN.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.Scan.SCAN.USER_ID, com.sonicle.webtop.mail.jooq.tables.Scan.SCAN.FOLDERNAME);

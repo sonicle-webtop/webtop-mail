@@ -142,6 +142,11 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(SCHEDULED_EMAILS_DISABLED,false);
 	}
 	
+	public int getSievePort() {
+		Integer value = getInteger(MailSettings.SIEVE_PORT, null);
+		return (value != null) ? value : getDefaultSievePort();
+	}
+	
 	//DEFAULTS
 	
 	public String getDefaultFolderPrefix() {
@@ -212,4 +217,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(DEFAULT_PREFIX+MailUserSettings.RECEIPT,false);
 	}
 	
+	public int getDefaultSievePort() {
+		return getInteger(DEFAULT_PREFIX+MailSettings.SIEVE_PORT, 2000);
+	}
 }

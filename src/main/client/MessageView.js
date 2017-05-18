@@ -151,7 +151,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createrule"), handler: function() {
 			var ae=me.emailMenu.activeElement;
 			me.createRule(ae.recEmail,ae.recType);
-		}, iconCls: 'wt-icon-new-rule-xs'});
+		}, iconCls: 'wtmail-icon-addMailFilter-xs'});
 		me.emailMenu=new Ext.menu.Menu({
 			items: actions
 		});
@@ -637,11 +637,21 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	
     createRule: function(email,type) {
 		var me=this,context="INBOX";
-		//if (ms.currentFolder==ms.folderSent) context="SENT";
-		me.mys.addRule({
-			from: type==="from"?email:null,
-			to: type==="to"||type==="cc"||type==="bcc"?email:null
-		});
+		var me = this, rfld, rval;
+		if (type === 'from') {
+			rfld = 'from';
+			rval = email;
+		} else if (type === 'to' || type === 'cc' || type === 'bcc') {
+			rfld = 'to_cc';
+			rval = email;
+		}
+		if (rfld && rval) {
+			me.mys.editInMailFilters({
+				addMailFilter: {
+					rules: Ext.JSON.encode([{field: rfld, operator: 'contains', value: rval}])
+				}
+			});
+		}
     },
 
     

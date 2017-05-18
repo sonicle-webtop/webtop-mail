@@ -33,8 +33,15 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.mail.sieve.SieveScriptBuilder;
+import com.fluffypeople.managesieve.ManageSieveClient;
+import com.fluffypeople.managesieve.SieveScript;
+import com.sonicle.commons.EnumUtils;
+import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.LangUtils.CollectionChangeSet;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.bol.OShare;
@@ -45,9 +52,21 @@ import com.sonicle.webtop.core.sdk.BaseManager;
 import com.sonicle.webtop.core.sdk.UserProfile.Data;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.mail.bol.OAutoResponder;
 import com.sonicle.webtop.mail.bol.OIdentity;
+import com.sonicle.webtop.mail.bol.OInFilter;
 import com.sonicle.webtop.mail.bol.model.Identity;
+import com.sonicle.webtop.mail.dal.AutoResponderDAO;
 import com.sonicle.webtop.mail.dal.IdentityDAO;
+import com.sonicle.webtop.mail.dal.InFilterDAO;
+import com.sonicle.webtop.mail.model.AutoResponder;
+import com.sonicle.webtop.mail.model.MailFilter;
+import com.sonicle.webtop.mail.model.MailFiltersType;
+import com.sonicle.mail.sieve.SieveAction;
+import com.sonicle.mail.sieve.SieveRule;
+import com.sonicle.mail.sieve.SieveMatch;
+import com.sonicle.webtop.mail.model.SieveActionList;
+import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -55,8 +74,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
+import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 
 /**
@@ -68,12 +90,19 @@ public class MailManager extends BaseManager {
 	public static final Logger logger = WT.getLogger(MailManager.class);
 	public static final String IDENTITY_SHARING_GROUPNAME = "IDENTITY";
 	public static final String IDENTITY_SHARING_ID = "0";
+	public static final String SIEVE_OLD_WEBTOP_SCRIPT = "webtop";
+	public static final String SIEVE_WEBTOP_SCRIPT = "webtop5";
 	
-	
+	private SieveConfig sieveConfig = null;
 	List<Identity> identities=null;
 	
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
+	}
+	
+	public void setSieveConfiguration(String host, int port, String username, String password) {
+		//TODO: portare i parametri (host,port,user,pass) nel manager
+		this.sieveConfig = new SieveConfig(host, port, username, password);
 	}
 	
 	public List<Identity> listIdentities() throws WTException {
@@ -366,5 +395,308 @@ public class MailManager extends BaseManager {
 		String path=PathUtils.concatPathParts(WT.getServiceHomePath(domainId, SERVICE_ID),"models");
 		return path;
 	}
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	public AutoResponder getAutoResponder() throws WTException {
+		AutoResponderDAO autdao = AutoResponderDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			
+			OAutoResponder oaut = autdao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+			if (oaut == null) {
+				return new AutoResponder();
+			} else {
+				return createAutoResponder(oaut);
+			}
+			
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void updateAutoResponder(AutoResponder autoResponder) throws WTException {
+		AutoResponderDAO autdao = AutoResponderDAO.getInstance();
+		Connection con = null;
+		
+		//TODO: valutare permessi... admin?
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			
+			OAutoResponder oaut = createOAutoResponder(autoResponder);
+			oaut.setDomainId(getTargetProfileId().getDomainId());
+			oaut.setUserId(getTargetProfileId().getUserId());
+			boolean exist = autdao.existByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+			if (exist) {
+				autdao.update(con, oaut);
+			} else {
+				autdao.insert(con, oaut);
+			}
+			
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public List<MailFilter> getMailFilters(MailFiltersType type) throws WTException {
+		InFilterDAO indao = InFilterDAO.getInstance();
+		List<MailFilter> filters = new ArrayList<>();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			
+			if (type.equals(MailFiltersType.INCOMING)) {
+				List<OInFilter> items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				for (OInFilter item : items) {
+					filters.add(createMailFilter(item));
+				}
+				return filters;
+			} else {
+				throw new WTException("Type not supported yet [{0}]", type.toString());
+			}
+			
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void updateMailFilters(MailFiltersType type, List<MailFilter> filters) throws WTException {
+		InFilterDAO indao = InFilterDAO.getInstance();
+		Connection con = null;
+		
+		//TODO: valutare permessi... admin?
+		
+		try {
+			con = WT.getConnection(SERVICE_ID, false);
+			
+			if (type.equals(MailFiltersType.INCOMING)) {
+				List<MailFilter> origFilters = getMailFilters(type);
+				CollectionChangeSet<MailFilter> changeSet = LangUtils.getCollectionChanges(origFilters, filters);
+				
+				OInFilter ofil = null;
+				for(MailFilter filter : changeSet.inserted) {
+					ofil = createOInFilter(filter);
+					ofil.setInFilterId(indao.getSequence(con).intValue());
+					ofil.setDomainId(getTargetProfileId().getDomainId());
+					ofil.setUserId(getTargetProfileId().getUserId());
+					indao.insert(con, ofil);
+				}
+				for(MailFilter filter : changeSet.updated) {
+					ofil = createOInFilter(filter);
+					indao.update(con, ofil);
+				}
+				for(MailFilter filter : changeSet.deleted) {
+					indao.delete(con, filter.getFilterId());
+				}
+				
+				DbUtils.commitQuietly(con);
+				
+			} else {
+				throw new WTException("Type not supported yet [{0}]", type.toString());
+			}
+			
+		} catch(SQLException | DAOException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public List<SieveScript> listSieveScripts() throws WTException {
+		ManageSieveClient client = null;
+		
+		ensureUserDomain();
+		try {
+			client = createSieveClient();
+			return SieveHelper.listScripts(client);
+		} finally {
+			SieveHelper.logoutSieveClientQuietly(client);
+		}
+	}
+	
+	public String getActiveSieveScriptName() throws WTException {
+		ManageSieveClient client = null;
+		
+		ensureUserDomain();
+		try {
+			client = createSieveClient();
+			return SieveHelper.getActiveScript(client);
+		} finally {
+			SieveHelper.logoutSieveClientQuietly(client);
+		}
+	}
+	
+	public void activateSieveScript(String name) throws WTException {
+		ManageSieveClient client = null;
+		
+		ensureUser();
+		try {
+			client = createSieveClient();
+			SieveHelper.activateScript(client, name);
+		} finally {
+			SieveHelper.logoutSieveClientQuietly(client);
+		}
+	}
+	
+	public void applySieveScript(boolean activate) throws WTException {
+		SieveScriptBuilder ssb = new SieveScriptBuilder();
+		
+		ensureUser();
+		logger.debug("Working on autoresponder...");
+		AutoResponder autoResp = getAutoResponder();
+		if (autoResp.getEnabled()) {
+			ssb.setVacation(autoResp.toSieveVacation());
+		}
+		
+		logger.debug("Working on incoming filters...");
+		List<MailFilter> filters = getMailFilters(MailFiltersType.INCOMING);
+		
+		// Arrange filters in the specified order and fill the builder
+		Collections.sort(filters, new Comparator<MailFilter>() {
+			@Override
+			public int compare(MailFilter o1, MailFilter o2) {
+				return Short.compare(o1.getOrder(), o2.getOrder());
+			}
+		});
+		for(MailFilter filter : filters) {
+			if (filter.getEnabled()) {
+				ssb.addFilter(filter.getName(), filter.getSieveMatch(), filter.getSieveRules(), filter.getSieveActions());
+			}
+		}
+		
+		String script = buildSieveScriptHeader() + ssb.build();
+		
+		ManageSieveClient client = null;
+		try {
+			if (sieveConfig == null) throw new WTException("SieveConfiguration not defined. Please call setSieveConfiguration(...) before call this method!");
+			client = client = createSieveClient();
+			SieveHelper.putScript(client, SIEVE_WEBTOP_SCRIPT, script);
+			if (activate) {
+				SieveHelper.activateScript(client, SIEVE_WEBTOP_SCRIPT);
+			}
+		} finally {
+			SieveHelper.logoutSieveClientQuietly(client);
+		}
+	}
+	
+	private ManageSieveClient createSieveClient() throws WTException {
+		if (sieveConfig == null) throw new WTException("SieveConfiguration not defined. Please call setSieveConfiguration(...) before using Sieve!");
+		return SieveHelper.createSieveClient(sieveConfig.getHost(), sieveConfig.getPort(), sieveConfig.getUsername(), sieveConfig.getPassword());
+	}
+	
+	private String buildSieveScriptHeader() {
+		DateTimeFormatter fmt = DateTimeUtils.createYmdHmsFormatter();
+		StringBuilder sb = new StringBuilder();
+		sb.append("# Generated by WebTop [http://www.sonicle.com]");
+		sb.append("\n");
+		sb.append("# ").append(SERVICE_ID).append("@").append(WT.getManifest(SERVICE_ID).getVersion().toString());
+		sb.append("\n");
+		sb.append("# ").append(fmt.print(DateTimeUtils.now()));
+		sb.append("\n");
+		sb.append("\n");
+		return sb.toString();
+	}
+	
+	private AutoResponder createAutoResponder(OAutoResponder oaut) {
+		if (oaut == null) return null;
+		AutoResponder aut = new AutoResponder();
+		aut.setEnabled(oaut.getEnabled());
+		aut.setSubject(oaut.getSubject());
+		aut.setMessage(oaut.getMessage());
+		aut.setDaysInterval(oaut.getDaysInterval());
+		aut.setActivationStartDate(oaut.getStartDate());
+		aut.setActivationEndDate(oaut.getEndDate());
+		aut.setSkipMailingLists(oaut.getSkipMailingLists());
+		return aut;
+	}
+	
+	private OAutoResponder createOAutoResponder(AutoResponder aut) {
+		if (aut == null) return null;
+		OAutoResponder oaut = new OAutoResponder();
+		oaut.setEnabled(aut.getEnabled());
+		oaut.setSubject(aut.getSubject());
+		oaut.setMessage(aut.getMessage());
+		oaut.setDaysInterval(aut.getDaysInterval());
+		oaut.setStartDate(aut.getActivationStartDate());
+		oaut.setEndDate(aut.getActivationEndDate());
+		oaut.setSkipMailingLists(aut.getSkipMailingLists());
+		return oaut;
+	}
+	
+	private OInFilter createOInFilter(MailFilter fil) {
+		if (fil == null) return null;
+		OInFilter ofil = new OInFilter();
+		ofil.setInFilterId(fil.getFilterId());
+		ofil.setEnabled(fil.getEnabled());
+		ofil.setOrder(fil.getOrder());
+		ofil.setName(fil.getName());
+		ofil.setSieveMatch(EnumUtils.toSerializedName(fil.getSieveMatch()));
+		ofil.setSieveRules(LangUtils.serialize(fil.getSieveRules(), SieveRuleList.class));
+		ofil.setSieveActions(LangUtils.serialize(fil.getSieveActions(), SieveActionList.class));
+		return ofil;
+	}
+	
+	private MailFilter createMailFilter(OInFilter ofil) {
+		if (ofil == null) return null;
+		MailFilter fil = new MailFilter();
+		fil.setFilterId(ofil.getInFilterId());
+		fil.setEnabled(ofil.getEnabled());
+		fil.setOrder(ofil.getOrder());
+		fil.setName(ofil.getName());
+		fil.setSieveMatch(EnumUtils.forSerializedName(ofil.getSieveMatch(), SieveMatch.class));
+		SieveRuleList rules = LangUtils.deserialize(ofil.getSieveRules(), null, SieveRuleList.class);
+		if (rules != null) fil.getSieveRules().addAll(rules);
+		SieveActionList acts = LangUtils.deserialize(ofil.getSieveActions(), null, SieveActionList.class);
+		if (acts != null) fil.getSieveActions().addAll(acts);
+		return fil;
+	}
+	
+	private static class SieveConfig {
+		private String host;
+		private int port;
+		private String username;
+		private char[] password;
+		
+		public SieveConfig(String host, int port, String username, String password) {
+			this.host = host;
+			this.port = port;
+			this.username = username;
+			this.password = password.toCharArray();
+		}
 
+		public String getHost() {
+			return host;
+		}
+
+		public int getPort() {
+			return port;
+		}
+
+		public String getUsername() {
+			return username;
+		}
+
+		public String getPassword() {
+			return new String(password);
+		}
+	}
 }
