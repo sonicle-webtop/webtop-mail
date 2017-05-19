@@ -42,10 +42,9 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		title: '{inMailFilters.tit}',
 		iconCls: 'wtmail-icon-inMailFilters-xs',
 		width: 560,
-		height: 440,
+		height: 500,
 		modal: true
 	},
-	fieldTitle: 'name',
 	modelName: 'Sonicle.webtop.mail.model.InMailFilters',
 	
 	constructor: function(cfg) {
@@ -53,6 +52,9 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		me.callParent([cfg]);
 		
 		WTU.applyFormulas(me.getVM(), {
+			foSieveAvail: WTF.foCompare('record', 'scriptsCount', function(v) {
+				return v !== -1;
+			}), 
 			foActiveScriptVisible: WTF.foCompare('record', 'scriptsCount', function(v) {
 				return v >= 2;
 			}),
@@ -104,7 +106,17 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 						}
 					}
 				})
-			]
+			],
+			bbar: {
+				xtype: 'statusbar',
+				items: [{
+					xtype: 'tbtext',
+					bind: {
+						hidden: '{foSieveAvail}'
+					},
+					text: me.mys.res('inMailFilters.warn.nosieve')
+				}]
+			}
 		});
 		me.callParent(arguments);
 		

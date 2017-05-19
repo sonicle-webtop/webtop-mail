@@ -7382,7 +7382,7 @@ public class Service extends BaseService {
 			if(crud.equals(Crud.READ)) {
 				String id = ServletUtils.getStringParameter(request, "id", true);
 				
-				int scriptCount = 0;
+				int scriptCount = -1;
 				String activeScript = null;
 				try {
 					List<com.fluffypeople.managesieve.SieveScript> scripts = manager.listSieveScripts();
