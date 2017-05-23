@@ -55,6 +55,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public String folderTrash;
 	public String folderSpam;
 	public char folderSeparator;
+	public String mainEmail;
 	public String replyTo;
 	public String sharedSort;
 	public boolean includeMessageInReply;

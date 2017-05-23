@@ -68,13 +68,18 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			xtype: 'wtopttabsection',
 			title: me.res('opts.main.tit'),
 			items: [
-/*			{
+			{
 				xtype: 'textfield',
-				bind: '{record.replyTo}',
+				bind: {
+					value: '{record.replyTo}',
+					emptyText: '{record.mainEmail}'
+				},
 				fieldLabel: me.res('opts.main.fld-replyTo.lbl'),
 				width: 400,
+				submitEmptyText: false,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			},*/
+			},
 			WTF.lookupCombo('id', 'desc', {
 				bind: {
 					value: '{record.protocol}',
@@ -85,7 +90,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				}),
 				fieldLabel: me.res('opts.main.fld-protocol.lbl'),
 				width: 220,
-				needReload: true,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}), {
 				xtype: 'textfield',
@@ -95,7 +100,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				},
 				fieldLabel: me.res('opts.main.fld-host.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'numberfield',
@@ -105,7 +110,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				},
 				fieldLabel: me.res('opts.main.fld-port.lbl'),
 				width: 200,
-				needReload: true,
+				needLogin: true,
 				hideTrigger: true,
 				keyNavEnabled: false,
 				mouseWheelEnabled: false,
@@ -145,7 +150,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				},
 				fieldLabel: me.res('opts.main.fld-folderPrefix.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
@@ -155,7 +160,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				},
 				fieldLabel: me.res('opts.main.fld-folderSent.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
@@ -165,7 +170,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				},
 				fieldLabel: me.res('opts.main.fld-folderDrafts.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
@@ -175,7 +180,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				},
 				fieldLabel: me.res('opts.main.fld-folderTrash.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'textfield',
@@ -185,7 +190,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				},
 				fieldLabel: me.res('opts.main.fld-folderSpam.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, WTF.lookupCombo('id', 'desc', {
 				bind: '{record.sharedSort}',

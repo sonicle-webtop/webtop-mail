@@ -86,6 +86,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.folderDrafts = mus.getFolderDrafts();
 				jso.folderTrash = mus.getFolderTrash();
 				jso.folderSpam = mus.getFolderSpam();
+				jso.mainEmail = WT.getUserData(getTargetProfileId()).getEmailAddress();
 				jso.replyTo = mus.getReplyTo();
 				jso.sharedSort = mus.getSharedSort();
 				jso.includeMessageInReply = mus.isIncludeMessageInReply();

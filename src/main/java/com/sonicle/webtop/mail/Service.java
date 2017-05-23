@@ -907,15 +907,15 @@ public class Service extends BaseService {
 			Identity from = msg.getFrom();
 			sender = from.getEmail();
 			name = from.getDisplayName();
-			replyto = sender;
+			if (replyto==null|| replyto.trim().length()==0) replyto = sender;
 		}
-		
-		msg.setReplyTo(replyto);
 		
 		if (name != null && name.length() > 0) {
 			sender = name + " <" + sender + ">";
-			
+			if (replyto!=null|| replyto.trim().length()>0) replyto=name + " <" + replyto + ">";
 		}
+		if (replyto!=null|| replyto.trim().length()>0) msg.setReplyTo(replyto);
+		
 		Exception retexc = null;
 		
 		if (attachments.size() == 0 && msg.getAttachments() == null) {
