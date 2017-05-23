@@ -77,7 +77,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
                 } else {
                     me.grid.moveSelection(me.fromFolder,me.curnode.id,me.grid.getSelection());
 					me.enable();
-					me.hideView();
+					me.closeView(false);
                 }
 			}
 		});
@@ -93,7 +93,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
                 } else {
                     me.grid.copySelection(me.fromFolder,me.curnode.id,me.grid.getSelection());
 					me.enable();
-					me.hideView();
+					me.closeView(false);
                 }
 			}
 		});
@@ -102,7 +102,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			text: WT.res("act-cancel.lbl"),
 			width:100,
 			handler: function() {
-				me.hideView();
+				me.closeView(false);
 			}
 		});
 		
@@ -142,7 +142,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		me.enable();
 		if (result) {
 			me.chkfiltered.setValue(false);
-			me.hideView();
+			me.closeView(false);
 		}
 	}
 	

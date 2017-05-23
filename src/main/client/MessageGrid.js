@@ -1037,7 +1037,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	actionMoveToFolder: function() {
 		var me=this;
-		if (!me.mcmdialog) {
+//		if (!me.mcmdialog) {
 			me.mcmdialog=WT.createView(me.mys.ID,'view.MoveCopyMessagesDialog',{
 				viewCfg: {
 					mys: me,
@@ -1046,10 +1046,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					grid: me
 				}
 			});
-		} else {
-			me.mcmdialog.fromFolder=me.currentFolder;
-			me.mcmdialog.grid=me;
-		}
+//		} else {
+//			me.mcmdialog.getView().fromFolder=me.currentFolder;
+//			me.mcmdialog.getView().grid=me;
+//		}
 		
 		me.mcmdialog.show();
 	},
