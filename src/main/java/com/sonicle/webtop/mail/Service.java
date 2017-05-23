@@ -4277,17 +4277,6 @@ public class Service extends BaseService {
 
 			}*/
 			
-			//Save used recipients
-			for(JsRecipient rcpt: pl.data.recipients) {
-                String email=rcpt.email;
-				if (email!=null && email.trim().length()>0) 
-					coreMgr.learnInternetRecipient(email);
-			}
-			//TODO save used subject
-			//Save used subject
-			/*String subject=request.getParameter("subject");
-			if (subject!=null && subject.trim().length()>0) wts.setServiceStoreEntry(getName(), "subject", subject.toUpperCase(),subject);*/
-        
 			checkStoreConnected();
 			//String attachments[] = request.getParameterValues("attachments");
 			//if (attachments == null) {
@@ -4302,6 +4291,18 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			Exception exc = sendMessage(msg, jsmsg.attachments);
 			if (exc == null) {
+				
+				//Save used recipients
+				for(JsRecipient rcpt: pl.data.recipients) {
+					String email=rcpt.email;
+					if (email!=null && email.trim().length()>0) 
+						coreMgr.learnInternetRecipient(email);
+				}
+				//TODO save used subject
+				//Save used subject
+				/*String subject=request.getParameter("subject");
+				if (subject!=null && subject.trim().length()>0) wts.setServiceStoreEntry(getName(), "subject", subject.toUpperCase(),subject);*/
+
 				coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
 				// TODO: Cloud integration!!! Destination emails added to share
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
