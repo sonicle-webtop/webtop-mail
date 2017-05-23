@@ -1915,7 +1915,7 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private String getTextPlainContentAsString(Part p) throws IOException, MessagingException {
+	private String getTextContentAsString(Part p) throws IOException, MessagingException {
 		java.io.InputStream istream = null;
 		String charset = MailUtils.getCharsetOrDefault(p.getContentType());
 		if (!java.nio.charset.Charset.isSupported(charset)) {
@@ -1962,12 +1962,13 @@ public class Service extends BaseService {
 			return false;
 		}
 		if (p.isMimeType("text/html")) {
-			String htmlcontent=(String)p.getContent();
+			//String htmlcontent=(String)p.getContent();
+			String htmlcontent = getTextContentAsString(p);
 			textsb.append(MailUtils.htmlToText(MailUtils.htmlunescapesource(htmlcontent)));
 			htmlsb.append(MailUtils.htmlescapefixsource(getBodyInnerHtml(htmlcontent)));
 			isHtml = true;
 		} else if (p.isMimeType("text/plain")) {
-			String content = getTextPlainContentAsString(p);
+			String content = getTextContentAsString(p);
 			textsb.append(content);
 			htmlsb.append(startpre + MailUtils.htmlescape(content) + endpre);
 			isHtml = false;
