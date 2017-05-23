@@ -52,6 +52,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			},
 			canChangeMailcardSettings: function(get) {
 				return get("record.canChangeMailcardSettings");
+			},
+			canChangeDomainMailcardSettings: function(get) {
+				return get("record.canChangeAccountSettings")&&get("record.canChangeMailcardSettings");
 			}
 		}
 	},
@@ -245,7 +248,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					fieldLabel: me.res('opts.editing.fld-emaildomainMailcard.lbl'),
 					layout: 'hbox',
 					bind: {
-						hidden: '{!canChangeMailcardSettings}'
+						hidden: '{!canChangeDomainMailcardSettings}'
 					},
 					items: [ 
 						{ xtype: 'button', text: WT.res('act-edit.lbl'), width: 100, handler: function(s) { me.editMailcard('emaildomain', s); } },
