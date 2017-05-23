@@ -436,8 +436,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 '-',
                 me.getAct('downloadmails'),
                 '-',
+				me.getAct('managehiddenfolders'),
                 me.getAct('hidefolder'),
-                me.getAct('managehiddenfolders'),
                 '-',
                 me.getAct('markseenfolder')
 			]
@@ -896,7 +896,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this;
 		WT.createView(me.ID,'view.HiddenFolders',{
 			viewCfg: {
-				handler: function() {
+				callback: function() {
 					me.reloadTree();
 				}
 			}
