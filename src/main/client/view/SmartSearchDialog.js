@@ -453,13 +453,13 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		WT.ajaxReq(me.mys.ID, 'PollSmartSearch', {
 			callback: function(success,json) {
 				if (success) {
-					var pg=me.lref("panelGraph");
+					var pg=me.lref("panelGraph"),
+						pattern=me.lref("fldSearch").getValue();
 					me.updateTotals(json.data);
 					if (!json.data.finished) {
 						me.polltask.delay(1000, me.doPolling, me);
 						pg.setTitle(me.mys.res('smartsearch-search.tit',pattern+" (..."+json.data.progress+"%...)"));
 					} else {
-						var pattern=me.lref("fldSearch").getValue();
 						pg.setTitle(me.mys.res('smartsearch-search.tit',pattern));
 					}
 				} else {
