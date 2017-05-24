@@ -1821,7 +1821,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					dcols[n++]=Ext.create({//Subject
 						xtype: 'gridcolumn',
 						header: me.res("column-subject"),
-						width: 300,
+						width: 200,
 						sortable: true,
 						dataIndex: 'subject',
 						stateId: 'stid-subject',
@@ -2118,7 +2118,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         stcols[n++]={ id: 'stid-unread', width: 40 };
         stcols[n++]={ id: 'stid-from', width: 198 };
         stcols[n++]={ id: 'stid-to', width: 198 };
-        stcols[n++]={ id: 'stid-subject', width: 675 };
+        stcols[n++]={ id: 'stid-subject', width: 400 };
         stcols[n++]={ id: 'stid-date', width: 96 };
         stcols[n++]={ id: 'stid-gdate', width: 96 };
         stcols[n++]={ id: 'stid-sdate', width: 96 };

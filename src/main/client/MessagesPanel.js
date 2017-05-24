@@ -44,8 +44,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     border: false,
 	
 	viewRegion: 'east',
-	viewWidth: 600,
-	viewHeight: 400,
+	viewWidth: "40%",
+	viewHeight: "40%",
 	viewCollapsed: false,
     
     filterTextField: null,
@@ -260,8 +260,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			header: false,
             collapsible : true,
 			collapsed: false, //me.viewCollapsed,
-            height: 400, //me.viewHeight,
-			width: 600, //me.viewWidth,
+            height: '40%', //me.viewHeight,
+			width: '40%', //me.viewWidth,
             bodyBorder: false,
             border: false,
 			tbar: Ext.create('Ext.toolbar.Toolbar',{
@@ -351,8 +351,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.clearMessageView();
 		if (!r) {
 			r="south";
-			w=640;
-			h=400;
+			w="40%";
+			h="40%";
 		}
 		me.viewRegion=r;
 		me.viewWidth=w;
