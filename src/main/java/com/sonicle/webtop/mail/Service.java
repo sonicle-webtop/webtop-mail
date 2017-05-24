@@ -902,19 +902,21 @@ public class Service extends BaseService {
 		String sender = profile.getEmailAddress();
 		String name = profile.getDisplayName();
 		String replyto = mprofile.getReplyTo();
+		boolean isOtherIdentity=false;
 		
 		if (msg.getFrom() != null) {
 			Identity from = msg.getFrom();
+			isOtherIdentity=!from.isMainIdentity();
 			sender = from.getEmail();
 			name = from.getDisplayName();
-			if (replyto==null|| replyto.trim().length()==0) replyto = sender;
+			if ( replyto==null|| replyto.trim().length()==0) replyto = sender;
 		}
 		
 		if (name != null && name.length() > 0) {
 			sender = name + " <" + sender + ">";
-			if (replyto!=null|| replyto.trim().length()>0) replyto=name + " <" + replyto + ">";
+			if (!isOtherIdentity && (replyto!=null && replyto.trim().length()>0)) replyto=name + " <" + replyto + ">";
 		}
-		if (replyto!=null|| replyto.trim().length()>0) msg.setReplyTo(replyto);
+		if (!isOtherIdentity && ( replyto!=null && replyto.trim().length()>0)) msg.setReplyTo(replyto);
 		
 		Exception retexc = null;
 		

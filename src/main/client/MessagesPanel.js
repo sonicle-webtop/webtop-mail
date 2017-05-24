@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	viewRegion: 'east',
 	viewWidth: 600,
 	viewHeight: 400,
+	viewCollapsed: false,
     
     filterTextField: null,
     filterCombo: null,
@@ -249,16 +250,18 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
         me.messageViewContainer=Ext.create({
 			xtype: 'wtpanel',
-            region: me.viewRegion,
+			stateful: true,
+			stateId: me.mys.buildStateId('ctmessageview'),
+            region: "east", //me.viewRegion,
             cls: 'wtmail-mv-container',
             layout: 'fit',
             split: true,
             collapseMode: 'mini',
 			header: false,
             collapsible : true,
-			collapsed: me.viewCollapsed,
-            height: me.viewHeight,
-			width: me.viewWidth,
+			collapsed: false, //me.viewCollapsed,
+            height: 400, //me.viewHeight,
+			width: 600, //me.viewWidth,
             bodyBorder: false,
             border: false,
 			tbar: Ext.create('Ext.toolbar.Toolbar',{
@@ -282,7 +285,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			if (!me.movingPanel) {
 				//if (me.viewRegion==='east') me.viewWidth=w;
 				//else me.viewHeight=h;
-				me.saveMessageView(me.viewRegion==='east'?w:h);
+				//me.saveMessageView(me.viewRegion==='east'?w:h);
 			}
 		});
 		me.messageViewContainer.on("expand",function() {
@@ -360,7 +363,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		mvc.setHeight(me.viewHeight);
 		me.updateLayout();
 		if (me.viewCollapsed) mvc.collapse();
-		if (save) me.saveMessageView();
+		//if (save) me.saveMessageView();
 		me.showMessage(idf,idm);
 		me.movingPanel=false;
 	},
@@ -504,7 +507,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     selectionChanged: function(sm,r,eopts) {
         var me=this,
 			c=sm.getCount();
-		if (!me.viewCollapsed) {
+		if (!me.messageViewContainer.collapsed) {
 			//if (c==1&&!ctrlshift) {
 			if (c===1) {
 				var id=r[0].get('idmessage');
