@@ -914,7 +914,7 @@ public class Service extends BaseService {
 		
 		if (name != null && name.length() > 0) {
 			sender = name + " <" + sender + ">";
-			if (!isOtherIdentity && (replyto!=null && replyto.trim().length()>0)) replyto=name + " <" + replyto + ">";
+			if (!isOtherIdentity && (replyto!=null && replyto.trim().length()>0 && !replyto.trim().endsWith(">"))) replyto=name + " <" + replyto + ">";
 		}
 		if (!isOtherIdentity && ( replyto!=null && replyto.trim().length()>0)) msg.setReplyTo(replyto);
 		
