@@ -1832,6 +1832,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								tindent=record.get("threadIndent"),
 								topen=record.get("threadOpen"),
 								tchildren=record.get("threadHasChildren"),
+								tuc=record.get("threadUnseenChildren"),
+								uline=me.threaded && !topen && tuc && tuc>0,
 								imgtag="";
 
 							if (me.threaded) {                    
@@ -1841,7 +1843,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 											"<span class='x-grid-group-title wtmail-element-toclick'"+
 											  " onclick='WT.getApp().getService(\""+me.mys.ID+"\").messagesPanel.folderList.collapseClicked("+rowIndex+");'"+
 											">&nbsp;</span>";
-									var tuc=record.get("threadUnseenChildren")
 									if (!topen && tuc && tuc>0) imgtag+="<b>+"+tuc+"</b>&nbsp;";
 								} else {
 									imgtag="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;";
@@ -1852,7 +1853,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								var imgname=Ext.String.format("status{0}_16.png",status);
 								imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16,"valign=top")+"&nbsp;";
 							}
+							if (uline) imgtag+="<u>";
 							imgtag+=value;
+							if (uline) imgtag+="</u>";
 							if (me.threaded && tindent===0) {
 								imgtag+="</div>";
 							}
