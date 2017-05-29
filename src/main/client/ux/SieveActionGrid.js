@@ -55,9 +55,9 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 			ptype: 'cellediting',
 			clicksToEdit: 1,
 			listeners: {
-				beforeedit: me.onCellBeforeEdit,
+				//beforeedit: me.onCellBeforeEdit,
 				edit: me.onCellEdit,
-				validateedit: me.onCellValidateEdit,
+				//validateedit: me.onCellValidateEdit,
 				scope: me
 			}
 		});
@@ -89,7 +89,13 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 				dataIndex: 'argument',
 				getEditor: me.getArgumentEditor.bind(me),
 				renderer: function(val, meta, rec) {
-					if (rec.get('method') === 'addflag') {
+					var mtd = rec.get('method');
+					if (Ext.isEmpty(val)) {
+						if (['reject', 'redirect', 'fileinto', 'addflag'].indexOf(mtd) !== -1) {
+							return me.styleAsEmpty(WT.res(sid, 'wtmailsieveactiongrid.argument.'+mtd+'.emp'));
+						}
+					}
+					if (mtd === 'addflag') {
 						return WT.res(sid, 'store.sieveActionArgFlag.'+val);
 					}
 					return val;
@@ -120,21 +126,20 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 		me.callParent(arguments);
 		
 		me.editors = {
-			'arg-text': new Ext.grid.CellEditor({
+			'argtext': new Ext.grid.CellEditor({
+				field: Ext.create('Ext.form.field.Text', {
+					allowBlank: false,
+					selectOnFocus: true
+				})
+			}),
+			'argemail': new Ext.grid.CellEditor({
 				field: Ext.create('Ext.form.field.Text', {
 					allowBlank: false,
 					selectOnFocus: true,
-					emptyText: WT.res(sid, 'wtmailsieveactiongrid.argument.emp')
+					emptyText: WT.res(sid, 'wtmailsieveactiongrid.ed.argemail.emp')
 				})
 			}),
-			'arg-email': new Ext.grid.CellEditor({
-				field: Ext.create('Ext.form.field.Text', {
-					allowBlank: false,
-					selectOnFocus: true,
-					emptyText: WT.res(sid, 'wtmailsieveactiongrid.argument.email.emp')
-				})
-			}),
-			'arg-folder': new Ext.grid.CellEditor({
+			'argfolder': new Ext.grid.CellEditor({
 				field: Ext.create({
 					xtype: 'sotreecombo',
 					allowBlank: false,
@@ -148,7 +153,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 					})
 				})	
 			}),
-			'arg-flag': new Ext.grid.CellEditor({
+			'argflag': new Ext.grid.CellEditor({
 				field: Ext.create(WTF.lookupCombo('id', 'desc', {
 					allowBlank: false,
 					store: Ext.create('Sonicle.webtop.mail.store.SieveActionArgFlag', {
@@ -189,13 +194,13 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 				method = rec.get('method');
 		switch(method) {
 			case 'reject':
-				return me.getCellEditor('arg-text', rec);
+				return me.getCellEditor('argtext', rec);
 			case 'redirect':
-				return me.getCellEditor('arg-email', rec);
+				return me.getCellEditor('argemail', rec);
 			case 'fileinto':
-				return me.getCellEditor('arg-folder', rec);
+				return me.getCellEditor('argfolder', rec);
 			case 'addflag':
-				return me.getCellEditor('arg-flag', rec);
+				return me.getCellEditor('argflag', rec);
 			default:
 				return false;
 		}
@@ -215,6 +220,10 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 		ed.editorId = rec.getId();
 		//ed.field.column = me.valueColumn;
 		return ed;
+	},
+	
+	styleAsEmpty: function(text) {
+		return '<span style="color:gray;font-style:italic;">' + text + '</span>';
 	},
 	
 	addAction: function() {
