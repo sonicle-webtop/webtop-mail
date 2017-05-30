@@ -67,6 +67,7 @@ public class JsSmartSearchTotals {
 	
 	public boolean finished=false;
 	public int progress=0;
+	public String curfoldername=null;
 	
 	public Person addPerson(String name, String email) {
 		Person p=hpersons.get(email);

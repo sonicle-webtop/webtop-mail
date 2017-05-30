@@ -6960,6 +6960,7 @@ public class Service extends BaseService {
 				sst.cancel();
 			
 			String pattern=ServletUtils.getStringParameter(request, "pattern", true);
+			boolean trashspam=ServletUtils.getBooleanParameter(request, "trashspam", false);
 			boolean fromme=ServletUtils.getBooleanParameter(request, "fromme", false);
 			boolean tome=ServletUtils.getBooleanParameter(request, "tome", false);
 			boolean attachments=ServletUtils.getBooleanParameter(request, "attachments", false);
@@ -6978,6 +6979,12 @@ public class Service extends BaseService {
 			String firstFolders[]={"INBOX", us.getFolderSent()};
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
+				
+				//skip shared
+				if (isUnderSharedFolder(folderId)) continue;
+				
+				if (!trashspam && (isTrashFolder(folderId)||isSpamFolder(folderId))) continue;
+				
 				boolean skip=false;
 				for(String skipfolder: firstFolders) {
 					if (skipfolder.equals(folderId)) {

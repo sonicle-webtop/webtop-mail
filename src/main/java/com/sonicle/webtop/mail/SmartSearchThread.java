@@ -121,6 +121,7 @@ public class SmartSearchThread extends Thread {
 				
 				FolderCache fc=ms.getFolderCache(folderId);
                 curfolder=fc;
+				sst.curfoldername=fc.getFolderName();
 				
 				if ((fc.getFolder().getType()&IMAPFolder.HOLDS_MESSAGES)==0) continue;
 				try {

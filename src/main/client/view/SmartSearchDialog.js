@@ -56,6 +56,26 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		
 		me.searchToolbar=new Ext.Toolbar({
 			items: [
+				{
+					xtype: 'label',
+					html: me.mys.res('smartsearch-view-fldaccount.lbl')+"&nbsp;:&nbsp;"
+				},
+				{
+					xtype: 'combobox',
+					reference: 'fldAccount',
+					width: 150
+				},
+				' ',' ',
+				{ 
+					xtype: 'checkbox', 
+					reference: 'chkTrashSpam', 
+					boxLabel: me.mys.res('smartsearch-view-trashspam',0), 
+					listeners: { 
+						change: function() {
+							me.runSearch(false);
+						}
+					}
+				},
 				'->',
 				Ext.create({
 					xtype: 'wtsuggestcombo',
@@ -92,7 +112,11 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 			
 			tbar: me.searchToolbar,		
 			buttons: [
-			]
+			],
+			bbar: {
+				xtype: 'statusbar',
+				reference: 'statusBar'
+			}
 		});
 		
 		me.callParent(arguments);
@@ -418,12 +442,14 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		//	return;
 		//}
 	
-		me.lref("panelGraph").setTitle(me.mys.res('smartsearch-search.tit',pattern+" (...0%...)"));
+		me.lref("panelGraph").setTitle(me.mys.res('smartsearch-search.tit',pattern));
+		me.lref("statusBar").setStatus("(...0%...)");
 		//me.wait(WT.res("loading"));
 		
 		WT.ajaxReq(me.mys.ID, 'RunSmartSearch', {
 			params: {
 				pattern: pattern,
+				trashspam: me.lref("chkTrashSpam").getValue(),
 				fromme: me.lref("chkFromMe").getValue(),
 				tome: me.lref("chkToMe").getValue(),
 				attachments: me.lref("chkAttachments").getValue(),
@@ -454,13 +480,15 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 			callback: function(success,json) {
 				if (success) {
 					var pg=me.lref("panelGraph"),
+						sb=me.lref("statusBar"),
 						pattern=me.lref("fldSearch").getValue();
 					me.updateTotals(json.data);
 					if (!json.data.finished) {
 						me.polltask.delay(1000, me.doPolling, me);
-						pg.setTitle(me.mys.res('smartsearch-search.tit',pattern+" (..."+json.data.progress+"%...)"));
-					} else {
 						pg.setTitle(me.mys.res('smartsearch-search.tit',pattern));
+						sb.setStatus(json.data.curfoldername+" - (..."+json.data.progress+"%...)");
+					} else {
+						sb.setStatus("");
 					}
 				} else {
 					WT.error(json.message);
