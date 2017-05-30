@@ -138,6 +138,7 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 		
 		me.loadStoreData(me.lref('gprules').getStore(), mo.get('rules'));
 		me.loadStoreData(me.lref('gpactions').getStore(), mo.get('actions'));
+		me.lref('fldname').focus(true);
 	},
 	
 	onBeforeModelValidate: function(s, model) {
