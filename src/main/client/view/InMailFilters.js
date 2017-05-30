@@ -54,7 +54,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		WTU.applyFormulas(me.getVM(), {
 			foSieveAvail: WTF.foCompare('record', 'scriptsCount', function(v) {
 				return v !== -1;
-			}), 
+			}),
 			foActiveScriptVisible: WTF.foCompare('record', 'scriptsCount', function(v) {
 				return v >= 2;
 			}),
@@ -100,8 +100,8 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					width: 220,
 					listeners: {
 						select: function(s, rec) {
-							if (rec.getId() !== 'webtop5') {
-								WT.warn(me.mys.res('inMailFilters.warn.notwebtop', WT.getPlatformName()));
+							if (rec.getId() !== me.self.WT_SCRIPT) {
+								WT.warn(me.mys.res('inMailFilters.warn.notwebtop', me.self.WT_SCRIPT));
 							}
 						}
 					}
@@ -229,8 +229,10 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 			});
 		}
 		
-		if (mo.get('activeScript') !== 'webtop5') {
-			WT.warn(me.mys.res('inMailFilters.warn.notwebtop', WT.getPlatformName()));
+		if (mo.get('activeScript') !== me.self.WT_SCRIPT) {
+			WT.confirm(me.mys.res('inMailFilters.confirm.notwebtop', WT.getPlatformName()), function(bid) {
+				if (bid === 'yes') mo.set('activeScript', me.self.WT_SCRIPT);
+			}, this);
 		}
 	},
 	
@@ -322,6 +324,10 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 			sieveRules: data.rules,
 			sieveActions: data.actions
 		};
+	},
+	
+	statics: {
+		WT_SCRIPT: 'webtop5'
 	}
 });
 	

@@ -7592,11 +7592,12 @@ public class Service extends BaseService {
 		ArrayList<JsSimple> items = new ArrayList<>();
 		
 		try {
-			items.add(new JsSimple(MailManager.SIEVE_WEBTOP_SCRIPT, "(" + WT.getPlatformName() + ")"));
+			items.add(new JsSimple(MailManager.SIEVE_WEBTOP_SCRIPT, MailManager.SIEVE_WEBTOP_SCRIPT));
 			
 			try {
 				List<com.fluffypeople.managesieve.SieveScript> scripts = manager.listSieveScripts();
 				for(com.fluffypeople.managesieve.SieveScript script : scripts) {
+					// Skip new webtop script name, we want it as first element
 					if (!StringUtils.equals(script.getName(), MailManager.SIEVE_WEBTOP_SCRIPT)) {
 						items.add(new JsSimple(script.getName(), script.getName()));
 					}
@@ -7656,6 +7657,8 @@ public class Service extends BaseService {
 							logger.warn("Error activating chosen script", ex1);
 						}
 					}
+					// Always generate a WT script but activate it 
+					// automatically only if has been selected our script
 					manager.applySieveScript(isWTScript);
 				}	
 				
@@ -7668,7 +7671,7 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private String findActiveScriptName(List<com.fluffypeople.managesieve.SieveScript> scripts) throws WTException {
+	private String findActiveScriptName(List<com.fluffypeople.managesieve.SieveScript> scripts) {
 		for (com.fluffypeople.managesieve.SieveScript script : scripts) {
 			if (script.isActive()) return script.getName();
 		}

@@ -622,6 +622,7 @@ public class MailManager extends BaseManager {
 		aut.setEnabled(oaut.getEnabled());
 		aut.setSubject(oaut.getSubject());
 		aut.setMessage(oaut.getMessage());
+		aut.setAddresses(oaut.getAddresses());
 		aut.setDaysInterval(oaut.getDaysInterval());
 		aut.setActivationStartDate(oaut.getStartDate());
 		aut.setActivationEndDate(oaut.getEndDate());
@@ -635,6 +636,7 @@ public class MailManager extends BaseManager {
 		oaut.setEnabled(aut.getEnabled());
 		oaut.setSubject(aut.getSubject());
 		oaut.setMessage(aut.getMessage());
+		oaut.setAddresses(aut.getAddresses());
 		oaut.setDaysInterval(aut.getDaysInterval());
 		oaut.setStartDate(aut.getActivationStartDate());
 		oaut.setEndDate(aut.getActivationEndDate());

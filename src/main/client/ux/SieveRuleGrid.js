@@ -58,9 +58,9 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 			ptype: 'cellediting',
 			clicksToEdit: 1,
 			listeners: {
-				beforeedit: me.onCellBeforeEdit,
+				//beforeedit: me.onCellBeforeEdit,
 				edit: me.onCellEdit,
-				validateedit: me.onCellValidateEdit,
+				//validateedit: me.onCellValidateEdit,
 				scope: me
 			}
 		});
@@ -91,6 +91,15 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 			}, {
 				dataIndex: 'argument',
 				getEditor: me.getArgumentEditor.bind(me),
+				renderer: function(val, meta, rec) {
+					var fld = rec.get('field');
+					if (Ext.isEmpty(val)) {
+						if (['header'].indexOf(fld) !== -1) {
+							return me.styleAsEmpty(WT.res(sid, 'wtmailsieverulegrid.argument.'+fld+'.emp'));
+						}
+					}
+					return val;
+				},
 				flex: 1
 			}, {
 				xtype: 'solookupcolumn',
@@ -105,9 +114,17 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 				dataIndex: 'value',
 				getEditor: me.getValueEditor.bind(me),
 				renderer: function(val, meta, rec) {
-					if (rec.get('field') === 'size') {
+					var fld = rec.get('field');
+					if (Ext.isEmpty(val)) {
+						if (['size'].indexOf(fld) !== -1) {
+							return me.styleAsEmpty(WT.res(sid, 'wtmailsieverulegrid.value.'+fld+'.emp'));
+						} else {
+							return me.styleAsEmpty(WT.res(sid, 'wtmailsieverulegrid.value.emp'));
+						}
+					}
+					if (fld === 'size') {
 						var bytes = parseInt(val);
-						if (Ext.isNumber(bytes)) return Sonicle.Bytes.format(bytes);
+						if (Ext.isNumber(bytes)) return Sonicle.Bytes.format(bytes);	
 					}
 					return val;
 				},
@@ -140,8 +157,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 			'argtext': new Ext.grid.CellEditor({
 				field: Ext.create('Ext.form.field.Text', {
 					allowBlank: false,
-					selectOnFocus: true,
-					emptyText: WT.res(sid, 'wtmailsieverulegrid.argument.header.emp')
+					selectOnFocus: true
 				})
 			}),
 			'optext': new Ext.grid.CellEditor({
@@ -163,15 +179,14 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 			'vtext': new Ext.grid.CellEditor({
 				field: Ext.create('Ext.form.field.Text', {
 					allowBlank: false,
-					selectOnFocus: true,
-					emptyText: WT.res(sid, 'wtmailsieverulegrid.value.emp')
+					selectOnFocus: true
 				})
 			}),
 			'vsize': new Ext.grid.CellEditor({
 				field: Ext.create('Sonicle.form.field.Bytes', {
 					allowBlank: false,
 					selectOnFocus: true,
-					emptyText: WT.res(sid, 'wtmailsieverulegrid.value.size.emp')
+					emptyText: WT.res(sid, 'wtmailsieverulegrid.ed.vsize.emp')
 				})
 			})
 		};
@@ -247,6 +262,10 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 		ed.editorId = rec.getId();
 		//ed.field.column = me.valueColumn;
 		return ed;
+	},
+	
+	styleAsEmpty: function(text) {
+		return '<span style="color:gray;font-style:italic;">' + text + '</span>';
 	},
 	
 	addRule: function() {

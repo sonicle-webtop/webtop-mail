@@ -37,8 +37,6 @@ import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.mail.model.AutoResponder;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
-import com.sonicle.mail.sieve.SieveAction;
-import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.util.ArrayList;
@@ -50,8 +48,8 @@ import java.util.List;
  */
 public class JsInMailFilters {
 	public MailFiltersType id = MailFiltersType.INCOMING;
-	public String activeScript;
 	public Integer scriptsCount;
+	public String activeScript;
 	public JsAutoResponder autoResponder;
 	public ArrayList<JsMailFilter> filters = new ArrayList<>();
 	

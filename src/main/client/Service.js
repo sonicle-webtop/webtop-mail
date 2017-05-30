@@ -325,29 +325,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				me.getAct('open'),
 				me.getAct('opennew'),
 				me.getAct('print'),
-				'-',
-				
-				{
-					text: 'TEST',
-					handler: function() {
-						var vct = WT.createView(me.ID,'view.MailFilter');
-						vct.show();
-					}
-				},
-				{
-					text: 'INFILTERS',
-					handler: function() {
-						var vct = WT.createView(me.ID, 'view.InMailFilters');
-						vct.show(false, function() {
-							vct.getView().begin('edit', {
-								data: {
-									id: 'in'
-								}
-							});
-						});
-					}
-				},
-								
+				'-',				
 				me.getAct('reply'),
 				me.getAct('replyall'),
 				me.getAct('forward'),
