@@ -40,6 +40,8 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 		'Sonicle.webtop.mail.store.SieveActionMethod'
 	],
 	
+	border: false,
+	
 	initComponent: function() {
 		var me = this,
 				sid = 'com.sonicle.webtop.mail';

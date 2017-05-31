@@ -43,6 +43,8 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 		'Sonicle.webtop.mail.store.SieveRuleOperatorSize'
 	],
 	
+	border: false,
+	
 	initComponent: function() {
 		var me = this,
 				sid = 'com.sonicle.webtop.mail';
