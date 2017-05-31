@@ -735,7 +735,16 @@ public class Service extends BaseService {
 	}
 	
 	public FolderCache trashFolder(String fullname) throws MessagingException {
-		if (!isUnderTrashFolder(fullname)) return moveFolder(fullname,mprofile.getFolderTrash());
+		if (!isUnderTrashFolder(fullname)) {
+			String foldertrash=mprofile.getFolderTrash();
+			if (isUnderSharedFolder(fullname)) {
+				String mainfolder=getMainSharedFolder(fullname);
+				if (mainfolder!=null) {
+					foldertrash = mainfolder + folderSeparator + getLastFolderName(foldertrash);
+				}
+			}
+			return moveFolder(fullname,foldertrash);
+		}
 		else {
 			deleteFolder(fullname);
 			return null;
@@ -745,6 +754,7 @@ public class Service extends BaseService {
 	public FolderCache moveFolder(String source, String dest) throws MessagingException {
 		Folder oldfolder = getFolder(source);
 		String oldname = oldfolder.getName();
+		System.out.println("moveFolder "+source+" -> "+dest);
 		Folder newfolder;
 		if (dest != null && dest.trim().length() > 0) {
 			String newname = dest + getFolderSeparator() + oldname;
@@ -761,7 +771,9 @@ public class Service extends BaseService {
 		if (fcsrc != null) {
 			destroyFolderCache(fcsrc);
 		}
+		System.out.println(oldfolder.getFullName()+" renameTo "+newfolder.getFullName());
 		boolean done = oldfolder.renameTo(newfolder);
+		System.out.println("done "+done);
 		if (done) {
 			if (dest != null) {
 				FolderCache tfc = getFolderCache(newfolder.getParent().getFullName());
@@ -2204,6 +2216,17 @@ public class Service extends BaseService {
 		   String str=mprofile.getFolderSent()+folderSeparator;
 		   return foldername.startsWith(str);
 	}  	
+	
+	public String getMainSharedFolder(String foldername) {
+		for (String fn : sharedPrefixes) {
+			String str = fn + folderSeparator;
+			if (foldername.startsWith(str)) {
+				int ix=foldername.indexOf(folderSeparator,str.length());
+				if (ix>=0) return foldername.substring(0,ix);
+			}
+		}
+		return null;
+	}
 	
 	public boolean hasDocumentArchiving() {
 		return RunContext.isPermitted(SERVICE_ID, "DOCUMENT_ARCHIVING");
