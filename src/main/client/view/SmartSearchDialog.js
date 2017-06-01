@@ -56,7 +56,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		
 		me.searchToolbar=new Ext.Toolbar({
 			items: [
-				{
+				/*{
 					xtype: 'label',
 					html: me.mys.res('smartsearch-view-fldaccount.lbl')+"&nbsp;:&nbsp;"
 				},
@@ -65,7 +65,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					reference: 'fldAccount',
 					width: 150
 				},
-				' ',' ',
+				' ',' ',*/
 				{ 
 					xtype: 'checkbox', 
 					reference: 'chkTrashSpam', 
@@ -488,7 +488,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 						pg.setTitle(me.mys.res('smartsearch-search.tit',pattern));
 						sb.setStatus(json.data.curfoldername+" - (..."+json.data.progress+"%...)");
 					} else {
-						sb.setStatus("");
+						sb.setStatus(" ");
 					}
 				} else {
 					WT.error(json.message);
