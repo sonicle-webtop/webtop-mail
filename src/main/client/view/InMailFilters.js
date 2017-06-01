@@ -96,8 +96,8 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					},
 					fieldLabel: me.mys.res('inMailFilters.fld-activeScript.lbl'),
 					labelAlign: 'right',
-					labelWidth: 120,
-					width: 220,
+					labelWidth: 140,
+					width: 240,
 					listeners: {
 						select: function(s, rec) {
 							if (rec.getId() !== me.self.WT_SCRIPT) {
