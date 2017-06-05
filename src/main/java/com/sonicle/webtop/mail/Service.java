@@ -2218,6 +2218,7 @@ public class Service extends BaseService {
 	}  	
 	
 	public String getMainSharedFolder(String foldername) {
+		if (!foldername.endsWith(""+folderSeparator)) foldername+=folderSeparator;
 		for (String fn : sharedPrefixes) {
 			String str = fn + folderSeparator;
 			if (foldername.startsWith(str)) {
@@ -2918,6 +2919,7 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			FolderCache tomcache = getFolderCache(tofolder);
+			String foldertrash=mprofile.getFolderTrash();
 			
 			//check if tofolder is my Spam, and there is spamadm, move there
 			if (tofolder.equals(mprofile.getFolderSpam())) {
@@ -2925,6 +2927,17 @@ public class Service extends BaseService {
 				if (spamadmSpam!=null) {
 					FolderCache fc=getFolderCache(spamadmSpam);
 					if (fc!=null) tomcache=fc;
+				}
+			}
+			//if trashing, check for shared profile trash
+			else if (tofolder.equals(foldertrash)) {
+				if (isUnderSharedFolder(fromfolder)) {
+					String mainfolder=getMainSharedFolder(fromfolder);
+					if (mainfolder!=null) {
+						foldertrash = mainfolder + folderSeparator + getLastFolderName(foldertrash);
+						FolderCache fc=getFolderCache(foldertrash);
+						if (fc!=null) tomcache=fc;
+					}
 				}
 			}
 			
