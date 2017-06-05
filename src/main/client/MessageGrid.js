@@ -1875,8 +1875,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							var tdy=record.get("istoday"),
 								fmtd=record.get("fmtd"),
 								tag;
-							if (!fmtd && (tdy || store.groupField=='gdate')) tag="<span ext:qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
-							else tag="<span ext:qtip='"+Ext.util.Format.date(value,'H:i:s')+"'>"+Ext.util.Format.date(value,'d-M-Y')+"</span>";
+							if (!fmtd && (tdy || store.groupField=='gdate')) tag="<span data-qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
+							else tag="<span data-qtip='"+Ext.util.Format.date(value,'H:i:s')+"'>"+Ext.util.Format.date(value,'d-M-Y')+"</span>";
 							return tag;
 						},
 						dataIndex: 'date',
