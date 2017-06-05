@@ -129,11 +129,11 @@ public class JsSmartSearchTotals {
 						if (p2.type!=1) return -1;
 					}
 					else if (p1.type==-1) {
-						if (p2.type!=-1) return -1;
+						if (p2.type==1) return 1;
+						if (p2.type==0) return -1;
 					}
 					else if (p1.type==0) {
-						if (p2.type==-1) return -1;
-						if (p2.type==1) return 1;
+						if (p2.type!=0) return 1;
 					}
 					return p2.total-p1.total;
 				}
@@ -147,11 +147,11 @@ public class JsSmartSearchTotals {
 						if (f2.type!=1) return -1;
 					}
 					else if (f1.type==-1) {
-						if (f2.type!=-1) return -1;
+						if (f2.type==1) return 1;
+						if (f2.type==0) return -1;
 					}
 					else if (f1.type==0) {
-						if (f2.type==-1) return -1;
-						if (f2.type==1) return 1;
+						if (f2.type!=0) return 1;
 					}
 					return f2.total-f1.total;
 				}

@@ -198,7 +198,12 @@ public class SmartSearchThread extends Thread {
 								(!attachments || (attachments && hasattachments))) {
 
 							if (isfromme) sst.viewFromMe++;
-							else sst.addPerson(iafrom.getPersonal(), iafrom.getAddress());
+							else {
+								String email=iafrom.getAddress();
+								JsSmartSearchTotals.Person p=sst.addPerson(iafrom.getPersonal(), email);
+								if (ispersonfilters.contains(email)) p.include();
+								else if (isnotpersonfilters.contains(email)) p.exclude();
+							}
 
 							if (istome) sst.viewToMe++;
 							for(InternetAddress iato: others) {
