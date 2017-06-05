@@ -351,7 +351,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								// calculate new and old values manually.
 								//var ov = s.lastValue || s.startValue;
 								//var nv = r.get('id');
-								if(!nv || !ov || ov === nv) return;
+								if (!Ext.isDefined(nv) || !Ext.isDefined(ov) || nv === null || ov === null || ov === nv) return;
 								me.selectedIdentity=me.identHash[nv];
                                 var format=me.mys.getVar("format");
 								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
