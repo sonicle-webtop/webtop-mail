@@ -5962,9 +5962,12 @@ public class Service extends BaseService {
 	}
 	
 	private boolean isAttachment(Part part) throws MessagingException {
-		return Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition())
-				|| Part.INLINE.equalsIgnoreCase(part.getDisposition())
-				|| (part.getDisposition() == null && part.getFileName() != null);
+		String disposition=part.getDisposition();
+		
+		if (Part.INLINE.equalsIgnoreCase(disposition)) return false;
+		
+		return Part.ATTACHMENT.equalsIgnoreCase(disposition)
+				|| (disposition == null && part.getFileName() != null);
 	}
 	
 	protected boolean hasAttachements(Part p) throws MessagingException, IOException {
