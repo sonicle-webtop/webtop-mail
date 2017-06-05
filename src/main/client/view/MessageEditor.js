@@ -697,6 +697,12 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		//also calling it seems to break binding
 		/*if (data.format==="html") me.htmlEditor.enableHtmlMode();
 		else */if (data.format==="plain") me.htmlEditor.enableTextMode();
+		
+		//check for empty recipients, force an empty one in case
+		if (!data.recipients || data.recipients.length==0) {
+			data.recipients=[ { rtype: 'to', email: '' } ];
+		}
+		
 		me.beginNew({
 			data: data
 		});
