@@ -170,6 +170,10 @@ public class Identity {
         return identityId;
     }
 	
+	public void setIdentityId(int id) {
+		identityId=id;
+	}
+	
     @Override
 	public String toString() {
 		return displayName + " <" + email + ">";

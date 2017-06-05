@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail.dal;
 import com.sonicle.webtop.core.dal.BaseDAO;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.mail.bol.OIdentity;
+import com.sonicle.webtop.mail.jooq.Sequences;
 import java.sql.Connection;
 import org.jooq.DSLContext;
 import static com.sonicle.webtop.mail.jooq.Tables.IDENTITIES;
@@ -51,6 +52,12 @@ public class IdentityDAO extends BaseDAO {
 	private final static IdentityDAO INSTANCE = new IdentityDAO();
 	public static IdentityDAO getInstance() {
 		return INSTANCE;
+	}
+	
+	public Long getSequence(Connection con) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		Long nextID = dsl.nextval(Sequences.SEQ_IDENTITIES);
+		return nextID;
 	}
 	
 	public List<OIdentity> selectByDomainUser(Connection con, String domainId, String userId) throws DAOException {

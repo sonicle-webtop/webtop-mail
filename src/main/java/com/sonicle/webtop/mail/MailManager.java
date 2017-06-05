@@ -121,13 +121,15 @@ public class MailManager extends BaseManager {
         return identities.get(0);
     }
 	
-	public void addIdentity(Identity ident) throws WTException {
+	public int addIdentity(Identity ident) throws WTException {
 		Connection con=null;
+		int newid=0;
 		try {
 			UserProfileId pid=getTargetProfileId();
 			con=WT.getConnection(SERVICE_ID);
 			IdentityDAO idao=IdentityDAO.getInstance();
 			OIdentity oident=new OIdentity();
+			oident.setIdentityId(idao.getSequence(con).intValue());
 			oident.setDisplayName(ident.getDisplayName());
 			oident.setDomainId(pid.getDomainId());
 			oident.setEmail(ident.getEmail());
@@ -136,11 +138,13 @@ public class MailManager extends BaseManager {
 			oident.setUserId(pid.getUserId());
 			idao.insert(con, oident);
 			identities.add(ident);
+			newid=oident.getIdentityId();
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
+		return newid;
 	}
 	
 	public void deleteIdentity(Identity ident) throws WTException {

@@ -227,8 +227,12 @@ public class UserOptionsService extends BaseUserOptionsService {
 				processListIdentities(request, response, out, crud);
 			} else if (crud.equals(Crud.CREATE)) {
 				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
-				mman.addIdentity(pl.data);
-				new JsonResult().printTo(out);
+				Identity ident=pl.data;
+				int newid=mman.addIdentity(ident);
+				ident.setIdentityId(newid);
+				List<Identity> jsidents = new ArrayList<>();
+				jsidents.add(ident);
+				new JsonResult("identities", jsidents).printTo(out);
 			} else if (crud.equals(Crud.DELETE)) {
 				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
 				mman.deleteIdentity(pl.data);
