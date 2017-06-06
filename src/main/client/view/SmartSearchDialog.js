@@ -56,16 +56,34 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		
 		me.searchToolbar=new Ext.Toolbar({
 			items: [
-				/*{
+				{
 					xtype: 'label',
-					html: me.mys.res('smartsearch-view-fldaccount.lbl')+"&nbsp;:&nbsp;"
+					html: me.mys.res('smartsearch-view-fldfolder.lbl')+"&nbsp;:&nbsp;"
 				},
 				{
-					xtype: 'combobox',
-					reference: 'fldAccount',
-					width: 150
+					xtype: 'sotreecombo',
+					reference: 'fldFolder',
+					width: 150,
+					triggers: {
+						clear: WTF.clearTrigger()
+					},
+					emptyText: me.mys.res('smartsearch-view-fldfolder-empty.lbl'),
+					store: Ext.create('Ext.data.TreeStore', {
+						model: 'Sonicle.webtop.mail.model.ImapTreeModel',
+						proxy: WTF.proxy(me.mys.ID,'GetImapTree'),
+						root: {
+							text: 'Imap Tree',
+							expanded: true
+						},
+						rootVisible: false
+					}),
+					listeners: { 
+						change: function() {
+							me.runSearch(false);
+						}
+					}
 				},
-				' ',' ',*/
+				' ',' ',
 				{ 
 					xtype: 'checkbox', 
 					reference: 'chkTrashSpam', 
@@ -434,6 +452,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		var me=this,
 			//minlen=3,
 			pattern=me.lref("fldSearch").getValue(),
+			folder=me.lref("fldFolder").getValue(),
 			personfilters=clear?{ is: [], isnot: [] }:me.getFilters("gridPersons","email"),
 			folderfilters=clear?{ is: [], isnot: [] }:me.getFilters("gridMailFolders","id");
 	
@@ -449,6 +468,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		WT.ajaxReq(me.mys.ID, 'RunSmartSearch', {
 			params: {
 				pattern: pattern,
+				folder: folder,
 				trashspam: me.lref("chkTrashSpam").getValue(),
 				fromme: me.lref("chkFromMe").getValue(),
 				tome: me.lref("chkToMe").getValue(),

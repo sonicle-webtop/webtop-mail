@@ -2201,6 +2201,11 @@ public class Service extends BaseService {
 		return b;
 	}
 	
+	public boolean isUnderFolder(String parentname, String foldername) {
+		if (!parentname.endsWith(""+folderSeparator)) parentname = parentname + folderSeparator;
+		return (foldername.startsWith(parentname));
+	}
+	
 	public boolean isSharedFolder(String foldername) {
 		boolean b = false;
 		for (String fn : sharedPrefixes) {
@@ -6999,6 +7004,7 @@ public class Service extends BaseService {
 				sst.cancel();
 			
 			String pattern=ServletUtils.getStringParameter(request, "pattern", true);
+			String folder=ServletUtils.getStringParameter(request, "folder", false);
 			boolean trashspam=ServletUtils.getBooleanParameter(request, "trashspam", false);
 			boolean fromme=ServletUtils.getBooleanParameter(request, "fromme", false);
 			boolean tome=ServletUtils.getBooleanParameter(request, "tome", false);
@@ -7019,9 +7025,16 @@ public class Service extends BaseService {
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
 				
-				//skip shared
-				if (isUnderSharedFolder(folderId)) continue;
+				//if folder selected, look only under that folder
+				if (folder!=null && folder.trim().length()>0) {
+					if (!folder.equals(folderId) && !isUnderFolder(folder, folderId))
+						continue;
+				} else {
+					//else skip shared
+					if (isUnderSharedFolder(folderId)) continue;
+				}
 				
+				//skip trash & spam unless selected
 				if (!trashspam && (isTrashFolder(folderId)||isSpamFolder(folderId))) continue;
 				
 				boolean skip=false;
