@@ -47,14 +47,14 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
-			canChangeAccountSettings: function(get) {
+			canSAccountSettings: function(get) {
 				return get("record.canChangeAccountSettings");
 			},
 			canChangeMailcardSettings: function(get) {
 				return get("record.canChangeMailcardSettings");
 			},
 			canChangeDomainMailcardSettings: function(get) {
-				return get("record.canChangeAccountSettings")&&get("record.canChangeMailcardSettings");
+				return get("record.canChangeDomainMailcardSettings");
 			}
 		}
 	},
