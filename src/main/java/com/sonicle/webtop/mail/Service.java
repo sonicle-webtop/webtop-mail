@@ -4923,15 +4923,30 @@ public class Service extends BaseService {
 			
 			HTMLMailData mailData = frommcache.getMailData((MimeMessage) m);
 			Object content = mailData.getAttachmentPart(Integer.parseInt(pidattach)).getContent();
+			
+			// We can copy attachments only if the content is an eml. If it is
+			// explicit simply treat it as message, otherwise try to decode the
+			// stream as a mime message. If an error is thrown during parse, it 
+			// means that the stream is reconducible to a valid mime-message.
+			MimeMessage	msgContent = null;
 			if (content instanceof MimeMessage) {
-				MimeMessage msg=new MimeMessage((MimeMessage)content);
-				msg.setFlag(Flags.Flag.SEEN, true);
-				tomcache.appendMessage(msg);
+				msgContent = new MimeMessage((MimeMessage)content);
+			} else if(content instanceof IMAPInputStream) {
+				try {
+					msgContent = new MimeMessage(session, (IMAPInputStream)content);
+				} catch(MessagingException ex1) {
+					logger.debug("Stream cannot be interpreted as MimeMessage", ex1);
+				}
+			}
+			
+			if (msgContent != null) {
+				msgContent.setFlag(Flags.Flag.SEEN, true);
+				tomcache.appendMessage(msgContent);
 				new JsonResult().printTo(out);
 			} else {
 				new JsonResult(false, lookupResource(locale, MailLocaleKey.ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED)).printTo(out);
 			}
-			IMAPNestedMessage impn;
+			
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			new JsonResult(false, exc.getMessage()).printTo(out);
