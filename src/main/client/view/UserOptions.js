@@ -37,6 +37,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		'Sonicle.webtop.mail.model.ServiceVars',
 		'Sonicle.webtop.mail.model.Identity',
 		'Sonicle.webtop.mail.store.EditingFormat',
+		'Sonicle.webtop.mail.store.ReadReceiptConfirmation',
 		'Sonicle.webtop.mail.view.MailcardEditor'
 	],
 	
@@ -47,7 +48,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
-			canSAccountSettings: function(get) {
+			canChangeAccountSettings: function(get) {
 				return get("record.canChangeAccountSettings");
 			},
 			canChangeMailcardSettings: function(get) {
@@ -68,145 +69,57 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			xtype: 'wtopttabsection',
 			title: me.res('opts.main.tit'),
 			items: [
-			{
-				xtype: 'textfield',
-				bind: {
-					value: '{record.replyTo}',
-					emptyText: '{record.mainEmail}'
-				},
-				fieldLabel: me.res('opts.main.fld-replyTo.lbl'),
-				width: 400,
-				submitEmptyText: false,
-				needLogin: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			},
-			WTF.lookupCombo('id', 'desc', {
-				bind: {
-					value: '{record.protocol}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				store: Ext.create('WTA.store.MailboxProtocols', {
-					autoLoad: true
-				}),
-				fieldLabel: me.res('opts.main.fld-protocol.lbl'),
-				width: 220,
-				needLogin: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}), {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.host}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				fieldLabel: me.res('opts.main.fld-host.lbl'),
-				width: 400,
-				needLogin: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
-				xtype: 'numberfield',
-				bind: {
-					value: '{record.port}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				fieldLabel: me.res('opts.main.fld-port.lbl'),
-				width: 200,
-				needLogin: true,
-				hideTrigger: true,
-				keyNavEnabled: false,
-				mouseWheelEnabled: false,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.username}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				plugins: 'sonoautocomplete',
-				fieldLabel: me.res('opts.main.fld-username.lbl'),
-				width: 400,
-				needLogin: true,
-				emptyText: me.res('opts.main.fld-username-empty.lbl'),
-				submitEmptyText: false,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
-				xtype: 'sopasswordfield',
-				bind: {
-					value: '{record.password}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				plugins: 'sonoautocomplete',
-				//inputType: 'password',
-				fieldLabel: me.res('opts.main.fld-password.lbl'),
-				width: 400,
-				needLogin: true,
-				emptyText: me.res('opts.main.fld-password-empty.lbl'),
-				submitEmptyText: false,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.folderPrefix}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				fieldLabel: me.res('opts.main.fld-folderPrefix.lbl'),
-				width: 400,
-				needLogin: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.folderSent}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				fieldLabel: me.res('opts.main.fld-folderSent.lbl'),
-				width: 400,
-				needLogin: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.folderDrafts}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				fieldLabel: me.res('opts.main.fld-folderDrafts.lbl'),
-				width: 400,
-				needLogin: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.folderTrash}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				fieldLabel: me.res('opts.main.fld-folderTrash.lbl'),
-				width: 400,
-				needLogin: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
-				xtype: 'textfield',
-				bind: {
-					value: '{record.folderSpam}',
-					disabled: '{!canChangeAccountSettings}'
-				},
-				fieldLabel: me.res('opts.main.fld-folderSpam.lbl'),
-				width: 400,
-				needLogin: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, WTF.lookupCombo('id', 'desc', {
-				bind: '{record.sharedSort}',
-				store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
-					autoLoad: true
-				}),
-				fieldLabel: me.res('opts.main.fld-sharedSort.lbl'),
-				width: 300,
-				needReload: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			})]
+				{
+					xtype: 'textfield',
+					bind: {
+						value: '{record.replyTo}',
+						emptyText: '{record.mainEmail}'
+					},
+					fieldLabel: me.res('opts.account.fld-replyTo.lbl'),
+					width: 440,
+					submitEmptyText: false,
+					needLogin: true,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				}, WTF.lookupCombo('id', 'desc', {
+					bind: '{record.readReceiptConfirmation}',
+					store: Ext.create('Sonicle.webtop.mail.store.ReadReceiptConfirmation', {
+						autoLoad: true
+					}),
+					fieldLabel: me.res('opts.account.fld-readreceiptconfirmation.lbl'),
+					width: 440,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				}), {
+					xtype: 'checkbox',
+					bind: '{sharedSeen}',
+					fieldLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'checkbox',
+					bind: '{manualSeen}',
+					fieldLabel: me.res('opts.adv.fld-manualSeen.lbl'),
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, WTF.lookupCombo('id', 'desc', {
+					bind: '{record.sharedSort}',
+					store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
+						autoLoad: true
+					}),
+					fieldLabel: me.res('opts.account.fld-sharedSort.lbl'),
+					width: 340,
+					needReload: true,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				})
+			]
 		});
 		
 		me.add({
 			xtype: 'wtopttabsection',
 			title: me.res('opts.editing.tit'),
+			defaults: {
+				labelAlign: 'right',
+				labelWidth: 180
+			},
 			items: [
 				WTF.lookupCombo('id', 'desc', {
 					bind: {
@@ -482,6 +395,130 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		
 		me.add({
 			xtype: 'wtopttabsection',
+			title: me.res('opts.account.tit'),
+			defaults: {
+				labelAlign: 'right',
+				labelWidth: 180
+			},
+			items: [
+			WTF.lookupCombo('id', 'desc', {
+				bind: {
+					value: '{record.protocol}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				store: Ext.create('WTA.store.MailboxProtocols', {
+					autoLoad: true
+				}),
+				fieldLabel: me.res('opts.account.fld-protocol.lbl'),
+				width: 260,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}), {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.host}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				fieldLabel: me.res('opts.account.fld-host.lbl'),
+				width: 440,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'numberfield',
+				bind: {
+					value: '{record.port}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				fieldLabel: me.res('opts.account.fld-port.lbl'),
+				width: 240,
+				needLogin: true,
+				hideTrigger: true,
+				keyNavEnabled: false,
+				mouseWheelEnabled: false,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.username}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				plugins: 'sonoautocomplete',
+				fieldLabel: me.res('opts.account.fld-username.lbl'),
+				width: 440,
+				needLogin: true,
+				emptyText: me.res('opts.account.fld-username-empty.lbl'),
+				submitEmptyText: false,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'sopasswordfield',
+				bind: {
+					value: '{record.password}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				plugins: 'sonoautocomplete',
+				//inputType: 'password',
+				fieldLabel: me.res('opts.account.fld-password.lbl'),
+				width: 440,
+				needLogin: true,
+				emptyText: me.res('opts.account.fld-password-empty.lbl'),
+				submitEmptyText: false,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.folderPrefix}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				fieldLabel: me.res('opts.account.fld-folderPrefix.lbl'),
+				width: 440,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.folderSent}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				fieldLabel: me.res('opts.account.fld-folderSent.lbl'),
+				width: 440,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.folderDrafts}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				fieldLabel: me.res('opts.account.fld-folderDrafts.lbl'),
+				width: 440,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.folderTrash}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				fieldLabel: me.res('opts.account.fld-folderTrash.lbl'),
+				width: 440,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.folderSpam}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				fieldLabel: me.res('opts.account.fld-folderSpam.lbl'),
+				width: 440,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}
+			]
+		});
+		
+		me.add({
+			xtype: 'wtopttabsection',
 			title: me.res('opts.adv.tit'),
 			items: [
 				{
@@ -526,18 +563,6 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							disabled: true
 						}
 					]
-				}, {
-					xtype: 'checkbox',
-					bind: '{sharedSeen}',
-					fieldLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
-					width: 100,
-					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-				}, {
-					xtype: 'checkbox',
-					bind: '{manualSeen}',
-					fieldLabel: me.res('opts.adv.fld-manualSeen.lbl'),
-					width: 100,
-					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
 					xtype: 'textfield',
 					bind: '{record.defaultFolder}',

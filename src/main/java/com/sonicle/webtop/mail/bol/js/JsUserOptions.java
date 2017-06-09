@@ -59,6 +59,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public String mainEmail;
 	public String replyTo;
 	public String sharedSort;
+	public String readReceiptConfirmation;
 	public boolean includeMessageInReply;
 	public String host;
 	public int port;

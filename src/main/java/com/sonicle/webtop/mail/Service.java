@@ -6234,7 +6234,7 @@ public class Service extends BaseService {
 			}
 			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash()) {
 				if (vheader != null && vheader[0] != null && !wasseen) {
-					sout += "{iddata:'receipt',value1:'" + StringEscapeUtils.escapeEcmaScript(vheader[0]) + "',value2:'',value3:0},\n";
+					sout += "{iddata:'receipt',value1:'"+us.getReadReceiptConfirmation()+"',value2:'"+StringEscapeUtils.escapeEcmaScript(vheader[0])+"',value3:0},\n";
 				}
 			}
 			

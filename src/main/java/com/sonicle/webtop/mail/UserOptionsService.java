@@ -90,6 +90,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.mainEmail = WT.getUserData(getTargetProfileId()).getEmailAddress();
 				jso.replyTo = mus.getReplyTo();
 				jso.sharedSort = mus.getSharedSort();
+				jso.readReceiptConfirmation = mus.getReadReceiptConfirmation();
 				jso.includeMessageInReply = mus.isIncludeMessageInReply();
 				jso.host = mus.getHost();
 				jso.port = mus.getPort();
@@ -108,7 +109,6 @@ public class UserOptionsService extends BaseUserOptionsService {
 			} else if (crud.equals(Crud.UPDATE)) {
 				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(payload, JsUserOptions.class);
 
-				// Main
 				if (pl.map.has("simpleArchivingMailFolder")) {
 					mus.setSimpleArchivingMailFolder(pl.data.simpleArchivingMailFolder);
 				}
@@ -120,6 +120,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 				}
 				if (pl.map.has("manualSeen")) {
 					mus.setManualSeen(pl.data.manualSeen);
+				}
+				if (pl.map.has("readReceiptConfirmation")) {
+					mus.setReadReceiptConfirmation(pl.data.readReceiptConfirmation);
 				}
 				if (pl.map.has("scanAll")) {
 					mus.setScanAll(pl.data.scanAll);

@@ -84,6 +84,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String FONT_SIZE = "font.size";
 	public static final String RECEIPT = "receipt";
 	public static final String PRIORITY = "priority";
+	public static final String READ_RECEIPT_CONFIRMATION = "readreceiptconfirmation";
 	
     
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
@@ -325,6 +326,16 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public boolean setSharedSort(String sharedSort) {
 		return setString(SHARED_SORT,sharedSort);
+	}
+	
+	public String getReadReceiptConfirmation() {
+		String s=getString(READ_RECEIPT_CONFIRMATION,null);
+		if (s==null) s="ask";
+		return s;
+	}
+	
+	public boolean setReadReceiptConfirmation(String rrc) {
+		return setString(READ_RECEIPT_CONFIRMATION, rrc);
 	}
 	
 	public boolean isIncludeMessageInReply() {

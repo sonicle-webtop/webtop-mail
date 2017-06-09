@@ -89,6 +89,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     nccs: 0,
     attachments: null,
     receipt: null,
+    receiptTo: null,
     latestId: null,
 	
 	emailMenu: null,
@@ -275,6 +276,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.ccEmails=null;
             me.attachments=null;
             me.receipt=null;
+            me.receiptTo=null;
             me.scheddate=null;
             me.ntos=0;
             me.nccs=0;
@@ -330,11 +332,16 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			}
 			//no receipt if workflow
             else if (me.receipt) {
-				WT.confirm(me.mys.res("receipt.confirm"),function(btn) {
-                    if (btn=='yes') {
-                        me.sendReceipt();
-                    }
-				});
+				if (me.receipt==="ask") {
+					WT.confirm(me.mys.res("receipt.confirm"),function(btn) {
+						if (btn=='yes') {
+							me.sendReceipt();
+						}
+					});
+				}
+				else if (me.receipt==="always") {
+					me.sendReceipt();
+				}
             }
             
             var tdh=me.tdHeader,
@@ -1019,6 +1026,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
         else if (iddata=='receipt') {
             me.receipt=item.get('value1');
+            me.receiptTo=item.get('value2');
 		}
         else if (iddata=='ical') {
             me.icalmethod=item.get('value1');
@@ -1090,7 +1098,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			params: {
 				from: ident.displayName+" <"+ident.email+">",
                 subject: me.subject,
-                to: me.receipt,
+                to: me.receiptTo,
                 folder: me.folder
 			},
 			callback: function(success,json) {
