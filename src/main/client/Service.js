@@ -535,8 +535,22 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//});
 			WT.showDesktopNotification(this.ID,{
 				title: Ext.String.ellipsis(pl.from,30),
-				body: pl.subject
+				body: pl.subject,
+				data: {
+					foldername: pl.foldername
+				}
+			}, {
+				callbackService: true
 			});
+		}
+	},
+	
+	notificationCallback: function(type, tag, data) {
+		if (type==='desktop') {
+			var me=this;
+			WT.activateService(me.ID);
+			me.imapTree.expandAndSelectNode(data.foldername,me.getVar("folderSeparator"));
+			me.showFolder(data.foldername);
 		}
 	},
 	
