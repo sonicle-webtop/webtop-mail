@@ -41,8 +41,8 @@ public class MailSettings {
 	
 	/**
 	 * [system+domain][default]
-	 * [enum]
-	 * The default value of the sync field for new categories.
+	 * [int]
+	 * The sieve management port.
 	 */
 	public static final String SIEVE_PORT = "sieve.port";
 }
