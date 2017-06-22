@@ -208,6 +208,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		   ff[me.getFolderSent()]=
 		    ff[me.getFolderTrash()]=
 		     ff[me.getFolderSpam()]=true;
+	 
 	},
 	
 	_TB: function(actionname) {
@@ -511,20 +512,25 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	unreadChanged: function(msg,unreadOnly) {
 		var me=this,
-			pl=msg.payload;
+			pl=msg.payload,
 			node=me.imapTree.getStore().getById(pl.foldername);
 		if (node) {
 			var folder=node.get("folder");
+			var oldunread=node.get("unread");
 			if (!unreadOnly) node.set('hasUnread',pl.hasUnreadChildren);
-			node.set('unread',pl.unread);
-			node.set('folder','');
-			node.set('folder',folder);
-
+			if (pl.unread!==oldunread) {
+				console.log("unreadChanged: pl.foldername="+pl.foldername+" - pl.unread="+pl.unread+" oldunread="+oldunread);
+				node.set('unread',pl.unread);
+				node.set('folder','');
+				node.set('folder',folder);
+			}
 		}
 	},
 	
 	recentMessage: function(msg) {
-		var pl=msg.payload;
+		var me=this,
+			pl=msg.payload;
+		console.log("recentMessage: pl.foldername="+pl.foldername);
 		if (pl.foldername==='INBOX') {
 			//var msg=me.res('ntf.newmsg.inbox-has')+" "+cfg.unread+" ";
 			//if (cfg.unread===1) msg+=me.res('ntf.newmsg.new-message');
@@ -542,6 +548,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			}, {
 				callbackService: true
 			});
+			
+		}
+		if (me.currentFolder===pl.foldername) {
+			me.messagesPanel.refreshGridWhenIdle(pl.foldername);
 		}
 	},
 	

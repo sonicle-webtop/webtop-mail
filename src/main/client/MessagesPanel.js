@@ -1,4 +1,4 @@
-/*
+ /*
  * webtop-mail is a WebTop Service developed by Sonicle S.r.l.
  * Copyright (C) 2014 Sonicle S.r.l.
  *
@@ -61,7 +61,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     saveColumnSizes: false,
 	saveColumnVisibility: false,
     savePaneSize: false,
-    
+	
     initComponent: function() {
 		var me=this;
 		
@@ -115,6 +115,20 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			if (me.bMultiSearch && me.bMultiSearch.pressed) {
 				me.bMultiSearch.toggle();
 			}
+		});
+		
+		me.folderList.on("afterrender",function() {
+			me.gridMonitor = Ext.create('Sonicle.ActivityMonitor', {
+				trackMoveEvents: false,
+				targetEl: me.folderList.body
+			});
+			me.gridMonitor.start(10000);
+			me.gridMonitor.on('change',function(gm,idle) {
+				//console.log("idle change event: "+idle+" idleRefreshFolder="+me.folderList.idleRefreshFolder);
+				if (idle && me.currentFolder===me.folderList.idleRefreshFolder) {
+					me._refreshIdleGrid();
+				}
+			});
 		});
 
 
@@ -333,6 +347,27 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.moveViewPanel(r,w,h,true);
 	},
 	
+	refreshGridWhenIdle: function(foldername) {
+		var me=this;
+		//console.log("refreshGridWhenIdle: idleRefreshFolder="+me.folderList.idleRefreshFolder);
+		if (me.currentFolder===foldername && me.folderList.idleRefreshFolder!==foldername) {
+			//console.log("refreshGridWhenIdle: foldername="+foldername);
+			if (me.gridMonitor.isIdle()) {
+				me._refreshIdleGrid();
+			} else {
+				//console.log("not idle, saving idleRefreshFolder");
+				me.folderList.idleRefreshFolder=foldername;
+			}
+		}
+	},
+	
+	_refreshIdleGrid: function() {
+		var me=this,
+			sel=me.folderList.getSelection();
+		if (sel) me.folderList.selectOnRefresh(sel);
+		me.reloadGrid();
+	},
+	
 	moveViewPanel: function(r,w,h,save,collapsed) {
 		var me=this,
 			mv=me.messageView,
@@ -495,12 +530,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     },
     
     reloadFolder: function(folderid,config,uid,page,tid) {
-        this.currentFolder=folderid;
-        this.folderList.reloadFolder(folderid,config,uid,page,tid);
+		var me=this;
+        me.currentFolder=folderid;
+        me.folderList.reloadFolder(folderid,config,uid,page,tid);
     },
 
     reloadCurrentFolder: function(config) {
-        this.folderList.reloadFolder(this.currentFolder,config);
+		var me=this;
+        me.folderList.reloadFolder(me.currentFolder,config);
     },
 	
 	//TODO no more ctrlshift?

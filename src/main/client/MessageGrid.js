@@ -513,6 +513,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
         me.store.on('beforeload',function() {
 			me.storeLoading=true;
+			me.idleRefreshFolder=null;
 		});
 		
         me.store.on('load',function(s,r,o) {
@@ -549,13 +550,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			sel=me.getSelection();
 	
 		if (sel) {
-			me.selectOnLoad=me.store.indexOf(sel[0]);
-			me.view.on('refresh',function() {
-				if (me.selectOnLoad) {
-					me.getSelectionModel().select(me.selectOnLoad);
-					delete me.selectOnLoad;
-				}
-			},me,{ single: true });
+			//var recindex=me.store.indexOf(sel[0]);
+			me.selectOnRefresh(sel);
 		}
 		me.store.reload({ 
 			params: {
@@ -564,6 +560,20 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				timestamp: Date.now()
 			}
 		});
+	},
+	
+	//sel must be an array of records
+	selectOnRefresh: function(sel) {
+		var me=this;
+		me.selectOnLoad=sel;
+		me.view.on('refresh',function() {
+			if (me.selectOnLoad) {
+				Ext.each(me.selectOnLoad, function(rec) {
+					me.getSelectionModel().select(me.store.findRecord("idmessage",rec.get("idmessage")),true);
+				});
+				delete me.selectOnLoad;
+			}
+		},me,{ single: true });
 	},
 
 	setPageSize: function(size) {
