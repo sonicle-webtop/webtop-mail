@@ -150,9 +150,9 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					},
 					getTip: function(v,rec) {
 						if (v === true) {
-							return me.mys.res('inMailFilters.gp-enabled.true');
+							return me.mys.res('inMailFilters.gp-filters.enabled.true');
 						} else {
-							return me.mys.res('inMailFilters.gp-enabled.false');
+							return me.mys.res('inMailFilters.gp-filters.enabled.false');
 						}
 					},
 					handler: function (grid, rix, cix, e, rec) {
