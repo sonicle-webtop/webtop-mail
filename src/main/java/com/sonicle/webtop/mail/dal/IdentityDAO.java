@@ -76,6 +76,8 @@ public class IdentityDAO extends BaseDAO {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.insertInto(IDENTITIES)
+			.set(IDENTITIES.IDENTITY_ID, item.getIdentityId())
+			.set(IDENTITIES.IDENTITY_UID, item.getIdentityUid())
 			.set(IDENTITIES.DOMAIN_ID, item.getDomainId())
 			.set(IDENTITIES.USER_ID, item.getUserId())
 			.set(IDENTITIES.DISPLAY_NAME, item.getDisplayName())
@@ -89,6 +91,7 @@ public class IdentityDAO extends BaseDAO {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.update(IDENTITIES)
+			.set(IDENTITIES.IDENTITY_UID, item.getIdentityUid())
 			.set(IDENTITIES.DISPLAY_NAME, item.getDisplayName())
 			.set(IDENTITIES.EMAIL, item.getEmail())
 			.set(IDENTITIES.MAIN_FOLDER, item.getMainFolder())

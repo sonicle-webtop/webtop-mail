@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Mail extends org.jooq.impl.SchemaImpl {
 
-	private static final long serialVersionUID = -231265815;
+	private static final long serialVersionUID = 1326369393;
 
 	/**
 	 * The reference instance of <code>mail</code>
@@ -58,6 +58,7 @@ public class Mail extends org.jooq.impl.SchemaImpl {
 			com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS,
 			com.sonicle.webtop.mail.jooq.tables.Notes.NOTES,
 			com.sonicle.webtop.mail.jooq.tables.Rules.RULES,
+			com.sonicle.webtop.mail.jooq.tables.RulesCopy.RULES_COPY,
 			com.sonicle.webtop.mail.jooq.tables.Scan.SCAN,
 			com.sonicle.webtop.mail.jooq.tables.UsersMap.USERS_MAP,
 			com.sonicle.webtop.mail.jooq.tables.Vacation.VACATION);

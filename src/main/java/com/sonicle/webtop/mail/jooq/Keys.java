@@ -22,6 +22,7 @@ public class Keys {
 	// -------------------------------------------------------------------------
 
 	public static final org.jooq.Identity<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord, java.lang.Integer> IDENTITY_IDENTITIES = Identities0.IDENTITY_IDENTITIES;
+	public static final org.jooq.Identity<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Integer> IDENTITY_IN_FILTERS = Identities0.IDENTITY_IN_FILTERS;
 
 	// -------------------------------------------------------------------------
 	// UNIQUE and PRIMARY KEY definitions
@@ -33,6 +34,7 @@ public class Keys {
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord> FILTERS_IN_PKEY = UniqueKeys0.FILTERS_IN_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.NotesRecord> NOTES_PKEY = UniqueKeys0.NOTES_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.RulesRecord> FILTERS_PKEY = UniqueKeys0.FILTERS_PKEY;
+	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.RulesCopyRecord> RULES_COPY_PKEY = UniqueKeys0.RULES_COPY_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord> MAILSCAN_PKEY = UniqueKeys0.MAILSCAN_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.UsersMapRecord> USERS_MAP_PKEY = UniqueKeys0.USERS_MAP_PKEY;
 	public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.VacationRecord> VACATION_PKEY = UniqueKeys0.VACATION_PKEY;
@@ -48,6 +50,7 @@ public class Keys {
 
 	private static class Identities0 extends org.jooq.impl.AbstractKeys {
 		public static org.jooq.Identity<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord, java.lang.Integer> IDENTITY_IDENTITIES = createIdentity(com.sonicle.webtop.mail.jooq.tables.Identities.IDENTITIES, com.sonicle.webtop.mail.jooq.tables.Identities.IDENTITIES.IDENTITY_ID);
+		public static org.jooq.Identity<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Integer> IDENTITY_IN_FILTERS = createIdentity(com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS, com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS.IN_FILTER_ID);
 	}
 
 	private static class UniqueKeys0 extends org.jooq.impl.AbstractKeys {
@@ -57,6 +60,7 @@ public class Keys {
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord> FILTERS_IN_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS, com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS.IN_FILTER_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.NotesRecord> NOTES_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Notes.NOTES, com.sonicle.webtop.mail.jooq.tables.Notes.NOTES.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.Notes.NOTES.MESSAGE_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.RulesRecord> FILTERS_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Rules.RULES, com.sonicle.webtop.mail.jooq.tables.Rules.RULES.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.Rules.RULES.USER_ID, com.sonicle.webtop.mail.jooq.tables.Rules.RULES.RULE_ID);
+		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.RulesCopyRecord> RULES_COPY_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.RulesCopy.RULES_COPY, com.sonicle.webtop.mail.jooq.tables.RulesCopy.RULES_COPY.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.RulesCopy.RULES_COPY.USER_ID, com.sonicle.webtop.mail.jooq.tables.RulesCopy.RULES_COPY.RULE_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord> MAILSCAN_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Scan.SCAN, com.sonicle.webtop.mail.jooq.tables.Scan.SCAN.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.Scan.SCAN.USER_ID, com.sonicle.webtop.mail.jooq.tables.Scan.SCAN.FOLDERNAME);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.UsersMapRecord> USERS_MAP_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.UsersMap.USERS_MAP, com.sonicle.webtop.mail.jooq.tables.UsersMap.USERS_MAP.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.UsersMap.USERS_MAP.USER_ID);
 		public static final org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.VacationRecord> VACATION_PKEY = createUniqueKey(com.sonicle.webtop.mail.jooq.tables.Vacation.VACATION, com.sonicle.webtop.mail.jooq.tables.Vacation.VACATION.DOMAIN_ID, com.sonicle.webtop.mail.jooq.tables.Vacation.VACATION.USER_ID, com.sonicle.webtop.mail.jooq.tables.Vacation.VACATION.ACTIVE);

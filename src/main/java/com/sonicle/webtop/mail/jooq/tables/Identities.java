@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Identities extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord> {
 
-	private static final long serialVersionUID = -1765072333;
+	private static final long serialVersionUID = 1660336578;
 
 	/**
 	 * The reference instance of <code>mail.identities</code>
@@ -65,6 +65,11 @@ public class Identities extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.
 	 * The column <code>mail.identities.fax</code>.
 	 */
 	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord, java.lang.Boolean> FAX = createField("fax", org.jooq.impl.SQLDataType.BOOLEAN.defaulted(true), this, "");
+
+	/**
+	 * The column <code>mail.identities.identity_uid</code>.
+	 */
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord, java.lang.String> IDENTITY_UID = createField("identity_uid", org.jooq.impl.SQLDataType.VARCHAR.length(36), this, "");
 
 	/**
 	 * Create a <code>mail.identities</code> table reference

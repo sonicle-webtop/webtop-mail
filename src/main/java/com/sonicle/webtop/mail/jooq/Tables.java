@@ -47,6 +47,11 @@ public class Tables {
 	public static final com.sonicle.webtop.mail.jooq.tables.Rules RULES = com.sonicle.webtop.mail.jooq.tables.Rules.RULES;
 
 	/**
+	 * The table mail.rules_copy
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables.RulesCopy RULES_COPY = com.sonicle.webtop.mail.jooq.tables.RulesCopy.RULES_COPY;
+
+	/**
 	 * The table mail.scan
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.Scan SCAN = com.sonicle.webtop.mail.jooq.tables.Scan.SCAN;

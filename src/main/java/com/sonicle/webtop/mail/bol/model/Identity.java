@@ -47,6 +47,7 @@ public class Identity {
 	public static final String TYPE_USER = "user";
 
     protected int identityId;
+    protected String identityUid=null;
 	protected String type = null;
 	protected String email;
 	protected String displayName;
@@ -61,20 +62,21 @@ public class Identity {
 	protected boolean isMainIdentity=false;
 	
 	public Identity(OIdentity oi) {
-        this(Identity.TYPE_USER, oi.getIdentityId(), oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false);
+        this(Identity.TYPE_USER, oi.getIdentityId(), oi.getIdentityUid(), oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false);
 	}
 
-	public Identity(int identityId, String displayName, String email, String mainFolder) {
-		this(Identity.TYPE_USER, identityId, displayName, email, mainFolder);
+	public Identity(int identityId, String identityUid, String displayName, String email, String mainFolder) {
+		this(Identity.TYPE_USER, identityId, identityUid, displayName, email, mainFolder);
 	}
 	
-	public Identity(String type, int identityId, String displayName, String email, String mainFolder) {
-		this(type,identityId,displayName,email,mainFolder,false,false);
+	public Identity(String type, int identityId, String identityUid, String displayName, String email, String mainFolder) {
+		this(type,identityId,identityUid,displayName,email,mainFolder,false,false);
 	}
 	
-	public Identity(String type, int identityId, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard) {
+	public Identity(String type, int identityId, String identityUid, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard) {
 		this.type = type;
 		this.identityId = identityId;
+		this.identityUid = identityUid;
 		this.displayName=displayName;
 		this.email=email;
 		this.mainFolder=mainFolder;
@@ -172,6 +174,14 @@ public class Identity {
 	
 	public void setIdentityId(int id) {
 		identityId=id;
+	}
+	
+    public String getIdentityUid() {
+        return identityUid;
+    }
+	
+	public void setIdentityUid(String uid) {
+		identityUid=uid;
 	}
 	
     @Override
