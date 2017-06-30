@@ -817,10 +817,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				listeners: {
 					save: {
 						fn: function(abv) {
+							var rcpts=abv.getRecipients();
 							me.recgrid.clear();
-							Ext.each(abv.getRecipients(),function(r) {
-								me.recgrid.addRecipient(r.type,r.email);
-							});
+							if (rcpts && rcpts.length>0) {
+								Ext.each(rcpts,function(r) {
+									me.recgrid.addRecipient(r.type,r.email);
+								});
+							} else {
+								me.recgrid.addRecipient('to','');
+							}
 						}
 					}
 				}
