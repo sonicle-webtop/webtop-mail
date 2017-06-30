@@ -3153,30 +3153,39 @@ public class Service extends BaseService {
 	
 	public void processDeleteMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
-		String uids[] = request.getParameterValues("ids");
+		String allfiltered = request.getParameter("allfiltered");
 		String smultifolder = request.getParameter("multifolder");
 		boolean multifolder = smultifolder != null && smultifolder.equals("true");
 		String sfullthreads = request.getParameter("fullthreads");
 		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String sout = null;
+		String uids[];
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
-			if (!multifolder) {
-				deleteMessages(mcache, toLongs(uids),fullthreads);
-			} else {
-                long iuids[]=new long[1];
-                for(String uid: uids) {
-                    int ix=uid.indexOf("|");
-                    fromfolder=uid.substring(0,ix);
-                    uid=uid.substring(ix+1);
-					mcache = getFolderCache(fromfolder);
-                    iuids[0]=Long.parseLong(uid);
-                    deleteMessages(mcache, iuids, fullthreads);
+			
+			if (allfiltered == null) {
+				uids = request.getParameterValues("ids");
+				if (!multifolder) {
+					deleteMessages(mcache, toLongs(uids),fullthreads);
+				} else {
+					long iuids[]=new long[1];
+					for(String uid: uids) {
+						int ix=uid.indexOf("|");
+						fromfolder=uid.substring(0,ix);
+						uid=uid.substring(ix+1);
+						mcache = getFolderCache(fromfolder);
+						iuids[0]=Long.parseLong(uid);
+						deleteMessages(mcache, iuids, fullthreads);
+					}
 				}
+				sout = "{\nresult: true\n}";
+			} else {
+                uids=getMessageUIDs(mcache,request);
+				deleteMessages(mcache, toLongs(uids),true);
+				sout = "{\nresult: true\n}";
 			}
-			sout = "{\nresult: true\n}";
-		} catch (MessagingException exc) {
+		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}
