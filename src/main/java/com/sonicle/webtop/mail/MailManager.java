@@ -592,7 +592,7 @@ public class MailManager extends BaseManager {
 		ManageSieveClient client = null;
 		try {
 			if (sieveConfig == null) throw new WTException("SieveConfiguration not defined. Please call setSieveConfiguration(...) before call this method!");
-			client = client = createSieveClient();
+			client = createSieveClient();
 			SieveHelper.putScript(client, SIEVE_WEBTOP_SCRIPT, script);
 			if (activate) {
 				SieveHelper.activateScript(client, SIEVE_WEBTOP_SCRIPT);
