@@ -568,8 +568,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.selectOnLoad=sel;
 		me.view.on('refresh',function() {
 			if (me.selectOnLoad) {
+				var sm=me.getSelectionModel(),s=me.getStore();
+				sm.deselectAll(true);
 				Ext.each(me.selectOnLoad, function(rec) {
-					me.getSelectionModel().select(me.store.findRecord("idmessage",rec.get("idmessage")),true);
+					sm.select(s.findRecord("idmessage",rec.get("idmessage")),true);
 				});
 				delete me.selectOnLoad;
 			}

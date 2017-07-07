@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables.pojos;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Identities implements java.io.Serializable {
 
-	private static final long serialVersionUID = 7001993;
+	private static final long serialVersionUID = 2129721061;
 
 	private java.lang.Integer identityId;
 	private java.lang.String  domainId;
@@ -25,6 +25,7 @@ public class Identities implements java.io.Serializable {
 	private java.lang.String  displayName;
 	private java.lang.String  mainFolder;
 	private java.lang.Boolean fax;
+	private java.lang.String  identityUid;
 
 	public Identities() {}
 
@@ -35,7 +36,8 @@ public class Identities implements java.io.Serializable {
 		java.lang.String  email,
 		java.lang.String  displayName,
 		java.lang.String  mainFolder,
-		java.lang.Boolean fax
+		java.lang.Boolean fax,
+		java.lang.String  identityUid
 	) {
 		this.identityId = identityId;
 		this.domainId = domainId;
@@ -44,6 +46,7 @@ public class Identities implements java.io.Serializable {
 		this.displayName = displayName;
 		this.mainFolder = mainFolder;
 		this.fax = fax;
+		this.identityUid = identityUid;
 	}
 
 	public java.lang.Integer getIdentityId() {
@@ -100,5 +103,13 @@ public class Identities implements java.io.Serializable {
 
 	public void setFax(java.lang.Boolean fax) {
 		this.fax = fax;
+	}
+
+	public java.lang.String getIdentityUid() {
+		return this.identityUid;
+	}
+
+	public void setIdentityUid(java.lang.String identityUid) {
+		this.identityUid = identityUid;
 	}
 }

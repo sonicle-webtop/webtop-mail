@@ -232,10 +232,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 			} else if (crud.equals(Crud.CREATE)) {
 				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
 				Identity ident=pl.data;
-				int newid=mman.addIdentity(ident);
-				ident.setIdentityId(newid);
+				Identity newident=mman.addIdentity(ident);
 				List<Identity> jsidents = new ArrayList<>();
-				jsidents.add(ident);
+				jsidents.add(newident);
 				new JsonResult("identities", jsidents).printTo(out);
 			} else if (crud.equals(Crud.DELETE)) {
 				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
@@ -243,8 +242,10 @@ public class UserOptionsService extends BaseUserOptionsService {
 				new JsonResult().printTo(out);
 			} else if (crud.equals(Crud.UPDATE)) {
 				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
-				mman.updateIdentity(pl.data.getIdentityId(), pl.data);
-				new JsonResult().printTo(out);
+				Identity uident=mman.updateIdentity(pl.data.getIdentityId(), pl.data);
+				List<Identity> jsidents = new ArrayList<>();
+				jsidents.add(uident);
+				new JsonResult("identities", jsidents).printTo(out);
 			}
 		} catch (Exception ex) {
 			logger.error("Error managing quickparts", ex);
@@ -302,7 +303,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 						ppi = WT.getUserPersonalInfo(profileId);
 					} else {
 						Identity ide = mman.findIdentity(identityId);
-						mman.setEmailMailcard(ide, html);
+						mman.setIdentityMailcard(ide, html);
 						mc = mman.getMailcard(ide);
 						ppi = getPersonalInfo(ide);
 					}
@@ -325,7 +326,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 						ppi = WT.getUserPersonalInfo(profileId);
 					} else {
 						Identity ide = mman.findIdentity(identId);
-						mman.setEmailMailcard(ide, null);
+						mman.setIdentityMailcard(ide, null);
 						mc = mman.getMailcard(ide);
 						ppi = getPersonalInfo(ide);
 					}

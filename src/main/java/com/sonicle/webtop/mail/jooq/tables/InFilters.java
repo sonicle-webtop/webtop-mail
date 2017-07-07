@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class InFilters extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord> {
 
-	private static final long serialVersionUID = -1747464859;
+	private static final long serialVersionUID = -1243349590;
 
 	/**
 	 * The reference instance of <code>mail.in_filters</code>
@@ -34,47 +34,47 @@ public class InFilters extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.j
 	/**
 	 * The column <code>mail.in_filters.in_filter_id</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Integer> IN_FILTER_ID = createField("in_filter_id", org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Integer> IN_FILTER_ID = createField("in_filter_id", org.jooq.impl.SQLDataType.INTEGER.nullable(false).defaulted(true), this, "");
 
 	/**
 	 * The column <code>mail.in_filters.domain_id</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> DOMAIN_ID = createField("domain_id", org.jooq.impl.SQLDataType.VARCHAR.length(20), this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> DOMAIN_ID = createField("domain_id", org.jooq.impl.SQLDataType.VARCHAR.length(20).nullable(false), this, "");
 
 	/**
 	 * The column <code>mail.in_filters.user_id</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> USER_ID = createField("user_id", org.jooq.impl.SQLDataType.VARCHAR.length(100), this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> USER_ID = createField("user_id", org.jooq.impl.SQLDataType.VARCHAR.length(100).nullable(false), this, "");
 
 	/**
 	 * The column <code>mail.in_filters.enabled</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Boolean> ENABLED = createField("enabled", org.jooq.impl.SQLDataType.BOOLEAN.defaulted(true), this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Boolean> ENABLED = createField("enabled", org.jooq.impl.SQLDataType.BOOLEAN.nullable(false).defaulted(true), this, "");
 
 	/**
 	 * The column <code>mail.in_filters.order</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Short> ORDER = createField("order", org.jooq.impl.SQLDataType.SMALLINT, this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Short> ORDER = createField("order", org.jooq.impl.SQLDataType.SMALLINT.nullable(false), this, "");
 
 	/**
 	 * The column <code>mail.in_filters.name</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> NAME = createField("name", org.jooq.impl.SQLDataType.VARCHAR.length(50), this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> NAME = createField("name", org.jooq.impl.SQLDataType.VARCHAR.length(255).nullable(false), this, "");
 
 	/**
 	 * The column <code>mail.in_filters.sieve_match</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> SIEVE_MATCH = createField("sieve_match", org.jooq.impl.SQLDataType.VARCHAR.length(10), this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> SIEVE_MATCH = createField("sieve_match", org.jooq.impl.SQLDataType.VARCHAR.length(10).nullable(false), this, "");
 
 	/**
 	 * The column <code>mail.in_filters.sieve_rules</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> SIEVE_RULES = createField("sieve_rules", org.jooq.impl.SQLDataType.CLOB, this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> SIEVE_RULES = createField("sieve_rules", org.jooq.impl.SQLDataType.CLOB.nullable(false), this, "");
 
 	/**
 	 * The column <code>mail.in_filters.sieve_actions</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> SIEVE_ACTIONS = createField("sieve_actions", org.jooq.impl.SQLDataType.CLOB, this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.String> SIEVE_ACTIONS = createField("sieve_actions", org.jooq.impl.SQLDataType.CLOB.nullable(false), this, "");
 
 	/**
 	 * Create a <code>mail.in_filters</code> table reference
@@ -96,6 +96,14 @@ public class InFilters extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.j
 
 	private InFilters(java.lang.String alias, org.jooq.Table<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord> aliased, org.jooq.Field<?>[] parameters) {
 		super(alias, com.sonicle.webtop.mail.jooq.Mail.MAIL, aliased, parameters, "");
+	}
+
+	/**
+	 * {@inheritDoc}
+	 */
+	@Override
+	public org.jooq.Identity<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord, java.lang.Integer> getIdentity() {
+		return com.sonicle.webtop.mail.jooq.Keys.IDENTITY_IN_FILTERS;
 	}
 
 	/**

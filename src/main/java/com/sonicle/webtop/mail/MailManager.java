@@ -65,6 +65,7 @@ import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.mail.sieve.SieveAction;
 import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.mail.sieve.SieveMatch;
+import com.sonicle.webtop.core.util.IdentifierUtils;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.io.File;
@@ -121,15 +122,16 @@ public class MailManager extends BaseManager {
         return identities.get(0);
     }
 	
-	public int addIdentity(Identity ident) throws WTException {
+	public Identity addIdentity(Identity ident) throws WTException {
 		Connection con=null;
-		int newid=0;
+		Identity newident=null;
 		try {
 			UserProfileId pid=getTargetProfileId();
 			con=WT.getConnection(SERVICE_ID);
 			IdentityDAO idao=IdentityDAO.getInstance();
 			OIdentity oident=new OIdentity();
 			oident.setIdentityId(idao.getSequence(con).intValue());
+			oident.setIdentityUid(IdentifierUtils.getUUIDTimeBased());
 			oident.setDisplayName(ident.getDisplayName());
 			oident.setDomainId(pid.getDomainId());
 			oident.setEmail(ident.getEmail());
@@ -137,14 +139,14 @@ public class MailManager extends BaseManager {
 			oident.setMainFolder(ident.getMainFolder());
 			oident.setUserId(pid.getUserId());
 			idao.insert(con, oident);
-			identities.add(ident);
-			newid=oident.getIdentityId();
+			newident=new Identity(oident);
+			identities.add(newident);
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
-		return newid;
+		return newident;
 	}
 	
 	public void deleteIdentity(Identity ident) throws WTException {
@@ -162,8 +164,9 @@ public class MailManager extends BaseManager {
 		}
 	}
 	
-	public void updateIdentity(int identityId, Identity ident) throws WTException {
+	public Identity updateIdentity(int identityId, Identity ident) throws WTException {
 		Connection con=null;
+		Identity uident=null;
 		try {
 			UserProfileId pid=getTargetProfileId();
 			con=WT.getConnection(SERVICE_ID);
@@ -175,8 +178,11 @@ public class MailManager extends BaseManager {
 			oident.setFax(ident.isFax());
 			oident.setMainFolder(ident.getMainFolder());
 			oident.setUserId(pid.getUserId());
+			if (ident.getIdentityUid()==null) ident.setIdentityUid(IdentifierUtils.getUUIDTimeBased());
+			oident.setIdentityUid(ident.getIdentityUid());
 			idao.update(con, identityId, oident);
-			Identity uident=findIdentity(ident.getIdentityId());
+			uident=findIdentity(ident.getIdentityId());
+			uident.setIdentityUid(ident.getIdentityUid());
 			uident.setDisplayName(ident.getDisplayName());
 			uident.setEmail(ident.getEmail());
 			uident.setFax(ident.isFax());
@@ -186,6 +192,7 @@ public class MailManager extends BaseManager {
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
+		return uident;
 	}
 	
 	public Identity findIdentity(int id) {
@@ -203,7 +210,7 @@ public class MailManager extends BaseManager {
 			UserProfileId pid=getTargetProfileId();
 			//first add main identity
 			Data udata=WT.getUserData(pid);
-			Identity id=new Identity(0,udata.getDisplayName(),udata.getEmail().getAddress(),null);
+			Identity id=new Identity(0,null,udata.getDisplayName(),udata.getEmail().getAddress(),null);
 			id.setIsMainIdentity(true);
 			idents.add(id);
 			
@@ -228,7 +235,7 @@ public class MailManager extends BaseManager {
 					boolean shareIdentity=spf.implies("READ");
 					boolean forceMailcard=spf.implies("UPDATE");
 					if (shareIdentity) {
-						id = new Identity(Identity.TYPE_AUTO,autoid--,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard);
+						id = new Identity(Identity.TYPE_AUTO,autoid--,null,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard);
 						id.setOriginPid(opid);
 						idents.add(id);
 					}
@@ -271,13 +278,16 @@ public class MailManager extends BaseManager {
 	
 	public Mailcard getMailcard(Identity identity) {
         UserProfileId pid=getTargetProfileId();
-		Mailcard mc = readEmailMailcard(pid.getDomainId(),identity.getEmail());
-		if(mc != null) return mc;
+		Mailcard mc = null;
+		if (identity.getIdentityUid()!=null) mc=readIdentityMailcard(pid.getDomainId(),identity);
+		if (mc != null) return mc;
+		mc = readEmailMailcard(pid.getDomainId(),identity.getEmail());
+		if (mc != null) return mc;
 		UserProfileId fpid=identity.getOriginPid();
 		if (fpid!=null) mc = readUserMailcard(fpid.getDomainId(),fpid.getUserId());
-		if(mc != null) return mc;
+		if (mc != null) return mc;
 		mc = readEmailDomainMailcard(pid.getDomainId(),identity.getEmail());
-		if(mc != null) return mc;
+		if (mc != null) return mc;
 		return readDefaultMailcard(pid.getDomainId());
     }
 	
@@ -341,8 +351,18 @@ public class MailManager extends BaseManager {
 		return new Mailcard();
 	}
 	
-	public void setEmailMailcard(Identity ident, String html) {
-		setEmailMailcard(getTargetProfileId().getDomainId(),ident.getEmail(),html);
+	private Mailcard readIdentityMailcard(String domainId, Identity identity) {
+		String mailcard = readMailcard(domainId, "mailcard_" + identity.getEmail()+"_"+identity.getIdentityUid());
+		if (mailcard != null) {
+			return new Mailcard(Mailcard.TYPE_EMAIL, mailcard);
+		}
+		return null;
+	}
+
+	public void setIdentityMailcard(Identity ident, String html) {
+		String domainId=getTargetProfileId().getDomainId();
+		if (ident.getIdentityUid()==null) setEmailMailcard(domainId,ident.getEmail(),html);
+		else writeMailcard(domainId, "mailcard_" + ident.getEmail() + "_"+ident.getIdentityUid(), html);
 	}
 
 	public void setEmailMailcard(String domainId, String email, String html) {

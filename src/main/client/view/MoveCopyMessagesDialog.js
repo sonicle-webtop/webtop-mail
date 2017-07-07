@@ -69,7 +69,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		var btnmove=Ext.create("Ext.Button",{
 			text: WT.res("act-move.lbl"),
 			disabled: true,
-			width:100,
+			width:80,
 			handler: function() {
 				me.disable();
                 if (chkfiltered.getValue()) {
@@ -85,7 +85,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		var btncopy=Ext.create("Ext.Button",{
 			text: WT.res("act-copy.lbl"),
 			disabled: true,
-			width:100,
+			width:80,
 			handler: function() {
 				me.disable();
                 if (chkfiltered.getValue()) {
@@ -98,9 +98,30 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			}
 		});
 		
+		var btndelete=Ext.create("Ext.Button",{
+			text: WT.res("act-delete.lbl"),
+			disabled: false,
+			width:80,
+			handler: function() {
+				WT.confirm(me.mys.res('suredeletepermanently'),function(bid) {
+					if (bid==='yes') {
+						me.disable();
+						if (chkfiltered.getValue()) {
+							me.grid.operateAllFiltered("DeleteMessages",me.fromFolder,null,me.ajaxResultCallback,me);
+						} else {
+							me.grid.deleteSelection(me.fromFolder,me.grid.getSelection());
+							me.enable();
+							me.closeView(false);
+						}
+					}
+					me.focus();
+				},me);
+			}
+		});
+		
 		var btncancel=Ext.create("Ext.Button",{
 			text: WT.res("act-cancel.lbl"),
-			width:100,
+			width:80,
 			handler: function() {
 				me.closeView(false);
 			}
@@ -112,6 +133,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 				'->',
 				btnmove,' ',' ',' ',' ',
 				btncopy,' ',' ',' ',' ',
+				btndelete,' ',' ',' ',' ',
 				btncancel
 			]
 		});

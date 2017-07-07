@@ -11,3 +11,5 @@ ALTER TABLE "mail"."rules" RENAME TO "_rules.old";
 -- ----------------------------
 @IgnoreErrors
 ALTER TABLE "mail"."vacation" RENAME TO "_vacation.old";
+
+ALTER TABLE "mail"."identities" ADD COLUMN "identity_uid" varchar(36);

@@ -817,10 +817,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				listeners: {
 					save: {
 						fn: function(abv) {
+							var rcpts=abv.getRecipients();
 							me.recgrid.clear();
-							Ext.each(abv.getRecipients(),function(r) {
-								me.recgrid.addRecipient(r.type,r.email);
-							});
+							if (rcpts && rcpts.length>0) {
+								Ext.each(rcpts,function(r) {
+									me.recgrid.addRecipient(r.type,r.email);
+								});
+							} else {
+								me.recgrid.addRecipient('to','');
+							}
 						}
 					}
 				}
@@ -911,22 +916,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	replaceMailcard: function(html, omc, nmc) {
 		if(Ext.isEmpty(omc) || Ext.isEmpty(nmc)) return html;
 		
-		var htmlEl = Ext.get(Ext.DomHelper.createDom({html: html})),
-			mcEl = htmlEl.query('#wt-mailcard',false);
-		if(mcEl) {
-			mcEl=mcEl[0];
+		var htmlDom = Ext.dom.Helper.createDom({html: html}),
+			mcDom = htmlDom.querySelector('#wt-mailcard');
+		if(mcDom) {
 			var htmlOmc = this.htmlEditor.cleanUpHtml(omc);
-			var htmlMcEl = this.htmlEditor.cleanUpHtmlFromDom(mcEl.dom);
+			var htmlMcEl = this.htmlEditor.cleanUpHtmlFromDom(mcDom);
 
 			if (htmlMcEl == htmlOmc) {
-				mcEl.dom.innerHTML = nmc;
+				mcDom.innerHTML = nmc;
 			} else {
 				WT.error(this.res('editor.mailcard.replace.no'));
 			}
-			return htmlEl.dom.innerHTML;
-		} else {
-			return html;
+			html=htmlDom.innerHTML;
 		}
+		return html;
 	},
 	
     disableControls: function(/*showProgress,*/showSendmask) {
