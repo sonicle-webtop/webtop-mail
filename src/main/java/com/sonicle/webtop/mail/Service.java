@@ -316,8 +316,7 @@ public class Service extends BaseService {
 
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
-		us = new MailUserSettings(profile.getId(),ss);
-		mprofile = new MailUserProfile(environment,this);
+		us = new MailUserSettings(profile.getId(),ss);		mprofile = new MailUserProfile(environment,this);
 		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mprofile.getMailUsername(), mprofile.getMailPassword());
 		fcProvided = new FolderCache(this, environment);
 		
