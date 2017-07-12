@@ -17,7 +17,7 @@ INSERT INTO "mail"."in_filters"
 ("domain_id", "user_id", "enabled", "order", "name", "sieve_match", "sieve_rules", "sieve_actions")
 SELECT "rules"."domain_id", "rules"."user_id", 
 CASE WHEN ("rules"."status" = 'E') THEN TRUE ELSE FALSE END AS "enabled",
-1 AS "order",
+"rules"."rule_id" AS "order",
 substring(
 CASE
 	WHEN ("rules"."action" = 'FILE') THEN 'Sposta '

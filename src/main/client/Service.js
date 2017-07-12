@@ -208,7 +208,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		   ff[me.getFolderSent()]=
 		    ff[me.getFolderTrash()]=
 		     ff[me.getFolderSpam()]=true;
-	 
+
+		if (me.getVar('autoResponderActive') === true) {
+			Ext.defer(function() {
+				WT.warn(me.res('warn.autoresponder'));
+			}, 1000);
+		}
 	},
 	
 	_TB: function(actionname) {

@@ -428,7 +428,22 @@ public class MailManager extends BaseManager {
 	
 	
 	
-	
+	public boolean isAutoResponderActive() throws WTException {
+		AutoResponderDAO autdao = AutoResponderDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			
+			OAutoResponder oaut = autdao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+			return (oaut != null) ? oaut.getEnabled() : false;
+			
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
 	
 	public AutoResponder getAutoResponder() throws WTException {
 		AutoResponderDAO autdao = AutoResponderDAO.getInstance();
@@ -478,6 +493,10 @@ public class MailManager extends BaseManager {
 	}
 	
 	public List<MailFilter> getMailFilters(MailFiltersType type) throws WTException {
+		return getMailFilters(type, false);
+	}
+	
+	public List<MailFilter> getMailFilters(MailFiltersType type, boolean enabledOnly) throws WTException {
 		InFilterDAO indao = InFilterDAO.getInstance();
 		List<MailFilter> filters = new ArrayList<>();
 		Connection con = null;
@@ -487,6 +506,11 @@ public class MailManager extends BaseManager {
 			
 			if (type.equals(MailFiltersType.INCOMING)) {
 				List<OInFilter> items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				if (enabledOnly) {
+					items = indao.selectEnabledByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				} else {
+					items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				}
 				for (OInFilter item : items) {
 					filters.add(createMailFilter(item));
 				}
@@ -612,7 +636,7 @@ public class MailManager extends BaseManager {
 		ManageSieveClient client = null;
 		try {
 			if (sieveConfig == null) throw new WTException("SieveConfiguration not defined. Please call setSieveConfiguration(...) before call this method!");
-			client = client = createSieveClient();
+			client = createSieveClient();
 			SieveHelper.putScript(client, SIEVE_WEBTOP_SCRIPT, script);
 			if (activate) {
 				SieveHelper.activateScript(client, SIEVE_WEBTOP_SCRIPT);
