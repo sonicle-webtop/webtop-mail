@@ -86,6 +86,23 @@ public class InFilterDAO extends BaseDAO {
 			.fetchInto(OInFilter.class);
 	}
 	
+	public List<OInFilter> selectEnabledByProfile(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(IN_FILTERS)
+			.where(
+				IN_FILTERS.DOMAIN_ID.equal(domainId)
+				.and(IN_FILTERS.USER_ID.equal(userId))
+				.and(IN_FILTERS.ENABLED.isTrue())
+			)
+			.orderBy(
+				IN_FILTERS.ORDER.asc(),
+				IN_FILTERS.NAME.asc()
+			)
+			.fetchInto(OInFilter.class);
+	}
+	
 	public int insert(Connection con, OInFilter item) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		InFiltersRecord record = dsl.newRecord(IN_FILTERS, item);

@@ -52,6 +52,8 @@ import com.sonicle.commons.web.json.MapItemList;
 import com.sonicle.commons.web.json.Payload;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
+import com.sonicle.mail.sieve.SieveAction;
+import com.sonicle.mail.sieve.SieveActionMethod;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
@@ -6774,18 +6776,20 @@ public class Service extends BaseService {
 	}
 	
 	boolean checkFileRules(String foldername) {
-		boolean b = false;
-		Connection con = null;
 		try {
-			UserProfile profile = environment.getProfile();
-			con = getConnection();
-			b = RuleDAO.getInstance().hasFileIntoFolder(con, profile.getDomainId(), profile.getUserId(), foldername);
-		} catch (SQLException exc) {
-			logger.error("Error checking File rules on folder {}", foldername, exc);
-		} finally {
-			DbUtils.closeQuietly(con);
+			List<MailFilter> filters = mailManager.getMailFilters(MailFiltersType.INCOMING, true);
+			for(MailFilter filter : filters) {
+				for(SieveAction action : filter.getSieveActions()) {
+					if (action.getMethod() == SieveActionMethod.FILE_INTO) {
+						if (StringUtils.equals(action.getArgument(), foldername)) return true;
+					}
+				}
+			}
+			
+		} catch(WTException ex) {
+			logger.error("Error checking file action [{}]", ex, foldername);
 		}
-		return b;
+		return false;
 	}
 	
 	boolean checkScanRules(String foldername) {

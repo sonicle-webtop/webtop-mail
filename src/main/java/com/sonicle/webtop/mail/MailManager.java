@@ -493,6 +493,10 @@ public class MailManager extends BaseManager {
 	}
 	
 	public List<MailFilter> getMailFilters(MailFiltersType type) throws WTException {
+		return getMailFilters(type, false);
+	}
+	
+	public List<MailFilter> getMailFilters(MailFiltersType type, boolean enabledOnly) throws WTException {
 		InFilterDAO indao = InFilterDAO.getInstance();
 		List<MailFilter> filters = new ArrayList<>();
 		Connection con = null;
@@ -502,6 +506,11 @@ public class MailManager extends BaseManager {
 			
 			if (type.equals(MailFiltersType.INCOMING)) {
 				List<OInFilter> items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				if (enabledOnly) {
+					items = indao.selectEnabledByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				} else {
+					items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				}
 				for (OInFilter item : items) {
 					filters.add(createMailFilter(item));
 				}
