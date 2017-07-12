@@ -376,13 +376,15 @@ public class Service extends BaseService {
 				checkCreateFolder(mprofile.getFolderDrafts());
 				checkCreateFolder(mprofile.getFolderTrash());
 				checkCreateFolder(mprofile.getFolderSpam());
+				checkCreateFolder(mprofile.getFolderArchive());
 			}
 			
 			skipReplyFolders = new String[]{
 				mprofile.getFolderDrafts(),
 				mprofile.getFolderSent(),
 				mprofile.getFolderSpam(),
-				mprofile.getFolderTrash()
+				mprofile.getFolderTrash(),
+				mprofile.getFolderArchive()
 			};
 			skipForwardFolders = new String[]{
 				mprofile.getFolderSpam(),
@@ -2144,6 +2146,18 @@ public class Service extends BaseService {
 		return false;
 	}
 	
+	public boolean isArchiveFolder(String fullname) {
+		String farchive = mprofile.getFolderArchive();
+		if (farchive!=null) {
+			String lastname = getLastFolderName(fullname);
+			String plastname = getLastFolderName(farchive);
+			if (lastname.equals(plastname)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public boolean isSpamFolder(String fullname) {
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(mprofile.getFolderSpam());
@@ -2158,6 +2172,7 @@ public class Service extends BaseService {
 				|| isDraftsFolder(foldername)
 				|| isInboxFolder(foldername)
 				|| isSentFolder(foldername)
+				|| isArchiveFolder(foldername)
 				|| isSpamFolder(foldername);
 		return retval;
 	}
@@ -2239,19 +2254,19 @@ public class Service extends BaseService {
 	}
 	
 	public String getSimpleArchivingMailFolder() {
-		return us.getSimpleArchivingMailFolder();
+		return us.getSimpleDMSArchivingMailFolder();
 	}
 	
 	public boolean isSimpleArchiving() {
-		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_SIMPLE);
+		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_SIMPLE);
 	}
 
 	public boolean isStructuredArchiving() {
-		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_STRUCTURED);
+		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_STRUCTURED);
 	}
 	
 	public boolean isWebtopArchiving() {
-		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_WEBTOP);
+		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_WEBTOP);
 	}
 	
 	public boolean isDocMgtFolder(String foldername) {
@@ -2262,7 +2277,7 @@ public class Service extends BaseService {
 			return false;
 		}
 		boolean b = false;
-		String df = us.getSimpleArchivingMailFolder();
+		String df = us.getSimpleDMSArchivingMailFolder();
 		if (df != null && df.trim().length() > 0) {
 			String lfn = getLastFolderName(foldername);
 			String dfn = getLastFolderName(df);
@@ -2309,6 +2324,8 @@ public class Service extends BaseService {
 			desc = lookupResource(MailLocaleKey.FOLDERS_DRAFTS);
 		} else if (fc.isTrash()) {
 			desc = lookupResource(MailLocaleKey.FOLDERS_TRASH);
+		} else if (fc.isArchive()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_ARCHIVE);
 		} else if (fc.isSent()) {
 			desc = lookupResource(MailLocaleKey.FOLDERS_SENT);
 		} else if (fc.isSpam()) {
@@ -2736,6 +2753,7 @@ public class Service extends BaseService {
 			FolderCache mc = getFolderCache(foldername);
 			if (mc == null) {
 				//continue;
+				System.out.println("foldername="+foldername+" parentname="+parent.getFullName());
 				FolderCache fcparent=getFolderCache(parent.getFullName());
 				mc=addSingleFoldersCache(fcparent, f);
 			}
@@ -2778,6 +2796,9 @@ public class Service extends BaseService {
 				nounread = true;
 			} else if (mc.isTrash()) {
 				iconCls = "wtmail-icon-trash-folder-xs";
+				nounread = true;
+			} else if (mc.isArchive()) {
+				iconCls = "wtmail-icon-archive-folder-xs";
 				nounread = true;
 			} else if (mc.isSpam()) {
 				iconCls = "wtmail-icon-spam-folder-xs";
@@ -2830,6 +2851,9 @@ public class Service extends BaseService {
 			if (mc.isTrash()) {
 				ss += ",isTrash: true";
 			}
+			if (mc.isArchive()) {
+				ss += ",isArchive: true";
+			}
 			if (mc.isSpam()) {
 				ss += ",isSpam: true";
 			}
@@ -2857,6 +2881,7 @@ public class Service extends BaseService {
 		Folder sent = null;
 		Folder drafts = null;
 		Folder trash = null;
+		Folder archive = null;
 		Folder spam = null;
 		for (Folder f : folders) {
 			String foldername = f.getFullName();
@@ -2868,6 +2893,7 @@ public class Service extends BaseService {
 				else if (isDraftsFolder(shortfoldername)) drafts=f;
 				else if (isTrashFolder(shortfoldername)) trash=f;
 				else if (isSpamFolder(shortfoldername)) spam=f;
+				else if (isArchiveFolder(shortfoldername)) archive=f;
 				else if (isSharedFolder(foldername)) sfolders.add(f);
 				else afolders.add(f);
 			}
@@ -2889,6 +2915,9 @@ public class Service extends BaseService {
 		}
 		
 		//add any mapped special folder in order on top
+		if (archive != null) {
+			afolders.add(0, archive);
+		}
 		if (trash != null) {
 			afolders.add(0, trash);
 		}
@@ -6256,7 +6285,7 @@ public class Service extends BaseService {
 				
 				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + "},\n";
 			}
-			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash()) {
+			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash() && !mcache.isArchive()) {
 				if (vheader != null && vheader[0] != null && !wasseen) {
 					sout += "{iddata:'receipt',value1:'"+us.getReadReceiptConfirmation()+"',value2:'"+StringEscapeUtils.escapeEcmaScript(vheader[0])+"',value3:0},\n";
 				}

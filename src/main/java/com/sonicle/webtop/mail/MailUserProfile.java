@@ -70,6 +70,7 @@ public class MailUserProfile {
     private String folderDrafts;
     private String folderTrash;
     private String folderSpam;
+    private String folderArchive;
     private String mailProtocol;
 	private String mailHost;
     private int mailPort;
@@ -166,6 +167,7 @@ public class MailUserProfile {
 			folderSent=mus.getFolderSent();
 			folderDrafts=mus.getFolderDrafts();
 			folderTrash=mus.getFolderTrash();
+			folderArchive=mus.getFolderArchive();
 			folderSpam=mus.getFolderSpam();
 			replyTo=mus.getReplyTo();
 			sharedSort=mus.getSharedSort();
@@ -220,6 +222,10 @@ public class MailUserProfile {
         return folderSpam;
     }
 	
+    public String getFolderArchive() {
+        return folderArchive;
+    }
+    
     public String getMailProtocol() {
         return mailProtocol;
     }

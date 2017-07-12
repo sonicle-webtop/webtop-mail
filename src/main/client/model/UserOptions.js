@@ -41,8 +41,9 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.roField('canChangeMailcardSettings', 'boolean'),
 		WTF.roField('canChangeDomainMailcardSettings', 'boolean'),
 		
-		WTF.field('simpleArchivingMailFolder', 'string', true),
-		WTF.field('archivingMethod', 'string', true),
+		WTF.field('dmsSimpleMailFolder', 'string', true),
+		WTF.field('dmsMethod', 'string', true),
+		WTF.field('archiveMode', 'string', true),
 		WTF.field('sharedSeen', 'boolean', false),
 		WTF.field('manualSeen', 'boolean', false),
 		WTF.field('scanAll', 'boolean', false),

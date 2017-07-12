@@ -177,6 +177,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_TRASH,null);
 	}
 
+	public String getDefaultFolderArchive() {
+		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_ARCHIVE,null);
+	}
+
 	public String getDefaultFolderSpam() {
 		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_SPAM,null);
 	}

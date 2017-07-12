@@ -75,8 +75,10 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.canChangeAccountSettings = RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE");
 				jso.canChangeMailcardSettings = RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE");
 				jso.canChangeDomainMailcardSettings = RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE");
-				jso.simpleArchivingMailFolder = mus.getSimpleArchivingMailFolder();
-				jso.archivingMethod = mus.getArchivingMethod();
+				jso.dmsSimpleMailFolder = mus.getSimpleDMSArchivingMailFolder();
+				jso.dmsMethod = mus.getDMSMethod();
+				jso.archiveMode = mus.getArchiveMode();
+				jso.archiveKeepFoldersStructure = mus.isArchiveKeepFoldersStructure();
 				jso.sharedSeen = mus.isSharedSeen();
 				jso.manualSeen = mus.isManualSeen();
 				jso.scanAll = mus.isScanAll();
@@ -109,11 +111,17 @@ public class UserOptionsService extends BaseUserOptionsService {
 			} else if (crud.equals(Crud.UPDATE)) {
 				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(payload, JsUserOptions.class);
 
-				if (pl.map.has("simpleArchivingMailFolder")) {
-					mus.setSimpleArchivingMailFolder(pl.data.simpleArchivingMailFolder);
+				if (pl.map.has("archiveMode")) {
+					mus.setArchiveMode(pl.data.archiveMode);
 				}
-				if (pl.map.has("archivingMethod")) {
-					mus.setArchivingMethod(pl.data.archivingMethod);
+				if (pl.map.has("archiveKeepFoldersStructure")) {
+					mus.setArchiveKeepFoldersStructure(pl.data.archiveKeepFoldersStructure);
+				}
+				if (pl.map.has("dmsSimpleMailFolder")) {
+					mus.setSimpleArchivingMailFolder(pl.data.dmsSimpleMailFolder);
+				}
+				if (pl.map.has("dmsMethod")) {
+					mus.setDMSMethod(pl.data.dmsMethod);
 				}
 				if (pl.map.has("sharedSeen")) {
 					mus.setSharedSeen(pl.data.sharedSeen);

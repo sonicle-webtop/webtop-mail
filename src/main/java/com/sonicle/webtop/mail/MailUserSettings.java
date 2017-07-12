@@ -64,6 +64,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String FOLDER_SENT = "folder.sent";
 	public static final String FOLDER_DRAFTS = "folder.drafts";
 	public static final String FOLDER_TRASH = "folder.trash";
+	public static final String FOLDER_ARCHIVE = "folder.archive";
 	public static final String FOLDER_SPAM = "folder.spam";
 	public static final String DEFAULT_FOLDER = "defaultfolder";
 	public static final String REPLY_TO = "reply.to";
@@ -103,36 +104,57 @@ public class MailUserSettings extends BaseUserSettings {
 	 * Archiving operative method. One of: simple, structured, webtop.
 	 * A null value indicated no method.
 	 */
-	public static final String ARCHIVING_METHOD = "archiving.method";
+	public static final String ARCHIVING_MODE = "archiving.mode";
+	public static final String ARCHIVING_KEEP_FOLDERS_STRUCTURE = "archiving.keep-folders-structure";
+	public static final String ARCHIVING_DMS_METHOD = "archiving.dms-method";
 	
-	public static final String ARCHIVING_METHOD_NONE = "none";
-	public static final String ARCHIVING_METHOD_SIMPLE = "simple";
-	public static final String ARCHIVING_METHOD_STRUCTURED = "structured";
-	public static final String ARCHIVING_METHOD_WEBTOP = "webtop";
+	public static final String ARCHIVING_MODE_SINGLE = "single";
+	public static final String ARCHIVING_MODE_YEAR = "year";
+	public static final String ARCHIVING_MODE_MONTH = "month";
+	
+	public static final String ARCHIVING_DMS_METHOD_NONE = "none";
+	public static final String ARCHIVING_DMS_METHOD_SIMPLE = "simple";
+	public static final String ARCHIVING_DMS_METHOD_STRUCTURED = "structured";
+	public static final String ARCHIVING_DMS_METHOD_WEBTOP = "webtop";
 	
 	/**
 	 * [string]
 	 * IMAP folder to be monitored by the archiving process
 	 */
-	public static final String SIMPLE_ARCHIVING_MAIL_FOLDER = "archiving.simple.mailfolder";
+	public static final String ARCHIVING_SIMPLE_DMS_MAIL_FOLDER = "archiving.dms-simple.mailfolder";
 	
-	public String getSimpleArchivingMailFolder() {
-		return getString(SIMPLE_ARCHIVING_MAIL_FOLDER, null);
+	public String getSimpleDMSArchivingMailFolder() {
+		return getString(ARCHIVING_SIMPLE_DMS_MAIL_FOLDER, null);
 	}
 	
 	public boolean setSimpleArchivingMailFolder(String value) {
-		return setString(SIMPLE_ARCHIVING_MAIL_FOLDER, value);
+		return setString(ARCHIVING_SIMPLE_DMS_MAIL_FOLDER, value);
 	}
 	
-	public String getArchivingMethod() {
-		return getString(ARCHIVING_METHOD, "none");
+	public String getDMSMethod() {
+		return getString(ARCHIVING_DMS_METHOD, "none");
 	}
 	
-	public boolean setArchivingMethod(String value) {
-		return setString(ARCHIVING_METHOD, value);
+	public boolean setDMSMethod(String value) {
+		return setString(ARCHIVING_DMS_METHOD, value);
 	}
 	
+	public String getArchiveMode() {
+		return getString(ARCHIVING_MODE, ARCHIVING_MODE_SINGLE);
+	}
+	
+	public boolean setArchiveMode(String value) {
+		return setString(ARCHIVING_MODE, value);
+	}
     
+    public boolean isArchiveKeepFoldersStructure() {
+        return getBoolean(ARCHIVING_KEEP_FOLDERS_STRUCTURE, false);
+    }
+	
+    public boolean setArchiveKeepFoldersStructure(boolean b) {
+        return setBoolean(ARCHIVING_KEEP_FOLDERS_STRUCTURE, b);
+    }
+	
     public boolean isSharedSeen() {
         return getBoolean(SHARED_SEEN, false);
     }
@@ -296,6 +318,16 @@ public class MailUserSettings extends BaseUserSettings {
 
 	public boolean setFolderTrash(String name) {
 		return setString(FOLDER_TRASH,name);
+	}
+	
+	public String getFolderArchive() {
+		String s=getString(FOLDER_ARCHIVE,null);
+		if (s==null) s=mss.getDefaultFolderArchive();
+		return s;
+	}
+
+	public boolean setFolderArchive(String name) {
+		return setString(FOLDER_ARCHIVE,name);
 	}
 	
 	public String getFolderSpam() {

@@ -40,6 +40,7 @@
 .wtmail-icon-cloud-download-xs { background-image: url('cloud-download_16.png') !important; }
 .wtmail-icon-cloud-upload-xs { background-image: url('cloud-upload_16.png') !important; }
 .wtmail-icon-smartsearch-xs { background-image: url('smartsearch_16.png') !important; }
+.wtmail-icon-archive-xs { background-image: url('imap-folder-archive_16.png') !important; }
 
 .wtmail-icon-format-insertimagefile-xs { background-image: url('format-insertimagefile_16.png') !important; }
 .wtmail-icon-format-quickpart-xs { background-image: url('format-quickpart_16.png') !important; }
@@ -88,6 +89,8 @@
 .x-grid-tree-node-expanded .wtmail-icon-spam-folder-xs { background-image: url(imap-folder-spam-open_16.png) !important; }
 .wtmail-icon-trash-folder-xs { background-image: url(imap-folder-trash_16.png) !important; }
 .x-grid-tree-node-expanded .wtmail-icon-trash-folder-xs { background-image: url(imap-folder-trash-open_16.png) !important; }
+.wtmail-icon-archive-folder-xs { background-image: url(imap-folder-archive_16.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-archive-folder-xs { background-image: url(imap-folder-archive-open_16.png) !important; }
 .wtmail-icon-shared-folder-xs { background-image: url(imap-folder-shared_16.png) !important; }
 .x-grid-tree-node-expanded .wtmail-icon-shared-folder-xs { background-image: url(imap-folder-shared-open_16.png) !important; }
 

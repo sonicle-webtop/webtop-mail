@@ -43,8 +43,10 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean canChangeAccountSettings;	
 	public boolean canChangeMailcardSettings;	
 	public boolean canChangeDomainMailcardSettings;	
-	public String simpleArchivingMailFolder;
-	public String archivingMethod;
+	public String archiveMode;
+	public boolean archiveKeepFoldersStructure;
+	public String dmsSimpleMailFolder;
+	public String dmsMethod;
 	public boolean sharedSeen;
 	public boolean manualSeen;
 	public boolean scanAll;

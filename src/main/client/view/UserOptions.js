@@ -45,6 +45,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		formulas: {
 			receipt: WTF.checkboxBind('record', 'receipt'),
 			priority: WTF.checkboxBind('record', 'priority'),
+			archiveKeepFoldersStructure: WTF.checkboxBind('record', 'archiveKeepFoldersStructure'),
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
@@ -384,14 +385,30 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			}]
 		});
 		
-		if (WT.isPermitted(me.ID,'DOCUMENT_MANAGEMENT','ACCESS')) {
-			me.add({
-				xtype: 'wtopttabsection',
-				title: me.res('opts.arch.tit'),
-				items: [
-				]
-			});
-		}
+		me.add({
+			xtype: 'wtopttabsection',
+			title: me.res('opts.arch.tit'),
+			items: [
+				WTF.lookupCombo('id', 'desc', {
+					bind: '{record.archiveMode}',
+					store: Ext.create('Sonicle.webtop.mail.store.ArchiveMode', {
+						autoLoad: true
+					}),
+					fieldLabel: me.res('opts.arch.fld-archiveMode.lbl'),
+					width: 340,
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				}), {
+					xtype: 'checkbox',
+					bind: '{archiveKeepFoldersStructure}',
+					fieldLabel: me.res('opts.arch.fld-keepFoldersStructure.lbl'),
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}
+			]
+		});
+		
+		//if (WT.isPermitted(me.ID,'DOCUMENT_MANAGEMENT','ACCESS')) {
+		//}
 		
 		me.add({
 			xtype: 'wtopttabsection',

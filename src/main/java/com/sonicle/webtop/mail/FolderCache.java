@@ -110,6 +110,7 @@ public class FolderCache {
     private boolean isTrash=false;
     private boolean isSpam=false;
     private boolean isDrafts=false;
+    private boolean isArchive=false;
     private boolean isDocMgt=false;
     private boolean isSharedFolder=false;
     private boolean isUnderSharedFolder=false;
@@ -206,9 +207,10 @@ public class FolderCache {
         isDrafts=ms.isDraftsFolder(shortfoldername);
         isTrash=ms.isTrashFolder(shortfoldername);
         isSpam=ms.isSpamFolder(shortfoldername);
+        isArchive=ms.isArchiveFolder(shortfoldername);
         isDocMgt=ms.isDocMgtFolder(shortfoldername);
         isSharedFolder=ms.isSharedFolder(foldername);
-        if (isDrafts||isSent||isTrash||isSpam) {
+        if (isDrafts||isSent||isTrash||isSpam||isArchive) {
             setCheckUnreads(false);
             setCheckRecents(false);
         }
@@ -426,12 +428,16 @@ public class FolderCache {
         return isSpam;
     }
 
+    public boolean isArchive() {
+        return isArchive;
+    }
+
     public boolean isDocMgt() {
         return isDocMgt;
     }
 
     public boolean isSpecial() {
-        return isSent||isDrafts||isTrash||isSpam||isDocMgt;
+        return isSent||isDrafts||isTrash||isSpam||isArchive||isDocMgt;
     }
 
     public boolean isSharedFolder() {
