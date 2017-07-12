@@ -7577,20 +7577,7 @@ public class Service extends BaseService {
 			co.put("messageViewMaxTos",ss.getMessageViewMaxTos());
 			co.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
 			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes()));
-			
-			UserProfile profile = environment.getProfile();
-			OVacation vacation=VacationDAO.getInstance().selectByUserId(con, profile.getDomainId(), profile.getUserId());
-			boolean vactive=false;
-			String vmessage="";
-			String vaddresses=profile.getEmailAddress();
-			if (vacation!=null) {
-				vactive=vacation.getActive();
-				vmessage=vacation.getMessage();
-				vaddresses=vacation.getAddresses();
-			}
-			co.put("vacationActive",vactive);
-			co.put("vacationMessage",vmessage);
-			co.put("vacationAddresses",vaddresses);
+			co.put("autoResponderActive", mailManager.isAutoResponderActive());
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	

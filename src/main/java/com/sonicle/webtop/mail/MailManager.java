@@ -428,7 +428,22 @@ public class MailManager extends BaseManager {
 	
 	
 	
-	
+	public boolean isAutoResponderActive() throws WTException {
+		AutoResponderDAO autdao = AutoResponderDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			
+			OAutoResponder oaut = autdao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+			return (oaut != null) ? oaut.getEnabled() : false;
+			
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
 	
 	public AutoResponder getAutoResponder() throws WTException {
 		AutoResponderDAO autdao = AutoResponderDAO.getInstance();
