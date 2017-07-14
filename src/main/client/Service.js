@@ -972,6 +972,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return this.getVar('folderTrash');
 	},
 	
+	getFolderArchive: function() {
+		return this.getVar('folderArchive');
+	},
+	
 	getFolderNodeById: function(foldername) {
 		return this.imapTree.getStore().getNodeById(foldername);
 	},

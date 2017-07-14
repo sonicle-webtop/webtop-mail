@@ -530,6 +530,16 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				width: 440,
 				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: {
+					value: '{record.folderArchive}',
+					disabled: '{!canChangeAccountSettings}'
+				},
+				fieldLabel: me.res('opts.account.fld-folderArchive.lbl'),
+				width: 440,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}
 			]
 		});

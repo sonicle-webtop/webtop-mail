@@ -65,6 +65,7 @@ import net.fortuna.ical4j.data.*;
 import net.fortuna.ical4j.model.*;
 import net.fortuna.ical4j.model.component.*;
 import net.fortuna.ical4j.model.property.*;
+import org.joda.time.LocalDate;
 
 
 /**
@@ -1055,7 +1056,7 @@ public class FolderCache {
                 ms.isSimpleArchiving() &&
                 ms.getSimpleArchivingMailFolder()!=null &&
                 ms.getSimpleArchivingMailFolder().equals(to.foldername)) {
-            archiveMessages(uids, to, fullthreads);
+            dmsArchiveMessages(uids, to, fullthreads);
         } else {
             Message mmsgs[]=getMessages(uids,fullthreads);
             folder.copyMessages(mmsgs, to.folder);
@@ -1064,7 +1065,41 @@ public class FolderCache {
         }
     }
 
-    public void archiveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
+    public void archiveMessages(long uids[], String folderarchive, boolean fullthreads) throws MessagingException {
+		if (canDelete()) {
+			Message mmsgs[]=getMessages(uids,fullthreads);
+			MailUserSettings mus=ms.getMailUserSettings();
+			String sep=""+ms.getFolderSeparator();
+			for(Message mmsg: mmsgs) {
+				LocalDate ld=new LocalDate(mmsg.getReceivedDate());
+				FolderCache fcto=ms.checkCreateAndCacheFolder(folderarchive);
+				System.out.println("archive mode="+mus.getArchiveMode());
+				if (mus.getArchiveMode().equals(MailUserSettings.ARCHIVING_MODE_YEAR)) {
+					folderarchive+=sep+ld.getYear();
+					System.out.println("folderarchive="+folderarchive);
+					fcto=ms.checkCreateAndCacheFolder(folderarchive);
+				} else if (mus.getArchiveMode().equals(MailUserSettings.ARCHIVING_MODE_MONTH)) {
+					folderarchive+=sep+ld.getYear();
+					fcto=ms.checkCreateAndCacheFolder(folderarchive);
+					folderarchive+=sep+ld.getYear()+"-"+ld.getMonthOfYear();
+					fcto=ms.checkCreateAndCacheFolder(folderarchive);
+				}
+				System.out.println("dest folder="+fcto.foldername);
+				
+				folder.copyMessages(mmsgs, fcto.folder);
+				fcto.setForceRefresh();
+				fcto.modified=true;
+			}
+			folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
+			removeDHash(uids);
+			folder.expunge();
+			setForceRefresh();
+			modified=true;
+		}
+		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
+    }
+
+    public void dmsArchiveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
         Message mmsgs[]=getMessages(uids,fullthreads);
         MimeMessage newmmsgs[]=getArchivedCopy(mmsgs);
         moveMessages(uids,to,fullthreads);

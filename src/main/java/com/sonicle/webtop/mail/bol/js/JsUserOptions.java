@@ -57,6 +57,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public String folderDrafts;
 	public String folderTrash;
 	public String folderSpam;
+	public String folderArchive;
 	public char folderSeparator;
 	public String mainEmail;
 	public String replyTo;

@@ -59,6 +59,7 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('folderDrafts', 'string', true),
 		WTF.field('folderTrash', 'string', true),
 		WTF.field('folderSpam', 'string', true),
+		WTF.field('folderArchive', 'string', true),
 		WTF.field('folderSeparator', 'string', true),
 		WTF.field('mainEmail', 'string', true),
 		WTF.field('replyTo', 'string', true),

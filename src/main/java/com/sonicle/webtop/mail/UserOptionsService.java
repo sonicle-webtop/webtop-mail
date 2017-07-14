@@ -89,6 +89,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.folderDrafts = mus.getFolderDrafts();
 				jso.folderTrash = mus.getFolderTrash();
 				jso.folderSpam = mus.getFolderSpam();
+				jso.folderArchive = mus.getFolderArchive();
 				jso.mainEmail = WT.getUserData(getTargetProfileId()).getEmailAddress();
 				jso.replyTo = mus.getReplyTo();
 				jso.sharedSort = mus.getSharedSort();
@@ -155,6 +156,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 				}
 				if (pl.map.has("folderSpam")) {
 					mus.setFolderSpam(pl.data.folderSpam);
+				}
+				if (pl.map.has("folderArchive")) {
+					mus.setFolderArchive(pl.data.folderArchive);
 				}
 				if (pl.map.has("replyTo")) {
 					mus.setReplyTo(pl.data.replyTo);

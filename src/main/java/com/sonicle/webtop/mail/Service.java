@@ -672,6 +672,10 @@ public class Service extends BaseService {
 		from.deleteMessages(uids,fullthreads);
 	}
 	
+	public void archiveMessages(FolderCache from, String folderarchive, long uids[], boolean fullthreads) throws MessagingException {
+		from.archiveMessages(uids, folderarchive, fullthreads);
+	}
+	
 	public void flagMessages(FolderCache from, long uids[], String flag) throws MessagingException {
 		from.flagMessages(uids, flag);
 	}
@@ -2368,19 +2372,32 @@ public class Service extends BaseService {
 		return store.getFolder(foldername);
 	}
 	
-	public void checkCreateFolder(String foldername) throws MessagingException {
+	public Folder checkCreateFolder(String foldername) throws MessagingException {
 		Folder folder = store.getFolder(foldername);
 		if (!folder.exists()) {
 			folder.create(Folder.HOLDS_MESSAGES | Folder.HOLDS_FOLDERS);
 		}
+		return folder;
+	}
+	
+	public FolderCache checkCreateAndCacheFolder(String fullname) throws MessagingException {
+		Folder folder=checkCreateFolder(fullname);
+		FolderCache fc=getFolderCache(fullname);
+		if (fc==null) {
+			FolderCache parent=fcRoot;
+			int ix=fullname.lastIndexOf(folderSeparator);
+			if (ix>0) parent=getFolderCache(fullname.substring(0,ix));
+			fc=addFoldersCache(parent, folder);
+		}
+		return fc;
 	}
 	
   
-  public boolean checkFolder(String foldername) throws MessagingException {
-      Folder folder=store.getFolder(foldername);
-	  return folder.exists();
-  }	
-	
+	public boolean checkFolder(String foldername) throws MessagingException {
+		Folder folder=store.getFolder(foldername);
+		return folder.exists();
+	}	
+
 	public static int getPriority(Message m) throws MessagingException {
 		String xprio = null;
 		String h[] = m.getHeader("X-Priority");
@@ -2950,11 +2967,13 @@ public class Service extends BaseService {
 		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String uids[] = null;
 		String sout = null;
+		boolean archiving = false;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			FolderCache tomcache = getFolderCache(tofolder);
 			String foldertrash=mprofile.getFolderTrash();
+			String folderarchive=mprofile.getFolderArchive();
 			
 			//check if tofolder is my Spam, and there is spamadm, move there
 			if (tofolder.equals(mprofile.getFolderSpam())) {
@@ -2975,13 +2994,27 @@ public class Service extends BaseService {
 					}
 				}
 			}
+			//if archiving, determine destination folder based on settings and shared profile
+			else if (tofolder.equals(mprofile.getFolderArchive())) {
+				if (isUnderSharedFolder(fromfolder)) {
+					String mainfolder=getMainSharedFolder(fromfolder);
+					if (mainfolder!=null) {
+						folderarchive = mainfolder + folderSeparator + getLastFolderName(folderarchive);
+					}
+				}
+				archiving=true;
+				System.out.println("archiving=true, folderarchive="+folderarchive);
+			}
 			
 			if (allfiltered == null) {
 				uids = request.getParameterValues("ids");
 				boolean norows=false;
 				if (uids.length==1 && uids[0].length()==0) norows=true;
 				if (!norows) {
-					if (!multifolder) moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
+					if (!multifolder) {
+						if (archiving) archiveMessages(mcache, folderarchive, toLongs(uids), fullthreads);
+						else moveMessages(mcache, tomcache, toLongs(uids), fullthreads);
+					}
 					else {
 						long iuids[]=new long[1];
 						for(String uid: uids) {
@@ -2990,7 +3023,8 @@ public class Service extends BaseService {
 							uid=uid.substring(ix+1);
 							mcache = getFolderCache(fromfolder);
 							iuids[0]=Long.parseLong(uid);
-							moveMessages(mcache, tomcache, iuids,fullthreads);
+							if (archiving) archiveMessages(mcache, folderarchive, iuids,fullthreads);
+							else moveMessages(mcache, tomcache, iuids,fullthreads);
 						}
 					}
 				}
@@ -2998,7 +3032,8 @@ public class Service extends BaseService {
 				sout = "{\nresult: true, millis: " + millis + "\n}";
 			} else {
                 uids=getMessageUIDs(mcache,request);
-                moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
+                if (archiving) archiveMessages(mcache, folderarchive, toLongs(uids),fullthreads);
+				else moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
@@ -7592,6 +7627,7 @@ public class Service extends BaseService {
 			co.put("folderSent", us.getFolderSent());
 			co.put("folderSpam", us.getFolderSpam());
 			co.put("folderTrash", us.getFolderTrash());
+			co.put("folderArchive", us.getFolderArchive());
 			co.put("folderSeparator", folderSeparator);
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
