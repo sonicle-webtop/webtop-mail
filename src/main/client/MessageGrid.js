@@ -1287,11 +1287,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						if (!n) {
 							me.mys.reloadTree();
 						} else {
-							//var expanded=n.isExpanded();
+							var expanded=n.isExpanded();
 							tree.getStore().load({
 								node: n,
 								callback: function() {
-									//if (!expanded) n.collapse();
+									//n.set("leaf",false);
+									if (!expanded) {
+										n.expand(false,function() {
+											n.collapse();
+										});
+									}
 								}
 							});
 						}
