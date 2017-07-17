@@ -1281,31 +1281,34 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					*/
 				   
 				    //if archiving, reload archive branch
-					if (json.archiving) {
-						var tree=me.mys.imapTree,
-							n=tree.getStore().getNodeById(json.tofolder);
-						if (!n) {
-							me.mys.reloadTree();
-						} else {
-							var expanded=n.isExpanded();
-							tree.getStore().load({
-								node: n,
-								callback: function() {
-									//n.set("leaf",false);
-									if (!expanded) {
-										n.expand(false,function() {
-											n.collapse();
-										});
-									}
-								}
-							});
-						}
-					}
+					if (json.archiving) me._refreshArchiveNode(json.tofolder);
 				} else {
 					WT.error(json.text);
 				}
 			}
 		});							
+	},
+	
+	_refreshArchiveNode: function(archivefolder) {
+		var me=this,
+			tree=me.mys.imapTree,
+			n=tree.getStore().getNodeById(archivefolder);
+		if (!n) {
+			me.mys.reloadTree();
+		} else {
+			var expanded=n.isExpanded();
+			tree.getStore().load({
+				node: n,
+				callback: function() {
+					if (!expanded) {
+						n.expand(false,function() {
+							n.collapse();
+						});
+					}
+				}
+			});
+		}
+		
 	},
 
 	checkBrokenThreads: function(selection,cb,scope) {
@@ -1382,6 +1385,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//	info.millis=o.millis;
 					//	this.ms.updateUnreads(options.tofolder,info,false);
 					//}
+					if (json.archiving) me._refreshArchiveNode(json.tofolder);
 				} else {
 					WT.error(json.text);
 				}

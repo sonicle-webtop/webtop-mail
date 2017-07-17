@@ -1072,7 +1072,10 @@ public class FolderCache {
 			Message mmsgs[]=getMessages(uids,fullthreads);
 			MailUserSettings mus=ms.getMailUserSettings();
 			String sep=""+ms.getFolderSeparator();
+			String xfolderarchive=folderarchive;
+			Message xmmsg[]=new Message[1];
 			for(Message mmsg: mmsgs) {
+				folderarchive=xfolderarchive;
 				LocalDate ld=new LocalDate(mmsg.getReceivedDate());
 				FolderCache fcto=ms.checkCreateAndCacheFolder(folderarchive);
 				if (mus.getArchiveMode().equals(MailUserSettings.ARCHIVING_MODE_YEAR)) {
@@ -1084,8 +1087,8 @@ public class FolderCache {
 					folderarchive+=sep+ld.getYear()+"-"+StringUtils.leftPad(ld.getMonthOfYear()+"",2,'0');
 					fcto=ms.checkCreateAndCacheFolder(folderarchive);
 				}
-				
-				folder.copyMessages(mmsgs, fcto.folder);
+				xmmsg[0]=mmsg;
+				folder.copyMessages(xmmsg, fcto.folder);
 				fcto.setForceRefresh();
 				fcto.modified=true;
 			}

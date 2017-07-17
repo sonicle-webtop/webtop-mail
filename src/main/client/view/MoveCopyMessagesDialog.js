@@ -119,13 +119,30 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			}
 		});
 		
-		var btncancel=Ext.create("Ext.Button",{
+		var btnarchive=Ext.create("Ext.Button",{
+			text: me.mys.res("act-archive.lbl"),
+			disabled: false,
+			width:80,
+			handler: function() {
+				var tofolder=me.mys.getFolderArchive();
+				me.disable();
+                if (chkfiltered.getValue()) {
+                    me.grid.operateAllFiltered("MoveMessages",me.fromFolder,tofolder,me.ajaxResultCallback,me);
+                } else {
+                    me.grid.moveSelection(me.fromFolder,tofolder,me.grid.getSelection());
+					me.enable();
+					me.closeView(false);
+                }
+			}
+		});
+		
+		/*var btncancel=Ext.create("Ext.Button",{
 			text: WT.res("act-cancel.lbl"),
 			width:80,
 			handler: function() {
 				me.closeView(false);
 			}
-		});
+		});*/
 		
 		Ext.apply(me, {
 			buttons: [
@@ -133,8 +150,9 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 				'->',
 				btnmove,' ',' ',' ',' ',
 				btncopy,' ',' ',' ',' ',
-				btndelete,' ',' ',' ',' ',
-				btncancel
+				btnarchive,' ',' ',' ',' ',
+				btndelete/*,' ',' ',' ',' ',
+				btncancel*/
 			]
 		});
 		
