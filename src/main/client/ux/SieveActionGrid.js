@@ -167,7 +167,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 	},
 	
 	onCellBeforeEdit: function(ed, cntx) {
-		console.log('onCellBeforeEdit');
+		//console.log('onCellBeforeEdit');
 	},
 	
 	onCellEdit: function(ed, cntx) {

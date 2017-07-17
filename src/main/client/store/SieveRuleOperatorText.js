@@ -37,8 +37,10 @@ Ext.define('Sonicle.webtop.mail.store.SieveRuleOperatorText', {
 	model: 'WTA.model.Simple',
 	data: [
 		['equal',''],
+		['equalmulti',''],
 		['notequal',''],
 		['contains',''],
+		['containsmulti',''],
 		['notcontains',''],
 		['matches',''],
 		['notmatches','']
