@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.mail.imap.*;
@@ -66,6 +67,7 @@ import net.fortuna.ical4j.model.*;
 import net.fortuna.ical4j.model.component.*;
 import net.fortuna.ical4j.model.property.*;
 import org.joda.time.LocalDate;
+import org.jooq.tools.StringUtils;
 
 
 /**
@@ -112,7 +114,7 @@ public class FolderCache {
     private boolean isSpam=false;
     private boolean isDrafts=false;
     private boolean isArchive=false;
-    private boolean isDocMgt=false;
+    private boolean isDms=false;
     private boolean isSharedFolder=false;
     private boolean isUnderSharedFolder=false;
     private boolean scanNeverDone=true;
@@ -209,7 +211,7 @@ public class FolderCache {
         isTrash=ms.isTrashFolder(shortfoldername);
         isSpam=ms.isSpamFolder(shortfoldername);
         isArchive=ms.isArchiveFolder(shortfoldername);
-        isDocMgt=ms.isDocMgtFolder(shortfoldername);
+        isDms=ms.isDmsFolder(shortfoldername);
         isSharedFolder=ms.isSharedFolder(foldername);
         if (isDrafts||isSent||isTrash||isSpam||isArchive) {
             setCheckUnreads(false);
@@ -433,12 +435,12 @@ public class FolderCache {
         return isArchive;
     }
 
-    public boolean isDocMgt() {
-        return isDocMgt;
+    public boolean isDms() {
+        return isDms;
     }
 
     public boolean isSpecial() {
-        return isSent||isDrafts||isTrash||isSpam||isArchive||isDocMgt;
+        return isSent||isDrafts||isTrash||isSpam||isArchive||isDms;
     }
 
     public boolean isSharedFolder() {
@@ -1052,10 +1054,10 @@ public class FolderCache {
 
     public void copyMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
 		
-        if (ms.hasDocumentArchiving() &&
-                ms.isSimpleArchiving() &&
-                ms.getSimpleArchivingMailFolder()!=null &&
-                ms.getSimpleArchivingMailFolder().equals(to.foldername)) {
+        if (ms.hasDmsDocumentArchiving() &&
+                ms.isDmsSimpleArchiving() &&
+                ms.getDmsSimpleArchivingMailFolder()!=null &&
+                ms.getDmsSimpleArchivingMailFolder().equals(to.foldername)) {
             dmsArchiveMessages(uids, to, fullthreads);
         } else {
             Message mmsgs[]=getMessages(uids,fullthreads);
@@ -1073,18 +1075,15 @@ public class FolderCache {
 			for(Message mmsg: mmsgs) {
 				LocalDate ld=new LocalDate(mmsg.getReceivedDate());
 				FolderCache fcto=ms.checkCreateAndCacheFolder(folderarchive);
-				System.out.println("archive mode="+mus.getArchiveMode());
 				if (mus.getArchiveMode().equals(MailUserSettings.ARCHIVING_MODE_YEAR)) {
 					folderarchive+=sep+ld.getYear();
-					System.out.println("folderarchive="+folderarchive);
 					fcto=ms.checkCreateAndCacheFolder(folderarchive);
 				} else if (mus.getArchiveMode().equals(MailUserSettings.ARCHIVING_MODE_MONTH)) {
 					folderarchive+=sep+ld.getYear();
 					fcto=ms.checkCreateAndCacheFolder(folderarchive);
-					folderarchive+=sep+ld.getYear()+"-"+ld.getMonthOfYear();
+					folderarchive+=sep+ld.getYear()+"-"+StringUtils.leftPad(ld.getMonthOfYear()+"",2,'0');
 					fcto=ms.checkCreateAndCacheFolder(folderarchive);
 				}
-				System.out.println("dest folder="+fcto.foldername);
 				
 				folder.copyMessages(mmsgs, fcto.folder);
 				fcto.setForceRefresh();
@@ -1101,14 +1100,14 @@ public class FolderCache {
 
     public void dmsArchiveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
         Message mmsgs[]=getMessages(uids,fullthreads);
-        MimeMessage newmmsgs[]=getArchivedCopy(mmsgs);
+        MimeMessage newmmsgs[]=getDmsArchivedCopy(mmsgs);
         moveMessages(uids,to,fullthreads);
         folder.appendMessages(newmmsgs);
         refresh();
     }
 
-    public void markArchivedMessages(long uids[], boolean fullthreads) throws MessagingException, IOException {
-        MimeMessage newmmsgs[]=getArchivedCopy(uids,fullthreads);
+    public void markDmsArchivedMessages(long uids[], boolean fullthreads) throws MessagingException, IOException {
+        MimeMessage newmmsgs[]=getDmsArchivedCopy(uids,fullthreads);
         try {
 			deleteMessages(uids,fullthreads);
 			folder.appendMessages(newmmsgs);
@@ -1116,18 +1115,18 @@ public class FolderCache {
 			//can't delete, try with flag
 			Message msgs[]=getMessages(uids,fullthreads);
 			for(Message m: msgs) 
-				m.setFlags(Service.flagArchived,true);
+				m.setFlags(Service.flagDmsArchived,true);
 		}
         
         refresh();
     }
 
-    public MimeMessage[] getArchivedCopy(long uids[],boolean fullthreads) throws MessagingException {
+    public MimeMessage[] getDmsArchivedCopy(long uids[],boolean fullthreads) throws MessagingException {
         Message mmsgs[]=getMessages(uids,fullthreads);
-        return getArchivedCopy(mmsgs);
+        return getDmsArchivedCopy(mmsgs);
     }
 
-    public MimeMessage[] getArchivedCopy(Message mmsgs[]) throws MessagingException {
+    public MimeMessage[] getDmsArchivedCopy(Message mmsgs[]) throws MessagingException {
         MimeMessage newmmsgs[]=new MimeMessage[mmsgs.length];
         int i=0;
         for(Message m:mmsgs) {

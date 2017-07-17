@@ -63,7 +63,7 @@
 .wtmail-icon-header-attach-xs { background-image: url('headerattach_16.gif') !important; background-repeat: no-repeat; background-position: center; }
 .wtmail-icon-header-flag-xs { background-image: url('headerflag_16.gif') !important; background-repeat: no-repeat; background-position: center; }
 .wtmail-icon-header-note-xs { background-image: url('headermailnote_16.gif') !important; background-repeat: no-repeat; background-position: center; }
-.wtmail-icon-header-docmgt-xs { background-image: url('headerdocmgt_16.png') !important; background-repeat: no-repeat; background-position: center; }
+.wtmail-icon-header-dms-xs { background-image: url('headerdms_16.png') !important; background-repeat: no-repeat; background-position: center; }
 
 .x-tool-graph  { background-image: url('showgraph_50x23.png') !important; width: 50px; height: 24px; }
 .x-tool-empty  { background-image: none !important; background-color: transparent !important; }

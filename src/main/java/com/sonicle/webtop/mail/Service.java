@@ -211,9 +211,9 @@ public class Service extends BaseService {
 	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
 	public static HashMap<String,Flags> tbFlagsHash=new HashMap<String,Flags>();
 	private static String sflagNote="mailnote";
-	private static String sflagArchived="$Archived";
+	private static String sflagDmsArchived="$Archived";
 	public static Flags flagNote=new Flags(sflagNote);
-	public static Flags flagArchived=new Flags(sflagArchived);
+	public static Flags flagDmsArchived=new Flags(sflagDmsArchived);
 	public static Flags flagFlagged=new Flags(Flags.Flag.FLAGGED);
 	
 	private FetchProfile FP = new FetchProfile();
@@ -336,7 +336,7 @@ public class Service extends BaseService {
 		draftsFP.add("Message-ID");
 		draftsFP.add("X-Priority");
 		draftsFP.add(HEADER_SONICLE_FROM_DRAFTER);
-		if (hasDocumentArchiving()) {
+		if (hasDmsDocumentArchiving()) {
 			FP.add("X-WT-Archived");
 			draftsFP.add("X-WT-Archived");
 		}
@@ -600,9 +600,9 @@ public class Service extends BaseService {
 		return folderPrefix;
 	}
 	
-	public void archiveMessages(FolderCache from, long nuids[], String idcategory, String idsubcategory, boolean fullthreads) throws MessagingException, FileNotFoundException, IOException {
+	public void dmsArchiveMessages(FolderCache from, long nuids[], String idcategory, String idsubcategory, boolean fullthreads) throws MessagingException, FileNotFoundException, IOException {
 		UserProfile profile = environment.getProfile();
-		String archiveto = ss.getArchivePath();
+		String archiveto = ss.getDmsArchivePath();
 		for (long nuid: nuids) {
 			Message msg = from.getMessage(nuid);
 			
@@ -657,7 +657,7 @@ public class Service extends BaseService {
 				pw.close();
 			}
 		}
-		from.markArchivedMessages(nuids,fullthreads);
+		from.markDmsArchivedMessages(nuids,fullthreads);
 	}
 	
 	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
@@ -2254,31 +2254,31 @@ public class Service extends BaseService {
 		return null;
 	}
 	
-	public boolean hasDocumentArchiving() {
-		return RunContext.isPermitted(SERVICE_ID, "DOCUMENT_ARCHIVING");
+	public boolean hasDmsDocumentArchiving() {
+		return RunContext.isPermitted(SERVICE_ID, "DMS_DOCUMENT_ARCHIVING");
 	}
 	
-	public String getSimpleArchivingMailFolder() {
+	public String getDmsSimpleArchivingMailFolder() {
 		return us.getSimpleDMSArchivingMailFolder();
 	}
 	
-	public boolean isSimpleArchiving() {
+	public boolean isDmsSimpleArchiving() {
 		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_SIMPLE);
 	}
 
-	public boolean isStructuredArchiving() {
+	public boolean isDmsStructuredArchiving() {
 		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_STRUCTURED);
 	}
 	
-	public boolean isWebtopArchiving() {
+	public boolean isDmsWebtopArchiving() {
 		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_WEBTOP);
 	}
 	
-	public boolean isDocMgtFolder(String foldername) {
+	public boolean isDmsFolder(String foldername) {
 		CoreManager core = WT.getCoreManager();
 		
 		UserProfile profile = environment.getProfile();
-		if (!hasDocumentArchiving()) {
+		if (!hasDmsDocumentArchiving()) {
 			return false;
 		}
 		boolean b = false;
@@ -2821,8 +2821,8 @@ public class Service extends BaseService {
 			} else if (mc.isSpam()) {
 				iconCls = "wtmail-icon-spam-folder-xs";
 				nounread = true;
-			} else if (mc.isDocMgt()) {
-				iconCls = "wtmail-icon-docmgt-folder-xs";
+			} else if (mc.isDms()) {
+				iconCls = "wtmail-icon-dms-folder-xs";
 			} else if (mc.isSharedInbox()) {
 				iconCls = "wtmail-icon-inbox-folder-xs";
 			}
@@ -2973,15 +2973,18 @@ public class Service extends BaseService {
 			FolderCache mcache = getFolderCache(fromfolder);
 			FolderCache tomcache = getFolderCache(tofolder);
 			String foldertrash=mprofile.getFolderTrash();
+			String folderspam=mprofile.getFolderSpam();
 			String folderarchive=mprofile.getFolderArchive();
 			
 			//check if tofolder is my Spam, and there is spamadm, move there
-			if (tofolder.equals(mprofile.getFolderSpam())) {
+			if (tofolder.equals(folderspam)) {
 				String spamadmSpam=ss.getSpamadmSpam();
 				if (spamadmSpam!=null) {
+					folderspam=spamadmSpam;
 					FolderCache fc=getFolderCache(spamadmSpam);
 					if (fc!=null) tomcache=fc;
 				}
+				tofolder=folderspam;
 			}
 			//if trashing, check for shared profile trash
 			else if (tofolder.equals(foldertrash)) {
@@ -2993,6 +2996,7 @@ public class Service extends BaseService {
 						if (fc!=null) tomcache=fc;
 					}
 				}
+				tofolder=foldertrash;
 			}
 			//if archiving, determine destination folder based on settings and shared profile
 			else if (tofolder.equals(mprofile.getFolderArchive())) {
@@ -3002,8 +3006,8 @@ public class Service extends BaseService {
 						folderarchive = mainfolder + folderSeparator + getLastFolderName(folderarchive);
 					}
 				}
+				tofolder=folderarchive;
 				archiving=true;
-				System.out.println("archiving=true, folderarchive="+folderarchive);
 			}
 			
 			if (allfiltered == null) {
@@ -3029,7 +3033,7 @@ public class Service extends BaseService {
 					}
 				}
 				long millis = System.currentTimeMillis();
-				sout = "{\nresult: true, millis: " + millis + "\n}";
+				sout = "{\nresult: true, millis: " + millis + ", tofolder: '"+StringEscapeUtils.escapeEcmaScript(tofolder)+"', archiving: "+archiving+"\n}";
 			} else {
                 uids=getMessageUIDs(mcache,request);
                 if (archiving) archiveMessages(mcache, folderarchive, toLongs(uids),fullthreads);
@@ -3037,7 +3041,7 @@ public class Service extends BaseService {
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
-				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + "\n}";
+				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + ", tofolder: '"+StringEscapeUtils.escapeEcmaScript(tofolder)+"', archiving: "+archiving+"\n}";
 			}
 		} catch(Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -3091,7 +3095,7 @@ public class Service extends BaseService {
 		out.println(sout);
 	}
 	
-	public void processArchiveMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+	public void processDmsArchiveMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
 		int ix = tofolder.indexOf("|");
@@ -3107,7 +3111,7 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			uids = request.getParameterValues("ids");
-			if (!multifolder) archiveMessages(mcache, toLongs(uids), idcategory, idsubcategory, fullthreads);
+			if (!multifolder) dmsArchiveMessages(mcache, toLongs(uids), idcategory, idsubcategory, fullthreads);
 			else {
                 long iuids[]=new long[1];
                 for(String uid: uids) {
@@ -3116,7 +3120,7 @@ public class Service extends BaseService {
                     uid=uid.substring(ix+1);
 					mcache = getFolderCache(fromfolder);
                     iuids[0]=Integer.parseInt(uid);
-                    archiveMessages(mcache, iuids, idcategory, idsubcategory, fullthreads);
+                    dmsArchiveMessages(mcache, iuids, idcategory, idsubcategory, fullthreads);
 				}
 			}
 			long millis = System.currentTimeMillis();
@@ -5784,10 +5788,10 @@ public class Service extends BaseService {
 						//idmessage=Utils.jsEscape(idmessage);
 						if (i>0) sout+=",\n";
 						boolean archived=false;
-						if (hasDocumentArchiving()) {
+						if (hasDmsDocumentArchiving()) {
 							archived=xm.getHeader("X-WT-Archived")!=null;
 							if (!archived) {
-								archived=flags.contains(sflagArchived);
+								archived=flags.contains(sflagDmsArchived);
 							}
 						}
 						sout += "{idmessage:'" + nuid + "',"
@@ -7058,10 +7062,10 @@ public class Service extends BaseService {
 						sout += ",\n";
 					}
 					boolean archived = false;
-					if (hasDocumentArchiving()) {
+					if (hasDmsDocumentArchiving()) {
 						archived=m.getHeader("X-WT-Archived")!=null;
 						if (!archived) {
-							archived=flags.contains(sflagArchived);
+							archived=flags.contains(sflagDmsArchived);
 						}
 					}
 					

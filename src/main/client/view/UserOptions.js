@@ -397,13 +397,13 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					fieldLabel: me.res('opts.arch.fld-archiveMode.lbl'),
 					width: 340,
 					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-				}), {
+				})/*, {
 					xtype: 'checkbox',
 					bind: '{archiveKeepFoldersStructure}',
 					fieldLabel: me.res('opts.arch.fld-keepFoldersStructure.lbl'),
 					width: 100,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-				}
+				}*/
 			]
 		});
 		

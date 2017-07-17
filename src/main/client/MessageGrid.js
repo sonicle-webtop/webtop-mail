@@ -1279,6 +1279,23 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					}
 					this.ms.updateUnreads(options.tofolder,info,false);
 					*/
+				   
+				    //if archiving, reload archive branch
+					if (json.archiving) {
+						var tree=me.mys.imapTree,
+							n=tree.getStore().getNodeById(json.tofolder);
+						if (!n) {
+							me.mys.reloadTree();
+						} else {
+							//var expanded=n.isExpanded();
+							tree.getStore().load({
+								node: n,
+								callback: function() {
+									//if (!expanded) n.collapse();
+								}
+							});
+						}
+					}
 				} else {
 					WT.error(json.text);
 				}
