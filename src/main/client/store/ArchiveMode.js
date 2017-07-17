@@ -32,28 +32,23 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.model.ImapTreeModel', {
-    extend: 'Ext.data.TreeModel',
-    idProperty: 'id',
-    fields: [
-		{ name: "id" },
-		{ name: "text" },
-		{ name: "folder" },
-		{ name: "leaf" },
-		{ name: "iconCls" },
-		{ name: "unread" },
-		{ name: "hasUnread" },
-		{ name: "isSharedToSomeone" },
-		{ name: "isSharedRoot" },
-		{ name: "isInbox" },
-		{ name: "isDrafts" },
-		{ name: "isSent" },
-		{ name: "isTrash" },
-		{ name: "isSpam" },
-		{ name: "isArchive" },
-		{ name: "scanOff" },
-		{ name: "scanOn" },
-		{ name: "scanEnabled" }
-    ]
+Ext.define('Sonicle.webtop.mail.store.ArchiveMode', {
+	extend: 'Ext.data.ArrayStore',
+	
+	model: 'WTA.model.Simple',
+	data: [
+		['single',''],
+		['year',''],
+		['month','']
+	],
+	
+	constructor: function(cfg) {
+		var me = this;
+		Ext.each(me.config.data, function(row) {
+			row[1] = WT.res('com.sonicle.webtop.mail','store.archiveMode.'+row[0]);
+		});
+		me.callParent([cfg]);
+	}
+	
+	
 });
-

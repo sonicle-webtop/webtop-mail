@@ -154,7 +154,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		me.imapTree.getPlugin('cellediting').on("beforeedit",function(editor , context , eOpts) {
 			var r=context.record;
-			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
+			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||r.get("isArchive")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
 		});
 
 		var tool = Ext.create({
@@ -292,6 +292,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh-xs' });
         me.addAct("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save-xs' });
         me.addAct("createreminder",{ handler: me.gridAction(me,'CreateReminder'), iconCls: 'wtcal-icon-newEvent-xs' });
+        me.addAct("archive",{ handler: me.gridAction(me,'Archive'), iconCls: 'wtmail-icon-archive-xs' });
         me.addAct("resetcolumns",{ handler: me.gridAction(me,'ResetColumns'), iconCls: '' });
         me.addAct("viewheaders",{ handler: me.gridAction(me,'ViewHeaders'), iconCls: '' });
         me.addAct("viewsource",{ handler: me.gridAction(me,'ViewSource'), iconCls: '' });
@@ -373,7 +374,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				'-',
 				me.getAct('movetofolder'),
 				me.getAct('savemail'),
-				me.getAct('createreminder')
+				me.getAct('createreminder'),
+				'-',
+				me.getAct("archive")
 			],
 			listeners: {
 				beforeshow: function() {
@@ -383,10 +386,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			
 		//TODO: document management
         /*if (WT.docmgt) {
-            cxmGrid.add('-');
+            //cxmGrid.add('-');
             cxmGrid.add(me.getAct('docmgt'));
         } else if (WT.docmgtwt) {
-            cxmGrid.add('-');
+            //cxmGrid.add('-');
             cxmGrid.add(me.getAct('docmgtwt'));
         }*/
 		
@@ -967,6 +970,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	getFolderTrash: function() {
 		return this.getVar('folderTrash');
+	},
+	
+	getFolderArchive: function() {
+		return this.getVar('folderArchive');
 	},
 	
 	getFolderNodeById: function(foldername) {

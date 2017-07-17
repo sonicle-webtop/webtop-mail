@@ -61,6 +61,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String ADMIN_PASSWORD = "admin.password";
 	public static final String NETHTOP_VMAIL_SECRET = "nethtop.vmail.secret";
 	public static final String SCHEDULED_EMAILS_DISABLED = "scheduled-emails.disabled";
+	public static final String SIEVE_SPAMFILTER_DISABLED = "sieve.spamfilter.disabled";
 
 /*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
 	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
@@ -141,6 +142,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public boolean isScheduledEmailsDisabled() {
 		return getBoolean(SCHEDULED_EMAILS_DISABLED,false);
 	}
+
+	public boolean isSieveSpamFilterDisabled() {
+		return getBoolean(SIEVE_SPAMFILTER_DISABLED,false);
+	}
 	
 	public int getSievePort() {
 		Integer value = getInteger(MailSettings.SIEVE_PORT, null);
@@ -175,6 +180,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public String getDefaultFolderTrash() {
 		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_TRASH,null);
+	}
+
+	public String getDefaultFolderArchive() {
+		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_ARCHIVE,null);
 	}
 
 	public String getDefaultFolderSpam() {

@@ -316,8 +316,7 @@ public class Service extends BaseService {
 
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
-		us = new MailUserSettings(profile.getId(),ss);
-		mprofile = new MailUserProfile(environment,this);
+		us = new MailUserSettings(profile.getId(),ss);		mprofile = new MailUserProfile(environment,this);
 		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mprofile.getMailUsername(), mprofile.getMailPassword());
 		fcProvided = new FolderCache(this, environment);
 		
@@ -378,13 +377,15 @@ public class Service extends BaseService {
 				checkCreateFolder(mprofile.getFolderDrafts());
 				checkCreateFolder(mprofile.getFolderTrash());
 				checkCreateFolder(mprofile.getFolderSpam());
+				checkCreateFolder(mprofile.getFolderArchive());
 			}
 			
 			skipReplyFolders = new String[]{
 				mprofile.getFolderDrafts(),
 				mprofile.getFolderSent(),
 				mprofile.getFolderSpam(),
-				mprofile.getFolderTrash()
+				mprofile.getFolderTrash(),
+				mprofile.getFolderArchive()
 			};
 			skipForwardFolders = new String[]{
 				mprofile.getFolderSpam(),
@@ -669,6 +670,10 @@ public class Service extends BaseService {
 	
 	public void deleteMessages(FolderCache from, long uids[], boolean fullthreads) throws MessagingException {
 		from.deleteMessages(uids,fullthreads);
+	}
+	
+	public void archiveMessages(FolderCache from, String folderarchive, long uids[], boolean fullthreads) throws MessagingException {
+		from.archiveMessages(uids, folderarchive, fullthreads);
 	}
 	
 	public void flagMessages(FolderCache from, long uids[], String flag) throws MessagingException {
@@ -2146,6 +2151,18 @@ public class Service extends BaseService {
 		return false;
 	}
 	
+	public boolean isArchiveFolder(String fullname) {
+		String farchive = mprofile.getFolderArchive();
+		if (farchive!=null) {
+			String lastname = getLastFolderName(fullname);
+			String plastname = getLastFolderName(farchive);
+			if (lastname.equals(plastname)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	public boolean isSpamFolder(String fullname) {
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(mprofile.getFolderSpam());
@@ -2160,6 +2177,7 @@ public class Service extends BaseService {
 				|| isDraftsFolder(foldername)
 				|| isInboxFolder(foldername)
 				|| isSentFolder(foldername)
+				|| isArchiveFolder(foldername)
 				|| isSpamFolder(foldername);
 		return retval;
 	}
@@ -2241,19 +2259,19 @@ public class Service extends BaseService {
 	}
 	
 	public String getSimpleArchivingMailFolder() {
-		return us.getSimpleArchivingMailFolder();
+		return us.getSimpleDMSArchivingMailFolder();
 	}
 	
 	public boolean isSimpleArchiving() {
-		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_SIMPLE);
+		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_SIMPLE);
 	}
 
 	public boolean isStructuredArchiving() {
-		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_STRUCTURED);
+		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_STRUCTURED);
 	}
 	
 	public boolean isWebtopArchiving() {
-		return us.getArchivingMethod().equals(MailUserSettings.ARCHIVING_METHOD_WEBTOP);
+		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_WEBTOP);
 	}
 	
 	public boolean isDocMgtFolder(String foldername) {
@@ -2264,7 +2282,7 @@ public class Service extends BaseService {
 			return false;
 		}
 		boolean b = false;
-		String df = us.getSimpleArchivingMailFolder();
+		String df = us.getSimpleDMSArchivingMailFolder();
 		if (df != null && df.trim().length() > 0) {
 			String lfn = getLastFolderName(foldername);
 			String dfn = getLastFolderName(df);
@@ -2311,6 +2329,8 @@ public class Service extends BaseService {
 			desc = lookupResource(MailLocaleKey.FOLDERS_DRAFTS);
 		} else if (fc.isTrash()) {
 			desc = lookupResource(MailLocaleKey.FOLDERS_TRASH);
+		} else if (fc.isArchive()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_ARCHIVE);
 		} else if (fc.isSent()) {
 			desc = lookupResource(MailLocaleKey.FOLDERS_SENT);
 		} else if (fc.isSpam()) {
@@ -2352,19 +2372,32 @@ public class Service extends BaseService {
 		return store.getFolder(foldername);
 	}
 	
-	public void checkCreateFolder(String foldername) throws MessagingException {
+	public Folder checkCreateFolder(String foldername) throws MessagingException {
 		Folder folder = store.getFolder(foldername);
 		if (!folder.exists()) {
 			folder.create(Folder.HOLDS_MESSAGES | Folder.HOLDS_FOLDERS);
 		}
+		return folder;
+	}
+	
+	public FolderCache checkCreateAndCacheFolder(String fullname) throws MessagingException {
+		Folder folder=checkCreateFolder(fullname);
+		FolderCache fc=getFolderCache(fullname);
+		if (fc==null) {
+			FolderCache parent=fcRoot;
+			int ix=fullname.lastIndexOf(folderSeparator);
+			if (ix>0) parent=getFolderCache(fullname.substring(0,ix));
+			fc=addFoldersCache(parent, folder);
+		}
+		return fc;
 	}
 	
   
-  public boolean checkFolder(String foldername) throws MessagingException {
-      Folder folder=store.getFolder(foldername);
-	  return folder.exists();
-  }	
-	
+	public boolean checkFolder(String foldername) throws MessagingException {
+		Folder folder=store.getFolder(foldername);
+		return folder.exists();
+	}	
+
 	public static int getPriority(Message m) throws MessagingException {
 		String xprio = null;
 		String h[] = m.getHeader("X-Priority");
@@ -2738,6 +2771,7 @@ public class Service extends BaseService {
 			FolderCache mc = getFolderCache(foldername);
 			if (mc == null) {
 				//continue;
+				System.out.println("foldername="+foldername+" parentname="+parent.getFullName());
 				FolderCache fcparent=getFolderCache(parent.getFullName());
 				mc=addSingleFoldersCache(fcparent, f);
 			}
@@ -2780,6 +2814,9 @@ public class Service extends BaseService {
 				nounread = true;
 			} else if (mc.isTrash()) {
 				iconCls = "wtmail-icon-trash-folder-xs";
+				nounread = true;
+			} else if (mc.isArchive()) {
+				iconCls = "wtmail-icon-archive-folder-xs";
 				nounread = true;
 			} else if (mc.isSpam()) {
 				iconCls = "wtmail-icon-spam-folder-xs";
@@ -2832,6 +2869,9 @@ public class Service extends BaseService {
 			if (mc.isTrash()) {
 				ss += ",isTrash: true";
 			}
+			if (mc.isArchive()) {
+				ss += ",isArchive: true";
+			}
 			if (mc.isSpam()) {
 				ss += ",isSpam: true";
 			}
@@ -2859,6 +2899,7 @@ public class Service extends BaseService {
 		Folder sent = null;
 		Folder drafts = null;
 		Folder trash = null;
+		Folder archive = null;
 		Folder spam = null;
 		for (Folder f : folders) {
 			String foldername = f.getFullName();
@@ -2870,6 +2911,7 @@ public class Service extends BaseService {
 				else if (isDraftsFolder(shortfoldername)) drafts=f;
 				else if (isTrashFolder(shortfoldername)) trash=f;
 				else if (isSpamFolder(shortfoldername)) spam=f;
+				else if (isArchiveFolder(shortfoldername)) archive=f;
 				else if (isSharedFolder(foldername)) sfolders.add(f);
 				else afolders.add(f);
 			}
@@ -2891,6 +2933,9 @@ public class Service extends BaseService {
 		}
 		
 		//add any mapped special folder in order on top
+		if (archive != null) {
+			afolders.add(0, archive);
+		}
 		if (trash != null) {
 			afolders.add(0, trash);
 		}
@@ -2922,11 +2967,13 @@ public class Service extends BaseService {
 		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
 		String uids[] = null;
 		String sout = null;
+		boolean archiving = false;
 		try {
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(fromfolder);
 			FolderCache tomcache = getFolderCache(tofolder);
 			String foldertrash=mprofile.getFolderTrash();
+			String folderarchive=mprofile.getFolderArchive();
 			
 			//check if tofolder is my Spam, and there is spamadm, move there
 			if (tofolder.equals(mprofile.getFolderSpam())) {
@@ -2947,13 +2994,27 @@ public class Service extends BaseService {
 					}
 				}
 			}
+			//if archiving, determine destination folder based on settings and shared profile
+			else if (tofolder.equals(mprofile.getFolderArchive())) {
+				if (isUnderSharedFolder(fromfolder)) {
+					String mainfolder=getMainSharedFolder(fromfolder);
+					if (mainfolder!=null) {
+						folderarchive = mainfolder + folderSeparator + getLastFolderName(folderarchive);
+					}
+				}
+				archiving=true;
+				System.out.println("archiving=true, folderarchive="+folderarchive);
+			}
 			
 			if (allfiltered == null) {
 				uids = request.getParameterValues("ids");
 				boolean norows=false;
 				if (uids.length==1 && uids[0].length()==0) norows=true;
 				if (!norows) {
-					if (!multifolder) moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
+					if (!multifolder) {
+						if (archiving) archiveMessages(mcache, folderarchive, toLongs(uids), fullthreads);
+						else moveMessages(mcache, tomcache, toLongs(uids), fullthreads);
+					}
 					else {
 						long iuids[]=new long[1];
 						for(String uid: uids) {
@@ -2962,7 +3023,8 @@ public class Service extends BaseService {
 							uid=uid.substring(ix+1);
 							mcache = getFolderCache(fromfolder);
 							iuids[0]=Long.parseLong(uid);
-							moveMessages(mcache, tomcache, iuids,fullthreads);
+							if (archiving) archiveMessages(mcache, folderarchive, iuids,fullthreads);
+							else moveMessages(mcache, tomcache, iuids,fullthreads);
 						}
 					}
 				}
@@ -2970,7 +3032,8 @@ public class Service extends BaseService {
 				sout = "{\nresult: true, millis: " + millis + "\n}";
 			} else {
                 uids=getMessageUIDs(mcache,request);
-                moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
+                if (archiving) archiveMessages(mcache, folderarchive, toLongs(uids),fullthreads);
+				else moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
@@ -6258,7 +6321,7 @@ public class Service extends BaseService {
 				
 				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + "},\n";
 			}
-			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash()) {
+			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash() && !mcache.isArchive()) {
 				if (vheader != null && vheader[0] != null && !wasseen) {
 					sout += "{iddata:'receipt',value1:'"+us.getReadReceiptConfirmation()+"',value2:'"+StringEscapeUtils.escapeEcmaScript(vheader[0])+"',value3:0},\n";
 				}
@@ -7564,6 +7627,7 @@ public class Service extends BaseService {
 			co.put("folderSent", us.getFolderSent());
 			co.put("folderSpam", us.getFolderSpam());
 			co.put("folderTrash", us.getFolderTrash());
+			co.put("folderArchive", us.getFolderArchive());
 			co.put("folderSeparator", folderSeparator);
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());

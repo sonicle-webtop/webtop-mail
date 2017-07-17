@@ -1027,6 +1027,25 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         }
     },
 
+    actionArchive: function() {
+		if (this.storeLoading) {
+			return;
+		}
+		
+		var me=this,
+			curfolder=me.currentFolder,
+			sm=me.getSelectionModel(),
+			selection=sm.getSelection(),
+			farchive=me.mys.getFolderArchive();
+	
+		if (!selection || selection.length==0) return;
+		
+        if (farchive) {
+			me.moveSelection(curfolder,farchive,selection);
+			me.focus();
+		}
+    },
+
     actionMarkSeen: function() {
 		this.actionMarkSeenState(true);
     },

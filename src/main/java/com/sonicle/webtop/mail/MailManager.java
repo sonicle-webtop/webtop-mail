@@ -607,6 +607,10 @@ public class MailManager extends BaseManager {
 	
 	public void applySieveScript(boolean activate) throws WTException {
 		SieveScriptBuilder ssb = new SieveScriptBuilder();
+		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID,getTargetProfileId().getDomainId());
+		MailUserSettings mus = new MailUserSettings(getTargetProfileId());
+		if (!mss.isSieveSpamFilterDisabled())
+			ssb.setSpamFilter(mus.getFolderSpam());
 		
 		ensureUser();
 		logger.debug("Working on autoresponder...");

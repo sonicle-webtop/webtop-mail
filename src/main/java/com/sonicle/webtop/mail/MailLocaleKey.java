@@ -54,6 +54,7 @@ public class MailLocaleKey {
     public static final String FOLDERS_DRAFTS="folders.drafts";
     public static final String FOLDERS_TRASH="folders.trash";
     public static final String FOLDERS_SPAM="folders.spam";
+    public static final String FOLDERS_ARCHIVE="folders.archive";
     public static final String FOLDERS_SHARED="folders.shared";
     public static final String RULES_FILE="rules.file";
     public static final String RULES_DISCARD="rules.discard";
