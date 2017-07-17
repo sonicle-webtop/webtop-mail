@@ -116,12 +116,16 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 				dataIndex: 'value',
 				getEditor: me.getValueEditor.bind(me),
 				renderer: function(val, meta, rec) {
-					var fld = rec.get('field');
+					var fld = rec.get('field'), op = rec.get('operator');
 					if (Ext.isEmpty(val)) {
 						if (['size'].indexOf(fld) !== -1) {
 							return me.styleAsEmpty(WT.res(sid, 'wtmailsieverulegrid.value.'+fld+'.emp'));
 						} else {
-							return me.styleAsEmpty(WT.res(sid, 'wtmailsieverulegrid.value.emp'));
+							if (op.indexOf('multi') !== -1) {
+								return me.styleAsEmpty(WT.res(sid, 'wtmailsieverulegrid.valuemulti.emp'));
+							} else {
+								return me.styleAsEmpty(WT.res(sid, 'wtmailsieverulegrid.value.emp'));
+							}
 						}
 					}
 					if (fld === 'size') {
@@ -219,7 +223,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 	},
 	
 	onCellValidateEdit: function(ed, cntx) {
-		console.log('onCellBeforeEdit');
+		//console.log('onCellBeforeEdit');
 	},
 	
 	getArgumentEditor: function(rec, col) {
