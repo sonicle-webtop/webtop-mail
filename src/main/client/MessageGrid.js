@@ -1279,11 +1279,41 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					}
 					this.ms.updateUnreads(options.tofolder,info,false);
 					*/
+				   
+				    //if archiving, reload archive branch
+					if (json.archiving) me._refreshArchiveNode(json.tofolder);
 				} else {
 					WT.error(json.text);
 				}
 			}
 		});							
+	},
+	
+	_refreshArchiveNode: function(fname) {
+		var me=this,
+			tree=me.mys.imapTree,
+			s=tree.getStore(),
+			n=s.getNodeById(fname);
+		if (!n) {
+			//look for parent to reload (e.g. shared folder)
+			var x=fname.lastIndexOf(me.mys.getVar("folderSeparator"));
+			if (x>0) n=s.getNodeById(fname.substring(0,x));
+			if (!n) me.mys.reloadTree();
+			else s.load({ node: n });
+		} else {
+			var expanded=n.isExpanded();
+			s.load({
+				node: n,
+				callback: function() {
+					if (!expanded) {
+						n.expand(false,function() {
+							n.collapse();
+						});
+					}
+				}
+			});
+		}
+		
 	},
 
 	checkBrokenThreads: function(selection,cb,scope) {
@@ -1360,6 +1390,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//	info.millis=o.millis;
 					//	this.ms.updateUnreads(options.tofolder,info,false);
 					//}
+					if (json.archiving) me._refreshArchiveNode(json.tofolder);
 				} else {
 					WT.error(json.text);
 				}
