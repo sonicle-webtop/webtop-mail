@@ -1087,6 +1087,21 @@ public class FolderCache {
 					folderarchive+=sep+ld.getYear()+"-"+StringUtils.leftPad(ld.getMonthOfYear()+"",2,'0');
 					fcto=ms.checkCreateAndCacheFolder(folderarchive);
 				}
+				if (mus.isArchiveKeepFoldersStructure()) {
+					String fname=foldername;
+					//strip prefix is present
+					String prefix=ms.getFolderPrefix();
+					if (prefix!=null && fname.startsWith(prefix)) {
+						fname=fname.substring(prefix.length());
+					}
+					if (ms.isUnderSharedFolder(foldername)) {
+						String mainfolder=ms.getMainSharedFolder(foldername);
+						if (fname.equals(mainfolder)) fname="INBOX";
+						else fname=fname.substring(mainfolder.length()+1);
+					}
+					folderarchive+=sep+fname;
+					fcto=ms.checkCreateAndCacheFolders(folderarchive);
+				}
 				xmmsg[0]=mmsg;
 				folder.copyMessages(xmmsg, fcto.folder);
 				fcto.setForceRefresh();

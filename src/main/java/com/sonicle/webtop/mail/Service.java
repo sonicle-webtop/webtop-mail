@@ -2392,6 +2392,15 @@ public class Service extends BaseService {
 		return fc;
 	}
 	
+	public FolderCache checkCreateAndCacheFolders(String fullname) throws MessagingException {
+		int x=fullname.indexOf(folderSeparator);
+		while(x>0) {
+			String fname=fullname.substring(0,x);
+			checkCreateAndCacheFolder(fname);
+			x=fullname.indexOf(folderSeparator,x+1);
+		}
+		return checkCreateAndCacheFolder(fullname);
+	}
   
 	public boolean checkFolder(String foldername) throws MessagingException {
 		Folder folder=store.getFolder(foldername);
@@ -3000,8 +3009,8 @@ public class Service extends BaseService {
 			}
 			//if archiving, determine destination folder based on settings and shared profile
 			else if (tofolder.equals(mprofile.getFolderArchive())) {
-				if (isUnderSharedFolder(fromfolder)) {
-					String mainfolder=getMainSharedFolder(fromfolder);
+					if (isUnderSharedFolder(fromfolder)) {
+						String mainfolder=getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
 						folderarchive = mainfolder + folderSeparator + getLastFolderName(folderarchive);
 					}
