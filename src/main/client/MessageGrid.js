@@ -1289,15 +1289,20 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});							
 	},
 	
-	_refreshArchiveNode: function(archivefolder) {
+	_refreshArchiveNode: function(fname) {
 		var me=this,
 			tree=me.mys.imapTree,
-			n=tree.getStore().getNodeById(archivefolder);
+			s=tree.getStore(),
+			n=s.getNodeById(fname);
 		if (!n) {
-			me.mys.reloadTree();
+			//look for parent to reload (e.g. shared folder)
+			var x=fname.lastIndexOf(me.mys.getVar("folderSeparator"));
+			if (x>0) n=s.getNodeById(fname.substring(0,x));
+			if (!n) me.mys.reloadTree();
+			else s.load({ node: n });
 		} else {
 			var expanded=n.isExpanded();
-			tree.getStore().load({
+			s.load({
 				node: n,
 				callback: function() {
 					if (!expanded) {
