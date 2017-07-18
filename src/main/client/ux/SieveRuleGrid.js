@@ -45,6 +45,12 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 	
 	border: false,
 	
+	/*
+	 * @private
+	 * @readonly
+	 */
+	fieldStore: null,
+	
 	initComponent: function() {
 		var me = this,
 				sid = 'com.sonicle.webtop.mail';
@@ -198,8 +204,14 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 		};
 	},
 	
+	destroy: function() {
+		var me = this;
+		me.callParent();
+		me.fieldStore = null;
+	},
+	
 	onCellBeforeEdit: function(ed, cntx) {
-		console.log('onCellBeforeEdit');
+		//console.log('onCellBeforeEdit');
 	},
 	
 	onCellEdit: function(ed, cntx) {

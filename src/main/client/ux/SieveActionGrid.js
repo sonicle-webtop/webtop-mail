@@ -42,6 +42,12 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 	
 	border: false,
 	
+	/*
+	 * @private
+	 * @readonly
+	 */
+	methodStore: null,
+	
 	initComponent: function() {
 		var me = this,
 				sid = 'com.sonicle.webtop.mail';
@@ -164,6 +170,12 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 				}))
 			})
 		};
+	},
+	
+	destroy: function() {
+		var me = this;
+		me.callParent();
+		me.methodStore = null;
 	},
 	
 	onCellBeforeEdit: function(ed, cntx) {
