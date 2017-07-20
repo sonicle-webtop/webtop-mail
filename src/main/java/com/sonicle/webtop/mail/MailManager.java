@@ -65,6 +65,7 @@ import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.mail.sieve.SieveAction;
 import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.mail.sieve.SieveMatch;
+import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
@@ -606,6 +607,7 @@ public class MailManager extends BaseManager {
 	}
 	
 	public void applySieveScript(boolean activate) throws WTException {
+		UserProfile.Data ud = WT.getUserData(getTargetProfileId());
 		SieveScriptBuilder ssb = new SieveScriptBuilder();
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID,getTargetProfileId().getDomainId());
 		MailUserSettings mus = new MailUserSettings(getTargetProfileId());
@@ -616,7 +618,7 @@ public class MailManager extends BaseManager {
 		logger.debug("Working on autoresponder...");
 		AutoResponder autoResp = getAutoResponder();
 		if (autoResp.getEnabled()) {
-			ssb.setVacation(autoResp.toSieveVacation());
+			ssb.setVacation(autoResp.toSieveVacation(ud.getPersonalEmail()));
 		}
 		
 		logger.debug("Working on incoming filters...");
