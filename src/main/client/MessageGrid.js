@@ -1471,6 +1471,159 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
 	},
 	
+	actionManageTags: function() {
+		var me=this;	
+		
+		WT.createView(me.mys.ID,'view.TagsManager',{
+			viewCfg: {
+				mys: me.mys,
+				listeners: {
+					viewclose: function() {
+						me.mys.reloadTags();
+					}
+				}
+			}
+		}).show();
+	},
+	
+	actionTag: function(tagId) {
+        var me=this,
+			selection=me.getSelection(),
+			folder=me.currentFolder,
+			data=me.sel2ids(selection),
+			ids=data.ids,
+			params={
+                tagId: tagId,
+                fromfolder: folder,
+                ids: ids,
+                multifolder: data.multifolder
+			};
+			
+        if (data.folders) params.folders=data.folders;
+		
+		WT.ajaxReq(me.mys.ID, 'TagMessages', {
+			params: params,
+			callback: function(success,json) {
+              if (success) {
+                  var dorel=false,
+					  fl=me.mys.messagesPanel.folderList;
+			  
+                  Ext.each(
+                    selection,
+                    function(r,index,allItems) {
+                      if (me!==fl) {
+                        var ff=(me.multifolder?r.get("folder"):me.currentFolder);
+                        if (ff===fl.currentFolder) dorel=true;
+                      }
+					  
+					  var tags=r.get("tags"),
+						  ix=-1;
+					  if (!tags) tags=[];
+					  else ix=Ext.Array.indexOf(tags,tagId);
+					  if (ix<0) {
+						  Ext.Array.insert(tags,0,[tagId]);
+					  }
+					  r.set("tags",null);
+					  r.set("tags",tags);
+                    }
+                  );
+                  if (dorel) this.mys.reloadFolderList();
+
+              } else {
+                  WT.error(json.text);
+              }
+			}
+		});					
+	},
+	
+	actionRemoveAllTags: function() {
+        var me=this,
+			selection=me.getSelection(),
+			folder=me.currentFolder,
+			data=me.sel2ids(selection),
+			ids=data.ids,
+			params={
+                fromfolder: folder,
+                ids: ids,
+                multifolder: data.multifolder
+			};
+			
+        if (data.folders) params.folders=data.folders;
+		
+		WT.ajaxReq(me.mys.ID, 'ClearMessagesTags', {
+			params: params,
+			callback: function(success,json) {
+              if (success) {
+                  var dorel=false,
+					  fl=me.mys.messagesPanel.folderList;
+			  
+                  Ext.each(
+                    selection,
+                    function(r,index,allItems) {
+                      if (me!==fl) {
+                        var ff=(me.multifolder?r.get("folder"):me.currentFolder);
+                        if (ff===fl.currentFolder) dorel=true;
+                      }
+					  
+					  r.set("tags",null);
+                    }
+                  );
+                  if (dorel) this.mys.reloadFolderList();
+
+              } else {
+                  WT.error(json.text);
+              }
+			}
+		});					
+	},
+	
+	actionUntag: function(tagId) {
+        var me=this,
+			selection=me.getSelection(),
+			folder=me.currentFolder,
+			data=me.sel2ids(selection),
+			ids=data.ids,
+			params={
+                tagId: tagId,
+                fromfolder: folder,
+                ids: ids,
+                multifolder: data.multifolder
+			};
+			
+        if (data.folders) params.folders=data.folders;
+		
+		WT.ajaxReq(me.mys.ID, 'UntagMessages', {
+			params: params,
+			callback: function(success,json) {
+              if (success) {
+                  var dorel=false,
+					  fl=me.mys.messagesPanel.folderList;
+			  
+                  Ext.each(
+                    selection,
+                    function(r,index,allItems) {
+                      if (me!==fl) {
+                        var ff=(me.multifolder?r.get("folder"):me.currentFolder);
+                        if (ff===fl.currentFolder) dorel=true;
+                      }
+					  
+					  var tags=r.get("tags");
+					  if (tags) {
+						Ext.Array.remove(tags,tagId);
+						r.set("tags",null);
+						if (tags.length>0) r.set("tags",tags);
+					  }
+                    }
+                  );
+                  if (dorel) this.mys.reloadFolderList();
+
+              } else {
+                  WT.error(json.text);
+              }
+			}
+		});					
+	},
+	
     actionFlag: function(flagstring) {
         var me=this,
 			selection=me.getSelection(),
@@ -1895,7 +2048,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								topen=record.get("threadOpen"),
 								tchildren=record.get("threadHasChildren"),
 								tuc=record.get("threadUnseenChildren"),
+								tags=record.get("tags"),
 								uline=me.threaded && !topen && tuc && tuc>0,
+								ctag=false,
 								imgtag="";
 
 							if (me.threaded) {                    
@@ -1915,9 +2070,17 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								var imgname=Ext.String.format("status{0}_16.png",status);
 								imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16,"valign=top")+"&nbsp;";
 							}
+							if (tags) {
+								var r=me.mys.tagsStore.findRecord('tagId',tags[0]);
+								if (r) {
+									ctag=true;
+									imgtag+="<span style='color: "+r.get("color")+"'>"
+								}
+							}
 							if (uline) imgtag+="<u>";
 							imgtag+=value;
 							if (uline) imgtag+="</u>";
+							if (ctag) imgtag+="</span>";
 							if (me.threaded && tindent===0) {
 								imgtag+="</div>";
 							}

@@ -33,16 +33,19 @@
  */
 package com.sonicle.webtop.mail.bol;
 
-import com.sonicle.webtop.mail.jooq.tables.pojos.Vacation;
+import com.sonicle.webtop.mail.jooq.tables.pojos.Tags;
 
 /**
  *
  * @author gbulfon
  */
-public class OVacation extends Vacation {
+public class OTag extends Tags {
 	
-	public OVacation() {
+	public OTag() {
 		
 	}
 	
+	public OTag(String domainId, String userId, String tagId, String description, String color) {
+		super(domainId, userId, tagId, description, color);
+	}
 }

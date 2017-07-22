@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class InFilters extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord> {
 
-	private static final long serialVersionUID = -1243349590;
+	private static final long serialVersionUID = -2061669606;
 
 	/**
 	 * The reference instance of <code>mail.in_filters</code>
@@ -111,7 +111,7 @@ public class InFilters extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.j
 	 */
 	@Override
 	public org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord> getPrimaryKey() {
-		return com.sonicle.webtop.mail.jooq.Keys.FILTERS_IN_PKEY;
+		return com.sonicle.webtop.mail.jooq.Keys.IN_FILTERS_PKEY;
 	}
 
 	/**
@@ -119,7 +119,7 @@ public class InFilters extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.j
 	 */
 	@Override
 	public java.util.List<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord>> getKeys() {
-		return java.util.Arrays.<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord>>asList(com.sonicle.webtop.mail.jooq.Keys.FILTERS_IN_PKEY);
+		return java.util.Arrays.<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord>>asList(com.sonicle.webtop.mail.jooq.Keys.IN_FILTERS_PKEY);
 	}
 
 	/**

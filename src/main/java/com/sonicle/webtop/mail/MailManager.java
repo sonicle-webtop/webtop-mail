@@ -66,8 +66,11 @@ import com.sonicle.mail.sieve.SieveAction;
 import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.mail.sieve.SieveMatch;
 import com.sonicle.webtop.core.util.IdentifierUtils;
+import com.sonicle.webtop.mail.bol.OTag;
+import com.sonicle.webtop.mail.dal.TagDAO;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
+import com.sonicle.webtop.mail.model.Tag;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -424,8 +427,87 @@ public class MailManager extends BaseManager {
 	
 	
 	
+	public List<Tag> getTags() throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		List<Tag> tags = new ArrayList<>();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			
+				List<OTag> items = tagdao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				for (OTag item : items) {
+					tags.add(createTag(item));
+				}
+				return tags;
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
 	
+	public void addTag(Tag tag) throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			tagdao.insert(con, createTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
 	
+	public void removeTag(String tagId) throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			tagdao.deleteById(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tagId);
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void updateTag(Tag tag) throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			tagdao.update(con, createTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	private Tag createTag(OTag otag) {
+		if (otag == null) return null;
+		Tag tag = new Tag();
+		tag.setTagId(otag.getTagId());
+		tag.setDescription(otag.getDescription());
+		tag.setColor(otag.getColor());
+		return tag;
+	}	
+	
+	private OTag createTag(String domainId, String userId, Tag tag) {
+		if (tag == null) return null;
+		OTag otag = new OTag();
+		otag.setDomainId(domainId);
+		otag.setUserId(userId);
+		otag.setTagId(tag.getTagId());
+		otag.setDescription(tag.getDescription());
+		otag.setColor(tag.getColor());
+		return otag;
+	}	
 	
 	
 	public boolean isAutoResponderActive() throws WTException {

@@ -41,7 +41,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		'Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop',
 		'Sonicle.webtop.mail.ServiceApi',
 		'Sonicle.webtop.mail.view.HiddenFolders',
-		'Sonicle.webtop.mail.ux.SieveRuleGrid'
+		'Sonicle.webtop.mail.ux.SieveRuleGrid',
+		'Sonicle.menu.StoreMenu',
+		'Sonicle.webtop.mail.model.Tag'
 	],
 
 	imapTree: null,
@@ -92,6 +94,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this;
 		
 		me.initActions();
+
+		//tags ctx menu needs this store to be prepared
+		me.tagsStore=Ext.create('Ext.data.JsonStore',{
+			autoLoad: true,
+			model: 'Sonicle.webtop.mail.model.Tag',
+			proxy: WTF.apiProxy(me.ID, 'ManageTags','data')
+		})
+		
 		me.initCxm();
 		
 		me.viewmaxtos=me.getVar('messageViewMaxTos');
@@ -214,6 +224,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				WT.warn(me.res('warn.autoresponder'));
 			}, 1000);
 		}
+		
 	},
 	
 	_TB: function(actionname) {
@@ -281,6 +292,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("flagpink",{ handler: me.gridAction(me,'Flag','pink')});
         me.addAct("flagcomplete",{ handler: me.gridAction(me,'Flag','complete')});
         me.addAct("clear",{ handler: me.gridAction(me,'Flag','clear'), iconCls: '' });
+		
+        //me.addAct("newtag",{ handler: me.gridAction(me,'NewTag') });
+        me.addAct("managetags",{ handler: me.gridAction(me,'ManageTags') });
+        me.addAct("removetags",{ handler: me.gridAction(me,'RemoveAllTags') });
+		
 		
         me.addAct("addnote",{ handler: me.gridAction(me,'AddNote') });
 	   
@@ -360,6 +376,35 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						  me.getAct('clear')
 						]
 					}
+				},
+				{
+					text: me.res("menu-tag"),
+					menu: me.addRef('mnutag',Ext.create({
+						xtype: 'sostoremenu',
+						itemClass: 'Ext.menu.CheckItem',
+						textField: 'html',
+						tagField: 'tagId',
+						textAsHtml: true,
+						staticItems: [
+						  //me.getAct('newtag'),
+						  me.getAct('managetags'),
+						  '-',
+						  me.getAct('removetags'),
+						  '-'
+						],
+						store: me.tagsStore,
+						listeners: {
+							click: function(menu,item,e) {
+								if (item.tag) {
+									var grid=me.getCtxGrid(e);
+									if (item.checked)
+										grid.actionTag(item.tag);
+									else
+										grid.actionUntag(item.tag);
+								}
+							}
+						}
+					}))
 				},
 				me.getAct('addnote'),
 				me.getAct('markseen'),
@@ -934,6 +979,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.downloadMails(rec.get("id"));
 	},
 	
+	reloadTags: function() {
+		this.tagsStore.reload();
+	},
+	
 	reloadTree: function() {
 		this.imapTree.getStore().reload();
 	},
@@ -945,6 +994,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	getCtxGrid: function(e) {
 		var md=e.menuData;
 		return (md && md.grid) ? md.grid : this.messagesPanel.folderList;
+	},
+	
+	getCtxGridRecord: function(e) {
+		var md=e.menuData;
+		return (md && md.rec) ? md.rec : null;
 	},
 	
 	getCtxNode: function(e) {
@@ -1268,6 +1322,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	isDrafts: function(folder) {
 		return this.imapTree.getStore().getById(folder).get("isDrafts");
+	},
+	
+	updateCxmGrid: function(r) {
+		var me=this,
+			menu=me.getRef('mnutag'),
+			tags=r.get("tags");
+		me.tagsStore.each(function(xr) {
+			menu.getComponent(xr.get("hashId")).setChecked(false,true);
+		});
+		if (tags) {
+			Ext.iterate(tags,function(tag) {
+				var xr=me.tagsStore.findRecord('tagId',tag);
+				if (xr) menu.getComponent(xr.get("hashId")).setChecked(true,true);
+			});
+		}
 	},
 	
 	updateCxmTree: function(r) {

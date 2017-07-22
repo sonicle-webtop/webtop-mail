@@ -31,55 +31,39 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.dal;
+package com.sonicle.webtop.mail.bol.js;
 
-import com.sonicle.webtop.core.dal.BaseDAO;
-import com.sonicle.webtop.core.dal.DAOException;
-import com.sonicle.webtop.mail.bol.OVacation;
-import java.sql.Connection;
-import org.jooq.DSLContext;
-import static com.sonicle.webtop.mail.jooq.Tables.*;
-import com.sonicle.webtop.mail.jooq.tables.records.VacationRecord;
+import com.sonicle.commons.web.json.JsonResult;
+import java.util.ArrayList;
+import org.apache.commons.codec.digest.DigestUtils;
 
 /**
  *
- * @author gbulfon
+ * @author gabriele.bulfon
  */
-public class VacationDAO extends BaseDAO {
-	
-	private final static VacationDAO INSTANCE = new VacationDAO();
-	public static VacationDAO getInstance() {
-		return INSTANCE;
-	}
-	
-	public OVacation selectByUserId(Connection con, String domainId, String userId) throws DAOException {
-		DSLContext dsl = getDSL(con);
-		return dsl
-			.select()
-			.from(VACATION)
-			.where(
-				VACATION.DOMAIN_ID.equal(domainId)
-				.and(VACATION.USER_ID.equal(userId))
-			)
-			.fetchOneInto(OVacation.class);
-	}
-	
-	public int insert(Connection con, OVacation item) throws DAOException {
-		DSLContext dsl = getDSL(con);
-		VacationRecord record = dsl.newRecord(VACATION, item);
-		return dsl
-			.insertInto(VACATION)
-			.set(record)
-			.execute();
-	}
+public class JsTag {
 
-	public int deleteByUserId(Connection con, String domainId, String userId) throws DAOException {
-		DSLContext dsl = getDSL(con);
-		return dsl
-			.delete(VACATION)
-			.where(VACATION.DOMAIN_ID.equal(domainId)
-					.and(VACATION.USER_ID.equal(userId))
-			)
-			.execute();
+	public String hashId = null;
+	public String tagId = null;
+	public String description = null;
+	public String color = null;
+	
+	public JsTag(String tagId, String description, String color) {
+		this.hashId="tid"+DigestUtils.md5Hex(tagId);
+		this.tagId=tagId;
+		this.description=description;
+		this.color=color;
 	}
+	
+	public static class List extends ArrayList<JsTag> {
+		public List() {
+			super();
+		}
+		
+		public static List fromJson(String value) {
+			if(value == null) return null;
+			return JsonResult.gson.fromJson(value, List.class);
+		}
+	}
+	
 }
