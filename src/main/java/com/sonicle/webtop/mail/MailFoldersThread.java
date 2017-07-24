@@ -123,7 +123,7 @@ public class MailFoldersThread extends Thread {
                             }
                         }
                     }
-                    //Service.logger.debug("MailFolderThread: Sleeping....");
+                    Service.logger.debug("MailFolderThread: Sleeping....");
                     if (sleepCount<=0) sleepCount=sleepOthers;
                     sleep(1000*sleepInbox);
                     sleepCount-=sleepInbox;
@@ -134,7 +134,7 @@ public class MailFoldersThread extends Thread {
             failed=true;
             failMessage=exc.getMessage();
         }
-        //Service.logger.debug("Exiting MFT");
+        Service.logger.debug("Exiting MFT");
     }
     
 }

@@ -2101,11 +2101,6 @@ public class Service extends BaseService {
 			ast.cancel();
 		}
 		
-		try {
-			disconnect();
-		} catch (Exception e) {
-			Service.logger.error("Exception",e);
-		}
 		if (fcRoot != null) {
 			fcRoot.cleanup(true);
 		}
@@ -2114,7 +2109,15 @@ public class Service extends BaseService {
 			fc.cleanup(true);
 		}
 		foldersCache.clear();
+		try {
+			logger.debug("disconnecting imap");
+			disconnect();
+			logger.debug("done");
+		} catch (Exception e) {
+			Service.logger.error("Exception",e);
+		}
 		validated = false;
+		logger.debug("exiting cleanup");
 	}
 	
 	protected void clearAllCloudAttachments() {
@@ -5950,6 +5953,16 @@ public class Service extends BaseService {
 								archived=flags.contains(sflagDmsArchived);
 							}
 						}
+						
+						String msgtext=null;
+						if (isToday) {
+							msgtext=MailUtils.getText(xm);
+							if (msgtext!=null) {
+								msgtext=msgtext.trim();
+								if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
+							}
+						}
+						
 						sout += "{idmessage:'" + nuid + "',"
 							+ "priority:" + priority + ","
 							+ "status:'" + status + "',"
@@ -5958,6 +5971,7 @@ public class Service extends BaseService {
 							+ "from:'" + from + "',"
 							+ "fromemail:'" + fromemail + "',"
 							+ "subject:'" + subject + "',"
+							+ (isToday ? "msgtext: '"+StringEscapeUtils.escapeEcmaScript(msgtext)+"',":"")
 							+ (sgi.threaded?"threadId: "+tId+",":"")
 							+ (sgi.threaded?"threadIndent:"+tIndent+",":"")
 							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"

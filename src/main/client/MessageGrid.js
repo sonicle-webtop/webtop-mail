@@ -333,7 +333,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	features: [
 		{
 			ftype:'mailgrouping'
-		}
+		},
+		{
+			ftype: 'rowbody',
+			getAdditionalData: function (data, idx, record, orig) {
+				var today=record.get('istoday');
+				return {
+					rowBody: today?
+						'<pre style="padding-left: 70px">'+record.get("msgtext")+'</pre>':
+						null,
+					rowBodyCls: today?"wtmail-row-body":"wtmail-row-body-hidden"
+				}
+			}
+		}		
 	],
 	selModel: { 
 		type: 'sorowmodel',
