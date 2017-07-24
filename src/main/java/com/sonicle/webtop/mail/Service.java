@@ -2632,7 +2632,7 @@ public class Service extends BaseService {
 	}
 	
 	protected FolderCache addFoldersCache(FolderCache parent, Folder child) throws MessagingException {
-		logger.debug("adding {} to {}",child.getName(),parent.getFolderName());
+		logger.trace("adding {} to {}",child.getName(),parent.getFolderName());
 		FolderCache fcChild = addSingleFoldersCache(parent, child);
 		boolean leaf = fcChild.isStartupLeaf();
 		if (!leaf) {
