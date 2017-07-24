@@ -5905,24 +5905,7 @@ public class Service extends BaseService {
 
 						boolean hasNote=flags.contains(sflagNote);
 						
-						ArrayList<Tag> tags=null;
-						String svtags=null;
-						if (flags!=null) {
-							for(Tag tag: atags) {
-								if (flags.contains(tag.getTagId())) {
-									if (tags==null) tags=new ArrayList<>();
-									tags.add(tag);
-								}
-							}
-							if (tags!=null) {
-								for(Tag tag: tags) {
-									if (svtags==null) svtags="[ ";
-									else svtags+=",";
-									svtags+="'"+StringEscapeUtils.escapeEcmaScript(tag.getTagId())+"'";
-								}
-								if (svtags!=null) svtags+=" ]";
-							}
-						}
+						String svtags=getJSTagsArray(flags);
 
 						boolean autoedit=false;
 
@@ -6314,6 +6297,28 @@ public class Service extends BaseService {
 		}
 	}
 	
+	private String getJSTagsArray(Flags flags) {
+		ArrayList<Tag> tags=null;
+		String svtags=null;
+		if (flags!=null) {
+			for(Tag tag: atags) {
+				if (flags.contains(tag.getTagId())) {
+					if (tags==null) tags=new ArrayList<>();
+					tags.add(tag);
+				}
+			}
+			if (tags!=null) {
+				for(Tag tag: tags) {
+					if (svtags==null) svtags="[ ";
+					else svtags+=",";
+					svtags+="'"+StringEscapeUtils.escapeEcmaScript(tag.getTagId())+"'";
+				}
+				if (svtags!=null) svtags+=" ]";
+			}
+		}
+		return svtags;
+	}
+	
 	DateFormat df = null;
 	
 	public void processGetMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -6584,7 +6589,13 @@ public class Service extends BaseService {
 				mcache.refreshUnreads();
 			}
 			long millis = System.currentTimeMillis();
-			sout += "\n],\ntotal:" + recs + ",\nmillis:" + millis + "\n}\n";
+			sout += "\n],\n";
+			
+			String svtags=getJSTagsArray(m.getFlags());
+			if (svtags!=null)
+				sout += "tags: " + svtags + ",\n";
+
+			sout += "total:" + recs + ",\nmillis:" + millis + "\n}\n";
 			out.println(sout);
 //            if (!wasopen) folder.close(false);
 		} catch (Exception exc) {

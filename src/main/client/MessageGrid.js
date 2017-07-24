@@ -1512,7 +1512,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                     selection,
                     function(r,index,allItems) {
                       if (me!==fl) {
-                        var ff=(me.multifolder?r.get("folder"):me.currentFolder);
+						var ff=(me.multifolder?r.get("folder"):me.currentFolder);
                         if (ff===fl.currentFolder) dorel=true;
                       }
 					  
@@ -1525,6 +1525,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					  }
 					  r.set("tags",null);
 					  r.set("tags",tags);
+					  
+					  me._checkUpdateMessageView(r);
                     }
                   );
                   if (dorel) this.mys.reloadFolderList();
@@ -1566,6 +1568,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                       }
 					  
 					  r.set("tags",null);
+					  me._checkUpdateMessageView(r);
                     }
                   );
                   if (dorel) this.mys.reloadFolderList();
@@ -1612,6 +1615,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						Ext.Array.remove(tags,tagId);
 						r.set("tags",null);
 						if (tags.length>0) r.set("tags",tags);
+						me._checkUpdateMessageView(r);
 					  }
                     }
                   );
@@ -1622,6 +1626,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
               }
 			}
 		});					
+	},
+	
+	_checkUpdateMessageView: function(r) {
+		var me=this,
+			mp=me.mys.messagesPanel,
+			mv=mp.messageView;
+			ff=(me.multifolder?r.get("folder"):me.currentFolder),
+			idmessage=r.get("idmessage");
+	
+		if (mv.folder===ff && mv.idmessage===idmessage) {
+			mp.clearMessageView();
+			mp.showMessage(ff,idmessage);
+		}
 	},
 	
     actionFlag: function(flagstring) {

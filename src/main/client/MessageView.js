@@ -63,6 +63,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     divBccs: null,
     divCcs: null,
     divAttach: null,
+	divTags: null,
 	divICal: null,
     divLine: null,
     tdBody: null,
@@ -215,6 +216,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.removeElement(me.divCcs);
             me.removeElement(me.divBccs);
             me.removeElement(me.divAttach);
+            me.removeElement(me.divTags);
 			me.removeElement(me.divICal);
             me.removeElement(me.divLine);
             var bd=me.divBody.dom;
@@ -275,6 +277,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.bccNames=null;
             me.ccEmails=null;
             me.attachments=null;
+			me.tags=null;
             me.receipt=null;
             me.receiptTo=null;
             me.scheddate=null;
@@ -309,6 +312,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
 			me.divAttach=Ext.get(document.createElement("div"));
 			me.divAttach.addCls("wtmail-mv-hattach");
+			
+			me.divTags=Ext.get(document.createElement("div"));
+			me.divTags.addCls("wtmail-mv-tags");
 			
 			me.divICal=Ext.get(document.createElement("div"));
 			me.divICal.addCls("wtmail-mv-hical")
@@ -407,6 +413,18 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			);
             tdh.insertFirst(me.divLine);
 			
+			if (me.tags) {
+				var tagsHtml="";
+				Ext.iterate(me.tags, function(tag) {
+					var r=me.mys.tagsStore.findRecord('tagId',tag);
+					if (r) {
+						tagsHtml+="<span style='background-color: "+r.get("color")+"'>&nbsp;"+r.get("description")+"&nbsp;</span>&nbsp;"
+					}
+				});
+				me.divTags.update(tagsHtml);
+				tdh.insertFirst(me.divTags);
+			}
+
             if (me.attachments) {
                 var names=null,
 					atts=me.attachments,
@@ -459,7 +477,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
                 me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+WT.res('saveall-desc')+"' data-qtitle='"+WT.res('saveall')+"' href='"+allhref.replace("'","%27")+"'>"+me.mys.res('attachments')+"</a>:&nbsp;</span>"+names);
-
+				
 				if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
 					
 					var aics=me.divAttach.query("a[ics]");
@@ -635,7 +653,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 me.viewResized(me,w,h,w,h);
             //}
             
-            if (me.icalmethod) console.log("ical - method: "+me.icalmethod+" , uid: "+me.icaluid+" , webtopid: "+me.icalwebtopid);
+            //if (me.icalmethod) console.log("ical - method: "+me.icalmethod+" , uid: "+me.icaluid+" , webtopid: "+me.icalwebtopid);
 			
             me.cleared=false;
             if (!provider) me.fireEvent('messageviewed',params.idmessage,me.proxy.getReader().rawData.millis,me.workflow);
@@ -1021,7 +1039,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             var o={id: item.get('value1'), name: item.get('value2'), size: parseInt(item.get('value3')/4*3), imgname: item.get('value4'), eml: iddata=='eml' };
             me.attachments[me.attachments.length]=o;
         }
-        else if (iddata=='html') {
+		else if (iddata=='html') {
             me.htmlparts[me.htmlparts.length]=item.get('value1');
         }
         else if (iddata=='receipt') {
@@ -1047,6 +1065,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		else if (iddata=='workflow3') {
 			me.wkfdaterequest=item.get('value1');
         }
+		
+		me.tags=me.proxy.getReader().rawData.tags;
     },
     
     appendEmail: function(name, desc, email) {
