@@ -82,6 +82,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -490,12 +491,45 @@ public class MailManager extends BaseManager {
 		}
 	}
 	
+	
+	private static Tag builtinTags[] = {
+		new Tag("$label1","$Label1","#ff003a"),
+		new Tag("$label2","$Label2","#ff9900"),
+		new Tag("$label3","$Label3","#009900"),
+		new Tag("$label4","$Label4","#3333ff"),
+		new Tag("$label5","$Label5","#993399")
+	};
+	
+	protected void addBuiltinTags() throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID, false);
+			for(Tag tag: builtinTags) {
+				try {
+					tagdao.insert(con, new OTag(
+							getTargetProfileId().getDomainId(), 
+							getTargetProfileId().getUserId(), 
+							tag.getTagId(),
+							lookupResource(getLocale(), MailLocaleKey.TAGS_LABEL(tag.getTagId())),
+							tag.getColor()
+					));
+				} catch(DAOException exc) {
+					
+				}
+			}
+		} catch(SQLException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
 	private Tag createTag(OTag otag) {
 		if (otag == null) return null;
-		Tag tag = new Tag();
-		tag.setTagId(otag.getTagId());
-		tag.setDescription(otag.getDescription());
-		tag.setColor(otag.getColor());
+		Tag tag = new Tag(otag.getTagId(),otag.getDescription(),otag.getColor());
 		return tag;
 	}	
 	

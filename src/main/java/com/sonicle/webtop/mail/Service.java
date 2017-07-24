@@ -5127,10 +5127,7 @@ public class Service extends BaseService {
 				new JsonResult(items).printTo(out);
 			} else if (crud.equals(Crud.CREATE)) {
 				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
-				Tag tag=new Tag();
-				tag.setTagId(pl.data.tagId);
-				tag.setDescription(pl.data.description);
-				tag.setColor(pl.data.color);
+				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
 				mailManager.addTag(tag);
 				loadTags();
 				
@@ -5139,10 +5136,7 @@ public class Service extends BaseService {
 				new JsonResult(items).printTo(out);
 			} else if (crud.equals(Crud.UPDATE)) {
 				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
-				Tag tag=new Tag();
-				tag.setTagId(pl.data.tagId);
-				tag.setDescription(pl.data.description);
-				tag.setColor(pl.data.color);
+				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
 				mailManager.updateTag(tag);
 				loadTags();
 				

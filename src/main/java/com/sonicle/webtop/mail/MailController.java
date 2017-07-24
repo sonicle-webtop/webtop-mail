@@ -34,11 +34,35 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.webtop.core.sdk.BaseController;
+import com.sonicle.webtop.core.sdk.ServiceVersion;
+import com.sonicle.webtop.core.sdk.UserProfileId;
+import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.core.sdk.interfaces.IControllerHandlesProfiles;
 
 /**
  *
  * @author malbinola
  */
-public class MailController extends BaseController {
+public class MailController extends BaseController implements IControllerHandlesProfiles {
 	
+	private static ServiceVersion SV_5_0_14=new ServiceVersion("5.0.14");
+	
+	@Override
+	public void addProfile(UserProfileId profileId) throws WTException {
+		MailManager manager = new MailManager(true, profileId);
+		manager.addBuiltinTags();
+	}
+
+	@Override
+	public void removeProfile(UserProfileId profileId, boolean deep) throws WTException {
+	}
+
+	@Override
+	public void upgradeProfile(UserProfileId profileId, ServiceVersion current, ServiceVersion lastSeen) throws WTException {
+		//Add default tag labels on v5.0.14
+		if (current.compareTo(SV_5_0_14)>=0 && lastSeen.compareTo(SV_5_0_14)<0) {
+			MailManager manager = new MailManager(true, profileId);
+			manager.addBuiltinTags();
+		}
+	}
 }
