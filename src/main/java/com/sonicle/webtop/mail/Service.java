@@ -2110,14 +2110,14 @@ public class Service extends BaseService {
 		}
 		foldersCache.clear();
 		try {
-			logger.debug("disconnecting imap");
+			logger.trace("disconnecting imap");
 			disconnect();
-			logger.debug("done");
+			logger.trace("done");
 		} catch (Exception e) {
 			Service.logger.error("Exception",e);
 		}
 		validated = false;
-		logger.debug("exiting cleanup");
+		logger.trace("exiting cleanup");
 	}
 	
 	protected void clearAllCloudAttachments() {
