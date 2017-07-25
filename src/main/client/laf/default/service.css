@@ -101,7 +101,7 @@
 .wtmail-row-hidden { display: none; }
 /* .wtmail-icon-testaction { background-image: url('mail_16.png') !important; }*/
 
-.wtmail-row-body { max-height: 80; }
+.wtmail-row-body { max-height: 30; color: gray }
 .wtmail-row-body-hidden { display: none; }
 
 table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }

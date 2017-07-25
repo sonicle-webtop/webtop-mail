@@ -340,7 +340,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				var today=record.get('istoday');
 				return {
 					rowBody: today?
-						'<pre style="padding-left: 70px">'+record.get("msgtext")+'</pre>':
+						"<span style='padding-left: 50px'>"+record.get("msgtext")+"</span>":
 						null,
 					rowBodyCls: today?"wtmail-row-body":"wtmail-row-body-hidden"
 				}
