@@ -5864,8 +5864,10 @@ public class Service extends BaseService {
 								}							}
 						}
 
+						boolean wasseen=false;
 						String status="read";
 						if (flags!=null) {
+							wasseen=flags.contains(Flags.Flag.SEEN);
 							if (flags.contains(Flags.Flag.ANSWERED)) {
 								if (flags.contains("$Forwarded")) status = "repfwd";
 								else status = "replied";
@@ -5961,6 +5963,7 @@ public class Service extends BaseService {
 								msgtext=msgtext.trim();
 								if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
 							}
+							xm.setFlag(Flags.Flag.SEEN, wasseen);
 						}
 						
 						sout += "{idmessage:'" + nuid + "',"
