@@ -32,16 +32,17 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.view.QuickPartsManager', {
+Ext.define('Sonicle.webtop.mail.view.TagsManager', {
 	extend: 'WTA.sdk.DockableView',
 	requires: [
-		'Sonicle.webtop.mail.model.QuickPartModel'
+		'Sonicle.webtop.mail.model.Tag',
+		'Sonicle.webtop.mail.view.TagEditor'
 	],
 	
 	dockableConfig: {
-		title: '{editor.quickpartsmgr.tit}',
-		iconCls: 'wtmail-icon-format-quickpart-xs',
-		width: 200,
+		title: '{tagsmgr.tit}',
+		//iconCls: 'wtmail-icon-format-quickpart-xs',
+		width: 400,
 		height: 300
 	},
 	promptConfirm: false,
@@ -57,15 +58,60 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartsManager', {
 		Ext.apply(me, {
 			tbar: [
 				Ext.create('Ext.button.Button', {
+					tooltip: WT.res('act-add.lbl'),
+					iconCls: 'wt-icon-add-xs',
+					handler: function() {
+						WT.createView(me.mys.ID,'view.TagEditor',{
+							viewCfg: {
+								mys: me.mys,
+								listeners: {
+									viewok: function(s,description,color) {
+										if (me.gpTags.getStore().findRecord("tagId",description) || me.gpTags.getStore().findRecord("description",description)) {
+											WT.error(me.mys.res("tagsmgr.error.tageidalreadypresent"));
+										} else {
+											me.gpTags.getStore().add({ tagId: description, description: description, color: color });
+											me.mys.reloadTags();
+										}
+									}
+								}
+							}
+						}).show();
+					}
+				}),
+				Ext.create('Ext.button.Button', {
+					tooltip: WT.res('act-edit.lbl'),
+					iconCls: 'wt-icon-edit-xs',
+					handler: function() {
+						if (me.gpTags.getSelectionModel().hasSelection()) {
+							var sel = me.gpTags.getSelectionModel().getSelection(),
+								rec=sel[0];
+							WT.createView(me.mys.ID,'view.TagEditor',{
+								viewCfg: {
+									mys: me.mys,
+									description: rec.get("description"),
+									color: rec.get("color"),
+									listeners: {
+										viewok: function(s,description,color) {
+											rec.set({ description: description, color: color });
+											me.mys.reloadTags();
+										}
+									}
+								}
+							}).show();
+						}
+					}
+				}),
+				Ext.create('Ext.button.Button', {
 					tooltip: WT.res('act-remove.lbl'),
 					iconCls: 'wt-icon-remove-xs',
 					handler: function() {
-						if (me.gpQPs.getSelectionModel().hasSelection()) {
+						if (me.gpTags.getSelectionModel().hasSelection()) {
 							WT.confirm(WT.res('confirm.delete'), function(bid) {
 								if(bid == 'yes') {
-									var sel = me.gpQPs.getSelectionModel().getSelection();
+									var sel = me.gpTags.getSelectionModel().getSelection();
 									if (sel.length>0) {
-										me.gpQPs.getStore().remove(sel[0]);
+										me.gpTags.getStore().remove(sel[0]);
+										me.mys.reloadTags();
 									}
 								}
 							});
@@ -77,7 +123,7 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartsManager', {
 		
 		me.callParent(arguments);
 		
-		me.gpQPs = Ext.create({
+		me.gpTags = Ext.create({
 			xtype: 'gridpanel',
 			region: 'center',
 			loadMask: {msg: WT.res('loading')},
@@ -85,19 +131,27 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartsManager', {
 			store: {
 				autoLoad: true,
 				autoSync: true,
-				model: 'Sonicle.webtop.mail.model.QuickPartModel',
-				proxy: WTF.apiProxy(me.mys.ID, 'ManageQuickParts','data')
+				model: 'Sonicle.webtop.mail.model.Tag',
+				proxy: WTF.apiProxy(me.mys.ID, 'ManageTags','data')
 			},
 			columns: [
 				{
-					dataIndex: 'id',
-					header: me.mys.res('quickpartsmgr.gp-qps.id.lbl'),
-					width: 180
-				}
+					dataIndex: 'description',
+					header: '',
+					flex: 1,
+					renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+						return "<span style='color: "+record.get("color")+"'>"+record.get("description")+"</span>";
+						
+					}
+}
 			]
 		});
 		
-		me.add(me.gpQPs);
+		me.add(me.gpTags);
+	},
+	
+	addTag: function(description,color) {
+		
 	}
 	
 });

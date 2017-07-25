@@ -35,70 +35,81 @@ package com.sonicle.webtop.mail.dal;
 
 import com.sonicle.webtop.core.dal.BaseDAO;
 import com.sonicle.webtop.core.dal.DAOException;
-import com.sonicle.webtop.mail.bol.ORule;
+import com.sonicle.webtop.mail.bol.OTag;
+import static com.sonicle.webtop.mail.jooq.Tables.TAGS;
+import com.sonicle.webtop.mail.jooq.tables.records.TagsRecord;
 import java.sql.Connection;
 import org.jooq.DSLContext;
-import static com.sonicle.webtop.mail.jooq.Tables.*;
-import com.sonicle.webtop.mail.jooq.tables.records.RulesRecord;
 import java.util.List;
 
 /**
  *
  * @author gbulfon
  */
-public class RuleDAO extends BaseDAO {
+public class TagDAO extends BaseDAO {
 	
-	private final static RuleDAO INSTANCE = new RuleDAO();
-	public static RuleDAO getInstance() {
+	private final static TagDAO INSTANCE = new TagDAO();
+	public static TagDAO getInstance() {
 		return INSTANCE;
 	}
 	
-	public boolean hasFileIntoFolder(Connection con, String domainId, String userId, String foldername) throws DAOException {
+	public List<OTag> selectByProfile(Connection con, String domainId, String userId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
-			.from(RULES)
+			.from(TAGS)
 			.where(
-				RULES.DOMAIN_ID.equal(domainId)
-				.and(RULES.USER_ID.equal(userId)
-				.and(RULES.STATUS.equal("E")
-				.and(RULES.ACTION.equal("FILE")
-				.and(RULES.ACTION_VALUE.equal(foldername)))))
+				TAGS.DOMAIN_ID.equal(domainId)
+				.and(TAGS.USER_ID.equal(userId))
 			)
-			.limit(1)
-			.fetchOneInto(ORule.class)!=null;
+			.fetchInto(OTag.class);
 	}
 	
-	public List<ORule> selectByUserId(Connection con, String domainId, String userId) throws DAOException {
+	public OTag selectById(Connection con, String domainId, String userId, String tagId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.select()
-			.from(RULES)
+			.from(TAGS)
 			.where(
-				RULES.DOMAIN_ID.equal(domainId)
-				.and(RULES.USER_ID.equal(userId))
+				TAGS.DOMAIN_ID.equal(domainId)
+				.and(TAGS.USER_ID.equal(userId)
+				.and(TAGS.TAG_ID.equal(tagId)))
 			)
-			.orderBy(RULES.RULE_ID)
-			.fetchInto(ORule.class);
+			.fetchOneInto(OTag.class);
 	}
 	
-	public int insert(Connection con, ORule item) throws DAOException {
+	public int insert(Connection con, OTag item) throws DAOException {
 		DSLContext dsl = getDSL(con);
-		RulesRecord record = dsl.newRecord(RULES, item);
+		TagsRecord record = dsl.newRecord(TAGS, item);
 		return dsl
-			.insertInto(RULES)
+			.insertInto(TAGS)
 			.set(record)
 			.execute();
-	}	
-
-	public int deleteByUserId(Connection con, String domainId, String userId) throws DAOException {
+	}
+	
+	public int deleteById(Connection con, String domainId, String userId, String tagId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
-			.delete(RULES)
-			.where(RULES.DOMAIN_ID.equal(domainId)
-					.and(RULES.USER_ID.equal(userId))
+			.delete(TAGS)
+			.where(
+				TAGS.DOMAIN_ID.equal(domainId)
+				.and(TAGS.USER_ID.equal(userId)
+				.and(TAGS.TAG_ID.equal(tagId)))
 			)
 			.execute();
 	}
 	
+	public int update(Connection con, OTag item) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.update(TAGS)
+			.set(TAGS.DESCRIPTION,item.getDescription())
+			.set(TAGS.COLOR,item.getColor())
+			.where(
+				TAGS.DOMAIN_ID.equal(item.getDomainId())
+				.and(TAGS.USER_ID.equal(item.getUserId())
+				.and(TAGS.TAG_ID.equal(item.getTagId())))
+			)
+			.execute();
+	}
 }

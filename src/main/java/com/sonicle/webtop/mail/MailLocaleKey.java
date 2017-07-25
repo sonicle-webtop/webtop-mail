@@ -88,6 +88,10 @@ public class MailLocaleKey {
     public static final String ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED="error.attachment.type.not.supported";
 	public static final String PERMISSION_DENIED="permission.denied";
 
+	public static String TAGS_LABEL(String label) {
+		return "tags."+label;
+	} 
+	
     public static String RULES_OPERATOR(String operator) {
         return "rules."+operator;
     }

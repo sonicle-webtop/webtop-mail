@@ -17,6 +17,16 @@ package com.sonicle.webtop.mail.jooq;
 public class Tables {
 
 	/**
+	 * The table mail._rules.old
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables._Rules_2eold _RULES_2eOLD = com.sonicle.webtop.mail.jooq.tables._Rules_2eold._RULES_2eOLD;
+
+	/**
+	 * The table mail._vacation.old
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables._Vacation_2eold _VACATION_2eOLD = com.sonicle.webtop.mail.jooq.tables._Vacation_2eold._VACATION_2eOLD;
+
+	/**
 	 * The table mail.autoresponders
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.Autoresponders AUTORESPONDERS = com.sonicle.webtop.mail.jooq.tables.Autoresponders.AUTORESPONDERS;
@@ -42,11 +52,6 @@ public class Tables {
 	public static final com.sonicle.webtop.mail.jooq.tables.Notes NOTES = com.sonicle.webtop.mail.jooq.tables.Notes.NOTES;
 
 	/**
-	 * The table mail.rules
-	 */
-	public static final com.sonicle.webtop.mail.jooq.tables.Rules RULES = com.sonicle.webtop.mail.jooq.tables.Rules.RULES;
-
-	/**
 	 * The table mail.rules_copy
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.RulesCopy RULES_COPY = com.sonicle.webtop.mail.jooq.tables.RulesCopy.RULES_COPY;
@@ -57,12 +62,12 @@ public class Tables {
 	public static final com.sonicle.webtop.mail.jooq.tables.Scan SCAN = com.sonicle.webtop.mail.jooq.tables.Scan.SCAN;
 
 	/**
+	 * The table mail.tags
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables.Tags TAGS = com.sonicle.webtop.mail.jooq.tables.Tags.TAGS;
+
+	/**
 	 * The table mail.users_map
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.UsersMap USERS_MAP = com.sonicle.webtop.mail.jooq.tables.UsersMap.USERS_MAP;
-
-	/**
-	 * The table mail.vacation
-	 */
-	public static final com.sonicle.webtop.mail.jooq.tables.Vacation VACATION = com.sonicle.webtop.mail.jooq.tables.Vacation.VACATION;
 }

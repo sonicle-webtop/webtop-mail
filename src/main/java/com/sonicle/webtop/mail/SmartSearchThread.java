@@ -255,7 +255,7 @@ public class SmartSearchThread extends Thread {
 									if (msgtext==null) msgtext="";
 									else {
 										msgtext=msgtext.trim();
-										if (msgtext.length()>200) msgtext=msgtext.substring(0,100);
+										if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
 									}
 									++visibleRows;
 								}

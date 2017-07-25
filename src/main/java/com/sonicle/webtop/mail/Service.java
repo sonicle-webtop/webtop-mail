@@ -73,39 +73,33 @@ import com.sonicle.webtop.core.bol.model.InternetRecipient;
 import com.sonicle.webtop.core.model.SharePermsElements;
 import com.sonicle.webtop.core.model.SharePermsFolder;
 import com.sonicle.webtop.core.bol.model.Sharing;
-import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICal4jUtils;
 import com.sonicle.webtop.core.util.ICalendarUtils;
-import com.sonicle.webtop.core.util.LoggerUtils;
-import com.sonicle.webtop.mail.bol.ORule;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OScan;
 import com.sonicle.webtop.mail.bol.OUserMap;
-import com.sonicle.webtop.mail.bol.OVacation;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsInMailFilters;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
-import com.sonicle.webtop.mail.bol.js.JsRule;
 import com.sonicle.webtop.mail.bol.js.JsSharing;
 import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
 import com.sonicle.webtop.mail.bol.js.JsSort;
+import com.sonicle.webtop.mail.bol.js.JsTag;
 import com.sonicle.webtop.mail.bol.model.Identity;
-import com.sonicle.webtop.mail.dal.RuleDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
-import com.sonicle.webtop.mail.dal.VacationDAO;
 import com.sonicle.webtop.mail.model.AutoResponder;
-import com.sonicle.webtop.mail.model.InMailFilters;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
+import com.sonicle.webtop.mail.model.Tag;
 import com.sonicle.webtop.vfs.IVfsManager;
 // TODO: Fix imported classes
 //import com.sonicle.webtop.Mailcard;
@@ -131,7 +125,6 @@ import com.sun.mail.util.PropUtil;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
-import java.text.DateFormatSymbols;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
@@ -215,6 +208,9 @@ public class Service extends BaseService {
 	public static Flags flagNote=new Flags(sflagNote);
 	public static Flags flagDmsArchived=new Flags(sflagDmsArchived);
 	public static Flags flagFlagged=new Flags(Flags.Flag.FLAGGED);
+	
+	protected List<Tag> atags=new ArrayList<>();
+	protected HashMap<String,Tag> htags=new HashMap<>();
 	
 	private FetchProfile FP = new FetchProfile();
 	private FetchProfile draftsFP=new FetchProfile();
@@ -366,6 +362,8 @@ public class Service extends BaseService {
 		mft.setSleepInbox(mprofile.getScanSeconds());
 		mft.setSleepCycles(mprofile.getScanCycles());
 		try {
+			loadTags();
+		
 			mft.abort();
 			checkStoreConnected();
 			
@@ -403,6 +401,15 @@ public class Service extends BaseService {
 				setSharedSeen(us.isSharedSeen());
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
+		}
+	}
+	
+	private synchronized void loadTags() throws WTException {		
+		atags.clear();
+		htags.clear();
+		atags=mailManager.getTags();
+		for(Tag tag: atags) {
+			htags.put(tag.getTagId(), tag);
 		}
 	}
 	
@@ -678,6 +685,18 @@ public class Service extends BaseService {
 	
 	public void flagMessages(FolderCache from, long uids[], String flag) throws MessagingException {
 		from.flagMessages(uids, flag);
+	}
+	
+	public void tagMessages(FolderCache from, long uids[], String tagId) throws MessagingException {
+		from.tagMessages(uids, tagId);
+	}
+	
+	public void untagMessages(FolderCache from, long uids[], String tagId) throws MessagingException {
+		from.untagMessages(uids, tagId);
+	}
+	
+	public void clearMessagesTags(FolderCache from, long uids[]) throws MessagingException {
+		from.clearMessagesTags(uids);
 	}
 	
 	public void clearMessagesFlag(FolderCache from, long uids[]) throws MessagingException {
@@ -2082,11 +2101,6 @@ public class Service extends BaseService {
 			ast.cancel();
 		}
 		
-		try {
-			disconnect();
-		} catch (Exception e) {
-			Service.logger.error("Exception",e);
-		}
 		if (fcRoot != null) {
 			fcRoot.cleanup(true);
 		}
@@ -2095,7 +2109,15 @@ public class Service extends BaseService {
 			fc.cleanup(true);
 		}
 		foldersCache.clear();
+		try {
+			logger.debug("disconnecting imap");
+			disconnect();
+			logger.debug("done");
+		} catch (Exception e) {
+			Service.logger.error("Exception",e);
+		}
 		validated = false;
+		logger.debug("exiting cleanup");
 	}
 	
 	protected void clearAllCloudAttachments() {
@@ -5097,6 +5119,132 @@ public class Service extends BaseService {
 		}
 	}
 	
+	public void processManageTags(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String crud = null;
+			List<JsTag> items;
+		try {
+			crud = ServletUtils.getStringParameter(request, "crud", true);
+			if (crud.equals(Crud.READ)) {
+				items=new ArrayList<>();
+				for(Tag t: atags) items.add(new JsTag(t.getTagId(),t.getDescription(),t.getColor()));
+				new JsonResult(items).printTo(out);
+			} else if (crud.equals(Crud.CREATE)) {
+				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
+				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
+				mailManager.addTag(tag);
+				loadTags();
+				
+				items=new ArrayList<>();
+				items.add(new JsTag(tag.getTagId(),tag.getDescription(),tag.getColor()));
+				new JsonResult(items).printTo(out);
+			} else if (crud.equals(Crud.UPDATE)) {
+				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
+				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
+				mailManager.updateTag(tag);
+				loadTags();
+				
+				items=new ArrayList<>();
+				items.add(new JsTag(tag.getTagId(),tag.getDescription(),tag.getColor()));
+				new JsonResult(items).printTo(out);
+			} else if (crud.equals(Crud.DELETE)) {
+				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
+				mailManager.removeTag(pl.data.tagId);
+				loadTags();
+
+				new JsonResult().printTo(out);
+			}
+		} catch (Exception ex) {
+		   logger.error("Error managing tags", ex);
+		   new JsonResult(false, "Error managing tags").printTo(out);
+		}
+	}
+	
+	public void processTagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String fromfolder = request.getParameter("fromfolder");
+		String uids[] = request.getParameterValues("ids");
+		String tagId = request.getParameter("tagId");
+		String multifolder = request.getParameter("multifolder");
+		boolean mf = multifolder != null && multifolder.equals("true");
+		try {
+			checkStoreConnected();
+			FolderCache mcache = getFolderCache(fromfolder);
+			if (!mf) {
+				tagMessages(mcache, toLongs(uids), tagId);
+			} else {
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    int ix=uid.indexOf("|");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
+					mcache = getFolderCache(fromfolder);
+                    iuids[0]=Long.parseLong(uid);
+                    tagMessages(mcache, iuids, tagId);
+				}
+			}
+			new JsonResult().printTo(out);
+		} catch (MessagingException exc) {
+		   logger.error("Error managing tags", exc);
+		   new JsonResult(false, "Error managing tags").printTo(out);
+		}
+	}	
+	
+	public void processUntagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String fromfolder = request.getParameter("fromfolder");
+		String uids[] = request.getParameterValues("ids");
+		String tagId = request.getParameter("tagId");
+		String multifolder = request.getParameter("multifolder");
+		boolean mf = multifolder != null && multifolder.equals("true");
+		try {
+			checkStoreConnected();
+			FolderCache mcache = getFolderCache(fromfolder);
+			if (!mf) {
+				untagMessages(mcache, toLongs(uids), tagId);
+			} else {
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    int ix=uid.indexOf("|");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
+					mcache = getFolderCache(fromfolder);
+                    iuids[0]=Long.parseLong(uid);
+                    untagMessages(mcache, iuids, tagId);
+				}
+			}
+			new JsonResult().printTo(out);
+		} catch (MessagingException exc) {
+		   logger.error("Error managing tags", exc);
+		   new JsonResult(false, "Error managing tags").printTo(out);
+		}
+	}	
+	
+	public void processClearMessagesTags(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String fromfolder = request.getParameter("fromfolder");
+		String uids[] = request.getParameterValues("ids");
+		String multifolder = request.getParameter("multifolder");
+		boolean mf = multifolder != null && multifolder.equals("true");
+		try {
+			checkStoreConnected();
+			FolderCache mcache = getFolderCache(fromfolder);
+			if (!mf) {
+				clearMessagesTags(mcache, toLongs(uids));
+			} else {
+                long iuids[]=new long[1];
+                for(String uid: uids) {
+                    int ix=uid.indexOf("|");
+                    fromfolder=uid.substring(0,ix);
+                    uid=uid.substring(ix+1);
+					mcache = getFolderCache(fromfolder);
+                    iuids[0]=Long.parseLong(uid);
+                    clearMessagesTags(mcache, iuids);
+				}
+			}
+			new JsonResult().printTo(out);
+		} catch (MessagingException exc) {
+		   logger.error("Error managing tags", exc);
+		   new JsonResult(false, "Error managing tags").printTo(out);
+		}
+	}	
+	
 /*	public void processListPublicImages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		SettingsManager sm = wta.getSettingsManager();
 		ArrayList<JsonHashMap> items = null;
@@ -5759,6 +5907,8 @@ public class Service extends BaseService {
 						if (cflag.length()==0 && flags.contains(Flags.Flag.FLAGGED)) cflag="special";
 
 						boolean hasNote=flags.contains(sflagNote);
+						
+						String svtags=getJSTagsArray(flags);
 
 						boolean autoedit=false;
 
@@ -5803,6 +5953,16 @@ public class Service extends BaseService {
 								archived=flags.contains(sflagDmsArchived);
 							}
 						}
+						
+						String msgtext=null;
+						if (isToday) {
+							msgtext=MailUtils.getText(xm);
+							if (msgtext!=null) {
+								msgtext=msgtext.trim();
+								if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
+							}
+						}
+						
 						sout += "{idmessage:'" + nuid + "',"
 							+ "priority:" + priority + ","
 							+ "status:'" + status + "',"
@@ -5811,6 +5971,7 @@ public class Service extends BaseService {
 							+ "from:'" + from + "',"
 							+ "fromemail:'" + fromemail + "',"
 							+ "subject:'" + subject + "',"
+							+ (isToday ? "msgtext: '"+StringEscapeUtils.escapeEcmaScript(msgtext)+"',":"")
 							+ (sgi.threaded?"threadId: "+tId+",":"")
 							+ (sgi.threaded?"threadIndent:"+tIndent+",":"")
 							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
@@ -5819,6 +5980,7 @@ public class Service extends BaseService {
 							+ "xdate: '" + xdate + "',"
 							+ "unread: " + unread + ","
 							+ "size:" + msgsize + ","
+							+ (svtags!=null ? "tags: "+svtags+",":"")
 							+ "flag:'" + cflag + "'"
 							+ (hasNote ? ",note:true" : "")
 							+ (archived ? ",arch:true" : "")
@@ -6149,6 +6311,28 @@ public class Service extends BaseService {
 		}
 	}
 	
+	private String getJSTagsArray(Flags flags) {
+		ArrayList<Tag> tags=null;
+		String svtags=null;
+		if (flags!=null) {
+			for(Tag tag: atags) {
+				if (flags.contains(tag.getTagId())) {
+					if (tags==null) tags=new ArrayList<>();
+					tags.add(tag);
+				}
+			}
+			if (tags!=null) {
+				for(Tag tag: tags) {
+					if (svtags==null) svtags="[ ";
+					else svtags+=",";
+					svtags+="'"+StringEscapeUtils.escapeEcmaScript(tag.getTagId())+"'";
+				}
+				if (svtags!=null) svtags+=" ]";
+			}
+		}
+		return svtags;
+	}
+	
 	DateFormat df = null;
 	
 	public void processGetMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -6419,7 +6603,13 @@ public class Service extends BaseService {
 				mcache.refreshUnreads();
 			}
 			long millis = System.currentTimeMillis();
-			sout += "\n],\ntotal:" + recs + ",\nmillis:" + millis + "\n}\n";
+			sout += "\n],\n";
+			
+			String svtags=getJSTagsArray(m.getFlags());
+			if (svtags!=null)
+				sout += "tags: " + svtags + ",\n";
+
+			sout += "total:" + recs + ",\nmillis:" + millis + "\n}\n";
 			out.println(sout);
 //            if (!wasopen) folder.close(false);
 		} catch (Exception exc) {

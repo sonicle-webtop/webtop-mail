@@ -31,23 +31,63 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.bol;
 
-import com.sonicle.webtop.mail.jooq.tables.pojos.Rules;
-import java.util.ArrayList;
-
-/**
- *
- * @author gbulfon
- */
-public class ORule extends Rules {
+Ext.define('Sonicle.webtop.mail.view.TagEditor', {
+	extend: 'WTA.sdk.DockableView',
+//	requires: [
+//	],
 	
-	public ORule() {
+	dockableConfig: {
+		title: '{tagseditor.tit}',
+		//iconCls: 'wtmail-icon-format-quickpart-xs',
+		modal: true,
+		width: 400,
+		height: 150
+	},
+	promptConfirm: false,
+	full: true,
+	
+	mys: null,
+	description: '',
+	color: "#ee2211",
+	
+	initComponent: function() {
+		var me = this;
+		Ext.apply(me, {
+			buttons: [
+				Ext.create('Ext.Button',{
+					text: 'Ok',
+					width: 100,
+					handler: function() {
+						me.fireEvent('viewok', me,me.lref("flddescription").getValue(),'#'+me.lref("fldcolor").getValue());
+						me.closeView(false);
+					}
+				})
+			]
+		});
 		
+		me.callParent(arguments);
+		
+		me.add({
+			xtype: 'wtpanel',
+			region: 'center',
+			layout: 'hbox',
+			bodyPadding: '10 10 10 10',
+			items: [
+				{
+					xtype: 'textfield',
+					reference: 'flddescription',
+					width: 240,
+					margin: 5,
+					value: me.description
+				},{
+					xtype: 'colorbutton',
+					reference: 'fldcolor',
+					margin: 5,
+					value: me.color
+				}
+			]
+		});
 	}
 	
-	public static class List extends ArrayList<ORule> {
-	
-	}
-	
-}
+});

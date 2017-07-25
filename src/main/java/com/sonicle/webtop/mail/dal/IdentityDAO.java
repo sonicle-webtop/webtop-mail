@@ -40,7 +40,6 @@ import com.sonicle.webtop.mail.jooq.Sequences;
 import java.sql.Connection;
 import org.jooq.DSLContext;
 import static com.sonicle.webtop.mail.jooq.Tables.IDENTITIES;
-import com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord;
 import java.util.List;
 
 /**

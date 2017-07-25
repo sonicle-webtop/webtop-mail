@@ -78,6 +78,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         });
 		if (me.gridMenu) {
 			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
+				me.mys.updateCxmGrid(rec);
 				WT.showContextMenu(e, me.gridMenu, { rec: rec, row: i, grid: me.folderList });
 			});
 		}

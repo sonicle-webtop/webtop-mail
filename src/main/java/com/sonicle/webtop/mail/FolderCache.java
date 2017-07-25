@@ -43,6 +43,7 @@ import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.*;
+import com.sonicle.webtop.mail.model.Tag;
 import com.sonicle.webtop.mail.ws.RecentMessage;
 import com.sonicle.webtop.mail.ws.UnreadChangedMessage;
 import com.sun.mail.imap.*;
@@ -1203,6 +1204,36 @@ public class FolderCache {
 				if (tbFlags!=null) fmsg.setFlags(tbFlags, true);
 			}
             
+        }
+    }
+  
+    public void tagMessages(long uids[], String tagId) throws MessagingException {
+//        open();
+        Message mmsgs[]=getMessages(uids,false);
+        for(Message fmsg: mmsgs) {
+			//Flags flags=fmsg.getFlags();
+			//flags.add(tagId);
+			//fmsg.setFlags(flags, true);
+			fmsg.setFlags(new Flags(tagId), true);
+        }
+    }
+  
+    public void untagMessages(long uids[], String tagId) throws MessagingException {
+//        open();
+        Message mmsgs[]=getMessages(uids,false);
+        for(Message fmsg: mmsgs) {
+			fmsg.setFlags(new Flags(tagId), false);
+        }
+    }
+  
+    public void clearMessagesTags(long uids[]) throws MessagingException {
+        Message mmsgs[]=getMessages(uids,false);
+		Flags flags=new Flags();
+		for(Tag tag: ms.atags) {
+			flags.add(tag.getTagId());
+		}
+        for(Message fmsg: mmsgs) {
+			fmsg.setFlags(flags, false);
         }
     }
   

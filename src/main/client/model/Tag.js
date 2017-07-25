@@ -31,38 +31,21 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail;
 
-import com.sonicle.webtop.core.sdk.BaseController;
-import com.sonicle.webtop.core.sdk.ServiceVersion;
-import com.sonicle.webtop.core.sdk.UserProfileId;
-import com.sonicle.webtop.core.sdk.WTException;
-import com.sonicle.webtop.core.sdk.interfaces.IControllerHandlesProfiles;
 
-/**
- *
- * @author malbinola
- */
-public class MailController extends BaseController implements IControllerHandlesProfiles {
+
+Ext.define('Sonicle.webtop.mail.model.Tag', {
+    extend: 'WTA.model.Base',
 	
-	private static ServiceVersion SV_5_0_14=new ServiceVersion("5.0.14");
-	
-	@Override
-	public void addProfile(UserProfileId profileId) throws WTException {
-		MailManager manager = new MailManager(true, profileId);
-		manager.addBuiltinTags();
-	}
-
-	@Override
-	public void removeProfile(UserProfileId profileId, boolean deep) throws WTException {
-	}
-
-	@Override
-	public void upgradeProfile(UserProfileId profileId, ServiceVersion current, ServiceVersion lastSeen) throws WTException {
-		//Add default tag labels on v5.0.14
-		if (current.compareTo(SV_5_0_14)>=0 && lastSeen.compareTo(SV_5_0_14)<0) {
-			MailManager manager = new MailManager(true, profileId);
-			manager.addBuiltinTags();
-		}
-	}
-}
+	identifier: 'negative',
+	idProperty: 'hashId',
+    fields: [
+		WTF.field('hashId', 'string', false),
+		WTF.field('tagId', 'string', false),
+		WTF.field('description', 'string', false),
+		WTF.field('color', 'string', false),
+		WTF.calcField('html','string',['description','color'], function(v,r) {
+			return "<span style='color: "+r.get("color")+"'>"+r.get("description")+"</span>";
+		})
+	]
+});

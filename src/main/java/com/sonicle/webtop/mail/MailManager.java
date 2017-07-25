@@ -67,8 +67,11 @@ import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.mail.sieve.SieveMatch;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
+import com.sonicle.webtop.mail.bol.OTag;
+import com.sonicle.webtop.mail.dal.TagDAO;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
+import com.sonicle.webtop.mail.model.Tag;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -79,6 +82,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
@@ -425,8 +429,120 @@ public class MailManager extends BaseManager {
 	
 	
 	
+	public List<Tag> getTags() throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		List<Tag> tags = new ArrayList<>();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			
+				List<OTag> items = tagdao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				for (OTag item : items) {
+					tags.add(createTag(item));
+				}
+				return tags;
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void addTag(Tag tag) throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			tagdao.insert(con, createTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void removeTag(String tagId) throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			tagdao.deleteById(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tagId);
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	public void updateTag(Tag tag) throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			tagdao.update(con, createTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
 	
 	
+	private static Tag builtinTags[] = {
+		new Tag("$label1","$Label1","#ff003a"),
+		new Tag("$label2","$Label2","#ff9900"),
+		new Tag("$label3","$Label3","#009900"),
+		new Tag("$label4","$Label4","#3333ff"),
+		new Tag("$label5","$Label5","#993399")
+	};
+	
+	protected void addBuiltinTags() throws WTException {
+		TagDAO tagdao = TagDAO.getInstance();
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID, false);
+			for(Tag tag: builtinTags) {
+				try {
+					tagdao.insert(con, new OTag(
+							getTargetProfileId().getDomainId(), 
+							getTargetProfileId().getUserId(), 
+							tag.getTagId(),
+							lookupResource(getLocale(), MailLocaleKey.TAGS_LABEL(tag.getTagId())),
+							tag.getColor()
+					));
+				} catch(DAOException exc) {
+					
+				}
+			}
+		} catch(SQLException ex) {
+			DbUtils.rollbackQuietly(con);
+			throw new WTException(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	private Tag createTag(OTag otag) {
+		if (otag == null) return null;
+		Tag tag = new Tag(otag.getTagId(),otag.getDescription(),otag.getColor());
+		return tag;
+	}	
+	
+	private OTag createTag(String domainId, String userId, Tag tag) {
+		if (tag == null) return null;
+		OTag otag = new OTag();
+		otag.setDomainId(domainId);
+		otag.setUserId(userId);
+		otag.setTagId(tag.getTagId());
+		otag.setDescription(tag.getDescription());
+		otag.setColor(tag.getColor());
+		return otag;
+	}	
 	
 	
 	public boolean isAutoResponderActive() throws WTException {

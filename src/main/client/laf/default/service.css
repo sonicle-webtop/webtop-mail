@@ -101,6 +101,9 @@
 .wtmail-row-hidden { display: none; }
 /* .wtmail-icon-testaction { background-image: url('mail_16.png') !important; }*/
 
+.wtmail-row-body { max-height: 30; color: gray }
+.wtmail-row-body-hidden { display: none; }
+
 table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 
 /* message view classes */
@@ -143,6 +146,7 @@ table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 .wtmail-mv-hattach SPAN A {text-decoration: none; color: black; }
 .wtmail-mv-hattach SPAN A IMG { border: none; vertical-align: middle; }
 .wtmail-mv-hattach SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-tags {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: black; }
 .wtmail-mv-hicalmessage { 
 	border-top: 1px solid gray; width:100%; height:22px; background-color: #99ccFF;
 	font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 14px; font-weight: plain; 

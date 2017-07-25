@@ -62,29 +62,29 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 		
 		Ext.apply(me, {
 			tbar: [
-				me.createAct("print",{
+				me.getAct("print",{
 					handler: function() {
 						mv.print();
 					},
 					iconCls: 'wt-icon-print-xs'
 				}),
-				me.createAct("delete",{
+				me.getAct("delete",{
 					handler: function() {
 						me.messageGrid.deleteMessage(me.folder,me.idmessage,me);
 					},
 					iconCls: 'wt-icon-delete-xs'
 				}),
-				me.createAct("reply",{
+				me.getAct("reply",{
 					handler: function() {
 						me.messageGrid.replyMessageById(me.folder,me.idmessage,false);
 					}
 				}),
-				me.createAct("replyall",{
+				me.getAct("replyall",{
 					handler: function() {
 						me.messageGrid.replyMessageById(me.folder,me.idmessage,true);
 					}
 				}),
-				me.createAct("forward",{
+				me.getAct("forward",{
 					handler: function() {
 						me.messageGrid.forwardMessageById(me.folder,me.idmessage);
 					}
