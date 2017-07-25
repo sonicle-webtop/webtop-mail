@@ -85,6 +85,7 @@ import java.util.List;
 import java.util.Locale;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.format.DateTimeFormatter;
+import org.jooq.exception.DataAccessException;
 import org.slf4j.Logger;
 
 /**
@@ -505,7 +506,7 @@ public class MailManager extends BaseManager {
 		Connection con = null;
 		
 		try {
-			con = WT.getConnection(SERVICE_ID, false);
+			con = WT.getConnection(SERVICE_ID);
 			for(Tag tag: builtinTags) {
 				try {
 					tagdao.insert(con, new OTag(
@@ -515,12 +516,11 @@ public class MailManager extends BaseManager {
 							lookupResource(getLocale(), MailLocaleKey.TAGS_LABEL(tag.getTagId())),
 							tag.getColor()
 					));
-				} catch(DAOException exc) {
+				} catch(DataAccessException exc) {
 					
 				}
 			}
 		} catch(SQLException ex) {
-			DbUtils.rollbackQuietly(con);
 			throw new WTException(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
