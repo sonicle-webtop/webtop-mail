@@ -251,7 +251,7 @@ public class SmartSearchThread extends Thread {
 
 								String msgtext = "";
 								if (visibleRows<maxVisibleRows) {
-									msgtext=MailUtils.getText(msg);
+									msgtext=MailUtils.peekText(msg);
 									if (msgtext==null) msgtext="";
 									else {
 										msgtext=msgtext.trim();

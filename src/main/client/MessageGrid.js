@@ -337,12 +337,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		{
 			ftype: 'rowbody',
 			getAdditionalData: function (data, idx, record, orig) {
-				var today=record.get('istoday');
+				var msgtext=record.get("msgtext");
 				return {
-					rowBody: today?
-						"<span style='padding-left: 50px'>"+record.get("msgtext")+"</span>":
+					rowBody: msgtext!=null?
+						"<span style='padding-left: 50px'>"+msgtext+"</span>":
 						null,
-					rowBodyCls: today?"wtmail-row-body":"wtmail-row-body-hidden"
+					rowBodyCls: msgtext!=null?"wtmail-row-body":"wtmail-row-body-hidden"
 				}
 			}
 		}		
@@ -1467,6 +1467,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	updateRecordSeenState: function(r,seen) {
+		var me=this;
 		if (r && r.get("unread")===seen) {
 			r.set("unread",!seen);
 			var st=r.get("status");
@@ -1474,6 +1475,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				if (st==="unread"||st==="new") r.set("status","read");
 			} else {
 				if (st==="read") r.set("status","unread");
+			}
+			var row=me.getView().getRow(r);
+			if (row && row.parentElement) {
+				var rowbody=row.parentElement.querySelector(".x-grid-rowbody-tr"),
+					cls="x-grid-rowbody-tr ";
+				if (rowbody) rowbody.className+=seen?cls+" wtmail-row-body-hidden":cls+" wtmail-row-body";
 			}
 			//TODO: not needed with websocket?
 			//var o=s.getProxy().getReader().rawData;

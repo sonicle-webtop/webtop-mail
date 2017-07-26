@@ -5864,10 +5864,8 @@ public class Service extends BaseService {
 								}							}
 						}
 
-						boolean wasseen=false;
 						String status="read";
 						if (flags!=null) {
-							wasseen=flags.contains(Flags.Flag.SEEN);
 							if (flags.contains(Flags.Flag.ANSWERED)) {
 								if (flags.contains("$Forwarded")) status = "repfwd";
 								else status = "replied";
@@ -5957,13 +5955,12 @@ public class Service extends BaseService {
 						}
 						
 						String msgtext=null;
-						if (isToday) {
-							msgtext=MailUtils.getText(xm);
+						if (isToday && unread) { 
+							msgtext=MailUtils.peekText(xm);
 							if (msgtext!=null) {
 								msgtext=msgtext.trim();
 								if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
 							}
-							xm.setFlag(Flags.Flag.SEEN, wasseen);
 						}
 						
 						sout += "{idmessage:'" + nuid + "',"
@@ -5974,7 +5971,7 @@ public class Service extends BaseService {
 							+ "from:'" + from + "',"
 							+ "fromemail:'" + fromemail + "',"
 							+ "subject:'" + subject + "',"
-							+ (isToday ? "msgtext: '"+StringEscapeUtils.escapeEcmaScript(msgtext)+"',":"")
+							+ (msgtext!=null ? "msgtext: '"+StringEscapeUtils.escapeEcmaScript(msgtext)+"',":"")
 							+ (sgi.threaded?"threadId: "+tId+",":"")
 							+ (sgi.threaded?"threadIndent:"+tIndent+",":"")
 							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
