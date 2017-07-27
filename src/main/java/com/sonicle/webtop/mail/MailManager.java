@@ -726,7 +726,7 @@ public class MailManager extends BaseManager {
 		UserProfile.Data ud = WT.getUserData(getTargetProfileId());
 		SieveScriptBuilder ssb = new SieveScriptBuilder();
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID,getTargetProfileId().getDomainId());
-		MailUserSettings mus = new MailUserSettings(getTargetProfileId());
+		MailUserSettings mus = new MailUserSettings(getTargetProfileId(),mss);
 		if (!mss.isSieveSpamFilterDisabled())
 			ssb.setSpamFilter(mus.getFolderSpam());
 		
