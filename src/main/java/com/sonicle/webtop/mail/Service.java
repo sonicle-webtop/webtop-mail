@@ -5069,10 +5069,10 @@ public class Service extends BaseService {
 		String to = request.getParameter("to");
 		String folder = request.getParameter("folder");
 		String sout = "";
-		Identity ident = mprofile.getIdentity(folder);
-		if (ident != null) {
-			from = ident.toString();
-		}
+		//Identity ident = mprofile.getIdentity(folder);
+		//if (ident != null) {
+		//	from = ident.toString();
+		//}
 		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] è stato letto.\n\n"
 				+ "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
 		try {
