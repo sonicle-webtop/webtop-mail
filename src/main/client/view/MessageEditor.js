@@ -1192,7 +1192,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 					"</a>",
 				"</td>",
 				"<td class='wtmail-td-editor-attachment-delete-icon'>",
-					"<img class='wt-icon-delete-xs' style='width: 16px; height: 16px;'>",
+					"<div class='wt-icon-delete-xs' style='width: 16px; height: 16px;'>",
 				"</td>",
 			  "</tr>",
 			"</table>",
