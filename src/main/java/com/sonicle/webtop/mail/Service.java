@@ -312,8 +312,26 @@ public class Service extends BaseService {
 
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
-		us = new MailUserSettings(profile.getId(),ss);		mprofile = new MailUserProfile(environment,this);
-		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mprofile.getMailUsername(), mprofile.getMailPassword());
+		us = new MailUserSettings(profile.getId(),ss);
+		mprofile = new MailUserProfile(environment,this);
+		String mailUsername = mprofile.getMailUsername();
+		String mailPassword = mprofile.getMailPassword();
+		String authorizationId=mailUsername;
+		boolean isImpersonated=profile.getPrincipal().isImpersonated();
+		if (isImpersonated) {
+			String vmailSecret=ss.getNethTopVmailSecret();
+			//use sasl rfc impersonate if no vmailSecret
+			if (vmailSecret==null) {
+				//TODO: implement sasl rfc authorization id if possible
+				//session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
+				//mailUsername=ss.getAdminUser();
+				//mailPassword=ss.getAdminPassword();
+			} else {
+				mailUsername+="*vmail";
+				mailPassword=vmailSecret;
+			}
+		}
+		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword);
 		fcProvided = new FolderCache(this, environment);
 		
 		folderPrefix = mprofile.getFolderPrefix();
