@@ -1,3 +1,4 @@
+@DataSource[default@com.sonicle.webtop.mail]
 
 CREATE SCHEMA "mail";
 
@@ -34,6 +35,24 @@ WITH (OIDS=FALSE)
 ;
 
 -- ----------------------------
+-- Table structure for identities
+-- ----------------------------
+DROP TABLE IF EXISTS "mail"."identities";
+CREATE TABLE "mail"."identities" (
+"identity_id" int4 DEFAULT nextval('"mail".seq_identities'::regclass) NOT NULL,
+"domain_id" varchar(20) DEFAULT ''::character varying NOT NULL,
+"user_id" varchar(100) NOT NULL,
+"email" varchar(100) NOT NULL,
+"display_name" varchar(100) NOT NULL,
+"main_folder" varchar(100),
+"fax" bool DEFAULT false,
+"identity_uid" varchar(36)
+)
+WITH (OIDS=TRUE)
+
+;
+
+-- ----------------------------
 -- Table structure for in_filters
 -- ----------------------------
 DROP TABLE IF EXISTS "mail"."in_filters";
@@ -50,22 +69,6 @@ CREATE TABLE "mail"."in_filters" (
 )
 WITH (OIDS=FALSE)
 
-;
-
--- ----------------------------
--- Table structure for identities
--- ----------------------------
-DROP TABLE IF EXISTS "mail"."identities";
-CREATE TABLE "mail"."identities" (
-"identity_id" int4 DEFAULT nextval('"mail".seq_identities'::regclass) NOT NULL,
-"domain_id" varchar(20) DEFAULT ''::character varying NOT NULL,
-"user_id" varchar(100) NOT NULL,
-"email" varchar(100) NOT NULL,
-"display_name" varchar(100) NOT NULL,
-"main_folder" varchar(100),
-"fax" bool DEFAULT false
-)
-WITH (OIDS=TRUE)
 ;
 
 -- ----------------------------
@@ -95,6 +98,21 @@ WITH (OIDS=FALSE)
 ;
 
 -- ----------------------------
+-- Table structure for tags
+-- ----------------------------
+DROP TABLE IF EXISTS "mail"."tags";
+CREATE TABLE "mail"."tags" (
+"domain_id" varchar(20) NOT NULL,
+"user_id" varchar(100) NOT NULL,
+"tag_id" varchar(255) NOT NULL,
+"description" varchar(255),
+"color" varchar(20)
+)
+WITH (OIDS=FALSE)
+
+;
+
+-- ----------------------------
 -- Table structure for users_map
 -- ----------------------------
 DROP TABLE IF EXISTS "mail"."users_map";
@@ -116,24 +134,34 @@ WITH (OIDS=FALSE)
 -- ----------------------------
 
 -- ----------------------------
--- Primary Key structure for table rules
+-- Indexes structure for table autoresponders
 -- ----------------------------
-ALTER TABLE "mail"."rules" ADD PRIMARY KEY ("domain_id", "user_id", "rule_id");
+CREATE INDEX "autoresponder_ak1" ON "mail"."autoresponders" USING btree ("domain_id", "user_id", "enabled");
 
 -- ----------------------------
--- Primary Key structure for table vacation
+-- Primary Key structure for table autoresponders
 -- ----------------------------
-ALTER TABLE "mail"."vacation" ADD PRIMARY KEY ("domain_id", "user_id", "active");
+ALTER TABLE "mail"."autoresponders" ADD PRIMARY KEY ("domain_id", "user_id");
 
 -- ----------------------------
 -- Indexes structure for table identities
 -- ----------------------------
-CREATE INDEX "identities_index" ON "mail"."identities" USING btree ("user_id", "display_name");
+CREATE INDEX "identities_ak1" ON "mail"."identities" USING btree ("user_id", "display_name");
 
 -- ----------------------------
 -- Primary Key structure for table identities
 -- ----------------------------
 ALTER TABLE "mail"."identities" ADD PRIMARY KEY ("identity_id");
+
+-- ----------------------------
+-- Indexes structure for table in_filters
+-- ----------------------------
+CREATE INDEX "in_filters_ak1" ON "mail"."in_filters" USING btree ("domain_id", "user_id", "enabled", "order");
+
+-- ----------------------------
+-- Primary Key structure for table in_filters
+-- ----------------------------
+ALTER TABLE "mail"."in_filters" ADD PRIMARY KEY ("in_filter_id");
 
 -- ----------------------------
 -- Primary Key structure for table notes
@@ -146,34 +174,18 @@ ALTER TABLE "mail"."notes" ADD PRIMARY KEY ("domain_id", "message_id");
 ALTER TABLE "mail"."scan" ADD PRIMARY KEY ("domain_id", "user_id", "foldername");
 
 -- ----------------------------
+-- Primary Key structure for table tags
+-- ----------------------------
+ALTER TABLE "mail"."tags" ADD PRIMARY KEY ("domain_id", "user_id", "tag_id");
+
+-- ----------------------------
 -- Primary Key structure for table users_map
 -- ----------------------------
 ALTER TABLE "mail"."users_map" ADD PRIMARY KEY ("domain_id", "user_id");
-
--- ----------------------------
--- Indexes structure for table autoresponders
--- ----------------------------
-CREATE INDEX "autoresponder_ak1" ON "mail"."autoresponders" USING btree ("domain_id", "user_id", "enabled");
-
--- ----------------------------
--- Primary Key structure for table autoresponders
--- ----------------------------
-ALTER TABLE "mail"."autoresponders" ADD PRIMARY KEY ("domain_id", "user_id");
-
--- ----------------------------
--- Indexes structure for table in_filters
--- ----------------------------
-CREATE INDEX "in_filters_ak1" ON "mail"."in_filters" USING btree ("domain_id", "user_id", "enabled", "order");
-
--- ----------------------------
--- Primary Key structure for table in_filters
--- ----------------------------
-ALTER TABLE "mail"."in_filters" ADD PRIMARY KEY ("in_filter_id");
-
 
 -- ----------------------------
 -- Align service version
 -- ----------------------------
 @DataSource[default@com.sonicle.webtop.core]
 DELETE FROM "core"."settings" WHERE ("settings"."service_id" = 'com.sonicle.webtop.mail') AND ("settings"."key" = 'manifest.version');
-INSERT INTO "core"."settings" ("service_id", "key", "value") VALUES ('com.sonicle.webtop.mail', 'manifest.version', '5.0.13');
+INSERT INTO "core"."settings" ("service_id", "key", "value") VALUES ('com.sonicle.webtop.mail', 'manifest.version', '5.0.14');
