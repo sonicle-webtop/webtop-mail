@@ -7,6 +7,7 @@ INSERT INTO "core"."settings" VALUES ('com.sonicle.webtop.mail', 'default.folder
 INSERT INTO "core"."settings" VALUES ('com.sonicle.webtop.mail', 'default.folder.sent', 'Sent');
 INSERT INTO "core"."settings" VALUES ('com.sonicle.webtop.mail', 'default.folder.spam', 'Spam');
 INSERT INTO "core"."settings" VALUES ('com.sonicle.webtop.mail', 'default.folder.trash', 'Trash');
+INSERT INTO "core"."settings" VALUES ('com.sonicle.webtop.mail', 'default.folder.archive', 'Archive');
 INSERT INTO "core"."settings" VALUES ('com.sonicle.webtop.mail', 'default.host', 'localhost');
 INSERT INTO "core"."settings" VALUES ('com.sonicle.webtop.mail', 'default.include.message.in.reply', 'true');
 INSERT INTO "core"."settings" VALUES ('com.sonicle.webtop.mail', 'default.port', '143');
