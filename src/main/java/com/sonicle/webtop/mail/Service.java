@@ -146,7 +146,7 @@ import org.slf4j.Logger;
 
 public class Service extends BaseService {
 	
-	boolean imapDebug=false;
+	boolean imapDebug=true;
 	public final static Logger logger = WT.getLogger(Service.class);
 	
 	class WebtopFlag {
@@ -2725,7 +2725,6 @@ public class Service extends BaseService {
 			boolean connected=checkStoreConnected();
 			if (!connected) throw new Exception("Mail account authentication error");
 			
-			out.print("{ data:[");
 			boolean isroot=pfoldername.equals("root");
             if (isroot) folder=getDefaultFolder();
 			else folder = getFolder(pfoldername);
@@ -2733,6 +2732,7 @@ public class Service extends BaseService {
 			Folder folders[] = folder.list();
 			String fprefix = mprofile.getFolderPrefix();
 			boolean level1 = (fprefix != null && fprefix.equals("INBOX."));
+			out.print("{ data:[");
 			if (isroot && hasDifferentDefaultFolder) {
 				Folder fcs[]=new Folder[0];
 				//check for other shared folders to be added
