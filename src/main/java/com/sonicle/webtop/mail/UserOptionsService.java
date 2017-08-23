@@ -216,7 +216,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 		try {
 			String type = ServletUtils.getStringParameter(request, "type", true);
 			boolean any = type.equals("any");
-			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, getTargetProfileId()); // new MailManager(getTargetProfileId());
+			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId()); // new MailManager(getTargetProfileId());
 			List<Identity> idents = mman.listIdentities();
 			List<Identity> jsidents = new ArrayList<>();
 			for (Identity ident : idents) {
@@ -237,7 +237,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 	public void processManageIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
 		String crud = null;
 		try {
-			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, getTargetProfileId());
+			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 			crud = ServletUtils.getStringParameter(request, "crud", true);
 			if (crud.equals(Crud.READ)) {
 				processListIdentities(request, response, out, crud);
@@ -272,7 +272,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 			String domainId=profileId.getDomainId();
 			String userId=profileId.getUserId();
 			String emailAddress=WT.getUserData(profileId).getEmailAddress();
-			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, profileId);
+			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, profileId);
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			String mailcardId = ServletUtils.getStringParameter(request, "mailcardId", true);
 			PersonalInfo ppi=null;

@@ -6577,7 +6577,7 @@ public class Service extends BaseService {
 				}
 				*/
 				
-				ICalendarManager cm=(ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+				ICalendarManager cm=(ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
 				if (cm!=null) {
 					int eid=-1;
 					//Event ev=cm.getEventByScope(EventScope.PERSONAL_AND_INCOMING, ir.getUID());
@@ -6939,7 +6939,7 @@ public class Service extends BaseService {
 			Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
 
 			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			ICalendarManager cm=(ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar",environment.getProfileId());
+			ICalendarManager cm=(ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
 			if (pcalaction.equals("accept")) {
 				Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
 				String ekey=cm.getEventInstanceKey(ev.getEventId());
@@ -7940,14 +7940,13 @@ public class Service extends BaseService {
 	}
 	
 	public void processLookupSieveScripts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		MailManager manager = (MailManager)WT.getServiceManager(SERVICE_ID, getEnv().getProfileId());
 		ArrayList<JsSimple> items = new ArrayList<>();
 		
 		try {
 			items.add(new JsSimple(MailManager.SIEVE_WEBTOP_SCRIPT, MailManager.SIEVE_WEBTOP_SCRIPT));
 			
 			try {
-				List<com.fluffypeople.managesieve.SieveScript> scripts = manager.listSieveScripts();
+				List<com.fluffypeople.managesieve.SieveScript> scripts = mailManager.listSieveScripts();
 				for(com.fluffypeople.managesieve.SieveScript script : scripts) {
 					// Skip new webtop script name, we want it as first element
 					if (!StringUtils.equals(script.getName(), MailManager.SIEVE_WEBTOP_SCRIPT)) {
@@ -7967,8 +7966,6 @@ public class Service extends BaseService {
 	}
 	
 	public void processManageMailFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		MailManager manager = (MailManager)WT.getServiceManager(SERVICE_ID, getEnv().getProfileId());
-		
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if(crud.equals(Crud.READ)) {
@@ -7977,7 +7974,7 @@ public class Service extends BaseService {
 				int scriptCount = -1;
 				String activeScript = null;
 				try {
-					List<com.fluffypeople.managesieve.SieveScript> scripts = manager.listSieveScripts();
+					List<com.fluffypeople.managesieve.SieveScript> scripts = mailManager.listSieveScripts();
 					scriptCount = scripts.size();
 					activeScript = findActiveScriptName(scripts);
 				} catch(WTException ex1) {
@@ -7985,9 +7982,9 @@ public class Service extends BaseService {
 				}
 				if (StringUtils.isBlank(activeScript)) activeScript = MailManager.SIEVE_WEBTOP_SCRIPT;
 				
-				AutoResponder autoResp = manager.getAutoResponder();
+				AutoResponder autoResp = mailManager.getAutoResponder();
 				MailFiltersType type = EnumUtils.forSerializedName(id, MailFiltersType.class);
-				List<MailFilter> filters = manager.getMailFilters(type);
+				List<MailFilter> filters = mailManager.getMailFilters(type);
 				
 				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, autoResp, filters);
 				
@@ -7998,20 +7995,20 @@ public class Service extends BaseService {
 				
 				if (EnumUtils.equals(pl.data.id, MailFiltersType.INCOMING)) {
 					List<MailFilter> filters = JsInMailFilters.createMailFilterList(pl.data);
-					manager.updateAutoResponder(JsInMailFilters.createAutoResponder(pl.data));
-					manager.updateMailFilters(pl.data.id, filters);
+					mailManager.updateAutoResponder(JsInMailFilters.createAutoResponder(pl.data));
+					mailManager.updateMailFilters(pl.data.id, filters);
 					
 					boolean isWTScript = StringUtils.equals(pl.data.activeScript, MailManager.SIEVE_WEBTOP_SCRIPT);
 					if (!isWTScript && !StringUtils.isBlank(pl.data.activeScript)) {
 						try {
-							manager.activateSieveScript(pl.data.activeScript);
+							mailManager.activateSieveScript(pl.data.activeScript);
 						} catch(WTException ex1) {
 							logger.warn("Error activating chosen script", ex1);
 						}
 					}
 					// Always generate a WT script but activate it 
 					// automatically only if has been selected our script
-					manager.applySieveScript(isWTScript);
+					mailManager.applySieveScript(isWTScript);
 				}	
 				
 				new JsonResult().printTo(out);
