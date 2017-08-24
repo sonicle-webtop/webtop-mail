@@ -43,6 +43,7 @@ Ext.define('Sonicle.webtop.mail.store.QuickFilter', {
 		['any'],
 		['unread'],
 		['flagged'],
+		['tagged'],
 		['unanswered'],
 		['attachment'],
 		['priority']

@@ -1197,11 +1197,11 @@ public class FolderCache {
 				if (!flag.equals("complete")) {
 					fmsg.setFlags(Service.flagsAll, false);
 					fmsg.setFlags(Service.oldFlagsAll, false);
-					fmsg.setFlags(Service.tbFlagsAll, false);
+					//fmsg.setFlags(Service.tbFlagsAll, false);
 				}
 				fmsg.setFlags(Service.flagsHash.get(flag), true);
-				Flags tbFlags=Service.tbFlagsHash.get(flag);
-				if (tbFlags!=null) fmsg.setFlags(tbFlags, true);
+				//Flags tbFlags=Service.tbFlagsHash.get(flag);
+				//if (tbFlags!=null) fmsg.setFlags(tbFlags, true);
 			}
             
         }
@@ -1243,7 +1243,7 @@ public class FolderCache {
         for(Message fmsg: mmsgs) {
             fmsg.setFlags(Service.flagsAll, false);
             fmsg.setFlags(Service.oldFlagsAll, false);
-            fmsg.setFlags(Service.tbFlagsAll, false);
+            //fmsg.setFlags(Service.tbFlagsAll, false);
 			//fmsg.setFlags(Service.flagFlagged,false);
         }
     }
@@ -1496,6 +1496,14 @@ public class FolderCache {
 				fts[0]=new FlagTerm(new Flags(Flag.FLAGGED),true);
 				for(int i=0;i<ms.allFlagStrings.length;++i)
 					fts[i+1]=new FlagTerm(new Flags(ms.allFlagStrings[i]),true);
+				terms.add(new OrTerm(fts));
+			}
+			else if (quickfilter.equals("tagged")) {
+				FlagTerm fts[]=new FlagTerm[ms.atags.size()];
+				//fts[0]=new FlagTerm(new Flags(Flag.FLAGGED),true);
+				int i=0;
+				for(Tag tag: ms.atags) 
+					fts[i++]=new FlagTerm(new Flags(tag.getTagId()),true);
 				terms.add(new OrTerm(fts));
 			}
 			else if (quickfilter.equals("unanswered")) {

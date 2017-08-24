@@ -146,39 +146,39 @@ import org.slf4j.Logger;
 
 public class Service extends BaseService {
 	
-	boolean imapDebug=false;
+	boolean imapDebug=true;
 	public final static Logger logger = WT.getLogger(Service.class);
 	
 	class WebtopFlag {
 		String label;
-		String tbLabel;
+		//String tbLabel;
 		
-		WebtopFlag(String label, String tbLabel) {
+		WebtopFlag(String label/*, String tbLabel*/) {
 			this.label=label;
-			this.tbLabel=tbLabel;
+			//this.tbLabel=tbLabel;
 		}
 		
 	}
 	
     public WebtopFlag[] webtopFlags={
-        new WebtopFlag("red","$label1"),
-        new WebtopFlag("blue","$label4"),
-        new WebtopFlag("yellow",null),
-        new WebtopFlag("green","$label3"),
-        new WebtopFlag("orange","$label2"),
-        new WebtopFlag("purple","$label5"),
-        new WebtopFlag("black",null),
-        new WebtopFlag("gray",null),
-        new WebtopFlag("white",null),
-        new WebtopFlag("brown",null),
-        new WebtopFlag("azure",null),
-        new WebtopFlag("pink",null),
-        new WebtopFlag("complete",null)
+        new WebtopFlag("red"/*,"$label1"*/),
+        new WebtopFlag("blue"/*,"$label4"*/),
+        new WebtopFlag("yellow"/*,null*/),
+        new WebtopFlag("green"/*,"$label3"*/),
+        new WebtopFlag("orange"/*,"$label2"*/),
+        new WebtopFlag("purple"/*,"$label5"*/),
+        new WebtopFlag("black"/*,null*/),
+        new WebtopFlag("gray"/*,null*/),
+        new WebtopFlag("white"/*,null*/),
+        new WebtopFlag("brown"/*,null*/),
+        new WebtopFlag("azure"/*,null*/),
+        new WebtopFlag("pink"/*,null*/),
+        new WebtopFlag("complete"/*,null*/)
 	};
 	
 	public String allFlagStrings[];
 	
-	class ThunderbirdFlag {
+	/*class ThunderbirdFlag {
 		String label;
 		int colorindex;
 		
@@ -186,7 +186,7 @@ public class Service extends BaseService {
 			this.label=label;
 			this.colorindex=colorindex;
 		}
-	}
+	}*/
 	
 /*    public ThunderbirdFlag tbFlagStrings[]={
         new ThunderbirdFlag("$label1",0),	//red
@@ -199,10 +199,10 @@ public class Service extends BaseService {
 	
 	public static Flags flagsAll = new Flags();
 	public static Flags oldFlagsAll = new Flags();
-	public static Flags tbFlagsAll=new Flags();
+	//public static Flags tbFlagsAll=new Flags();
 	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
 	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
-	public static HashMap<String,Flags> tbFlagsHash=new HashMap<String,Flags>();
+	//public static HashMap<String,Flags> tbFlagsHash=new HashMap<String,Flags>();
 	private static String sflagNote="mailnote";
 	private static String sflagDmsArchived="$Archived";
 	public static Flags flagNote=new Flags(sflagNote);
@@ -282,7 +282,7 @@ public class Service extends BaseService {
 			allFlagsArray.add(fs.label);
 			String oldfs="flag"+fs.label;
 			flagsAll.add(fs.label);
-			if (fs.tbLabel!=null) tbFlagsAll.add(fs.tbLabel);
+			//if (fs.tbLabel!=null) tbFlagsAll.add(fs.tbLabel);
 			oldFlagsAll.add(oldfs);
 			Flags flags=new Flags();
 			flags.add(fs.label);
@@ -290,15 +290,15 @@ public class Service extends BaseService {
 			flags=new Flags();
 			flags.add(oldfs);
 			oldFlagsHash.put(fs.label, flags);
-			if (fs.tbLabel!=null) {
+			/*if (fs.tbLabel!=null) {
 				Flags tbFlags=new Flags();
 				tbFlags.add(fs.tbLabel);
 				tbFlagsHash.put(fs.label, tbFlags);
-			}
+			}*/
 		}
-		for(WebtopFlag fs: webtopFlags) {
+		/*for(WebtopFlag fs: webtopFlags) {
 			if (fs.tbLabel!=null) allFlagsArray.add(fs.tbLabel);
-		}	  
+		}*/	  
 		for(WebtopFlag fs: webtopFlags) {
 			allFlagsArray.add("flag"+fs.label);
 		}	  
@@ -5905,12 +5905,12 @@ public class Service extends BaseService {
 						String cflag="";
 						for (WebtopFlag webtopFlag: webtopFlags) {
 							String flagstring=webtopFlag.label;
-							String tbflagstring=webtopFlag.tbLabel;
+							//String tbflagstring=webtopFlag.tbLabel;
 							if (!flagstring.equals("complete")) {
 								String oldflagstring="flag"+flagstring;
 								if (flags.contains(flagstring)
 										||flags.contains(oldflagstring)
-										|| (tbflagstring!=null && flags.contains(tbflagstring))
+										/*|| (tbflagstring!=null && flags.contains(tbflagstring))*/
 								) {
 									cflag=flagstring;
 								}
@@ -7257,12 +7257,12 @@ public class Service extends BaseService {
 					String cflag="";
 					for (WebtopFlag webtopFlag: webtopFlags) {
 						String flagstring=webtopFlag.label;
-						String tbflagstring=webtopFlag.tbLabel;
+						//String tbflagstring=webtopFlag.tbLabel;
 						if (!flagstring.equals("complete")) {
 							String oldflagstring="flag"+flagstring;
 							if (flags.contains(flagstring)
 									||flags.contains(oldflagstring)
-									|| (tbflagstring!=null && flags.contains(tbflagstring))
+									/*|| (tbflagstring!=null && flags.contains(tbflagstring))*/
 							) {
 								cflag=flagstring;
 							}
