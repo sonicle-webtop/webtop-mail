@@ -146,7 +146,7 @@ import org.slf4j.Logger;
 
 public class Service extends BaseService {
 	
-	boolean imapDebug=true;
+	boolean imapDebug=false;
 	public final static Logger logger = WT.getLogger(Service.class);
 	
 	class WebtopFlag {
