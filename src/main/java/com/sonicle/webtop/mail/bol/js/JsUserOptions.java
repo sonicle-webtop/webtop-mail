@@ -49,6 +49,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public String dmsMethod;
 	public boolean sharedSeen;
 	public boolean manualSeen;
+	public boolean ingridPreview;
 	public boolean scanAll;
 	public int scanSeconds;
 	public int scanCycles;

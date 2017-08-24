@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('archiveMode', 'string', true),
 		WTF.field('sharedSeen', 'boolean', false),
 		WTF.field('manualSeen', 'boolean', false),
+		WTF.field('ingridPreview', 'boolean', true),
 		WTF.field('scanAll', 'boolean', false),
 		WTF.field('scanSeconds', 'int', false),
 		WTF.field('scanCycles', 'int', false),

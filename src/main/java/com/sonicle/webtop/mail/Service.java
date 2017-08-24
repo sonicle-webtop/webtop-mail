@@ -5973,7 +5973,7 @@ public class Service extends BaseService {
 						}
 						
 						String msgtext=null;
-						if (isToday && unread) { 
+						if (us.isIngridPreview() && isToday && unread) { 
 							msgtext=MailUtils.peekText(xm);
 							if (msgtext!=null) {
 								msgtext=msgtext.trim();

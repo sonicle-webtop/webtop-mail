@@ -49,6 +49,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
+			ingridPreview: WTF.checkboxBind('record', 'ingridPreview'),
 			canChangeAccountSettings: function(get) {
 				return get("record.canChangeAccountSettings");
 			},
@@ -90,6 +91,13 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					width: 440,
 					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 				}), {
+					xtype: 'checkbox',
+					bind: '{ingridPreview}',
+					fieldLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
+					needReload: true,
+					width: 100,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
 					xtype: 'checkbox',
 					bind: '{sharedSeen}',
 					fieldLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
