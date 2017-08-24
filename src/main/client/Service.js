@@ -1324,6 +1324,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return this.imapTree.getStore().getById(folder).get("isDrafts");
 	},
 	
+	isTrash: function(folder) {
+		return this.imapTree.getStore().getById(folder).get("isTrash");
+	},
+	
 	updateCxmGrid: function(r) {
 		var me=this,
 			menu=me.getRef('mnutag'),

@@ -1005,7 +1005,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (!selection || selection.length==0) return;
 		
         if (ftrash) {
-			if (!me.multifolder && curfolder===ftrash) {
+			if (!me.multifolder && me.mys.isTrash(curfolder)) {
 				//TODO: warning
 				WT.confirm(me.res('sureprompt'),function(bid) {
 					if (bid==='yes') {
@@ -1180,7 +1180,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			},
 			ftrash=me.mys.getFolderTrash();
 		
-		if (curfolder===ftrash) {
+		if (me.mys.isTrash(curfolder)) {
 			//TODO: warning
 			WT.confirm(me.res('sureprompt'),function(bid) {
 				if (bid==='yes') {
