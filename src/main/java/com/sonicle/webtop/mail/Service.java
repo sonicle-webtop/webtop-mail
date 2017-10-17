@@ -4601,7 +4601,23 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
-				fc = getFolderCache(mprofile.getFolderDrafts());
+				String draftsfolder=mprofile.getFolderDrafts();
+				Identity ident = msg.getFrom();
+				if (ident != null ) {
+					String mainfolder=ident.getMainFolder();
+					if (mainfolder != null && mainfolder.trim().length() > 0) {
+						String newdraftsfolder = mainfolder + folderSeparator + getLastFolderName(draftsfolder);
+						try {
+							Folder folder = getFolder(newdraftsfolder);
+							if (folder.exists()) {
+								draftsfolder = newdraftsfolder;
+							}
+						} catch (MessagingException exc) {
+							logger.error("Error on identity {}/{} Drafts Folder", environment.getProfile().getUserId(), ident.getEmail(), exc);
+						}
+					}
+				}
+				fc = getFolderCache(draftsfolder);
 			} else {
 				fc = getFolderCache(savefolder);
 			}
