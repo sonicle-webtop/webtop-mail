@@ -187,18 +187,33 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbx=0;
 		
 		var smenu=[],sx=0;
-		smenu[sx++]={ text: me.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-send-xs', handler: me.actionSend, scope: me };
-		if (!me.mys.getVar("schedDisabled"))
-			smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me };
-		tbitems[tbx++]={
-			xtype: 'splitbutton',
-			text: me.res('editor.send.btn-send.lbl'),
-			tooltip: me.res('editor.send.btn-send.lbl'),
-			iconCls: 'wtmail-icon-send-xs',
-			handler: me.actionSend,
-			scope: me,
-			menu: smenu
-		};
+		if (!me.fax) {
+			smenu[sx++]={ text: me.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-send-xs', handler: me.actionSend, scope: me };
+			if (!me.mys.getVar("schedDisabled"))
+				smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me };
+			tbitems[tbx++]={
+				xtype: 'splitbutton',
+				text: me.res('editor.send.btn-send.lbl'),
+				tooltip: me.res('editor.send.btn-send.lbl'),
+				iconCls: 'wtmail-icon-send-xs',
+				handler: me.actionSend,
+				scope: me,
+				menu: smenu
+			};
+		} else {
+			smenu[sx++]={ text: me.res('editor.send.btn-sendfax.lbl'), iconCls: 'wtmail-icon-sendfax-xs', handler: me.actionSend, scope: me };
+			if (!me.mys.getVar("schedDisabled"))
+				smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me };
+			tbitems[tbx++]={
+				xtype: 'splitbutton',
+				text: me.res('editor.send.btn-sendfax.lbl'),
+				tooltip: me.res('editor.send.btn-sendfax.lbl'),
+				iconCls: 'wtmail-icon-sendfax-xs',
+				handler: me.actionSend,
+				scope: me,
+				menu: smenu
+			};
+		}
 		tbitems[tbx++]='-';
 		
 		if (me.showSave) {
@@ -692,7 +707,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	startNew: function(data) {
 		var me=this;
-		if (!data.contentReady) data.content=me.prepareContent(data.content,data.format,(data.contentAfter===undefined?true:data.contentAfter));
+		if (!data.fax && !data.contentReady) data.content=me.prepareContent(data.content,data.format,(data.contentAfter===undefined?true:data.contentAfter));
 		//default of html editor is html, so no need to enable html mode
 		//also calling it seems to break binding
 		/*if (data.format==="html") me.htmlEditor.enableHtmlMode();

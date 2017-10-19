@@ -7884,6 +7884,9 @@ public class Service extends BaseService {
 			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes()));
 			co.put("autoResponderActive", mailManager.isAutoResponderActive());
 			
+			//if (RunContext.isPermitted(SERVICE_ID, "FAX","ACCESS")) 
+				//co.put("faxSubject",getEnv().getCoreServiceSettings().)
+			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	
 		} finally {

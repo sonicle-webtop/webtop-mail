@@ -89,6 +89,7 @@
 			<permission group="SHARING_UNKNOWN_ROLES" actions="SHOW" />
 			<permission group="MAILCARD_SETTINGS" actions="CHANGE" />
 			<permission group="DOMAIN_MAILCARD_SETTINGS" actions="CHANGE" />
+			<permission group="FAX" actions="ACCESS" />
 		</permissions>
 	</service>
 </services>

@@ -5,6 +5,8 @@
 
 /* actions */
 .wtmail-icon-newmsg-xs { background-image: url('statusnew_16.png') !important; }
+.wtmail-icon-newfax-xs { background-image: url('newfax_16.png') !important; }
+.wtmail-icon-sendfax-xs { background-image: url('fax_16.png') !important; }
 .wtmail-icon-reply-xs { background-image: url('statusreplied_16.png') !important; }
 .wtmail-icon-replyall-xs { background-image: url('replyall_16.png') !important; }
 .wtmail-icon-forward-xs { background-image: url('statusforwarded_16.png') !important; }

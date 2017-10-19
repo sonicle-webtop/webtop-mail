@@ -202,8 +202,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				xb[xx++]=me._TB("inMailFilters")
             ]
         );
-		//TODO FAX
-        //if (WT.hasFax) this.toolbar.insertButton(0,xb[xx++]=new Ext.Button(this.getAct('newfax')));
+
+		if (WT.isPermitted(me.ID,'FAX','ACCESS'))
+			me.toolbar.insert(0,me._TB("newfax"));
+		
 		//TODO DOCMGT
         //if (WT.docmgt) this.toolbar.insertButton(4,xb[xx++]=new Ext.Button(this.getAct('docmgt')));
         //else if (WT.docmgtwt) this.toolbar.insertButton(4,xb[xx++]=new Ext.Button(this.getAct('docmgtwt')));
@@ -253,15 +255,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me = this;
 	
         me.addNewAction("newmsg",{ handler: me.actionNew, scope: me});
-		//TODO FAX
-/*        if (WT.hasFax) {
-            this.sna=new Array();
-            this.sna[0]=this.addAct("newfax",this.actionNewFax,this);
-        }*/
+		if (WT.isPermitted(me.ID,'FAX','ACCESS'))
+			me.addNewAction("newfax",{ handler: me.actionNewFax, scope: me});
 		
         me.addAct("open",{ handler: me.gridAction(me,'Open'), iconCls: '' });
         me.addAct("opennew",{ handler: me.gridAction(me,'OpenNew'), iconCls: '' });
         
+        me.addAct("newfax",{ handler: function() { me.actionNewFax(); }, text: null });
         me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print-xs' });
         me.addAct("reply",{ handler: me.gridAction(me,'Reply') });
         me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll') });
@@ -673,6 +673,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.startNewMessage(me.currentFolder, { format: me.getVar("format") });
 	},
 	
+	actionNewFax: function() {
+		var me=this;
+		me.startNewMessage(me.currentFolder, { format: "plain", fax: true });
+	},
+	
 	/**
 	 * Starts a new message with preconfigured options.
 	 * @param {String} Reference folder id 
@@ -706,12 +711,24 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		var v=WT.createView(me.ID,'view.MessageEditor',{
 			viewCfg: {
+				dockableConfig: {
+					title: '{fax.tit}',
+					iconCls: 'wtmail-icon-newfax-xs',
+					width: 830,
+					height: 500
+				},
 				msgId: opts.msgId||0,
 				mys: me,
 				identityIndex: ident.index||0,
 				fontFace: me.getVar('fontName'),
 				fontSize: me.getVar('fontSize'),
 				autosave: true,
+				showSave: !opts.fax,
+				showReceipt: !opts.fax,
+				showPriority: !opts.fax,
+				showReminder: !opts.fax,
+				showCloud: !opts.fax,
+				fax: opts.fax,
 				listeners: {
 					modelsave: function(s,success) {
 						if (success) {
@@ -745,7 +762,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 references: opts.references,
                 origuid: opts.origuid,
                 forwardedfolder: opts.forwardedfolder,
-                forwardedfrom: opts.forwardedfrom
+                forwardedfrom: opts.forwardedfrom,
+				fax: opts.fax
 			});
 		});
 	},
