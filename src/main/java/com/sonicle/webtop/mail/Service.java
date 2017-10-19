@@ -69,7 +69,7 @@ import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
 import com.sonicle.webtop.core.bol.js.JsSimple;
-import com.sonicle.webtop.core.bol.model.InternetRecipient;
+import com.sonicle.webtop.core.model.Recipient;
 import com.sonicle.webtop.core.model.SharePermsElements;
 import com.sonicle.webtop.core.model.SharePermsFolder;
 import com.sonicle.webtop.core.bol.model.Sharing;
@@ -4466,7 +4466,7 @@ public class Service extends BaseService {
 				for(JsRecipient rcpt: pl.data.recipients) {
 					String email=rcpt.email;
 					if (email!=null && email.trim().length()>0) 
-						coreMgr.learnInternetRecipient(email);
+						coreMgr.autoLearnInternetRecipient(email);
 				}
 				//TODO save used subject
 				//Save used subject
@@ -4764,11 +4764,11 @@ public class Service extends BaseService {
 					String dom=iamail.substring(iamail.indexOf("@")+1);
 					CoreManager core=WT.getCoreManager();
 					if (environment.getWebTopSession().isServiceAllowed(dom)) {
-						List<InternetRecipient> rcpts=core.expandToInternetRecipients(iamail);
-						for (InternetRecipient rcpt: rcpts) {
+						List<Recipient> rcpts=core.expandVirtualProviderRecipient(iamail);
+						for (Recipient rcpt: rcpts) {
 							String xemail=rcpt.getAddress();
 							String xpersonal=rcpt.getPersonal();
-							String xrtype=rcpt.getRecipientType().toString();
+							String xrtype=EnumUtils.toSerializedName(rcpt.getType());
 
 							if (xpersonal!=null) xemail=xpersonal+" <"+xemail+">";
 
