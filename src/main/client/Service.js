@@ -675,7 +675,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionNewFax: function() {
 		var me=this;
-		me.startNewMessage(me.currentFolder, { format: "plain", fax: true });
+		me.startNewMessage(me.currentFolder, { format: "plain", fax: true, faxsubject: me.getVar("faxSubject") });
 	},
 	
 	/**
@@ -712,8 +712,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var v=WT.createView(me.ID,'view.MessageEditor',{
 			viewCfg: {
 				dockableConfig: {
-					title: '{fax.tit}',
-					iconCls: 'wtmail-icon-newfax-xs',
+					title: opts.fax?'{fax.tit}':'{message.tit}',
+					iconCls: opts.fax?'wtmail-icon-newfax-xs':'wtmail-icon-newmsg-xs',
 					width: 830,
 					height: 500
 				},
@@ -729,6 +729,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				showReminder: !opts.fax,
 				showCloud: !opts.fax,
 				fax: opts.fax,
+				faxsubject: opts.faxsubject,
 				listeners: {
 					modelsave: function(s,success) {
 						if (success) {
@@ -746,7 +747,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			var meditor=v.getView();
 			meditor.startNew({
 				folder: idfolder,
-				subject: opts.subject||'',
+				subject: opts.subject||opts.faxsubject||'',
 				receipt: opts.receipt||me.getVar('receipt'),
 				priority: opts.priority||me.getVar('priority'),
 				from: ident.email,

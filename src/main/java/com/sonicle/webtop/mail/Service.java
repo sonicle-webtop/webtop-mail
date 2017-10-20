@@ -129,6 +129,8 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import javax.activation.*;
 import javax.mail.*;
 import javax.mail.Message.RecipientType;
@@ -4422,22 +4424,28 @@ public class Service extends BaseService {
             long msgId=ServletUtils.getLongParameter(request, "msgId", true);
             boolean isFax=ServletUtils.getBooleanParameter(request, "isFax", false);
             boolean save=ServletUtils.getBooleanParameter(request, "save", false);
-            //TODO: fax
-			/*
+			
 			if (isFax) {
-				int faxmaxtos=ss.getFaxMaxRecipients();
+				int faxmaxtos=getEnv().getCoreServiceSettings().getFaxMaxRecipients();
 				
 				//check for valid fax recipients
-				String faxpattern=ss.getFaxPattern();
+				String faxpattern=getEnv().getCoreServiceSettings().getFaxPattern();
 				String regex="^"+faxpattern.replace("{number}", "(\\d+)").replace("{username}", "(\\w+)")+"$";
 				Pattern pattern=Pattern.compile(regex);
 				int nemails=0;
-				for(String email: emails) {
-					if (StringUtils.isEmpty(email)) continue;
+				for(JsRecipient jsr: jsmsg.recipients) {
+					if (StringUtils.isEmpty(jsr.email)) continue;
 					++nemails;
-					if (StringUtils.isNumeric(email)) continue;
-					Matcher pm=pattern.matcher(email);
-					if (!pm.matches()) {
+					if (StringUtils.isNumeric(jsr.email)) continue;
+					boolean matches=false;
+					try {
+						InternetAddress ia=new InternetAddress(jsr.email);
+						String email=ia.getAddress();
+						matches=pattern.matcher(email).matches();
+					} catch(Exception exc) {
+						
+					}
+					if (!matches) {
 						throw new Exception(lookupResource(MailLocaleKey.FAX_ADDRESS_ERROR));
 					}
 				}
@@ -4445,7 +4453,7 @@ public class Service extends BaseService {
 					throw new WTException(lookupResource(MailLocaleKey.FAX_MAXADDRESS_ERROR), faxmaxtos);
 				}
 
-			}*/
+			}
 			
 			checkStoreConnected();
 			//String attachments[] = request.getParameterValues("attachments");
@@ -4747,7 +4755,7 @@ public class Service extends BaseService {
 			boolean listdone = false;
 			if (email.indexOf('@') < 0) {
 				if (isFax && StringUtils.isNumeric(email)) {
-					String faxpattern = ss.getFaxPattern();
+					String faxpattern = getEnv().getCoreServiceSettings().getFaxPattern();
 					String faxemail = faxpattern.replace("{number}", email).replace("{username}", profile.getUserId());
 					email = faxemail;
 				}
@@ -4853,7 +4861,7 @@ public class Service extends BaseService {
 		msg.setBcc(bcc);
 		msg.setSubject(jsmsg.subject);
 		
-        //TODO: fax
+        //TODO: fax coverpage - dismissed
 		/*if (isFax) {
 			String coverpage = request.getParameter("faxcover");
 			if (coverpage != null) {
@@ -7884,8 +7892,8 @@ public class Service extends BaseService {
 			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes()));
 			co.put("autoResponderActive", mailManager.isAutoResponderActive());
 			
-			//if (RunContext.isPermitted(SERVICE_ID, "FAX","ACCESS")) 
-				//co.put("faxSubject",getEnv().getCoreServiceSettings().)
+			if (RunContext.isPermitted(SERVICE_ID, "FAX","ACCESS")) 
+				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	

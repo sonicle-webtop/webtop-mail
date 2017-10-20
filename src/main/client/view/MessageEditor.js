@@ -153,6 +153,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			region: 'center',
 			tabIndex: 2,
 			fields: { recipientType: 'rtype', email: 'email' },
+			rftype: me.fax?'fax':'email',
 			bind: {
 				store: '{record.recipients}'
 			},
@@ -169,6 +170,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             suggestionContext: 'subject',
             width: 600,
 			tabIndex: 3,
+			disabled: me.faxsubject?true:false,
 			enableKeyEvents: true,
 			fieldLabel: WT.res('word.subject'),
 			labelWidth: 60,
@@ -499,6 +501,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'wthtmleditor',
 				region: 'center',
 				bind: '{record.content}',
+				disabled: me.faxsubject?true:false,
 				enableFont: true,
 				enableFontSize: true,
 				enableFormat: true,
@@ -766,7 +769,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		console.log("sendMessage");
         me.getModel().setExtraParams({
             action: 'SendMessage',
-			sendAction: 'send'
+			sendAction: 'send',
+			isFax: me.fax
         });
 		if (me.getModel().get("reminder")) {
 			today=new Date(),

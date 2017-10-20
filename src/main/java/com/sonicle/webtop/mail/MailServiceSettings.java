@@ -49,8 +49,6 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
     public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
 	public static final String DMS_ARCHIVE = "archive";
-	public static final String FAX_MAX_RECIPIENTS = "fax.max.recipients";
-	public static final String FAX_PATTERN = "fax.pattern";
 	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";
 	public static final String ATTACHMENT_DIR = "attachment.dir";
 	public static final String MESSAGE_VIEW_MAX_TOS = "message.view.max.tos";
@@ -83,14 +81,6 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public String getDmsArchivePath() {
 		return getString(DMS_ARCHIVE,null);
-	}
-	
-	public String getFaxPattern() {
-		return getString(FAX_PATTERN,null);
-	}
-	
-	public int getFaxMaxRecipients() {
-		return getInteger(FAX_MAX_RECIPIENTS,1);
 	}
 	
 	public int getAttachmentMaxSize() {
