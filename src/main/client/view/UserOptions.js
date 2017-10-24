@@ -609,14 +609,14 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			]
 		});
 		
-		if (WT.isPermitted(me.ID,'MAIL_WORKFLOW','ACCESS')) {
+		/*if (WT.isPermitted(me.ID,'MAIL_WORKFLOW','ACCESS')) {
 			me.add({
 				xtype: 'wtopttabsection',
 				title: me.res('opts.wkf.tit'),
 				items: [
 				]
 			});
-		}
+		}*/
 	},
 	
 	editMailcard: function(mailcardId, cmp) {
