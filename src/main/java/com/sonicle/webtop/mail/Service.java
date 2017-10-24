@@ -57,7 +57,7 @@ import com.sonicle.mail.sieve.SieveActionMethod;
 import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
-import com.sonicle.webtop.calendar.GetEventScope;
+import com.sonicle.webtop.calendar.model.GetEventScope;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
 import com.sonicle.webtop.core.CoreManager;
