@@ -60,7 +60,7 @@ public class JsSmartSearchTotals {
 	public int day = 0;
 	public ArrayList<Person> persons=new ArrayList<>();
 	public ArrayList<Folder> folders=new ArrayList<>();
-	public ArrayList<Message> messages=new ArrayList<>();
+	public ArrayList<JsPreviewMessage> messages=new ArrayList<>();
 	public ArrayList<Year> years=new ArrayList<>();
 	
 	private transient HashMap<String,Person> hpersons=new HashMap<>();
@@ -108,13 +108,13 @@ public class JsSmartSearchTotals {
 	
 	public void addMessage(long uid, String folderid, String subject, String from, String to, Date date, String text) {
 		synchronized(lock) {
-			messages.add(new Message(uid,folderid,subject,from,to,date,text));
+			messages.add(new JsPreviewMessage(uid,folderid,subject,from,to,date,text));
 		}
 	}
 	
 	public void addMessage(long uid, String folderid, String subject, String from, String to, String date, String text) {
 		synchronized(lock) {
-			messages.add(new Message(uid,folderid,subject,from,to,date,text));
+			messages.add(new JsPreviewMessage(uid,folderid,subject,from,to,date,text));
 		}
 	}
 	
@@ -317,35 +317,4 @@ public class JsSmartSearchTotals {
 		
 	}		
 	
-	class Message {
-		long uid;
-		String folderid;
-		String subject;
-		String from;
-		String to;
-		String date;
-		String text;
-		
-		Message(long uid, String folderid, String subject, String from, String to, Date date, String text) {
-			DateTimeFormatter ymdhmsZoneFmt = DateTimeUtils.createYmdHmsFormatter();
-			String sdate=ymdhmsZoneFmt.print(new DateTime(date));
-			this.uid=uid;
-			this.folderid=folderid;
-			this.subject=subject;
-			this.from=from;
-			this.to=to;
-			this.date=sdate;
-			this.text=text;
-		}
-		
-		Message(long uid, String folderid, String subject, String from, String to, String date, String text) {
-			this.uid=uid;
-			this.folderid=folderid;
-			this.subject=subject;
-			this.from=from;
-			this.to=to;
-			this.date=date;
-			this.text=text;
-		}
-	}
 }

@@ -91,5 +91,9 @@
 			<permission group="DOMAIN_MAILCARD_SETTINGS" actions="CHANGE" />
 			<permission group="FAX" actions="ACCESS" />
 		</permissions>
+		
+		<portlets>
+			<portlet jsClassName="portlet.Mail" />
+		</portlets>
 	</service>
 </services>

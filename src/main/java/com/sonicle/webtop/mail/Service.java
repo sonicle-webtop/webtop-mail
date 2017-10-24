@@ -86,6 +86,7 @@ import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsInMailFilters;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
+import com.sonicle.webtop.mail.bol.js.JsPreviewMessage;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSharing;
@@ -5132,6 +5133,91 @@ public class Service extends BaseService {
 		}
 	}
 
+	public void processPortletMail(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		ArrayList<JsPreviewMessage> items = new ArrayList<>();
+		
+		try {
+			String query = ServletUtils.getStringParameter(request, "query", null);
+			int visibleRows=0;
+			int maxVisibleRows=20;
+			
+			if (query == null) {
+				String folderId = "INBOX";
+				FolderCache fc=getFolderCache(folderId);
+				Message msgs[]=fc.getMessages("unread","","",FolderCache.SORT_BY_DATE,false,true,0,false,false);
+				fc.fetch(msgs, getMessageFetchProfile());
+				for (Message msg: msgs) {
+					SonicleIMAPMessage simsg=(SonicleIMAPMessage)msg;
+					
+					Address afrom=msg.getFrom()[0];
+					InternetAddress iafrom=null;
+					if (afrom instanceof InternetAddress) {
+						iafrom=(InternetAddress) afrom;
+					}
+
+					Address[] rcpts=msg.getRecipients(Message.RecipientType.TO);
+					ArrayList<InternetAddress> tos=new ArrayList<>();
+					if (rcpts!=null)
+						for(Address ato: rcpts) {
+							if (ato instanceof InternetAddress) {
+								InternetAddress iato=(InternetAddress) ato;
+								tos.add(iato);
+							}
+						}
+						
+					String msgtext = "";
+					if (visibleRows<maxVisibleRows) {
+						msgtext=MailUtils.peekText(simsg);
+						if (msgtext==null) msgtext="";
+						else {
+							msgtext=msgtext.trim();
+							if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
+						}
+						++visibleRows;
+					}
+								
+					String from=iafrom!=null?(iafrom.getPersonal()!=null?iafrom.getPersonal():iafrom.getAddress()):"";
+					String to="";
+					if (tos.size()>0) {
+						boolean first=true;
+						for(InternetAddress iato: tos) {
+							if (!first) to+="; ";
+							to+=(iato.getPersonal()!=null?iato.getPersonal():iato.getAddress());
+							first=false;
+						}
+					}
+					
+					JsPreviewMessage jsmsg=new JsPreviewMessage(
+						simsg.getUID(), folderId, simsg.getSubject(), 
+						from,
+						to,
+						msg.getReceivedDate(),
+						msgtext
+					);
+					items.add(jsmsg);
+				}
+			} else {
+/*				final Set<Integer> ids = folders.keySet();
+				for (FolderTasks foTaskObj : manager.listFolderTasks(ids, "%"+query+"%")) {
+					final CategoryRoot root = rootByFolder.get(foTaskObj.folder.getCategoryId());
+					if (root == null) continue;
+					final CategoryFolder folder = folders.get(foTaskObj.folder.getCategoryId());
+					if (folder == null) continue;
+					
+					for (TaskEx task : foTaskObj.tasks) {
+						items.add(new JsPletTasks(root, folder, task, DateTimeZone.UTC));
+					}
+				}*/
+			}
+			
+			new JsonResult(items).printTo(out);
+			
+		} catch(Exception ex) {
+			logger.error("Error in PortletMail", ex);
+			new JsonResult(false, "Error").printTo(out);	
+		}
+	}
+	
 	public void processManageQuickParts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String crud = null;
 			HashMap<String,String> items;

@@ -46,7 +46,12 @@ Ext.define('Sonicle.webtop.mail.ServiceApi', {
      *       { rtype: 'cc', email: 'example2@domain.tld' },
      *       { rtype: 'bcc', email: 'example3@domain.tld' }
      *     ]	 
+	 * @param {Object[]} [data.attachments] The email attachments:
+     *     attachments: [
+     *       { uploadId: [server UploadedFile id], fileName: "[the file name]", fileSize: [the file size] }
+     *     ]	 
 	 * @param {Object} opts An object containing configuration.
+	 * @param {Number} [opts.messageEditorId] the message editor id for reference in the attachements
 	 * @param {Boolean} [opts.contentReady] True if content is ready without any need of processing (e.g. mailcard).
 	 * @param {Boolean} [opts.appendContent] When contentReady=false, append content to processing (e.g. mailcard).
 	 * @param {Function} [opts.callback] Callback method for 'viewsave' event.
@@ -61,10 +66,19 @@ Ext.define('Sonicle.webtop.mail.ServiceApi', {
 			subject: data.subject,
 			content: data.content,
 			recipients: data.recipients,
+			attachments: data.attachments,
+			msgId: opts.messageEditorId,
 			contentReady: opts.contentReady,
 			contentAfter: opts.appendContent,
 			folder: folder
 		});
+	},
+	
+	/**
+	 * Build a new msg id for editing context.
+	 */
+	buildMessageEditorId: function() {
+		return Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
 	}
 	
 });

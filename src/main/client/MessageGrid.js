@@ -766,8 +766,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						//try to find uid if thread is open
 						fr=me.store.findRecord('idmessage',me.autoselectUid);
 						if (fr) {
-							me.selModel.select(fr);
-							Ext.defer(function() { me.ensureVisible(fr); },1000);
+							me.getSelectionModel().select(fr);
+							//Ext.defer(function() { me.ensureVisible(fr); },1000);
 							me.autoSelectUid=null;
 							me.autoSelectPage=null;
 							me.autoSelectTid=null;
@@ -778,8 +778,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						}
 					} else {
 						fr=me.store.findRecord('idmessage',me.autoselectUid);
-						me.selModel.select(fr);
-						Ext.defer(function() { me.ensureVisible(fr); },1000);
+						me.getSelectionModel().select(fr);
+						//Ext.defer(function() { me.ensureVisible(fr); },1000);
 						me.autoSelectUid=null;
 						me.autoSelectPage=null;
 						me.autoSelectTid=null;

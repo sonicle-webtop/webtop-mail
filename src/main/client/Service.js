@@ -125,6 +125,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
 			mys: me,
+			region: 'center',
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
 					me.updateCxmTree(rec);
@@ -166,14 +167,56 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			var r=context.record;
 			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||r.get("isArchive")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
 		});
+		
+		me.calendarTool=Ext.create({
+			region: 'south',
+			xtype: 'gridpanel',
+			reference: 'gp',
+			store: {
+				autoLoad: true,
+				model: 'Sonicle.webtop.calendar.model.PletEvents',
+				proxy: WTF.apiProxy(me.mys.ID, 'PortletEvents', 'data', {
+					extraParams: {
+						query: null
+					}
+				})
+			},
+			columns: [{
+				xtype: 'socolorcolumn',
+				dataIndex: 'calendarName',
+				colorField: 'calendarColor',
+				width: 30
+			}, {
+				dataIndex: 'title',
+				flex: 1
+			}],
+			features: [{
+				ftype: 'rowbody',
+				getAdditionalData: function(data, idx, rec, orig) {
+					var info = me._calendarTool_buildDateTimeInfo(rec.get('startDate'), rec.get('endDate')),
+						loc = Ext.String.ellipsis(rec.get('location'), 150);
+					return {
+						rowBody: info + (!Ext.isEmpty(loc) ? (' <span style="color:grey;">' + Ext.String.htmlEncode('@'+loc) + '</span>') : '')
+					};
+				}
+			}],
+			listeners: {
+				//rowdblclick: function(s, rec) {
+				//	var er = me.mys.toRightsObj(rec.get('_erights'));
+				//	me.mys.openEventUI(er.UPDATE, rec.get('id'));
+				//}
+			}
+		});
+		
 
 		var tool = Ext.create({
 				xtype: 'panel',
 				title: me.getName(),
 				width: 200,
-				layout: 'fit',
+				layout: 'border',
 				items: [
-					me.imapTree
+					me.imapTree,
+					me.calendarTool
 				]
 		});
 		me.setToolComponent(tool);
@@ -228,6 +271,26 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 		
 	},
+	
+	_calendarTool_buildDateTimeInfo: function(start) {
+		var me = this,
+				soDate = Sonicle.Date,
+				eDate = Ext.Date,
+				startd = eDate.format(start, WT.getShortDateFmt()),
+				startt = eDate.format(start, WT.getShortTimeFmt()),
+				now = soDate.setTime(new Date(), 0, 0, 0),
+				str0;
+		
+		if (soDate.diffDays(now, start) === 0) {
+			str0 = me.mys.res('portlet.events.gp.dateat.today');
+		} else if (soDate.diffDays(now, start) === 1) {
+			str0 = me.mys.res('portlet.events.gp.dateat.tomorrow');
+		} else {
+			str0 = startd;
+		}
+		return Ext.String.format(me.mys.res('portlet.events.gp.dateat'), str0, startt);
+	},
+	
 	
 	_TB: function(actionname) {
 		var bt=Ext.create('Ext.button.Button',this.getAct(actionname));
