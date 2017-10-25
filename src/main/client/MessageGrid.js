@@ -600,7 +600,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		return this.pageSize;
 	},
 	
-	reloadFolder: function(folder_id, config, uid, page, tid){
+	reloadFolder: function(folder_id, config, uid, rid, page, tid){
 		var me = this,
 			proxy = me.store.getProxy();
 	
@@ -646,6 +646,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.getStore().clearFilter(true);
 		if (uid) {
 			me.autoselectUid=uid;
+			me.autoselectRow=rid;
 			me.autoselectPage=page;
 			me.autoselectTid=tid;
 		} else {
@@ -759,35 +760,39 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
 		//autoselect
 		if (me.autoselectUid) {
-			me.store.prefetchPage(me.autoselectPage, {
-				callback: function() {
-					var fr;
-					if (me.autoselectTid) {
-						//try to find uid if thread is open
-						fr=me.store.findRecord('idmessage',me.autoselectUid);
-						if (fr) {
-							me.getSelectionModel().select(fr);
-							//Ext.defer(function() { me.ensureVisible(fr); },1000);
+			me.ensureVisible(me.autoselectRow, {
+				animate: true,
+				highlight: true,
+				select: false,
+				callback: function(success,rec,node) {
+					if (success) {
+						if (me.autoselectTid) {
+							var fr=me.store.findRecord('idmessage',me.autoselectUid);
+							//if rec is in store, thread is already open, all is fine
+							if (fr) {
+								Ext.defer(function() { me.getSelectionModel().select(fr); },1000);
+								me.autoSelectUid=null;
+								me.autoSelectPage=null;
+								me.autoSelectTid=null;
+							} else {
+								//if not open thread, causing another try with thread open
+								fr=me.store.findRecord('idmessage',me.autoselectTid);
+								Ext.defer(function() { me.collapseThread(fr); },1000);
+							}
+						} else {
+							me.getSelectionModel().select(rec);
 							me.autoSelectUid=null;
 							me.autoSelectPage=null;
 							me.autoSelectTid=null;
-						} else {
-							//if not found, open thread, causing another load with thread open
-							fr=me.store.findRecord('idmessage',me.autoselectTid);
-							me.collapseThread(fr);
 						}
 					} else {
-						fr=me.store.findRecord('idmessage',me.autoselectUid);
-						me.getSelectionModel().select(fr);
-						//Ext.defer(function() { me.ensureVisible(fr); },1000);
+						console.log("error during ensureVisibile");
 						me.autoSelectUid=null;
 						me.autoSelectPage=null;
 						me.autoSelectTid=null;
 					}
-					
 				}
-			});
-			
+			});			
 		}
 		//TODO: autoedit
 		/*

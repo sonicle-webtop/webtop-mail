@@ -172,10 +172,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			region: 'south',
 			xtype: 'gridpanel',
 			reference: 'gp',
+			height: 200,
+			title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit"),
 			store: {
 				autoLoad: true,
 				model: 'Sonicle.webtop.calendar.model.PletEvents',
-				proxy: WTF.apiProxy(me.mys.ID, 'PortletEvents', 'data', {
+				proxy: WTF.apiProxy("com.sonicle.webtop.calendar", 'PortletEvents', 'data', {
 					extraParams: {
 						query: null
 					}
@@ -201,10 +203,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			}],
 			listeners: {
-				//rowdblclick: function(s, rec) {
-				//	var er = me.mys.toRightsObj(rec.get('_erights'));
-				//	me.mys.openEventUI(er.UPDATE, rec.get('id'));
-				//}
+				rowdblclick: function(s, rec) {
+					var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
+					if (capi)
+						capi.openEvent({ ekey: rec.get('id') });
+				}
 			}
 		});
 		
@@ -593,15 +596,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		this.showFolder(folderid);
 	},
 	
-	selectAndShowFolder: function(folderid,uid,page,tid) {
+	selectAndShowFolder: function(folderid,uid,rid,page,tid) {
 		var me=this;
 		
 		me.imapTree.expandAndSelectNode(folderid,me.getVar("folderSeparator"));
-		me.showFolder(folderid,uid,page,tid);
+		me.showFolder(folderid,uid,rid,page,tid);
 	},
 	
 	//if uid, try to select specific uid
-	showFolder: function(folderid,uid,page,tid) {
+	showFolder: function(folderid,uid,rid,page,tid) {
         var me=this,
 			mp=me.messagesPanel;
 		//TODO: folder clicked
@@ -623,7 +626,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		mp.quickFilterCombo.setValue('any');
         
 		var params={start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2};
-        mp.reloadFolder(folderid,params,uid,page,tid);
+        mp.reloadFolder(folderid,params,uid,rid,page,tid);
 	}, 
 	
 	unreadChanged: function(msg,unreadOnly) {

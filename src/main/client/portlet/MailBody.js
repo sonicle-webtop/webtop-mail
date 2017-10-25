@@ -103,7 +103,7 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
 			callback: function(success,json) {
 				if (success) {
 					WT.activateService(me.mys.ID);
-					me.mys.selectAndShowFolder(folderid,uid,json.page,json.threadid);
+					me.mys.selectAndShowFolder(folderid,uid,json.row,json.page,json.threadid);
 				} else {
 					WT.error(json.message);
 				}

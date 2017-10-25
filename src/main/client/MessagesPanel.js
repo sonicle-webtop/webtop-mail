@@ -530,10 +530,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         this.folderList.getSelectionModel().deselectAll();
     },
     
-    reloadFolder: function(folderid,config,uid,page,tid) {
+    reloadFolder: function(folderid,config,uid,rid,page,tid) {
 		var me=this;
         me.currentFolder=folderid;
-        me.folderList.reloadFolder(folderid,config,uid,page,tid);
+        me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
     },
 
     reloadCurrentFolder: function(config) {
