@@ -168,49 +168,19 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||r.get("isArchive")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
 		});
 		
-		me.calendarTool=Ext.create({
-			region: 'south',
-			xtype: 'gridpanel',
-			reference: 'gp',
-			height: 200,
-			title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit"),
-			store: {
-				autoLoad: true,
-				model: 'Sonicle.webtop.calendar.model.PletEvents',
-				proxy: WTF.apiProxy("com.sonicle.webtop.calendar", 'PortletEvents', 'data', {
-					extraParams: {
-						query: null
-					}
-				})
-			},
-			columns: [{
-				xtype: 'socolorcolumn',
-				dataIndex: 'calendarName',
-				colorField: 'calendarColor',
-				width: 30
-			}, {
-				dataIndex: 'title',
-				flex: 1
-			}],
-			features: [{
-				ftype: 'rowbody',
-				getAdditionalData: function(data, idx, rec, orig) {
-					var info = me._calendarTool_buildDateTimeInfo(rec.get('startDate'), rec.get('endDate')),
-						loc = Ext.String.ellipsis(rec.get('location'), 150);
-					return {
-						rowBody: info + (!Ext.isEmpty(loc) ? (' <span style="color:grey;">' + Ext.String.htmlEncode('@'+loc) + '</span>') : '')
-					};
-				}
-			}],
-			listeners: {
-				rowdblclick: function(s, rec) {
-					var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
-					if (capi)
-						capi.openEvent({ ekey: rec.get('id') });
-				}
-			}
+		var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
+		me.calendarTool=capi.createEventsPortletBody({
+			region: 'center',
+			height: 150,
+			title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit")
 		});
-		
+		var tapi=WT.getServiceApi("com.sonicle.webtop.tasks");
+		me.tasksTool=tapi.createTasksPortletBody({
+			region: 'south',
+			split: true,
+			height: 150,
+			title: WT.res("com.sonicle.webtop.tasks","portlet.tasks.tit")
+		});
 
 		var tool = Ext.create({
 				xtype: 'panel',
@@ -219,7 +189,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				layout: 'border',
 				items: [
 					me.imapTree,
-					me.calendarTool
+					{
+						xtype: 'panel',
+						height: 300,
+						layout: 'border',
+						region: 'south',
+						split: true,
+						items: [
+							me.calendarTool,
+							me.tasksTool
+						]
+					}
 				]
 		});
 		me.setToolComponent(tool);
