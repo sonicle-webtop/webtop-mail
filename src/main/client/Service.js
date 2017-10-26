@@ -169,38 +169,46 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		
 		var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
-		me.calendarTool=capi.createEventsPortletBody({
-			region: 'center',
-			height: 150,
-			title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit")
-		});
+		if (capi)
+			me.calendarTool=capi.createEventsPortletBody({
+				region: 'center',
+				height: 150,
+				title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit")
+			});
 		var tapi=WT.getServiceApi("com.sonicle.webtop.tasks");
-		me.tasksTool=tapi.createTasksPortletBody({
-			region: 'south',
-			split: true,
-			height: 150,
-			title: WT.res("com.sonicle.webtop.tasks","portlet.tasks.tit")
-		});
+		if (tapi)
+			me.tasksTool=tapi.createTasksPortletBody({
+				region: 'south',
+				split: true,
+				height: 150,
+				title: WT.res("com.sonicle.webtop.tasks","portlet.tasks.tit")
+			});
+		
+		var subtools=null;
+		
+		if (me.calendarTool||me.tasksTool) {
+			var items=new Array();
+			if (me.calendarTool) items.push(me.calendarTool);
+			if (me.tasksTool) items.push(me.tasksTool);
+			subtools=Ext.create({
+				xtype: 'panel',
+				height: 300,
+				layout: 'border',
+				region: 'south',
+				split: true,
+				items: items
+			});
+		}
 
+		var toolitems=new Array();
+		toolitems.push(me.imapTree);
+		if (subtools) toolitems.push(subtools);
 		var tool = Ext.create({
 				xtype: 'panel',
 				title: me.getName(),
 				width: 200,
 				layout: 'border',
-				items: [
-					me.imapTree,
-					{
-						xtype: 'panel',
-						height: 300,
-						layout: 'border',
-						region: 'south',
-						split: true,
-						items: [
-							me.calendarTool,
-							me.tasksTool
-						]
-					}
-				]
+				items: toolitems
 		});
 		me.setToolComponent(tool);
 
@@ -252,6 +260,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				WT.warn(me.res('warn.autoresponder'));
 			}, 1000);
 		}
+		
+		me.on("activate", function() {
+			if (me.calendarTool) me.calendarTool.refresh();
+			if (me.tasksTool) me.tasksTool.refresh();
+		});
 		
 	},
 	

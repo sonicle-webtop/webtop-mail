@@ -135,7 +135,8 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
     },
 			
 	refresh: function() {
-		this.lref('gridMessages').getStore().load();
+		if (!this.isSearch)
+			this.lref('gridMessages').getStore().load();
 	},
 	
 	recents: function() {
@@ -180,9 +181,9 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
 					});
 					if (!json.data.finished) {
 						me.polltask.delay(1000, me.doSearchPolling, me);
-						me.lref("statusBar").setStatus(json.data.curfoldername+" - (..."+json.data.progress+"%...)");
+						me.lref("statusBar").setStatus(Ext.String.format(me.mys.res("portlet.mail.sbar.progress"),json.data.curfoldername,json.data.progress));
 					} else {
-						me.lref("statusBar").setStatus(" ");
+						me.lref("statusBar").setStatus(Ext.String.format(me.mys.res("portlet.mail.sbar.count"),json.data.totalRows));
 					}
 				} else {
 					WT.error(json.message);
