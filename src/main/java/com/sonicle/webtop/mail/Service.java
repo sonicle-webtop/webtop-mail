@@ -8033,6 +8033,8 @@ public class Service extends BaseService {
 			co.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
 			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes()));
 			co.put("autoResponderActive", mailManager.isAutoResponderActive());
+			co.put("showUpcomingEvents", us.getShowUpcomingEvents());
+			co.put("showUpcomingTasks", us.getShowUpcomingTasks());
 			
 			if (RunContext.isPermitted(SERVICE_ID, "FAX","ACCESS")) 
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());

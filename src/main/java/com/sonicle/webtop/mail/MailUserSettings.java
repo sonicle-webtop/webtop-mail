@@ -34,7 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
-import com.sonicle.webtop.core.app.WT;
+import static com.sonicle.webtop.mail.MailSettings.*;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import java.text.MessageFormat;
@@ -537,5 +537,23 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public boolean setPriority(boolean b) {
 		return setBoolean(PRIORITY,b);
+	}
+	
+	public boolean getShowUpcomingEvents() {
+		Boolean value = getBoolean(SHOW_UPCOMING_EVENTS, null);
+		return (value != null) ? value : mss.getDefaultShowUpcomingEvents();
+	}
+	
+	public boolean setShowUpcomingEvents(boolean value) {
+		return setBoolean(SHOW_UPCOMING_EVENTS, value);
+	}
+	
+	public boolean getShowUpcomingTasks() {
+		Boolean value = getBoolean(SHOW_UPCOMING_TASKS, null);
+		return (value != null) ? value : mss.getDefaultShowUpcomingTasks();
+	}
+	
+	public boolean setShowUpcomingTasks(boolean value) {
+		return setBoolean(SHOW_UPCOMING_TASKS, value);
 	}
 }

@@ -107,6 +107,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.fontSize = mus.getFontSize();
 				jso.receipt = mus.isReceipt();
 				jso.priority = mus.isPriority();
+				jso.showUpcomingEvents = mus.getShowUpcomingEvents();
+				jso.showUpcomingTasks = mus.getShowUpcomingTasks();
 
 				new JsonResult(jso).printTo(out);
 
@@ -205,6 +207,12 @@ public class UserOptionsService extends BaseUserOptionsService {
 				}
 				if (pl.map.has("priority")) {
 					mus.setPriority(pl.data.priority);
+				}
+				if (pl.map.has("showUpcomingEvents")) {
+					mus.setShowUpcomingEvents(pl.data.showUpcomingEvents);
+				}
+				if (pl.map.has("showUpcomingTasks")) {
+					mus.setShowUpcomingTasks(pl.data.showUpcomingTasks);
 				}
 
 				new JsonResult().printTo(out);

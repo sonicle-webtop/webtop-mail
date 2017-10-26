@@ -45,4 +45,18 @@ public class MailSettings {
 	 * The sieve management port.
 	 */
 	public static final String SIEVE_PORT = "sieve.port";
+	
+	/**
+	 * [user][default]
+	 * [boolean]
+	 * Activate a view showing all upcoming events.
+	 */
+	public static final String SHOW_UPCOMING_EVENTS = "upcoming.events.show";
+	
+	/**
+	 * [user][default]
+	 * [boolean]
+	 * Activate a view showing all upcoming tasks.
+	 */
+	public static final String SHOW_UPCOMING_TASKS = "upcoming.tasks.show";
 }

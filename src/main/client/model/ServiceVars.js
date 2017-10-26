@@ -44,7 +44,9 @@ Ext.define('Sonicle.webtop.mail.model.ServiceVars', {
 		{ name: 'messageViewRegion', type: 'string' },
 		{ name: 'messageViewWidth', type: 'int' },
 		{ name: 'messageViewHeight', type: 'int' },
-		{ name: 'columnSizes', type: 'string' }
+		{ name: 'columnSizes', type: 'string' },
+		WTF.field('showUpcomingEvents', 'boolean', true),
+		WTF.field('showUpcomingTasks', 'boolean', true)
 	],
 	hasMany: [{
 		name: 'identities',

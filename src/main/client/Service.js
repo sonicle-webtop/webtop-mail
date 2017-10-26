@@ -168,21 +168,29 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||r.get("isArchive")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
 		});
 		
-		var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
-		if (capi)
-			me.calendarTool=capi.createEventsPortletBody({
-				region: 'center',
-				height: 150,
-				title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit")
-			});
-		var tapi=WT.getServiceApi("com.sonicle.webtop.tasks");
-		if (tapi)
-			me.tasksTool=tapi.createTasksPortletBody({
-				region: 'south',
-				split: true,
-				height: 150,
-				title: WT.res("com.sonicle.webtop.tasks","portlet.tasks.tit")
-			});
+		if (me.getVar('showUpcomingEvents')) {
+			var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
+			if (capi)
+				me.calendarTool=capi.createEventsPortletBody({
+					region: 'center',
+					title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit"),
+					border: false,
+					height: 150
+				});
+		}
+		if (me.getVar('showUpcomingTasks')) {
+			var tapi=WT.getServiceApi("com.sonicle.webtop.tasks");
+			if (tapi)
+				me.tasksTool=tapi.createTasksPortletBody({
+					region: 'south',
+					title: WT.res("com.sonicle.webtop.tasks","portlet.tasks.tit"),
+					stateful: true,
+					stateId: me.buildStateId('pnlint-2'),
+					split: true,
+					border: false,
+					height: 150
+				});
+		}
 		
 		var subtools=null;
 		
@@ -191,11 +199,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			if (me.calendarTool) items.push(me.calendarTool);
 			if (me.tasksTool) items.push(me.tasksTool);
 			subtools=Ext.create({
+				region: 'south',
 				xtype: 'panel',
+				stateful: true,
+				stateId: me.buildStateId('pnlint-main'),
+				split: true,
+				border: false,
 				height: 300,
 				layout: 'border',
-				region: 'south',
-				split: true,
 				items: items
 			});
 		}

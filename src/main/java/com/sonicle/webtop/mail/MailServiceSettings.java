@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
+import static com.sonicle.webtop.mail.MailSettings.*;
 
 /**
  *
@@ -218,5 +219,13 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public int getDefaultSievePort() {
 		return getInteger(DEFAULT_PREFIX+MailSettings.SIEVE_PORT, 2000);
+	}
+	
+	public boolean getDefaultShowUpcomingEvents() {
+		return getBoolean(DEFAULT_PREFIX + SHOW_UPCOMING_EVENTS, false);
+	}
+	
+	public boolean getDefaultShowUpcomingTasks() {
+		return getBoolean(DEFAULT_PREFIX + SHOW_UPCOMING_TASKS, false);
 	}
 }

@@ -50,6 +50,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
 			ingridPreview: WTF.checkboxBind('record', 'ingridPreview'),
+			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
+			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks'),
 			canChangeAccountSettings: function(get) {
 				return get("record.canChangeAccountSettings");
 			},
@@ -118,7 +120,47 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					width: 340,
 					needReload: true,
 					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-				})
+				}),
+				{
+					xtype: 'soformseparator',
+					title: me.res('opts.main.panels.tit')
+				}, {
+					xtype: 'checkbox',
+					bind: '{showUpcomingEvents}',
+					hideEmptyLabel: false,
+					boxLabel: me.res('opts.main.fld-showUpcomingEvents.lbl'),
+					labelWidth: 20,
+					listeners: {
+						change: {
+							fn: function(s) {
+								//TODO: workaround...il modello veniva salvato prima dell'aggionamento
+								Ext.defer(function() {
+									me.onBlurAutoSave(s);
+								}, 200);
+							},
+							scope: me
+						}
+					},
+					needReload: true
+				}, {
+					xtype: 'checkbox',
+					bind: '{showUpcomingTasks}',
+					hideEmptyLabel: false,
+					boxLabel: me.res('opts.main.fld-showUpcomingTasks.lbl'),
+					labelWidth: 20,
+					listeners: {
+						change: {
+							fn: function(s) {
+								//TODO: workaround...il modello veniva salvato prima dell'aggionamento
+								Ext.defer(function() {
+									me.onBlurAutoSave(s);
+								}, 200);
+							},
+							scope: me
+						}
+					},
+					needReload: true
+				}
 			]
 		});
 		
