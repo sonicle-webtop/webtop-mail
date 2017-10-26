@@ -33,10 +33,11 @@
 Ext.define('Sonicle.webtop.mail.model.PletMail', {
 	extend: 'WTA.ux.data.BaseModel',
 	
-	idProperty: 'uid',
+	//idProperty: 'uid',
 	fields: [
 		WTF.roField('uid', 'int'),
 		WTF.roField('folderid', 'string'),
+		WTF.roField('foldername', 'string'),
 		WTF.roField('subject', 'string'),
 		WTF.roField('from', 'string'),
 		WTF.roField('to', 'string'),

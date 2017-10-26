@@ -270,7 +270,10 @@ public class SmartSearchThread extends Thread {
 										first=false;
 									}
 								}
-								sst.addMessage(msg.getUID(), folderId, msg.getSubject(), 
+								sst.addMessage(msg.getUID(), 
+										folderId, 
+										ms.getInternationalFolderName(ms.getFolderCache(folderId)),
+										msg.getSubject(), 
 										from,
 										to,
 										msg.getReceivedDate(),

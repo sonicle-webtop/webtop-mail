@@ -86,6 +86,7 @@ import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsInMailFilters;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
+import com.sonicle.webtop.mail.bol.js.JsPortletSearchResult;
 import com.sonicle.webtop.mail.bol.js.JsPreviewMessage;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
@@ -267,6 +268,7 @@ public class Service extends BaseService {
 	
 	private IVfsManager vfsmanager=null;
 	private SmartSearchThread sst;
+	private PortletSearchThread pst;
 	
 	static {
 		inlineableMimes.add("image/gif");
@@ -5188,7 +5190,10 @@ public class Service extends BaseService {
 					}
 					
 					JsPreviewMessage jsmsg=new JsPreviewMessage(
-						simsg.getUID(), folderId, simsg.getSubject(), 
+						simsg.getUID(), 
+						folderId,
+						getInternationalFolderName(getFolderCache(folderId)),
+						simsg.getSubject(), 
 						from,
 						to,
 						msg.getReceivedDate(),
@@ -5197,17 +5202,6 @@ public class Service extends BaseService {
 					items.add(jsmsg);
 				}
 			} else {
-/*				final Set<Integer> ids = folders.keySet();
-				for (FolderTasks foTaskObj : manager.listFolderTasks(ids, "%"+query+"%")) {
-					final CategoryRoot root = rootByFolder.get(foTaskObj.folder.getCategoryId());
-					if (root == null) continue;
-					final CategoryFolder folder = folders.get(foTaskObj.folder.getCategoryId());
-					if (folder == null) continue;
-					
-					for (TaskEx task : foTaskObj.tasks) {
-						items.add(new JsPletTasks(root, folder, task, DateTimeZone.UTC));
-					}
-				}*/
 			}
 			
 			new JsonResult(items).printTo(out);
@@ -7491,6 +7485,67 @@ public class Service extends BaseService {
 				}
 			}
 			else new JsonResult(false,"Smart search is not available").printTo(out);
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			new JsonResult(false,exc.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processPortletRunSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			boolean trash=false;
+			boolean spam=false;
+			
+			if (pst!=null && pst.isRunning())
+				pst.cancel();
+			
+			String pattern=ServletUtils.getStringParameter(request, "pattern", true);
+			String[] tokens = StringUtils.split(pattern, " ");
+			String patterns = "";
+			String searchfields = "";
+			boolean first=true;
+			for(String token : tokens) {
+				if (!first) { patterns+="|"; searchfields+="|"; }
+				patterns += token;
+				searchfields += "any";
+				first=false;
+			}
+			Set<String> _folderIds=foldersCache.keySet();
+			
+			//sort folders, placing first interesting ones
+			ArrayList<String> folderIds=new ArrayList<>();
+			Collections.sort(folderIds);
+			String firstFolders[]={"INBOX", us.getFolderSent()};
+			for(String folderId: firstFolders) folderIds.add(folderId);
+			for(String folderId: _folderIds) {
+				
+				if (isUnderSharedFolder(folderId)) continue;
+				//skip trash & spam unless selected
+				if (!trash && isTrashFolder(folderId)) continue;
+				if (!spam && isSpamFolder(folderId)) continue;
+				
+				folderIds.add(folderId);
+			}
+			
+			pst=new PortletSearchThread(this,patterns,searchfields,folderIds);
+			pst.start();
+			new JsonResult().printTo(out);
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			new JsonResult(false,exc.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processPortletPollSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			if (pst!=null) {
+				JsPortletSearchResult jspsr=pst.getPortletSearchResult();
+				synchronized(jspsr.lock) {
+					JsonResult jsr=new JsonResult(jspsr);
+					jsr.printTo(out);
+				}
+			}
+			else new JsonResult(false,"Portlet search is not available").printTo(out);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			new JsonResult(false,exc.getMessage()).printTo(out);

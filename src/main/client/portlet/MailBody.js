@@ -38,15 +38,24 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
 	
 	isSearch: false,
 	
+	storeRecents: null,
+	storeSearch: null,
+	
 	initComponent: function() {
 		var me = this;
+		
+		Ext.apply(me, {
+			
+			bbar: {
+				xtype: 'statusbar',
+				reference: 'statusBar',
+				hidden: true
+			}
+		});
+		
 		me.callParent(arguments);
-		me.add({
-			xtype: 'grid',
-			reference: 'gridMessages',
-			hideHeaders: true,
-			region: 'center',
-			store: {
+		
+		me.storeRecents=Ext.create('Ext.data.Store',{
 				autoLoad: true,
 				model: 'Sonicle.webtop.mail.model.PletMail',
 				proxy: WTF.apiProxy(me.mys.ID, 'PortletMail', 'data', {
@@ -54,7 +63,20 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
 						query: null
 					}
 				})
-			},
+		});
+		me.storeSearch=Ext.create('Ext.data.Store',{
+				autoLoad: false,
+				model: 'Sonicle.webtop.mail.model.PletMail',
+				data: [
+				]
+		});
+		
+		me.add({
+			xtype: 'grid',
+			reference: 'gridMessages',
+			hideHeaders: true,
+			region: 'center',
+			store: me.storeRecents,
 			columns: [
 				{ dataIndex: 'subject', flex: 1, tdCls: 'x-window-header-title-default wtmail-smartsearch-name-column' },
 				{ dataIndex: 'date', width: 160 }
@@ -62,14 +84,18 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
 			features: [{
 				ftype: 'rowbody',
 				getAdditionalData: function (data, idx, record, orig) {
-					var eto=Ext.String.escape(record.get("to")),
+					var efolderid=Ext.String.escape(record.get("folderid")),
+						foldername=Ext.String.htmlEncode(record.get("foldername")),
+						eto=Ext.String.escape(record.get("to")),
 						to=Ext.String.htmlEncode(record.get("to")),
 						from=Ext.String.htmlEncode(record.get("from")),
 						text=Ext.String.htmlEncode(record.get("text"));
 
 
 					return {
-						rowBody:"<div style='padding: 1em; width: 200px; overflow: ellipsis; white-space: nowrap' data-qtip='"+eto+"'>"+
+						rowBody:"<div style='padding: 1em; width: 200px; overflow: ellipsis; white-space: nowrap' data-qtip='"+efolderid+"'>"+
+								foldername+"</div>"+
+								"<div style='padding: 1em; width: 200px; overflow: ellipsis; white-space: nowrap' data-qtip='"+eto+"'>"+
 									'<b>'+me.mys.res("from")+':</b> '+from+'    '+
 									'<b>'+me.mys.res("to")+':</b> '+to+'</div>'+
 								'<pre style="padding: 1em">'+text+'</pre>',
@@ -80,10 +106,7 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
 			listeners: {
 				rowdblclick: function(grid, r, tr, rowIndex, e, eopts) {
 					me.openMessage(r);
-				}/*,
-				selectionchange: function(grid, recs, eopts) {
-					me.lref("buttonOpenInFolder").setDisabled(!recs || recs.length===0);
-				}*/
+				}
 			}
 		});
 	},
@@ -116,12 +139,56 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
 	},
 	
 	recents: function() {
-		this.isSearch = false;
-		WTU.loadWithExtraParams(this.lref('gridMessages').getStore(), {query: null});
+		var me=this;
+		me.isSearch = false;
+		me.lref('gridMessages').setStore(me.storeRecents);
+		me.lref("statusBar").hide();
 	},
 	
 	search: function(s) {
-		this.isSearch = true;
-		WTU.loadWithExtraParams(this.lref('gridMessages').getStore(), {query: s});
-	}
+		var me=this;
+		me.isSearch = true;
+		me.lref('gridMessages').setStore(me.storeSearch);
+		me.lref("statusBar").setStatus("(...0%...)");
+		me.lref("statusBar").show();
+		
+		WT.ajaxReq(me.mys.ID, 'PortletRunSearch', {
+			params: {
+				pattern: s
+			},
+			callback: function(success,json) {
+				if (success) {
+					if (!me.polltask) me.polltask=new Ext.util.DelayedTask();
+					me.polltask.delay(1000, me.doSearchPolling, me);
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});					
+		
+	},
+	
+	doSearchPolling: function() {
+		var me=this;
+	
+		WT.ajaxReq(me.mys.ID, 'PortletPollSearch', {
+			callback: function(success,json) {
+				if (success) {
+					me.storeSearch.removeAll();
+					Ext.each(json.data.messages, function(m) {
+						me.storeSearch.add({ uid: m.uid, folderid: m.folderid, foldername: m.foldername, subject: m.subject, from: m.from, to: m.to, date: m.date, text: m.text });
+					});
+					if (!json.data.finished) {
+						me.polltask.delay(1000, me.doSearchPolling, me);
+						me.lref("statusBar").setStatus(json.data.curfoldername+" - (..."+json.data.progress+"%...)");
+					} else {
+						me.lref("statusBar").setStatus(" ");
+					}
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});					
+	},
+	
 });

@@ -33,46 +33,36 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
-import com.sonicle.commons.time.DateTimeUtils;
+import java.util.ArrayList;
 import java.util.Date;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
 
 /**
  *
  * @author gabriele.bulfon
  */
-public class JsPreviewMessage {
-		long uid;
-		String folderid;
-		String foldername;
-		String subject;
-		String from;
-		String to;
-		String date;
-		String text;
-		
-		public JsPreviewMessage(long uid, String folderid, String foldername, String subject, String from, String to, Date date, String text) {
-			DateTimeFormatter ymdhmsZoneFmt = DateTimeUtils.createYmdHmsFormatter();
-			String sdate=ymdhmsZoneFmt.print(new DateTime(date));
-			this.uid=uid;
-			this.folderid=folderid;
-			this.foldername=foldername;
-			this.subject=subject;
-			this.from=from;
-			this.to=to;
-			this.date=sdate;
-			this.text=text;
-		}
-		
-		public JsPreviewMessage(long uid, String folderid, String foldername, String subject, String from, String to, String date, String text) {
-			this.uid=uid;
-			this.folderid=folderid;
-			this.foldername=foldername;
-			this.subject=subject;
-			this.from=from;
-			this.to=to;
-			this.date=date;
-			this.text=text;
+public class JsPortletSearchResult {
+
+	public Object lock=new Object();
+	
+	public int totalRows = 0;
+	public int visibleRows = 0;
+	public ArrayList<JsPreviewMessage> messages=new ArrayList<>();
+	
+	public boolean finished=false;
+	public int progress=0;
+	public String curfoldername=null;
+	
+	public void addMessage(long uid, String folderid, String foldername, String subject, String from, String to, Date date, String text) {
+		synchronized(lock) {
+			messages.add(new JsPreviewMessage(uid,folderid,foldername,subject,from,to,date,text));
 		}
 	}
+	
+	public void addMessage(long uid, String folderid, String foldername, String subject, String from, String to, String date, String text) {
+		synchronized(lock) {
+			messages.add(new JsPreviewMessage(uid,folderid,foldername,subject,from,to,date,text));
+		}
+	}
+	
+	
+}

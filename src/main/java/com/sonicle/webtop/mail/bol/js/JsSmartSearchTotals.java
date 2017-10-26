@@ -106,15 +106,15 @@ public class JsSmartSearchTotals {
 		return f;
 	}
 	
-	public void addMessage(long uid, String folderid, String subject, String from, String to, Date date, String text) {
+	public void addMessage(long uid, String folderid, String foldername, String subject, String from, String to, Date date, String text) {
 		synchronized(lock) {
-			messages.add(new JsPreviewMessage(uid,folderid,subject,from,to,date,text));
+			messages.add(new JsPreviewMessage(uid,folderid,foldername,subject,from,to,date,text));
 		}
 	}
 	
-	public void addMessage(long uid, String folderid, String subject, String from, String to, String date, String text) {
+	public void addMessage(long uid, String folderid, String foldername, String subject, String from, String to, String date, String text) {
 		synchronized(lock) {
-			messages.add(new JsPreviewMessage(uid,folderid,subject,from,to,date,text));
+			messages.add(new JsPreviewMessage(uid,folderid,foldername,subject,from,to,date,text));
 		}
 	}
 	
