@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import java.util.regex.Pattern;
+import org.codehaus.plexus.util.StringUtils;
 
 /**
  *
@@ -95,18 +96,18 @@ public class Mailcard {
 			String custom1=personalInfo.getCustom01();
 			String custom2=personalInfo.getCustom02();
 			String custom3=personalInfo.getCustom03();
-			if(title != null) html = PATTERN_TITLE.matcher(html).replaceAll(title);
-			if(firstName != null) html = PATTERN_FIRST_NAME.matcher(html).replaceAll(firstName);
-			if(lastName != null) html = PATTERN_LAST_NAME.matcher(html).replaceAll(lastName);
-			if(company != null) html = PATTERN_COMPANY.matcher(html).replaceAll(company);
-			if(function != null) html = PATTERN_FUNCTION.matcher(html).replaceAll(function);
-			if(email != null) html = PATTERN_WORK_EMAIL.matcher(html).replaceAll(email);
-			if(mobile != null) html = PATTERN_WORK_MOBILE.matcher(html).replaceAll(mobile);
-			if(telephone != null) html = PATTERN_WORK_TELEPHONE.matcher(html).replaceAll(telephone);
-			if(fax != null) html = PATTERN_WORK_FAX.matcher(html).replaceAll(fax);
-			if(custom1 != null) html = PATTERN_CUSTOM_1.matcher(html).replaceAll(custom1);
-			if(custom2 != null) html = PATTERN_CUSTOM_2.matcher(html).replaceAll(custom2);
-			if(custom3 != null) html = PATTERN_CUSTOM_3.matcher(html).replaceAll(custom3);
+			html = PATTERN_TITLE.matcher(html).replaceAll(StringUtils.defaultString(title));
+			html = PATTERN_FIRST_NAME.matcher(html).replaceAll(StringUtils.defaultString(firstName));
+			html = PATTERN_LAST_NAME.matcher(html).replaceAll(StringUtils.defaultString(lastName));
+			html = PATTERN_COMPANY.matcher(html).replaceAll(StringUtils.defaultString(company));
+			html = PATTERN_FUNCTION.matcher(html).replaceAll(StringUtils.defaultString(function));
+			html = PATTERN_WORK_EMAIL.matcher(html).replaceAll(StringUtils.defaultString(email));
+			html = PATTERN_WORK_MOBILE.matcher(html).replaceAll(StringUtils.defaultString(mobile));
+			html = PATTERN_WORK_TELEPHONE.matcher(html).replaceAll(StringUtils.defaultString(telephone));
+			html = PATTERN_WORK_FAX.matcher(html).replaceAll(StringUtils.defaultString(fax));
+			html = PATTERN_CUSTOM_1.matcher(html).replaceAll(StringUtils.defaultString(custom1));
+			html = PATTERN_CUSTOM_2.matcher(html).replaceAll(StringUtils.defaultString(custom2));
+			html = PATTERN_CUSTOM_3.matcher(html).replaceAll(StringUtils.defaultString(custom3));
 		}
 		return html;
 	}
