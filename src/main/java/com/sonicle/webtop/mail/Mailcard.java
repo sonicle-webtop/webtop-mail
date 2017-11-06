@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import java.util.regex.Pattern;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.codehaus.plexus.util.StringUtils;
 
 /**
@@ -96,18 +97,18 @@ public class Mailcard {
 			String custom1=personalInfo.getCustom01();
 			String custom2=personalInfo.getCustom02();
 			String custom3=personalInfo.getCustom03();
-			html = PATTERN_TITLE.matcher(html).replaceAll(StringUtils.defaultString(title));
-			html = PATTERN_FIRST_NAME.matcher(html).replaceAll(StringUtils.defaultString(firstName));
-			html = PATTERN_LAST_NAME.matcher(html).replaceAll(StringUtils.defaultString(lastName));
-			html = PATTERN_COMPANY.matcher(html).replaceAll(StringUtils.defaultString(company));
-			html = PATTERN_FUNCTION.matcher(html).replaceAll(StringUtils.defaultString(function));
-			html = PATTERN_WORK_EMAIL.matcher(html).replaceAll(StringUtils.defaultString(email));
-			html = PATTERN_WORK_MOBILE.matcher(html).replaceAll(StringUtils.defaultString(mobile));
-			html = PATTERN_WORK_TELEPHONE.matcher(html).replaceAll(StringUtils.defaultString(telephone));
-			html = PATTERN_WORK_FAX.matcher(html).replaceAll(StringUtils.defaultString(fax));
-			html = PATTERN_CUSTOM_1.matcher(html).replaceAll(StringUtils.defaultString(custom1));
-			html = PATTERN_CUSTOM_2.matcher(html).replaceAll(StringUtils.defaultString(custom2));
-			html = PATTERN_CUSTOM_3.matcher(html).replaceAll(StringUtils.defaultString(custom3));
+			html = PATTERN_TITLE.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(title)));
+			html = PATTERN_FIRST_NAME.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(firstName)));
+			html = PATTERN_LAST_NAME.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(lastName)));
+			html = PATTERN_COMPANY.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(company)));
+			html = PATTERN_FUNCTION.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(function)));
+			html = PATTERN_WORK_EMAIL.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(email)));
+			html = PATTERN_WORK_MOBILE.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(mobile)));
+			html = PATTERN_WORK_TELEPHONE.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(telephone)));
+			html = PATTERN_WORK_FAX.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(fax)));
+			html = PATTERN_CUSTOM_1.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(custom1)));
+			html = PATTERN_CUSTOM_2.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(custom2)));
+			html = PATTERN_CUSTOM_3.matcher(html).replaceAll(StringUtils.defaultString(StringEscapeUtils.escapeHtml4(custom3)));
 		}
 		return html;
 	}
