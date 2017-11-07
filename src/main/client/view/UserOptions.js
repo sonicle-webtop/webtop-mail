@@ -195,7 +195,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'numberfield',
 					bind: '{record.fontSize}',
 					fieldLabel: WT.res('word.size'),
-					width: 200,
+					width: 230,
 					hideTrigger: true,
 					keyNavEnabled: false,
 					mouseWheelEnabled: false,
