@@ -59,4 +59,6 @@ public class JsMessage {
     public String forwardedfrom;
     //Reply/Forward data
     public long origuid;
+	public long draftuid;
+	public String draftfolder;
 }

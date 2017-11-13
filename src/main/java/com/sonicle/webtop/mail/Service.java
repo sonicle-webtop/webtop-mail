@@ -3764,7 +3764,7 @@ public class Service extends BaseService {
 			boolean result = true;
 			sout = "{\n";
 			mcache = getFolderCache(folder);
-			if (isSpecialFolder(folder)) {
+			if (!isUnderFolder(mprofile.getFolderArchive(),folder) && isSpecialFolder(folder)) {
 				result = false;
 			} else {
 				result = deleteFolder(folder);
@@ -3789,7 +3789,7 @@ public class Service extends BaseService {
 			boolean result = true;
 			sout = "{\n";
 			mcache = getFolderCache(folder);
-			if (isSpecialFolder(folder)) {
+			if (!isUnderFolder(mprofile.getFolderArchive(),folder) && isSpecialFolder(folder)) {
 				result = false;
 			} else {
 				FolderCache newfc = trashFolder(folder);
@@ -4472,6 +4472,11 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			Exception exc = sendMessage(msg, jsmsg.attachments);
 			if (exc == null) {
+				//if is draft, check for deletion
+				if (jsmsg.draftuid>0 && jsmsg.draftfolder!=null && ss.isDefaultFolderDraftsDeleteMsgOnSend()) {
+					FolderCache fc=getFolderCache(jsmsg.draftfolder);
+					fc.deleteMessages(new long[] { jsmsg.draftuid }, false);
+				}
 				
 				//Save used recipients
 				for(JsRecipient rcpt: pl.data.recipients) {

@@ -536,7 +536,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
         me.on('rowdblclick',function(grid, r, tr, rowIndex, e, eopts) {
 			var folder=me.multifolder?r.get("folder"):me.currentFolder;
-			if (me.mys.isDrafts(folder)) me.editMessage(r);
+			if (me.mys.isDrafts(folder)) me.editMessage(r,true);
 			else me.openMessage(r);
 		});
 		me.on('cellclick',function(grid, td, cellIndex, r, rowIndex, e, eopts) {
@@ -954,11 +954,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.editMessage(recs[0],false);
     },
     
-    editMessage: function(r,del) {
-        this.editMessageById(r.get('folder')||this.currentFolder,r.get("idmessage"),del);
+    editMessage: function(r,isdraft) {
+        this.editMessageById(r.get('folder')||this.currentFolder,r.get("idmessage"),isdraft);
     },
     
-    editMessageById: function(idfolder,idmessage,del) {
+    editMessageById: function(idfolder,idmessage,isdraft) {
         var me=this,msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
         
 		WT.ajaxReq(me.mys.ID, 'GetEditMessage', {
@@ -984,11 +984,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						replyfolder: json.replyfolder,
 						inreplyto: json.inreplyto,
 						references: json.references,
-						origuid: json.origuid
+						origuid: json.origuid,
+						draftuid: isdraft?idmessage:0,
+						draftfolder: isdraft?idfolder:null
 					});
-                    if (del) {
-                        //TODO: remove original
-                    }
 				} else {
 					WT.error(json.text);
 				}

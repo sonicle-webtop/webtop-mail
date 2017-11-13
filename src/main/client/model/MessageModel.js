@@ -60,7 +60,9 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
         { name: "forwardedfolder", type: 'string' },
         { name: "forwardedfrom", type: 'string' },
         //Reply/Forward data
-        { name: "origuid", type: 'int' }
+        { name: "origuid", type: 'int' },
+        { name: "draftuid", type: 'int' },
+		{ name: "draftfolder", type: 'string' }
 	]
 	
 });

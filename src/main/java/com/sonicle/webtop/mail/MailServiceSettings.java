@@ -181,6 +181,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_SPAM,null);
 	}
 	
+	public boolean isDefaultFolderDraftsDeleteMsgOnSend() {
+		return getBoolean(DEFAULT_PREFIX+MailUserSettings.FOLDER_DRAFTS_DELETEMSGONSEND,false);
+	}
+	
 	public boolean isDefaultIncludeMessageInReply() {
 		return getBoolean(DEFAULT_PREFIX+MailUserSettings.INCLUDE_MESSAGE_IN_REPLY,true);
 	}

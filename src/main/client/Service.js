@@ -714,7 +714,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			references: data.references,
 			origuid: data.origuid,
 			forwardedfolder: data.forwardedfolder,
-			forwardedfrom: data.forwardedfrom
+			forwardedfrom: data.forwardedfrom,
+			draftuid: data.draftuid,
+			draftfolder: data.draftfolder
 		});
 
 		return true;
@@ -834,7 +836,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 origuid: opts.origuid,
                 forwardedfolder: opts.forwardedfolder,
                 forwardedfrom: opts.forwardedfrom,
-				fax: opts.fax
+				fax: opts.fax,
+				draftuid: opts.draftuid,
+				draftfolder: opts.draftfolder
 			});
 		});
 	},

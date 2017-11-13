@@ -673,6 +673,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				if (f) {
 					
 				}
+				if (r.get("draftuid")>0 && r.get("draftfolder")==me.mys.currentFolder) {
+					me.mys.reloadFolderList();
+				}
 			} else {
 				if (me.autosaveTask) me.autosaveTask.delay(me.autosaveDelay);
 				me.enableControls(false,true);

@@ -68,6 +68,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String FOLDER_ARCHIVE = "folder.archive";
 	public static final String FOLDER_SPAM = "folder.spam";
 	public static final String DEFAULT_FOLDER = "defaultfolder";
+	public static final String FOLDER_DRAFTS_DELETEMSGONSEND = "folder.drafts.deletemsgonsend";
 	public static final String REPLY_TO = "reply.to";
 	public static final String SHARED_SORT = "shared.sort";
 	public static final String INCLUDE_MESSAGE_IN_REPLY = "include.message.in.reply";
