@@ -4936,7 +4936,10 @@ public class Service extends BaseService {
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
                 
 				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
-				String htmlcontent = MailUtils.htmlescapefixsource(content);
+				String htmlcontent = MailUtils.htmlescapefixsource(content).trim();
+				if (htmlcontent.length()<6 || !htmlcontent.substring(0,6).toLowerCase().equals("<html>")) {
+					htmlcontent="<html><header></header><body>"+htmlcontent+"</body></html>";
+				}
 				msg.setContent(htmlcontent, textcontent, "text/html");
 			} else {
 				msg.setContent(jsmsg.content, null, "text/"+jsmsg.format);
