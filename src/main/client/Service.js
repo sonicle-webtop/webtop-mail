@@ -91,7 +91,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	init: function() {
-		var me=this;
+		var me=this,
+				sue = me.getVar('showUpcomingEvents'),
+				sut = me.getVar('showUpcomingTasks');
 		
 		me.initActions();
 
@@ -100,7 +102,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			autoLoad: true,
 			model: 'Sonicle.webtop.mail.model.Tag',
 			proxy: WTF.apiProxy(me.ID, 'ManageTags','data')
-		})
+		});
 		
 		me.initCxm();
 		
@@ -172,32 +174,36 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
 			if (capi)
 				me.calendarTool=capi.createEventsPortletBody({
-					region: 'center',
 					title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit"),
 					border: false,
-					height: 150
+					width: '100%',
+					flex: 1
 				});
 		}
 		if (me.getVar('showUpcomingTasks')) {
 			var tapi=WT.getServiceApi("com.sonicle.webtop.tasks");
 			if (tapi)
 				me.tasksTool=tapi.createTasksPortletBody({
-					region: 'south',
 					title: WT.res("com.sonicle.webtop.tasks","portlet.tasks.tit"),
-					stateful: true,
-					stateId: me.buildStateId('pnlint-2'),
 					split: true,
 					border: false,
-					height: 150
+					width: '100%',
+					flex: 1
 				});
 		}
 		
 		var subtools=null;
 		
 		if (me.calendarTool||me.tasksTool) {
-			var items=new Array();
-			if (me.calendarTool) items.push(me.calendarTool);
-			if (me.tasksTool) items.push(me.tasksTool);
+			var items=new Array(), sth = 0;
+			if (me.calendarTool) {
+				sth += 150;
+				items.push(me.calendarTool);
+			}
+			if (me.tasksTool) {
+				sth += 150;
+				items.push(me.tasksTool);
+			}
 			subtools=Ext.create({
 				region: 'south',
 				xtype: 'panel',
@@ -205,8 +211,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				stateId: me.buildStateId('pnlint-main'),
 				split: true,
 				border: false,
-				height: 300,
-				layout: 'border',
+				height: sth,
+				layout: 'vbox',
 				items: items
 			});
 		}
