@@ -95,21 +95,21 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				}), {
 					xtype: 'checkbox',
 					bind: '{ingridPreview}',
-					fieldLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
+					hideEmptyLabel: false,
+					boxLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
 					needReload: true,
-					width: 100,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
 					xtype: 'checkbox',
 					bind: '{sharedSeen}',
-					fieldLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
-					width: 100,
+					hideEmptyLabel: false,
+					boxLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
 					xtype: 'checkbox',
 					bind: '{manualSeen}',
-					fieldLabel: me.res('opts.adv.fld-manualSeen.lbl'),
-					width: 100,
+					hideEmptyLabel: false,
+					boxLabel: me.res('opts.adv.fld-manualSeen.lbl'),
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, WTF.lookupCombo('id', 'desc', {
 					bind: '{record.sharedSort}',
