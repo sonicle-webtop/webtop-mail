@@ -33,8 +33,6 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sonicle.webtop.core.app.CoreManifest;
-import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
 import static com.sonicle.webtop.mail.MailSettings.*;
 
@@ -84,8 +82,13 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(DMS_ARCHIVE,null);
 	}
 	
-	public int getAttachmentMaxSize() {
-		return getInteger(ATTACHMENT_MAXSIZE,10*1024*1024);
+	public long getAttachmentMaxFileSize(boolean fallbackOnDefault) {
+		final Long value = getLong(ATTACHMENT_MAXFILESIZE, null);
+		if (fallbackOnDefault && (value == null)) {
+			return getDefaultAttachmentMaxFileSize();
+		} else {
+			return value;
+		}
 	}
 	
 /*	public String getAttachDir() {
@@ -222,7 +225,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}
 	
 	public int getDefaultSievePort() {
-		return getInteger(DEFAULT_PREFIX+MailSettings.SIEVE_PORT, 2000);
+		return getInteger(DEFAULT_PREFIX + SIEVE_PORT, 2000);
 	}
 	
 	public boolean getDefaultShowUpcomingEvents() {
@@ -231,5 +234,9 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public boolean getDefaultShowUpcomingTasks() {
 		return getBoolean(DEFAULT_PREFIX + SHOW_UPCOMING_TASKS, false);
+	}
+	
+	public long getDefaultAttachmentMaxFileSize() {
+		return getLong(DEFAULT_PREFIX + ATTACHMENT_MAXFILESIZE, (long)10485760); // 10MB
 	}
 }

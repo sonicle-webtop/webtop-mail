@@ -8018,6 +8018,7 @@ public class Service extends BaseService {
 				else loadIdentityMailcard(jsid);
 			}
 			
+			co.put("attachmentMaxFileSize", ss.getAttachmentMaxFileSize(true));
 			co.put("folderDrafts", us.getFolderDrafts());
 			co.put("folderSent", us.getFolderSent());
 			co.put("folderSpam", us.getFolderSpam());

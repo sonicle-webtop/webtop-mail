@@ -287,34 +287,33 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					extraParams: {
 						tag: me.msgId
 					},
-                    dropElement: me.getId()
+                    dropElement: me.getId(),
+					maxFileSize: me.mys.getVar('attachmentMaxFileSize')
 				}),
 				listeners: {
 					beforeupload: function(s,file) {
 						me.htmlEditor.showProgress(file.name);
+					},
+					uploadcomplete: function(s,fok,ffailed) {
+						//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
+					},
+					uploaderror: function(s, file, cause) {
+						me.htmlEditor.hideProgress();
+						WTA.ux.UploadBar.handleUploadError(s, file, cause);
 					},
 					uploadprogress: function(s,file) {
 						me.htmlEditor.setProgress(file.percent);
 					},
 					fileuploaded: function(s,file,resp) {
 						me.htmlEditor.hideProgress();
-						me.attlist.addAttachment(
-								{ 
-                                    msgId: me.msgId, 
-                                    uploadId: resp.data.uploadId, 
-                                    fileName: file.name, 
-                                    cid: null,
-                                    inline: false,
-                                    fileSize: file.size 
-                                }
-						);
-					},
-					uploaderror: function(s,file,msg) {
-						me.htmlEditor.hideProgress();
-						WT.error(msg);
-					},
-					uploadcomplete: function(s,fok,ffailed) {
-						//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
+						me.attlist.addAttachment({
+							msgId: me.msgId,
+							uploadId: resp.data.uploadId,
+							fileName: file.name,
+							cid: null,
+							inline: false,
+							fileSize: file.size
+						});
 					}
 				}
 			};		
@@ -385,7 +384,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		//TODO complete implementation
 		if (me.showCloud) {
-			var vfsapi=WT.getServiceApi("com.sonicle.webtop.vfs");
+			var vfsapi = WT.getServiceApi('com.sonicle.webtop.vfs');
             if (vfsapi) {
 				tbitems[tbx++]='-';
 				tbitems[tbx++]={
@@ -397,9 +396,17 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						extraParams: {
 							tag: me.msgId
 						},
+						maxFileSize: vfsapi.getVar('privateUploadMaxFileSize'),
 						listeners: {
 							beforeupload: function(s,file) {
 								me.htmlEditor.showProgress(file.name);
+							},
+							uploadcomplete: function(s,fok,ffailed) {
+								//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
+							},
+							uploaderror: function(s, file, cause) {
+								me.htmlEditor.hideProgress();
+								WTA.ux.UploadBar.handleUploadError(s, file, cause);
 							},
 							uploadprogress: function(s,file) {
 								me.htmlEditor.setProgress(file.percent);
@@ -414,13 +421,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 											me.htmlEditor.execCommand('inserthtml', false, "<br>"+result.embed+"<br>");
 									}
 								});
-							},
-							uploaderror: function(s,file,msg) {
-								me.htmlEditor.hideProgress();
-								WT.error(msg);
-							},
-							uploadcomplete: function(s,fok,ffailed) {
-								//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
 							}
 						}
 					})
@@ -524,11 +524,19 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						uploaderConfig: WTF.uploader(me.mys.ID,'UploadCid',{
 							extraParams: {
 								tag: me.msgId
-							}
+							},
+							maxFileSize: me.mys.getVar('attachmentMaxFileSize')
 						}),
 						listeners: {
 							beforeupload: function(s,file) {
 								me.htmlEditor.showProgress(file.name);
+							},
+							uploadcomplete: function(s,fok,ffailed) {
+								//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
+							},
+							uploaderror: function(s, file, cause) {
+								me.htmlEditor.hideProgress();
+								WTA.ux.UploadBar.handleUploadError(s, file, cause);
 							},
 							uploadprogress: function(s,file) {
 								me.htmlEditor.setProgress(file.percent);
@@ -552,13 +560,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 										cid: file.name
 									})
 								);
-							},
-							uploaderror: function(s,file,msg) {
-								me.htmlEditor.hideProgress();
-								WT.error(msg);
-							},
-							uploadcomplete: function(s,fok,ffailed) {
-								//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
 							}
 						}
 					},

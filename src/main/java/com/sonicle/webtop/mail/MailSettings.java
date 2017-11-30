@@ -40,6 +40,13 @@ package com.sonicle.webtop.mail;
 public class MailSettings {
 	
 	/**
+	 * [user+domain+system][default]
+	 * [long]
+	 * Maximum file size single message attachment
+	 */
+	public static final String ATTACHMENT_MAXFILESIZE = "attachment.maxfilesize";
+	
+	/**
 	 * [system+domain][default]
 	 * [int]
 	 * The sieve management port.
