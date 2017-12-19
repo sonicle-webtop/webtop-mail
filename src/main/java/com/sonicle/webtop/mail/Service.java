@@ -34,6 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.EnumUtils;
+import com.sonicle.commons.InternetAddressUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.CoreLocaleKey;
 import com.sonicle.commons.LangUtils;
@@ -131,7 +132,6 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.jar.*;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.activation.*;
 import javax.mail.*;
@@ -860,7 +860,7 @@ public class Service extends BaseService {
 	  }
 	  InternetAddress ia[]=InternetAddress.parse(email, false);
 	  //build an InternetAddress with UTF8 personal, if present
-	  InternetAddress retia=MailUtils.buildInternetAddress(ia[0].getAddress(),ia[0].getPersonal());
+	  InternetAddress retia=InternetAddressUtils.toInternetAddress(ia[0].getAddress(),ia[0].getPersonal());
 	  return retia;
 	}
 	
@@ -6705,7 +6705,7 @@ public class Service extends BaseService {
 					UserProfile.Data ud = WT.getUserData(pid);
 					
 					if (ev != null) {
-						InternetAddress organizer = MailUtils.buildInternetAddress(ev.getOrganizer());
+						InternetAddress organizer = InternetAddressUtils.toInternetAddress(ev.getOrganizer());
 						boolean iAmOwner = pid.equals(cm.getCalendarOwner(ev.getCalendarId()));
 						boolean iAmOrganizer = (organizer != null) && StringUtils.equalsIgnoreCase(organizer.getAddress(), ud.getEmailAddress());
 						
