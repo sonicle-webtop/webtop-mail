@@ -1067,6 +1067,12 @@ public class FolderCache {
             to.modified=true;
         }
     }
+	
+	private LocalDate getArchivingReferenceDate(Message message) throws MessagingException {
+		java.util.Date date = message.getSentDate();
+		if (date == null) date = message.getReceivedDate();
+		return new LocalDate(date);
+	}
 
     public void archiveMessages(long uids[], String folderarchive, boolean fullthreads) throws MessagingException {
 		if (canDelete()) {
@@ -1077,7 +1083,7 @@ public class FolderCache {
 			Message xmmsg[]=new Message[1];
 			for(Message mmsg: mmsgs) {
 				folderarchive=xfolderarchive;
-				LocalDate ld=new LocalDate(mmsg.getReceivedDate());
+				LocalDate ld=getArchivingReferenceDate(mmsg);
 				FolderCache fcto=ms.checkCreateAndCacheFolder(folderarchive);
 				if (mus.getArchiveMode().equals(MailUserSettings.ARCHIVING_MODE_YEAR)) {
 					folderarchive+=sep+ld.getYear();
