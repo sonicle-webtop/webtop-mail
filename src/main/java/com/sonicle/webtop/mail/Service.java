@@ -1138,16 +1138,13 @@ public class Service extends BaseService {
 			//else create a multipart/alternative with both rich and text mime content
 			if (textcontent == null || smsg.getMime().equalsIgnoreCase("text/plain")) {
 				MimeBodyPart mbp1 = new MimeBodyPart();
-				mbp1.setText(smsg.getContent(), "UTF-8");
-				mbp1.setHeader("Content-type", smsg.getMime());
-				
+				mbp1.setContent(smsg.getContent(), MailUtils.buildPartContentType(smsg.getMime(), "UTF-8"));
 				mp.addBodyPart(mbp1);
 			} else {
 				MimeMultipart alternative = new MimeMultipart("alternative");
 				//the rich part
 				MimeBodyPart mbp2 = new MimeBodyPart();
-				mbp2.setText(smsg.getContent(), "UTF-8");
-				mbp2.setHeader("Content-type", smsg.getMime());
+				mbp2.setContent(smsg.getContent(), MailUtils.buildPartContentType(smsg.getMime(), "UTF-8"));
 				//the text part
 				MimeBodyPart mbp1 = new MimeBodyPart();
 
@@ -1161,8 +1158,7 @@ public class Service extends BaseService {
 				 }
 				 }
 				 textcontent=new String(bos.toByteArray());*/
-				mbp1.setText(textcontent, "UTF-8");
-				mbp1.setHeader("Content-type", "text/plain");
+				mbp1.setContent(textcontent, MailUtils.buildPartContentType("text/plain", "UTF-8"));
 //          mbp1.setHeader("Content-transfer-encoding","quoted-printable");
 
 				alternative.addBodyPart(mbp1);
@@ -7121,8 +7117,7 @@ public class Service extends BaseService {
 			smsg.setContent("");
 
 			javax.mail.internet.MimeBodyPart part2 = new javax.mail.internet.MimeBodyPart();
-			part2.setText(icalContent, "UTF-8");
-			part2.setHeader("Content-type", icalContentType);
+			part2.setContent(icalContent, MailUtils.buildPartContentType(icalContentType, "UTF-8"));
 			part2.setHeader("Content-Transfer-Encoding", "8BIT");
 			//part2.setFileName("webtop-reply.ics");
 			/*javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();

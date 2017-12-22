@@ -266,7 +266,8 @@ public class SaxHTMLMailParser extends DefaultHandler {
 
     if(justBody) {
       if(isbody) {
-        pwriter.print(MailUtils.htmlescape(chars, start, len));
+        //pwriter.print(MailUtils.htmlescape(chars, start, len));
+		pwriter.print(MailUtils.htmlescape(new String(chars, start, len)));
         return;
       }
     }
@@ -300,8 +301,9 @@ public class SaxHTMLMailParser extends DefaultHandler {
 	  //skip any scripting
       //pwriter.write(chars, start, len);
     } else {
-	  String html=MailUtils.htmlescape(chars, start, len);
-      pwriter.print(html);
+	  //String html=MailUtils.htmlescape(chars, start, len);
+      //pwriter.print(html);
+	  pwriter.print(MailUtils.htmlescape(new String(chars, start, len)));
     }
   }
 
