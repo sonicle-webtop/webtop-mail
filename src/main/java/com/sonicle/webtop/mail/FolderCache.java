@@ -2436,6 +2436,7 @@ public class FolderCache {
   private void doHTMLMailParse(SaxHTMLMailParser saxHTMLMailParser, InputStream istream, String charset) throws SAXException, IOException {
     HTMLInputStream hstream=new HTMLInputStream(istream);
     XMLReader xmlparser=XMLReaderFactory.createXMLReader("org.cyberneko.html.parsers.SAXParser");
+	xmlparser.setProperty("http://xml.org/sax/properties/lexical-handler", saxHTMLMailParser);
     xmlparser.setContentHandler(saxHTMLMailParser);
     xmlparser.setErrorHandler(saxHTMLMailParser);
     while(!hstream.isRealEof()) {
