@@ -37,10 +37,12 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.MailUtils;
 import java.io.*;
 import java.util.*;
+import org.apache.commons.lang3.StringUtils;
 import org.xml.sax.*;
+import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.*;
 
-public class SaxHTMLMailParser extends DefaultHandler {
+public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler {
 
   private Body body=new Body();
 
@@ -65,6 +67,7 @@ public class SaxHTMLMailParser extends DefaultHandler {
   private static Vector unenclosedTags=new Vector();
 
   private HTMLMailData mailData=null;
+  private String lastComment = null;
 
   static {
     unenclosedTags.addElement("IMG");
@@ -154,112 +157,119 @@ public class SaxHTMLMailParser extends DefaultHandler {
     pwriter.flush();
   }
 
-  public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
-    if (qName.equalsIgnoreCase("html")) {
-        inhtml=true;
-        return;
-    }
-    if (!inhtml) return;
-    
-    //store body attributes
-    if(qName.equalsIgnoreCase("body")) {
-      body.setData(attributes);
+	@Override
+	public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException {
+		if (lastComment != null) {
+			pwriter.print("<!--" + lastComment + "-->");
+			lastComment = null;
+		}
+		
+		if (qName.equalsIgnoreCase("html")) {
+			inhtml = true;
+			return;
+		}
+		if (!inhtml) {
+			return;
+		}
 
-    }
-	
-	//filter out any script element
-	if (qName.equalsIgnoreCase("script")) {
-		isscript=true;
-		return;
-	}
-	
-    if(!isbody) {
-      /*if(!isscript&&qName.equalsIgnoreCase("script")) {
+		//store body attributes
+		if (qName.equalsIgnoreCase("body")) {
+			body.setData(attributes);
+
+		}
+
+		//filter out any script element
+		if (qName.equalsIgnoreCase("script")) {
+			isscript = true;
+			return;
+		}
+
+		if (!isbody) {
+			/*if(!isscript&&qName.equalsIgnoreCase("script")) {
         isscript=true;
       }*/
-      if(baseUrl==null&&qName.equalsIgnoreCase("base")) {
-        baseUrl=attributes.getValue("href");
-        if(baseUrl!=null) {
-          if (baseUrl.toLowerCase().startsWith("file:")) {
-            baseUrl=null;
-            return;
-          }
-          else if (baseUrl.charAt(baseUrl.length()-1)!='/') {
-              int bx=baseUrl.lastIndexOf('/');
-              int dx=baseUrl.lastIndexOf('.');
-              if (dx>bx) baseUrl=baseUrl.substring(0,bx+1); //take off any wrong file spec at the end
-              else baseUrl+="/"; //or append a slash
-          }
-        }
-      }
-    }
-
-    if(justBody) {
-      if(!isbody) {
-        if(qName.equalsIgnoreCase("body")) {
-          isbody=true;
-          return;
-        } else if(qName.equalsIgnoreCase("style")) {
-          isstyle=true;
-        } else {
-          return;
-        }
-      }
-    } else if(qName.equalsIgnoreCase("style")) {
-      isstyle=true;
-    }
-
-    boolean islink=false;
-    boolean ismailto=false;
-    boolean changedTarget=false;
-    String address=null;
-    if(qName.equalsIgnoreCase("a")) {
-      islink=true;
-
-    }
-    pwriter.print("<"+qName);
-    int len=attributes.getLength();
-    for(int i=0; i<len; ++i) {
-      String aqname=attributes.getQName(i);
-      String avalue=attributes.getValue(i);
-      String laqname=aqname.toLowerCase();
-	  boolean isdataimg=
-			  laqname.equals("src")
-				&&
-			  (
-				avalue.startsWith("data:")
-					||
-				avalue.startsWith("DATA:")
-			  );
-	  if (!isdataimg) {
-		String lavalue=avalue.toLowerCase();
-		if(laqname.endsWith("src")||laqname.equals("background")) {
-		  //clear any source calling /
-		  if (avalue.startsWith("#")) avalue="";
-		  else if(avalue.toLowerCase().startsWith("cid:")) {
-			avalue=evaluateCid(avalue);
-		  } else {
-			avalue=evaluateUrl(avalue);
-		  }
-		} else if(laqname.equals("target")) {
-		  avalue="_new";
-		  changedTarget=true;
-		} else if(laqname.equals("href")&&lavalue.startsWith("mailto:")) {
-		  address=lavalue.substring(7);
-		  avalue="#";
-		  ismailto=true;
+			if (baseUrl == null && qName.equalsIgnoreCase("base")) {
+				baseUrl = attributes.getValue("href");
+				if (baseUrl != null) {
+					if (baseUrl.toLowerCase().startsWith("file:")) {
+						baseUrl = null;
+						return;
+					} else if (baseUrl.charAt(baseUrl.length() - 1) != '/') {
+						int bx = baseUrl.lastIndexOf('/');
+						int dx = baseUrl.lastIndexOf('.');
+						if (dx > bx) {
+							baseUrl = baseUrl.substring(0, bx + 1); //take off any wrong file spec at the end
+						} else {
+							baseUrl += "/"; //or append a slash
+						}
+					}
+				}
+			}
 		}
-	  }
-      pwriter.print(" "+aqname+"=\""+avalue+"\"");
-    }
-    if(ismailto) {
-      pwriter.print(" onclick='parent.WT.handleMailAddress(\""+address+"\"); return false;'");
-    } else if(islink&&!changedTarget) {
-      pwriter.print(" target=_new");
-    }
-    pwriter.print(">");
-	pwriter.flush();
-  }
+
+		if (justBody) {
+			if (!isbody) {
+				if (qName.equalsIgnoreCase("body")) {
+					isbody = true;
+					return;
+				} else if (qName.equalsIgnoreCase("style")) {
+					isstyle = true;
+				} else {
+					return;
+				}
+			}
+		} else if (qName.equalsIgnoreCase("style")) {
+			isstyle = true;
+		}
+
+		boolean islink = false;
+		boolean ismailto = false;
+		boolean changedTarget = false;
+		String address = null;
+		if (qName.equalsIgnoreCase("a")) {
+			islink = true;
+
+		}
+		pwriter.print("<" + qName);
+		int len = attributes.getLength();
+		for (int i = 0; i < len; ++i) {
+			String aqname = attributes.getQName(i);
+			String avalue = attributes.getValue(i);
+			String laqname = aqname.toLowerCase();
+			boolean isdataimg
+					= laqname.equals("src")
+					&& (avalue.startsWith("data:")
+					|| avalue.startsWith("DATA:"));
+			if (!isdataimg) {
+				String lavalue = avalue.toLowerCase();
+				if (laqname.endsWith("src") || laqname.equals("background")) {
+					//clear any source calling /
+					if (avalue.startsWith("#")) {
+						avalue = "";
+					} else if (avalue.toLowerCase().startsWith("cid:")) {
+						avalue = evaluateCid(avalue);
+					} else {
+						avalue = evaluateUrl(avalue);
+					}
+				} else if (laqname.equals("target")) {
+					avalue = "_new";
+					changedTarget = true;
+				} else if (laqname.equals("href") && lavalue.startsWith("mailto:")) {
+					address = lavalue.substring(7);
+					avalue = "#";
+					ismailto = true;
+				}
+			}
+			pwriter.print(" " + aqname + "=\"" + avalue + "\"");
+		}
+		if (ismailto) {
+			pwriter.print(" onclick='parent.WT.handleMailAddress(\"" + address + "\"); return false;'");
+		} else if (islink && !changedTarget) {
+			pwriter.print(" target=_new");
+		}
+		pwriter.print(">");
+		pwriter.flush();
+	}
 
   public void characters(char[] chars, int start, int len) throws org.xml.sax.SAXException {
       if (!inhtml) return;
@@ -442,6 +452,30 @@ public class SaxHTMLMailParser extends DefaultHandler {
   public String getBodyTEXT() {
     return body.text;
   }
+
+	@Override
+	public void startDTD(String name, String publicId, String systemId) throws SAXException {}
+
+	@Override
+	public void endDTD() throws SAXException {}
+
+	@Override
+	public void startEntity(String name) throws SAXException {}
+
+	@Override
+	public void endEntity(String name) throws SAXException {}
+
+	@Override
+	public void startCDATA() throws SAXException {}
+
+	@Override
+	public void endCDATA() throws SAXException {}
+
+	@Override
+	public void comment(char[] ch, int start, int length) throws SAXException {
+		final String s = new String(ch, start, length).trim();
+		lastComment = StringUtils.isBlank(s) ? null : s;
+	}
 
   class Body {
     String bgcolor;

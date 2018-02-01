@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.sonicle.webtop</groupId>
 	<artifactId>webtop-mail</artifactId>
-	<version>5.1.2</version>
+	<version>5.1.3</version>
 	<packaging>jar</packaging>
 	<name>webtop-mail</name>
 	
@@ -17,6 +17,9 @@
 		<!-- WEBTOP SERVICE CONFIGURATION -->
 		<webtop.service.package>com.sonicle.webtop.mail</webtop.service.package>
 		<webtop.service.jsPackage>Sonicle.webtop.mail</webtop.service.jsPackage>
+		<webtop.service.i18n.languages>en,it,es,de</webtop.service.i18n.languages>
+		<webtop.service.i18n.tx.push.languages>it</webtop.service.i18n.tx.push.languages>
+		<webtop.service.i18n.tx.pull.languages>es,de</webtop.service.i18n.tx.pull.languages>
 	</properties>
 	
 	<dependencies>

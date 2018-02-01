@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.regex.Matcher;
@@ -262,16 +263,26 @@ public class ICalendarRequest {
 	}
 	
 	public String getHtmlView(Locale locale, String serviceVersion, String laf, ResourceBundle bundle) {
+		String htmlmsg = "";
+		if (method.equals("REQUEST")) {
+			htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.invited"), StringEscapeUtils.escapeHtml4(organizerCN));
+		} else if (method.equals("REPLY")) {
+			Parameter param=icalAttendees[0].getParameter("PARTSTAT");
+			String v=param.getValue();
+			if (v.equals("ACCEPTED"))
+				htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.accepted"), StringEscapeUtils.escapeHtml4(attendeesCN[0]));
+			else if (v.equals("DECLINED"))
+				htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.declined"), StringEscapeUtils.escapeHtml4(attendeesCN[0]));
+			else
+				htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.answered"), StringEscapeUtils.escapeHtml4(attendeesCN[0]));
+			
+		} else if (method.equals("CANCEL")) {
+			htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.canceled"), StringEscapeUtils.escapeHtml4(organizerCN));
+		}
 		
-		String htmlsummary=StringEscapeUtils.escapeHtml4(summary);
-		String htmllocation=StringEscapeUtils.escapeHtml4(location);
-		String htmldatestart=StringEscapeUtils.escapeHtml4(String.format(locale,"%tc",dateStart));
-		String htmldateend=StringEscapeUtils.escapeHtml4(String.format(locale,"%tc",dateEnd));
-		//String htmlduration=StringEscapeUtils.escapeHtml4(duration);
 		String htmlorganizer="<span class='"+getParstatClassName(icalOrganizer)+"'></span>&nbsp;"+StringEscapeUtils.escapeHtml4(organizer);
-		String htmldescription=StringEscapeUtils.escapeHtml4(description);
 		StringBuilder htmlattendees=new StringBuilder();
-		if (attendees!=null)
+		if (attendees!=null) {
 			for(int i=0;i<attendees.length;++i) {
 				String s=attendees[i];
 				Attendee a=icalAttendees[i];
@@ -279,23 +290,6 @@ public class ICalendarRequest {
 				htmlattendees.append(s); 
 				htmlattendees.append("<br>"); 
 			}
-		
-
-		String htmltitle=htmlsummary;
-		if (method.equals("REQUEST")) {
-			htmltitle=bundle.getString("ical.invited.by")+" "+StringEscapeUtils.escapeHtml4(organizerCN)+" "+bundle.getString("ical.invited.to")+" "+htmlsummary;
-		} else if (method.equals("REPLY")) {
-			Parameter param=icalAttendees[0].getParameter("PARTSTAT");
-			String v=param.getValue();
-			if (v.equals("ACCEPTED"))
-				htmltitle=attendeesCN[0]+" "+bundle.getString("ical.accepted")+" "+bundle.getString("ical.invited.to")+" "+htmlsummary;
-			else if (v.equals("DECLINED"))
-				htmltitle=attendeesCN[0]+" "+bundle.getString("ical.declined")+" "+bundle.getString("ical.invited.to")+" "+htmlsummary;
-			else
-				htmltitle=attendeesCN[0]+" "+bundle.getString("ical.answered");
-		}
-		else if (method.equals("CANCEL")) {
-			htmltitle=StringEscapeUtils.escapeHtml4(organizerCN)+" "+bundle.getString("ical.canceled")+" "+htmlsummary;
 		}
 		return String.format(
 			locale,
@@ -308,26 +302,33 @@ public class ICalendarRequest {
 			"</table>"+
 
 			"<table border=0 cellpadding=4 class=wtmail-ical-tabledata>"+
-			"<tr><td class=wtmail-ical-label>Titolo:</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>Luogo:</td><td class=wtmail-ical-data>%s</td></tr>"+
+			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
+			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
 			//"<tr><td class=wtmail-ical-label>Quando:</td><td>"+sDtStart+"</td></tr>"+
-			"<tr><td class=wtmail-ical-label>Inizio:</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>Fine:</td><td class=wtmail-ical-data>%s</td></tr>"+
+			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
+			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
 //			"<tr><td class=wtmail-ical-label>Durata:</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>Organizzatore:</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>Descrizione:</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>Partecipanti:</td><td class=wtmail-ical-data>%s</td></tr>"+
+			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
+			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
+			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
 
 			"</table>"+
 			"</body></html>",
-				htmltitle,
-				htmlsummary,
-				htmllocation,
-				htmldatestart,
-				htmldateend,
+				htmlmsg,
+				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.summary")),
+				StringEscapeUtils.escapeHtml4(summary),
+				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.location")),
+				StringEscapeUtils.escapeHtml4(location),
+				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.start")),
+				StringEscapeUtils.escapeHtml4(String.format(locale,"%tc",dateStart)),
+				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.end")),
+				StringEscapeUtils.escapeHtml4(String.format(locale,"%tc",dateEnd)),
 //				htmlduration,
+				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.organizer")),
 				htmlorganizer,
-				hyperlinkText(htmldescription,"_new"),
+				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.description")),
+				hyperlinkText(StringEscapeUtils.escapeHtml4(description),"_new"),
+				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.attendees")),
 				htmlattendees
 		);
 	}

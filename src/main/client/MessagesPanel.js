@@ -353,7 +353,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		//console.log("refreshGridWhenIdle: idleRefreshFolder="+me.folderList.idleRefreshFolder);
 		if (me.currentFolder===foldername && me.folderList.idleRefreshFolder!==foldername) {
 			//console.log("refreshGridWhenIdle: foldername="+foldername);
-			if (me.gridMonitor.isIdle()) {
+			if (me.gridMonitor && me.gridMonitor.isIdle()) {
 				me._refreshIdleGrid();
 			} else {
 				//console.log("not idle, saving idleRefreshFolder");

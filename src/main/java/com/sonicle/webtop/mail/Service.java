@@ -100,6 +100,7 @@ import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.model.AutoResponder;
+import com.sonicle.webtop.mail.model.MailEditFormat;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.webtop.mail.model.Tag;
@@ -4179,8 +4180,9 @@ public class Service extends BaseService {
 		long newmsgid = Long.parseLong(pnewmsgid);
 		String sout = null;
 		try {
-			String format=us.getFormat();
-			boolean isHtml=format.equals("html");
+			MailEditFormat editFormat = ServletUtils.getEnumParameter(request, "format", null, MailEditFormat.class);
+			if (editFormat == null) editFormat = EnumUtils.forSerializedName(us.getFormat(), MailEditFormat.HTML, MailEditFormat.class);
+			boolean isPlainEdit = MailEditFormat.PLAIN_TEXT.equals(editFormat);
 			
 			checkStoreConnected();
 			FolderCache mcache = getFolderCache(pfoldername);
@@ -4356,8 +4358,8 @@ public class Service extends BaseService {
             
             if (ident!=null) sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
-			sout += " content:'" + (isHtml?StringEscapeUtils.escapeEcmaScript(html):StringEscapeUtils.escapeEcmaScript(MailUtils.htmlToText(MailUtils.htmlunescapesource(html)))) + "',\n";
-            sout += " format:'"+(isHtml?"html":"text")+"'\n";
+			sout += " content:'" + (isPlainEdit ? StringEscapeUtils.escapeEcmaScript(MailUtils.htmlToText(MailUtils.htmlunescapesource(html))) : StringEscapeUtils.escapeEcmaScript(html)) + "',\n";
+            sout += " format:'"+EnumUtils.toSerializedName(editFormat)+"'\n";
 			sout += "\n}";
             
 
@@ -6085,11 +6087,15 @@ public class Service extends BaseService {
 						}
 						
 						String msgtext=null;
-						if (us.isIngridPreview() && isToday && unread) { 
-							msgtext=MailUtils.peekText(xm);
-							if (msgtext!=null) {
-								msgtext=msgtext.trim();
-								if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
+						if (us.isIngridPreview() && isToday && unread) {
+							try {
+								msgtext=MailUtils.peekText(xm);
+								if (msgtext!=null) {
+									msgtext=msgtext.trim();
+									if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
+								}
+							} catch(MessagingException | IOException ex1) {
+								msgtext = ex1.getMessage();
 							}
 						}
 						
