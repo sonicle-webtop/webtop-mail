@@ -2225,8 +2225,11 @@ public class Service extends BaseService {
 	
 	public boolean isInboxFolder(String foldername) {
 		if (!hasDifferentDefaultFolder) {
-			String lname=getLastFolderName(foldername);
-			if (lname.equals("INBOX")) return true;
+			//if is root inbox
+			if (foldername.equals("INBOX") || 
+					//or a shared inbox
+					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX"))
+			) return true;
 		} else {
 			return isDefaultFolder(foldername);
 		}
@@ -2709,6 +2712,7 @@ public class Service extends BaseService {
 	private ArrayList<FolderCache> opened = new ArrayList<FolderCache>();
 
 	protected void poolOpened(FolderCache fc) {
+		
 		if (opened.size() >= 5) {
 			FolderCache rfc = opened.remove(0);
 			rfc.cleanup(false);
