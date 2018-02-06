@@ -7063,7 +7063,7 @@ public class Service extends BaseService {
 				Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
 				String ekey=cm.getEventInstanceKey(ev.getEventId());
 
-				sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
+				sendICalendarReply(ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED);
 				new JsonResult(ekey).printTo(out);
 			} else if (pcalaction.equals("cancel")||pcalaction.equals("update")) {
 				cm.updateEventFromICal(ir.getCalendar());
@@ -7091,7 +7091,7 @@ public class Service extends BaseService {
             Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
             
 			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			sendICalendarReply(((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.DECLINED, ir.getCalendar(),ir.getSummary(),ir.getOrganizerAddress());
+			sendICalendarReply(ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.DECLINED);
 			new JsonResult().printTo(out);
         } catch(Exception exc) {
             new JsonResult(false,exc.getMessage()).printTo(out);
@@ -7100,7 +7100,7 @@ public class Service extends BaseService {
         
 	}
 	
-	private void sendICalendarReply(InternetAddress forAddress, PartStat response, net.fortuna.ical4j.model.Calendar cal, String summary, String organizerAddress) throws Exception {
+/*	private void sendICalendarReply(InternetAddress forAddress, PartStat response, net.fortuna.ical4j.model.Calendar cal, String summary, String organizerAddress) throws Exception {
 		UserProfile profile=environment.getProfile();
 		Locale locale=profile.getLocale();
 		String action_string=response.equals(PartStat.ACCEPTED)?
@@ -7130,10 +7130,10 @@ public class Service extends BaseService {
 			part2.setContent(icalContent, MailUtils.buildPartContentType(icalContentType, "UTF-8"));
 			part2.setHeader("Content-Transfer-Encoding", "8BIT");
 			//part2.setFileName("webtop-reply.ics");
-			/*javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
-			part1.setText(content, "UTF8", "application/ics");
-			part1.setHeader("Content-type", "application/ics");
-			part1.setFileName("webtop-reply.ics");*/
+			//javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
+			//part1.setText(content, "UTF8", "application/ics");
+			//part1.setHeader("Content-type", "application/ics");
+			//part1.setFileName("webtop-reply.ics");
 
 			MimeMultipart mp = new MimeMultipart("mixed");
 			mp.addBodyPart(part2);
@@ -7147,7 +7147,59 @@ public class Service extends BaseService {
 			if (exc!=null) throw exc;
 		}
 		
+	}*/
+	
+	private void sendICalendarReply(ICalendarRequest request, InternetAddress forAddress, PartStat response) throws Exception {
+		InternetAddress organizerAddress = InternetAddressUtils.toInternetAddress(request.getOrganizerAddress());
+		sendICalendarReply(request.getCalendar(), organizerAddress, forAddress, response, request.getSummary());
 	}
+	
+	private void sendICalendarReply(net.fortuna.ical4j.model.Calendar ical, InternetAddress organizerAddress, InternetAddress forAddress, PartStat response, String eventSummary) throws Exception {
+		String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
+		net.fortuna.ical4j.model.Calendar icalReply = ICalendarUtils.buildInvitationReply(ical, prodId, forAddress, response);
+		if (icalReply == null) throw new WTException("Unable to build iCalendar");
+		
+		// Creates base message parts
+		net.fortuna.ical4j.model.property.Method icalMethod = net.fortuna.ical4j.model.property.Method.REPLY;
+		String icalText = ICalendarUtils.calendarToString(icalReply);
+		MimeBodyPart calPart = ICalendarUtils.createInvitationCalendarPart(icalMethod, icalText);
+		String filename = ICalendarUtils.buildICalendarAttachmentFilename(WT.getPlatformName());
+		MimeBodyPart attPart = ICalendarUtils.createInvitationAttachmentPart(icalText, filename);
+		
+		/*
+		// Defines message structure
+		MimeMultipart altPart = new MimeMultipart("alternative");
+		altPart.addBodyPart(calPart);
+		MimeBodyPart altwPart = new MimeBodyPart();
+		altwPart.setContent(altPart);
+		
+		MimeMultipart mixPart = new MimeMultipart("mixed");
+		mixPart.addBodyPart(altwPart);
+		mixPart.addBodyPart(attPart);
+		*/
+		
+		MimeMultipart mmp = ICalendarUtils.createInvitationPart(null, calPart, attPart);
+		
+		UserProfile.Data ud = WT.getUserData(getEnv().getProfileId());
+		InternetAddress from = InternetAddressUtils.toInternetAddress(ud.getFullEmailAddress());
+		Message message = createMessage(from, TplHelper.buildEventInvitationReplyEmailSubject(ud.getLocale(), response, eventSummary));
+		message.addRecipient(RecipientType.TO, organizerAddress);
+		message.setContent(mmp);
+		
+		sendMsg(message);
+	}
+	
+	private MimeMessage createMessage(InternetAddress from, String subject) throws MessagingException {
+		try {
+			subject = MimeUtility.encodeText(subject);
+		} catch (Exception ex) {}
+		
+		MimeMessage message = new MimeMessage(session);
+		message.setSubject(subject);
+		message.addFrom(new InternetAddress[] {from});
+		message.setSentDate(new java.util.Date());
+		return message;
+	}	
 	
     public void processUpdateCalendarReply(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
         String pfoldername=request.getParameter("folder");
