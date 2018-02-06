@@ -88,8 +88,7 @@ public class JobService extends BaseJobService {
 		
 		// Reminder job
 		Trigger remTrigger = TriggerBuilder.newTrigger()
-				//.withSchedule(SimpleScheduleBuilder.repeatMinutelyForever(2))
-				.withSchedule(SimpleScheduleBuilder.repeatSecondlyForever(30))
+				.withSchedule(SimpleScheduleBuilder.repeatMinutelyForever(2))
 				//.withSchedule(CronScheduleBuilder.cronSchedule("0 0/2 * * * ?")) // every minute of the hour
 				.build();
 		jobs.add(new TaskDefinition(ScheduledSendJob.class, remTrigger));
