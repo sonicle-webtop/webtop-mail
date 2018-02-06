@@ -365,7 +365,7 @@ public class Service extends BaseService {
 		
 		hasDifferentDefaultFolder=us.getDefaultFolder()!=null;
 		
-		session=environment.getWebTopSession().getMailSession();
+		session=environment.getSession().getMailSession();
 		//session=Session.getDefaultInstance(props, null);
 		session.setDebug(imapDebug);
 
@@ -4132,7 +4132,7 @@ public class Service extends BaseService {
 								" }";
 						first = false;
 						//TODO: change this weird matching of cids2urls!
-						html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+RunContext.getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+						html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 					}
 				}
 				sout += "\n ],\n";
@@ -4347,7 +4347,7 @@ public class Service extends BaseService {
                             " }";
                     first = false;
 					//TODO: change this weird matching of cids2urls!
-                    html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+RunContext.getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+                    html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
                 }
             }
             sout += "\n ],\n";
@@ -4487,7 +4487,7 @@ public class Service extends BaseService {
 				/*String subject=request.getParameter("subject");
 				if (subject!=null && subject.trim().length()>0) wts.setServiceStoreEntry(getName(), "subject", subject.toUpperCase(),subject);*/
 
-				coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
+				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				// TODO: Cloud integration!!! Destination emails added to share
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
 				 for(String hash: hashlinks) {
@@ -4637,7 +4637,7 @@ public class Service extends BaseService {
 			}
 			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
 			if (exc == null) {
-				coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
+				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -4678,7 +4678,7 @@ public class Service extends BaseService {
 			}
 			Exception exc = scheduleMessage(msg, jsmsg.attachments, fc, scheddate, schedtime, schednotify);
 			if (exc == null) {
-				coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
+				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -4699,7 +4699,7 @@ public class Service extends BaseService {
 		try {
 			long msgId=ServletUtils.getLongParameter(request, "msgId", true);
 			deleteCloudAttachments(msgId);
-			coreMgr.deleteMyAutosaveData(RunContext.getWebTopClientID(), SERVICE_ID, "newmail", ""+msgId);
+			coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 			json=new JsonResult();
 		} catch(Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -4777,7 +4777,7 @@ public class Service extends BaseService {
 					String iamail=ia.getAddress();
 					String dom=iamail.substring(iamail.indexOf("@")+1);
 					CoreManager core=WT.getCoreManager();
-					if (environment.getWebTopSession().isServiceAllowed(dom)) {
+					if (environment.getSession().isServiceAllowed(dom)) {
 						List<Recipient> rcpts=core.expandVirtualProviderRecipient(iamail);
 						for (Recipient rcpt: rcpts) {
 							String xemail=rcpt.getAddress();
@@ -4918,18 +4918,18 @@ public class Service extends BaseService {
 				
 				//CIDs
                 String content=jsmsg.content;
-                String pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+RunContext.getCSRFToken()+"&amp;service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
+                String pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&amp;service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
                 String pattern2=RegexUtils.escapeRegexSpecialChars("&amp;cid=");
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "cid:");
-                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+RunContext.getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&cid=");
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "cid:");
 				
                 //URLs
-                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+RunContext.getCSRFToken()+"&amp;service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&amp;service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&amp;url=");
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
-                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+RunContext.getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
+                pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&url=");
                 content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
                 
@@ -5000,7 +5000,7 @@ public class Service extends BaseService {
 			File file = WT.createTempFile();
 			int filesize=IOUtils.copy(part.getInputStream(), new FileOutputStream(file));
 			WebTopSession.UploadedFile uploadedFile = new WebTopSession.UploadedFile(false, this.SERVICE_ID, file.getName(), tag, filename, filesize, ctype);
-			environment.getWebTopSession().addUploadedFile(uploadedFile);
+			environment.getSession().addUploadedFile(uploadedFile);
 			
 			MapItem data = new MapItem(); // Empty response data
 			data.add("uploadId", uploadedFile.getUploadId());
@@ -5046,7 +5046,7 @@ public class Service extends BaseService {
 				String filename=msg.getSubject()+".eml";
 			
 				WebTopSession.UploadedFile uploadedFile = new WebTopSession.UploadedFile(false, this.SERVICE_ID, file.getName(), tag, filename, filesize, ctype);
-				environment.getWebTopSession().addUploadedFile(uploadedFile);
+				environment.getSession().addUploadedFile(uploadedFile);
 				ufiles.add(uploadedFile);
 			}			
 			
