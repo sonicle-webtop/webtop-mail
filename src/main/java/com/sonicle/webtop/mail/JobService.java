@@ -61,6 +61,7 @@ import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.MimeMessage;
 import javax.mail.search.HeaderTerm;
+import org.quartz.CronScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
@@ -88,13 +89,14 @@ public class JobService extends BaseJobService {
 		// Reminder job
 		Trigger remTrigger = TriggerBuilder.newTrigger()
 				.withSchedule(SimpleScheduleBuilder.repeatMinutelyForever(2))
+				//.withSchedule(CronScheduleBuilder.cronSchedule("0 0/2 * * * ?")) // every minute of the hour
 				.build();
 		jobs.add(new TaskDefinition(ScheduledSendJob.class, remTrigger));
 		
 		return jobs;
 	}
 	
-	class ScheduledSendJob extends BaseJobServiceTask {
+	public static class ScheduledSendJob extends BaseJobServiceTask {
 		private JobService jobService = null;
 		private CoreManager cm=null;
 		
@@ -120,7 +122,7 @@ public class JobService extends BaseJobService {
 		public void executeWork() {
 			Connection con=null;
 			try {
-				con=getConnection();
+				con=jobService.getConnection();
 				List<ODomain> domains=cm.listDomains(true);
 				for(ODomain domain: domains) {
 					String domainId=domain.getDomainId();
@@ -312,8 +314,8 @@ public class JobService extends BaseJobService {
 					}
 					String nmto=nm.getRecipients(Message.RecipientType.TO)[0].toString();
 					String nmsubject=nm.getSubject();
-					String fmtsubject=lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_SUBJECT);
-					String fmthtml=lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_HTML);
+					String fmtsubject=jobService.lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_SUBJECT);
+					String fmthtml=jobService.lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_HTML);
 					String subject=java.text.MessageFormat.format(fmtsubject,nmto);
 					String html=java.text.MessageFormat.format(fmthtml,
 							DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT,locale).format(cal.getTime()),
@@ -345,7 +347,7 @@ public class JobService extends BaseJobService {
 		private MailServiceSettings getMailServiceSettings(String domainId) {
 			MailServiceSettings mss=hmss.get(domainId);
 			if (mss==null) {
-				mss=new MailServiceSettings(SERVICE_ID,domainId);
+				mss=new MailServiceSettings(jobService.SERVICE_ID,domainId);
 				hmss.put(domainId, mss);
 			}
 			return mss;
