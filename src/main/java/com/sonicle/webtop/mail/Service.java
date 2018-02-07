@@ -46,6 +46,7 @@ import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
+import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
@@ -3559,6 +3560,7 @@ public class Service extends BaseService {
 	
 	public String getPartName(Part p) throws MessagingException {
 		String pname = p.getFileName();
+		// TODO: Remove code below if already included in JavaMail impl.
 		if (pname == null) {
 			String hctypes[] = p.getHeader("Content-Type");
 			if (hctypes == null || hctypes.length == 0) {
@@ -3583,11 +3585,12 @@ public class Service extends BaseService {
 			if (pname == null) {
 				return null;
 			}
-		}
-		try {
-			pname = MailUtils.decodeQString(pname, "iso-8859-1");
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
+			logger.warn("Code in getPartName is still used. Please review it!");
+			try {
+				pname = MimeUtility.decodeText(pname);
+			} catch(UnsupportedEncodingException ex) {
+				Service.logger.error("Exception", ex);
+			}
 		}
 		return pname;
 	}
@@ -6901,8 +6904,7 @@ public class Service extends BaseService {
 						if (xctype!=null) ctype=xctype;
 					}
 				}
-				response.setContentType(ctype);
-				response.setHeader("Content-Disposition", "inline; filename=\"" + name + "\"");
+				ServletUtils.setFileStreamHeaders(response, ctype, DispositionType.INLINE, name);
 				if (providername==null) {
 					Folder folder=mailData.getFolder();
 					if (!folder.isOpen()) folder.open(Folder.READ_ONLY);
@@ -6947,8 +6949,7 @@ public class Service extends BaseService {
 			name += ".zip";
 			//prepare hashmap to hold already used pnames
 			HashMap<String,String> pnames=new HashMap<String,String>();
-			response.setContentType("application/x-zip-compressed");
-			response.setHeader("Content-Disposition", "inline; filename=\"" + name + "\"");
+			ServletUtils.setFileStreamHeaders(response, "application/x-zip-compressed", DispositionType.INLINE, name);
 			JarOutputStream jos = new java.util.jar.JarOutputStream(response.getOutputStream());
 			byte[] b = new byte[64 * 1024];
 			for (String pid : pids) {
@@ -6957,10 +6958,12 @@ public class Service extends BaseService {
 				if (pname == null) {
 					pname = "unknown";
 				}
+				/*
 				try {
 					pname = MailUtils.decodeQString(pname, "iso-8859-1");
 				} catch (Exception exc) {
 				}
+				*/
 				//keep name and extension
 				String bpname=pname;
 				String extpname=null;
