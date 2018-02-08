@@ -6722,6 +6722,9 @@ public class Service extends BaseService {
 						//TODO: rimuovere controllo su data? dovrebbe sempre aggiornare?
 						
 						if (iAmOwner || iAmOrganizer) {
+							eid = 0;
+							//TODO: troviamo un modo per capire se la risposta si riverisce all'ultima versione dell'evento? Nuovo campo timestamp?
+							/*
 							DateTime dtEvt = ev.getRevisionTimestamp().withMillisOfSecond(0).withZone(DateTimeZone.UTC);
 							DateTime dtICal = ICal4jUtils.fromICal4jDate(ir.getLastModified(), ICal4jUtils.getTimeZone(DateTimeZone.UTC));
 							if (dtICal.isAfter(dtEvt)) {
@@ -6729,6 +6732,7 @@ public class Service extends BaseService {
 							} else {
 								eid = ev.getEventId();
 							}
+							*/
 						}
 					}
 					sout+="{iddata:'ical',value1:'"+ir.getMethod()+"',value2:'"+ir.getUID()+"',value3:'"+eid+"'},\n";
