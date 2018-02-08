@@ -1383,7 +1383,11 @@ public class Service extends BaseService {
 				} else if (!isHtml) {
 					forward.setText(getForwardBody(msg, textsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, false, fromtitle, totitle, cctitle, datetitle, subjecttitle));
 				} else {
-					forward.setText(getForwardBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle));
+					forward.setText(
+							MailUtils.removeMSWordShit(
+								getForwardBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle)
+							)
+					);
 				}
 			} catch (Exception exc) {
 				Service.logger.error("Exception",exc);
@@ -1741,7 +1745,7 @@ public class Service extends BaseService {
 				} else {
 					text = getReplyBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
 				}
-				reply.setText(text);
+				reply.setText(MailUtils.removeMSWordShit(text));
 			} else {
 				reply.setText("");
 			}

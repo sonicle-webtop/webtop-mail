@@ -2370,10 +2370,13 @@ public class FolderCache {
           status.textfound=true;
         }
       } else if(ap.isMimeType("text/calendar")) {
+		mailData.addAttachmentPart(ap);
+		mailData.addDisplayPart(ap);
+        if(!status.htmlfound) {
           dispPart=ap;
           //mailData.addUnknownPart(ap);
-          mailData.addAttachmentPart(ap);
-		  break;
+		  //break;
+		}
       }
     }
     return dispPart;
