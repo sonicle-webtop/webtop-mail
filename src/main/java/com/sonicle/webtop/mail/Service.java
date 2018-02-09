@@ -908,6 +908,38 @@ public class Service extends BaseService {
 		
 	}
 	
+	public boolean sendMsg(InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) {
+		
+		try {
+			subject = MimeUtility.encodeText(subject);
+		} catch (Exception ex) {}
+		
+		try {
+			MimeMessage message = new MimeMessage(session);
+			message.setSubject(subject);
+			message.addFrom(new InternetAddress[] {from});
+
+			if (to != null) {
+				for(InternetAddress ia: to) message.addRecipient(Message.RecipientType.TO, ia);
+			}
+			if (cc != null) {
+				for(InternetAddress ia: cc) message.addRecipient(Message.RecipientType.CC, ia);
+			}
+			if (bcc != null) {
+				for(InternetAddress ia: bcc) message.addRecipient(Message.RecipientType.BCC, ia);
+			}
+
+			message.setContent(part);
+			message.setSentDate(new java.util.Date());
+			
+			return sendMsg(message);
+			
+		} catch(MessagingException ex) {
+			logger.warn("Unable to send message", ex);
+			return false;
+		}
+	}
+	
 	public boolean sendMsg(Message msg) {
 		UserProfile profile = environment.getProfile();
 		String sentfolder = mprofile.getFolderSent();
@@ -7176,18 +7208,6 @@ public class Service extends BaseService {
 		MimeBodyPart calPart = ICalendarUtils.createInvitationCalendarPart(icalMethod, icalText);
 		String filename = ICalendarUtils.buildICalendarAttachmentFilename(WT.getPlatformName());
 		MimeBodyPart attPart = ICalendarUtils.createInvitationAttachmentPart(icalText, filename);
-		
-		/*
-		// Defines message structure
-		MimeMultipart altPart = new MimeMultipart("alternative");
-		altPart.addBodyPart(calPart);
-		MimeBodyPart altwPart = new MimeBodyPart();
-		altwPart.setContent(altPart);
-		
-		MimeMultipart mixPart = new MimeMultipart("mixed");
-		mixPart.addBodyPart(altwPart);
-		mixPart.addBodyPart(attPart);
-		*/
 		
 		MimeMultipart mmp = ICalendarUtils.createInvitationPart(null, calPart, attPart);
 		

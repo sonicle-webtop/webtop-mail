@@ -65,6 +65,8 @@ import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.mail.sieve.SieveAction;
 import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.mail.sieve.SieveMatch;
+import com.sonicle.webtop.core.app.SessionContext;
+import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
 import com.sonicle.webtop.mail.bol.OTag;
@@ -79,10 +81,15 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import javax.mail.internet.InternetAddress;
+import javax.mail.internet.MimeMessage;
+import javax.mail.internet.MimeMultipart;
+import javax.mail.internet.MimeUtility;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.format.DateTimeFormatter;
 import org.jooq.exception.DataAccessException;
@@ -92,7 +99,7 @@ import org.slf4j.Logger;
  *
  * @author gabriele.bulfon
  */
-public class MailManager extends BaseManager {
+public class MailManager extends BaseManager implements IMailManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
 	public static final String IDENTITY_SHARING_GROUPNAME = "IDENTITY";
@@ -110,6 +117,15 @@ public class MailManager extends BaseManager {
 	public void setSieveConfiguration(String host, int port, String username, String password) {
 		//TODO: portare i parametri (host,port,user,pass) nel manager
 		this.sieveConfig = new SieveConfig(host, port, username, password);
+	}
+	
+	@Override
+	public boolean sendMessage(InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) throws WTException {
+		WebTopSession wts = SessionContext.getCurrent();
+		if (wts == null) throw new WTException("Unable to get session");
+		com.sonicle.webtop.mail.Service mail = (com.sonicle.webtop.mail.Service)wts.getPrivateServiceById(SERVICE_ID);
+		if (mail == null) throw new WTException("Unable to get service");
+		return mail.sendMsg(from, to, cc, bcc, subject, part);
 	}
 	
 	public List<Identity> listIdentities() throws WTException {
