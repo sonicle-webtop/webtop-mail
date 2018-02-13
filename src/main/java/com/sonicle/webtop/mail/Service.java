@@ -6686,6 +6686,8 @@ public class Service extends BaseService {
 					//	pname = fname + "." + ext;
 					//}
 					if (isCalendar) pname+=".ics";
+				} else {
+					if (isCalendar && !StringUtils.endsWithIgnoreCase(pname, ".ics")) pname+=".ics";
 				}
 				int size = p.getSize();
 				int lines = (size / 76);
