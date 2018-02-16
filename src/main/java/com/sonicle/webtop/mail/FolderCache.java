@@ -2219,16 +2219,18 @@ public class FolderCache {
           tnefp=tnefmp.getBodyPart(j);
           prepareHTMLMailData(tnefp,mailData);
         }
-        //  Part tnefp=TNEFMime.convert(this.ms.getMailSession(), msg);
-        //  if (tnefp instanceof Multipart) {
-        //      Multipart tnefmp=(Multipart)tnefp;
-        //      int tnefparts=tnefmp.getCount();
-        //      for(int j=0; j<tnefparts; ++j) {
-        //        tnefp=tnefmp.getBodyPart(j);
-        //        prepareHTMLMailData(tnefp,mailData);
-        //      }
-        //  }
-        //  else prepareHTMLMailData(tnefp,mailData);
+		
+		
+        /*Part tnefp=net.freeutils.tnef.mime.TNEFMime.convert(this.ms.getMailSession(), (Part)msg, false);
+        if (tnefp instanceof Multipart) {
+            Multipart tnefmp=(Multipart)tnefp;
+            int tnefparts=tnefmp.getCount();
+            for(int j=0; j<tnefparts; ++j) {
+              tnefp=tnefmp.getBodyPart(j);
+              prepareHTMLMailData(tnefp,mailData);
+            }
+        }
+        else prepareHTMLMailData(tnefp,mailData);*/
       } catch(Exception exc) {
         Service.logger.error("Exception",exc);
         mailData.addUnknownPart(msg);
@@ -2287,16 +2289,16 @@ public class FolderCache {
               prepareHTMLMailData(tnefp,mailData);
             }
 
-            //  Part tnefp=TNEFMime.convert(this.ms.getMailSession(), p);
-            //  if (tnefp instanceof Multipart) {
-            //      Multipart tnefmp=(Multipart)tnefp;
-            //      int tnefparts=tnefmp.getCount();
-            //      for(int j=0; j<tnefparts; ++j) {
-            //        tnefp=tnefmp.getBodyPart(j);
-            //        prepareHTMLMailData(tnefp,mailData);
-            //      }
-            //  }
-            //  else prepareHTMLMailData(tnefp,mailData);
+            /*Part tnefp=net.freeutils.tnef.mime.TNEFMime.convert(this.ms.getMailSession(), (Part) p, false);
+            if (tnefp instanceof Multipart) {
+                Multipart tnefmp=(Multipart)tnefp;
+                int tnefparts=tnefmp.getCount();
+                for(int j=0; j<tnefparts; ++j) {
+                  tnefp=tnefmp.getBodyPart(j);
+                  prepareHTMLMailData(tnefp,mailData);
+                }
+            }
+            else prepareHTMLMailData(tnefp,mailData);*/
           } catch(Exception exc) {
             mailData.addUnknownPart(p);
             mailData.addAttachmentPart(p);

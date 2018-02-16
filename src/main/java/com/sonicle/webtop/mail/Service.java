@@ -5200,10 +5200,13 @@ public class Service extends BaseService {
 				for (Message msg: msgs) {
 					SonicleIMAPMessage simsg=(SonicleIMAPMessage)msg;
 					
-					Address afrom=msg.getFrom()[0];
 					InternetAddress iafrom=null;
-					if (afrom instanceof InternetAddress) {
-						iafrom=(InternetAddress) afrom;
+					Address vfrom[]=msg.getFrom();
+					if (vfrom!=null && vfrom.length>0) {
+						Address afrom=vfrom[0];
+						if (afrom instanceof InternetAddress) {
+							iafrom=(InternetAddress) afrom;
+						}
 					}
 
 					Address[] rcpts=msg.getRecipients(Message.RecipientType.TO);
