@@ -92,8 +92,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	init: function() {
 		var me=this,
-				sue = me.getVar('showUpcomingEvents'),
-				sut = me.getVar('showUpcomingTasks');
+		sue = me.getVar('showUpcomingEvents'),
+		sut = me.getVar('showUpcomingTasks');
 		
 		me.initActions();
 
@@ -221,11 +221,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		toolitems.push(me.imapTree);
 		if (subtools) toolitems.push(subtools);
 		var tool = Ext.create({
-				xtype: 'panel',
-				title: me.getName(),
-				width: 200,
-				layout: 'border',
-				items: toolitems
+			xtype: 'panel',
+			title: me.getName(),
+			width: 200,
+			layout: 'border',
+			items: toolitems
 		});
 		me.setToolComponent(tool);
 
@@ -233,26 +233,26 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.onMessage('recent',me.recentMessage,me);
 		
         var xb=new Array();
-			xx=0;
+		xx=0;
 		me.toolbar=mp.toolbar;
         me.toolbar.insert(0,[
-                xb[xx++]=me._TB("print"),
-                xb[xx++]=me._TB("delete"),
-                xb[xx++]=me._TB("spam"),
-                xb[xx++]=me._TB('movetofolder'),
-                "-",
-                xb[xx++]=me._TB("reply"),
-                xb[xx++]=me._TB("replyall"),
-                xb[xx++]=me._TB("forward"),
-                "-",
-                xb[xx++]=me._TB("check"),
-                "-",
-                xb[xx++]=me._TB("markseen"),
-                xb[xx++]=me._TB("markunseen"),
-                "-",
-				xb[xx++]=me._TB("inMailFilters")
-            ]
-        );
+			xb[xx++]=me._TB("print"),
+			xb[xx++]=me._TB("delete"),
+			xb[xx++]=me._TB("spam"),
+			xb[xx++]=me._TB('movetofolder'),
+			"-",
+			xb[xx++]=me._TB("reply"),
+			xb[xx++]=me._TB("replyall"),
+			xb[xx++]=me._TB("forward"),
+			"-",
+			xb[xx++]=me._TB("check"),
+			"-",
+			xb[xx++]=me._TB("markseen"),
+			xb[xx++]=me._TB("markunseen"),
+			"-",
+			xb[xx++]=me._TB("inMailFilters")
+		]
+				);
 
 		if (WT.isPermitted(me.ID,'FAX','ACCESS'))
 			me.toolbar.insert(0,me._TB("newfax"));
@@ -267,10 +267,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		var ff=me.specialFolders;
 		ff[me.getFolderInbox()]=
-		 ff[me.getFolderDrafts()]=
-		   ff[me.getFolderSent()]=
-		    ff[me.getFolderTrash()]=
-		     ff[me.getFolderSpam()]=true;
+				ff[me.getFolderDrafts()]=
+				ff[me.getFolderSent()]=
+				ff[me.getFolderTrash()]=
+				ff[me.getFolderSpam()]=true;
 
 		if (me.getVar('autoResponderActive') === true) {
 			Ext.defer(function() {
@@ -287,12 +287,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	_calendarTool_buildDateTimeInfo: function(start) {
 		var me = this,
-				soDate = Sonicle.Date,
-				eDate = Ext.Date,
-				startd = eDate.format(start, WT.getShortDateFmt()),
-				startt = eDate.format(start, WT.getShortTimeFmt()),
-				now = soDate.setTime(new Date(), 0, 0, 0),
-				str0;
+		soDate = Sonicle.Date,
+		eDate = Ext.Date,
+		startd = eDate.format(start, WT.getShortDateFmt()),
+		startt = eDate.format(start, WT.getShortTimeFmt()),
+		now = soDate.setTime(new Date(), 0, 0, 0),
+		str0;
 		
 		if (soDate.diffDays(now, start) === 0) {
 			str0 = me.mys.res('portlet.events.gp.dateat.today');
@@ -319,8 +319,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	gridAction: function(me,actionName,obj) {
 		return function(s,e) {
 			var g=me.getCtxGrid(e),
-				fname='action'+actionName,
-				fn=g[fname];
+			fname='action'+actionName,
+			fn=g[fname];
 		
 			if (Ext.isFunction(fn)) fn.call(g,obj);
 			else Ext.Error.raise('missing grid action function '+fname);
@@ -411,7 +411,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
         /*if (WT.docmgt) this.aDocMgt=this.addDependencyAction("docmgt","webtop/js/mail/DocMgt.js","actionDocMgt",this,'iconDocMgt');
         if (WT.docmgtwt) this.aDocMgtwt=this.addDependencyAction("docmgtwt","webtop/js/mail/DocMgt.js","actionDocMgtWt",this,'iconDocMgt');
-		*/
+		 */
 	},
 	
 	initCxm: function() {
@@ -434,22 +434,22 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					text: me.res("menu-complete"),
 					menu: {
 						items: [
-						  me.getAct('flagred'),
-						  me.getAct('flagorange'),
-						  me.getAct('flaggreen'),
-						  me.getAct('flagblue'),
-						  me.getAct('flagpurple'),
-						  me.getAct('flagyellow'),
-						  me.getAct('flagblack'),
-						  me.getAct('flaggray'),
-						  me.getAct('flagwhite'),
-						  me.getAct('flagbrown'),
-						  me.getAct('flagazure'),
-						  me.getAct('flagpink'),
-						  '-',
-						  me.getAct('flagcomplete'),
-						  //me.getAct('addmemo'),
-						  me.getAct('clear')
+							me.getAct('flagred'),
+							me.getAct('flagorange'),
+							me.getAct('flaggreen'),
+							me.getAct('flagblue'),
+							me.getAct('flagpurple'),
+							me.getAct('flagyellow'),
+							me.getAct('flagblack'),
+							me.getAct('flaggray'),
+							me.getAct('flagwhite'),
+							me.getAct('flagbrown'),
+							me.getAct('flagazure'),
+							me.getAct('flagpink'),
+							'-',
+							me.getAct('flagcomplete'),
+							//me.getAct('addmemo'),
+							me.getAct('clear')
 						]
 					}
 				},
@@ -462,11 +462,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						tagField: 'tagId',
 						textAsHtml: true,
 						staticItems: [
-						  //me.getAct('newtag'),
-						  me.getAct('managetags'),
-						  '-',
-						  me.getAct('removetags'),
-						  '-'
+							//me.getAct('newtag'),
+							me.getAct('managetags'),
+							'-',
+							me.getAct('removetags'),
+							'-'
 						],
 						store: me.tagsStore,
 						listeners: {
@@ -493,11 +493,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				'-',
 				me.getAct('delete'),
 				'-',
-				me.getAct('movetofolder'),
-				me.getAct('savemail'),
-				me.getAct('createreminder'),
-				'-',
-				me.getAct("archive")
+				me.getAct("archive"),
+				{
+					text: me.res("menu-operations"),
+					menu: {
+						items: [
+							me.getAct('movetofolder'),
+							me.getAct('savemail'),
+							me.getAct('createreminder'),
+							me.getAct('resetcolumns')
+						]      
+					}
+				},    
 			],
 			listeners: {
 				beforeshow: function() {
@@ -514,12 +521,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
             cxmGrid.add(me.getAct('docmgtwt'));
         }*/
 		
+		//        cxmGrid.add('-');
+		//        cxmGrid.add(me.getAct('resetcolumns'));
         cxmGrid.add('-');
-        cxmGrid.add(me.getAct('resetcolumns'));
-        cxmGrid.add('-');
-        cxmGrid.add(me.getAct('viewheaders'));
-        cxmGrid.add(me.getAct('viewsource'));
-		
+		cxmGrid.add({
+			text: me.res("menu-headers"),
+			menu: {
+				items: [	
+					me.getAct('viewheaders'),
+					me.getAct('viewsource')
+				]      
+			}
+		}, );
 		//tree menu
 		var mscan,mshowsharings;
 		me.addRef('cxmTree', Ext.create({
@@ -576,10 +589,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 var ctot=cols.length;
                 for(var i=0;i<ctot;++i) {
 					var col=cols[i],
-						s=colsizes[col.dataIndex];
-                  if (s) {
-                      col.setWidth(s);
-                  }
+					s=colsizes[col.dataIndex];
+					if (s) {
+						col.setWidth(s);
+					}
                 }
             }
             this.resizedcols=true;
@@ -616,7 +629,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	//if uid, try to select specific uid
 	showFolder: function(folderid,uid,rid,page,tid) {
         var me=this,
-			mp=me.messagesPanel;
+		mp=me.messagesPanel;
 		//TODO: folder clicked
         //mp.depressFilterRowButton();
         mp.clearGridSelections();
@@ -641,8 +654,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	unreadChanged: function(msg,unreadOnly) {
 		var me=this,
-			pl=msg.payload,
-			node=me.imapTree.getStore().getById(pl.foldername);
+		pl=msg.payload,
+		node=me.imapTree.getStore().getById(pl.foldername);
 		if (node) {
 			var folder=node.get("folder");
 			var oldunread=node.get("unread");
@@ -658,7 +671,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	recentMessage: function(msg) {
 		var me=this,
-			pl=msg.payload;
+		pl=msg.payload;
 		console.log("recentMessage: pl.foldername="+pl.foldername);
 		if (pl.foldername==='INBOX') {
 			//var msg=me.res('ntf.newmsg.inbox-has')+" "+cfg.unread+" ";
@@ -695,8 +708,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	autosaveRestore: function(value) {
 		var me=this,
-			data=Ext.JSON.decode(value),
-			rcpts=[];
+		data=Ext.JSON.decode(value),
+		rcpts=[];
 	
 		if (data.recipients) {
 			for(var i=0;i<data.recipients.length;++i) {
@@ -730,8 +743,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	getFolderGroup: function(foldername) {
 		var me=this,
-			node=me.imapTree.getStore().getById(foldername),
-			group='';
+		node=me.imapTree.getStore().getById(foldername),
+		group='';
 		if (node) {
 			group=node.get('group');
 		}
@@ -740,7 +753,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	setFolderGroup: function(foldername,group) {
 		var me=this,
-			node=me.imapTree.getStore().getById(foldername);
+		node=me.imapTree.getStore().getById(foldername);
 		if (node) {
 			node.set('group',group);
 		}
@@ -772,13 +785,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		opts=opts||{};
 		
 		var me=this,
-//			identIndex=0,
-//			identities=me.varsData.identities,
-//          ident=identities[0],
-			ident=me.getFolderIdentity(idfolder);
-			rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
+		//			identIndex=0,
+		//			identities=me.varsData.identities,
+		//          ident=identities[0],
+		ident=me.getFolderIdentity(idfolder);
+		rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 	
-/*        for(var i=1;i<identities.length;++i) {
+		/*        for(var i=1;i<identities.length;++i) {
             var ifolder=identities[i].mainFolder;
             if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
                 identIndex=i;
@@ -851,8 +864,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	getFolderIdentity: function(idfolder) {
 		var me=this,
-			identities=me.getVar("identities"),
-            ident=identities[0];
+		identities=me.getVar("identities"),
+		ident=identities[0];
 	
         for(var i=1;i<identities.length;++i) {
             var ifolder=identities[i].mainFolder;
@@ -872,7 +885,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionAdvancedSearch: function(s,e) {
 		var me=this,
-			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0];
+		fn=me.getCtxNode(e)||me.imapTree.getSelection()[0];
 	
 		WT.createView(me.ID,'view.AdvancedSearchDialog',{
 			viewCfg: {
@@ -887,20 +900,20 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionSharing: function(s,e) {
 		var me=this,
-			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0];
+		fn=me.getCtxNode(e)||me.imapTree.getSelection()[0];
 	
 		me.showSharingView(fn);
 	},
 	
 	runSmartSearch: function() {
 		var me=this,
-			pattern=me.messagesPanel.filterTextField.getValue(),
-			vw=WT.createView(me.ID,'view.SmartSearchDialog',{
-				viewCfg: {
-					mys: me,
-					pattern: pattern
-				}
-			});
+		pattern=me.messagesPanel.filterTextField.getValue(),
+		vw=WT.createView(me.ID,'view.SmartSearchDialog',{
+			viewCfg: {
+				mys: me,
+				pattern: pattern
+			}
+		});
 		
 		vw.show(false, function() {
 			if (pattern && pattern.length>0) vw.getView().runSearch();
@@ -909,18 +922,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	showSharingView: function(node) {
 		var me=this,
-			vw=WT.createView(me.ID,'view.Sharing',{
-				viewCfg: {
-					mys: me
-				}
-			});
+		vw=WT.createView(me.ID,'view.Sharing',{
+			viewCfg: {
+				mys: me
+			}
+		});
 	
 		vw.getView().on("modelsave",function(v, success,r) {
 			if (success) {
 				var s=me.imapTree.getStore(),
-					n=s.getNodeById(r.get("id")),
-					m=r.get("method"),
-					pn=m==="all"?s.getRootNode():n.parentNode;
+				n=s.getNodeById(r.get("id")),
+				m=r.get("method"),
+				pn=m==="all"?s.getRootNode():n.parentNode;
 					
 				
 				s.load({
@@ -947,8 +960,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionEmptyFolder: function(s,e) {
 		var me=this,
-			r=me.getCtxNode(e),
-			folder=r.get("id");
+		r=me.getCtxNode(e),
+		folder=r.get("id");
 	
 		WT.confirm(me.res('sureprompt'),function(bid) {
 			if (bid==='yes') {
@@ -959,9 +972,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionDeleteFolder: function(s,e) {
 		var me=this,
-			r=me.getCtxNode(e),
-			folder=r.get("id"),
-			pn=r.parentNode;
+		r=me.getCtxNode(e),
+		folder=r.get("id"),
+		pn=r.parentNode;
 	
 		if (pn && pn.get("isTrash")) {
 			WT.confirm(me.res('sureprompt'),function(bid) {
@@ -977,14 +990,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionRenameFolder: function(s,e) {
 		var me=this,
-			r=me.getCtxNode(e);
+		r=me.getCtxNode(e);
 	
 		me.imapTree.startEdit(r,0);
 	},
 	
     actionNewFolder: function(s,e) {
 		var me=this,
-			folder=me.getCtxNode(e).get("id");
+		folder=me.getCtxNode(e).get("id");
         WT.prompt('',{
 			title: me.res("act-newfolder.lbl"),
 			fn: function(btn,value) {
@@ -1005,14 +1018,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionMoveToMainFolder: function(s,e) {
 		var me=this,
-			rec=me.getCtxNode(e);
+		rec=me.getCtxNode(e);
 	
 		me.moveFolder(rec.get("id"),null);
 	},
 	
 	actionFolderRefresh: function(s,e) {
 		var me=this,
-			rec=me.getCtxNode(e);
+		rec=me.getCtxNode(e);
 	
 		if (rec) me.refreshFolder(rec);
 		else {
@@ -1022,9 +1035,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionScanFolder: function(mi,e) {
 		var me=this,
-			n=me.getCtxNode(e),
-			folder=n.get("id"),
-			v=mi.checked;
+		n=me.getCtxNode(e),
+		folder=n.get("id"),
+		v=mi.checked;
 	
 		if (n.hasChildNodes()) {
 			WT.confirm(me.res('recursive'),function(bid) {
@@ -1037,8 +1050,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionFolderHide: function(s,e) {
 		var me=this,
-			n=me.getCtxNode(e),
-			folder=n.get("id");
+		n=me.getCtxNode(e),
+		folder=n.get("id");
 	
 		WT.confirm(me.res('confirm.folder-hide'),function(bid) {
 			if (bid=='yes') 
@@ -1059,21 +1072,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionFolderMarkSeen: function(s,e) {
 		var me=this,
-			n=me.getCtxNode(e),
-			folder=n.get("id");
+		n=me.getCtxNode(e),
+		folder=n.get("id");
 	
 		if (n.hasChildNodes()) {
 			WT.confirm(me.res('recursive'),function(bid) {
 				me.markSeenFolder(folder,(bid=='yes'));
 			});
 		} else {
-				me.markSeenFolder(folder,false);
+			me.markSeenFolder(folder,false);
 		}
 	},
 	
 	actionDownloadMails: function(s,e) {
 		var me=this,
-			rec=me.getCtxNode(e);
+		rec=me.getCtxNode(e);
 	
 		me.downloadMails(rec.get("id"));
 	},
@@ -1185,17 +1198,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			callback: function(success,json) {
 				if (json.result) {
 					var tr=me.imapTree,
-						v=tr.getView(),
-						s=tr.store,
-						n=(parent?s.getNodeById(parent):s.getRoot()),
-						newname=name,
-						newfullname=json.fullname;
-						me._createNode(n,newfullname,newname);
-						n.expand(false,function(nodes) {
-							var newnode=n.findChild("text",newname);
-							v.setSelection(newnode);
-							me.folderClicked(tr,newnode);
-						});
+					v=tr.getView(),
+					s=tr.store,
+					n=(parent?s.getNodeById(parent):s.getRoot()),
+					newname=name,
+					newfullname=json.fullname;
+					me._createNode(n,newfullname,newname);
+					n.expand(false,function(nodes) {
+						var newnode=n.findChild("text",newname);
+						v.setSelection(newnode);
+						me.folderClicked(tr,newnode);
+					});
 				} else {
 					WT.error(json.text);
 				}
@@ -1206,17 +1219,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	_createNode: function(n,newfullname,newname) {
 		var me=this,
-			newnode=n.createNode({
-				id: newfullname,
-				text: newname,
-				folder: newname,
-				leaf: true,
-				iconCls: 'wtmail-icon-imap-folder-xs',
-				unread:0,
-				hasUnread:false
-			}),
-			cn=n.childNodes,
-			before=null;
+		newnode=n.createNode({
+			id: newfullname,
+			text: newname,
+			folder: newname,
+			leaf: true,
+			iconCls: 'wtmail-icon-imap-folder-xs',
+			unread:0,
+			hasUnread:false
+		}),
+		cn=n.childNodes,
+		before=null;
 	
 		for(var c=0;before==null && c<cn.length;++c) {
 			var cid=cn[c].id;
@@ -1255,8 +1268,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			callback: function(success,json) {
 				if (json.result) {
 					var tr=me.imapTree,
-						s=tr.store,
-						n=s.getById(json.oldid);
+					s=tr.store,
+					n=s.getById(json.oldid);
 					if (n) n.remove();
 					n=(json.parent?s.getNodeById(json.parent):s.getRoot());
 					me.selectChildNode(n,json.newid);
@@ -1293,7 +1306,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			callback: function(success,json) {
 				if (json.result) {
 					var s=me.imapTree.getStore(),
-						n=s.getById(folder);
+					n=s.getById(folder);
 					if (n) n.remove();
 					if (json.newid && json.trashid) {
 						n=s.getById(json.trashid);
@@ -1315,8 +1328,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			},
 			callback: function(success,json) {
 				var tr=me.imapTree,
-					s=tr.getStore(),
-					n=s.getById(folder);
+				s=tr.getStore(),
+				n=s.getById(folder);
 			
 				if (json.result) {
 					s.load({
@@ -1341,8 +1354,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			},
 			callback: function(success,json) {
 				var tr=me.imapTree,
-					s=tr.getStore(),
-					n=s.getById(folder);
+				s=tr.getStore(),
+				n=s.getById(folder);
 			
 				if (json.result) {
 					n.set("scanEnabled",v);
@@ -1363,7 +1376,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	selectChildNode: function(parentNode, childId) {
 		var me=this,
-			tr=me.imapTree;
+		tr=me.imapTree;
 	
 		if (parentNode.isExpanded()) {
 			tr.getStore().load({ node: parentNode });
@@ -1429,8 +1442,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	updateCxmGrid: function(r) {
 		var me=this,
-			menu=me.getRef('mnutag'),
-			tags=r.get("tags");
+		menu=me.getRef('mnutag'),
+		tags=r.get("tags");
 		me.tagsStore.each(function(xr) {
 			menu.getComponent(xr.get("hashId")).setChecked(false,true);
 		});
@@ -1444,9 +1457,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	updateCxmTree: function(r) {
 		var me=this,
-			d=r.getData(),
-			id=r.get("id"),
-			rootid=me.imapTree.getRootNode().get("id");
+		d=r.getData(),
+		id=r.get("id"),
+		rootid=me.imapTree.getRootNode().get("id");
 	
 		me.getAct('emptyfolder').setDisabled(!r.get("isTrash")&&!r.get("isSpam"));
 
@@ -1483,7 +1496,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	editInMailFilters: function(opts) {
 		opts = opts || {};
 		var me = this,
-				vct = WT.createView(me.ID, 'view.InMailFilters');
+		vct = WT.createView(me.ID, 'view.InMailFilters');
 		
 		vct.getView().on('viewsave', function(s, success, model) {
 			Ext.callback(opts.callback, opts.scope || me, [success, model]);
