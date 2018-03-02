@@ -1260,24 +1260,29 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
     moveFolder: function(src,dst) {
 		var me=this;
-		WT.ajaxReq(me.ID, 'MoveFolder', {
-			params: {
-				folder: src,
-				to: dst
-			},
-			callback: function(success,json) {
-				if (json.result) {
-					var tr=me.imapTree,
-					s=tr.store,
-					n=s.getById(json.oldid);
-					if (n) n.remove();
-					n=(json.parent?s.getNodeById(json.parent):s.getRoot());
-					me.selectChildNode(n,json.newid);
-				} else {
-					WT.error(json.text);
-				}
+		WT.confirm(me.res('sureprompt'),function(bid) {
+			if (bid==='yes') {
+				WT.ajaxReq(me.ID, 'MoveFolder', {
+					params: {
+						folder: src,
+						to: dst
+					},
+					callback: function(success,json) {
+						if (json.result) {
+							var tr=me.imapTree,
+							s=tr.store,
+							n=s.getById(json.oldid);
+							if (n) n.remove();
+							n=(json.parent?s.getNodeById(json.parent):s.getRoot());
+							me.selectChildNode(n,json.newid);
+						} else {
+							WT.error(json.text);
+						}
+					}
+				});	
 			}
-		});					
+			me.focus();
+		},me);
     },
 	
 	deleteFolder: function(folder) {
