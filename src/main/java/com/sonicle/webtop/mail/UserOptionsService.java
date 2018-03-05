@@ -105,6 +105,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.format = mus.getFormat();
 				jso.font = mus.getFontName();
 				jso.fontSize = mus.getFontSize();
+				jso.fontColor = mus.getFontColor();
 				jso.receipt = mus.isReceipt();
 				jso.priority = mus.isPriority();
 				jso.showUpcomingEvents = mus.getShowUpcomingEvents();
@@ -201,6 +202,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 				}
 				if (pl.map.has("fontSize")) {
 					mus.setFontSize(pl.data.fontSize);
+				}
+				if (pl.map.has("fontColor")) {
+					mus.setFontColor(pl.data.fontColor);
 				}
 				if (pl.map.has("receipt")) {
 					mus.setReceipt(pl.data.receipt);

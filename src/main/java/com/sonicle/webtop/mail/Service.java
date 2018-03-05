@@ -8121,6 +8121,7 @@ public class Service extends BaseService {
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
 			co.put("fontSize", us.getFontSize());
+			co.put("fontColor", us.getFontColor());
 			co.put("receipt", us.isReceipt());
 			co.put("priority", us.isPriority());
 			co.put("pageRows", us.getPageRows());

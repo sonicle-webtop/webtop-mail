@@ -73,6 +73,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public String defaultFolder;
 	public String format;
 	public String font;
+	public String fontColor;
 	public int fontSize;
 	public boolean receipt;
 	public boolean priority;

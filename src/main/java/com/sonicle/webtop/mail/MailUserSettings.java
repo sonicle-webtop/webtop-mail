@@ -1,36 +1,36 @@
 /*
- * webtop-mail is a WebTop Service developed by Sonicle S.r.l.
- * Copyright (C) 2014 Sonicle S.r.l.
- *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Affero General Public License version 3 as published by
- * the Free Software Foundation with the addition of the following permission
- * added to Section 15 as permitted in Section 7(a): FOR ANY PART OF THE COVERED
- * WORK IN WHICH THE COPYRIGHT IS OWNED BY SONICLE, SONICLE DISCLAIMS THE
- * WARRANTY OF NON INFRINGEMENT OF THIRD PARTY RIGHTS.
- *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program; if not, see http://www.gnu.org/licenses or write to
- * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
- * MA 02110-1301 USA.
- *
- * You can contact Sonicle S.r.l. at email address sonicle@sonicle.com
- *
- * The interactive user interfaces in modified source and object code versions
- * of this program must display Appropriate Legal Notices, as required under
- * Section 5 of the GNU Affero General Public License version 3.
- *
- * In accordance with Section 7(b) of the GNU Affero General Public License
- * version 3, these Appropriate Legal Notices must retain the display of the
- * "Powered by Sonicle WebTop" logo. If the display of the logo is not reasonably
- * feasible for technical reasons, the Appropriate Legal Notices must display
- * the words "Powered by Sonicle WebTop".
- */
+* webtop-mail is a WebTop Service developed by Sonicle S.r.l.
+* Copyright (C) 2014 Sonicle S.r.l.
+*
+* This program is free software; you can redistribute it and/or modify it under
+* the terms of the GNU Affero General Public License version 3 as published by
+* the Free Software Foundation with the addition of the following permission
+* added to Section 15 as permitted in Section 7(a): FOR ANY PART OF THE COVERED
+* WORK IN WHICH THE COPYRIGHT IS OWNED BY SONICLE, SONICLE DISCLAIMS THE
+* WARRANTY OF NON INFRINGEMENT OF THIRD PARTY RIGHTS.
+*
+* This program is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+* FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+* details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with this program; if not, see http://www.gnu.org/licenses or write to
+* the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+* MA 02110-1301 USA.
+*
+* You can contact Sonicle S.r.l. at email address sonicle@sonicle.com
+*
+* The interactive user interfaces in modified source and object code versions
+* of this program must display Appropriate Legal Notices, as required under
+* Section 5 of the GNU Affero General Public License version 3.
+*
+* In accordance with Section 7(b) of the GNU Affero General Public License
+* version 3, these Appropriate Legal Notices must retain the display of the
+* "Powered by Sonicle WebTop" logo. If the display of the logo is not reasonably
+* feasible for technical reasons, the Appropriate Legal Notices must display
+* the words "Powered by Sonicle WebTop".
+*/
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
@@ -45,7 +45,7 @@ import java.util.HashMap;
  * @author gbulfon
  */
 public class MailUserSettings extends BaseUserSettings {
-
+	
 	public static final String MESSAGE_QUICKPART = "message.quickpart@{0}"; // !IMPORTANT
 	public static final String MESSAGE_LIST_GROUP = "messagelist.group@{0}"; // was : "messagelist-group-{0}"
 	public static final String MESSAGE_LIST_SORT = "messagelist.sort@{0}"; // was : "messagelist-{0}-sort"
@@ -85,11 +85,12 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String FORMAT = "format";
 	public static final String FONT_NAME = "font.name";
 	public static final String FONT_SIZE = "font.size";
+	public static final String FONT_COLOR = "font.color";
 	public static final String RECEIPT = "receipt";
 	public static final String PRIORITY = "priority";
 	public static final String READ_RECEIPT_CONFIRMATION = "readreceiptconfirmation";
 	
-    
+	
 	private MailServiceSettings mss; //TODO: portare le chiavi di default qui?
 	
 	public MailUserSettings(UserProfileId profileId) {
@@ -148,37 +149,37 @@ public class MailUserSettings extends BaseUserSettings {
 	public boolean setArchiveMode(String value) {
 		return setString(ARCHIVING_MODE, value);
 	}
-    
-    public boolean isArchiveKeepFoldersStructure() {
-        return getBoolean(ARCHIVING_KEEP_FOLDERS_STRUCTURE, false);
-    }
 	
-    public boolean setArchiveKeepFoldersStructure(boolean b) {
-        return setBoolean(ARCHIVING_KEEP_FOLDERS_STRUCTURE, b);
-    }
+	public boolean isArchiveKeepFoldersStructure() {
+		return getBoolean(ARCHIVING_KEEP_FOLDERS_STRUCTURE, false);
+	}
 	
-    public boolean isIngridPreview() {
-        return getBoolean(INGRID_PREVIEW, true);
-    }
+	public boolean setArchiveKeepFoldersStructure(boolean b) {
+		return setBoolean(ARCHIVING_KEEP_FOLDERS_STRUCTURE, b);
+	}
 	
-    public boolean setIngridPreview(boolean b) {
-        return setBoolean(INGRID_PREVIEW, b);
-    }
+	public boolean isIngridPreview() {
+		return getBoolean(INGRID_PREVIEW, true);
+	}
 	
-    public boolean isSharedSeen() {
-        return getBoolean(SHARED_SEEN, false);
-    }
+	public boolean setIngridPreview(boolean b) {
+		return setBoolean(INGRID_PREVIEW, b);
+	}
 	
-    public boolean setSharedSeen(boolean b) {
-        return setBoolean(SHARED_SEEN, b);
-    }
+	public boolean isSharedSeen() {
+		return getBoolean(SHARED_SEEN, false);
+	}
 	
-    public boolean isManualSeen() {
-        return getBoolean(MANUAL_SEEN, false);
-    }
+	public boolean setSharedSeen(boolean b) {
+		return setBoolean(SHARED_SEEN, b);
+	}
+	
+	public boolean isManualSeen() {
+		return getBoolean(MANUAL_SEEN, false);
+	}
 	
 	public boolean setManualSeen(boolean b) {
-        return setBoolean(MANUAL_SEEN, b);
+		return setBoolean(MANUAL_SEEN, b);
 	}
 	
 	public String getMessageListGroup(String foldername) {
@@ -204,7 +205,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public boolean setColumnsOrderSetting(ColumnsOrderSetting cos) {
 		return setObject(COLUMNS_ORDER,cos,ColumnsOrderSetting.class);
 	}
-    
+	
 	public void clearColumnsOrderSetting() {
 		clear(COLUMNS_ORDER);
 	}
@@ -219,7 +220,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public boolean setColumnVisibilitySetting(String foldername, ColumnVisibilitySetting cvs) {
 		return setObject(MessageFormat.format(COLUMN_VISIBLE, foldername),cvs,ColumnVisibilitySetting.class);
 	}
-    
+	
 	public boolean clearColumnVisibilitySetting(String foldername) {
 		return clear(MessageFormat.format(COLUMN_VISIBLE, foldername));
 	}
@@ -325,7 +326,7 @@ public class MailUserSettings extends BaseUserSettings {
 		if (s==null) s=mss.getDefaultFolderTrash();
 		return s;
 	}
-
+	
 	public boolean setFolderTrash(String name) {
 		return setString(FOLDER_TRASH,name);
 	}
@@ -335,7 +336,7 @@ public class MailUserSettings extends BaseUserSettings {
 		if (s==null) s=mss.getDefaultFolderArchive();
 		return s;
 	}
-
+	
 	public boolean setFolderArchive(String name) {
 		return setString(FOLDER_ARCHIVE,name);
 	}
@@ -519,6 +520,16 @@ public class MailUserSettings extends BaseUserSettings {
 	public boolean setFontSize(int size) {
 		return setInteger(FONT_SIZE, size);
 	}
+	public String getFontColor() {
+		String s=getString(FONT_COLOR,null);
+		if (s==null) s="#000000";
+		return s;
+	}
+	
+	public boolean setFontColor(String fontcolor) {
+		return setString(FONT_COLOR, fontcolor);
+	}
+	
 	
 	public boolean isReceipt() {
 		Boolean b=getBoolean(RECEIPT,null);

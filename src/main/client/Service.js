@@ -813,6 +813,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				identityIndex: ident.index||0,
 				fontFace: me.getVar('fontName'),
 				fontSize: me.getVar('fontSize'),
+				fontColor: me.getVar('fontColor'),
 				autosave: true,
 				showSave: !opts.fax,
 				showReceipt: !opts.fax,
