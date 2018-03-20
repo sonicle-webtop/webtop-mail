@@ -91,7 +91,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 					listeners: {
 						'select': {
 							fn: function(cb,r,ix) {
-							  if (r.get('id').startsWith('folder:')) me.searchCheckbox.show();
+							  if (Ext.String.startsWith(r.get('id'), 'folder:')) me.searchCheckbox.show();
 							  else me.searchCheckbox.hide();
 							}
 						}

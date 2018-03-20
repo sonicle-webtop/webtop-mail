@@ -111,7 +111,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		if (!node) node=me.getRootNode();
 		
 		Ext.each(node.childNodes,function(cn,cx,an) {
-			if (id.startsWith(cn.id+sep)) {
+			if (Ext.String.startsWith(id, cn.id+sep)) {
 				cn.expand(false,function() {
 					me.expandAndSelectNode(id,sep,cn);
 				});

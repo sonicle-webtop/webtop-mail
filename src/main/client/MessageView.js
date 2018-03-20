@@ -1205,7 +1205,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
    /* as from original main.js */
     setEmailElement: function(e,desc,email,type) {
 		var me=this;
-        if (email && !email.startsWith('undisclosed-recipients')) {
+        if (email && !Ext.String.startsWith(email, 'undisclosed-recipients')) {
 			//TODO check if really used: can't find a class like this
             //if (!e.hasClass("wtmail-element-email")) e.addClass("wtmail-element-email");
             e.recDesc=desc;
