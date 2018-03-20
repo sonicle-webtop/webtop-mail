@@ -337,7 +337,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		{
 			ftype: 'rowbody',
 			getAdditionalData: function (data, idx, record, orig) {
-				var msgtext=record.get("msgtext");
+				var msgtext=Ext.String.htmlEncode(record.get("msgtext"));
 				return {
 					rowBody: msgtext!=null?
 						"<span style='padding-left: 50px'>"+msgtext+"</span>":
