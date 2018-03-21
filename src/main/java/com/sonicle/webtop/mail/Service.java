@@ -805,7 +805,7 @@ public class Service extends BaseService {
 	public FolderCache moveFolder(String source, String dest) throws MessagingException {
 		Folder oldfolder = getFolder(source);
 		String oldname = oldfolder.getName();
-		System.out.println("moveFolder "+source+" -> "+dest);
+		//System.out.println("moveFolder "+source+" -> "+dest);
 		Folder newfolder;
 		if (dest != null && dest.trim().length() > 0) {
 			String newname = dest + getFolderSeparator() + oldname;
@@ -822,9 +822,9 @@ public class Service extends BaseService {
 		if (fcsrc != null) {
 			destroyFolderCache(fcsrc);
 		}
-		System.out.println(oldfolder.getFullName()+" renameTo "+newfolder.getFullName());
+		//System.out.println(oldfolder.getFullName()+" renameTo "+newfolder.getFullName());
 		boolean done = oldfolder.renameTo(newfolder);
-		System.out.println("done "+done);
+		//System.out.println("done "+done);
 		if (done) {
 			if (dest != null) {
 				FolderCache tfc = getFolderCache(newfolder.getParent().getFullName());
@@ -2863,7 +2863,7 @@ public class Service extends BaseService {
 			FolderCache mc = getFolderCache(foldername);
 			if (mc == null) {
 				//continue;
-				System.out.println("foldername="+foldername+" parentname="+parent.getFullName());
+				//System.out.println("foldername="+foldername+" parentname="+parent.getFullName());
 				FolderCache fcparent=getFolderCache(parent.getFullName());
 				mc=addSingleFoldersCache(fcparent, f);
 			}
@@ -8121,6 +8121,7 @@ public class Service extends BaseService {
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
 			co.put("fontSize", us.getFontSize());
+			co.put("fontColor", us.getFontColor());
 			co.put("receipt", us.isReceipt());
 			co.put("priority", us.isPriority());
 			co.put("pageRows", us.getPageRows());

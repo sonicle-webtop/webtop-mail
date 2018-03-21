@@ -64,6 +64,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	selectedIdentity: null,
 	fontFace: 'Arial',
 	fontSize: 12,
+	fontColor: '#000000',
 	
     showSave: true,
     showAddressBook: true,
@@ -506,6 +507,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableFontSize: true,
 				enableFormat: true,
 				enableColors: true,
+				enableEmoticons: true,
 				enableAlignments: true,
 				enableLinks: true,
 				enableLists: true,
@@ -901,7 +903,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				if (contentAfter) content=mchtml+content;
 				else content+=mchtml;
 			}
-			content='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;">'+content+'</div>';
+			content='<div style="font-family: '+me.fontFace+'; font-size: '+me.fontSize+'px;color: '+me.fontColor+';">'+content+'</div>';
 		}
 		else if (format==="plain") {
 			if (mc) {

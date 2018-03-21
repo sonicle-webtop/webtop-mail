@@ -76,6 +76,7 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('format', 'string', true),
 		WTF.field('font', 'string', true),
 		WTF.field('fontSize', 'int', true),
+		WTF.field('fontColor', 'string', true),
 		WTF.field('receipt', 'boolean', false),
 		WTF.field('priority', 'boolean', false),
 		WTF.field('showUpcomingEvents', 'boolean', false),
