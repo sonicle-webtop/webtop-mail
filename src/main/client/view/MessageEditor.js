@@ -507,6 +507,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableFontSize: true,
 				enableFormat: true,
 				enableColors: true,
+				enableEmoticons: true,
 				enableAlignments: true,
 				enableLinks: true,
 				enableLists: true,
