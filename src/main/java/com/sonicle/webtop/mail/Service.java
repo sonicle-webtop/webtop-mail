@@ -2337,7 +2337,7 @@ public class Service extends BaseService {
 	}
 	
 	public boolean hasDmsDocumentArchiving() {
-		return RunContext.isPermitted(SERVICE_ID, "DMS_DOCUMENT_ARCHIVING");
+		return RunContext.isPermitted(true, SERVICE_ID, "DMS_DOCUMENT_ARCHIVING");
 	}
 	
 	public String getDmsSimpleArchivingMailFolder() {
@@ -7715,10 +7715,10 @@ public class Service extends BaseService {
 				if (ad.getInternetName().toLowerCase().equals(domain)) userId=aclUserId.substring(0,ix);
 				else {
 					//skip if non domain users not permitted
-					if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
+					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
 				}
 			} else {
-				if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
+				if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
 			}
 		}
 		if (principal.getUserId().equals(userId)) userId=null;
@@ -7758,7 +7758,7 @@ public class Service extends BaseService {
 				boolean shareIdentity=false;
 				boolean forceMailcard=false;
 				if (roleUid==null) { 
-					if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 					roleUid=aclUserId; 
 					roleDescription=roleUid; 
 				} else {
@@ -8139,8 +8139,9 @@ public class Service extends BaseService {
 			co.put("showUpcomingEvents", us.getShowUpcomingEvents());
 			co.put("showUpcomingTasks", us.getShowUpcomingTasks());
 			
-			if (RunContext.isPermitted(SERVICE_ID, "FAX","ACCESS")) 
+			if (RunContext.isPermitted(true, SERVICE_ID, "FAX", "ACCESS")) {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());
+			}
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	

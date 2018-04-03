@@ -36,11 +36,9 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 	
 	proxy: WT.optionsProxy('com.sonicle.webtop.mail'),
 	fields: [
-		
-		WTF.roField('canChangeAccountSettings', 'boolean'),
-		WTF.roField('canChangeMailcardSettings', 'boolean'),
-		WTF.roField('canChangeDomainMailcardSettings', 'boolean'),
-		
+		WTF.roField('canManageAccount', 'boolean'),
+		WTF.roField('canManageMailcard', 'boolean'),
+		WTF.roField('canManageDomainMailcard', 'boolean'),
 		WTF.field('dmsSimpleMailFolder', 'string', true),
 		WTF.field('dmsMethod', 'string', true),
 		WTF.field('archiveMode', 'string', true),
