@@ -7076,7 +7076,7 @@ public class Service extends BaseService {
 				Service.logger.debug("uploadId was not valid!");
 			}
 		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
+			Service.logger.error("Exception during previewAttachment",exc);
 		}
 	}
 	
