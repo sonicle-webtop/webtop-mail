@@ -6129,7 +6129,7 @@ public class Service extends BaseService {
 						}
 						
 						String msgtext=null;
-						if (us.isIngridPreview() && isToday && unread) {
+						if (us.getShowMessagePreviewOnRow()&& isToday && unread) {
 							try {
 								msgtext=MailUtils.peekText(xm);
 								if (msgtext!=null) {
