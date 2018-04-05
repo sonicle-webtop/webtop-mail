@@ -56,6 +56,13 @@ public class MailSettings {
 	/**
 	 * [user][default]
 	 * [boolean]
+	 * Activate or not message body preview in messages grid
+	 */
+	public static final String SHOW_MESSAGE_PREVIEW_ON_ROW = "ingrid.preview";
+	
+	/**
+	 * [user][default]
+	 * [boolean]
 	 * Activate a view showing all upcoming events.
 	 */
 	public static final String SHOW_UPCOMING_EVENTS = "upcoming.events.show";

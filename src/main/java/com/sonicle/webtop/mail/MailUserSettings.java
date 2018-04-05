@@ -54,7 +54,6 @@ public class MailUserSettings extends BaseUserSettings {
 	public static final String COLUMN_SIZE = COLUMN_SIZE_PREFIX+"{0}"; //was : "column-{0}"
 	public static final String COLUMN_VISIBLE = "column.visible@{0}";
 	public static final String COLUMNS_ORDER = "columns.order";
-	public static final String INGRID_PREVIEW = "ingrid.preview";
 	public static final String SHARED_SEEN = "sharedseen";
 	public static final String MANUAL_SEEN = "manualseen";
 	public static final String SHARING_RIGHTS = "sharing.rights";
@@ -156,14 +155,6 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public boolean setArchiveKeepFoldersStructure(boolean b) {
 		return setBoolean(ARCHIVING_KEEP_FOLDERS_STRUCTURE, b);
-	}
-	
-	public boolean isIngridPreview() {
-		return getBoolean(INGRID_PREVIEW, true);
-	}
-	
-	public boolean setIngridPreview(boolean b) {
-		return setBoolean(INGRID_PREVIEW, b);
 	}
 	
 	public boolean isSharedSeen() {
@@ -549,6 +540,15 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public boolean setPriority(boolean b) {
 		return setBoolean(PRIORITY,b);
+	}
+	
+	public boolean getShowMessagePreviewOnRow() {
+		Boolean value = getBoolean(SHOW_MESSAGE_PREVIEW_ON_ROW, null);
+		return (value != null) ? value : mss.getDefaultShowMessagePreviewOnRow();
+	}
+	
+	public boolean setShowMessagePreviewOnRow(boolean value) {
+		return setBoolean(SHOW_MESSAGE_PREVIEW_ON_ROW, value);
 	}
 	
 	public boolean getShowUpcomingEvents() {

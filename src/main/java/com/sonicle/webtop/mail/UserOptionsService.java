@@ -79,7 +79,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.dmsMethod = mus.getDMSMethod();
 				jso.archiveMode = mus.getArchiveMode();
 				jso.archiveKeepFoldersStructure = mus.isArchiveKeepFoldersStructure();
-				jso.ingridPreview = mus.isIngridPreview();
+				jso.ingridPreview = mus.getShowMessagePreviewOnRow();
 				jso.sharedSeen = mus.isSharedSeen();
 				jso.manualSeen = mus.isManualSeen();
 				jso.scanAll = mus.isScanAll();
@@ -129,7 +129,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 					mus.setDMSMethod(pl.data.dmsMethod);
 				}
 				if (pl.map.has("ingridPreview")) {
-					mus.setIngridPreview(pl.data.ingridPreview);
+					mus.setShowMessagePreviewOnRow(pl.data.ingridPreview);
 				}
 				if (pl.map.has("sharedSeen")) {
 					mus.setSharedSeen(pl.data.sharedSeen);
