@@ -128,6 +128,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
 			mys: me,
 			region: 'center',
+			
+			stateEvents : ['collapsenode', 'expandnode'],
+			stateId : 'imaptree-state-id',
+			statefulFolders : true,
+			
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
 					me.updateCxmTree(rec);
@@ -144,6 +149,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						//keep enabled loadMask only for root loading
 						me.imapTree.getView().loadMask=false;
 						me.selectInbox();
+						//Ext.each(n.childNodes,function(cn,cx,an) {
+						//	if (cn.get("isSharedRoot")) {
+						//		cn.expand();
+						//	}
+						//});
+					}
+				},
+				foldersstaterestored: function(t,expandedNodes) {
+					var me=this;
+					//if no state was present, defaults to expand shared folders
+					if (!expandedNodes) {
+						var n=me.getRootNode();
 						Ext.each(n.childNodes,function(cn,cx,an) {
 							if (cn.get("isSharedRoot")) {
 								cn.expand();
