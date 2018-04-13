@@ -4650,7 +4650,6 @@ public class Service extends BaseService {
             long msgId=ServletUtils.getLongParameter(request, "msgId", true);
 			//String attachments[] = request.getParameterValues("attachments");
 			String savefolder = ServletUtils.getStringParameter(request, "savefolder", false);
-            
 			//if (attachments == null) {
 			//	attachments = new String[0];
 			//}
@@ -4681,6 +4680,10 @@ public class Service extends BaseService {
 			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+				
+				if (pl.data.origuid>0 && pl.data.folder!=null && fc.getFolder().getFullName().equals(pl.data.folder)) {
+					fc.deleteMessages(new long[] { pl.data.origuid }, false);
+				}
 				
 				fc.setForceRefresh();
                 json=new JsonResult()

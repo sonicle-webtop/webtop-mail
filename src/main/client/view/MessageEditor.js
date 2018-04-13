@@ -221,11 +221,28 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		if (me.showSave) {
 			tbitems[tbx++]={
-				xtype: 'button',
+				xtype: 'splitbutton',
+				//text: me.res('editor.send.btn-save.tip'),
 				tooltip: me.res('editor.btn-save.tip'),
 				iconCls: 'wt-icon-save-xs',
 				handler: me.actionSave,
-				scope: me
+				scope: me,
+				menu: [
+					{
+						text: me.res('editor.btn-save.tip'),
+						//tooltip: me.res('editor.btn-save.tip'),
+						iconCls: 'wt-icon-save-xs',
+						handler: me.actionSave,
+						scope: me				
+					},
+					{
+						text: me.res('editor.btn-save-new.tip'),
+						//tooltip: me.res('editor.btn-save-new.tip'),
+						iconCls: 'wt-icon-save-new-xs',
+						handler: me.actionSaveNew,
+						scope: me				
+					},
+				]
 			};
 			tbitems[tbx++]='-';
 		}
@@ -678,6 +695,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 				if (r.get("draftuid")>0 && r.get("draftfolder")==me.mys.currentFolder) {
 					me.mys.reloadFolderList();
+					me.mys.messagesPanel.clearMessageView();
 				}
 			} else {
 				if (me.autosaveTask) me.autosaveTask.delay(me.autosaveDelay);
@@ -818,6 +836,12 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         }
     },
     
+    actionSaveNew: function() {
+        var me=this;
+		me.getModel().set("origuid",0);
+		me.actionSave();
+	},
+	
     saveMessage: function() {
         var me=this;
         me.getModel().setExtraParams({
