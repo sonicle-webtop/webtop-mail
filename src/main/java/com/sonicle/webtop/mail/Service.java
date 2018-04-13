@@ -4650,7 +4650,6 @@ public class Service extends BaseService {
             long msgId=ServletUtils.getLongParameter(request, "msgId", true);
 			//String attachments[] = request.getParameterValues("attachments");
 			String savefolder = ServletUtils.getStringParameter(request, "savefolder", false);
-            
 			//if (attachments == null) {
 			//	attachments = new String[0];
 			//}
@@ -4681,6 +4680,10 @@ public class Service extends BaseService {
 			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+				
+				if (pl.data.origuid>0 && pl.data.folder!=null && fc.getFolder().getFullName().equals(pl.data.folder)) {
+					fc.deleteMessages(new long[] { pl.data.origuid }, false);
+				}
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -7847,19 +7850,21 @@ public class Service extends BaseService {
 				
 				//first delete all removed roles
 				for(JsSharing.SharingRights sr: sharing.rights) {
+					String imapId=ss.isImapAclLowercase()?sr.imapId.toLowerCase(): sr.imapId ;
 					if (!pl.data.hasImapId(sr.imapId)) {
-						logger.debug("Folder ["+foldername+"] - remove acl for "+sr.imapId+" recursive="+recursive);
-						removeFolderSharing(foldername,sr.imapId,recursive);
+						logger.debug("Folder ["+foldername+"] - remove acl for "+imapId+" recursive="+recursive);
+						removeFolderSharing(foldername,imapId,recursive);
 						updateIdentitySharingRights(newwtrights,sr.roleUid,false,false);
 					}
 				}
 				
 				//now apply new acls
 				for(JsSharing.SharingRights sr: pl.data.rights) {
+					String imapId=ss.isImapAclLowercase()?sr.imapId.toLowerCase(): sr.imapId ;
 					if (!StringUtils.isEmpty(sr.imapId)) {
 						String srights=sr.toString();
-						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+sr.imapId+" recursive="+recursive);
-						setFolderSharing(foldername, sr.imapId, srights, recursive);
+						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+imapId+" recursive="+recursive);
+						setFolderSharing(foldername, imapId, srights, recursive);
 						updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard);
 					}
 				}

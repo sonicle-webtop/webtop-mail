@@ -41,6 +41,7 @@ import java.util.List;
  */
 public class JsMessage {
 
+	public String folder;
     public Boolean receipt;
     public Boolean priority;
     public String from;
