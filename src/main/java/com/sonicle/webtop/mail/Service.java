@@ -7846,19 +7846,21 @@ public class Service extends BaseService {
 				
 				//first delete all removed roles
 				for(JsSharing.SharingRights sr: sharing.rights) {
+					String imapId=ss.isImapAclLowercase()?sr.imapId.toLowerCase(): sr.imapId ;
 					if (!pl.data.hasImapId(sr.imapId)) {
-						logger.debug("Folder ["+foldername+"] - remove acl for "+sr.imapId+" recursive="+recursive);
-						removeFolderSharing(foldername,sr.imapId,recursive);
+						logger.debug("Folder ["+foldername+"] - remove acl for "+imapId+" recursive="+recursive);
+						removeFolderSharing(foldername,imapId,recursive);
 						updateIdentitySharingRights(newwtrights,sr.roleUid,false,false);
 					}
 				}
 				
 				//now apply new acls
 				for(JsSharing.SharingRights sr: pl.data.rights) {
+					String imapId=ss.isImapAclLowercase()?sr.imapId.toLowerCase(): sr.imapId ;
 					if (!StringUtils.isEmpty(sr.imapId)) {
 						String srights=sr.toString();
-						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+sr.imapId+" recursive="+recursive);
-						setFolderSharing(foldername, sr.imapId, srights, recursive);
+						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+imapId+" recursive="+recursive);
+						setFolderSharing(foldername, imapId, srights, recursive);
 						updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard);
 					}
 				}

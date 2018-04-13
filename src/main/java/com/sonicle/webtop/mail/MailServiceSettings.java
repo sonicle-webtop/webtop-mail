@@ -59,6 +59,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String NETHTOP_VMAIL_SECRET = "nethtop.vmail.secret";
 	public static final String SCHEDULED_EMAILS_DISABLED = "scheduled-emails.disabled";
 	public static final String SIEVE_SPAMFILTER_DISABLED = "sieve.spamfilter.disabled";
+	public static final String IMAP_ACL_LOWERCASE="imap.acl.lowercase";
 
 /*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
 	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
@@ -144,6 +145,9 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public int getSievePort() {
 		Integer value = getInteger(MailSettings.SIEVE_PORT, null);
 		return (value != null) ? value : getDefaultSievePort();
+	}
+	public boolean isImapAclLowercase() {
+		return getBoolean(IMAP_ACL_LOWERCASE,false);
 	}
 	
 	//DEFAULTS
