@@ -100,17 +100,15 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 		me.on({
 			scope: me,
 			render: me.onStatefulRender,
-			show: me.restoreFoldersState, //See: http://extjs.com/forum/showthread.php?p=212359
 			beforeitemexpand: me.beforeStatefulItemExpand,
 			beforeitemcollapse: me.beforeStatefulItemCollapse
 		});										  
 		me.setStateful(true);
 	},
 	
-	onStatefulRender: function(){ //In this event must be restoreState but not not work: http://extjs.com/forum/showthread.php?p=212359
+	onStatefulRender: function(){
 		var me=this;
-		me.setVisible(false);
-		Ext.defer(function() { me.setVisible(true); },1000);
+		Ext.defer(function() { me.restoreFoldersState(); },1000);
 	},
 	
 	restoreFoldersState: function() {											 
