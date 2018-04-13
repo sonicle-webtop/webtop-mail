@@ -657,6 +657,18 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		s.load();
 	},
 	
+	getState: function() {
+		var me=this,gcols=me.getColumns(),cols=new Array(gcols.length);
+		Ext.each(gcols,function(gcol,ix,gcols) {
+			cols[ix]={
+				id: gcol.stateId,
+				width: gcol.width,
+				hidden: gcol.hidden
+			}
+		});
+		return { columns: cols };
+	},
+	
     /**
      * Initializes the state of the object upon construction.
      * @private
@@ -667,6 +679,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
             hasListeners = me.hasListeners,
             state,
             combinedState,
+			defaultState,
             i, len,
             plugins,
             plugin,
@@ -678,8 +691,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
             if (combinedState) {
                 state = Ext.apply({}, combinedState);
+				defaultState=false;
             } else {
 				state=me.createDefaultState();
+				defaultState=true;
 			}
 			
 			var node=me.mys.getFolderNodeById(me.currentFolder),
@@ -690,16 +705,18 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				delete state.storeState.filters;
 				delete state.storeState.grouper;
 			}
-			Ext.each(state.columns,function(col) {
-				switch(col.id) {
-					case 'stid-from':
-						me._updateColHiddenState(col,issentfolder);
-						break;
-					case 'stid-to':
-						me._updateColHiddenState(col,!issentfolder);
-						break;
-				}
-			});
+			if (defaultState) {
+				Ext.each(state.columns,function(col) {
+					switch(col.id) {
+						case 'stid-from':
+							me._updateColHiddenState(col,issentfolder);
+							break;
+						case 'stid-to':
+							me._updateColHiddenState(col,!issentfolder);
+							break;
+					}
+				});
+			}
 			
 			var newcols=me.createColumnsFromState(state);
 			
@@ -731,13 +748,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.fireEvent('staterestore', me, state);
 			}
 			
+			me.folderStateInitialized=true;
         }
     },
 	
 	//add hidden only if not already set and new state true
 	//if already set and false, delete it
 	_updateColHiddenState: function(col,hidden) {
-		if (!Ext.isDefined(col.hidden) && hidden) col.hidden=hidden;
+		//if (!Ext.isDefined(col.hidden) && hidden) col.hidden=hidden;
+		//else if (!col.hidden) delete col.hidden;
+		if (!Ext.isDefined(col.hidden)) col.hidden=hidden;
 		else if (!col.hidden) delete col.hidden;
 	},
  	
@@ -1826,7 +1846,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
     actionResetColumns: function() {
         this.initFolderState(true);
-		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), { timestamp: Date.now() }));
+		this.proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), { timestamp: Date.now() }));
 		this.store.load();
     },
 

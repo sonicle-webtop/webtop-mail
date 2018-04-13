@@ -146,6 +146,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 		Integer value = getInteger(MailSettings.SIEVE_PORT, null);
 		return (value != null) ? value : getDefaultSievePort();
 	}
+	
 	public boolean isImapAclLowercase() {
 		return getBoolean(IMAP_ACL_LOWERCASE,false);
 	}
