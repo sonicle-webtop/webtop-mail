@@ -4130,7 +4130,7 @@ public class Service extends BaseService {
 			);
 			
 			sout = "{\n result: true,";
-            Identity ident=mprofile.getIdentity(pfoldername);
+			Identity ident=mprofile.getIdentity(pfoldername);
 			String forwardedfrom = smsg.getForwardedFrom();
 			sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
 			if (forwardedfrom != null) {
@@ -4145,39 +4145,45 @@ public class Service extends BaseService {
 				HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
 				boolean first = true;
 				sout += " attachments: [\n";
+				
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
-					Part part = maildata.getAttachmentPart(i);
-					String filename = getPartName(part);
-					if (filename != null) {
-						String cids[] = part.getHeader("Content-ID");
-						String cid = null;
-						//String cid=filename;
-						if (cids != null && cids[0] != null) {
-							cid = cids[0];
-							if (cid.startsWith("<")) cid=cid.substring(1);
-							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
+					try{
+						Part part = maildata.getAttachmentPart(i);
+						String filename = getPartName(part);
+						if (filename != null) {
+							String cids[] = part.getHeader("Content-ID");
+							String cid = null;
+							//String cid=filename;
+							if (cids != null && cids[0] != null) {
+								cid = cids[0];
+								if (cid.startsWith("<")) cid=cid.substring(1);
+								if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
+							}
+							String mime=part.getContentType();
+							UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
+							boolean inline = false;
+							if (part.getDisposition() != null) {
+								inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
+							}
+							if (!first) {
+								sout += ",\n";
+							}
+							sout += "{ "+
+									" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
+									" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
+									" cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
+									" inline: "+inline+", "+
+									" fileSize: "+upfile.getSize()+" "+
+									" }";
+							first = false;
+							//TODO: change this weird matching of cids2urls!
+							html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 						}
-                        String mime=part.getContentType();
-						UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
-						boolean inline = false;
-						if (part.getDisposition() != null) {
-							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
-						}
-						if (!first) {
-							sout += ",\n";
-						}
-						sout += "{ "+
-								" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
-								" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
-								" cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
-                                " inline: "+inline+", "+
-								" fileSize: "+upfile.getSize()+" "+
-								" }";
-						first = false;
-						//TODO: change this weird matching of cids2urls!
-						html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+					} catch (Exception exc) {
+						Service.logger.error("Exception",exc);
 					}
 				}
+				
 				sout += "\n ],\n";
 				//String surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
 				//html = replaceCidUrls(html, maildata, surl);
@@ -4188,20 +4194,20 @@ public class Service extends BaseService {
 				sout += "{ "+
 						" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
 						" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
-                        " cid: null, "+
-                        " inline: false, "+
+						" cid: null, "+
+						" inline: false, "+
 						" fileSize: "+upfile.getSize()+" "+
 						" }";
 				sout += "\n ],\n";
 			}
-            sout += " identityId: "+ident.getIdentityId()+",\n";
+			sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
 			if (isHtml) {
 				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
 			} else {
 				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(text) + "',\n";
 			}
-            sout += " format:'"+format+"'\n";
+			sout += " format:'"+format+"'\n";
 			sout += "\n}";
 			out.println(sout);
 		} catch (Exception exc) {
