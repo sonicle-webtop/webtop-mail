@@ -1911,23 +1911,21 @@ public class Service extends BaseService {
 					sb.append("</BLOCKQUOTE>");
 				}
 			} else {
-				String ubody = body.toUpperCase();
+				//String ubody = body.toUpperCase();
 				while (true) {
-					int ix1 = ubody.indexOf("<BODY");
+					int ix1 = StringUtils.indexOfIgnoreCase(body,"<BODY");
 					if (ix1 < 0) {
 						break;
 					}
-					int ix2 = ubody.indexOf(">", ix1 + 1);
+					int ix2 = StringUtils.indexOfIgnoreCase(body,">", ix1 + 1);
 					if (ix2 < 0) {
 						ix2 = ix1 + 4;
 					}
-					int ix3 = ubody.indexOf("</BODY", ix2 + 1);
+					int ix3 = StringUtils.indexOfIgnoreCase(body,"</BODY", ix2 + 1);
 					if (ix3 > 0) {
 						body = body.substring(ix2 + 1, ix3);
-						ubody = ubody.substring(ix2 + 1, ix3);
 					} else {
 						body = body.substring(ix2 + 1);
-						ubody = ubody.substring(ix2 + 1);
 					}
 				}
 				//body=removeStartEndTag(body,unwantedTags);
