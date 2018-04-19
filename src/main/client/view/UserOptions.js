@@ -43,6 +43,18 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	
 	viewModel: {
 		formulas: {
+			foCanManageAccount: function(get) {
+				if (WT.isProfileActingAsAdmin()) return true;
+				return get('record.canManageAccount');
+			},
+			foCanManageMailcard: function(get) {
+				if (WT.isProfileActingAsAdmin()) return true;
+				return get('record.canManageMailcard');
+			},
+			foCanManageDomainMailcard: function(get) {
+				if (WT.isProfileActingAsAdmin()) return true;
+				return get('record.canManageDomainMailcard');
+			},
 			receipt: WTF.checkboxBind('record', 'receipt'),
 			priority: WTF.checkboxBind('record', 'priority'),
 			archiveKeepFoldersStructure: WTF.checkboxBind('record', 'archiveKeepFoldersStructure'),
@@ -51,19 +63,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
 			ingridPreview: WTF.checkboxBind('record', 'ingridPreview'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
-			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks'),
-			canChangeAccountSettings: function(get) {
-				return get("record.canChangeAccountSettings");
-			},
-			canChangeMailcardSettings: function(get) {
-				return get("record.canChangeMailcardSettings");
-			},
-			canChangeDomainMailcardSettings: function(get) {
-				return get("record.canChangeDomainMailcardSettings");
-			}
+			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks')
 		}
 	},
-	
 		
 	initComponent: function() {
 		var me = this;
@@ -226,7 +228,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					fieldLabel: me.res('opts.editing.fld-emaildomainMailcard.lbl'),
 					layout: 'hbox',
 					bind: {
-						hidden: '{!canChangeDomainMailcardSettings}'
+						hidden: '{!foCanManageDomainMailcard}'
 					},
 					items: [ 
 						{ xtype: 'button', text: WT.res('act-edit.lbl'), width: 100, handler: function(s) { me.editMailcard('emaildomain', s); } },
@@ -238,7 +240,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					fieldLabel: me.res('opts.editing.fld-identity0Mailcard.lbl'),
 					layout: 'hbox',
 					bind: {
-						hidden: '{!canChangeMailcardSettings}'
+						hidden: '{!foCanManageMailcard}'
 					},
 					items: [ 
 						{ xtype: 'button', text: WT.res('act-edit.lbl'), width: 100, handler: function(s) { me.editMailcard('identity|0', s); } },
@@ -296,7 +298,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									xtype: 'label',
 									text: ' Mailcard: ',
 									bind: {
-										hidden: '{!canChangeMailcardSettings}'
+										hidden: '{!foCanManageMailcard}'
 									}
 								},
 								{
@@ -305,7 +307,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									tooltip: me.res('opts.a-mailcardedit.tip'),
 									iconCls: 'wtmail-icon-mailcardedit-xs',
 									bind: {
-										hidden: '{!canChangeMailcardSettings}'
+										hidden: '{!foCanManageMailcard}'
 									},
 									disabled: true,
 									handler: function(s) {
@@ -324,7 +326,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									tooltip: me.res('opts.a-mailcardremove.tip'),
 									iconCls: 'wtmail-icon-mailcardremove-xs',
 									bind: {
-										hidden: '{!canChangeMailcardSettings}'
+										hidden: '{!foCanManageMailcard}'
 									},
 									disabled: true,
 									handler: function(s) {
@@ -480,7 +482,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				WTF.lookupCombo('id', 'desc', {
 					bind: {
 						value: '{record.protocol}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					store: Ext.create('WTA.store.MailboxProtocols', {
 						autoLoad: true
@@ -493,7 +495,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'textfield',
 					bind: {
 						value: '{record.host}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					fieldLabel: me.res('opts.account.fld-host.lbl'),
 					width: 440,
@@ -503,7 +505,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'numberfield',
 					bind: {
 						value: '{record.port}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					fieldLabel: me.res('opts.account.fld-port.lbl'),
 					width: 240,
@@ -516,7 +518,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'textfield',
 					bind: {
 						value: '{record.username}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					plugins: 'sonoautocomplete',
 					fieldLabel: me.res('opts.account.fld-username.lbl'),
@@ -529,7 +531,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'sopasswordfield',
 					bind: {
 						value: '{record.password}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					plugins: 'sonoautocomplete',
 					//inputType: 'password',
@@ -543,7 +545,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'textfield',
 					bind: {
 						value: '{record.folderPrefix}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					fieldLabel: me.res('opts.account.fld-folderPrefix.lbl'),
 					width: 440,
@@ -553,7 +555,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'textfield',
 					bind: {
 						value: '{record.folderSent}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					fieldLabel: me.res('opts.account.fld-folderSent.lbl'),
 					width: 440,
@@ -563,7 +565,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'textfield',
 					bind: {
 						value: '{record.folderDrafts}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					fieldLabel: me.res('opts.account.fld-folderDrafts.lbl'),
 					width: 440,
@@ -573,7 +575,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'textfield',
 					bind: {
 						value: '{record.folderTrash}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					fieldLabel: me.res('opts.account.fld-folderTrash.lbl'),
 					width: 440,
@@ -583,7 +585,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'textfield',
 					bind: {
 						value: '{record.folderSpam}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					fieldLabel: me.res('opts.account.fld-folderSpam.lbl'),
 					width: 440,
@@ -593,7 +595,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'textfield',
 					bind: {
 						value: '{record.folderArchive}',
-						disabled: '{!canChangeAccountSettings}'
+						disabled: '{!foCanManageAccount}'
 					},
 					fieldLabel: me.res('opts.account.fld-folderArchive.lbl'),
 					width: 440,

@@ -346,7 +346,7 @@ public class FolderCache {
 			CoreManager core=WT.getCoreManager();
 			String roleUid=core.getUserUid(pid);
 			if (roleUid==null) { 
-				if (!RunContext.isPermitted(ms.SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+				if (!RunContext.isPermitted(true, ms.SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 			}
 			retval=true;
 			break;
