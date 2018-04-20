@@ -78,7 +78,7 @@ Ext.define('Sonicle.webtop.mail.portlet.MailBody', {
 			region: 'center',
 			store: me.storeRecents,
 			columns: [
-				{ dataIndex: 'subject', flex: 1, tdCls: 'x-window-header-title-default wtmail-smartsearch-name-column' },
+				{ dataIndex: 'subject', flex: 1, tdCls: 'wt-theme-txt-hi wtmail-smartsearch-name-column' },
 				{ dataIndex: 'date', width: 160 }
 			],
 			features: [{
