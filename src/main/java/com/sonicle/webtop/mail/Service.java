@@ -5497,7 +5497,27 @@ public class Service extends BaseService {
 		us.setPageRows(pagerows);
 		mprofile.setNumMsgList(pagerows);
 		new JsonResult(true,"").printTo(out);
+	}
+
+
+	public void processUploadToFolder (HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try{
+			String currentFolder=request.getParameter("folder");
+			String uploadId=request.getParameter("uploadId");
+			
+			UploadedFile upfile=getUploadedFile(uploadId);
+			InputStream in = new FileInputStream(upfile.getFile());
+			MimeMessage msgContent = new MimeMessage(session, in);
+			FolderCache tomcache = getFolderCache(currentFolder);
+			msgContent.setFlag(Flags.Flag.SEEN, true);
+			tomcache.appendMessage(msgContent);
+			new JsonResult().printTo(out);
+		} catch(Exception exc) {
+			logger.debug("Cannot upload to folder",exc);
+			new JsonResult("Cannot upload to folder", exc).printTo(out);
+		}
 	}	
+
 	
 	class MessagesInfo {
 		Message messages[];
