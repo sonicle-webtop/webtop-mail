@@ -398,6 +398,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("spam",{ handler: me.gridAction(me,'Spam'), iconCls: 'wt-icon-block-xs' });
         me.addAct("delete",{ handler: me.gridAction(me,'Delete'), iconCls: 'wt-icon-delete-xs' });
         me.addAct("movetofolder",{ handler: me.gridAction(me,'MoveToFolder') });
+		//me.addAct('uploadtofolder', {} );
+		
         me.addAct("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh-xs' });
         me.addAct("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save-xs' });
         me.addAct("createreminder",{ handler: me.gridAction(me,'CreateReminder'), iconCls: 'wtcal-icon-newEvent-xs' });
@@ -573,12 +575,58 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				mscan=Ext.create('Ext.menu.CheckItem',me.getAct('scanfolder')),
                 '-',
                 me.getAct('downloadmails'),
+				Ext.create({
+					xtype:'souploadmenuitem',
+					tooltip: me.res('act-uploademail.lbl'),
+					text: me.res('act-uploademail.lbl'),
+					uploaderConfig: WTF.uploader(me.ID,'UploadToFolder',{
+						mimeTypes: [
+						 {title: "Email", extensions: "eml"}
+						]
+					}),
+					listeners: {
+						beforeupload: function(s,file) {
+							//me.htmlEditor.showProgress(file.name);
+						},
+						uploadcomplete: function(s,fok,ffailed) {
+							//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
+						},
+						uploaderror: function(s, file, cause) {
+							//me.htmlEditor.hideProgress();
+							//WTA.ux.UploadBar.handleUploadError(s, file, cause);
+						},
+						uploadprogress: function(s,file) {
+							//me.htmlEditor.setProgress(file.percent);
+						},
+						fileuploaded: function(s,file,resp) {
+							var ctxFolder=me.lastMenuData.rec.get("id");
+							WT.ajaxReq(me.ID, 'UploadToFolder', {
+								params: {
+									folder:  ctxFolder,
+									uploadId: resp.data.uploadId,
+								},
+								callback: function(success,json) {
+									if (success) {
+										me.selectAndShowFolder(ctxFolder);
+									} else {
+										WT.error(json.text);
+									}
+								}
+							});							
+						}
+					}
+				}),
                 '-',
 				me.getAct('managehiddenfolders'),
                 me.getAct('hidefolder'),
                 '-',
                 me.getAct('markseenfolder')
-			]
+			],
+			listeners: {
+				beforeshow: function(s) {
+					me.lastMenuData=s.menuData;
+				}
+			}
 		}));
 		mscan.on('click',me.actionScanFolder,me);
 		me.addRef("mnuScan",mscan);
