@@ -1,0 +1,4 @@
+$	5.1.6
+	%	Versione 5.1.6
+	*	<p>Prova Whatsnew</p>
+		<img src="5.1.6_testwhatsnew.png"/>
