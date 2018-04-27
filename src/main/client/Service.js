@@ -551,7 +551,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					me.getAct('viewsource')
 				]      
 			}
-		}, );
+		});
 		//tree menu
 		var mscan,mshowsharings;
 		me.addRef('cxmTree', Ext.create({
@@ -586,17 +586,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					}),
 					listeners: {
 						beforeupload: function(s,file) {
-							//me.htmlEditor.showProgress(file.name);
 						},
 						uploadcomplete: function(s,fok,ffailed) {
-							//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
 						},
 						uploaderror: function(s, file, cause) {
-							//me.htmlEditor.hideProgress();
-							//WTA.ux.UploadBar.handleUploadError(s, file, cause);
 						},
 						uploadprogress: function(s,file) {
-							//me.htmlEditor.setProgress(file.percent);
 						},
 						fileuploaded: function(s,file,resp) {
 							var ctxFolder=me.lastMenuData.rec.get("id");
