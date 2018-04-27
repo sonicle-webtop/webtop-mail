@@ -383,7 +383,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
         } else {
             cidUrl+="&provider="+provider+"&providerid="+XURLEncoder.encode(providerid);
         }
-        cidUrl+="&cid="+XURLEncoder.encode(name);
+        cidUrl+="&cid="+name;
     } else {
         /*cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
             "&newmsgid="+msguid+
