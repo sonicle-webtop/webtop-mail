@@ -6662,12 +6662,18 @@ public class Service extends BaseService {
 			} else {
 				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid);
 			}
-			for (String html : htmlparts) {
+			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
+			ICalendarRequest ir=mailData.getICalRequest();
+			if (ir!=null) {
+			    if(htmlparts.size() > 0) sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(htmlparts.get(0)) + "',value2:'',value3:0},\n";
+			} else {
+				for (String html : htmlparts) {
 				//sout += "{iddata:'html',value1:'" + OldUtils.jsEscape(html) + "',value2:'',value3:0},\n";
-				sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(html) + "',value2:'',value3:0},\n";
-				++recs;
+				 sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(html) + "',value2:'',value3:0},\n";
+				 ++recs;
+			    }
 			}
-			
+						
 			if (!wasseen) {
 				if (us.isManualSeen()) {
 					m.setFlag(Flags.Flag.SEEN, false);
@@ -6677,7 +6683,7 @@ public class Service extends BaseService {
 				}
 			}
 			
-			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
+			
 			int acount = mailData.getAttachmentPartCount();
 			for (int i = 0; i < acount; ++i) {
 				Part p = mailData.getAttachmentPart(i);
@@ -6744,7 +6750,6 @@ public class Service extends BaseService {
 				}
 			}			
 			
-			ICalendarRequest ir=mailData.getICalRequest();
 			if (ir!=null) {
 				
 				/*
