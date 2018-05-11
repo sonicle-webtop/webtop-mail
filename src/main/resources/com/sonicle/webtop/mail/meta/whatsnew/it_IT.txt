@@ -1,4 +1,24 @@
+$	5.2.0
+	%	Versione 5.2.0
+	*	<h1>Contatti automatici di WebTop</h1>
+		<p>Il suggeritore dei contatti ora mostra automaticamente gli utenti
+		dello stesso dominio, indicati con la sorgente [webtop].</p>
+		<img src="5.2.0_webtopcontacts.png"/>
+	*	<h1>Importa email</h1>
+		<p>Il menu contestuale delle cartelle ha una nuova funzione di importazione
+		email, consentendo di portare e visualizzare file EML all'interno delle cartelle di posta.</p>
+		<img src="5.2.0_importeml.png"/>
 $	5.1.6
 	%	Versione 5.1.6
-	*	<p>Prova Whatsnew</p>
-		<img src="5.1.6_testwhatsnew.png"/>
+	*	<h1>Salvataggio bozza con sovrascrittura</h1>
+		<p>Salvando normalmente una bozza, la precedente viene sovrascritta
+		senza crearne una nuova. Il bottone di salvataggio dispone comunque
+		di un menu che consente di salvare una nuova bozza</p>
+		<img src="5.1.6_savedraft.png"/>
+	*	<h1>Salvataggio layout cartelle e colonne</h1>
+		<p>Il layout delle cartelle e della griglia email viene ora salvato
+		e ripristinato a parità di device e browser</p>
+		<img src="5.1.6_savelayout.png"/>
+	*	<h1>Selettore emtoicons per le email</h1>
+		<p>L'editor di posta ora dispone di un selettore per le emoticons.</p>
+		<img src="5.1.6_emoticons.png"/>
