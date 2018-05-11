@@ -6773,9 +6773,10 @@ public class Service extends BaseService {
 					//Event ev=cm.getEventByScope(EventScope.PERSONAL_AND_INCOMING, ir.getUID());
 					Event ev = null;
 					if (ir.getMethod().equals("REPLY")) {
-						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, true, ir.getUID());
+						// Previous impl. forced (forceOriginal == true)
+						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUID());
 					} else {
-						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, false, ir.getUID());
+						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUID());
 					}
 					
 					UserProfileId pid = getEnv().getProfileId();
