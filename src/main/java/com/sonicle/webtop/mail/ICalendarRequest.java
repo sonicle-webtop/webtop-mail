@@ -89,7 +89,8 @@ public class ICalendarRequest {
 	private final Date lastmodified;
 	
 	public ICalendarRequest(InputStream istream) throws IOException, ParserException {
-		ical=ICalendarUtils.parseRelaxed(istream);
+		ICalendarUtils.relaxParsingAndCompatibility();
+		ical=ICalendarUtils.parse(istream);
 		
 		Method icalMethod=ical.getMethod();
 		if (icalMethod==null) method="REQUEST";
