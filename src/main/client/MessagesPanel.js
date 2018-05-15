@@ -71,7 +71,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						xtype: 'sobreadcrumb',
                         store: me.imapStore,
 						overflowHandler: 'scroller',
-						hideMenu:true,
+//						hideMenu:true,
 						minDepth: 1,
 							listeners: {
 							change: function(s, node) {
@@ -555,6 +555,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.currentFolder=folderid;
 		var node=me.bcFolders.getStore().getById(folderid);
 		me.bcFolders.setSelection(node);
+		if(node.data.expandable && !node.isLoaded()) node.expand(); //me.bcFolders.getStore().load({node:node});
         me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
     },
 
