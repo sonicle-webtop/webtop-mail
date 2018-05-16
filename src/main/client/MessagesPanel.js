@@ -66,6 +66,23 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
 		
 		me.callParent(arguments);
+		
+		me.bcFolders=Ext.create({
+						xtype: 'sobreadcrumb',
+                        store: me.imapStore,
+						overflowHandler: 'scroller',
+//						hideMenu:true,
+						minDepth: 1,
+							listeners: {
+							change: function(s, node) {
+								console.log('breadchange'+ node.getId());
+								if(node) {
+									me.mys.selectAndShowFolder(node.getId());
+								}
+							}
+						},
+						flex: 1
+					});
 
         me.folderList=Ext.create('Sonicle.webtop.mail.MessageGrid',{
             region:'center',
@@ -74,8 +91,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			mp: me,
 			createPagingToolbar: true,
 			stateful: true,
-			baseStateId: me.mys.buildStateId('messagegrid')
-        });
+			baseStateId: me.mys.buildStateId('messagegrid'),			
+			tbar: [
+					me.bcFolders
+				  ]
+         });
 		if (me.gridMenu) {
 			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
 				me.mys.updateCxmGrid(rec);
@@ -533,6 +553,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     reloadFolder: function(folderid,config,uid,rid,page,tid) {
 		var me=this;
         me.currentFolder=folderid;
+		var node=me.bcFolders.getStore().getById(folderid);
+		me.bcFolders.setSelection(node);
+		if(node.data.expandable && !node.isLoaded()) node.expand(); //me.bcFolders.getStore().load({node:node});
         me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
     },
 

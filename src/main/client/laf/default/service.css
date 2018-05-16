@@ -81,6 +81,8 @@
 .wtmail-icon-sieveFilter-xs { background-image: url('sieveFilter_16.png') !important; }
 
 /* tree */
+.wtmail-icon-imap-folder-xs { background-image: url(imap-folder-default_16.png) !important; }
+.x-grid-tree-node-expanded .wtmail-icon-imap-folder-xs { background-image: url(imap-folder-default-open_16.png) !important; }
 .wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox_16.png) !important; }
 .x-grid-tree-node-expanded .wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox-open_16.png) !important; }
 .wtmail-icon-drafts-folder-xs { background-image: url(imap-folder-drafts_16.png) !important; }

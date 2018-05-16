@@ -6973,7 +6973,7 @@ public class Service extends BaseService {
 					name=MailUtils.decodeQString(name);
 				} catch(Exception exc) {
 				}
- 
+ 	            name=name.trim();
 				if (psaveas==null) {
 					int ix=name.lastIndexOf(".");
 					if (ix>0) {

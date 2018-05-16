@@ -109,21 +109,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.viewmaxtos=me.getVar('messageViewMaxTos');
 		me.viewmaxccs=me.getVar('messageViewMaxCcs');
 		
-		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
-			pageSize: me.getVar('pageRows'),
-			viewRegion: me.getVar('messageViewRegion','east'),
-			viewWidth: me.getVar('messageViewWidth',600),
-			viewHeight: me.getVar('messageViewHeight',400),
-			viewCollapsed: me.getVar('messageViewCollapsed',false),
-			saveColumnSizes: true,
-			saveColumnVisibility: true,
-			saveColumnOrder: true,
-			savePaneSize: true,
-			gridMenu: me.getRef('cxmGrid'),
-			mys: me
-		});
-		me.messagesPanel=mp;
-		me.setMainComponent(me.messagesPanel);
+	
+		
 		
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
 			mys: me,
@@ -182,11 +169,27 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				}
 			}
 		});
+		
 		me.imapTree.getPlugin('cellediting').on("beforeedit",function(editor , context , eOpts) {
 			var r=context.record;
 			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||r.get("isArchive")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
 		});
-		
+			var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
+			pageSize: me.getVar('pageRows'),
+			viewRegion: me.getVar('messageViewRegion','east'),
+			viewWidth: me.getVar('messageViewWidth',600),
+			viewHeight: me.getVar('messageViewHeight',400),
+			viewCollapsed: me.getVar('messageViewCollapsed',false),
+			saveColumnSizes: true,
+			saveColumnVisibility: true,
+			saveColumnOrder: true,
+			savePaneSize: true,
+			gridMenu: me.getRef('cxmGrid'),
+			mys: me,
+		    imapStore: me.imapTree.getStore()
+		});
+		me.messagesPanel=mp;
+		me.setMainComponent(me.messagesPanel);
 		if (me.getVar('showUpcomingEvents')) {
 			var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
 			if (capi)
