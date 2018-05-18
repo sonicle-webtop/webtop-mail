@@ -693,6 +693,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	showFolder: function(folderid,uid,rid,page,tid) {
         var me=this,
 		mp=me.messagesPanel;
+		if (!mp) return;
 		//TODO: folder clicked
         //mp.depressFilterRowButton();
         mp.clearGridSelections();
