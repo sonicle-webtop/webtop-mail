@@ -75,7 +75,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						minDepth: 1,
 							listeners: {
 							change: function(s, node) {
-								console.log('breadchange'+ node.getId());
 								if(node) {
 									me.mys.selectAndShowFolder(node.getId());
 								}
