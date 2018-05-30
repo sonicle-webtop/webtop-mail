@@ -38,6 +38,7 @@ import com.sonicle.commons.db.DbUtils;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.bol.ODomain;
+import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.BaseJobService;
 import com.sonicle.webtop.core.sdk.BaseJobServiceTask;
 import com.sonicle.webtop.core.sdk.UserProfileId;
@@ -61,6 +62,7 @@ import javax.mail.Store;
 import javax.mail.Transport;
 import javax.mail.internet.MimeMessage;
 import javax.mail.search.HeaderTerm;
+import org.apache.commons.lang.StringUtils;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
@@ -98,7 +100,7 @@ public class JobService extends BaseJobService {
 	
 	public static class ScheduledSendJob extends BaseJobServiceTask {
 		private JobService jobService = null;
-		private CoreManager cm=null;
+		private CoreManager globalCm=null;
 		
 		private HashMap<String,MailServiceSettings> hmss=new HashMap();
 		private HashMap<UserProfileId,MailUserSettings> hmus=new HashMap();
@@ -108,7 +110,7 @@ public class JobService extends BaseJobService {
 		HeaderTerm hterm=new HeaderTerm("Sonicle-send-scheduled","true");
 		
 		public ScheduledSendJob() {
-			cm=WT.getCoreManager();
+			globalCm=WT.getCoreManager();
 		}
 	
 		@Override
@@ -123,9 +125,11 @@ public class JobService extends BaseJobService {
 			Connection con=null;
 			try {
 				con=jobService.getConnection();
-				List<ODomain> domains=cm.listDomains(true);
+				List<ODomain> domains=globalCm.listDomains(true);
 				for(ODomain domain: domains) {
 					String domainId=domain.getDomainId();
+					UserProfileId adminPid=new UserProfileId(domainId,"admin");
+					CoreManager domainCm=WT.getCoreManager(adminPid);
 					Session session=WT.getGlobalMailSession(domainId);
 					MailServiceSettings mss = getMailServiceSettings(domainId);
 					if (mss.isScheduledEmailsDisabled()) {
@@ -133,22 +137,26 @@ public class JobService extends BaseJobService {
 						continue;
 					}
 					String vmailSecret=mss.getNethTopVmailSecret();
-					List<OUserMap> musers=UserMapDAO.getInstance().selectByDomainId(con, domainId);
-					for(OUserMap muser: musers) {
+					List<OUser> ousers=domainCm.listUsers(true);
+					//List<OUserMap> musers=UserMapDAO.getInstance().selectByDomainId(con, domainId);
+					for(OUser ouser: ousers) {
 						Store store=null;
 						try {
-							String userId=muser.getUserId();
+							String userId=ouser.getUserId();
 							UserProfileId pid=new UserProfileId(domainId,userId);
+							MailUserSettings mus=getMailUserSettings(pid, mss);
+							String host=mus.getHost();
+							int port=mus.getPort();
+							String protocol=mus.getProtocol();
 							if (vmailSecret==null) {
 								String adminUser=mss.getAdminUser();
 								String adminPassword=mss.getAdminPassword();
-								store=connectAdminStore(session, muser, adminUser, adminPassword);
+								store=connectAdminStore(session, host, port, protocol, adminUser, adminPassword);
 							} else {
-								store=connectVmailStore(session, muser, vmailSecret);
+								store=connectVmailStore(session, host, port, protocol, pid, vmailSecret);
 							}
-							MailUserSettings mus=getMailUserSettings(pid, mss);
-							Folder outgoings[]=getOutgoingFolders(store, domain, muser, vmailSecret, mus);
-							Folder folderSent=getSentFolder(store, muser, domain, vmailSecret, mus);
+							Folder outgoings[]=getOutgoingFolders(store, domain, pid, vmailSecret, mus);
+							Folder folderSent=getSentFolder(store, pid, domain, vmailSecret, mus);
 							sendScheduledMails(session,pid,domain,outgoings,folderSent,WT.getUserData(pid).getLocale());
 							store.close();
 							store=null;
@@ -198,7 +206,7 @@ public class JobService extends BaseJobService {
 			}
 		}
 		
-		private Folder[] getOutgoingFolders(Store store, ODomain domain, OUserMap mu, String vmailSecret, MailUserSettings mus) throws MessagingException {
+		private Folder[] getOutgoingFolders(Store store, ODomain domain, UserProfileId pid, String vmailSecret, MailUserSettings mus) throws MessagingException {
 			String foldername=mus.getFolderDrafts();
 			String folderprefix=mus.getFolderPrefix();
 			if (folderprefix!=null && folderprefix.length()>0 && foldername.startsWith(folderprefix)) {
@@ -212,8 +220,8 @@ public class JobService extends BaseJobService {
 				for(int i=0;i<uns.length;++i) {
 					Folder un=uns[i];
 					char sep=un.getSeparator();
-					String fname=mu.getMailUser()+sep+foldername;
-					if (domain.getDirUri().startsWith("ldapWebTop:")) fname+="@"+domain.getInternetName();
+					String fname=pid.getUserId()+sep+foldername;
+					if (StringUtils.startsWithIgnoreCase(domain.getDirUri(),"ldapWebTop:")) fname+="@"+domain.getInternetName();
 					outgoings[i]=un.getFolder(fname);
 				}
 			} else {
@@ -223,7 +231,7 @@ public class JobService extends BaseJobService {
 			return outgoings;
 		}
 		
-		private Folder getSentFolder(Store store, OUserMap mu, ODomain domain, String vmailSecret, MailUserSettings mus) throws MessagingException {
+		private Folder getSentFolder(Store store, UserProfileId pid, ODomain domain, String vmailSecret, MailUserSettings mus) throws MessagingException {
 			String foldername=mus.getFolderSent();
 			String folderprefix=mus.getFolderPrefix();
 			if (folderprefix!=null && folderprefix.length()>0 && foldername.startsWith(folderprefix)) {
@@ -236,8 +244,8 @@ public class JobService extends BaseJobService {
 				if (uns.length>0) {
 					Folder un=uns[0];
 					char sep=un.getSeparator();
-					String fname=mu.getMailUser()+sep+foldername;
-					if (domain.getDirUri().startsWith("ldapWebTop:")) fname+="@"+domain.getInternetName();
+					String fname=pid.getUserId()+sep+foldername;
+					if (StringUtils.startsWithIgnoreCase(domain.getDirUri(),"ldapWebTop:")) fname+="@"+domain.getInternetName();
 					sent=un.getFolder(fname);
 				}
 			} else {
@@ -329,15 +337,15 @@ public class JobService extends BaseJobService {
 			}
 		}
 		
-		private Store connectAdminStore(Session session, OUserMap mu, String adminUser, String adminPassword) throws MessagingException {
-			Store store=session.getStore(mu.getMailProtocol());
-			store.connect(mu.getMailHost(),mu.getMailPort(),adminUser,adminPassword);
+		private Store connectAdminStore(Session session, String host, int port, String protocol, String adminUser, String adminPassword) throws MessagingException {
+			Store store=session.getStore(protocol);
+			store.connect(host,port,adminUser,adminPassword);
 			return store;
 		}
     
-		private Store connectVmailStore(Session session, OUserMap mu, String vmailSecret) throws MessagingException {
-			Store store=session.getStore(mu.getMailProtocol());
-			store.connect(mu.getMailHost(),mu.getMailPort(),mu.getMailUser()+"*vmail",vmailSecret);
+		private Store connectVmailStore(Session session, String host, int port, String protocol, UserProfileId pid, String vmailSecret) throws MessagingException {
+			Store store=session.getStore(protocol);
+			store.connect(host,port,pid.getUserId()+"*vmail",vmailSecret);
 			return store;
 		}
 		

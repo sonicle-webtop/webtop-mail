@@ -72,9 +72,10 @@ public class UserOptionsService extends BaseUserOptionsService {
 
 			if (crud.equals(Crud.READ)) {
 				JsUserOptions jso = new JsUserOptions(getTargetProfileId().toString());
-				jso.canChangeAccountSettings = RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE");
-				jso.canChangeMailcardSettings = RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE");
-				jso.canChangeDomainMailcardSettings = RunContext.isPermitted(getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE");
+				jso.canManageAccount = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE");
+				jso.canManageMailcard = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE");
+				jso.canManageDomainMailcard = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE");
+				
 				jso.dmsSimpleMailFolder = mus.getSimpleDMSArchivingMailFolder();
 				jso.dmsMethod = mus.getDMSMethod();
 				jso.archiveMode = mus.getArchiveMode();
@@ -115,109 +116,54 @@ public class UserOptionsService extends BaseUserOptionsService {
 
 			} else if (crud.equals(Crud.UPDATE)) {
 				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(payload, JsUserOptions.class);
+				
+				if (pl.map.has("dmsSimpleMailFolder")) mus.setSimpleArchivingMailFolder(pl.data.dmsSimpleMailFolder);
+				if (pl.map.has("dmsMethod")) mus.setDMSMethod(pl.data.dmsMethod);
+				if (pl.map.has("includeMessageInReply")) mus.setIncludeMessageInReply(pl.data.includeMessageInReply);
+				
+				// Main
+				if (pl.map.has("replyTo")) mus.setReplyTo(pl.data.replyTo);
+				if (pl.map.has("readReceiptConfirmation")) mus.setReadReceiptConfirmation(pl.data.readReceiptConfirmation);
+				if (pl.map.has("ingridPreview")) mus.setShowMessagePreviewOnRow(pl.data.ingridPreview);
+				if (pl.map.has("manualSeen")) mus.setManualSeen(pl.data.manualSeen);
+				if (pl.map.has("sharedSeen")) mus.setSharedSeen(pl.data.sharedSeen);
+				if (pl.map.has("sharedSort")) mus.setSharedSort(pl.data.sharedSort);
+				if (pl.map.has("showUpcomingEvents")) mus.setShowUpcomingEvents(pl.data.showUpcomingEvents);
+				if (pl.map.has("showUpcomingTasks")) mus.setShowUpcomingTasks(pl.data.showUpcomingTasks);
+				
+				// Editing
+				if (pl.map.has("format")) mus.setFormat(pl.data.format);
+				if (pl.map.has("font")) mus.setFontName(pl.data.font);
+				if (pl.map.has("fontSize")) mus.setFontSize(pl.data.fontSize);
+				if (pl.map.has("fontColor")) mus.setFontColor(pl.data.fontColor);
+				if (pl.map.has("receipt")) mus.setReceipt(pl.data.receipt);
+				if (pl.map.has("priority")) mus.setPriority(pl.data.priority);
 
-				if (pl.map.has("archiveMode")) {
-					mus.setArchiveMode(pl.data.archiveMode);
+				
+				// Archive
+				if (pl.map.has("archiveMode")) mus.setArchiveMode(pl.data.archiveMode);
+				if (pl.map.has("archiveKeepFoldersStructure")) mus.setArchiveKeepFoldersStructure(pl.data.archiveKeepFoldersStructure);
+				
+				// Account
+				if (RunContext.isImpersonated() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE")) {
+					if (pl.map.has("protocol")) mus.setProtocol(pl.data.protocol);
+					if (pl.map.has("host")) mus.setHost(pl.data.host);
+					if (pl.map.has("port")) mus.setPort(pl.data.port);
+					if (pl.map.has("username")) mus.setUsername(pl.data.username);
+					if (pl.map.has("password")) mus.setPassword(pl.data.password);
+					if (pl.map.has("folderPrefix")) mus.setFolderPrefix(pl.data.folderPrefix);
+					if (pl.map.has("folderSent")) mus.setFolderSent(pl.data.folderSent);
+					if (pl.map.has("folderDrafts")) mus.setFolderDrafts(pl.data.folderDrafts);
+					if (pl.map.has("folderTrash")) mus.setFolderTrash(pl.data.folderTrash);
+					if (pl.map.has("folderSpam")) mus.setFolderSpam(pl.data.folderSpam);
+					if (pl.map.has("folderArchive")) mus.setFolderArchive(pl.data.folderArchive);
 				}
-				if (pl.map.has("archiveKeepFoldersStructure")) {
-					mus.setArchiveKeepFoldersStructure(pl.data.archiveKeepFoldersStructure);
-				}
-				if (pl.map.has("dmsSimpleMailFolder")) {
-					mus.setSimpleArchivingMailFolder(pl.data.dmsSimpleMailFolder);
-				}
-				if (pl.map.has("dmsMethod")) {
-					mus.setDMSMethod(pl.data.dmsMethod);
-				}
-				if (pl.map.has("ingridPreview")) {
-					mus.setShowMessagePreviewOnRow(pl.data.ingridPreview);
-				}
-				if (pl.map.has("sharedSeen")) {
-					mus.setSharedSeen(pl.data.sharedSeen);
-				}
-				if (pl.map.has("manualSeen")) {
-					mus.setManualSeen(pl.data.manualSeen);
-				}
-				if (pl.map.has("readReceiptConfirmation")) {
-					mus.setReadReceiptConfirmation(pl.data.readReceiptConfirmation);
-				}
-				if (pl.map.has("scanAll")) {
-					mus.setScanAll(pl.data.scanAll);
-				}
-				if (pl.map.has("scanSeconds")) {
-					mus.setScanSeconds(pl.data.scanSeconds);
-				}
-				if (pl.map.has("scanCycles")) {
-					mus.setScanCycles(pl.data.scanCycles);
-				}
-				if (pl.map.has("folderPrefix")) {
-					mus.setFolderPrefix(pl.data.folderPrefix);
-				}
-				if (pl.map.has("folderSent")) {
-					mus.setFolderSent(pl.data.folderSent);
-				}
-				if (pl.map.has("folderDrafts")) {
-					mus.setFolderDrafts(pl.data.folderDrafts);
-				}
-				if (pl.map.has("folderTrash")) {
-					mus.setFolderTrash(pl.data.folderTrash);
-				}
-				if (pl.map.has("folderSpam")) {
-					mus.setFolderSpam(pl.data.folderSpam);
-				}
-				if (pl.map.has("folderArchive")) {
-					mus.setFolderArchive(pl.data.folderArchive);
-				}
-				if (pl.map.has("replyTo")) {
-					mus.setReplyTo(pl.data.replyTo);
-				}
-				if (pl.map.has("sharedSort")) {
-					mus.setSharedSort(pl.data.sharedSort);
-				}
-				if (pl.map.has("includeMessageInReply")) {
-					mus.setIncludeMessageInReply(pl.data.includeMessageInReply);
-				}
-				if (pl.map.has("host")) {
-					mus.setHost(pl.data.host);
-				}
-				if (pl.map.has("port")) {
-					mus.setPort(pl.data.port);
-				}
-				if (pl.map.has("username")) {
-					mus.setUsername(pl.data.username);
-				}
-				if (pl.map.has("password")) {
-					mus.setPassword(pl.data.password);
-				}
-				if (pl.map.has("protocol")) {
-					mus.setProtocol(pl.data.protocol);
-				}
-				if (pl.map.has("defaultFolder")) {
-					mus.setDefaultFolder(pl.data.defaultFolder);
-				}
-				if (pl.map.has("format")) {
-					mus.setFormat(pl.data.format);
-				}
-				if (pl.map.has("font")) {
-					mus.setFontName(pl.data.font);
-				}
-				if (pl.map.has("fontSize")) {
-					mus.setFontSize(pl.data.fontSize);
-				}
-				if (pl.map.has("fontColor")) {
-					mus.setFontColor(pl.data.fontColor);
-				}
-				if (pl.map.has("receipt")) {
-					mus.setReceipt(pl.data.receipt);
-				}
-				if (pl.map.has("priority")) {
-					mus.setPriority(pl.data.priority);
-				}
-				if (pl.map.has("showUpcomingEvents")) {
-					mus.setShowUpcomingEvents(pl.data.showUpcomingEvents);
-				}
-				if (pl.map.has("showUpcomingTasks")) {
-					mus.setShowUpcomingTasks(pl.data.showUpcomingTasks);
-				}
+				
+				// Advanced
+				if (pl.map.has("scanAll")) mus.setScanAll(pl.data.scanAll);
+				if (pl.map.has("scanSeconds")) mus.setScanSeconds(pl.data.scanSeconds);
+				if (pl.map.has("scanCycles")) mus.setScanCycles(pl.data.scanCycles);
+				if (pl.map.has("defaultFolder")) mus.setDefaultFolder(pl.data.defaultFolder);
 
 				new JsonResult().printTo(out);
 			}

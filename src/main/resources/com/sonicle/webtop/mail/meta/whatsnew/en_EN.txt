@@ -1,0 +1,24 @@
+$	5.2.0
+	%	Versione 5.2.0
+	*	<h1>Automatic WebTop contacts</h1>
+		<p>Contacts suggestions now automatically contains users of the
+		same domain, showing them as the source [webtop]</p>
+		<img src="5.2.0_webtopcontacts.png"/>
+	*	<h1>Email import</h1>
+		<p>The folders context menu as a new email import function, allowing
+		to easily bring and view EML files inside the email folders.</p>
+		<img src="5.2.0_importeml.png"/>
+$	5.1.6
+	%	Versione 5.1.6
+	*	<h1>Overwriting when saving drafts</h1>
+		<p>Saving a draft, the original will be overwritten without creating
+		a new one. The save button features a new menu allowing to save
+		a new draft, if necessary.</p>
+		<img src="5.1.6_savedraft.png"/>ng"/>
+	*	<h1>Remembering folders and columns layout</h1>
+		<p>Folders and columns layout is now saved and restored,
+		on the same device and browser.</p>
+		<img src="5.1.6_savelayout.png"/>
+	*	<h1>Emoticons selector on email editor</h1>
+		<p>The email editor now features an emoticons selector</p>
+		<img src="5.1.6_emoticons.png"/>

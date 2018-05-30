@@ -2335,7 +2335,7 @@ public class Service extends BaseService {
 	}
 	
 	public boolean hasDmsDocumentArchiving() {
-		return RunContext.isPermitted(SERVICE_ID, "DMS_DOCUMENT_ARCHIVING");
+		return RunContext.isPermitted(true, SERVICE_ID, "DMS_DOCUMENT_ARCHIVING");
 	}
 	
 	public String getDmsSimpleArchivingMailFolder() {
@@ -5495,7 +5495,27 @@ public class Service extends BaseService {
 		us.setPageRows(pagerows);
 		mprofile.setNumMsgList(pagerows);
 		new JsonResult(true,"").printTo(out);
+	}
+
+
+	public void processUploadToFolder (HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try{
+			String currentFolder=request.getParameter("folder");
+			String uploadId=request.getParameter("uploadId");
+			
+			UploadedFile upfile=getUploadedFile(uploadId);
+			InputStream in = new FileInputStream(upfile.getFile());
+			MimeMessage msgContent = new MimeMessage(session, in);
+			FolderCache tomcache = getFolderCache(currentFolder);
+			msgContent.setFlag(Flags.Flag.SEEN, true);
+			tomcache.appendMessage(msgContent);
+			new JsonResult().printTo(out);
+		} catch(Exception exc) {
+			logger.debug("Cannot upload to folder",exc);
+			new JsonResult("Cannot upload to folder", exc).printTo(out);
+		}
 	}	
+
 	
 	class MessagesInfo {
 		Message messages[];
@@ -6640,12 +6660,18 @@ public class Service extends BaseService {
 			} else {
 				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid);
 			}
-			for (String html : htmlparts) {
+			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
+			ICalendarRequest ir=mailData.getICalRequest();
+			if (ir!=null) {
+			    if(htmlparts.size() > 0) sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(htmlparts.get(0)) + "',value2:'',value3:0},\n";
+			} else {
+				for (String html : htmlparts) {
 				//sout += "{iddata:'html',value1:'" + OldUtils.jsEscape(html) + "',value2:'',value3:0},\n";
-				sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(html) + "',value2:'',value3:0},\n";
-				++recs;
+				 sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(html) + "',value2:'',value3:0},\n";
+				 ++recs;
+			    }
 			}
-			
+						
 			if (!wasseen) {
 				if (us.isManualSeen()) {
 					m.setFlag(Flags.Flag.SEEN, false);
@@ -6655,7 +6681,7 @@ public class Service extends BaseService {
 				}
 			}
 			
-			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
+			
 			int acount = mailData.getAttachmentPartCount();
 			for (int i = 0; i < acount; ++i) {
 				Part p = mailData.getAttachmentPart(i);
@@ -6722,7 +6748,6 @@ public class Service extends BaseService {
 				}
 			}			
 			
-			ICalendarRequest ir=mailData.getICalRequest();
 			if (ir!=null) {
 				
 				/*
@@ -6753,9 +6778,10 @@ public class Service extends BaseService {
 					//Event ev=cm.getEventByScope(EventScope.PERSONAL_AND_INCOMING, ir.getUID());
 					Event ev = null;
 					if (ir.getMethod().equals("REPLY")) {
-						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, true, ir.getUID());
+						// Previous impl. forced (forceOriginal == true)
+						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUID());
 					} else {
-						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, false, ir.getUID());
+						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUID());
 					}
 					
 					UserProfileId pid = getEnv().getProfileId();
@@ -6947,7 +6973,7 @@ public class Service extends BaseService {
 					name=MailUtils.decodeQString(name);
 				} catch(Exception exc) {
 				}
- 
+ 	            name=name.trim();
 				if (psaveas==null) {
 					int ix=name.lastIndexOf(".");
 					if (ix>0) {
@@ -7066,9 +7092,9 @@ public class Service extends BaseService {
 			/*String cid = request.getParameter("cid");
 			Attachment att = null;
 			if (tempname != null) {
-			att = getAttachment(msgid, tempname);
+				att = getAttachment(msgid, tempname);
 			} else if (cid != null) {
-			att = getAttachmentByCid(msgid, cid);
+				att = getAttachmentByCid(msgid, cid);
 			}*/
 			if (uploadId != null && hasUploadedFile(uploadId)) {
 				WebTopSession.UploadedFile upl = getUploadedFile(uploadId);
@@ -7083,7 +7109,7 @@ public class Service extends BaseService {
 				Service.logger.debug("uploadId was not valid!");
 			}
 		} catch (Exception exc) {
-			Service.logger.error("Exception during previewAttachment",exc);
+			logger.error("Error in PreviewAttachment", exc);
 		}
 	}
 	
@@ -7100,41 +7126,42 @@ public class Service extends BaseService {
 	}
 	
 	public void processCalendarRequest(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String pcalaction=request.getParameter("calaction");
-		String pfoldername=request.getParameter("folder");
-		String puidmessage=request.getParameter("idmessage");
-		String pidattach=request.getParameter("idattach");
+		String pcalaction = request.getParameter("calaction");
+		String pfoldername = request.getParameter("folder");
+		String puidmessage = request.getParameter("idmessage");
+		String pidattach = request.getParameter("idattach");
 		try {
 			checkStoreConnected();
-			FolderCache mcache=getFolderCache(pfoldername);
-			long newmsguid=Long.parseLong(puidmessage);
-			Message m=mcache.getMessage(newmsguid);
-			HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
-			Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
-			
-			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			ICalendarManager cm=(ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
+			FolderCache mcache = getFolderCache(pfoldername);
+			long newmsguid = Long.parseLong(puidmessage);
+			Message m = mcache.getMessage(newmsguid);
+			HTMLMailData mailData = mcache.getMailData((MimeMessage)m);
+			Part part = mailData.getAttachmentPart(Integer.parseInt(pidattach));
+
+			ICalendarRequest ir = new ICalendarRequest(part.getInputStream());
+			ICalendarManager cm = (ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
 			if (pcalaction.equals("accept")) {
-				Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
-				String ekey=cm.getEventInstanceKey(ev.getEventId());
-				
+				Event ev = cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
+				String ekey = cm.getEventInstanceKey(ev.getEventId());
 				sendICalendarReply(ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED);
 				new JsonResult(ekey).printTo(out);
+				
 			} else if (pcalaction.equals("import")) {
-				Event ev=cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
-				String ekey=cm.getEventInstanceKey(ev.getEventId());
+				Event ev = cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
+				String ekey = cm.getEventInstanceKey(ev.getEventId());
 				new JsonResult(ekey).printTo(out);
-			}else if (pcalaction.equals("cancel")||pcalaction.equals("update")) {
+				
+			} else if (pcalaction.equals("cancel") || pcalaction.equals("update")) {
 				cm.updateEventFromICal(ir.getCalendar());
 				new JsonResult().printTo(out);
+				
 			} else {
-				throw new Exception("Unsupported calendar request action : "+pcalaction);
+				throw new Exception("Unsupported calendar request action : " + pcalaction);
 			}
-		} catch(Exception exc) {
+		} catch (Exception exc) {
 			new JsonResult(exc).printTo(out);
-			logger.error("Error sending "+pcalaction, exc);
+			logger.error("Error sending " + pcalaction, exc);
 		}
-		
 	}
 	
     public void processDeclineInvitation(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -7726,10 +7753,10 @@ public class Service extends BaseService {
 				if (ad.getInternetName().toLowerCase().equals(domain)) userId=aclUserId.substring(0,ix);
 				else {
 					//skip if non domain users not permitted
-					if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
+					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
 				}
 			} else {
-				if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
+				if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
 			}
 		}
 		if (principal.getUserId().equals(userId)) userId=null;
@@ -7769,7 +7796,7 @@ public class Service extends BaseService {
 				boolean shareIdentity=false;
 				boolean forceMailcard=false;
 				if (roleUid==null) { 
-					if (!RunContext.isPermitted(SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 					roleUid=aclUserId; 
 					roleDescription=roleUid; 
 				} else {
@@ -8152,8 +8179,9 @@ public class Service extends BaseService {
 			co.put("showUpcomingEvents", us.getShowUpcomingEvents());
 			co.put("showUpcomingTasks", us.getShowUpcomingTasks());
 			
-			if (RunContext.isPermitted(SERVICE_ID, "FAX","ACCESS")) 
+			if (RunContext.isPermitted(true, SERVICE_ID, "FAX", "ACCESS")) {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());
+			}
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	
