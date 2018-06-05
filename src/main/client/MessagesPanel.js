@@ -553,9 +553,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
         me.currentFolder=folderid;
 		var node=me.bcFolders.getStore().getById(folderid);
-		me.bcFolders.setSelection(node);
-		if(node.data.expandable && !node.isLoaded()) node.expand(); //me.bcFolders.getStore().load({node:node});
-        me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
+		if (node) {
+			me.bcFolders.setSelection(node);
+			if(node.data.expandable && !node.isLoaded()) node.expand(); //me.bcFolders.getStore().load({node:node});
+			me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
+		}
     },
 
     reloadCurrentFolder: function(config) {
