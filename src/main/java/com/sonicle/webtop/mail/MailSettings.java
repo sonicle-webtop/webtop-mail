@@ -73,4 +73,79 @@ public class MailSettings {
 	 * Activate a view showing all upcoming tasks.
 	 */
 	public static final String SHOW_UPCOMING_TASKS = "upcoming.tasks.show";
+	
+	
+	
+	
+	
+	public static final String MESSAGE_QUICKPART = "message.quickpart@{0}"; // !IMPORTANT
+	public static final String MESSAGE_LIST_GROUP = "messagelist.group@{0}"; // was : "messagelist-group-{0}"
+	public static final String MESSAGE_LIST_SORT = "messagelist.sort@{0}"; // was : "messagelist-{0}-sort"
+	public static final String MESSAGE_LIST_THREADED = "messagelist.threaded@{0}"; // was : "list-threaded-{0}"
+	public static final String COLUMN_SIZE_PREFIX = "column.size@"; //was : "column-{0}"
+	public static final String COLUMN_SIZE = COLUMN_SIZE_PREFIX+"{0}"; //was : "column-{0}"
+	public static final String COLUMN_VISIBLE = "column.visible@{0}";
+	public static final String COLUMNS_ORDER = "columns.order";
+	public static final String SHARED_SEEN = "sharedseen";
+	public static final String MANUAL_SEEN = "manualseen";
+	public static final String SHARING_RIGHTS = "sharing.rights";
+	public static final String FOLDER_PEFFIX = "folder.prefix";
+	public static final String SCAN_ALL = "scan.all";
+	public static final String SCAN_SECONDS = "scan.seconds";
+	public static final String SCAN_CYCLES = "scan.cycles";
+	public static final String FOLDER_SENT = "folder.sent";
+	public static final String FOLDER_DRAFTS = "folder.drafts";
+	public static final String FOLDER_TRASH = "folder.trash";
+	public static final String FOLDER_ARCHIVE = "folder.archive";
+	public static final String FOLDER_SPAM = "folder.spam";
+	public static final String DEFAULT_FOLDER = "defaultfolder";
+	public static final String FAVORITES = "favorites";
+	public static final String FOLDER_DRAFTS_DELETEMSGONSEND = "folder.drafts.deletemsgonsend";
+	public static final String REPLY_TO = "reply.to";
+	public static final String SHARED_SORT = "shared.sort";
+	public static final String INCLUDE_MESSAGE_IN_REPLY = "include.message.in.reply";
+	public static final String PAGE_ROWS = "page.rows";
+	public static final String HOST="host";
+	public static final String PORT="port";
+	public static final String USERNAME="username";
+	public static final String PASSWORD="password";
+	public static final String PROTOCOL="protocol";
+	public static final String MESSAGE_VIEW_REGION = "message.view.region";
+	public static final String MESSAGE_VIEW_WIDTH = "message.view.width";
+	public static final String MESSAGE_VIEW_HEIGHT = "message.view.height";
+	public static final String MESSAGE_VIEW_COLLAPSED = "message.view.collapsed";
+	public static final String FORMAT = "format";
+	public static final String FONT_NAME = "font.name";
+	public static final String FONT_SIZE = "font.size";
+	public static final String FONT_COLOR = "font.color";
+	public static final String RECEIPT = "receipt";
+	public static final String PRIORITY = "priority";
+	public static final String READ_RECEIPT_CONFIRMATION = "readreceiptconfirmation";
+	
+	
+	/**
+	 * [string]
+	 * Archiving operative method. One of: simple, structured, webtop.
+	 * A null value indicated no method.
+	 */
+	public static final String ARCHIVING_MODE = "archiving.mode";
+	public static final String ARCHIVING_KEEP_FOLDERS_STRUCTURE = "archiving.keep-folders-structure";
+	public static final String ARCHIVING_DMS_METHOD = "archiving.dms-method";
+	
+	public static final String ARCHIVING_MODE_SINGLE = "single";
+	public static final String ARCHIVING_MODE_YEAR = "year";
+	public static final String ARCHIVING_MODE_MONTH = "month";
+	
+	public static final String ARCHIVING_DMS_METHOD_NONE = "none";
+	public static final String ARCHIVING_DMS_METHOD_SIMPLE = "simple";
+	public static final String ARCHIVING_DMS_METHOD_STRUCTURED = "structured";
+	public static final String ARCHIVING_DMS_METHOD_WEBTOP = "webtop";
+	
+	/**
+	 * [string]
+	 * IMAP folder to be monitored by the archiving process
+	 */
+	public static final String ARCHIVING_SIMPLE_DMS_MAIL_FOLDER = "archiving.dms-simple.mailfolder";
+	
+	
 }

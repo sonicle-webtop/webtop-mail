@@ -154,79 +154,79 @@ public class MailServiceSettings extends BaseServiceSettings {
 	//DEFAULTS
 	
 	public String getDefaultFolderPrefix() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_PEFFIX,null);
+		return getString(DEFAULT_PREFIX+MailSettings.FOLDER_PEFFIX,null);
 	}
 	
 	public boolean isDefaultScanAll() {
-		return getBoolean(DEFAULT_PREFIX+MailUserSettings.SCAN_ALL,false);
+		return getBoolean(DEFAULT_PREFIX+MailSettings.SCAN_ALL,false);
 	}
 	
 	public int getDefaultScanSeconds() {
-		return getInteger(DEFAULT_PREFIX+MailUserSettings.SCAN_SECONDS,30);
+		return getInteger(DEFAULT_PREFIX+MailSettings.SCAN_SECONDS,30);
 	}
 	
 	public int getDefaultScanCycles() {
-		return getInteger(DEFAULT_PREFIX+MailUserSettings.SCAN_CYCLES,10);
+		return getInteger(DEFAULT_PREFIX+MailSettings.SCAN_CYCLES,10);
 	}
 	
 	public String getDefaultFolderSent() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_SENT,null);
+		return getString(DEFAULT_PREFIX+MailSettings.FOLDER_SENT,null);
 	}
 	
 	public String getDefaultFolderDrafts() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_DRAFTS,null);
+		return getString(DEFAULT_PREFIX+MailSettings.FOLDER_DRAFTS,null);
 	}
 	
 	public String getDefaultFolderTrash() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_TRASH,null);
+		return getString(DEFAULT_PREFIX+MailSettings.FOLDER_TRASH,null);
 	}
 
 	public String getDefaultFolderArchive() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_ARCHIVE,null);
+		return getString(DEFAULT_PREFIX+MailSettings.FOLDER_ARCHIVE,null);
 	}
 
 	public String getDefaultFolderSpam() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.FOLDER_SPAM,null);
+		return getString(DEFAULT_PREFIX+MailSettings.FOLDER_SPAM,null);
 	}
 	
 	public boolean isDefaultFolderDraftsDeleteMsgOnSend() {
-		return getBoolean(DEFAULT_PREFIX+MailUserSettings.FOLDER_DRAFTS_DELETEMSGONSEND,false);
+		return getBoolean(DEFAULT_PREFIX+MailSettings.FOLDER_DRAFTS_DELETEMSGONSEND,false);
 	}
 	
 	public boolean isDefaultIncludeMessageInReply() {
-		return getBoolean(DEFAULT_PREFIX+MailUserSettings.INCLUDE_MESSAGE_IN_REPLY,true);
+		return getBoolean(DEFAULT_PREFIX+MailSettings.INCLUDE_MESSAGE_IN_REPLY,true);
 	}
 	
 	public int getDefaultPageRows() {
-		return getInteger(DEFAULT_PREFIX+MailUserSettings.PAGE_ROWS,50);
+		return getInteger(DEFAULT_PREFIX+MailSettings.PAGE_ROWS,50);
 	}
 	
 	public String getDefaultHost() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.HOST,"localhost");
+		return getString(DEFAULT_PREFIX+MailSettings.HOST,"localhost");
 	}
 	
 	public int getDefaultPort() {
-		return getInteger(DEFAULT_PREFIX+MailUserSettings.PORT,25);
+		return getInteger(DEFAULT_PREFIX+MailSettings.PORT,25);
 	}
 	
 	public String getDefaultProtocol() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.PROTOCOL,"imap");
+		return getString(DEFAULT_PREFIX+MailSettings.PROTOCOL,"imap");
 	}
 	
 	public String getDefaultFormat() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.FORMAT,"html");
+		return getString(DEFAULT_PREFIX+MailSettings.FORMAT,"html");
 	}
 	
 	public String getDefaultFontName() {
-		return getString(DEFAULT_PREFIX+MailUserSettings.FONT_NAME,"Arial");
+		return getString(DEFAULT_PREFIX+MailSettings.FONT_NAME,"Arial");
 	}
 	
 	public int getDefaultFontSize() {
-		return getInteger(DEFAULT_PREFIX+MailUserSettings.FONT_SIZE,12);
+		return getInteger(DEFAULT_PREFIX+MailSettings.FONT_SIZE,12);
 	}
 	
 	public boolean isDefaultReceipt() {
-		return getBoolean(DEFAULT_PREFIX+MailUserSettings.RECEIPT,false);
+		return getBoolean(DEFAULT_PREFIX+MailSettings.RECEIPT,false);
 	}
 	
 	public int getDefaultSievePort() {

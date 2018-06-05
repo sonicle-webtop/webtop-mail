@@ -2343,15 +2343,15 @@ public class Service extends BaseService {
 	}
 	
 	public boolean isDmsSimpleArchiving() {
-		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_SIMPLE);
+		return us.getDMSMethod().equals(MailSettings.ARCHIVING_DMS_METHOD_SIMPLE);
 	}
 
 	public boolean isDmsStructuredArchiving() {
-		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_STRUCTURED);
+		return us.getDMSMethod().equals(MailSettings.ARCHIVING_DMS_METHOD_STRUCTURED);
 	}
 	
 	public boolean isDmsWebtopArchiving() {
-		return us.getDMSMethod().equals(MailUserSettings.ARCHIVING_DMS_METHOD_WEBTOP);
+		return us.getDMSMethod().equals(MailSettings.ARCHIVING_DMS_METHOD_WEBTOP);
 	}
 	
 	public boolean isDmsFolder(String foldername) {
@@ -2793,7 +2793,7 @@ public class Service extends BaseService {
 				if (fcs.length>0) System.arraycopy(fcs,0,xfolders,1+folders.length,fcs.length);
 				folders=xfolders;
 			}
-			outputFolders(folder, folders, level1, out);
+			outputFolders(folder, folders, level1, false, out);
 			out.println("], message: '' }");
 			
 		} catch (Exception exc) {
@@ -2838,8 +2838,13 @@ public class Service extends BaseService {
 		
 	};
 	
-	private void outputFolders(Folder parent, Folder folders[], boolean level1, PrintWriter out) throws Exception {
-		ArrayList<Folder> afolders = sortFolders(folders);
+	private void outputFolders(Folder parent, Folder folders[], boolean level1, boolean favorites, PrintWriter out) throws Exception {
+		ArrayList<Folder> afolders;
+		if (!favorites) afolders=sortFolders(folders);
+		else {
+			afolders=new ArrayList<Folder>();
+			for(Folder f: folders) afolders.add(f);
+		}
 		//If Shared Folders, sort on description
 		if (isSharedFolder(parent.getFullName())) {
 			String ss = mprofile.getSharedSort();
@@ -2872,7 +2877,8 @@ public class Service extends BaseService {
 			boolean noinferiors = false;
 			if (hasDifferentDefaultFolder && isDefaultFolder(foldername)) {
 				
-			} else {
+			}
+			else if (!favorites) {
 				for(String att: atts) {
 					if (att.equals("\\HasChildren")) {
 						if (!level1 || !foldername.equals("INBOX")) leaf=false;
@@ -2974,8 +2980,10 @@ public class Service extends BaseService {
 			}
 			ss += "},";
 			out.print(ss);
-			if (level1 && foldername.equals("INBOX")) {
-				outputFolders(f, f.list(), false, out);
+			if (!favorites) {
+				if (level1 && foldername.equals("INBOX")) {
+					outputFolders(f, f.list(), false, false, out);
+				}
 			}
 		}
 	}
@@ -3046,6 +3054,38 @@ public class Service extends BaseService {
 		
 		return afolders;
 	}
+	
+	public void processGetFavoritesTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			out.print("{ data:[");
+			MailUserSettings.Favorites favorites=us.getFavorites();
+			Folder folders[]=new Folder[favorites.size()];
+			for(int i=0;i<favorites.size();++i) folders[i]=getFolder(favorites.get(i));
+			outputFolders(getFolder(""),folders,false,true,out);
+			out.println("], message: '' }");
+			
+		} catch (Exception exc) {
+			new JsonResult(exc).printTo(out);
+			Service.logger.error("Exception",exc);
+		}
+	}
+	
+	public void processAddToFavorites(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String folder = request.getParameter("folder");
+		MailUserSettings.Favorites favorites=us.getFavorites();
+		favorites.add(folder);
+		us.setFavorites(favorites);
+		new JsonResult().printTo(out);
+	}	
+	
+	public void processRemoveFavorite(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String folder = request.getParameter("folder");
+		MailUserSettings.Favorites favorites=us.getFavorites();
+		favorites.remove(folder);
+		us.setFavorites(favorites);
+		new JsonResult().printTo(out);
+	}	
+	
 	
 	public void processMoveMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String fromfolder = request.getParameter("fromfolder");

@@ -43,6 +43,10 @@
 .wtmail-icon-cloud-upload-xs { background-image: url('cloud-upload_16.png') !important; }
 .wtmail-icon-smartsearch-xs { background-image: url('smartsearch_16.png') !important; }
 .wtmail-icon-archive-xs { background-image: url('imap-folder-archive_16.png') !important; }
+.wtmail-icon-emailaccount-xs { background-image: url('emailaccount_16.png') !important; }
+.wtmail-icon-favorites-xs { background-image: url('favorites_16.png') !important; }
+.wtmail-icon-favoriteadd-xs { background-image: url('favoriteadd_16.png') !important; }
+.wtmail-icon-favoriteremove-xs { background-image: url('favoriteremove_16.png') !important; }
 
 .wtmail-icon-format-insertimagefile-xs { background-image: url('format-insertimagefile_16.png') !important; }
 .wtmail-icon-format-quickpart-xs { background-image: url('format-quickpart_16.png') !important; }

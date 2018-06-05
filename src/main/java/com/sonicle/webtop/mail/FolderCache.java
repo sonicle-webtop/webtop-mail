@@ -1085,10 +1085,10 @@ public class FolderCache {
 				folderarchive=xfolderarchive;
 				LocalDate ld=getArchivingReferenceDate(mmsg);
 				FolderCache fcto=ms.checkCreateAndCacheFolder(folderarchive);
-				if (mus.getArchiveMode().equals(MailUserSettings.ARCHIVING_MODE_YEAR)) {
+				if (mus.getArchiveMode().equals(MailSettings.ARCHIVING_MODE_YEAR)) {
 					folderarchive+=sep+ld.getYear();
 					fcto=ms.checkCreateAndCacheFolder(folderarchive);
-				} else if (mus.getArchiveMode().equals(MailUserSettings.ARCHIVING_MODE_MONTH)) {
+				} else if (mus.getArchiveMode().equals(MailSettings.ARCHIVING_MODE_MONTH)) {
 					folderarchive+=sep+ld.getYear();
 					fcto=ms.checkCreateAndCacheFolder(folderarchive);
 					folderarchive+=sep+ld.getYear()+"-"+StringUtils.leftPad(ld.getMonthOfYear()+"",2,'0');

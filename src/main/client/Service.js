@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		'Sonicle.webtop.mail.model.Tag'
 	],
 
+	favoritesTree: null,
 	imapTree: null,
 	toolbar: null,
 	messagesPanel: null,
@@ -111,10 +112,32 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 	
 		
+		me.favoritesTree=Ext.create('Sonicle.webtop.mail.FavoritesTree',{
+			mys: me,
+			width: '100%',
+			rootVisible: true,
+			padding: '0 0 20 0',
+			
+			listeners: {
+				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
+					WT.showContextMenu(e, me.getRef('cxmFavorites'), { rec: rec });
+				},
+				containercontextmenu: function(v, e, eopts) {
+					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
+				},
+				rowclick: function(t, r, tr, ix, e, eopts) {
+					me.folderClicked(t, r, tr, ix, e, eopts);
+				}
+			}
+			
+		});
 		
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
 			mys: me,
-			region: 'center',
+			width: '100%',
+			//region: 'center',
+			hideHeaders: true,
+			rootVisible: true,
 			
 			stateEvents : ['collapsenode', 'expandnode'],
 			stateId : 'imaptree-state-id',
@@ -129,6 +152,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
 				rowclick: function(t, r, tr, ix, e, eopts) {
+					me.favoritesTree.setSelection(null);
 					me.folderClicked(t, r, tr, ix, e, eopts);
 				},
 				load: function(t,r,s,o,n) {
@@ -174,7 +198,22 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			var r=context.record;
 			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||r.get("isArchive")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
 		});
-			var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
+		
+		me.trees=Ext.create({
+				xtype: 'panel',
+				border: false,
+				layout: 'vbox',
+				region: 'center',
+				scrollable: true,
+				items: [
+					me.favoritesTree,
+					me.imapTree
+				]
+		});
+		
+		
+		
+		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
 			pageSize: me.getVar('pageRows'),
 			viewRegion: me.getVar('messageViewRegion','east'),
 			viewWidth: me.getVar('messageViewWidth',600),
@@ -238,7 +277,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 
 		var toolitems=new Array();
-		toolitems.push(me.imapTree);
+		toolitems.push(me.trees);
 		if (subtools) toolitems.push(subtools);
 		var tool = Ext.create({
 			xtype: 'panel',
@@ -423,6 +462,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("newmainfolder",{ handler: me.actionNewMainFolder, scope: me });
         me.addAct("movetomain",{ handler: me.actionMoveToMainFolder, scope: me, iconCls: '' });
         me.addAct("refresh",{ handler: me.actionFolderRefresh, scope: me, iconCls: 'wt-icon-refresh-xs' });
+        me.addAct("refreshtree",{ handler: me.actionTreeRefresh, scope: me, iconCls: '' });
+        me.addAct("favorite",{ handler: me.actionFavorite, scope: me, iconCls: 'wtmail-icon-favoriteadd-xs' });
+        me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wtmail-icon-favoriteremove-xs' });
 
         me.addAct("scanfolder",{ handler: null, iconCls: '' });
 		
@@ -561,6 +603,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			xtype: 'menu',
 			items: [
                 me.getAct('advsearch'),
+				me.getAct('favorite'),
                 me.getAct('emptyfolder'),
                 '-',
                 me.getAct('deletefolder'),
@@ -571,6 +614,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 me.getAct('newmainfolder'),
                 '-',
                 me.getAct('refresh'),
+                me.getAct('refreshtree'),
                 '-',
                 me.getAct('sharing'),
 				mshowsharings=Ext.create('Ext.menu.CheckItem',me.getAct('showsharings')),
@@ -638,7 +682,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 '-',
                 me.getAct('managehiddenfolders'),
                 '-',
-                me.getAct('refresh')
+                me.getAct('refreshtree')
+            ]
+        }));
+		me.addRef('cxmFavorites', Ext.create({
+			xtype: 'menu',
+            items: [
+                me.getAct('removefavorite')
             ]
         }));
 	},
@@ -719,16 +769,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	unreadChanged: function(msg,unreadOnly) {
 		var me=this,
 		pl=msg.payload,
-		node=me.imapTree.getStore().getById(pl.foldername);
+		node=me.imapTree.getStore().getById(pl.foldername),
+		fnode=me.favoritesTree.getStore().getById(pl.foldername);
 		if (node) {
 			var folder=node.get("folder");
 			var oldunread=node.get("unread");
 			if (!unreadOnly) node.set('hasUnread',pl.hasUnreadChildren);
 			if (pl.unread!==oldunread) {
-				console.log("unreadChanged: pl.foldername="+pl.foldername+" - pl.unread="+pl.unread+" oldunread="+oldunread);
 				node.set('unread',pl.unread);
 				node.set('folder','');
 				node.set('folder',folder);
+				if (fnode) {
+					fnode.set('unread',pl.unread);
+					fnode.set('folder','');
+					fnode.set('folder',folder);
+				}
 			}
 		}
 	},
@@ -736,7 +791,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	recentMessage: function(msg) {
 		var me=this,
 		pl=msg.payload;
-		console.log("recentMessage: pl.foldername="+pl.foldername);
 		if (pl.foldername==='INBOX') {
 			//var msg=me.res('ntf.newmsg.inbox-has')+" "+cfg.unread+" ";
 			//if (cfg.unread===1) msg+=me.res('ntf.newmsg.new-message');
@@ -1083,19 +1137,39 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionMoveToMainFolder: function(s,e) {
 		var me=this,
-		rec=me.getCtxNode(e);
+			rec=me.getCtxNode(e);
 	
 		me.moveFolder(rec.get("id"),null);
 	},
 	
 	actionFolderRefresh: function(s,e) {
 		var me=this,
-		rec=me.getCtxNode(e);
+			rec=me.getCtxNode(e);
 	
 		if (rec) me.refreshFolder(rec);
 		else {
 			me.reloadTree();
 		}
+	},
+	
+	actionTreeRefresh: function(s,e) {
+		this.reloadTree();
+	},
+	
+	actionFavorite: function(s,e) {
+		var me=this,
+			n=me.getCtxNode(e),
+			folder=n.get("id");
+	
+		me.addToFavorites(folder);
+	},
+	
+	actionRemoveFavorite: function(s,e) {
+		var me=this,
+			n=me.getCtxNode(e),
+			folder=n.get("id");
+	
+		me.removeFavorite(folder);
 	},
 	
 	actionScanFolder: function(mi,e) {
@@ -1164,6 +1238,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		this.imapTree.getStore().reload();
 	},
 	
+	reloadFavorites: function() {
+		this.favoritesTree.getStore().reload();
+	},
+	
     reloadFolderList: function() {
         this.messagesPanel.reloadGrid();
     },
@@ -1229,6 +1307,38 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				if (json.result) {
 					var node=me.imapTree.getStore().getById(folder);
 					if (node) node.remove();
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},	
+	
+	addToFavorites: function(folder) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'AddToFavorites', {
+			params: {
+				folder: folder
+			},
+			callback: function(success,json) {
+				if (success) {
+					me.reloadFavorites();
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},	
+	
+	removeFavorite: function(folder) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'RemoveFavorite', {
+			params: {
+				folder: folder
+			},
+			callback: function(success,json) {
+				if (success) {
+					me.reloadFavorites();
 				} else {
 					WT.error(json.text);
 				}

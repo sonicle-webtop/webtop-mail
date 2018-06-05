@@ -32,15 +32,9 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.ImapTree', {
+Ext.define('Sonicle.webtop.mail.FavoritesTree', {
 	extend: 'Sonicle.webtop.mail.SimpleImapTree',
 	
-	plugins: {
-        ptype: 'cellediting',
-		pluginId: 'cellediting',
-        clicksToEdit: 2
-    },	
-
 	constructor: function(cfg) {
 		var me = this;
 		
@@ -48,9 +42,9 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 			viewConfig: {
 				plugins: { 
 					ptype: 'imaptreeviewdragdrop' ,
-					moveFolder: function(src,dst) {
+					/*moveFolder: function(src,dst) {
 						cfg.mys.moveFolder(src,dst);
-					},
+					},*/
 					moveMessages: function(data,dst) {
 						data.view.grid.moveSelection(data.srcFolder,dst,data.records);
 					},
@@ -68,12 +62,12 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 			
 			store: Ext.create('Ext.data.TreeStore', {
 				model: 'Sonicle.webtop.mail.model.ImapTreeModel',
-				proxy: WTF.proxy(cfg.mys.ID,'GetImapTree'),
+				proxy: WTF.proxy(cfg.mys.ID,'GetFavoritesTree'),
 				root: {
-					text: 'Email Imap Tree',
-					folder: WT.getVar("userDisplayName"),
+					text: 'Favorites Tree',
+					folder: WT.res("word.favorites"),
 					unread: 0,
-					iconCls: 'wtmail-icon-emailaccount-xs',
+					iconCls: 'wtmail-icon-favorites-xs',
 					expanded: true
 				},
 				rootVisible: false
@@ -82,89 +76,8 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 
 		me.callParent([cfg]);
 		
-		if (false !== me.statefulFolders) me.setupStateful();
-		
-	},
-	
-	startEdit: function(record,c) {
-		var me=this;
-		me.getPlugin('cellediting').startEdit(record, me.getView().ownerCt.getColumnManager().getHeaderAtIndex(c));
-	},
-	
-	//Stateful implementations
-	setupStateful: function() {
-		var me=this;
-		
-		me.expandedNodes = {};
-		me.stateEvents = [ 'expandnode', 'collapsenode' ];
-		me.getState = function() {
-			return { expandedNodes: me.expandedNodes };
-		};
-		me.on({
-			scope: me,
-			render: me.onStatefulRender,
-			beforeitemexpand: me.beforeStatefulItemExpand,
-			beforeitemcollapse: me.beforeStatefulItemCollapse
-		});										  
-		me.setStateful(true);
-	},
-	
-	onStatefulRender: function(){
-		var me=this;
-		Ext.defer(function() { me.restoreFoldersState(); },1000);
-	},
-	
-	restoreFoldersState: function() {											 
-		var me=this,
-			state=Ext.state.Manager.get(me.stateId);
-		if (state && state.expandedNodes) {
-			me.expandedNodes=state.expandedNodes;
-			me._doExpandPath(
-				Ext.Array.sort(Ext.Object.getAllKeys(state.expandedNodes)),
-				0
-			);
-			//me.setHeight(me.height); //For make work: http://extjs.com/forum/showthread.php?p=212359
-		}
-		else me.fireEvent("foldersstaterestored",me,null);
-	},
-	
-	_doExpandPath: function(expandedNodesArray,ix) {
-		var me=this;
-		
-		if (ix<expandedNodesArray.length) {
-			me.restoringState=true;
-			var node=me.store.getById(expandedNodesArray[ix]);
-			if (node) {
-				me.expandNode(node, false, function() {
-					me._doExpandPath(expandedNodesArray,ix+1);
-				});
-			}
-		} else {
-			me.restoringState=false;
-			me.fireEvent("foldersstaterestored",me,me.expandedNodes);
-		}
-	},
-	
-	beforeStatefulItemExpand:function(n) {
-		var me=this;
-		if(!me.restoringState && n.id) {
-			me.expandedNodes[n.id] = n.getPath();
-			me.saveState();
-		}
-	},
-	
-	beforeStatefulItemCollapse:function(n) {
-		var me=this;
-		if(n.id) {
-			delete(me.expandedNodes[n.id]);
-			n.cascade(function(child) {
-				if(child.id) {
-					delete(me.expandedNodes[child.id]);
-				}
-			}, this);
-			me.saveState();
-		}
 	}
+	
 	
 });
 
