@@ -142,6 +142,7 @@ import javax.mail.internet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -8353,10 +8354,12 @@ public class Service extends BaseService {
 				FileObject fo=vfsmanager.getStoreFile(sid,path);
 				if (!fo.exists()) fo.createFolder();
 				String filename=file.getFilename();
-				String newPath = vfsmanager.addStoreFileFromStream(sid, path, filename, is, false);
+				String newFullName = vfsmanager.addStoreFileFromStream(sid, path, filename, is, false);
+				
+				filename=FilenameUtils.getName(newFullName);
 				responseData.add("storeId", sid);
-				responseData.add("filePath", path+"/"+filename);
-				attachCloud(msgid,sid,newPath,filename);
+				responseData.add("filePath", newFullName);
+				attachCloud(msgid,sid,newFullName,filename);
 			} catch(UploadException ex) {
 				logger.trace("Upload failure", ex);
 				throw ex;
