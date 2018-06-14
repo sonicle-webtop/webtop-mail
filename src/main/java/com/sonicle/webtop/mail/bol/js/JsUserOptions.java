@@ -40,9 +40,9 @@ import com.sonicle.webtop.core.sdk.bol.js.JsUserOptionsBase;
  * @author malbinola
  */
 public class JsUserOptions extends JsUserOptionsBase {
-	public boolean canManageAccount;	
-	public boolean canManageMailcard;	
-	public boolean canManageDomainMailcard;	
+	public boolean permAccountManage;	
+	public boolean permMailcardManage;	
+	public boolean permDomainMailcardManage;	
 	public String archiveMode;
 	public boolean archiveKeepFoldersStructure;
 	public String dmsSimpleMailFolder;

@@ -34,27 +34,19 @@
 Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	extend: 'WTA.sdk.UserOptionsView',
 	requires: [
+		'WTA.store.MailboxProtocols',
 		'Sonicle.webtop.mail.model.ServiceVars',
 		'Sonicle.webtop.mail.model.Identity',
+		'Sonicle.webtop.mail.store.ArchiveMode',
 		'Sonicle.webtop.mail.store.EditingFormat',
-		'Sonicle.webtop.mail.store.ReadReceiptConfirmation',
+		'Sonicle.webtop.mail.store.ReadReceiptConfirmation'
+	],
+	uses: [
 		'Sonicle.webtop.mail.view.MailcardEditor'
 	],
 	
 	viewModel: {
 		formulas: {
-			foCanManageAccount: function(get) {
-				if (WT.isProfileActingAsAdmin()) return true;
-				return get('record.canManageAccount');
-			},
-			foCanManageMailcard: function(get) {
-				if (WT.isProfileActingAsAdmin()) return true;
-				return get('record.canManageMailcard');
-			},
-			foCanManageDomainMailcard: function(get) {
-				if (WT.isProfileActingAsAdmin()) return true;
-				return get('record.canManageDomainMailcard');
-			},
 			receipt: WTF.checkboxBind('record', 'receipt'),
 			priority: WTF.checkboxBind('record', 'priority'),
 			archiveKeepFoldersStructure: WTF.checkboxBind('record', 'archiveKeepFoldersStructure'),
@@ -68,111 +60,121 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	},
 		
 	initComponent: function() {
-		var me = this;
+		var me = this, vm;
 		me.callParent(arguments);
+		
+		vm = me.getViewModel();
+		vm.setFormulas(Ext.apply(vm.getFormulas() || {}, {
+			foCanManageAccount: function(get) {
+				if (WT.isAdmin() || me.isAdminOnBehalf()) return true;
+				return get('record.permAccountManage');
+			},
+			foCanManageMailcard: function(get) {
+				if (WT.isAdmin() || me.isAdminOnBehalf()) return true;
+				return get('record.permMailcardManage');
+			},
+			foCanManageDomainMailcard: function(get) {
+				if (WT.isAdmin() || me.isAdminOnBehalf()) return true;
+				return get('record.permDomainMailcardManage');
+			}
+		}));
 		
 		me.add({
 			xtype: 'wtopttabsection',
 			title: me.res('opts.main.tit'),
-			items: [
-				{
-					xtype: 'textfield',
-					bind: {
-						value: '{record.replyTo}',
-						emptyText: '{record.mainEmail}'
-					},
-					fieldLabel: me.res('opts.account.fld-replyTo.lbl'),
-					width: 440,
-					submitEmptyText: false,
-					needLogin: true,
-					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-				}, WTF.lookupCombo('id', 'desc', {
-					bind: '{record.readReceiptConfirmation}',
-					store: Ext.create('Sonicle.webtop.mail.store.ReadReceiptConfirmation', {
-						autoLoad: true
-					}),
-					fieldLabel: me.res('opts.account.fld-readreceiptconfirmation.lbl'),
-					width: 440,
-					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-				}), {
-					xtype: 'checkbox',
-					bind: '{ingridPreview}',
-					hideEmptyLabel: false,
-					boxLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
-					needReload: true,
-					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-				}, {
-					xtype: 'checkbox',
-					bind: '{sharedSeen}',
-					hideEmptyLabel: false,
-					boxLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
-					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-				}, {
-					xtype: 'checkbox',
-					bind: '{manualSeen}',
-					hideEmptyLabel: false,
-					boxLabel: me.res('opts.adv.fld-manualSeen.lbl'),
-					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-				}, WTF.lookupCombo('id', 'desc', {
-					bind: '{record.sharedSort}',
-					store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
-						autoLoad: true
-					}),
-					fieldLabel: me.res('opts.account.fld-sharedSort.lbl'),
-					width: 340,
-					needReload: true,
-					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			items: [{
+				xtype: 'textfield',
+				bind: {
+					value: '{record.replyTo}',
+					emptyText: '{record.mainEmail}'
+				},
+				fieldLabel: me.res('opts.account.fld-replyTo.lbl'),
+				width: 440,
+				submitEmptyText: false,
+				needLogin: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, WTF.lookupCombo('id', 'desc', {
+				bind: '{record.readReceiptConfirmation}',
+				store: Ext.create('Sonicle.webtop.mail.store.ReadReceiptConfirmation', {
+					autoLoad: true
 				}),
-				{
-					xtype: 'soformseparator',
-					title: me.res('opts.main.panels.tit')
-				}, {
-					xtype: 'checkbox',
-					bind: '{showUpcomingEvents}',
-					hideEmptyLabel: false,
-					boxLabel: me.res('opts.main.fld-showUpcomingEvents.lbl'),
-					labelWidth: 20,
-					listeners: {
-						change: {
-							fn: function(s) {
-								//TODO: workaround...il modello veniva salvato prima dell'aggionamento
-								Ext.defer(function() {
-									me.onBlurAutoSave(s);
-								}, 200);
-							},
-							scope: me
-						}
-					},
-					needReload: true
-				}, {
-					xtype: 'checkbox',
-					bind: '{showUpcomingTasks}',
-					hideEmptyLabel: false,
-					boxLabel: me.res('opts.main.fld-showUpcomingTasks.lbl'),
-					labelWidth: 20,
-					listeners: {
-						change: {
-							fn: function(s) {
-								//TODO: workaround...il modello veniva salvato prima dell'aggionamento
-								Ext.defer(function() {
-									me.onBlurAutoSave(s);
-								}, 200);
-							},
-							scope: me
-						}
-					},
-					needReload: true
-				}
-			]
+				fieldLabel: me.res('opts.account.fld-readreceiptconfirmation.lbl'),
+				width: 440,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}), {
+				xtype: 'checkbox',
+				bind: '{ingridPreview}',
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
+				needReload: true,
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
+				xtype: 'checkbox',
+				bind: '{sharedSeen}',
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
+				xtype: 'checkbox',
+				bind: '{manualSeen}',
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-manualSeen.lbl'),
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, WTF.lookupCombo('id', 'desc', {
+				bind: '{record.sharedSort}',
+				store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
+					autoLoad: true
+				}),
+				fieldLabel: me.res('opts.account.fld-sharedSort.lbl'),
+				width: 340,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}),
+			{
+				xtype: 'soformseparator',
+				title: me.res('opts.main.panels.tit')
+			}, {
+				xtype: 'checkbox',
+				bind: '{showUpcomingEvents}',
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.main.fld-showUpcomingEvents.lbl'),
+				labelWidth: 20,
+				listeners: {
+					change: {
+						fn: function(s) {
+							//TODO: workaround...il modello veniva salvato prima dell'aggionamento
+							Ext.defer(function() {
+								me.onBlurAutoSave(s);
+							}, 200);
+						},
+						scope: me
+					}
+				},
+				needReload: true
+			}, {
+				xtype: 'checkbox',
+				bind: '{showUpcomingTasks}',
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.main.fld-showUpcomingTasks.lbl'),
+				labelWidth: 20,
+				listeners: {
+					change: {
+						fn: function(s) {
+							//TODO: workaround...il modello veniva salvato prima dell'aggionamento
+							Ext.defer(function() {
+								me.onBlurAutoSave(s);
+							}, 200);
+						},
+						scope: me
+					}
+				},
+				needReload: true
+			}]
 		});
 		
 		me.add({
 			xtype: 'wtopttabsection',
 			title: me.res('opts.editing.tit'),
-			defaults: {
-				labelAlign: 'right',
-				labelWidth: 180
-			},
 			items: [
 				WTF.lookupCombo('id', 'desc', {
 					bind: {
@@ -203,25 +205,23 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					mouseWheelEnabled: false,
 					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 				}, {
-						xtype: 'sopalettefield',
-						bind: '{record.fontColor}',
-						//colors: WT.getColorPalette(),
-						fieldLabel: WT.res('word.color'),
-						width: 240,
-						listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-						
-					
+					xtype: 'sopalettefield',
+					bind: '{record.fontColor}',
+					//colors: WT.getColorPalette(),
+					fieldLabel: WT.res('word.color'),
+					width: 240,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
 					xtype: 'checkbox',
 					bind: '{receipt}',
-					fieldLabel: me.res('opts.editing.fld-receipt.lbl'),
-					width: 100,
+					boxLabel: me.res('opts.editing.fld-receipt.lbl'),
+					hideEmptyLabel: false,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
 					xtype: 'checkbox',
 					bind: '{priority}',
-					fieldLabel: me.res('opts.editing.fld-priority.lbl'),
-					width: 100,
+					boxLabel: me.res('opts.editing.fld-priority.lbl'),
+					hideEmptyLabel: false,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
 					xtype: 'fieldcontainer',
@@ -251,6 +251,20 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			]		
 		});
 		
+		var identEdCfg = {};
+		if (me.isProfileSelf()) {
+			identEdCfg = {
+				xtype: 'sotreecombo',
+				store: Ext.create('Ext.data.TreeStore', {
+					model: 'Sonicle.webtop.mail.model.ImapTreeModel',
+					proxy: WTF.proxy(me.ID, 'GetImapTree'),
+					root: {expanded: true},
+					rootVisible: false
+				})
+			};
+		} else {
+			identEdCfg = {xtype: 'textfield'};
+		}
 		me.add({
 			xtype: 'wtopttabsection',
 			title: me.res('opts.ident.tit'),
@@ -261,88 +275,81 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					items: [{
 							region: 'north',
 							xtype: 'toolbar',
-							items: [
-								{
-									xtype: 'button',
-									reference: 'addIdentity',
-									text: WT.res('act-add.lbl'),
-									tooltip: null,
-									iconCls: 'wt-icon-add-xs',
-									handler: function() {
-										var g=me.lref('gpidents'),
-										r=g.store.add({
-											type: 'user',
-											email: '',
-											displayName: '',
-											mainFolder: '',
-											fax: false
-										})[0];
-										g.getPlugin('gpidentseditor').startEdit(r);
-									}
-								},
-								{
-									xtype: 'button',
-									reference: 'deleteIdentity',
-									text: WT.res('act-delete.lbl'),
-									tooltip: null,
-									iconCls: 'wt-icon-delete-xs',
-									handler: function() {
-										var sel = me.lref('gpidents').getSelection();
-										if (sel.length>0)
-											me.lref('gpidents').store.remove(sel[0]);
-									},
-									disabled: true
-								},
-								'-',
-								{
-									xtype: 'label',
-									text: ' Mailcard: ',
-									bind: {
-										hidden: '{!foCanManageMailcard}'
-									}
-								},
-								{
-									xtype: 'button',
-									reference: 'editIdentityMailcard',
-									tooltip: me.res('opts.a-mailcardedit.tip'),
-									iconCls: 'wtmail-icon-mailcardedit-xs',
-									bind: {
-										hidden: '{!foCanManageMailcard}'
-									},
-									disabled: true,
-									handler: function(s) {
-										var grid=me.lref('gpidents'),
-										sel = grid.getSelection();
-										if (sel.length>0) {
-											var id = 'identity|'+sel[0].get("identityId");
-											me.editMailcard(id, null);
-										}
-									},
-									scope: this
-								},
-								{
-									xtype: 'button',
-									reference: 'deleteIdentityMailcard',
-									tooltip: me.res('opts.a-mailcardremove.tip'),
-									iconCls: 'wtmail-icon-mailcardremove-xs',
-									bind: {
-										hidden: '{!foCanManageMailcard}'
-									},
-									disabled: true,
-									handler: function(s) {
-										var grid=me.lref('gpidents'),
-										sel = grid.getSelection();
-										if (sel.length>0) {
-											var id = 'identity|'+sel[0].get("identityId");
-											me.delMailcard(id, null);
-										}
-									},
-									scope: this
+							items: [{
+								xtype: 'button',
+								reference: 'addIdentity',
+								text: WT.res('act-add.lbl'),
+								tooltip: null,
+								iconCls: 'wt-icon-add-xs',
+								handler: function() {
+									var g=me.lref('gpidents'),
+									r=g.store.add({
+										type: 'user',
+										email: '',
+										displayName: '',
+										mainFolder: '',
+										fax: false
+									})[0];
+									g.getPlugin('gpidentseditor').startEdit(r);
 								}
-						
-							]
-						},
-						{					
+							}, {
+								xtype: 'button',
+								reference: 'deleteIdentity',
+								text: WT.res('act-delete.lbl'),
+								tooltip: null,
+								iconCls: 'wt-icon-delete-xs',
+								handler: function() {
+									var sel = me.lref('gpidents').getSelection();
+									if (sel.length>0)
+										me.lref('gpidents').store.remove(sel[0]);
+								},
+								disabled: true
+							},
+							'-',
+							{
+								xtype: 'label',
+								text: ' Mailcard: ',
+								bind: {
+									hidden: '{!foCanManageMailcard}'
+								}
+							}, {
+								xtype: 'button',
+								reference: 'editIdentityMailcard',
+								tooltip: me.res('opts.a-mailcardedit.tip'),
+								iconCls: 'wtmail-icon-mailcardedit-xs',
+								bind: {
+									hidden: '{!foCanManageMailcard}'
+								},
+								disabled: true,
+								handler: function(s) {
+									var grid=me.lref('gpidents'),
+									sel = grid.getSelection();
+									if (sel.length>0) {
+										var id = 'identity|'+sel[0].get("identityId");
+										me.editMailcard(id, null);
+									}
+								},
+								scope: this
+							}, {
+								xtype: 'button',
+								reference: 'deleteIdentityMailcard',
+								tooltip: me.res('opts.a-mailcardremove.tip'),
+								iconCls: 'wtmail-icon-mailcardremove-xs',
+								bind: {
+									hidden: '{!foCanManageMailcard}'
+								},
+								disabled: true,
+								handler: function(s) {
+									var grid=me.lref('gpidents'),
+									sel = grid.getSelection();
+									if (sel.length>0) {
+										var id = 'identity|'+sel[0].get("identityId");
+										me.delMailcard(id, null);
+									}
+								},
+								scope: this
+							}]
+						}, {					
 							region: 'center',
 							xtype: 'gridpanel',
 							reference: 'gpidents',
@@ -371,16 +378,18 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							columns: [{
 									dataIndex: 'displayName',
 									header: me.res('opts.ident.displayName.lbl'),
-									editor: { xtype: 'textfield' },
+									editor: {xtype: 'textfield'},
 									flex: 2
 								}, {
 									dataIndex: 'email',
 									header: me.res('opts.ident.email.lbl'),
-									editor: { xtype: 'textfield' },
+									editor: {xtype: 'textfield'},
 									flex: 2
 								}, {
 									dataIndex: 'mainFolder',
 									header: me.res('opts.ident.mainFolder.lbl'),
+									editor: identEdCfg,
+									/*
 									editor: {
 										xtype: 'sotreecombo',
 										store: Ext.create('Ext.data.TreeStore', {
@@ -393,6 +402,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 											rootVisible: false
 										})
 									},
+									*/
 									flex: 2
 								}, {
 									xtype: 'checkcolumn',
@@ -474,10 +484,14 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		me.add({
 			xtype: 'wtopttabsection',
 			title: me.res('opts.account.tit'),
-			defaults: {
-				labelAlign: 'right',
-				labelWidth: 180
+			bind: {
+				permStatus: '{record.permAccountManage}'
 			},
+			plugins: [{
+				ptype: 'wttabpermstatus',
+				isAdmin: WT.isAdmin() || me.isAdminOnBehalf(),
+				info: 'ACCOUNT_SETTINGS:CHANGE'
+			}],
 			items: [
 				WTF.lookupCombo('id', 'desc', {
 					bind: {
@@ -608,68 +622,56 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		me.add({
 			xtype: 'wtopttabsection',
 			title: me.res('opts.adv.tit'),
-			items: [
-				{
-					xtype: 'checkbox',
-					bind: '{scanAll}',
-					fieldLabel: me.res('opts.adv.fld-scanAll.lbl'),
+			items: [{
+				xtype: 'checkbox',
+				bind: '{scanAll}',
+				fieldLabel: me.res('opts.adv.fld-scanAll.lbl'),
+				width: 100,
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
+				xtype: 'numberfield',
+				bind: '{record.scanSeconds}',
+				fieldLabel: me.res('opts.adv.fld-scanSeconds.lbl'),
+				minValue: 3,
+				hideTrigger: true,
+				keyNavEnabled: false,
+				mouseWheelEnabled: false,
+				width: 200,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'fieldcontainer',
+				fieldLabel: me.res('opts.adv.fld-scanCycles.lbl'),
+				layout: 'hbox',
+				items: [{
+					xtype: 'sliderwidget',
+					bind: '{record.scanCycles}',
+					increment: 1,
+					keyIncrement: 1,
+					minValue: 3,
+					maxValue: 30,
 					width: 100,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-				}, {
-					xtype: 'numberfield',
-					bind: '{record.scanSeconds}',
-					fieldLabel: me.res('opts.adv.fld-scanSeconds.lbl'),
-					width: 200,
-					hideTrigger: true,
-					keyNavEnabled: false,
-					mouseWheelEnabled: false,
-					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-				}, {
-					xtype: 'fieldcontainer',
-					fieldLabel: me.res('opts.adv.fld-scanCycles.lbl'),
-					layout: 'hbox',
-					items: [ 
-						{
-							xtype: 'sliderwidget',
-							bind: '{record.scanCycles}',
-							width: 100,
-							increment: 1,
-							keyIncrement: 1,
-							minValue: 3,
-							maxValue: 30,
-							listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-						},
-						{ xtype: 'displayfield', text: '', width: 10 },
-						{
-							xtype: 'numberfield',
-							bind: '{record.scanSecondsOthers}',
-							fieldLabel: ' ',
-							width: 150,
-							hideTrigger: true,
-							keyNavEnabled: false,
-							mouseWheelEnabled: false,
-							disabled: true
-						}
-					]
-				}, {
-					xtype: 'textfield',
-					bind: '{record.defaultFolder}',
-					fieldLabel: me.res('opts.adv.fld-defaultFolder.lbl'),
-					width: 400,
-					needReload: true,
-					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-				}
-			]
+					}, {
+						xtype: 'displayfield', text: '', width: 10
+					}, {
+						xtype: 'numberfield',
+						bind: '{record.scanSecondsOthers}',
+						fieldLabel: ' ',
+						width: 150,
+						hideTrigger: true,
+						keyNavEnabled: false,
+						mouseWheelEnabled: false,
+						disabled: true
+				}]
+			}, {
+				xtype: 'textfield',
+				bind: '{record.defaultFolder}',
+				fieldLabel: me.res('opts.adv.fld-defaultFolder.lbl'),
+				width: 400,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}]
 		});
-		
-		/*if (WT.isPermitted(me.ID,'MAIL_WORKFLOW','ACCESS')) {
-			me.add({
-				xtype: 'wtopttabsection',
-				title: me.res('opts.wkf.tit'),
-				items: [
-				]
-			});
-		}*/
 	},
 	
 	editMailcard: function(mailcardId, cmp) {

@@ -49,7 +49,6 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 	promptConfirm: false,
 	full: true,
 	
-	mys: null,
 	html: '',
 	
 	initComponent: function() {
@@ -90,8 +89,8 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 					tabIndex: -1,
 					iconCls: 'wtmail-icon-htmleditor-template-xs',
 					tooltip: {
-						title: me.mys.res('opts.mailcard-editor.b-tpl.tit'),
-						text: me.mys.res('opts.mailcard-editor.b-tpl.tip')
+						title: me.res('opts.mailcard-editor.b-tpl.tit'),
+						text: me.res('opts.mailcard-editor.b-tpl.tip')
 					},
 					menu: Ext.create("Ext.menu.Menu",{
 						listeners: {
@@ -102,51 +101,51 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 						items: [
 							{
 								text: 'TITLE',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.title')
+								tooltip: me.res('opts.mailcard-editor.tpl.title')
 							},
 							{
 								text: 'FIRST_NAME',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.firstname')
+								tooltip: me.res('opts.mailcard-editor.tpl.firstname')
 							},
 							{
 								text: 'LAST_NAME',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.lastname')
+								tooltip: me.res('opts.mailcard-editor.tpl.lastname')
 							},
 							{
 								text: 'COMPANY',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.company')
+								tooltip: me.res('opts.mailcard-editor.tpl.company')
 							},
 							{
 								text: 'FUNCTION',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.function')
+								tooltip: me.res('opts.mailcard-editor.tpl.function')
 							},
 							{
 								text: 'EMAIL',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.workemail')
+								tooltip: me.res('opts.mailcard-editor.tpl.workemail')
 							},
 							{
 								text: 'MOBILE',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.workmobile')
+								tooltip: me.res('opts.mailcard-editor.tpl.workmobile')
 							},
 							{
 								text: 'TELEPHONE',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.worktelephone')
+								tooltip: me.res('opts.mailcard-editor.tpl.worktelephone')
 							},
 							{
 								text: 'FAX',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.workfax')
+								tooltip: me.res('opts.mailcard-editor.tpl.workfax')
 							},
 							{
 								text: 'CUSTOM_1',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.custom1')
+								tooltip: me.res('opts.mailcard-editor.tpl.custom1')
 							},
 							{
 								text: 'CUSTOM_2',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.custom2')
+								tooltip: me.res('opts.mailcard-editor.tpl.custom2')
 							},
 							{
 								text: 'CUSTOM_3',
-								tooltip: me.mys.res('opts.mailcard-editor.tpl.custom3')
+								tooltip: me.res('opts.mailcard-editor.tpl.custom3')
 							}
 						]
 					})
@@ -155,8 +154,8 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 					tabIndex: -1,
 					iconCls: 'wt-icon-format-insertimageurl-xs',
 					tooltip: {
-						title: me.mys.res('editor.pubimg.tit'),
-						text: me.mys.res('editor.pubimg.tip')
+						title: me.res('editor.pubimg.tit'),
+						text: me.res('editor.pubimg.tip')
 					},
 					menu: {
 						xtype: 'sostoremenu',

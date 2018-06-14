@@ -72,9 +72,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 
 			if (crud.equals(Crud.READ)) {
 				JsUserOptions jso = new JsUserOptions(getTargetProfileId().toString());
-				jso.canManageAccount = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE");
-				jso.canManageMailcard = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE");
-				jso.canManageDomainMailcard = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE");
+				jso.permAccountManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE");
+				jso.permMailcardManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE");
+				jso.permDomainMailcardManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE");
 				
 				jso.dmsSimpleMailFolder = mus.getSimpleDMSArchivingMailFolder();
 				jso.dmsMethod = mus.getDMSMethod();
