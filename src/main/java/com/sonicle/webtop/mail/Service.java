@@ -5307,11 +5307,12 @@ public class Service extends BaseService {
 			crud = ServletUtils.getStringParameter(request, "crud", true);
 			if (crud.equals(Crud.READ)) {
 				items=new ArrayList<>();
-				for(Tag t: atags) items.add(new JsTag(t.getTagId(),t.getDescription(),t.getColor()));
-				new JsonResult(items).printTo(out);
+				for(Tag t: atags) items.add(new JsTag(t.getTagId(),t.getDescription(),t.getColor()));	
+                new JsonResult(items).printTo(out);
 			} else if (crud.equals(Crud.CREATE)) {
 				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
 				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
+			    if(tag.getTagId().contains(" ")==true) tag.setTagId(tag.getTagId().replaceAll(" ","_"));
 				mailManager.addTag(tag);
 				loadTags();
 				
@@ -5321,7 +5322,11 @@ public class Service extends BaseService {
 			} else if (crud.equals(Crud.UPDATE)) {
 				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
 				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
-				mailManager.updateTag(tag);
+				String newTagId=tag.getDescription();
+				String oldTagId=tag.getTagId();
+				if(newTagId.contains(" ")==true) newTagId=newTagId.replaceAll(" ","_");
+				mailManager.updateTag(tag,newTagId);
+				mailManager.updateFoldersTag(oldTagId,newTagId,foldersCache.values());
 				loadTags();
 				
 				items=new ArrayList<>();

@@ -58,7 +58,7 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
 		return cls;
     }
 	
-	
+
 //TODO: MessageListView various
 /*    onLoad : function(){
         var g=this.grid;
@@ -1523,6 +1523,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				listeners: {
 					viewclose: function() {
 						me.mys.reloadTags();
+						var node=me.mys.getFolderNodeById(me.currentFolder);					
+						me.mys.refreshFolder(node);
 					}
 				}
 			}
