@@ -84,8 +84,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Level;
+import javax.mail.Message;
+import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
@@ -494,13 +498,16 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	public void updateTag(Tag tag) throws WTException {
+	public void updateTag(Tag tag,String newTagId) throws WTException {
 		TagDAO tagdao = TagDAO.getInstance();
 		Connection con = null;
+		String oldTagId="";
 		
 		try {
 			con = WT.getConnection(SERVICE_ID);
-			tagdao.update(con, createTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
+			oldTagId=tag.getTagId();
+			tag.setTagId(newTagId);
+			tagdao.update(con,oldTagId, createTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
@@ -508,6 +515,25 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
+	public void updateFoldersTag(String oldTagId , String newTagId, Collection<FolderCache> folders){
+		
+		for(FolderCache fc: folders){
+			Message msgs[] = null;
+			try {
+				msgs = fc.getMessages(null,oldTagId,"flag",FolderCache.SORT_BY_DATE,false,true,0,false,false);
+				long[] uid = new long[msgs.length];
+				for (int i=0;i<msgs.length;i++) {
+					uid[i]=fc.getUID(msgs[i]);
+				}
+				fc.untagMessages(uid, oldTagId);
+				fc.tagMessages(uid, newTagId);
+			} catch (MessagingException ex) {
+				java.util.logging.Logger.getLogger(MailManager.class.getName()).log(Level.SEVERE, null, ex);
+			} catch (IOException ex) {
+				java.util.logging.Logger.getLogger(MailManager.class.getName()).log(Level.SEVERE, null, ex);
+			}
+		}
+	}
 	
 	private static Tag builtinTags[] = {
 		new Tag("$label1","$Label1","#ff003a"),

@@ -99,16 +99,17 @@ public class TagDAO extends BaseDAO {
 			.execute();
 	}
 	
-	public int update(Connection con, OTag item) throws DAOException {
+	public int update(Connection con,String oldTagId, OTag item) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.update(TAGS)
+			.set(TAGS.TAG_ID,item.getTagId())
 			.set(TAGS.DESCRIPTION,item.getDescription())
 			.set(TAGS.COLOR,item.getColor())
 			.where(
 				TAGS.DOMAIN_ID.equal(item.getDomainId())
 				.and(TAGS.USER_ID.equal(item.getUserId())
-				.and(TAGS.TAG_ID.equal(item.getTagId())))
+				.and(TAGS.TAG_ID.equal(oldTagId)))
 			)
 			.execute();
 	}
