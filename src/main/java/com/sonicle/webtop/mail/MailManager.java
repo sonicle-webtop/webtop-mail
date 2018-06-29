@@ -519,7 +519,6 @@ public class MailManager extends BaseManager implements IMailManager {
 		
 		for(FolderCache fc: folders){
 			Message msgs[] = null;
-			//logger.info("updateFolderTags: "+fc.getFolderName());
 			try {
 				msgs = fc.getMessages(null,oldTagId,"flag",FolderCache.SORT_BY_DATE,false,true,0,false,false);
 				long[] uid = new long[msgs.length];
@@ -529,9 +528,9 @@ public class MailManager extends BaseManager implements IMailManager {
 				fc.untagMessages(uid, oldTagId);
 				fc.tagMessages(uid, newTagId);
 			} catch (MessagingException ex) {
-				logger.error("Error on folder "+fc.getFolderName(), ex);
+				java.util.logging.Logger.getLogger(MailManager.class.getName()).log(Level.SEVERE, null, ex);
 			} catch (IOException ex) {
-				logger.error("Error on folder "+fc.getFolderName(), ex);
+				java.util.logging.Logger.getLogger(MailManager.class.getName()).log(Level.SEVERE, null, ex);
 			}
 		}
 	}

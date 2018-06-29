@@ -75,7 +75,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						minDepth: 1,
 							listeners: {
 							change: function(s, node) {
-								if(node && !me.reloadingFolder) {
+								if(node) {
 									me.mys.selectAndShowFolder(node.getId());
 								}
 							}
@@ -554,25 +554,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.currentFolder=folderid;
 		var node=me.bcFolders.getStore().getById(folderid);
 		if (node) {
-			me.reloadingFolder=true;
 			me.bcFolders.setSelection(node);
-			if(node.data.expandable && !node.isLoaded()) {
-				//BUG: loading the node leave the folder without plus/open icon
-				//need to switch leaf value to get it back after load
-				var leaf=node.isLeaf();
-				me.bcFolders.getStore().load({
-					node:node,
-					callback: function() {
-						if (!leaf) {
-							node.set("leaf",true);
-							node.set("leaf",false);
-						}
-					}
-				});
-			}
+			if(node.data.expandable && !node.isLoaded()) node.expand(); //me.bcFolders.getStore().load({node:node});
 			me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
-			me.reloadingFolder=false;
-			//Ext.defer(function() { node.triggerUIUpdate() },300);
 		}
     },
 
