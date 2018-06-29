@@ -75,7 +75,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						minDepth: 1,
 							listeners: {
 							change: function(s, node) {
-								if(node) {
+								if(node && !me.reloadingFolder) {
 									me.mys.selectAndShowFolder(node.getId());
 								}
 							}
@@ -553,12 +553,27 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
         me.currentFolder=folderid;
 		var node=me.bcFolders.getStore().getById(folderid);
-		me.bcFolders.setSelection(node);
-		if(node.data.expandable && !node.isLoaded()) node.expand(); //me.bcFolders.getStore().load({node:node});
-        me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
+		if (node) {
+			me.reloadingFolder=true;
+			me.bcFolders.setSelection(node);
+			if(node.data.expandable && !node.isLoaded()) {
+				var leaf=node.isLeaf();
+				me.bcFolders.getStore().load({
+					node:node,
+					callback: function() {
+						if (!leaf) {
+							node.set("leaf",true);
+							node.set("leaf",false);
+						}
+					}
+				});
+			}
+			me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
+			me.reloadingFolder=false;
+		}
     },
 
-    reloadCurrentFolder: function(config) {
+	 reloadCurrentFolder: function(config) {
 		var me=this;
         me.folderList.reloadFolder(me.currentFolder,config);
     },
