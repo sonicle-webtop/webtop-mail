@@ -528,9 +528,9 @@ public class MailManager extends BaseManager implements IMailManager {
 				fc.untagMessages(uid, oldTagId);
 				fc.tagMessages(uid, newTagId);
 			} catch (MessagingException ex) {
-				java.util.logging.Logger.getLogger(MailManager.class.getName()).log(Level.SEVERE, null, ex);
+				logger.error("Error updating folder tags on "+fc.getFolderName(),ex);
 			} catch (IOException ex) {
-				java.util.logging.Logger.getLogger(MailManager.class.getName()).log(Level.SEVERE, null, ex);
+				logger.error("Error updating folder tags on "+fc.getFolderName(),ex);
 			}
 		}
 	}
