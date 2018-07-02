@@ -92,6 +92,7 @@ Ext.define('Sonicle.webtop.mail.view.TagsManager', {
 									color: rec.get("color"),
 									listeners: {
 										viewok: function(s,description,color) {
+											me.wait();
 											rec.set({ description: description, color: color });
 											me.mys.reloadTags();
 										}
@@ -132,7 +133,12 @@ Ext.define('Sonicle.webtop.mail.view.TagsManager', {
 				autoLoad: true,
 				autoSync: true,
 				model: 'Sonicle.webtop.mail.model.Tag',
-				proxy: WTF.apiProxy(me.mys.ID, 'ManageTags','data')
+				proxy: WTF.apiProxy(me.mys.ID, 'ManageTags','data'),
+				listeners: {
+					write: function(s,op) {
+						me.unwait();
+					}
+				}
 			},
 			columns: [
 				{
