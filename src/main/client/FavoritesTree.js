@@ -53,7 +53,8 @@ Ext.define('Sonicle.webtop.mail.FavoritesTree', {
 					},
 					copyAttachment: function(data,dst) {
 						cfg.mys.copyAttachment(data.params.folder,dst,data.params.idmessage,data.params.idattach);
-					}
+					},
+					rootName: cfg.rootName||me.rootName
 				},
 				markDirty: false,
 				loadMask: true,
@@ -64,6 +65,7 @@ Ext.define('Sonicle.webtop.mail.FavoritesTree', {
 				model: 'Sonicle.webtop.mail.model.ImapTreeModel',
 				proxy: WTF.proxy(cfg.mys.ID,'GetFavoritesTree'),
 				root: {
+					id: cfg.rootName||me.rootName,
 					text: 'Favorites Tree',
 					folder: WT.res("word.favorites"),
 					unread: 0,

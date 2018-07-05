@@ -72,11 +72,14 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
      */
 	copyAttachment: Ext.emptyFn,
 	
+	rootName: '.',
+	
 	dropZone: {
 		onNodeDrop : function(targetNode, dragZone, e, data) {
 			var me=this,done=false;
 			
 			targetNode=me.view.getRecord(targetNode); //from el node to record node
+			if (targetNode.id===me.ownerPlugin.rootName) return false;
 			
 			switch(dragZone.ddGroup) {
 				case "mail":
@@ -108,8 +111,13 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 		},
 		
 		onNodeOver : function(node, dragZone, e, data) {
-			var ctrlKey=dragZone.ddGroup!=="attachment"?e.ctrlKey:false;
+			var me=this,
+				targetNode=me.view.getRecord(node); //from el node to record node
+		
+			if (targetNode.id===me.ownerPlugin.rootName)
+				return Ext.dd.DropZone.prototype.dropNotAllowed;
 			
+			var ctrlKey=dragZone.ddGroup!=="attachment"?e.ctrlKey:false;
 			Ext.tree.ViewDropZone.prototype.onNodeOver.call(this,node,dragZone,e,data);
 			data.copy=ctrlKey;
 			var returnCls=ctrlKey? Ext.baseCSSPrefix + 'tree-drop-ok-append': Ext.baseCSSPrefix + 'dd-drop-ok';
