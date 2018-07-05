@@ -130,6 +130,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
 				rowclick: function(t, r, tr, ix, e, eopts) {
+					me.imapTree.setSelection(null);
 					me.folderClicked(t, r, tr, ix, e, eopts);
 				}
 			}
@@ -724,7 +725,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	selectInbox: function() {
 		var me=this;
-		me.imapTree.getSelectionModel().select(0);
+		me.imapTree.getSelectionModel().select(1);
 		me.showFolder(me.getFolderInbox());
 	},
 
