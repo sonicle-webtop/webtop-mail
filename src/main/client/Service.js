@@ -117,6 +117,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			width: '100%',
 			rootVisible: true,
 			padding: '0 0 20 0',
+			border: false,
+			bodyStyle: {
+				borderTopColor: 'transparent'
+			},
 			
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
@@ -138,6 +142,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//region: 'center',
 			hideHeaders: true,
 			rootVisible: true,
+			border: false,
+			bodyStyle: {
+				borderTopColor: 'transparent'
+			},
 			
 			stateEvents : ['collapsenode', 'expandnode'],
 			stateId : 'imaptree-state-id',
@@ -284,6 +292,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			title: me.getName(),
 			width: 200,
 			layout: 'border',
+			border: false,
 			items: toolitems
 		});
 		me.setToolComponent(tool);
