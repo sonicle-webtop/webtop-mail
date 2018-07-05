@@ -50,6 +50,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	imapTree: null,
 	toolbar: null,
 	messagesPanel: null,
+	
+	rootName: '.',
 
 	treeEditor: null,
 	baloon: null,
@@ -95,6 +97,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this,
 		sue = me.getVar('showUpcomingEvents'),
 		sut = me.getVar('showUpcomingTasks');
+
+		me.rootName=me.getVar("folderSeparator");
 		
 		me.initActions();
 
@@ -121,6 +125,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			bodyStyle: {
 				borderTopColor: 'transparent'
 			},
+			rootName: me.rootName,
 			
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
@@ -147,6 +152,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			bodyStyle: {
 				borderTopColor: 'transparent'
 			},
+			rootName: me.rootName,
 			
 			stateEvents : ['collapsenode', 'expandnode'],
 			stateId : 'imaptree-state-id',
@@ -165,7 +171,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					me.folderClicked(t, r, tr, ix, e, eopts);
 				},
 				load: function(t,r,s,o,n) {
-					if (n.id==='root') {
+					if (n.id===me.rootName) {
 						//keep enabled loadMask only for root loading
 						me.imapTree.getView().loadMask=false;
 						me.selectInbox();

@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		
 	useArrows: true,
 	rootVisible: false,
+	rootName: '.',
 
 	constructor: function(cfg) {
 		var me = this;

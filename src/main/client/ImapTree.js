@@ -70,6 +70,7 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 				model: 'Sonicle.webtop.mail.model.ImapTreeModel',
 				proxy: WTF.proxy(cfg.mys.ID,'GetImapTree'),
 				root: {
+					id: cfg.rootName||me.rootName,
 					text: 'Email Imap Tree',
 					folder: WT.getVar("userDisplayName"),
 					unread: 0,

@@ -243,6 +243,7 @@ public class Service extends BaseService {
 	private String sharedPrefixes[] = null;
 	private char folderSeparator = 0;
 	private String folderPrefix = null;
+	private String rootName = ".";
 	
 	private PrivateEnvironment environment = null;
 	private MailUserProfile mprofile;
@@ -528,6 +529,7 @@ public class Service extends BaseService {
 				store.connect(mailHost, mailUsername, mailPassword);
 			}
 			folderSeparator = getDefaultFolder().getSeparator();
+			rootName=""+folderSeparator;
 			Folder un[] = store.getUserNamespaces("");
 			sharedPrefixes = new String[un.length];
 			int ix = 0;
@@ -2767,7 +2769,7 @@ public class Service extends BaseService {
 			boolean connected=checkStoreConnected();
 			if (!connected) throw new Exception("Mail account authentication error");
 			
-			boolean isroot=pfoldername.equals("root");
+			boolean isroot=pfoldername.equals(rootName);
             if (isroot) folder=getDefaultFolder();
 			else folder = getFolder(pfoldername);
 			
