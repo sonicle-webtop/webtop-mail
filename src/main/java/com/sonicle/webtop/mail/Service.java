@@ -5312,7 +5312,7 @@ public class Service extends BaseService {
 			} else if (crud.equals(Crud.CREATE)) {
 				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
 				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
-			    if(tag.getTagId().contains(" ")==true) tag.setTagId(tag.getTagId().replaceAll(" ","_"));
+			    tag.setTagId(mailManager.sanitazeTagId(tag.getTagId()));
 				mailManager.addTag(tag);
 				loadTags();
 				
@@ -5324,7 +5324,7 @@ public class Service extends BaseService {
 				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
 				String newTagId=tag.getDescription();
 				String oldTagId=tag.getTagId();
-				if(newTagId.contains(" ")==true) newTagId=newTagId.replaceAll(" ","_");
+			    newTagId=mailManager.sanitazeTagId(newTagId);				
 				mailManager.updateTag(tag,newTagId);
 				mailManager.updateFoldersTag(oldTagId,newTagId,foldersCache.values());
 				loadTags();
@@ -6965,6 +6965,7 @@ public class Service extends BaseService {
 				part = mailData.getUnknownPart(Integer.parseInt(punknown));
 			}
 
+			boolean wasseen = m.isSet(Flags.Flag.SEEN);
 			if (part!=null) {
 				String ctype="binary/octet-stream";
 				if (psaveas==null) {
@@ -6991,10 +6992,17 @@ public class Service extends BaseService {
 				if (providername==null) {
 					Folder folder=mailData.getFolder();
 					if (!folder.isOpen()) folder.open(Folder.READ_ONLY);
-				}
+				}				
 				InputStream is = part.getInputStream();
 				OutputStream out = response.getOutputStream();
 				fastStreamCopy(is, out);
+				is.close();
+				out.close();
+				if(!wasseen){
+				   if (us.isManualSeen()) {
+					m.setFlag(Flags.Flag.SEEN, false);
+				   }
+				}
 			}			
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
