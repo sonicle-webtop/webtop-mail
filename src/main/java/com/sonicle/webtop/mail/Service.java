@@ -87,6 +87,7 @@ import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsInMailFilters;
+import com.sonicle.webtop.mail.bol.js.JsMailAutosave;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsPortletSearchResult;
 import com.sonicle.webtop.mail.bol.js.JsPreviewMessage;
@@ -139,6 +140,8 @@ import javax.activation.*;
 import javax.mail.*;
 import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
+import javax.mail.search.HeaderTerm;
+import javax.management.openmbean.OpenMBeanInfo;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
@@ -227,6 +230,8 @@ public class Service extends BaseService {
 	private boolean hasDifferentDefaultFolder=false;
 	
 	public static final String HEADER_SONICLE_FROM_DRAFTER="Sonicle-from-drafter";	
+	
+	public static final String HEADER_X_WEBTOP_MSGID="X-WEBTOP-MSGID";
 	
 	static String startpre = "<PRE>";
 	static String endpre = "</PRE>";
@@ -693,6 +698,64 @@ public class Service extends BaseService {
 			}
 		}
 		from.markDmsArchivedMessages(nuids,fullthreads);
+	}
+	
+	
+	public void processManageAutosave(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		super.processManageAutosave(request, response, out);
+		long msgId=Long.parseLong(request.getParameter("key"));
+		String value=request.getParameter("value");
+		JsMailAutosave jsmas=JsonResult.GSON_PLAIN_WONULLS.fromJson(value, JsMailAutosave.class);
+
+		//save also in drafts
+		try {
+			JsMessage jsmsg=new JsMessage();
+			jsmsg.content=jsmas.content;
+			jsmsg.folder=jsmas.folder;
+			jsmsg.format=jsmas.format;
+			jsmsg.forwardedfolder=jsmas.forwardedfolder;
+			jsmsg.forwardedfrom=jsmas.forwardedfrom;
+			Identity id=mailManager.findIdentity(jsmas.identityId);
+			jsmsg.from=id.getDisplayName()+" <"+id.getEmail()+">";
+			jsmsg.identityId=jsmas.identityId;
+			jsmsg.inreplyto=jsmas.inreplyto;
+			jsmsg.origuid=jsmas.origuid;
+			jsmsg.priority=jsmas.priority;
+			jsmsg.receipt=jsmas.receipt;			
+			jsmsg.recipients=new ArrayList<JsRecipient>();
+			for(int r=0;r<jsmas.recipients.size();++r) {
+				JsRecipient jsr=new JsRecipient();
+				jsr.email=jsmas.recipients.get(r);
+				jsr.rtype=jsmas.rtypes.get(r);
+				jsmsg.recipients.add(jsr);
+			}
+			jsmsg.references=jsmas.references;
+			jsmsg.replyfolder=jsmas.replyfolder;
+			jsmsg.subject=jsmas.subject;
+
+			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false);
+			checkStoreConnected();
+			FolderCache fc = getFolderCache(mprofile.getFolderDrafts());
+			
+			//find and delete old draft for this msgid
+			deleteAutosavedDraft(msgId);
+			
+			msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
+			Exception exc = saveMessage(msg, null, fc);
+		} catch(Exception exc) {
+			logger.error("Error on autosave in drafts!",exc);
+		}
+	}	
+	
+	private void deleteAutosavedDraft(long msgId) throws MessagingException {
+		FolderCache fc=getFolderCache(mprofile.getFolderDrafts());
+		fc.open();
+		Folder folder=fc.getFolder();
+		Message[] oldmsgs=folder.search(new HeaderTerm(HEADER_X_WEBTOP_MSGID,""+msgId));
+		if (oldmsgs!=null && oldmsgs.length>0) {
+			for(Message m: oldmsgs) m.setFlag(Flags.Flag.DELETED, true);
+			folder.expunge();
+		}
 	}
 	
 	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
@@ -4277,12 +4340,26 @@ public class Service extends BaseService {
 			boolean receipt = false;
 			int priority = 3;
 			boolean recipients = false;
+			boolean toDelete=false;
 			if (isDraftsFolder(pfoldername)) {
 				if (vheader != null && vheader[0] != null) {
 					receipt = true;
 				}
 				priority = getPriority(m);
 				recipients = true;
+				
+				//if autosaved drafts, delete
+				String values[]=m.getHeader(HEADER_X_WEBTOP_MSGID);
+				if (values!=null && values.length>0) {
+					try {
+						long msgId=Long.parseLong(values[0]);
+						if (msgId>0) {
+							toDelete=true;
+						}
+					} catch(NumberFormatException exc) {
+						
+					}
+				}
 			}
 			
 			sout = "{\n result: true,";
@@ -4444,10 +4521,17 @@ public class Service extends BaseService {
             
             if (ident!=null) sout += " identityId: "+ident.getIdentityId()+",\n";
 			sout += " origuid:"+puidmessage+",\n";
+			sout += " deleted:"+toDelete+",\n";
+			sout += " folder:'"+pfoldername+"',\n";
 			sout += " content:'" + (isPlainEdit ? StringEscapeUtils.escapeEcmaScript(MailUtils.htmlToText(MailUtils.htmlunescapesource(html))) : StringEscapeUtils.escapeEcmaScript(html)) + "',\n";
             sout += " format:'"+EnumUtils.toSerializedName(editFormat)+"'\n";
 			sout += "\n}";
-            
+
+			if (toDelete) {
+				m.setFlag(Flags.Flag.DELETED, true);
+				m.getFolder().expunge();
+			}
+			
 
 			out.println(sout);
 		} catch (Exception exc) {
@@ -4572,14 +4656,14 @@ public class Service extends BaseService {
 					if (email!=null && email.trim().length()>0) 
 						coreMgr.autoLearnInternetRecipient(email);
 				}
-				//TODO save used subject
-				//Save used subject
-				/*String subject=request.getParameter("subject");
-				if (subject!=null && subject.trim().length()>0) wts.setServiceStoreEntry(getName(), "subject", subject.toUpperCase(),subject);*/
+				
+				//Save subject for suggestions
 				if (jsmsg.subject!=null && jsmsg.subject.trim().length()>0)
 					WT.getCoreManager().addServiceStoreEntry(SERVICE_ID, "subject", jsmsg.subject.toUpperCase(),jsmsg.subject);
 
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+				
+				deleteAutosavedDraft(msgId);
 				// TODO: Cloud integration!!! Destination emails added to share
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
 				 for(String hash: hashlinks) {
@@ -4706,29 +4790,15 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
-				String draftsfolder=mprofile.getFolderDrafts();
-				Identity ident = msg.getFrom();
-				if (ident != null ) {
-					String mainfolder=ident.getMainFolder();
-					if (mainfolder != null && mainfolder.trim().length() > 0) {
-						String newdraftsfolder = mainfolder + folderSeparator + getLastFolderName(draftsfolder);
-						try {
-							Folder folder = getFolder(newdraftsfolder);
-							if (folder.exists()) {
-								draftsfolder = newdraftsfolder;
-							}
-						} catch (MessagingException exc) {
-							logger.error("Error on identity {}/{} Drafts Folder", environment.getProfile().getUserId(), ident.getEmail(), exc);
-						}
-					}
-				}
-				fc = getFolderCache(draftsfolder);
+				fc = determineSentFolder(msg);
 			} else {
 				fc = getFolderCache(savefolder);
 			}
 			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+				
+				deleteAutosavedDraft(msgId);
 				
 				if (pl.data.origuid>0 && pl.data.folder!=null && fc.getFolder().getFullName().equals(pl.data.folder)) {
 					fc.deleteMessages(new long[] { pl.data.origuid }, false);
@@ -4745,6 +4815,27 @@ public class Service extends BaseService {
             json=new JsonResult(false, exc.getMessage());
 		}
         json.printTo(out);
+	}
+	
+	private FolderCache determineSentFolder(SimpleMessage msg) throws MessagingException {
+		String draftsfolder=mprofile.getFolderDrafts();
+		Identity ident = msg.getFrom();
+		if (ident != null ) {
+			String mainfolder=ident.getMainFolder();
+			if (mainfolder != null && mainfolder.trim().length() > 0) {
+				String newdraftsfolder = mainfolder + folderSeparator + getLastFolderName(draftsfolder);
+				try {
+					Folder folder = getFolder(newdraftsfolder);
+					if (folder.exists()) {
+						draftsfolder = newdraftsfolder;
+					}
+				} catch (MessagingException exc) {
+					logger.error("Error on identity {}/{} Drafts Folder", environment.getProfile().getUserId(), ident.getEmail(), exc);
+				}
+			}
+		}
+		FolderCache fc = getFolderCache(draftsfolder);
+		return fc;
 	}
 	
 	public void processScheduleMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -4775,6 +4866,8 @@ public class Service extends BaseService {
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				
+				deleteAutosavedDraft(msgId);
+				
 				fc.setForceRefresh();
                 json=new JsonResult()
                         .set("saved", Boolean.TRUE);
@@ -4795,6 +4888,7 @@ public class Service extends BaseService {
 			long msgId=ServletUtils.getLongParameter(request, "msgId", true);
 			deleteCloudAttachments(msgId);
 			coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+			deleteAutosavedDraft(msgId);
 			json=new JsonResult();
 		} catch(Exception exc) {
 			Service.logger.error("Exception",exc);

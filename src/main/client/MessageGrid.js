@@ -1008,6 +1008,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						draftuid: isdraft?idmessage:0,
 						draftfolder: isdraft?idfolder:null
 					});
+					if (json.deleted && json.folder==me.mys.currentFolder) {
+						me.mys.reloadFolderList();
+						me.mys.messagesPanel.clearMessageView();
+					}
 				} else {
 					WT.error(json.text);
 				}

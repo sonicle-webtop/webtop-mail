@@ -693,7 +693,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				if (f) {
 					
 				}
-				if (r.get("draftuid")>0 && r.get("draftfolder")==me.mys.currentFolder) {
+				if (me.mys.isDrafts(me.mys.currentFolder) || (r.get("draftuid")>0 && r.get("draftfolder")==me.mys.currentFolder)) {
 					me.mys.reloadFolderList();
 					me.mys.messagesPanel.clearMessageView();
 				}
@@ -999,7 +999,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
           this.recgrid.store.getRange(),
           function(r,index,allItems) {
             rcpts[index]=Ext.util.Format.htmlDecode(r.get("email"));
-            rtypes[index]=r.get("totype");
+            rtypes[index]=r.get("rtype");
           }
         );
     },	
@@ -1017,6 +1017,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				inreplyto: o.inreplyto,
 				references: o.references,
 				origuid: o.origuid,
+				priority: me.getModel().get("priority"),
+				receipt: me.getModel().get("receipt"),
 				forwardedfolder: o.forwardedfolder,
 				forwardedfrom: o.forwardedfrom,
 				recipients: [],
@@ -1033,7 +1035,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				},
 				callback: function(success,json) {
 					if (success) {
-						console.log("autosave done");
+						if (o.folder==me.mys.currentFolder) {
+							me.mys.reloadFolderList();
+							me.mys.messagesPanel.clearMessageView();
+						}
+						
 					} else {
 						WT.error(json.text);
 					}
@@ -1178,6 +1184,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 			}
 		});					
+		if (me.mys.isDrafts(me.mys.currentFolder)) {
+			me.mys.reloadFolderList();
+			me.mys.messagesPanel.clearMessageView();
+		}
 	},
 	
     enableControls: function() {
