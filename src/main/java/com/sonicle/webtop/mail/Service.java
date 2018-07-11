@@ -4576,6 +4576,8 @@ public class Service extends BaseService {
 				//Save used subject
 				/*String subject=request.getParameter("subject");
 				if (subject!=null && subject.trim().length()>0) wts.setServiceStoreEntry(getName(), "subject", subject.toUpperCase(),subject);*/
+				if (jsmsg.subject!=null && jsmsg.subject.trim().length()>0)
+					WT.getCoreManager().addServiceStoreEntry(SERVICE_ID, "subject", jsmsg.subject.toUpperCase(),jsmsg.subject);
 
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				// TODO: Cloud integration!!! Destination emails added to share
