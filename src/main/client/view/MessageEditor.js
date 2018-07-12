@@ -790,7 +790,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	sendMessage: function() {
         var me=this;
-		console.log("sendMessage");
         me.getModel().setExtraParams({
             action: 'SendMessage',
 			sendAction: 'send',
@@ -1035,7 +1034,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				},
 				callback: function(success,json) {
 					if (success) {
-						if (o.folder==me.mys.currentFolder) {
+						if (me.mys.isDrafts(me.mys.currentFolder)) {
 							me.mys.reloadFolderList();
 							me.mys.messagesPanel.clearMessageView();
 						}
@@ -1048,7 +1047,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			
 			me.clearAutosaveDirty();
 		} else {
-			console.log("autosave is clean");
+			//console.log("autosave is clean");
 		}
 		me.autosaveTask.delay(me.autosaveDelay);
 	},
@@ -1178,16 +1177,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			},
 			callback: function(success,json) {
 				if (success) {
-					console.log("message discarded");
+					if (me.mys.isDrafts(me.mys.currentFolder)) {
+						me.mys.reloadFolderList();
+						me.mys.messagesPanel.clearMessageView();
+					}
 				} else {
 					WT.error(json.text);
 				}
 			}
 		});					
-		if (me.mys.isDrafts(me.mys.currentFolder)) {
-			me.mys.reloadFolderList();
-			me.mys.messagesPanel.clearMessageView();
-		}
 	},
 	
     enableControls: function() {
