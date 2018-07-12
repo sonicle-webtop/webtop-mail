@@ -155,6 +155,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 						model: 'Sonicle.webtop.mail.model.ImapTreeModel',
 						proxy: WTF.proxy(sid, 'GetImapTree'),
 						root: {
+							id: '/',
 							expanded: true
 						},
 						rootVisible: false

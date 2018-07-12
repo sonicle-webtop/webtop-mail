@@ -258,7 +258,10 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				store: Ext.create('Ext.data.TreeStore', {
 					model: 'Sonicle.webtop.mail.model.ImapTreeModel',
 					proxy: WTF.proxy(me.ID, 'GetImapTree'),
-					root: {expanded: true},
+					root: {
+						id: '/',
+						expanded: true
+					},
 					rootVisible: false
 				})
 			};

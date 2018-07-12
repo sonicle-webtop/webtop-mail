@@ -72,6 +72,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 						model: 'Sonicle.webtop.mail.model.ImapTreeModel',
 						proxy: WTF.proxy(me.mys.ID,'GetImapTree'),
 						root: {
+							id: '/',
 							text: 'Imap Tree',
 							expanded: true
 						},

@@ -59,8 +59,7 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 					},
 					copyAttachment: function(data,dst) {
 						cfg.mys.copyAttachment(data.params.folder,dst,data.params.idmessage,data.params.idattach);
-					},
-					rootName: cfg.rootName||me.rootName
+					}
 				},
 				markDirty: false,
 				loadMask: true,
@@ -71,7 +70,7 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 				model: 'Sonicle.webtop.mail.model.ImapTreeModel',
 				proxy: WTF.proxy(cfg.mys.ID,'GetImapTree'),
 				root: {
-					id: cfg.rootName||me.rootName,
+					id: '/',
 					text: 'Email Imap Tree',
 					folder: WT.getVar("userDisplayName"),
 					unread: 0,
