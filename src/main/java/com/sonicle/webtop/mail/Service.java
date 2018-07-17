@@ -875,12 +875,19 @@ public class Service extends BaseService {
 			String newname = dest + getFolderSeparator() + oldname;
 			newfolder = getFolder(newname);
 		} else {
-			String prefix = getFolderPrefix();
-			String newname = oldname;
-			if (prefix != null) {
-				newname = prefix + newname;
+			if (hasDifferentDefaultFolder()) {
+				String prefix=getDefaultFolder().getFullName();
+				String newname=oldname;
+				if (prefix!=null) newname=prefix+folderSeparator+newname;
+				newfolder=getFolder(newname);
+			} else {
+				String prefix = getFolderPrefix();
+				String newname = oldname;
+				if (prefix != null) {
+					newname = prefix + newname;
+				}
+				newfolder = getFolder(newname);
 			}
-			newfolder = getFolder(newname);
 		}
 		FolderCache fcsrc = getFolderCache(source);
 		if (fcsrc != null) {

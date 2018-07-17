@@ -1245,11 +1245,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	reloadTree: function() {
-		this.imapTree.getStore().reload();
+		var me=this;
+		//this.imapTree.getStore().reload();
+		me.imapTree.getStore().load({
+			node: me.imapTree.getRootNode(),
+			callback: function(recs,op,success) {
+				if (success) {
+					me.imapTree.restoreFoldersState();
+				}
+			}
+		});
 	},
 	
 	reloadFavorites: function() {
-		this.favoritesTree.getStore().reload();
+		//this.favoritesTree.getStore().reload();
+		this.favoritesTree.getStore().load({
+			node: this.favoritesTree.getRootNode()
+		});
 	},
 	
     reloadFolderList: function() {
@@ -1458,15 +1470,22 @@ Ext.define('Sonicle.webtop.mail.Service', {
 							s=tr.store,
 							n=s.getById(json.oldid);
 							if (n) n.remove();
-							n=(json.parent?s.getNodeById(json.parent):s.getRoot());
-							me.selectChildNode(n,json.newid);
+							if (json.parent!=null && json.parent===me.getFolderInbox()) {
+								me.reloadTree();
+							} else {
+								n=(json.parent?s.getNodeById(json.parent):s.getRoot());
+								if (n.get("leaf")) n.set("leaf",false);
+								n.expand(false,function(nodes) {
+									me.selectChildNode(n,json.newid);
+								});
+							}
 						} else {
 							WT.error(json.text);
 						}
 					}
 				});	
 			}
-			me.focus();
+			//me.focus();
 		},me);
     },
 	
