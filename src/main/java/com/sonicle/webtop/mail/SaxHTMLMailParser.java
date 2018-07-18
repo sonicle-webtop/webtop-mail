@@ -36,8 +36,10 @@ package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.MailUtils;
 import java.io.*;
+import java.nio.charset.Charset;
 import java.util.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.client.utils.URLEncodedUtils;
 import org.xml.sax.*;
 import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.*;
@@ -225,7 +227,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 		boolean islink = false;
 		boolean ismailto = false;
 		boolean changedTarget = false;
-		String address = null;
+		String mailtoParams = null;
 		if (qName.equalsIgnoreCase("a")) {
 			islink = true;
 
@@ -255,7 +257,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 					avalue = "_new";
 					changedTarget = true;
 				} else if (laqname.equals("href") && lavalue.startsWith("mailto:")) {
-					address = lavalue.substring(7);
+					mailtoParams = lavalue.substring(7);
 					avalue = "#";
 					ismailto = true;
 				}
@@ -263,13 +265,28 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 			pwriter.print(" " + aqname + "=\"" + avalue + "\"");
 		}
 		if (ismailto) {
-			pwriter.print(" onclick='parent.WT.handleMailAddress(\"" + address + "\"); return false;'");
+			String email=mailtoParams;
+			String sparams="\""+email+"\"";
+			int ix=mailtoParams.indexOf("?");
+			if (ix>0) {
+				email=mailtoParams.substring(0,ix);
+				mailtoParams=mailtoParams.substring(ix+1);
+				Map<String,String> params=getQueryMap(mailtoParams);
+				String subject=params.get("subject");
+				String body=params.get("body");
+				if (subject==null) subject="";
+				if (body==null) body="";
+				sparams="\""+email+"\",\""+subject+"\",\""+body+"\"";
+			}
+			pwriter.print(" onclick='parent.WT.handleMailAddress(" + sparams + "); return false;'");
 		} else if (islink && !changedTarget) {
 			pwriter.print(" target=_new");
 		}
 		pwriter.print(">");
 		pwriter.flush();
 	}
+	
+	
 
   public void characters(char[] chars, int start, int len) throws org.xml.sax.SAXException {
       if (!inhtml) return;
@@ -394,6 +411,18 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
     return cidUrl;
   }
 
+	private Map<String, String> getQueryMap(String query) {
+		String[] params = query.split("&");
+		Map<String, String> map = new HashMap<>();
+		for (String param : params)
+		{
+			String name = param.split("=")[0];
+			String value = param.split("=")[1];
+			map.put(name, value);
+		}
+		return map;
+	}  
+
   private String evaluateUrl(String avalue) {
 //		Service.logger.debug("evaluating url "+avalue);
     boolean islocal=mailData.conatinsUrlPart(avalue);
@@ -499,7 +528,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
       }
     }
   }
-
+  
 /*  class MyPrintWriter extends PrintWriter {
 
       MyPrintWriter(Writer w) {
