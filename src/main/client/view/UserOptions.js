@@ -49,6 +49,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		formulas: {
 			receipt: WTF.checkboxBind('record', 'receipt'),
 			priority: WTF.checkboxBind('record', 'priority'),
+			noMailcardOnReplyForward: WTF.checkboxBind('record', 'noMailcardOnReplyForward'),
 			archiveKeepFoldersStructure: WTF.checkboxBind('record', 'archiveKeepFoldersStructure'),
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
@@ -221,6 +222,12 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'checkbox',
 					bind: '{priority}',
 					boxLabel: me.res('opts.editing.fld-priority.lbl'),
+					hideEmptyLabel: false,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'checkbox',
+					bind: '{noMailcardOnReplyForward}',
+					boxLabel: me.res('opts.editing.fld-noMailcardOnReplyForward.lbl'),
 					hideEmptyLabel: false,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {

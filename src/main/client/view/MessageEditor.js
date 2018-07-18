@@ -260,25 +260,25 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
         var dash=false;
         if (me.showReceipt) {
-			tbitems[tbx++]={
+			tbitems[tbx++]=me.addRef('chkReceipt', Ext.create({
 				xtype: 'button',
 				enableToggle: true,
 				tooltip: me.res('editor.btn-receipt.tip'),
 				iconCls: 'wtmail-icon-receipt-xs',
 				handler: me.actionReceipt,
 				scope: me
-			};
+			}));
             dash=true;
         }
         if (this.showPriority) {
-			tbitems[tbx++]={
+			tbitems[tbx++]=me.addRef('chkPriority', Ext.create({
 				xtype: 'button',
 				enableToggle: true,
 				tooltip: me.res('editor.btn-priority.tip'),
 				iconCls: 'wtmail-icon-priority-high-xs',
 				handler: me.actionPriority,
 				scope: me
-			};
+			}));
             dash=true;
         }
         if (this.showReminder) {
@@ -733,8 +733,17 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	
 	startNew: function(data) {
-		var me=this;
-		if (!data.fax && !data.contentReady) data.content=me.prepareContent(data.content,data.format,(data.contentAfter===undefined?true:data.contentAfter));
+		var me=this,mc=null;
+		if ((data.forwardedfrom||data.inreplyto)&&me.mys.getVar("noMailcardOnReplyForward")) {
+			mc={
+				source: '',
+				html: '',
+				text: ''
+			};
+		}
+		
+		
+		if (!data.fax && !data.contentReady) data.content=me.prepareContent(data.content,data.format,(data.contentAfter===undefined?true:data.contentAfter),mc);
 		//default of html editor is html, so no need to enable html mode
 		//also calling it seems to break binding
 		/*if (data.format==="html") me.htmlEditor.enableHtmlMode();
@@ -745,6 +754,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			data.recipients=[ { rtype: 'to', email: '' } ];
 		}
 		
+		if (data.receipt) me.getRef("chkReceipt").toggle(true);
+		if (data.priority) me.getRef("chkPriority").toggle(true);
 		me.beginNew({
 			data: data
 		});

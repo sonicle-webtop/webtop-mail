@@ -77,6 +77,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public int fontSize;
 	public boolean receipt;
 	public boolean priority;
+	public boolean noMailcardOnReplyForward;
 	public boolean showUpcomingEvents;
 	public boolean showUpcomingTasks;
 	

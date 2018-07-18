@@ -120,6 +120,7 @@ public class MailSettings {
 	public static final String FONT_COLOR = "font.color";
 	public static final String RECEIPT = "receipt";
 	public static final String PRIORITY = "priority";
+	public static final String NO_MAILCARD_ON_REPLY_FORWARD = "no.mailcard.on.reply.forward";
 	public static final String READ_RECEIPT_CONFIRMATION = "readreceiptconfirmation";
 	
 	

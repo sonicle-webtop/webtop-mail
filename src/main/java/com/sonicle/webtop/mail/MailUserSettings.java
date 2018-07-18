@@ -477,6 +477,16 @@ public class MailUserSettings extends BaseUserSettings {
 		return setBoolean(PRIORITY,b);
 	}
 	
+	public boolean isNoMailcardOnReplyForward() {
+		Boolean b=getBoolean(NO_MAILCARD_ON_REPLY_FORWARD, null);
+		if (b==null) b=mss.isDefaultNoMailcardOnReplyForward();
+		return b;
+	}
+	
+	public boolean setNoMailcardOnReplyForward(boolean b) {
+		return setBoolean(NO_MAILCARD_ON_REPLY_FORWARD,b);
+	}
+	
 	public boolean getShowMessagePreviewOnRow() {
 		Boolean value = getBoolean(SHOW_MESSAGE_PREVIEW_ON_ROW, null);
 		return (value != null) ? value : mss.getDefaultShowMessagePreviewOnRow();

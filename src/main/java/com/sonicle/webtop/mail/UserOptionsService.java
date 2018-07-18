@@ -109,6 +109,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.fontColor = mus.getFontColor();
 				jso.receipt = mus.isReceipt();
 				jso.priority = mus.isPriority();
+				jso.noMailcardOnReplyForward = mus.isNoMailcardOnReplyForward();
 				jso.showUpcomingEvents = mus.getShowUpcomingEvents();
 				jso.showUpcomingTasks = mus.getShowUpcomingTasks();
 
@@ -138,6 +139,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("fontColor")) mus.setFontColor(pl.data.fontColor);
 				if (pl.map.has("receipt")) mus.setReceipt(pl.data.receipt);
 				if (pl.map.has("priority")) mus.setPriority(pl.data.priority);
+				if (pl.map.has("noMailcardOnReplyForward")) mus.setNoMailcardOnReplyForward(pl.data.noMailcardOnReplyForward);
 
 				
 				// Archive

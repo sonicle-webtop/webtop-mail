@@ -197,6 +197,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(DEFAULT_PREFIX+MailSettings.INCLUDE_MESSAGE_IN_REPLY,true);
 	}
 	
+	public boolean isDefaultNoMailcardOnReplyForward() {
+		return getBoolean(DEFAULT_PREFIX+MailSettings.NO_MAILCARD_ON_REPLY_FORWARD,false);
+	}
+	
 	public int getDefaultPageRows() {
 		return getInteger(DEFAULT_PREFIX+MailSettings.PAGE_ROWS,50);
 	}

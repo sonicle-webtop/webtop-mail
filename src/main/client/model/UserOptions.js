@@ -77,6 +77,7 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('fontColor', 'string', true),
 		WTF.field('receipt', 'boolean', false),
 		WTF.field('priority', 'boolean', false),
+		WTF.field('noMailcardOnReplyForward',false),
 		WTF.field('showUpcomingEvents', 'boolean', false),
 		WTF.field('showUpcomingTasks', 'boolean', false)
 	]
