@@ -553,25 +553,36 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
         me.currentFolder=folderid;
 		var node=me.bcFolders.getStore().getById(folderid);
+		//node may be a favorite, so may not be already loaded in imap tree
 		if (node) {
-			me.reloadingFolder=true;
-			me.bcFolders.setSelection(node);
-			if(node.data.expandable && !node.isLoaded()) {
-				var leaf=node.isLeaf();
-				me.bcFolders.getStore().load({
-					node:node,
-					callback: function() {
-						if (!leaf) {
-							node.set("leaf",true);
-							node.set("leaf",false);
-						}
-					}
-				});
-			}
-			me.folderList.reloadFolder(folderid,config,uid,rid,page,tid);
-			me.reloadingFolder=false;
+			me._updateBreadcrumbAndReloadFolderList(node,config,uid,rid,page,tid,true);
+		} else {
+			me.mys.imapTree.expandNode(folderid,me.mys.getVar("folderSeparator"),false,null,function() {
+				node=me.bcFolders.getStore().getById(folderid);
+				me._updateBreadcrumbAndReloadFolderList(node,config,uid,rid,page,tid,false);
+			});
 		}
     },
+	
+	_updateBreadcrumbAndReloadFolderList: function(node,config,uid,rid,page,tid,updateLeafState) {
+		var me=this;
+		me.reloadingFolder=true;
+		me.bcFolders.setSelection(node);
+		if(node.data.expandable && !node.isLoaded()) {
+			var leaf=node.isLeaf();
+			me.bcFolders.getStore().load({
+				node:node,
+				callback: function() {
+					if (updateLeafState && !leaf) {
+						node.set("leaf",true);
+						node.set("leaf",false);
+					}
+				}
+			});
+		}
+		me.folderList.reloadFolder(node.id,config,uid,rid,page,tid);
+		me.reloadingFolder=false;
+	},
 
 	 reloadCurrentFolder: function(config) {
 		var me=this;

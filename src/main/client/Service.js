@@ -745,7 +745,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	selectAndShowFolder: function(folderid,uid,rid,page,tid) {
 		var me=this;
 		
-		me.imapTree.expandAndSelectNode(folderid,me.getVar("folderSeparator"));
+		me.imapTree.expandNode(folderid,me.getVar("folderSeparator"),true);
 		me.showFolder(folderid,uid,rid,page,tid);
 	},
 	
@@ -829,7 +829,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if (type==='desktop') {
 			var me=this;
 			WT.activateService(me.ID);
-			me.imapTree.expandAndSelectNode(data.foldername,me.getVar("folderSeparator"));
+			me.imapTree.expandNode(data.foldername,me.getVar("folderSeparator"),true);
 			me.showFolder(data.foldername);
 		}
 	},

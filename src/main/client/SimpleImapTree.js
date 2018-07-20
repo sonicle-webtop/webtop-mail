@@ -105,7 +105,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		this.getColumns()[2].setHidden(!b);
 	},
 	
-	expandAndSelectNode: function(id,sep,node) {
+	expandNode: function(id,sep,select,node,cb) {
 		var me=this;
 	
 		if (!node) node=me.getRootNode();
@@ -113,10 +113,13 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		Ext.each(node.childNodes,function(cn,cx,an) {
 			if (Ext.String.startsWith(id, cn.id+sep)) {
 				cn.expand(false,function() {
-					me.expandAndSelectNode(id,sep,cn);
+					me.expandNode(id,sep,select,cn,cb);
 				});
 			}
-			else if (id===cn.id) me.selModel.select(cn);
+			else if (id===cn.id) {
+				if (select) me.selModel.select(cn);
+				if (cb) Ext.callback(cb,me);
+			}
 		});
 	}
 	
