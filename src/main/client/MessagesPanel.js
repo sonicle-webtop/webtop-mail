@@ -172,7 +172,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			stateful: true,
 			baseStateId: me.mys.buildStateId('messagegrid'),			
 			dockedItems: [
-				Ext.create('Ext.toolbar.Toolbar',{
+/*				Ext.create('Ext.toolbar.Toolbar',{
 					border: false,
 					bodyStyle: {
 						borderTopColor: 'transparent'
@@ -180,6 +180,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 					items: [
 						me.filterCombo,
 						me.filterTextField,
+						me.quickFilterCombo,
 						"->",
 						me.res("groupby")+":",
 						me.groupCombo,
@@ -187,7 +188,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						me.res('messages')+":",
 						me.labelMessages,
 					]
-				}),
+				}),*/
 				Ext.create('Ext.toolbar.Toolbar',{
 					border: false,
 					bodyStyle: {
@@ -352,7 +353,16 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				scale: 'large'
 			},			
 			items:[
-				"->",
+				{ xtype: 'tbspacer', width: 250 },
+				me.filterCombo,
+				me.filterTextField,
+				me.quickFilterCombo,
+				{ xtype: 'tbspacer', width: 100 },
+				me.res("groupby")+":",
+				me.groupCombo,
+				'->',
+				me.res('messages')+":",
+				me.labelMessages,
 				//me.mys._TB("inMailFilters"),
 				/*me.res('messages')+":",
 				me.labelMessages,
