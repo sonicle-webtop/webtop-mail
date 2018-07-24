@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 	
 	dockableConfig: {
 		title: '{inMailFilters.tit}',
-		iconCls: 'wtmail-icon-inMailFilters-xs',
+		iconCls: 'wtmail-icon-inMailFilters',
 		width: 560,
 		height: 500,
 		modal: true

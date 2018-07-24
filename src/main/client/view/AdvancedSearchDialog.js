@@ -36,7 +36,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 	extend: 'WTA.sdk.DockableView',
 	
 	dockableConfig: {
-		iconCls: 'wt-icon-search-adv-xs',
+		iconCls: 'wt-icon-search-adv',
 		title: '{act-advsearch.lbl}',
 		width: 700,
 		height: 600
@@ -199,10 +199,10 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						store: new Ext.data.SimpleStore({
 							fields: ['id','desc','icon'],
 							data: [
-								['replied',me.res('streplied'),'wtmail-icon-status-replied-xs'],
-								['forwarded',me.res('stforwarded'),'wtmail-icon-status-forwarded-xs'],
+								['replied',me.res('streplied'),'wtmail-icon-status-replied'],
+								['forwarded',me.res('stforwarded'),'wtmail-icon-status-forwarded'],
 								['read',me.res('stread'),'wtmail-icon-status-read-xs'],
-								['new',me.res('strecent'),'wtmail-icon-status-new-xs']
+								['new',me.res('strecent'),'wtmail-icon-status-new']
 							]
 						}),
 						//value: this.method,

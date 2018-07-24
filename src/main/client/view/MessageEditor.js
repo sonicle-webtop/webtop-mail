@@ -51,7 +51,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	dockableConfig: {
 		title: '{message.tit}',
-		iconCls: 'wtmail-icon-newmsg-xs',
+		iconCls: 'wtmail-icon-newmsg',
 		width: 830,
 		height: 500
 	},
@@ -1260,7 +1260,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 					"</a>",
 				"</td>",
 				"<td class='wtmail-td-editor-attachment-delete-icon'>",
-					"<div class='wt-icon-delete-xs' style='width: 16px; height: 16px;'>",
+					"<div class='wt-icon-delete' style='width: 16px; height: 16px;'>",
 				"</td>",
 			  "</tr>",
 			"</table>",
@@ -1272,7 +1272,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 			var me=this,
 				tgt=e.getTarget(null,null,true);
 
-			if (tgt.hasCls('wt-icon-delete-xs')) {
+			if (tgt.hasCls('wt-icon-delete')) {
 				//me.ownerCt.remove(this);
 				//me.fireEvent('remove',me);
 				me.getStore().remove(r);

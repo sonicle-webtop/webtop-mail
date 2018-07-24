@@ -64,7 +64,7 @@ Ext.define('Sonicle.webtop.mail.view.EmlMessageView', {
 					handler: function() {
 						mv.print();
 					},
-					iconCls: 'wt-icon-print-xs'
+					iconCls: 'wt-icon-print'
 				})
 			]
 		});

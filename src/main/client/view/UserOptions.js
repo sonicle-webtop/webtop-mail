@@ -307,7 +307,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								reference: 'deleteIdentity',
 								text: WT.res('act-delete.lbl'),
 								tooltip: null,
-								iconCls: 'wt-icon-delete-xs',
+								iconCls: 'wt-icon-delete',
 								handler: function() {
 									var sel = me.lref('gpidents').getSelection();
 									if (sel.length>0)

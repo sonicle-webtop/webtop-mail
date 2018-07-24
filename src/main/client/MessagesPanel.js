@@ -83,6 +83,86 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						flex: 1
 					});
 
+		me.labelMessages=Ext.create({
+			xtype: 'tbtext',
+			text: '0'
+		});
+		
+        me.quickFilterCombo=Ext.create(WTF.localCombo('id', 'desc', {
+            width: 80,
+			matchFieldWidth: false,
+			listConfig: { width: 120 },
+			store: Ext.create('Sonicle.webtop.mail.store.QuickFilter', {
+				autoLoad: true
+			}),
+            value: 'any',
+			tooltip: me.res('quickfilter.tip'),
+			plugins: [ 'sofieldtooltip' ],
+			listeners: {
+				select: function(cb,r,eopts) {
+					me.quickFilterChanged(r.get("id"));
+				}
+			}
+        }));
+        me.filterCombo=Ext.create(WTF.localCombo('id', 'desc', {
+            width: 100,
+			matchFieldWidth: false,
+			listConfig: { width: 120 },
+			store: Ext.create('Sonicle.webtop.mail.store.Filter', {
+				autoLoad: true
+			}),
+            value: 'subject',
+			tooltip: me.res('filter.tip'),
+			plugins: [ 'sofieldtooltip' ],
+			listeners: {
+				change: function(cb,nv,ov) {
+					me.filterTextField.setSuggestionContext("filter"+nv);
+				}
+			}
+        }));
+        me.filterTextField=Ext.create({
+			xtype: 'wtsuggestcombo',
+			preventEnterFiringOnPickerExpanded: false,
+			sid: me.mys.ID,
+			suggestionContext: 'filtersubject',
+            width: 200,
+			tooltip: me.res('filtertext.tip'),
+			triggers: {
+				search: {
+					hidden: false,
+					cls: Ext.baseCSSPrefix + 'form-search-trigger',
+					handler: function(tf) {
+						me.filterAction(tf);
+					}
+				}
+			},
+			listeners: {
+				enterkey: function(tf,e) {
+					me.filterAction(tf,e.ctrlKey);
+				},
+				select: function(tf,r,eopts) {
+					me.filterAction(tf);
+				}
+			}
+			
+        });
+        me.groupCombo=Ext.create(WTF.localCombo('id', 'desc', {
+            width: 120,
+			matchFieldWidth: false,
+			listConfig: { width: 100 },
+			store: Ext.create('Sonicle.webtop.mail.store.Group', {
+				autoLoad: true
+			}),
+            value: '',
+			tooltip: me.res('group.tip'),
+			plugins: [ 'sofieldtooltip' ],
+			listeners: {
+				select: function(cb,r,eopts) {
+					me.folderList.changeGrouping(r.get('id'));
+				}
+			}
+        }));
+		
         me.folderList=Ext.create('Sonicle.webtop.mail.MessageGrid',{
             region:'center',
 			pageSize: 50,//me.pageSize,
@@ -91,10 +171,93 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			createPagingToolbar: true,
 			stateful: true,
 			baseStateId: me.mys.buildStateId('messagegrid'),			
-			tbar: [
-					me.bcFolders
-				  ]
-         });
+			dockedItems: [
+				Ext.create('Ext.toolbar.Toolbar',{
+					border: false,
+					bodyStyle: {
+						borderTopColor: 'transparent'
+					},
+					items: [
+						me.filterCombo,
+						me.filterTextField,
+						"->",
+						me.res("groupby")+":",
+						me.groupCombo,
+						'-',
+						me.res('messages')+":",
+						me.labelMessages,
+					]
+				}),
+				Ext.create('Ext.toolbar.Toolbar',{
+					border: false,
+					bodyStyle: {
+						borderTopColor: 'transparent'
+					},
+					items: [
+						me.bcFolders,
+						'->',
+						me.mys._TB("reply",null,'small'),
+						me.mys._TB("replyall",null,'small'),
+						me.mys._TB("forward",null,'small'),
+						'-',
+						me.mys._TB("delete",null,'small'),
+						me.mys._TB("spam",null,'small'),
+						'-',
+						{
+							text: null,
+							iconCls: 'wtmail-icon-tag',
+							menu: Ext.create({
+								xtype: 'sostoremenu',
+								itemClass: 'Ext.menu.CheckItem',
+								textField: 'html',
+								tagField: 'tagId',
+								textAsHtml: true,
+								staticItems: [
+								],
+								store: me.mys.tagsStore,
+								listeners: {
+									click: function(menu,item,e) {
+										if (item.tag) {
+											var grid=me.mys.getCtxGrid(e);
+											if (item.checked)
+												grid.actionTag(item.tag);
+											else
+												grid.actionUntag(item.tag);
+										}
+									}
+								}
+							})
+						},
+						{
+							text: null,
+							iconCls: 'wtmail-icon-flagred-xs',
+							menu: {
+								items: [
+									me.mys.getAct('flagred'),
+									me.mys.getAct('flagorange'),
+									me.mys.getAct('flaggreen'),
+									me.mys.getAct('flagblue'),
+									me.mys.getAct('flagpurple'),
+									me.mys.getAct('flagyellow'),
+									me.mys.getAct('flagblack'),
+									me.mys.getAct('flaggray'),
+									me.mys.getAct('flagwhite'),
+									me.mys.getAct('flagbrown'),
+									me.mys.getAct('flagazure'),
+									me.mys.getAct('flagpink'),
+									'-',
+									me.mys.getAct('flagcomplete'),
+									//me.getAct('addmemo'),
+									me.mys.getAct('clear')
+								]
+							}
+						},
+						'-',
+						me.bMultiSearch=me.mys._TB("multisearch",null,'small')
+					]
+				})
+			]
+        });
 		if (me.gridMenu) {
 			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
 				me.mys.updateCxmGrid(rec);
@@ -165,86 +328,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         });
         me.messageView.on('messageviewed',me.messageViewed,me);
 
-        me.quickFilterCombo=Ext.create(WTF.localCombo('id', 'desc', {
-            width: 80,
-			matchFieldWidth: false,
-			listConfig: { width: 120 },
-			store: Ext.create('Sonicle.webtop.mail.store.QuickFilter', {
-				autoLoad: true
-			}),
-            value: 'any',
-			tooltip: me.res('quickfilter.tip'),
-			plugins: [ 'sofieldtooltip' ],
-			listeners: {
-				select: function(cb,r,eopts) {
-					me.quickFilterChanged(r.get("id"));
-				}
-			}
-        }));
-        me.filterCombo=Ext.create(WTF.localCombo('id', 'desc', {
-            width: 80,
-			matchFieldWidth: false,
-			listConfig: { width: 120 },
-			store: Ext.create('Sonicle.webtop.mail.store.Filter', {
-				autoLoad: true
-			}),
-            value: 'subject',
-			tooltip: me.res('filter.tip'),
-			plugins: [ 'sofieldtooltip' ],
-			listeners: {
-				change: function(cb,nv,ov) {
-					me.filterTextField.setSuggestionContext("filter"+nv);
-				}
-			}
-        }));
-        me.filterTextField=Ext.create({
-			xtype: 'wtsuggestcombo',
-			preventEnterFiringOnPickerExpanded: false,
-			sid: me.mys.ID,
-			suggestionContext: 'filtersubject',
-            width: 150,
-			tooltip: me.res('filtertext.tip'),
-			triggers: {
-				search: {
-					hidden: false,
-					cls: Ext.baseCSSPrefix + 'form-search-trigger',
-					handler: function(tf) {
-						me.filterAction(tf);
-					}
-				}
-			},
-			listeners: {
-				enterkey: function(tf,e) {
-					me.filterAction(tf,e.ctrlKey);
-				},
-				select: function(tf,r,eopts) {
-					me.filterAction(tf);
-				}
-			}
-			
-        });
-        me.groupCombo=Ext.create(WTF.localCombo('id', 'desc', {
-            width: 120,
-			matchFieldWidth: false,
-			listConfig: { width: 100 },
-			store: Ext.create('Sonicle.webtop.mail.store.Group', {
-				autoLoad: true
-			}),
-            value: '',
-			tooltip: me.res('group.tip'),
-			plugins: [ 'sofieldtooltip' ],
-			listeners: {
-				select: function(cb,r,eopts) {
-					me.folderList.changeGrouping(r.get('id'));
-				}
-			}
-        }));
-		
-		me.labelMessages=Ext.create({
-			xtype: 'tbtext',
-			text: '0'
-		});
-		
         me.folderList.store.on("metachange",function(s,meta) {
             var gg=meta.groupField;
 			if (gg==='') gg='none';
@@ -265,20 +348,23 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
                 me.res("groupby")+":",
                 me.groupCombo
             ]*/
+			defaults: {
+				scale: 'large'
+			},			
 			items:[
-				me.bMultiSearch=me.mys._TB("multisearch"),
 				"->",
-				me.res('messages')+":",
+				//me.mys._TB("inMailFilters"),
+				/*me.res('messages')+":",
 				me.labelMessages,
-				'-',
-				me.mys._TB("advsearch"),
-                "-",
+				'-',*/
+				//me.mys._TB("advsearch")
+/*                "-",
                 me.res("groupby")+":",
                 me.groupCombo,
                 "-",
 				me.quickFilterCombo,
 				me.filterCombo,
-                me.filterTextField
+                me.filterTextField*/
 			]
 		});
 
@@ -301,14 +387,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			tbar: Ext.create('Ext.toolbar.Toolbar',{
 				hidden: true,
 				items: [
-					me.getAct("delete"),
-					'-',
 					me.getAct("reply"),
 					me.getAct("replyall"),
 					me.getAct("forward"),
 					'-',
+					me.getAct("delete"),
+					me.getAct("spam")
+					/*'-',
 					me.getAct("markseen"),
-					me.getAct("markunseen")
+					me.getAct("markunseen")*/
 				]
 			}),
             items: [ me.messageView ]

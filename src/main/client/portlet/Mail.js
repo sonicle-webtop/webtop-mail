@@ -37,6 +37,6 @@ Ext.define('Sonicle.webtop.mail.portlet.Mail', {
 	],
 	
 	title: '{portlet.mail.tit}',
-	iconCls: 'wtmail-icon-newmsg-xs',
+	iconCls: 'wtmail-icon-newmsg',
 	bodyClass: 'Sonicle.webtop.mail.portlet.MailBody'
 });

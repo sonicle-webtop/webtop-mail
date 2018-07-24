@@ -2133,7 +2133,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								for(var i=0;i<tindent;++i) imgtag+="&nbsp;&nbsp;&nbsp;";
 							}
 							if (status!=="read" && status!=="unread") {
-								var imgname=Ext.String.format("status{0}_16.png",status);
+								var imgname=Ext.String.format("status{0}_16.svg",status);
 								imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16,"valign=top")+"&nbsp;";
 							}
 							if (tags) {

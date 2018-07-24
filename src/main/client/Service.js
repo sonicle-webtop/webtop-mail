@@ -305,26 +305,36 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		xx=0;
 		me.toolbar=mp.toolbar;
         me.toolbar.insert(0,[
-			xb[xx++]=me._TB("print"),
+/*			xb[xx++]=me._TB("print"),
 			xb[xx++]=me._TB("delete"),
 			xb[xx++]=me._TB("spam"),
 			xb[xx++]=me._TB('movetofolder'),
+			"-",*/
+			//{ xtype: 'tbspacer', width: 200 },
+			/*"-",
+			xb[xx++]=me._TB("check"),
+			xb[xx++]=me._TB("print"),
+			xb[xx++]=me._TB("delete"),*/
 			"-",
-			xb[xx++]=me._TB("reply"),
-			xb[xx++]=me._TB("replyall"),
-			xb[xx++]=me._TB("forward"),
-			"-",
+			xb[xx++]=me._TB("inMailFilters"),
+			/*"-",
+			xb[xx++]=me._TB("reply",true),
+			xb[xx++]=me._TB("replyall",true),
+			xb[xx++]=me._TB("forward",true),
+			"-",*/
+			xb[xx++]=me._TB("advsearch")
+			/*"-"
 			xb[xx++]=me._TB("check"),
 			"-",
 			xb[xx++]=me._TB("markseen"),
 			xb[xx++]=me._TB("markunseen"),
-			"-",
-			xb[xx++]=me._TB("inMailFilters")
+			"-",*/
+			//xb[xx++]=me._TB("inMailFilters")
 		]
 				);
 
-		if (WT.isPermitted(me.ID,'FAX','ACCESS'))
-			me.toolbar.insert(0,me._TB("newfax"));
+		/*if (WT.isPermitted(me.ID,'FAX','ACCESS'))
+			me.toolbar.insert(0,me._TB("newfax"));*/
 		
 		//TODO DOCMGT
         //if (WT.docmgt) this.toolbar.insertButton(4,xb[xx++]=new Ext.Button(this.getAct('docmgt')));
@@ -374,9 +384,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	
-	_TB: function(actionname) {
+	_TB: function(actionname,text,scale) {
 		var bt=Ext.create('Ext.button.Button',this.getAct(actionname));
-		bt.setText('');
+		if (!text) bt.setText('');
+		bt.setScale(scale||'medium');
+		bt.setUI('default-toolbar');
 		return bt;
 	},
 	
@@ -399,7 +411,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	initActions: function() {
 		var me = this;
 	
-        me.addNewAction("newmsg",{ handler: me.actionNew, scope: me});
+        me.addNewAction("newmsg",{ handler: me.actionNew, scope: me, iconCls: 'wtmail-icon-newmsg' });
 		if (WT.isPermitted(me.ID,'FAX','ACCESS'))
 			me.addNewAction("newfax",{ handler: me.actionNewFax, scope: me});
 		
@@ -407,19 +419,20 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("opennew",{ handler: me.gridAction(me,'OpenNew'), iconCls: '' });
         
         me.addAct("newfax",{ handler: function() { me.actionNewFax(); }, text: null });
-        me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print-xs' });
-        me.addAct("reply",{ handler: me.gridAction(me,'Reply') });
-        me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll') });
-        me.addAct("forward",{ handler: me.gridAction(me,'Forward') });
+        me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print' });
+        me.addAct("reply",{ handler: me.gridAction(me,'Reply'), iconCls: 'wtmail-icon-reply'  });
+        me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll'), iconCls: 'wtmail-icon-replyall' });
+        me.addAct("forward",{ handler: me.gridAction(me,'Forward'), iconCls: 'wtmail-icon-forward'  });
         me.addAct("forwardeml",{ handler: me.gridAction(me,'ForwardEml') });
         me.addAct('inMailFilters', {
-			text: null,
+			text: me.res("inMailFilters.tit"),
 			handler: function() {
 				me.editInMailFilters();
-			}
+			},
+			iconCls: 'wtmail-icon-inMailFilters'
 		});
 		
-		me.addAct("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi-xs', enableToggle: true });
+		me.addAct("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi', enableToggle: true });
 		
 		
         me.addAct("special",{ handler: me.gridAction(me,'Flag','special') });
@@ -448,11 +461,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("markseen",{ handler: me.gridAction(me,'MarkSeen') });
         me.addAct("markunseen",{ handler: me.gridAction(me,'MarkUnseen') });
         me.addAct("spam",{ handler: me.gridAction(me,'Spam'), iconCls: 'wt-icon-block-xs' });
-        me.addAct("delete",{ handler: me.gridAction(me,'Delete'), iconCls: 'wt-icon-delete-xs' });
+        me.addAct("delete",{ handler: me.gridAction(me,'Delete'), iconCls: 'wt-icon-delete' });
         me.addAct("movetofolder",{ handler: me.gridAction(me,'MoveToFolder') });
 		//me.addAct('uploadtofolder', {} );
 		
-        me.addAct("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh-xs' });
+        me.addAct("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh' });
         me.addAct("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save-xs' });
         me.addAct("createreminder",{ handler: me.gridAction(me,'CreateReminder'), iconCls: 'wtcal-icon-newEvent-xs' });
         me.addAct("archive",{ handler: me.gridAction(me,'Archive'), iconCls: 'wtmail-icon-archive-xs' });
@@ -461,17 +474,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("viewsource",{ handler: me.gridAction(me,'ViewSource'), iconCls: '' });
 		
         //me.addAct("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
-        me.addAct("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv-xs' });
+        me.addAct("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv' });
         me.addAct("sharing",{ handler: me.actionSharing, scope: me, iconCls: 'wt-icon-sharing-xs' });
         me.addAct("showsharings",{ handler: null, iconCls: '' });
         me.addAct("threaded",{ handler: function() { me.messagesPanel.actionThreaded(); }, iconCls: 'wtmail-icon-threaded-xs', enableToggle: true });
         me.addAct("emptyfolder",{ handler: me.actionEmptyFolder, scope: me });
-        me.addAct("deletefolder",{ handler: me.actionDeleteFolder, scope: me, iconCls: 'wt-icon-delete-xs' });
+        me.addAct("deletefolder",{ handler: me.actionDeleteFolder, scope: me, iconCls: 'wt-icon-delete' });
         me.addAct("renamefolder",{ handler: me.actionRenameFolder, scope: me });
         me.addAct("newfolder",{ handler: me.actionNewFolder, scope: me });
         me.addAct("newmainfolder",{ handler: me.actionNewMainFolder, scope: me });
         me.addAct("movetomain",{ handler: me.actionMoveToMainFolder, scope: me, iconCls: '' });
-        me.addAct("refresh",{ handler: me.actionFolderRefresh, scope: me, iconCls: 'wt-icon-refresh-xs' });
+        me.addAct("refresh",{ handler: me.actionFolderRefresh, scope: me, iconCls: 'wt-icon-refresh' });
         me.addAct("refreshtree",{ handler: me.actionTreeRefresh, scope: me, iconCls: '' });
         me.addAct("favorite",{ handler: me.actionFavorite, scope: me, iconCls: 'wtmail-icon-favoriteadd-xs' });
         me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wtmail-icon-favoriteremove-xs' });
@@ -932,7 +945,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			viewCfg: {
 				dockableConfig: {
 					title: opts.fax?'{fax.tit}':'{message.tit}',
-					iconCls: opts.fax?'wtmail-icon-newfax-xs':'wtmail-icon-newmsg-xs',
+					iconCls: opts.fax?'wtmail-icon-newfax-xs':'wtmail-icon-newmsg',
 					width: 830,
 					height: 500
 				},

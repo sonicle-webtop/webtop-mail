@@ -66,28 +66,31 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 					handler: function() {
 						mv.print();
 					},
-					iconCls: 'wt-icon-print-xs'
+					iconCls: 'wt-icon-print'
 				}),
 				me.addAct("delete",{
 					handler: function() {
 						me.messageGrid.deleteMessage(me.folder,me.idmessage,me);
 					},
-					iconCls: 'wt-icon-delete-xs'
+					iconCls: 'wt-icon-delete'
 				}),
 				me.addAct("reply",{
 					handler: function() {
 						me.messageGrid.replyMessageById(me.folder,me.idmessage,false);
-					}
+					},
+					iconCls: 'wtmail-icon-reply'
 				}),
 				me.addAct("replyall",{
 					handler: function() {
 						me.messageGrid.replyMessageById(me.folder,me.idmessage,true);
-					}
+					},
+					iconCls: 'wtmail-icon-replyall'
 				}),
 				me.addAct("forward",{
 					handler: function() {
 						me.messageGrid.forwardMessageById(me.folder,me.idmessage);
-					}
+					},
+					iconCls: 'wtmail-icon-forward'
 				})
 			]
 		});
