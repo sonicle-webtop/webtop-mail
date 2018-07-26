@@ -227,6 +227,23 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 											else
 												grid.actionUntag(item.tag);
 										}
+									},
+									show: function(menu) {
+										var sel=me.folderList.getSelection(),
+											tagsStore=me.mys.tagsStore;
+										tagsStore.each(function(xr) {
+											menu.getComponent(xr.get("hashId")).setChecked(false,true);
+										});
+										if (sel && sel.length===1) {
+											var r=sel[0];
+												tags=r.get("tags");
+											if (tags) {
+												Ext.iterate(tags,function(tag) {
+													var xr=tagsStore.findRecord('tagId',tag);
+													if (xr) menu.getComponent(xr.get("hashId")).setChecked(true,true);
+												});
+											}
+										}
 									}
 								}
 							})
