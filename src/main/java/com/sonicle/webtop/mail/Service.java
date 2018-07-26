@@ -4259,7 +4259,7 @@ public class Service extends BaseService {
 					try{
 						Part part = maildata.getAttachmentPart(i);
 						String filename = getPartName(part);
-						if (filename != null) {
+						if (filename != null && !part.isMimeType("message/*")) {
 							String cids[] = part.getHeader("Content-ID");
 							String cid = null;
 							//String cid=filename;
@@ -4268,7 +4268,7 @@ public class Service extends BaseService {
 								if (cid.startsWith("<")) cid=cid.substring(1);
 								if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
 							}
-							String mime=part.getContentType();
+							String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
 							UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
 							boolean inline = false;
 							if (part.getDisposition() != null) {
