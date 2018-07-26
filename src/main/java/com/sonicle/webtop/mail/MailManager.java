@@ -535,6 +535,17 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
+	public String sanitazeTagId(String tagId){
+		 tagId=tagId.replace(" ","_");
+		 tagId=tagId.replace("%","_");
+		 tagId=tagId.replace("*","_");
+		 tagId=tagId.replace("\\","_");
+		 tagId=tagId.replace("]","_");
+	     tagId=tagId.replace("[","_");			 
+		 for(char c=1;c<32;++c) tagId=tagId.replace(String.valueOf(c),"_");	
+		 return tagId;		
+	}
+	
 	private static Tag builtinTags[] = {
 		new Tag("$label1","$Label1","#ff003a"),
 		new Tag("$label2","$Label2","#ff9900"),
