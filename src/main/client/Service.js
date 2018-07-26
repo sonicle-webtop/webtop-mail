@@ -941,7 +941,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
             }
         }*/
 
-		var v=WT.createView(me.ID,'view.MessageEditor',{
+		var meditor=WT.createView(me.ID,'view.MessageEditor',{
+			swapReturn: true,
 			viewCfg: {
 				dockableConfig: {
 					title: opts.fax?'{fax.tit}':'{message.tit}',
@@ -970,14 +971,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 							if (me.getFolderNodeById(me.currentFolder).get("isSent") || (f && f===me.currentFolder)) {
 								me.messagesPanel.reloadGrid();
 							}
+							else if (me.isDrafts(me.currentFolder) || (opts.draftuid>0 && opts.draftfolder===me.currentFolder)) {
+								me.reloadFolderList();
+								me.messagesPanel.clearMessageView();
+							}
 						}
+					},
+					viewclose: function() {
+							if (me.isDrafts(me.currentFolder) || (opts.draftuid>0 && opts.draftfolder===me.currentFolder)) {
+								me.reloadFolderList();
+								me.messagesPanel.clearMessageView();
+							}
 					}
 				}
 			},
 		});
 	
-		v.show(false,function() {
-			var meditor=v.getView();
+		meditor.showView(function() {
 			meditor.startNew({
 				folder: idfolder,
 				subject: opts.subject||opts.faxsubject||'',

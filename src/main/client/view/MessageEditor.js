@@ -688,15 +688,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		});
 		me.on('modelsave', function(s,success) {
 			if (success) {
-				var r=me.getModel()
-					f=r.get("forwardedfolder")||r.get("replyfolder");
-				if (f) {
-					
-				}
-				if (me.mys.isDrafts(me.mys.currentFolder) || (r.get("draftuid")>0 && r.get("draftfolder")==me.mys.currentFolder)) {
-					me.mys.reloadFolderList();
-					me.mys.messagesPanel.clearMessageView();
-				}
 			} else {
 				if (me.autosaveTask) me.autosaveTask.delay(me.autosaveDelay);
 				me.enableControls(false,true);
@@ -1188,10 +1179,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			},
 			callback: function(success,json) {
 				if (success) {
-					if (me.mys.isDrafts(me.mys.currentFolder)) {
-						me.mys.reloadFolderList();
-						me.mys.messagesPanel.clearMessageView();
-					}
+					//if (me.mys.isDrafts(me.mys.currentFolder)) {
+					//	me.mys.reloadFolderList();
+					//	me.mys.messagesPanel.clearMessageView();
+					//}
 				} else {
 					WT.error(json.text);
 				}

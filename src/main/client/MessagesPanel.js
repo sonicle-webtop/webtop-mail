@@ -214,6 +214,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 								tagField: 'tagId',
 								textAsHtml: true,
 								staticItems: [
+									me.getAct('managetags'),
+									'-',
 								],
 								store: me.mys.tagsStore,
 								listeners: {
@@ -353,13 +355,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				scale: WT.serviceToolbarScale
 			},			
 			items:[
-				{ xtype: 'tbspacer', width: 250 },
+				//{ xtype: 'tbspacer', width: 250 },
+				'->',
 				me.filterCombo,
 				me.filterTextField,
 				me.quickFilterCombo,
 				{ xtype: 'tbspacer', width: 100 },
 				me.res("groupby")+":",
 				me.groupCombo,
+				{ xtype: 'tbspacer', width: 100 },
 				'->',
 				me.res('messages')+":",
 				me.labelMessages,
