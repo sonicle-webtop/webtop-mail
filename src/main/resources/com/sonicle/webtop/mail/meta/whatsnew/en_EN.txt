@@ -1,3 +1,16 @@
+$	5.3.0
+	%	Version 5.3.0
+	*	<h1>Favorites</h1>
+		<p>New "Faforites" folder always visible on top, where you can add your most
+		used folders by right clicking on them and selecting "add to favorites".</p>
+		<img src="5.3.0_favorites.png"/>
+	*	<h1>Automatic save on drafts</h1>
+		<p>During mail composition, the system saves periodically on drafts.
+		In case of connection lost or other sudden problem, the mail will
+		be available in your drafts from any other device</p>
+	*	<h1>New mailcard setting</h1>
+		<p>It's possible to choose not to include the mailcard when answering and fowarding</p>
+		<img src="5.3.0_nomailcard.png"/>
 $	5.2.0
 	%	Versione 5.2.0
 	*	<h1>Automatic WebTop contacts</h1>

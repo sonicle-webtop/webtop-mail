@@ -1,3 +1,17 @@
+$	5.3.0
+	%	Versione 5.3.0
+	*	<h1>Preferiti</h1>
+		<p>Nuova cartella "Preferiti" sempre visibile in alto, dove è possibile aggiungere
+		le cartelle più utilizzate cliccandole con il tasto destro del mouse e selezionando
+		il menu "aggiungi a preferiti".</p>
+		<img src="5.3.0_favorites.png"/>
+	*	<h1>Salvataggio automatico in bozze</h1>
+		<p>Durante la composizione di una mail, il sistema salva periodicamente
+		nelle bozze. In caso di perdita di connessione o altri problemi improvvisi
+		sarà possibile ritrovare l'email nelle proprie bozze da qualunque altro dispositivo</p>
+	*	<h1>Nuova impostazione firma</h1>
+		<p>E' possibile scegliere se non includere la firma nelle risposte e negli inoltri</p>
+		<img src="5.3.0_nomailcard.png"/>
 $	5.2.0
 	%	Versione 5.2.0
 	*	<h1>Contatti automatici di WebTop</h1>
