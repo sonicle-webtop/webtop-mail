@@ -316,13 +316,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			xb[xx++]=me._TB("print"),
 			xb[xx++]=me._TB("delete"),*/
 			"-",
-			xb[xx++]=me._TB("inMailFilters"),
+			//xb[xx++]=me._TB("inMailFilters"),
+			xb[xx++]=me.getActAs("inMailFilters","button",{ text: null, ui: 'default-toolbar' }),
 			/*"-",
 			xb[xx++]=me._TB("reply",true),
 			xb[xx++]=me._TB("replyall",true),
 			xb[xx++]=me._TB("forward",true),
 			"-",*/
-			xb[xx++]=me._TB("advsearch")
+			//xb[xx++]=me._TB("advsearch")
+			xb[xx++]=me.getActAs("advsearch","button",{ text: null, ui: 'default-toolbar' })
 			/*"-"
 			xb[xx++]=me._TB("check"),
 			"-",

@@ -369,7 +369,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
                 me.groupCombo
             ]*/
 			defaults: {
-				scale: WT.serviceToolbarScale
+				scale: WT.getHeaderScale()
 			},			
 			items:[
 				//{ xtype: 'tbspacer', width: 250 },
