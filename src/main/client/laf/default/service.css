@@ -5,7 +5,7 @@
 .wtmail-icon-service-l { background-image: url('service_32.svg') !important; background-size: contain; }
 
 /* actions */
-.wtmail-icon-newmsg { background-image: url('statusnew_32.svg') !important; background-size: contain; }
+.wtmail-icon-newmsg { background-image: url('statusnew_16.svg') !important; background-size: contain; }
 .wtmail-icon-newfax-xs { background-image: url('newfax_16.png') !important; }
 .wtmail-icon-sendfax-xs { background-image: url('fax_16.png') !important; }
 .wtmail-icon-reply { background-image: url('statusreplied_16.svg') !important; background-size: contain; }
@@ -61,7 +61,7 @@
 .wtmail-icon-status-read-xs { background-image: url('statusunread_16.png') !important; }
 .wtmail-icon-status-unseen-xs { background-image: url('status-seen_16.png') !important; }
 .wtmail-icon-status-seen-xs { background-image: url('status-unseen_16.png') !important; }
-.wtmail-icon-status-new { background-image: url('statusnew_32.svg') !important; background-size: contain; }
+.wtmail-icon-status-new { background-image: url('statusnew_16.svg') !important; background-size: contain; }
 .wtmail-icon-status-replied { background-image: url('statusreplied_16.svg') !important; background-size: contain; }
 .wtmail-icon-status-forwarded { background-image: url('statusforwarded_16.svg') !important; background-size: contain; }
 .wtmail-icon-status-replied-forwarded { background-image: url('statusrepfwd_16.svg') !important; background-size: contain; }
