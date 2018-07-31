@@ -5346,8 +5346,8 @@ public class Service extends BaseService {
 			if (query == null) {
 				String folderId = "INBOX";
 				FolderCache fc=getFolderCache(folderId);
-				Message msgs[]=fc.getMessages("unread","","",FolderCache.SORT_BY_DATE,false,true,0,false,false);
-				fc.fetch(msgs, getMessageFetchProfile());
+				Message msgs[]=fc.getMessages("unread","","",FolderCache.SORT_BY_DATE,false,true,-1,true,false);
+				fc.fetch(msgs, getMessageFetchProfile(),0,50);
 				for (Message msg: msgs) {
 					SonicleIMAPMessage simsg=(SonicleIMAPMessage)msg;
 					

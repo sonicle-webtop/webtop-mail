@@ -109,12 +109,12 @@ public class PortletSearchThread extends Thread {
 				Message msgs[]=null;
 				//some folders (e.g. NS7 Public) may not allow search
 				try {
-					msgs=fc.getMessages(null, patterns, searchfields, FolderCache.SORT_BY_DATE, false, true, -1, false, false);
+					msgs=fc.getMessages(null, patterns, searchfields, FolderCache.SORT_BY_DATE, false, true, -1, true, false);
 				} catch(MessagingException mexc) {
 				}
                 
                 if (msgs!=null && msgs.length>0) {
-					fc.fetch(msgs, ms.getMessageFetchProfile());
+					fc.fetch(msgs, ms.getMessageFetchProfile(),0,50);
 					int totmsgs=0;
 					for(Message xmsg: msgs) {
 						SonicleIMAPMessage msg=(SonicleIMAPMessage)xmsg;

@@ -520,7 +520,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		for(FolderCache fc: folders){
 			Message msgs[] = null;
 			try {
-				msgs = fc.getMessages(null,oldTagId,"flag",FolderCache.SORT_BY_DATE,false,true,0,false,false);
+				msgs = fc.getMessages(null,oldTagId,"flag",FolderCache.SORT_BY_DATE,false,true,-1,true,false);
 				long[] uid = new long[msgs.length];
 				for (int i=0;i<msgs.length;i++) {
 					uid[i]=fc.getUID(msgs[i]);

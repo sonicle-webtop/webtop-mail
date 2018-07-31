@@ -281,7 +281,7 @@ public class FolderCache {
 					@Override
 					public void messageChanged(MessageChangedEvent mce) {
 						try {
-							//Service.logger.debug("MessageChanged: {},{},{}",mce.getMessage().getFolder().getFullName(),mce.getMessage().getSubject(),mce.getMessageChangeType());
+							//Service.logger.info("MessageChanged: {},{},{}",mce.getMessage().getFolder().getFullName(),mce.getMessage().getSubject(),mce.getMessageChangeType());
 							refreshUnreads();
 						} catch(MessagingException exc) {
 						}
@@ -589,9 +589,20 @@ public class FolderCache {
 		);
 	}
 	
+	//detect multiple calls by message events
+	long lastRefreshUnreads=0;
+	
     protected void refreshUnreads() throws MessagingException {
-        refreshUnreadMessagesCount();
-        updateUnreads();
+		long millis=System.currentTimeMillis();
+		long d=millis-lastRefreshUnreads;
+		if (d>=1000) {
+			Service.logger.debug("Refreshing unreads");
+			lastRefreshUnreads=millis;
+			refreshUnreadMessagesCount();
+			updateUnreads();
+		} else {
+			Service.logger.debug("Skipping call to refreshUnreads arrived in {} ms",d);
+		}
     }
 
     protected void refreshUnreadMessagesCount() throws MessagingException {
