@@ -80,11 +80,15 @@
 
 .wtmail-header-text-clip div div div div { text-overflow: clip; }
 
-.wtmail-icon-inMailFilters { background-image: url('inMailFilter_16.svg') !important; background-size: contain; }
-.wtmail-icon-outMailFilters-xs { background-image: url('outMailFilter_16.png') !important; }
+.wtmail-icon-inMailFilters { background-image: url('mailfilter-in_16.svg') !important; background-size: contain; }
+.wtmail-icon-outMailFilters { background-image: url('mailfilter-out_16.png') !important; background-size: contain; }
 .wtmail-icon-addMailFilter-xs { background-image: url('mailFilter-add_16.png') !important; }
 .wtmail-icon-deleteMailFilter-xs { background-image: url('mailFilter-delete_16.png') !important; }
 .wtmail-icon-sieveFilter-xs { background-image: url('sieveFilter_16.png') !important; }
+
+.wtmail-icon-msgAddReminder { background-image: url('msg-reminder-add_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgReceipt { background-image: url('msg-receipt_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgPriorityHigh { background-image: url('msg-priority-high_16.svg') !important; background-size: contain; }
 
 /* tree */
 .wtmail-icon-imap-folder-xs { background-image: url(imap-folder-default_16.png) !important; }

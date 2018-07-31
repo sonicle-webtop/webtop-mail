@@ -264,7 +264,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'button',
 				enableToggle: true,
 				tooltip: me.res('editor.btn-receipt.tip'),
-				iconCls: 'wtmail-icon-receipt-xs',
+				iconCls: 'wtmail-icon-msgReceipt',
 				handler: me.actionReceipt,
 				scope: me
 			}));
@@ -275,7 +275,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'button',
 				enableToggle: true,
 				tooltip: me.res('editor.btn-priority.tip'),
-				iconCls: 'wtmail-icon-priority-high-xs',
+				iconCls: 'wtmail-icon-msgPriorityHigh',
 				handler: me.actionPriority,
 				scope: me
 			}));
@@ -286,7 +286,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'button',
 				enableToggle: true,
 				tooltip: me.res('editor.btn-reminder.tip'),
-				iconCls: 'wtcal-icon-newEvent-xs',
+				iconCls: 'wtmail-icon-msgAddReminder',
 				handler: me.actionReminder,
 				scope: me
 			};
