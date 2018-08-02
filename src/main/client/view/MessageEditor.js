@@ -342,7 +342,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbitems[tbx++]= me.addAct('pasteList', {
 				text: null,
 				tooltip: me.mys.res('act-pasteList.tip'),
-				iconCls: 'wtcon-icon-paste-list-xs',
+				iconCls: 'wt-icon-clipboard-paste',
 				handler: function() {
 					//Ext.defer(function() {
 						me.pasteList();
