@@ -591,17 +591,21 @@ public class FolderCache {
 	
 	//detect multiple calls by message events
 	long lastRefreshUnreads=0;
+	Object refreshLock=new Object();
 	
     protected void refreshUnreads() throws MessagingException {
-		long millis=System.currentTimeMillis();
-		long d=millis-lastRefreshUnreads;
-		if (d>=1000) {
-			Service.logger.debug("Refreshing unreads");
-			lastRefreshUnreads=millis;
-			refreshUnreadMessagesCount();
-			updateUnreads();
-		} else {
-			Service.logger.debug("Skipping call to refreshUnreads arrived in {} ms",d);
+		synchronized(refreshLock) {
+			long millis=System.currentTimeMillis();
+			long d=millis-lastRefreshUnreads;
+			if (d>=100) {
+				Service.logger.debug("Refreshing unreads");
+				lastRefreshUnreads=millis;
+				refreshUnreadMessagesCount();
+				updateUnreads();
+			} else {
+				lastRefreshUnreads=millis;
+				Service.logger.debug("Skipping call to refreshUnreads arrived in {} ms",d);
+			}
 		}
     }
 
