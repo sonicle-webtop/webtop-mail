@@ -72,6 +72,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     showPriority: true,
 	showReminder: true,
     showAttach: true,
+	showImportEmail: true,
     showIdentities: true,
     showEditToolbar: true,
     showSourceEdit: true,
@@ -336,6 +337,21 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 			};		
 		}
+		
+		if (me.showImportEmail) {
+			tbitems[tbx++]= me.addAct('pasteList', {
+				text: null,
+				tooltip: me.mys.res('act-pasteList.tip'),
+				iconCls: 'wtcon-icon-paste-list-xs',
+				handler: function() {
+					//Ext.defer(function() {
+						me.pasteList();
+					//},100);
+				}
+			});
+		}
+			
+		
 		
 		if (me.showIdentities) {
             var idents=new Array(),
@@ -1169,6 +1185,24 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			}));
 		});
 		menu.updateLayout();
+	},
+	
+	
+	pasteList: function() {
+		var me=this;
+		
+		WT.prompt('',{
+			title: me.mys.res("act-pasteList.tit"),
+			fn: function(btn,text) {
+				if (btn==='ok') {
+					me.recgrid.loadValues(text);
+				}
+			},
+			scope: me,
+			width: 400,
+			multiline: 200,
+			value: ''
+		});
 	},
 	
     onDiscard: function() {
