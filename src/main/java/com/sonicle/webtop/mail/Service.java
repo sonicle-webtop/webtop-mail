@@ -78,7 +78,7 @@ import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
-import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.core.app.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICal4jUtils;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ONote;
