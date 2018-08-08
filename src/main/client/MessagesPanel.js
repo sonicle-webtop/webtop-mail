@@ -201,6 +201,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						me.mys._TB("replyall",null,'small'),
 						me.mys._TB("forward",null,'small'),
 						'-',
+						me.mys._TB("print",null,'small'),
 						me.mys._TB("delete",null,'small'),
 						me.mys._TB("spam",null,'small'),
 						'-',
