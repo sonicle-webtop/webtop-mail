@@ -466,7 +466,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("delete",{ handler: me.gridAction(me,'Delete'), iconCls: 'wt-icon-delete' });
         me.addAct("movetofolder",{ handler: me.gridAction(me,'MoveToFolder') });
 		//me.addAct('uploadtofolder', {} );
-		
+	
         me.addAct("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh' });
         me.addAct("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save-xs' });
         me.addAct("createreminder",{ handler: me.gridAction(me,'CreateReminder'), iconCls: 'wtcal-icon-newEvent-xs' });

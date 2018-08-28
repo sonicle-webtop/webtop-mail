@@ -280,11 +280,13 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
 Ext.define('Sonicle.webtop.mail.GridFeatureGrouping', {
 	extend: 'Ext.grid.feature.Grouping',
 	alias: 'feature.mailgrouping',
-	/*init: function() {
-		var me=this;
-		me.callParent(arguments);
-		me.collapsible = true;
-	},*/
+	expandTip: '',
+	collapseTip: ''
+//	init: function() {
+//		var me=this;
+//		me.callParent(arguments);
+//		me.collapsible = true;
+//	}
 	//groupHeaderTpl: '{columnName}: name',
 /*	groupHeaderTpl: Ext.create('Ext.XTemplate',
 		'{[this.formatColumnName(values)]}: {[this.formatName(parent,values)]}',
@@ -302,9 +304,9 @@ Ext.define('Sonicle.webtop.mail.GridFeatureGrouping', {
 			}
 		}
 	),*/
-	onColumnMove: function() {
-		console.log('onColumnMove overridden!');
-	}
+//	onColumnMove: function() {
+//		console.log('onColumnMove overridden!');
+//	}
 });
 
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
