@@ -448,7 +448,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 for(var i=0;i<len;++i) {
                     var att=atts[i];
                     var name=att.name;
-                    var imgclass=WTF.fileTypeCssIconCls(WTA.Util.getFileExtension(name),"xs");
+                    var imgclass=WTF.fileTypeCssIconCls(WTA.Util.getFileExtension(name));
                     var aparams;
                     if (!provider) {
                         aparams={
@@ -466,13 +466,17 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     vparams[i]=aparams;
                     ids[ids.length]=att.id;
                     var ssize=Sonicle.String.humanReadableSize(att.size);
+					var doEdit=WT.getVar('docServerEnabled')&&att.editable;
+					//var href=doEdit?WTF.processUrl(me.mys.ID,"EditAttachment",aparams):WTF.processBinUrl(me.mys.ID,"GetAttachment",aparams);
 					var href=WTF.processBinUrl(me.mys.ID,"GetAttachment",aparams);
                     if (Ext.isIE) href+="&saveas=1";
+					var docedit=null;
+					if (doEdit) docedit=" docedit='"+Ext.Object.toQueryString(aparams)+"'";
                     var ics=null;
                     if (name.toLowerCase().endsWith(".ics")) ics=" ics='"+Ext.Object.toQueryString(aparams)+"'";
                     var eml=null;
                     if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
-                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
+                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+(docedit!=null?docedit:"")+"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
@@ -552,6 +556,19 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						},me);
 					}
                 }
+				
+				if (WT.getVar('docServerEnabled')) {
+					var adocedit=me.divAttach.query("a[docedit]");
+						Ext.each(adocedit,function(o) { 
+							Ext.get(o).on("click",function(e,t,o) { 
+								var xel=t; //sometimes returns SPAN or IMG instead of A
+								if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
+								me.viewFile(xel.getAttribute("docedit"));
+								e.stopEvent(); 
+								return false;
+							},me );
+						},me);
+				}
 
 				
                 tdh.insertFirst(me.divAttach);
@@ -1036,7 +1053,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
         else if (iddata=='attach' || iddata=='eml') {
             if (!me.attachments) me.attachments=new Array();
-            var o={id: item.get('value1'), name: item.get('value2'), size: parseInt(item.get('value3')/4*3), imgname: item.get('value4'), eml: iddata=='eml' };
+            var o={
+				id: item.get('value1'), 
+				name: item.get('value2'), 
+				size: parseInt(item.get('value3')/4*3), 
+				imgname: item.get('value4'), 
+				eml: iddata=='eml',
+				editable: item.get('editable')
+			};
             me.attachments[me.attachments.length]=o;
         }
 		else if (iddata=='html') {
@@ -1284,6 +1308,39 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
    
+    viewFile: function(qsparams) {
+		var me=this,
+		params=Ext.Object.fromQueryString(qsparams);
+		WT.ajaxReq(me.mys.ID, 'ViewAttachment', {
+			params: params,
+			callback: function(success, json) {
+				if (success) {
+					var editingCfg=json.data;
+					var vw = WT.createView(WT.ID, 'view.DocEditor', {
+						swapReturn: true,
+						viewCfg: {
+							editingId: editingCfg.editingId,
+							editorConfig: {
+								editable: editingCfg.writeSupported,
+								token: editingCfg.token,
+								docType: editingCfg.docType,
+								docExtension: editingCfg.docExtension,
+								docKey: editingCfg.docKey,
+								docTitle: editingCfg.docName,
+								docUrl: editingCfg.docUrl,
+								//autosave: false,
+								callbackUrl: editingCfg.callbackUrl
+							}
+						}
+					});
+					vw.showView(function() {
+						vw.begin('view');
+					});
+				}
+			}
+		});
+    },	
+	
     actionCalendarEvent: function(act,t,qsparams) {
 		var me=this,
 			params=Ext.Object.fromQueryString(qsparams);

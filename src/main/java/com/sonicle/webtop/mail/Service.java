@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.AlgoUtils;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.InternetAddressUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
@@ -48,6 +49,7 @@ import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
+import com.sonicle.commons.web.json.CompositeId;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.MapItemList;
@@ -64,10 +66,12 @@ import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
+import com.sonicle.webtop.core.app.DocEditorManager;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
+import com.sonicle.webtop.core.app.sdk.BaseDocEditorDocumentHandler;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
 import com.sonicle.webtop.core.bol.js.JsSimple;
@@ -4282,7 +4286,8 @@ public class Service extends BaseService {
 									" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
 									" cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
 									" inline: "+inline+", "+
-									" fileSize: "+upfile.getSize()+" "+
+									" fileSize: "+upfile.getSize()+", "+
+									" editable: "+isFileEditableInDocEditor(filename)+" "+
 									" }";
 							first = false;
 							//TODO: change this weird matching of cids2urls!
@@ -4305,7 +4310,8 @@ public class Service extends BaseService {
 						" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
 						" cid: null, "+
 						" inline: false, "+
-						" fileSize: "+upfile.getSize()+" "+
+						" fileSize: "+upfile.getSize()+", "+
+						" editable: "+isFileEditableInDocEditor(filename)+" "+
 						" }";
 				sout += "\n ],\n";
 			}
@@ -5200,6 +5206,7 @@ public class Service extends BaseService {
 			data.add("uploadId", uploadedFile.getUploadId());
 			data.add("name", uploadedFile.getFilename());
 			data.add("size", uploadedFile.getSize());
+			data.add("editable", isFileEditableInDocEditor(filename));
 			new JsonResult(data).printTo(out);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -5250,6 +5257,7 @@ public class Service extends BaseService {
 				mi.add("uploadId", ufile.getUploadId());
 				mi.add("name", ufile.getFilename());
 				mi.add("size", ufile.getSize());
+				mi.add("editable", isFileEditableInDocEditor(ufile.getFilename()));
 				data.add(mi);
 			}
 			new JsonResult(data).printTo(out);
@@ -6879,7 +6887,9 @@ public class Service extends BaseService {
 				int rsize = size - (lines * 2);//(p.getSize()/4)*3;
 				String iddata = ctype.equalsIgnoreCase("message/rfc822") ? "eml" : (inline ? "inlineattach" : "attach");
 				
-				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + "},\n";
+				boolean editable=isFileEditableInDocEditor(pname);
+				
+				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + ", editable: "+editable+" },\n";
 			}
 			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash() && !mcache.isArchive()) {
 				if (vheader != null && vheader[0] != null && !wasseen) {
@@ -7267,6 +7277,96 @@ public class Service extends BaseService {
 			}
 		} catch (Exception exc) {
 			logger.error("Error in PreviewAttachment", exc);
+		}
+	}
+	
+	public void processDocPreviewAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			checkStoreConnected();
+			String uploadId = request.getParameter("uploadId");
+			/*String cid = request.getParameter("cid");
+			Attachment att = null;
+			if (tempname != null) {
+				att = getAttachment(msgid, tempname);
+			} else if (cid != null) {
+				att = getAttachmentByCid(msgid, cid);
+			}*/
+			if (uploadId != null && hasUploadedFile(uploadId)) {
+				WebTopSession.UploadedFile upl = getUploadedFile(uploadId);
+				
+				String fileHash=AlgoUtils.md5Hex(new CompositeId("previewattach",uploadId).toString());
+				AttachmentViewerDocumentHandler docHandler = new AttachmentViewerDocumentHandler(false, getEnv().getProfileId(), fileHash, upl.getFile());
+				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, upl.getFilename(), upl.getFile().lastModified());
+				
+				new JsonResult(config).printTo(out);
+				
+				
+			} else {
+				Service.logger.debug("uploadId was not valid!");
+			}
+		} catch (Exception exc) {
+			logger.error("Error in PreviewAttachment", exc);
+		}
+	}
+	
+	//view through onlyoffice doc viewer
+	public void processViewAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String pfoldername = request.getParameter("folder");
+		String puidmessage = request.getParameter("idmessage");
+		String pidattach = request.getParameter("idattach");
+		String providername = request.getParameter("provider");
+		String providerid = request.getParameter("providerid");
+		String pcid = request.getParameter("cid");
+		String purl = request.getParameter("url");
+		String punknown = request.getParameter("unknown");
+		
+		try {
+			checkStoreConnected();
+			FolderCache mcache = null;
+			Message m = null;
+			if (providername == null) {
+				mcache = getFolderCache(pfoldername);
+                long newmsguid=Long.parseLong(puidmessage);
+                m=mcache.getMessage(newmsguid);
+			} else {
+				mcache = fcProvided;
+				m = mcache.getProvidedMessage(providername, providerid);
+			}
+			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
+			Part part = null;
+			if (pcid != null) {
+				part = mailData.getCidPart(pcid);
+			} else if (purl != null) {
+				part = mailData.getUrlPart(purl);
+			} else if (pidattach != null) {
+				part = mailData.getAttachmentPart(Integer.parseInt(pidattach));
+			} else if (punknown != null) {
+				part = mailData.getUnknownPart(Integer.parseInt(punknown));
+			}
+
+			if (part!=null) {
+				String name=part.getFileName();
+				if (name==null) name="";
+				try {
+					name=MailUtils.decodeQString(name);
+				} catch(Exception exc) {
+				}
+ 	            name=name.trim();
+				if (providername==null) {
+					Folder folder=mailData.getFolder();
+					if (!folder.isOpen()) folder.open(Folder.READ_ONLY);
+				}				
+				
+				String fileHash=AlgoUtils.md5Hex(new CompositeId(pfoldername,puidmessage,pidattach).toString());
+				long lastModified=m.getReceivedDate().getTime();
+				AttachmentViewerDocumentHandler docHandler = new AttachmentViewerDocumentHandler(false, getEnv().getProfileId(), fileHash, part, lastModified);
+				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, name, lastModified);
+				
+				new JsonResult(config).printTo(out);
+				
+			}			
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -8526,4 +8626,54 @@ public class Service extends BaseService {
 			}
 		}
 	}
+	
+	private static class AttachmentViewerDocumentHandler extends BaseDocEditorDocumentHandler {
+		private final File file;
+		private final Part part;
+		private final long lastModified;
+		
+		public AttachmentViewerDocumentHandler(boolean writeCapability, UserProfileId targetProfileId, String documentUniqueId, Part part, long lastModified) {
+			super(writeCapability, targetProfileId, documentUniqueId);
+			this.part = part;
+			this.lastModified = lastModified;
+			this.file=null;
+		}
+		
+		public AttachmentViewerDocumentHandler(boolean writeCapability, UserProfileId targetProfileId, String documentUniqueId, File file) {
+			super(writeCapability, targetProfileId, documentUniqueId);
+			this.file=file;
+			this.lastModified = file.lastModified();
+			this.part = null;
+		}
+		
+		@Override
+		public long getLastModifiedTime() throws IOException {
+			return lastModified;
+		}
+		
+		@Override
+		public InputStream readDocument() throws IOException {
+			try {
+				if (part!=null) return part.getInputStream();
+				if (file!=null) return new FileInputStream(file);
+				throw new IOException("Unable to find part or file");
+			} catch(MessagingException ex) {
+				throw new IOException("Unable to read document", ex);
+			}
+		}
+		
+		@Override
+		public void writeDocument(InputStream is) throws IOException {
+			throw new IOException("Write not supported");
+		}
+		
+	}
+	
+	private WebTopSession getWts() {
+		return getEnv().getWebTopSession();
+	}
+	
+	
+	
+	
 }
