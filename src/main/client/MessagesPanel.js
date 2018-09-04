@@ -676,7 +676,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		if (node) {
 			me._updateBreadcrumbAndReloadFolderList(node,config,uid,rid,page,tid,true);
 		} else {
-			me.mys.imapTree.expandNode(folderid,me.mys.getVar("folderSeparator"),false,null,function() {
+			me.mys.imapTree.expandNodePath(folderid,me.mys.getVar("folderSeparator"),false,null,function() {
 				node=me.bcFolders.getStore().getById(folderid);
 				me._updateBreadcrumbAndReloadFolderList(node,config,uid,rid,page,tid,false);
 			});
