@@ -2075,7 +2075,7 @@ public class FolderCache {
 					mailData.addAttachmentPart(dispPart);
 				}
             } else {
-                xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body><tt>");
+				xhtml.append("<html><head><meta content='text/html; charset="+charset+"' http-equiv='Content-Type'></head><body><tt>");
                 String line=null;
                 java.io.BufferedReader br=new java.io.BufferedReader(new java.io.InputStreamReader(istream,charset));
                 while((line=br.readLine())!=null) {
