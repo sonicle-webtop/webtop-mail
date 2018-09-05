@@ -107,6 +107,13 @@ public class MailUserSettings extends BaseUserSettings {
 	public boolean setManualSeen(boolean b) {
 		return setBoolean(MANUAL_SEEN, b);
 	}
+	public boolean isSeenOnOpen() {
+		return getBoolean(SEEN_ON_OPEN, false);
+	}
+	
+	public boolean setSeenOnOpen(boolean b) {
+		return setBoolean(SEEN_ON_OPEN, b);
+	}
 	
 	public String getMessageListGroup(String foldername) {
 		return getString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),"");

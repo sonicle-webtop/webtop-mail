@@ -1778,7 +1778,10 @@ public class FolderCache {
             } else if (searchfield.equals("flags")) {
               term=new FlagTerm(new Flags(pattern),!negate);
               negate=false;
-            } else if (searchfield.equals("status")) {
+            } else if (searchfield.equals("tags")) {
+              term=new FlagTerm(new Flags(pattern),!negate);
+              negate=false;
+            }else if (searchfield.equals("status")) {
                 if (pattern.equals("unread")) {
                     term=unseenSearchTerm;
                 } else if (pattern.equals("new")) {

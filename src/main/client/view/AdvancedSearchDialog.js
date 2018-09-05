@@ -63,7 +63,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
     
 	initComponent: function() {
 		var me = this;
-		
+			
 		me.searchToolbar=new Ext.Toolbar({
 			items: [
 				Ext.create("Ext.form.Label", { text: me.res('advsearch-folder')+':' }),
@@ -156,7 +156,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 					[ 'priority', me.res('priority')],
 					[ 'status', me.res('status')],
 					[ 'flags', me.res('flags')],
-					[ 'any', me.res('anywhere')]
+					[ 'tags', me.res('tags')],
+					[ 'any', me.res('store.filter.any')]
 				],
 				searchdata: {
 					'subject': null,
@@ -220,23 +221,38 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						store: new Ext.data.SimpleStore({
 							fields: ['id','desc','icon'],
 							data: [
-								['red',me.res('flagred'),'wtmail-icon-flagred-xs'],
-								['blue',me.res('flagblue'),'wtmail-icon-flagblue-xs'],
-								['yellow',me.res('flagyellow'),'wtmail-icon-flagyellow-xs'],
-								['green',me.res('flaggreen'),'wtmail-icon-flaggreen-xs'],
-								['orange',me.res('flagorange'),'wtmail-icon-flagorange-xs'],
-								['purple',me.res('flagpurple'),'wtmail-icon-flagpurple-xs'],
-								['black',me.res('flagblack'),'wtmail-icon-flagblack-xs'],
-								['gray',me.res('flaggray'),'wtmail-icon-flaggray-xs'],
-								['white',me.res('flagwhite'),'wtmail-icon-flagwhite-xs'],
-								['brown',me.res('flagbrown'),'wtmail-icon-flagbrown-xs'],
-								['azure',me.res('flagazure'),'wtmail-icon-flagazure-xs'],
-								['pink',me.res('flagpink'),'wtmail-icon-flagpink-xs'],
-								['complete',me.res('flagcomplete'),'wtmail-icon-flagcomplete-xs']
+								['red',me.res('act-flagred.lbl'),'wtmail-icon-flagred-xs'],
+								['blue',me.res('act-flagblue.lbl'),'wtmail-icon-flagblue-xs'],
+								['yellow',me.res('act-flagyellow.lbl'),'wtmail-icon-flagyellow-xs'],
+								['green',me.res('act-flaggreen.lbl'),'wtmail-icon-flaggreen-xs'],
+								['orange',me.res('act-flagorange.lbl'),'wtmail-icon-flagorange-xs'],
+								['purple',me.res('act-flagpurple.lbl'),'wtmail-icon-flagpurple-xs'],
+								['black',me.res('act-flagblack.lbl'),'wtmail-icon-flagblack-xs'],
+								['gray',me.res('act-flaggray.lbl'),'wtmail-icon-flaggray-xs'],
+								['white',me.res('act-flagwhite.lbl'),'wtmail-icon-flagwhite-xs'],
+								['brown',me.res('act-flagbrown.lbl'),'wtmail-icon-flagbrown-xs'],
+								['azure',me.res('act-flagazure.lbl'),'wtmail-icon-flagazure-xs'],
+								['pink',me.res('act-flagpink.lbl'),'wtmail-icon-flagpink-xs'],
+								['complete',me.res('act-flagcomplete.lbl'),'wtmail-icon-flagcomplete-xs']
 							]
 						}),
 						//value: this.method,
 						valueField: 'id'
+					},
+					'tags':{
+						xtype: 'socolorcombo',
+						forceSelection: true,
+						triggerAction: 'all',
+						displayField: 'description',
+						valueField: 'tagId',
+						editable: false,
+						colorize: 'text',
+						colorField: 'color',
+						store: {
+							autoLoad: true,
+							model: 'Sonicle.webtop.mail.model.Tag',
+							proxy: WTF.apiProxy(me.mys.ID, 'ManageTags','data')
+						}
 					},
 					'any': null
 				}

@@ -280,11 +280,13 @@ Ext.define('Sonicle.webtop.mail.MultiFolderMessagesModel',{
 Ext.define('Sonicle.webtop.mail.GridFeatureGrouping', {
 	extend: 'Ext.grid.feature.Grouping',
 	alias: 'feature.mailgrouping',
-	/*init: function() {
-		var me=this;
-		me.callParent(arguments);
-		me.collapsible = true;
-	},*/
+	expandTip: '',
+	collapseTip: ''
+//	init: function() {
+//		var me=this;
+//		me.callParent(arguments);
+//		me.collapsible = true;
+//	}
 	//groupHeaderTpl: '{columnName}: name',
 /*	groupHeaderTpl: Ext.create('Ext.XTemplate',
 		'{[this.formatColumnName(values)]}: {[this.formatName(parent,values)]}',
@@ -302,9 +304,9 @@ Ext.define('Sonicle.webtop.mail.GridFeatureGrouping', {
 			}
 		}
 	),*/
-	onColumnMove: function() {
-		console.log('onColumnMove overridden!');
-	}
+//	onColumnMove: function() {
+//		console.log('onColumnMove overridden!');
+//	}
 });
 
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
@@ -538,6 +540,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			var folder=me.multifolder?r.get("folder"):me.currentFolder;
 			if (me.mys.isDrafts(folder)) me.editMessage(r,true);
 			else me.openMessage(r);
+			if(me.mys.getVar("seenOnOpen")) me.actionMarkSeenState(true);
 		});
 		me.on('cellclick',function(grid, td, cellIndex, r, rowIndex, e, eopts) {
 			if (me.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {
@@ -2166,7 +2169,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							var tdy=record.get("istoday"),
 								fmtd=record.get("fmtd"),
 								tag;
-							if (!fmtd && (tdy || store.groupField=='gdate')) tag="<span data-qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
+							if (!fmtd && (tdy || store.getGroupField()==='gdate')) tag="<span data-qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
 							else tag="<span data-qtip='"+Ext.util.Format.date(value,'H:i:s')+"'>"+Ext.util.Format.date(value,'d-M-Y')+"</span>";
 							return tag;
 						},

@@ -307,14 +307,26 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
 			id=r.get("id");
         me.pValue.layout.setActiveItem(this.id+"-ase-"+id);
         var sd=me.searchdata[id];
-        if (sd!=null && (sd.xtype=='combo'||sd.xtype=='soiconcombo') && sd.forceSelection) {
-            me.cbMethod.getStore().loadData(this.mdatashort,false);
+        if (sd!=null && (sd.xtype=='combo'||sd.xtype=='soiconcombo' || sd.xtype=='socolorcombo') && sd.forceSelection) {
+           me.cbMethod.setStore(new Ext.data.SimpleStore({
+             autoload: true,
+             fields: ['id','desc'],
+             data: me.mdatashort
+            }));
             me.cbMethod.setValue('is');
         } else if (sd!=null && sd.xtype=='datefield') {
-            me.cbMethod.getStore().loadData(this.mdatadate,false);
+			 me.cbMethod.setStore(new Ext.data.SimpleStore({
+             autoload: true,
+             fields: ['id','desc'],
+             data: me.mdatadate
+            }));
             me.cbMethod.setValue('is');
         } else {
-            me.cbMethod.getStore().loadData(this.mdatafull,false);
+			 me.cbMethod.setStore(new Ext.data.SimpleStore({
+             autoload: true,
+             fields: ['id','desc'],
+             data: me.mdatafull
+            }));
             me.cbMethod.setValue('contains');
         }
     }
