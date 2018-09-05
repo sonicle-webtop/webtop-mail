@@ -88,6 +88,7 @@ public class MailSettings {
 	public static final String COLUMNS_ORDER = "columns.order";
 	public static final String SHARED_SEEN = "sharedseen";
 	public static final String MANUAL_SEEN = "manualseen";
+	public static final String SEEN_ON_OPEN = "seenonopen";
 	public static final String SHARING_RIGHTS = "sharing.rights";
 	public static final String FOLDER_PEFFIX = "folder.prefix";
 	public static final String SCAN_ALL = "scan.all";

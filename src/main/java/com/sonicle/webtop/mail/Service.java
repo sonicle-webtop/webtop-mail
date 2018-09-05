@@ -8326,6 +8326,7 @@ public class Service extends BaseService {
 			co.put("schedDisabled",ss.isScheduledEmailsDisabled());
 			co.put("identities", jsidents);
 			co.put("manualSeen",us.isManualSeen());
+			co.put("seenOnOpen",us.isSeenOnOpen());
 			co.put("messageViewRegion",us.getMessageViewRegion());
 			co.put("messageViewWidth",us.getMessageViewWidth());
 			co.put("messageViewHeight",us.getMessageViewHeight());

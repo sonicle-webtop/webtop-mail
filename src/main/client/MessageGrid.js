@@ -540,6 +540,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			var folder=me.multifolder?r.get("folder"):me.currentFolder;
 			if (me.mys.isDrafts(folder)) me.editMessage(r,true);
 			else me.openMessage(r);
+			if(me.mys.getVar("seenOnOpen")) me.actionMarkSeenState(true);
 		});
 		me.on('cellclick',function(grid, td, cellIndex, r, rowIndex, e, eopts) {
 			if (me.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {

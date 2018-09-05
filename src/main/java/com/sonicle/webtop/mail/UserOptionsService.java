@@ -83,6 +83,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.ingridPreview = mus.getShowMessagePreviewOnRow();
 				jso.sharedSeen = mus.isSharedSeen();
 				jso.manualSeen = mus.isManualSeen();
+				jso.seenOnOpen = mus.isSeenOnOpen();
 				jso.scanAll = mus.isScanAll();
 				jso.scanSeconds = mus.getScanSeconds();
 				jso.scanCycles = mus.getScanCycles();
@@ -128,6 +129,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("ingridPreview")) mus.setShowMessagePreviewOnRow(pl.data.ingridPreview);
 				if (pl.map.has("manualSeen")) mus.setManualSeen(pl.data.manualSeen);
 				if (pl.map.has("sharedSeen")) mus.setSharedSeen(pl.data.sharedSeen);
+				if (pl.map.has("seenOnOpen")) mus.setSeenOnOpen(pl.data.seenOnOpen);
 				if (pl.map.has("sharedSort")) mus.setSharedSort(pl.data.sharedSort);
 				if (pl.map.has("showUpcomingEvents")) mus.setShowUpcomingEvents(pl.data.showUpcomingEvents);
 				if (pl.map.has("showUpcomingTasks")) mus.setShowUpcomingTasks(pl.data.showUpcomingTasks);

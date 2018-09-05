@@ -54,6 +54,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
+			seenOnOpen: WTF.checkboxBind('record', 'seenOnOpen'),
 			ingridPreview: WTF.checkboxBind('record', 'ingridPreview'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
 			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks')
@@ -117,11 +118,22 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, {
 				xtype: 'checkbox',
+				reference: 'fldmanualSeen',
 				bind: '{manualSeen}',
 				hideEmptyLabel: false,
 				boxLabel: me.res('opts.adv.fld-manualSeen.lbl'),
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-			}, WTF.lookupCombo('id', 'desc', {
+			},  {
+				xtype: 'checkbox',
+				style :'margin-left:30px',
+				bind: {
+					value:'{seenOnOpen}',					
+					disabled: '{!fldmanualSeen.checked}'
+				},
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-seenonopen.lbl'),
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			},WTF.lookupCombo('id', 'desc', {
 				bind: '{record.sharedSort}',
 				store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
 					autoLoad: true
