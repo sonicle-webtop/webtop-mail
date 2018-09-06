@@ -733,7 +733,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				tbar=me.messageViewContainer.getTopBar();
 			tbar.show();
 			//tbar.setHeight(24);
-			me.messageView._showMessage(folder,id);
+			me.messageView._showMessage(folder,id,!me.mys.getVar("manualSeen"));
 		}
 	},
 

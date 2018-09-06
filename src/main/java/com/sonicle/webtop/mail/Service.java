@@ -6706,6 +6706,7 @@ public class Service extends BaseService {
 		String providerid = request.getParameter("providerid");
 		int idattach = 0;
 		boolean isEditor = request.getParameter("editor") != null;
+		boolean setSeen = ServletUtils.getBooleanParameter(request, "setseen", true);
 		if (df == null) {
 			df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.MEDIUM, environment.getProfile().getLocale());
 		}
@@ -6830,7 +6831,8 @@ public class Service extends BaseService {
 			}
 						
 			if (!wasseen) {
-				if (us.isManualSeen()) {
+				//if (us.isManualSeen()) {
+				if (!setSeen) {
 					m.setFlag(Flags.Flag.SEEN, false);
 				} else {
 					//if no html part, flag seen is not set
