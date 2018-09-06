@@ -941,6 +941,14 @@ public class Service extends BaseService {
 	  return retia;
 	}
 	
+	public Identity findIdentity(InternetAddress fromAddr) {
+		for(Identity ident: mprofile.getIdentities()) {
+			if (fromAddr.getAddress().equalsIgnoreCase(ident.getEmail()))
+				return ident;
+		}
+		return null;
+	}
+	
 	public Exception sendReceipt(String from, String to, String subject, String body) {
 		return sendTextMsg(from, from, new String[]{to}, null, null, "Receipt: " + subject, body);
 	}
@@ -1016,8 +1024,13 @@ public class Service extends BaseService {
 	}
 	
 	public boolean sendMsg(Message msg) {
-		UserProfile profile = environment.getProfile();
-		String sentfolder = mprofile.getFolderSent();
+		Identity ident=null;
+		try {
+			ident=findIdentity((InternetAddress)(msg.getFrom()[0]));
+		} catch(Exception exc) {
+			
+		}
+		String sentfolder = getSentFolder(ident);
 		try {
 			Transport.send(msg);
 			saveSent(msg, sentfolder);
@@ -1030,8 +1043,28 @@ public class Service extends BaseService {
 		
 	}
 	
-	public Exception sendMsg(String from, SimpleMessage smsg, List<JsAttachment> attachments) {
+	public String getSentFolder(Identity ident) {
 		UserProfile profile = environment.getProfile();
+		String sentfolder = mprofile.getFolderSent();
+		if (ident != null ) {
+			String mainfolder=ident.getMainFolder();
+			if (mainfolder != null && mainfolder.trim().length() > 0) {
+				String newsentfolder = mainfolder + folderSeparator + getLastFolderName(sentfolder);
+				try {
+					Folder folder = getFolder(newsentfolder);
+					if (folder.exists()) {
+						sentfolder = newsentfolder;
+					}
+				} catch (MessagingException exc) {
+					logger.error("Error on identity {}/{} Sent Folder", profile.getUserId(), ident.getEmail(), exc);
+				}
+			}
+		}
+		return sentfolder;
+	}
+	
+	public Exception sendMsg(String from, SimpleMessage smsg, List<JsAttachment> attachments) {
+		/*UserProfile profile = environment.getProfile();
 		String sentfolder = mprofile.getFolderSent();
 		Identity ident = smsg.getFrom();
 		if (ident != null ) {
@@ -1047,7 +1080,14 @@ public class Service extends BaseService {
 					logger.error("Error on identity {}/{} Sent Folder", profile.getUserId(), ident.getEmail(), exc);
 				}
 			}
+		}*/
+		Identity ident=null;
+		try {
+			ident=findIdentity(new InternetAddress(from));
+		} catch(Exception exc) {
+			
 		}
+		String sentfolder=getSentFolder(ident);
 		Exception retexc = null;
 		Message msg = null;
 		try {
