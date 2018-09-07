@@ -109,7 +109,22 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		me.viewmaxtos=me.getVar('messageViewMaxTos');
 		me.viewmaxccs=me.getVar('messageViewMaxCcs');
-		
+
+		//create early but set imap store later to avoid early events on Firefox
+		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
+			pageSize: me.getVar('pageRows'),
+			viewRegion: me.getVar('messageViewRegion','east'),
+			viewWidth: me.getVar('messageViewWidth',600),
+			viewHeight: me.getVar('messageViewHeight',400),
+			viewCollapsed: me.getVar('messageViewCollapsed',false),
+			saveColumnSizes: true,
+			saveColumnVisibility: true,
+			saveColumnOrder: true,
+			savePaneSize: true,
+			gridMenu: me.getRef('cxmGrid'),
+			mys: me
+		});
+		me.messagesPanel=mp;
 	
 		
 		me.favoritesTree=Ext.create('Sonicle.webtop.mail.FavoritesTree',{
@@ -169,11 +184,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						//keep enabled loadMask only for root loading
 						me.imapTree.getView().loadMask=false;
 						me.selectInbox();
-						//Ext.each(n.childNodes,function(cn,cx,an) {
-						//	if (cn.get("isSharedRoot")) {
-						//		cn.expand();
-						//	}
-						//});
 					}
 				},
 				foldersstaterestored: function(t,expandedNodes) {
@@ -220,23 +230,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				]
 		});
 		
+		me.messagesPanel.setImapStore(me.imapTree.getStore());
 		
-		
-		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
-			pageSize: me.getVar('pageRows'),
-			viewRegion: me.getVar('messageViewRegion','east'),
-			viewWidth: me.getVar('messageViewWidth',600),
-			viewHeight: me.getVar('messageViewHeight',400),
-			viewCollapsed: me.getVar('messageViewCollapsed',false),
-			saveColumnSizes: true,
-			saveColumnVisibility: true,
-			saveColumnOrder: true,
-			savePaneSize: true,
-			gridMenu: me.getRef('cxmGrid'),
-			mys: me,
-		    imapStore: me.imapTree.getStore()
-		});
-		me.messagesPanel=mp;
 		me.setMainComponent(me.messagesPanel);
 		if (me.getVar('showUpcomingEvents')) {
 			var capi=WT.getServiceApi("com.sonicle.webtop.calendar");

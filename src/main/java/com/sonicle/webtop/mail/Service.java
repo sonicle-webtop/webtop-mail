@@ -751,13 +751,15 @@ public class Service extends BaseService {
 	
 	private void deleteAutosavedDraft(long msgId) throws MessagingException {
 		FolderCache fc=getFolderCache(mprofile.getFolderDrafts());
-		fc.open();
 		Folder folder=fc.getFolder();
+		boolean wasopen=folder.isOpen();
+		if (!wasopen) folder.open(Folder.READ_WRITE);
 		Message[] oldmsgs=folder.search(new HeaderTerm(HEADER_X_WEBTOP_MSGID,""+msgId));
 		if (oldmsgs!=null && oldmsgs.length>0) {
 			for(Message m: oldmsgs) m.setFlag(Flags.Flag.DELETED, true);
 			folder.expunge();
 		}
+		if (!wasopen) folder.close(true);
 	}
 	
 	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
