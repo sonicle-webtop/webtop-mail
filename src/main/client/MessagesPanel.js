@@ -67,11 +67,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		
 		me.callParent(arguments);
 		
+		//The breadcrumb store will be set later through setImapStore, to avoid too early events
 		me.bcFolders=Ext.create({
 						xtype: 'sobreadcrumb',
-                        store: me.imapStore,
 						overflowHandler: 'scroller',
-//						hideMenu:true,
 						minDepth: 1,
 							listeners: {
 							change: function(s, node) {
@@ -468,6 +467,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
 
     },
+	
+	setImapStore: function(store) {
+		this.bcFolders.setStore(store);
+	},
 	
 	getAct: function(name) {
 		return this.mys.getAct(name);
