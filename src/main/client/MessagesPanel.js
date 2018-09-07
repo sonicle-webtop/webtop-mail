@@ -329,7 +329,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			me.gridMonitor.start(10000);
 			me.gridMonitor.on('change',function(gm,idle) {
 				//console.log("idle change event: "+idle+" idleRefreshFolder="+me.folderList.idleRefreshFolder);
-				if (idle && me.currentFolder===me.folderList.idleRefreshFolder) {
+				if (idle && me.currentFolder && me.currentFolder===me.folderList.idleRefreshFolder) {
 					me._refreshIdleGrid();
 				}
 			});
