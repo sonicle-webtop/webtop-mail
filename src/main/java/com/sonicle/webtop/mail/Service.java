@@ -947,20 +947,20 @@ public class Service extends BaseService {
 		return null;
 	}
 	
-	public Exception sendReceipt(String from, String to, String subject, String body) {
-		return sendTextMsg(from, from, new String[]{to}, null, null, "Receipt: " + subject, body);
+	public Exception sendReceipt(Identity ident, String from, String to, String subject, String body) {
+		return sendTextMsg(ident, from, from, new String[]{to}, null, null, "Receipt: " + subject, body);
 	}
 	
-	private Exception sendTextMsg(String fromAddr, String rplyAddr, String[] toAddr,
+	private Exception sendTextMsg(Identity ident, String fromAddr, String rplyAddr, String[] toAddr,
 			String[] ccAddr,
 			String[] bccAddr, String subject, String body) {
 		
-		return sendTextMsg(fromAddr,
+		return sendTextMsg(ident, fromAddr,
 				rplyAddr, toAddr, ccAddr, bccAddr, subject, body, null);
 		
 	}
 	
-	private Exception sendTextMsg(String fromAddr, String rplyAddr, String[] toAddr, String[] ccAddr, String[] bccAddr,
+	private Exception sendTextMsg(Identity ident, String fromAddr, String rplyAddr, String[] toAddr, String[] ccAddr, String[] bccAddr,
 			String subject, String body, List<JsAttachment> attachments) {
 		
 		SimpleMessage smsg = new SimpleMessage(0);
@@ -973,6 +973,8 @@ public class Service extends BaseService {
 
 		//set BCC recipients
 		smsg.addBcc(bccAddr);
+		
+		if (ident!=null) smsg.setFrom(ident);
 
 		//set Reply To address
 		if (rplyAddr != null && rplyAddr.length() > 0) {
@@ -990,6 +992,10 @@ public class Service extends BaseService {
 	}
 	
 	public boolean sendMsg(InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) {
+		return sendMsg(null,from, to, cc, bcc, subject, part);
+	}
+	
+	public boolean sendMsg(Identity ident, InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) {
 		
 		try {
 			subject = MimeUtility.encodeText(subject);
@@ -1013,7 +1019,7 @@ public class Service extends BaseService {
 			message.setContent(part);
 			message.setSentDate(new java.util.Date());
 			
-			return sendMsg(message);
+			return sendMsg(ident,message);
 			
 		} catch(MessagingException ex) {
 			logger.warn("Unable to send message", ex);
@@ -1022,11 +1028,16 @@ public class Service extends BaseService {
 	}
 	
 	public boolean sendMsg(Message msg) {
-		Identity ident=null;
-		try {
-			ident=findIdentity((InternetAddress)(msg.getFrom()[0]));
-		} catch(Exception exc) {
-			
+		return sendMsg(null,msg);
+	}
+	
+	public boolean sendMsg(Identity ident, Message msg) {
+		if (ident==null) {
+			try {
+				ident=findIdentity((InternetAddress)(msg.getFrom()[0]));
+			} catch(Exception exc) {
+
+			}
 		}
 		String sentfolder = getSentFolder(ident);
 		try {
@@ -1062,10 +1073,10 @@ public class Service extends BaseService {
 	}
 	
 	public Exception sendMsg(String from, SimpleMessage smsg, List<JsAttachment> attachments) {
-		/*UserProfile profile = environment.getProfile();
-		String sentfolder = mprofile.getFolderSent();
+		//UserProfile profile = environment.getProfile();
+		//String sentfolder = mprofile.getFolderSent();
 		Identity ident = smsg.getFrom();
-		if (ident != null ) {
+		/*f (ident != null ) {
 			String mainfolder=ident.getMainFolder();
 			if (mainfolder != null && mainfolder.trim().length() > 0) {
 				String newsentfolder = mainfolder + folderSeparator + getLastFolderName(sentfolder);
@@ -1079,12 +1090,6 @@ public class Service extends BaseService {
 				}
 			}
 		}*/
-		Identity ident=null;
-		try {
-			ident=findIdentity(new InternetAddress(from));
-		} catch(Exception exc) {
-			
-		}
 		String sentfolder=getSentFolder(ident);
 		Exception retexc = null;
 		Message msg = null;
@@ -5352,19 +5357,19 @@ public class Service extends BaseService {
 	public void processSendReceipt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
 		String subject = request.getParameter("subject");
-		String from = request.getParameter("from");
+		//String from = request.getParameter("from");
+		int identityId = Integer.parseInt(request.getParameter("identityId"));
 		String to = request.getParameter("to");
-		String folder = request.getParameter("folder");
-		String sout = "";
-		//Identity ident = mprofile.getIdentity(folder);
-		//if (ident != null) {
-		//	from = ident.toString();
-		//}
+		//String folder = request.getParameter("folder");
+		//String sout = "";
+		Identity ident = mprofile.getIdentity(identityId);
+		String from = ident.getDisplayName()+" <"+ident.getEmail()+">";
+		
 		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] è stato letto.\n\n"
 				+ "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
 		try {
 			checkStoreConnected();
-			Exception exc = sendReceipt(from, to, subject, body);
+			Exception exc = sendReceipt(ident, from, to, subject, body);
 			if (exc == null) {
 				new JsonResult().printTo(out);
 			} else {
