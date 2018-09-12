@@ -1754,7 +1754,16 @@ public class FolderCache {
             String pattern=entry.getValue();
             boolean negate=(method==AdvancedSearchEntry.METHOD_DOESNOTCONTAIN||method==AdvancedSearchEntry.METHOD_ISNOT);
             //Service.logger.debug("ADVSEARCH: pattern="+pattern+" searchfield="+searchfield);
-            if(searchfield.equals("subject")) {
+			if (searchfield.equals("any")) {
+				SearchTerm anyterms[]=new SearchTerm[6];
+				anyterms[0]=new SubjectTerm(pattern);
+				anyterms[1]=new RecipientStringTerm(Message.RecipientType.TO, pattern);
+				anyterms[2]=new RecipientStringTerm(Message.RecipientType.CC, pattern);
+				anyterms[3]=new RecipientStringTerm(Message.RecipientType.BCC, pattern);
+				anyterms[4]=new FromStringTerm(pattern);
+				anyterms[5]=new BodyTerm(pattern);
+				term=new OrTerm(anyterms);
+			} else if(searchfield.equals("subject")) {
               term=new SubjectTerm(pattern);
             } else if(searchfield.equals("to")) {
               term=new RecipientStringTerm(Message.RecipientType.TO, pattern);
