@@ -71,6 +71,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.bcFolders=Ext.create({
 						xtype: 'sobreadcrumb',
 						overflowHandler: 'scroller',
+						hidden: !WT.plTags.desktop,
 						minDepth: 1,
 							listeners: {
 							change: function(s, node) {
@@ -168,7 +169,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			mys: me.mys,
 			mp: me,
 			createPagingToolbar: true,
-			stateful: true,
+			stateful: WT.plTags.desktop?true:false,
 			baseStateId: me.mys.buildStateId('messagegrid'),			
 			dockedItems: [
 /*				Ext.create('Ext.toolbar.Toolbar',{
@@ -204,6 +205,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						me.mys._TB("delete",null,'small'),
 						me.mys._TB("spam",null,'small'),
 						'-',
+						me.mys._TB("special",null,'small'),
 						{
 							text: null,
 							iconCls: 'wtmail-icon-tag',
@@ -401,17 +403,17 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
         me.messageViewContainer=Ext.create({
 			xtype: 'wtpanel',
-			stateful: true,
+			stateful: WT.plTags.desktop,
 			stateId: me.mys.buildStateId('ctmessageview'),
-            region: "east", //me.viewRegion,
+            region: WT.plTags.desktop?"east":"south", //me.viewRegion,
             cls: 'wtmail-mv-container',
             layout: 'fit',
             split: true,
             collapseMode: 'mini',
 			header: false,
-            collapsible : true,
+            collapsible : WT.plTags.desktop,
 			collapsed: false, //me.viewCollapsed,
-            height: '40%', //me.viewHeight,
+            height: WT.plTags.desktop?'40%':'60%', //me.viewHeight,
 			width: '40%', //me.viewWidth,
             bodyBorder: false,
             border: false,
@@ -732,19 +734,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
 	showMessage: function(folder,id) {
 		if (folder && id) {
-			var me=this,
-				tbar=me.messageViewContainer.getTopBar();
-			tbar.show();
-			//tbar.setHeight(24);
+			var me=this;
+			if (WT.plTags.desktop) me.messageViewContainer.getTopBar().show();
 			me.messageView._showMessage(folder,id,!me.mys.getVar("manualSeen"));
 		}
 	},
 
     clearMessageView: function() {
-		var me=this,
-			tbar=me.messageViewContainer.getTopBar();
-		tbar.hide();
-		//tbar.setHeight(0);
+		var me=this;
+		if (WT.plTags.desktop) me.messageViewContainer.getTopBar().hide();
         me.messageView._clear();
     },
 	

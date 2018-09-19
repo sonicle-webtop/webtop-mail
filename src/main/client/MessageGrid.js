@@ -644,7 +644,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 		}
 		me.currentFolder = folder_id;
-		me.initFolderState();
+		me.initFolderState(!WT.plTags.desktop);
 		me.hideFilterBar();
 		me.getStore().clearFilter(true);
 		if (uid) {
@@ -678,7 +678,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
      */
     initFolderState: function(reset){
         var me = this,
-            id = me.stateful && me.getStateId(),
+            id = /*me.stateful &&*/ me.getStateId(),
             hasListeners = me.hasListeners,
             state,
             combinedState,
@@ -2105,7 +2105,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					dcols[n++]=Ext.create({//Subject
 						xtype: 'gridcolumn',
 						header: me.res("column-subject"),
-						width: 200,
+						width: WT.plTags.desktop?400:200,
 						sortable: true,
 						dataIndex: 'subject',
 						stateId: 'stid-subject',
@@ -2389,7 +2389,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	createDefaultState: function() {
-        var me=this,n=0,stcols=new Array();
+        var me=this,n=0,stcols=new Array(),
+			issentfolder=false;
+		
+		if (me.mys && me.currentFolder) {
+			var node=me.mys.getFolderNodeById(me.currentFolder);
+			if (node) issentfolder=(node.data.isSent||node.data.isUnderSent);
+		}
+	
 		
 /*		a={"columns":[
 				{"id":"stid-priority","width":40},
@@ -2413,9 +2420,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         }
         stcols[n++]={ id: 'stid-priority', width: 40 };
         stcols[n++]={ id: 'stid-unread', width: 40 };
-        stcols[n++]={ id: 'stid-from', width: 198 };
-        stcols[n++]={ id: 'stid-to', width: 198 };
-        stcols[n++]={ id: 'stid-subject', width: 400 };
+        stcols[n++]={ id: 'stid-from', width: 198, hidden: issentfolder?true:false };
+        stcols[n++]={ id: 'stid-to', width: 198, hidden: issentfolder?false:true };
+        stcols[n++]={ id: 'stid-subject', width: WT.plTags.desktop?400:200 };
         stcols[n++]={ id: 'stid-date', width: 96 };
         stcols[n++]={ id: 'stid-gdate', width: 96 };
         stcols[n++]={ id: 'stid-sdate', width: 96 };

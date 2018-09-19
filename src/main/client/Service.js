@@ -416,7 +416,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("opennew",{ handler: me.gridAction(me,'OpenNew'), iconCls: '' });
         
         me.addAct("newfax",{ handler: function() { me.actionNewFax(); }, text: null });
-        me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print' });
+        me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print', hidden: !WT.plTags.desktop });
         me.addAct("reply",{ handler: me.gridAction(me,'Reply'), iconCls: 'wtmail-icon-reply'  });
         me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll'), iconCls: 'wtmail-icon-replyall' });
         me.addAct("forward",{ handler: me.gridAction(me,'Forward'), iconCls: 'wtmail-icon-forward'  });

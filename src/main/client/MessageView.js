@@ -381,7 +381,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				this
 			);*/
 			
-			if (me.mp) {
+			if (me.mp && WT.plTags.desktop) {
 				var wticon=(me.mp.getViewRegion()==='east'?'wt-icon-panel-bottom-xs':'wt-icon-panel-right-xs');
 				me.divSubject.update(
 					"<table class='wtmail-mv-subject-table'><tr>"+
