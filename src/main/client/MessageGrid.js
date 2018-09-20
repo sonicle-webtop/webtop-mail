@@ -645,7 +645,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
 		me.currentFolder = folder_id;
 		me.initFolderState(!WT.plTags.desktop);
-		me.hideFilterBar();
+		//me.hideFilterBar();
 		me.getStore().clearFilter(true);
 		if (uid) {
 			me.autoselectUid=uid;
