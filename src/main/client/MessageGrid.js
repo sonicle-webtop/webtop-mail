@@ -764,11 +764,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		else if (!col.hidden) delete col.hidden;
 	},
  	
-	updateTotals: function(total,realTotal) {
+	updateTotals: function(total,realTotal,quotaLimit,quotaUsage) {
 		var me=this;
 		me.msgsTotal=total;
 		me.msgsRealTotal=realTotal;
-		me.fireEvent('totals',me,me.msgsTotal,me.msgsRealTotal);
+		me.fireEvent('totals',me,me.msgsTotal,me.msgsRealTotal,quotaLimit,quotaUsage);
 	},
 	
     loaded: function(s,r,o) {
@@ -777,7 +777,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			json=s.proxy.reader.rawData;
 
 		if (json) { 
-			me.updateTotals(json.total,json.realTotal);
+			me.updateTotals(json.total,json.realTotal,json.quotaLimit,json.quotaUsage);
 			me.fireEvent('load',me,me.currentFolder,json);
 		}
 		

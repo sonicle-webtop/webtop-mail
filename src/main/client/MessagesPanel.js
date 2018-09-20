@@ -303,10 +303,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			} 
 		});
 		
-		me.folderList.on('totals',function(g,total,realTotal) {
+		me.folderList.on('totals',function(g,total,realTotal,quotaLimit,quotaUsage) {
 			var text=''+total;
 			if (me.folderList.threaded && realTotal)
 				text+=" ["+realTotal+"]";
+			if (quotaLimit) {
+				text+=" - "+WT.res("word.quota")+": "+Math.round(quotaUsage/1024)+"MB / "+
+						Math.round(quotaLimit/1024)+"MB ("+
+						Math.round(100*quotaUsage/quotaLimit)+"%)";
+			}
 			me.labelMessages.setText(text);
 		});
 		

@@ -6448,8 +6448,24 @@ public class Service extends BaseService {
 				}
 				else funread=0;
 				
+				long qlimit=-1;
+				long qusage=-1;
+				Quota quotas[]=((IMAPStore)store).getQuota("INBOX");
+				if (quotas!=null)
+					for(Quota q: quotas) {
+						if ((q.quotaRoot.equals("INBOX") || q.quotaRoot.equals("Quota")) && q.resources!=null) {
+							for(Quota.Resource r: q.resources) {
+								if (r.name.equals("STORAGE")) {
+									qlimit=r.limit;
+									qusage=r.usage;
+								}
+							}
+						}
+					}
+				
 				sout += "\n],\n";
 				sout += "total: "+(total-expunged)+",\n";
+				if (qlimit>=0 && qusage>=0) sout+=" quotaLimit: "+qlimit+", quotaUsage: "+qusage+",\n";
 				sout += "realTotal: "+(xmsgs.length-expunged)+",\n";
 				sout += "expunged: "+(expunged)+",\n";
 				sout += "metaData: {\n"
