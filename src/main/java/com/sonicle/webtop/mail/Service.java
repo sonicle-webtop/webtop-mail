@@ -923,6 +923,23 @@ public class Service extends BaseService {
 		if (!done) {
 			throw new MessagingException("Rename failed");
 		}
+		
+		//trick for Dovecot on NethServer: under shared folders, create and destroy a fake folder
+		//or rename will not work correctly
+		if (isUnderSharedFolder(newfolder.getFullName())) {
+			Map<String,String> map=((IMAPStore)store).id(null);
+			if (map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot")) {
+				String trickName="_________"+System.currentTimeMillis();
+				Folder trickFolder=fcparent.getFolder().getFolder(trickName);
+				try {
+					trickFolder.create(Folder.READ_ONLY);
+					trickFolder.delete(true);
+				} catch(MessagingException exc) {
+
+				}
+			}
+		}
+		
 		addFoldersCache(fcparent, newfolder);
 		return newfolder.getFullName();
 	}
