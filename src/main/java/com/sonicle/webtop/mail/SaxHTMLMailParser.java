@@ -262,7 +262,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 					ismailto = true;
 				}
 			}
-			pwriter.print(" " + aqname + "=\"" + avalue + "\"");
+			pwriter.print(" " + aqname + "=\"" + StringUtils.replace(avalue, "\"", "&quot;") + "\"");
 		}
 		if (ismailto) {
 			String email=mailtoParams;
