@@ -2247,7 +2247,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						},
 						iconSize: WTU.imgSizeToPx('xs'),
 						scope: me,
-						filter: { xtype: 'textfield'}
+						filter: {
+							xtype: 'soicononlycombobox',
+							editable: false,
+							width: 24,
+							listConfig: {
+								minWidth: 42
+							},
+							hideTrigger: true,
+							store: [
+								['','\u00a0',''],
+								["true",'\u00a0',WTF.cssIconCls(me.mys.XID, 'attachment', 'xs')]
+							]
+						}
 
 					});
 					break;

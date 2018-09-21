@@ -5980,6 +5980,8 @@ public class Service extends BaseService {
 					if (filter.property.equals("unread")) {
 						psearchfield+="status";
 						ppattern+=filter.value.equals("true")?"unread":"read";
+					} else if (filter.property.equals("atts")) {
+						pquickfilter="attachment";
 					} else {
 						psearchfield+=filter.property;
 						ppattern+=filter.value;
