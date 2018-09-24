@@ -191,7 +191,7 @@ public class SmartSearchThread extends Thread {
 								}
 							}*/
 
-						boolean hasattachments=ms.hasAttachements(msg);
+						boolean hasattachments=fc.hasAttachements(msg);
 
 						if ((!fromme || (fromme && isfromme)) && 
 								(!tome || (tome && istome)) &&

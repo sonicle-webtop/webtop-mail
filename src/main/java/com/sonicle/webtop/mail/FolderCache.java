@@ -1663,7 +1663,7 @@ public class FolderCache {
 		return xmsgs;
 	}
 	
-	private SonicleIMAPMessage[] _getThreadedMessages(String quickfilter, String patterns, String searchfields) throws MessagingException {
+	private SonicleIMAPMessage[] _getThreadedMessages(String quickfilter, String patterns, String searchfields) throws MessagingException, IOException {
 		SonicleIMAPMessage[] tmsgs=null;
 		open();
 
@@ -1700,17 +1700,25 @@ public class FolderCache {
 				openThreads=newOpenThreads;
 			}
 		}
+		if (quickfilter!=null && quickfilter.equals("attachment")) {
+			ArrayList<Message> amsgs=new ArrayList<Message>();
+			for(Message m: tmsgs) {
+				if (hasAttachements(m)) amsgs.add(m);
+			}
+			tmsgs=new SonicleIMAPMessage[amsgs.size()];
+			amsgs.toArray(tmsgs);
+		}
 		
 		return tmsgs;
 	}
-
-	private boolean isAttachment(Part part) throws MessagingException {
+	
+	protected boolean isAttachment(Part part) throws MessagingException {
 		return Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) 
 				|| Part.INLINE.equalsIgnoreCase(part.getDisposition()) 
 				|| (part.getDisposition() == null && part.getFileName() != null);
 	}
     
-    private boolean hasAttachements(Part p) throws MessagingException, IOException {
+    protected boolean hasAttachements(Part p) throws MessagingException, IOException {
         boolean retval=false;
         
         //String disp=p.getDisposition();

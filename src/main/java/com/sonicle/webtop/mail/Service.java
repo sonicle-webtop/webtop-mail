@@ -6249,7 +6249,7 @@ public class Service extends BaseService {
 							}
 						}*/
 
-						boolean hasAttachments=hasAttachements(xm);
+						boolean hasAttachments=mcache.hasAttachements(xm);
 
 						subject=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject));
 
@@ -6673,37 +6673,6 @@ public class Service extends BaseService {
 		cal.set(java.util.Calendar.HOUR_OF_DAY, schedhour);
 		cal.set(java.util.Calendar.MINUTE, schedmins);
 		return cal;
-	}
-	
-	private boolean isAttachment(Part part) throws MessagingException {
-		String disposition=part.getDisposition();
-		
-		if (Part.INLINE.equalsIgnoreCase(disposition)) return false;
-		
-		return Part.ATTACHMENT.equalsIgnoreCase(disposition)
-				|| (disposition == null && part.getFileName() != null);
-	}
-	
-	protected boolean hasAttachements(Part p) throws MessagingException, IOException {
-		boolean retval = false;
-
-		//String disp=p.getDisposition();
-		if (isAttachment(p)) {
-			retval = true;
-		} //if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT)) retval=true;
-		else if (p.isMimeType("multipart/*")) {
-			Multipart mp = (Multipart) p.getContent();
-			int parts = mp.getCount();
-			for (int i = 0; i < parts; ++i) {
-				Part bp = mp.getBodyPart(i);
-				if (hasAttachements(bp)) {
-					retval = true;
-					break;
-				}
-			}
-		}
-		
-		return retval;
 	}
 	
 	class MessageListThread implements Runnable {
