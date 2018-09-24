@@ -3253,6 +3253,14 @@ public class Service extends BaseService {
 					FolderCache fc=getFolderCache(spamadmSpam);
 					if (fc!=null) tomcache=fc;
 				}
+				else if (isUnderSharedFolder(fromfolder)) {
+					String mainfolder=getMainSharedFolder(fromfolder);
+					if (mainfolder!=null) {
+						folderspam = mainfolder + folderSeparator + getLastFolderName(folderspam);
+						FolderCache fc=getFolderCache(folderspam);
+						if (fc!=null) tomcache=fc;
+					}
+				}
 				tofolder=folderspam;
 			}
 			//if trashing, check for shared profile trash
