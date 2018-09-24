@@ -2469,6 +2469,7 @@ public class FolderCache {
     HTMLInputStream hstream=new HTMLInputStream(istream);
     XMLReader xmlparser=XMLReaderFactory.createXMLReader("org.cyberneko.html.parsers.SAXParser");
 	xmlparser.setProperty("http://xml.org/sax/properties/lexical-handler", saxHTMLMailParser);
+	xmlparser.setFeature("http://apache.org/xml/features/scanner/notify-char-refs", true);
     xmlparser.setContentHandler(saxHTMLMailParser);
     xmlparser.setErrorHandler(saxHTMLMailParser);
     while(!hstream.isRealEof()) {
