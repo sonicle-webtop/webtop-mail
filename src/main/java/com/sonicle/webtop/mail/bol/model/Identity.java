@@ -34,6 +34,7 @@
 package com.sonicle.webtop.mail.bol.model;
 
 import com.sonicle.webtop.core.sdk.UserProfileId;
+import com.sonicle.webtop.mail.MailAccount;
 import com.sonicle.webtop.mail.Mailcard;
 import com.sonicle.webtop.mail.bol.OIdentity;
 
@@ -183,6 +184,14 @@ public class Identity {
 	public void setIdentityUid(String uid) {
 		identityUid=uid;
 	}
+	
+	public MailAccount getAccount() {
+		return null;
+	}
+	
+/*	public void setAccount(MailAccount account) {
+		this.account=account;
+	}*/
 	
     @Override
 	public String toString() {

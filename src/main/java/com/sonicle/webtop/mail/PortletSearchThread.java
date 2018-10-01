@@ -63,9 +63,11 @@ public class PortletSearchThread extends Thread {
 	private JsPortletSearchResult psr=new JsPortletSearchResult();
 
     private final Service ms;
+	private MailAccount account;
 	
-    public PortletSearchThread(Service ms, String patterns, String searchfields, ArrayList<String> folderIds) throws MessagingException {
+    public PortletSearchThread(Service ms, MailAccount account, String patterns, String searchfields, ArrayList<String> folderIds) throws MessagingException {
         this.ms=ms;
+		this.account=account;
 		this.patterns=patterns;
 		this.folderIds=folderIds;
 		this.searchfields=searchfields;
@@ -90,7 +92,7 @@ public class PortletSearchThread extends Thread {
                 progress++;
 				psr.progress=(int)((100.0/folderIds.size()*progress));
 				
-				FolderCache fc=ms.getFolderCache(folderId);
+				FolderCache fc=account.getFolderCache(folderId);
                 curfolder=fc;
 				psr.curfoldername=fc.getFolderName();
 				
@@ -167,7 +169,7 @@ public class PortletSearchThread extends Thread {
 						}
 						psr.addMessage(msg.getUID(), 
 								folderId, 
-								ms.getInternationalFolderName(ms.getFolderCache(folderId)),
+								ms.getInternationalFolderName(account.getFolderCache(folderId)),
 								msg.getSubject(), 
 								from,
 								to,

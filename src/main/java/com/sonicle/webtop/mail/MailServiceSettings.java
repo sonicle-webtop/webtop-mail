@@ -46,34 +46,33 @@ public class MailServiceSettings extends BaseServiceSettings {
         super(serviceId, domainId);
     }
 	
-    public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
-	public static final String DMS_ARCHIVE = "archive";
-	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";
-	public static final String ATTACHMENT_DIR = "attachment.dir";
-	public static final String MESSAGE_VIEW_MAX_TOS = "message.view.max.tos";
-	public static final String MESSAGE_VIEW_MAX_CCS = "message.view.max.ccs";
-	public static final String SORT_FOLDERS = "sort.folders";
-	public static final String SPAMADM_SPAM = "spamadm.spam";
-	public static final String ADMIN_USER = "admin.user";
-	public static final String ADMIN_PASSWORD = "admin.password";
-	public static final String NETHTOP_VMAIL_SECRET = "nethtop.vmail.secret";
-	public static final String SCHEDULED_EMAILS_DISABLED = "scheduled-emails.disabled";
-	public static final String SIEVE_SPAMFILTER_DISABLED = "sieve.spamfilter.disabled";
-	public static final String IMAP_ACL_LOWERCASE="imap.acl.lowercase";
-
-/*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
-	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
-	public static final String DEFAULT_SCAN_SECONDS = "default.scan.seconds";
-	public static final String DEFAULT_SCAN_CYCLES = "default.scan.cycles";
-	public static final String DEFAULT_FOLDER_SENT = "default.folder.sent";
-	public static final String DEFAULT_FOLDER_DRAFTS = "default.folder.drafts";
-	public static final String DEFAULT_FOLDER_TRASH = "default.folder.trash";
-	public static final String DEFAULT_FOLDER_SPAM = "default.folder.spam";
-	public static final String DEFAULT_INCLUDE_MESSAGE_IN_REPLY = "default.include.message.in.reply";
-	public static final String DEFAULT_PAGE_ROWS = "default.page.rows";
-	public static final String DEFAULT_HOST = "default.host";
-	public static final String DEFAULT_PORT = "default.port";
-	public static final String DEFAULT_PROTOCOL = "default.protocol";*/
+	public boolean isArchivingExternal() {
+        return getBoolean(ARCHIVING_EXTERNAL,false);
+	}
+	
+	public String getArchivingExternalHost() {
+		return getString(ARCHIVING_EXTERNAL_HOST,"localhost");
+	}
+	
+	public int getArchivingExternalPort() {
+		return getInteger(ARCHIVING_EXTERNAL_PORT,143);
+	}
+	
+	public String getArchivingExternalProtocol() {
+		return getString(ARCHIVING_EXTERNAL_PROTOCOL,"imap");
+	}
+	
+	public String getArchivingExternalUsername() {
+		return getString(ARCHIVING_EXTERNAL_USERNAME,"domain-archive");
+	}
+	
+	public String getArchivingExternalPassword() {
+		return getString(ARCHIVING_EXTERNAL_PASSWORD,"secret");
+	}
+	
+	public String getArchivingExternalFolderPrefix() {
+		return getString(ARCHIVING_EXTERNAL_FOLDER_PREFIX,null);
+	}
 	
     public boolean isAutocreateSpecialFolders() {
         return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);

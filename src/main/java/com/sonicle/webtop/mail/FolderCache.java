@@ -154,6 +154,8 @@ public class FolderCache {
     static final FlagTerm recentSearchTerm=new FlagTerm(recentFlags,true);
     static final FlagTerm repliedSearchTerm=new FlagTerm(repliedFlags,true);
     static final FlagTerm forwardedSearchTerm=new FlagTerm(forwardedFlags,true);
+	
+	private MailAccount account=null;
     
     private static final HashMap<String,HashMap<String,Integer>> months=new HashMap<>();
 
@@ -199,33 +201,35 @@ public class FolderCache {
         environment=env;
 //        wtd=environment.getWebTopDomain();
         profile=env.getProfile();
+		account=null;
     }
     
-    public FolderCache(Folder folder, Service ms, PrivateEnvironment env) throws MessagingException {
+    public FolderCache(MailAccount account, Folder folder, Service ms, PrivateEnvironment env) throws MessagingException {
         this(ms,env);
+		this.account=account;
         foldername=folder.getFullName();
         this.folder=folder;
-        String shortfoldername=ms.getShortFolderName(foldername);
-        isInbox=ms.isInboxFolder(foldername);
-        isSent=ms.isSentFolder(shortfoldername);
-        isDrafts=ms.isDraftsFolder(shortfoldername);
-        isTrash=ms.isTrashFolder(shortfoldername);
-        isSpam=ms.isSpamFolder(shortfoldername);
-        isArchive=ms.isArchiveFolder(shortfoldername);
-        isDms=ms.isDmsFolder(shortfoldername);
-        isSharedFolder=ms.isSharedFolder(foldername);
+        String shortfoldername=account.getShortFolderName(foldername);
+        isInbox=account.isInboxFolder(foldername);
+        isSent=account.isSentFolder(shortfoldername);
+        isDrafts=account.isDraftsFolder(shortfoldername);
+        isTrash=account.isTrashFolder(shortfoldername);
+        isSpam=account.isSpamFolder(shortfoldername);
+        isArchive=account.isArchiveFolder(shortfoldername);
+        isDms=ms.isDmsFolder(account,shortfoldername);
+        isSharedFolder=account.isSharedFolder(foldername);
         if (isDrafts||isSent||isTrash||isSpam||isArchive) {
             setCheckUnreads(false);
             setCheckRecents(false);
         }
 
         isSharedInbox=false;
-		if (ms.hasDifferentDefaultFolder() && ms.isDefaultFolder(foldername)) {
+		if (account.hasDifferentDefaultFolder() && account.isDefaultFolder(foldername)) {
 			
 		}
-		else if (ms.isUnderSharedFolder(foldername)) {
+		else if (account.isUnderSharedFolder(foldername)) {
 			isUnderSharedFolder=true;
-			char sep=ms.getFolderSeparator();
+			char sep=account.getFolderSeparator();
             int ix=foldername.indexOf(sep);
             String subname=foldername.substring(ix+1);
 			int isep=subname.indexOf(sep);
@@ -239,7 +243,7 @@ public class FolderCache {
 					isSharedFolder=true;
 				}
             } else { //look for a possible INBOX under a shared folder
-				FolderCache fcparent=ms.getFolderCache(folder.getParent().getFullName());
+				FolderCache fcparent=account.getFolderCache(folder.getParent().getFullName());
 				String fname=folder.getName();
 				if (fcparent.isSharedFolder && fname.equals("INBOX"))
 					isSharedInbox=true;
@@ -363,12 +367,12 @@ public class FolderCache {
     }
 
     public void updateScanFlags() {
-        String sfname=ms.getShortFolderName(foldername);
+        String sfname=account.getShortFolderName(foldername);
         if (isInbox || isSharedInbox) {
             setScanForcedOn(true);
             setScanForcedOff(false);
         }
-        else if (ms.isSpecialFolder(sfname)) {
+        else if (account.isSpecialFolder(sfname)) {
             setScanForcedOn(false);
             //setScanForcedOff(true);
 			setScanForcedOff(false);
@@ -379,6 +383,10 @@ public class FolderCache {
         }
         setScanEnabled(ms.checkScanRules(foldername));
     }
+	
+	public MailAccount getAccount() {
+		return account;
+	}
 
     public void setIsRoot(boolean b) {
         this.isRoot=b;
@@ -1093,36 +1101,36 @@ public class FolderCache {
 		if (canDelete()) {
 			Message mmsgs[]=getMessages(uids,fullthreads);
 			MailUserSettings mus=ms.getMailUserSettings();
-			String sep=""+ms.getFolderSeparator();
+			String sep=""+account.getFolderSeparator();
 			String xfolderarchive=folderarchive;
 			Message xmmsg[]=new Message[1];
 			for(Message mmsg: mmsgs) {
 				folderarchive=xfolderarchive;
 				LocalDate ld=getArchivingReferenceDate(mmsg);
-				FolderCache fcto=ms.checkCreateAndCacheFolder(folderarchive);
+				FolderCache fcto=account.checkCreateAndCacheFolder(folderarchive);
 				if (mus.getArchiveMode().equals(MailSettings.ARCHIVING_MODE_YEAR)) {
 					folderarchive+=sep+ld.getYear();
-					fcto=ms.checkCreateAndCacheFolder(folderarchive);
+					fcto=account.checkCreateAndCacheFolder(folderarchive);
 				} else if (mus.getArchiveMode().equals(MailSettings.ARCHIVING_MODE_MONTH)) {
 					folderarchive+=sep+ld.getYear();
-					fcto=ms.checkCreateAndCacheFolder(folderarchive);
+					fcto=account.checkCreateAndCacheFolder(folderarchive);
 					folderarchive+=sep+ld.getYear()+"-"+StringUtils.leftPad(ld.getMonthOfYear()+"",2,'0');
-					fcto=ms.checkCreateAndCacheFolder(folderarchive);
+					fcto=account.checkCreateAndCacheFolder(folderarchive);
 				}
 				if (mus.isArchiveKeepFoldersStructure()) {
 					String fname=foldername;
 					//strip prefix is present
-					String prefix=ms.getFolderPrefix();
+					String prefix=account.getFolderPrefix();
 					if (prefix!=null && fname.startsWith(prefix)) {
 						fname=fname.substring(prefix.length());
 					}
-					if (ms.isUnderSharedFolder(foldername)) {
-						String mainfolder=ms.getMainSharedFolder(foldername);
+					if (account.isUnderSharedFolder(foldername)) {
+						String mainfolder=account.getMainSharedFolder(foldername);
 						if (fname.equals(mainfolder)) fname="INBOX";
 						else fname=fname.substring(mainfolder.length()+1);
 					}
 					folderarchive+=sep+fname;
-					fcto=ms.checkCreateAndCacheFolders(folderarchive);
+					fcto=account.checkCreateAndCacheFolders(folderarchive);
 				}
 				xmmsg[0]=mmsg;
 				folder.copyMessages(xmmsg, fcto.folder);
@@ -1334,15 +1342,15 @@ public class FolderCache {
 
     public Folder createFolder(String name) throws MessagingException {
         Folder newfolder=null;
-        if (!ms.hasDifferentDefaultFolder() && isRoot) {
-            String prefix=ms.getFolderPrefix();
+        if (!account.hasDifferentDefaultFolder() && isRoot) {
+            String prefix=account.getFolderPrefix();
             if (prefix!=null) name=prefix+name;
-            newfolder=ms.getFolder(name);
+            newfolder=account.getFolder(name);
         } else {
             newfolder=folder.getFolder(name);
         }
         if (newfolder.create(Folder.HOLDS_MESSAGES)) {
-            ms.addFoldersCache(this, newfolder);
+            account.addFoldersCache(this, newfolder);
         }
         else newfolder=null;
         return newfolder;

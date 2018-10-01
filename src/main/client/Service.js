@@ -47,6 +47,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	],
 
 	favoritesTree: null,
+	archiveTree: null,
 	imapTree: null,
 	toolbar: null,
 	messagesPanel: null,
@@ -152,6 +153,31 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			
 		});
 		
+		if (me.getVar("isArchivingExternal")) {
+			me.archiveTree=Ext.create('Sonicle.webtop.mail.ArchiveTree',{
+				mys: me,
+				width: '100%',
+				rootVisible: true,
+				padding: '0 0 20 0',
+				border: false,
+				bodyStyle: {
+					borderTopColor: 'transparent'
+				},
+
+				listeners: {
+					itemcontextmenu: function(v, rec, itm, i, e, eopts) {
+					},
+					containercontextmenu: function(v, e, eopts) {
+					},
+					rowclick: function(t, r, tr, ix, e, eopts) {
+						me.imapTree.setSelection(null);
+						me.folderClicked(t, r, tr, ix, e, eopts);
+					}
+				}
+
+			});
+		}
+		
 		me.imapTree=Ext.create('Sonicle.webtop.mail.ImapTree',{
 			mys: me,
 			width: '100%',
@@ -217,6 +243,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			var r=context.record;
 			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||r.get("isArchive")||(r.get("depth")===2 && r.get("isUnderShared"))) return false;
 		});
+
+		var trees=[
+			me.favoritesTree,
+		];
+		if (me.archiveTree) trees.push(me.archiveTree);
+		
+		trees.push(me.imapTree);
 		
 		me.trees=Ext.create({
 				xtype: 'panel',
@@ -224,10 +257,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				layout: 'vbox',
 				region: 'center',
 				scrollable: true,
-				items: [
-					me.favoritesTree,
-					me.imapTree
-				]
+				items: trees
 		});
 		
 		me.messagesPanel.setImapStore(me.imapTree.getStore());

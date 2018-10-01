@@ -32,29 +32,53 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.model.ImapTreeModel', {
-    extend: 'Ext.data.TreeModel',
-    idProperty: 'id',
-    fields: [
-		{ name: "id" },
-		{ name: "text" },
-		{ name: "folder" },
-		{ name: "leaf" },
-		{ name: "iconCls" },
-		{ name: "unread" },
-		{ name: "hasUnread" },
-		{ name: "isSharedToSomeone" },
-		{ name: "isSharedRoot" },
-		{ name: "isInbox" },
-		{ name: "isDrafts" },
-		{ name: "isSent" },
-		{ name: "isTrash" },
-		{ name: "isSpam" },
-		{ name: "isArchive" },
-		{ name: "scanOff" },
-		{ name: "scanOn" },
-		{ name: "scanEnabled" },
-		{ name: "accountId" }		
-    ]
+Ext.define('Sonicle.webtop.mail.ArchiveTree', {
+	extend: 'Sonicle.webtop.mail.SimpleImapTree',
+	
+	constructor: function(cfg) {
+		var me = this;
+		
+		Ext.apply(cfg,{
+			viewConfig: {
+/*				plugins: { 
+					ptype: 'imaptreeviewdragdrop' ,
+					moveFolder: function(src,dst) {
+						cfg.mys.moveFolder(src,dst);
+					},
+					moveMessages: function(data,dst) {
+						data.view.grid.moveSelection(data.srcFolder,dst,data.records);
+					},
+					copyMessages: function(data,dst) {
+						data.view.grid.copySelection(data.srcFolder,dst,data.records);
+					},
+					copyAttachment: function(data,dst) {
+						cfg.mys.copyAttachment(data.params.folder,dst,data.params.idmessage,data.params.idattach);
+					}
+				},*/
+				markDirty: false,
+				loadMask: true,
+				animate: true
+			},
+			
+			store: Ext.create('Ext.data.TreeStore', {
+				model: 'Sonicle.webtop.mail.model.ImapTreeModel',
+				proxy: WTF.proxy(cfg.mys.ID,'GetArchiveTree'),
+				root: {
+					id: '/',
+					text: 'Archive Tree',
+					folder: WT.res("word.archive")+" - "+WT.getVar("userDisplayName"),
+					unread: 0,
+					iconCls: 'wtmail-icon-archive-xs',
+					expanded: true
+				},
+				rootVisible: false
+			})
+		});
+
+		me.callParent([cfg]);
+		
+	}
+	
+	
 });
 

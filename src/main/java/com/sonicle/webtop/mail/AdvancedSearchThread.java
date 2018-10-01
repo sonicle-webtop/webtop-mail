@@ -51,6 +51,7 @@ public class AdvancedSearchThread extends Thread {
     public static final int FOLDERTYPE_SHARED=4;
 
     private Service ms;
+	private MailAccount account;
     private int folderType;
     private boolean subfolders;
 	private boolean trashspam;
@@ -67,28 +68,30 @@ public class AdvancedSearchThread extends Thread {
     ArrayList<FolderCache> folders=new ArrayList<FolderCache>();
     ArrayList<Message> result=new ArrayList<Message>();
 
-    public AdvancedSearchThread(Service ms, String folder, boolean trashspam, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
+    public AdvancedSearchThread(Service ms, MailAccount acount, String folder, boolean trashspam, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
         this.ms=ms;
+		this.account=account;
         this.folderType=FOLDERTYPE_SPECIFIC;
         this.subfolders=subfolders;
 		this.trashspam=trashspam;
         this.and=and;
         this.entries=entries;
 
-        FolderCache fc=ms.getFolderCache(folder);
+        FolderCache fc=account.getFolderCache(folder);
         folders.add(fc);
         if (subfolders) addChildren(fc);
     }
 
-    public AdvancedSearchThread(Service ms, int folderType, boolean trashspam, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
+    public AdvancedSearchThread(Service ms, MailAccount account, int folderType, boolean trashspam, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
         this.ms=ms;
+		this.account=account;
         this.folderType=folderType;
         this.subfolders=subfolders;
 		this.trashspam=trashspam;
         this.and=and;
         this.entries=entries;
 
-        FolderCache fcr=ms.getRootFolderCache();
+        FolderCache fcr=account.getRootFolderCache();
         switch(folderType) {
 
             case FOLDERTYPE_ALL:
@@ -101,7 +104,7 @@ public class AdvancedSearchThread extends Thread {
                 }
                 break;
             case FOLDERTYPE_SHARED:
-                FolderCache sfc[]=ms.getSharedFoldersCache();
+                FolderCache sfc[]=account.getSharedFoldersCache();
                 if (sfc!=null) {
                     for(FolderCache fc: sfc) addChildren(fc);
                 }
@@ -188,9 +191,9 @@ public class AdvancedSearchThread extends Thread {
     private void addChildren(FolderCache fc) throws MessagingException {
 		Folder children[]=fc.getFolder().list();
 		if (children!=null) {
-			ArrayList<Folder> achildren=ms.sortFolders(children);
+			ArrayList<Folder> achildren=ms.sortFolders(account,children);
 			for(Folder folder: achildren) {
-				FolderCache fcc=ms.getFolderCache(folder.getFullName());
+				FolderCache fcc=account.getFolderCache(folder.getFullName());
 				if (fcc!=null) {
 					if (!trashspam) {
 						//skip trash and spam from advanced search

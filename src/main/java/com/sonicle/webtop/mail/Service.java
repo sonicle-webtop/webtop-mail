@@ -83,7 +83,6 @@ import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
 import com.sonicle.webtop.core.app.servlet.ServletHelper;
-import com.sonicle.webtop.core.util.ICal4jUtils;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OScan;
@@ -137,15 +136,12 @@ import java.sql.*;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.Map.Entry;
 import java.util.jar.*;
 import java.util.regex.Pattern;
 import javax.activation.*;
 import javax.mail.*;
 import javax.mail.Message.RecipientType;
 import javax.mail.internet.*;
-import javax.mail.search.HeaderTerm;
-import javax.management.openmbean.OpenMBeanInfo;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
@@ -154,8 +150,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
-import org.joda.time.DateTime;
-import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -231,7 +225,7 @@ public class Service extends BaseService {
 	
 	private boolean sortfolders=false;
 	
-	private boolean hasDifferentDefaultFolder=false;
+	//private boolean hasDifferentDefaultFolder=false;
 	
 	public static final String HEADER_SONICLE_FROM_DRAFTER="Sonicle-from-drafter";	
 	
@@ -244,32 +238,38 @@ public class Service extends BaseService {
 //	private static String webtopHTMLMessage = "This email has been sent through Sonicle WebMail system [ <A HREF='http://www.sonicle.com'>http://www.sonicle.com</A> ]";
 //	private static String unwantedTags[] = {"style"};
 
+	protected static final String MAIN_ACCOUNT_ID="main";
+	protected static final String ARCHIVE_ACCOUNT_ID="archive";
+	
 	private MailManager mailManager;
-	private Session session;
-	private Store store;
-	private String storeProtocol;
-	private boolean disconnecting = false;
-	private String sharedPrefixes[] = null;
-	private char folderSeparator = 0;
-	private String folderPrefix = null;
+	private MailAccount mainAccount=null;
+	private MailAccount archiveAccount=null;
+	private HashMap<String,MailAccount> accounts=new HashMap<>();
+	//private Session session;
+	//private Store store;
+	//private String storeProtocol;
+	//private boolean disconnecting = false;
+	//private String sharedPrefixes[] = null;
+	//private char folderSeparator = 0;
+	//private String folderPrefix = null;
 	
 	private PrivateEnvironment environment = null;
 	private MailUserProfile mprofile;
 	private MailServiceSettings ss = null;
 	private MailUserSettings us = null;
 	private CoreUserSettings cus = null;
-	private boolean validated = false;
+	//private boolean validated = false;
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
-	private boolean hasAnnotations=false;
+	//private boolean hasAnnotations=false;
 	
-	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
-	private FolderCache fcRoot = null;
-	private FolderCache[] fcShared = null;
+	//private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
+	//private FolderCache fcRoot = null;
+	//private FolderCache[] fcShared = null;
 	private FolderCache fcProvided = null;
 	
-	private String skipReplyFolders[] = null;
-	private String skipForwardFolders[] = null;
+	//private String skipReplyFolders[] = null;
+	//private String skipForwardFolders[] = null;
 	
 	private static ArrayList<String> inlineableMimes = new ArrayList<String>();
 	
@@ -335,8 +335,8 @@ public class Service extends BaseService {
 		String mailPassword = mprofile.getMailPassword();
 		String authorizationId=mailUsername;
 		boolean isImpersonated=profile.getPrincipal().isImpersonated();
+		String vmailSecret=ss.getNethTopVmailSecret();
 		if (isImpersonated) {
-			String vmailSecret=ss.getNethTopVmailSecret();
 			//use sasl rfc impersonate if no vmailSecret
 			if (vmailSecret==null) {
 				//TODO: implement sasl rfc authorization id if possible
@@ -351,8 +351,9 @@ public class Service extends BaseService {
 		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword);
 		fcProvided = new FolderCache(this, environment);
 		
-		folderPrefix = mprofile.getFolderPrefix();
-		storeProtocol = mprofile.getMailProtocol();
+		mainAccount=createAccount(MAIN_ACCOUNT_ID);
+		mainAccount.setFolderPrefix(mprofile.getFolderPrefix());
+		mainAccount.setProtocol(mprofile.getMailProtocol());
 		
 		FP.add(FetchProfile.Item.ENVELOPE);
 		FP.add(FetchProfile.Item.FLAGS);
@@ -374,25 +375,33 @@ public class Service extends BaseService {
 		
 		sortfolders=ss.isSortFolder();
 		
-		hasDifferentDefaultFolder=us.getDefaultFolder()!=null;
+		mainAccount.setDifferentDefaultFolder(us.getDefaultFolder());
 		
-		session=environment.getSession().getMailSession();
-		//session=Session.getDefaultInstance(props, null);
-		session.setDebug(imapDebug);
+		mainAccount.setMailSession(environment.getSession().getMailSession());
+		mainAccount.setSessionDebug(imapDebug);
 
-		try {
-			session.setProvider(new Provider(Provider.Type.STORE,"imap","com.sonicle.mail.imap.SonicleIMAPStore","Sonicle","1.0"));
-			session.setProvider(new Provider(Provider.Type.STORE,"imaps","com.sonicle.mail.imap.SonicleIMAPSSLStore","Sonicle","1.0"));
-		} catch (NoSuchProviderException exc) {
-			logger.error("Cannot create mail store for {}", profile.getUserId(), exc);
+		mainAccount.setPort(mprofile.getMailPort());
+		mainAccount.setHost(mprofile.getMailHost());
+		mainAccount.setUsername(mprofile.getMailUsername());
+		mainAccount.setPassword(mprofile.getMailPassword());
+		mainAccount.setReplyTo(mprofile.getReplyTo());
+		
+		if (isImpersonated) {
+			if (vmailSecret==null) mainAccount.setSaslRFCImpersonate(mprofile.getMailUsername(), ss.getAdminUser(), ss.getAdminPassword());
+			else mainAccount.setNethImpersonate(mprofile.getMailUsername(),vmailSecret);
 		}
+		mainAccount.setFolderSent(mprofile.getFolderSent());
+		mainAccount.setFolderDrafts(mprofile.getFolderDrafts());
+		mainAccount.setFolderSpam(mprofile.getFolderSpam());
+		mainAccount.setFolderTrash(mprofile.getFolderTrash());
+		mainAccount.setFolderArchive(mprofile.getFolderArchive());
 		
 		//TODO initialize user for first time use
 		//SettingsManager sm = wta.getSettingsManager();
 		//boolean initUser = LangUtils.value(sm.getUserSetting(profile, "mail", com.sonicle.webtop.Settings.INITIALIZE), false);
 		//if(initUser) initializeUser(profile);
 
-		mft = new MailFoldersThread(this, environment);
+		mft = new MailFoldersThread(this, environment, mainAccount);
 		mft.setCheckAll(mprofile.isScanAll());
 		mft.setSleepInbox(mprofile.getScanSeconds());
 		mft.setSleepCycles(mprofile.getScanCycles());
@@ -400,32 +409,26 @@ public class Service extends BaseService {
 			loadTags();
 		
 			mft.abort();
-			checkStoreConnected();
-			
-			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
+			mainAccount.checkStoreConnected();
 			
 			//prepare special folders if not existant
 			if (ss.isAutocreateSpecialFolders()) {
-				checkCreateFolder(mprofile.getFolderSent());
-				checkCreateFolder(mprofile.getFolderDrafts());
-				checkCreateFolder(mprofile.getFolderTrash());
-				checkCreateFolder(mprofile.getFolderSpam());
-				checkCreateFolder(mprofile.getFolderArchive());
+				mainAccount.createSpecialFolders();
 			}
 			
-			skipReplyFolders = new String[]{
-				mprofile.getFolderDrafts(),
-				mprofile.getFolderSent(),
-				mprofile.getFolderSpam(),
-				mprofile.getFolderTrash(),
-				mprofile.getFolderArchive()
-			};
-			skipForwardFolders = new String[]{
-				mprofile.getFolderSpam(),
-				mprofile.getFolderTrash()
-			};
+			mainAccount.setSkipReplyFolders(new String[]{
+				mainAccount.getFolderDrafts(),
+				mainAccount.getFolderSent(),
+				mainAccount.getFolderSpam(),
+				mainAccount.getFolderTrash(),
+				mainAccount.getFolderArchive()
+			});
+			mainAccount.setSkipForwardFolders(new String[]{
+				mainAccount.getFolderSpam(),
+				mainAccount.getFolderTrash(),
+			});
 			
-			loadFoldersCache();
+			mainAccount.loadFoldersCache(mft);
 			if (!imapDebug) mft.start();
 			
 			vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs");
@@ -433,10 +436,51 @@ public class Service extends BaseService {
 			registerUploadListener("UploadCloudFile", new OnUploadCloudFile());
 			
 			if (!profile.getPrincipal().getAuthenticationDomain().getDirUri().getScheme().equals(LdapNethDirectory.SCHEME))
-				setSharedSeen(us.isSharedSeen());
+				setSharedSeen(mainAccount,us.isSharedSeen());
+			
+			
+			//if external archive, initialize account
+			if (ss.isArchivingExternal()) {
+				archiveAccount=createAccount(ARCHIVE_ACCOUNT_ID);
+				archiveAccount.setFolderPrefix(ss.getArchivingExternalFolderPrefix());
+				archiveAccount.setProtocol(ss.getArchivingExternalProtocol());
+
+				archiveAccount.setMailSession(environment.getSession().getMailSession());
+				archiveAccount.setSessionDebug(imapDebug);
+
+				archiveAccount.setPort(ss.getArchivingExternalPort());
+				archiveAccount.setHost(ss.getArchivingExternalHost());
+				archiveAccount.setUsername(ss.getArchivingExternalUsername());
+				archiveAccount.setPassword(ss.getArchivingExternalPassword());
+				
+				archiveAccount.setFolderSent(mprofile.getFolderSent());
+				archiveAccount.setFolderDrafts(mprofile.getFolderDrafts());
+				archiveAccount.setFolderSpam(mprofile.getFolderSpam());
+				archiveAccount.setFolderTrash(mprofile.getFolderTrash());
+				archiveAccount.setFolderArchive(mprofile.getFolderArchive());
+				
+				archiveAccount.checkStoreConnected();
+				archiveAccount.loadFoldersCache(archiveAccount);
+			}
+
+			
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
+	}
+	
+	private MailAccount createAccount(String id) {
+		MailAccount account=new MailAccount(id,this,environment);
+		accounts.put(id, account);
+		return account;
+	}
+	
+	public MailAccount getMainAccount() {
+		return mainAccount;
+	}
+	
+	public MailAccount getArchiveAccount() {
+		return archiveAccount;
 	}
 	
 	private synchronized void loadTags() throws WTException {		
@@ -460,133 +504,6 @@ public class Service extends BaseService {
 		return this.cus;
 	}
 	
-	public boolean hasDifferentDefaultFolder() {
-		return hasDifferentDefaultFolder;
-	}
-	
-	
-	public Session getMailSession() {
-		return this.session;
-	}
-	
-	public boolean isValid() throws MessagingException {
-		if (!validated) {
-			if (environment == null) {
-				return false;
-			}
-			validateUser();
-		}
-		return validated;
-	}
-	
-	public boolean checkStoreConnected() throws MessagingException {
-		if (environment == null) {
-			return false;
-		}
-		UserProfile profile = environment.getProfile();
-		synchronized (profile) {
-			if (!isConnected()) {
-				return validateUser();
-			}
-			return true;
-		}
-	}
-	
-	private boolean connect() {
-		UserProfile profile = environment.getProfile();
-		int port = mprofile.getMailPort();
-		String mailHost = mprofile.getMailHost();
-		String mailUsername = mprofile.getMailUsername();
-		String mailPassword = mprofile.getMailPassword();
-		String authorizationId=mailUsername;
-		boolean isImpersonated=profile.getPrincipal().isImpersonated();
-		try {
-			if (store!=null && store.isConnected()) {
-				disconnecting = true;
-				store.close();
-			}
-			if (isImpersonated) {
-				String vmailSecret=ss.getNethTopVmailSecret();
-				//use sasl rfc impersonate if no vmailSecret
-				if (vmailSecret==null) {
-					session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
-					mailUsername=ss.getAdminUser();
-					mailPassword=ss.getAdminPassword();
-				} else {
-					mailUsername+="*vmail";
-					mailPassword=vmailSecret;
-				}
-			}
-			
-			store=session.getStore(storeProtocol);
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-		}
-		boolean sucess = true;
-		disconnecting = false;
-		try {
-			
-			//warning: trace mode shows credentials
-			Service.logger.trace("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
-			if (isImpersonated)
-				Service.logger.info(" impersonating "+authorizationId);
-			
-			if (port > 0) {
-				store.connect(mailHost, port, mailUsername, mailPassword);
-			} else {
-				store.connect(mailHost, mailUsername, mailPassword);
-			}
-			folderSeparator = getDefaultFolder().getSeparator();
-			Folder un[] = store.getUserNamespaces("");
-			sharedPrefixes = new String[un.length];
-			int ix = 0;
-			for (Folder sp : un) {
-				String s = sp.getFullName();
-				//if (s.endsWith(""+folderSeparator)) s=s.substring(0,s.length()-1);
-				sharedPrefixes[ix] = s;
-				++ix;
-			}
-		} catch (MessagingException exc) {
-			logger.error("Error connecting to the mail server", exc);
-			sucess = false;
-		}
-		
-		return sucess;
-		
-	}
-	
-	private boolean isConnected() {
-		if (store == null) {
-			return false;
-		}
-		return store.isConnected();
-	}
-	
-	public boolean disconnect() {
-		
-		try {
-			if (store.isConnected()) {
-				disconnecting = true;
-				store.close();
-			}
-			
-		} catch (MessagingException ex) {
-			Service.logger.error("Exception",ex);
-		}
-		
-		return true;
-		
-	}
-
-	/**
-	 * Validate the user login and password through the email server
-	 *
-	 */
-	private boolean validateUser() throws MessagingException {
-		validated = connect();
-		return validated;
-	}
-
 	/**
 	 * Logout
 	 *
@@ -603,43 +520,6 @@ public class Service extends BaseService {
 
 	public MailFoldersThread getMailFoldersThread() {
 		return mft;
-	}
-	
-	public char getFolderSeparator() throws MessagingException {
-		return folderSeparator;
-	}
-	
-	public FolderCache[] getSharedFoldersCache() throws MessagingException {
-		if (fcShared == null) {
-			if (sharedPrefixes != null) {
-				String sf[] = sharedPrefixes;
-				fcShared = new FolderCache[sf.length];
-				for (int i = 0; i < sf.length; ++i) {
-					fcShared[i] = getFolderCache(sf[i]);
-				}
-			}
-		}
-		return fcShared;
-	}
-	
-	public FolderCache getRootFolderCache() {
-		return fcRoot;
-	}
-	
-	public Set<Entry<String, FolderCache>> getFolderCacheEntries() {
-		return foldersCache.entrySet();
-	}
-	
-	public FolderCache getFolderCache(String foldername) throws MessagingException {
-		return foldersCache.get(foldername);
-	}
-	
-	public void setFolderPrefix(String prefix) {
-		folderPrefix = prefix;
-	}
-	
-	public String getFolderPrefix() {
-		return folderPrefix;
 	}
 	
 	public void dmsArchiveMessages(FolderCache from, long nuids[], String idcategory, String idsubcategory, boolean fullthreads) throws MessagingException, FileNotFoundException, IOException {
@@ -702,6 +582,15 @@ public class Service extends BaseService {
 		from.markDmsArchivedMessages(nuids,fullthreads);
 	}
 	
+	private void deleteAutosavedDraft(MailAccount account, long msgId) throws MessagingException {
+		account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
+	}
+	
+	private MailAccount getAccount(Identity ident) {
+		if (ident==null) return mainAccount;
+		MailAccount account=ident.getAccount();
+		return account!=null?account:mainAccount;
+	}
 	
 	public void processManageAutosave(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		super.processManageAutosave(request, response, out);
@@ -711,13 +600,14 @@ public class Service extends BaseService {
 
 		//save also in drafts
 		try {
+			Identity id=mailManager.findIdentity(jsmas.identityId);
+			MailAccount account=getAccount(id);
 			JsMessage jsmsg=new JsMessage();
 			jsmsg.content=jsmas.content;
 			jsmsg.folder=jsmas.folder;
 			jsmsg.format=jsmas.format;
 			jsmsg.forwardedfolder=jsmas.forwardedfolder;
 			jsmsg.forwardedfrom=jsmas.forwardedfrom;
-			Identity id=mailManager.findIdentity(jsmas.identityId);
 			jsmsg.from=id.getDisplayName()+" <"+id.getEmail()+">";
 			jsmsg.identityId=jsmas.identityId;
 			jsmsg.inreplyto=jsmas.inreplyto;
@@ -736,11 +626,11 @@ public class Service extends BaseService {
 			jsmsg.subject=jsmas.subject;
 
 			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false);
-			checkStoreConnected();
-			FolderCache fc = getFolderCache(mprofile.getFolderDrafts());
+			account.checkStoreConnected();
+			FolderCache fc = account.getFolderCache(account.getFolderDrafts());
 			
 			//find and delete old draft for this msgid
-			deleteAutosavedDraft(msgId);
+			account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
 			
 			msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
 			Exception exc = saveMessage(msg, null, fc);
@@ -748,19 +638,6 @@ public class Service extends BaseService {
 			logger.error("Error on autosave in drafts!",exc);
 		}
 	}	
-	
-	private void deleteAutosavedDraft(long msgId) throws MessagingException {
-		FolderCache fc=getFolderCache(mprofile.getFolderDrafts());
-		Folder folder=fc.getFolder();
-		boolean wasopen=folder.isOpen();
-		if (!wasopen) folder.open(Folder.READ_WRITE);
-		Message[] oldmsgs=folder.search(new HeaderTerm(HEADER_X_WEBTOP_MSGID,""+msgId));
-		if (oldmsgs!=null && oldmsgs.length>0) {
-			for(Message m: oldmsgs) m.setFlag(Flags.Flag.DELETED, true);
-			folder.expunge();
-		}
-		if (!wasopen) folder.close(true);
-	}
 	
 	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
 		from.moveMessages(uids, to, fullthreads);
@@ -806,142 +683,17 @@ public class Service extends BaseService {
 		from.setMessagesUnseen(uids);
 	}
 	
-	public String getShortFolderName(String fullname) {
-		String shortname = fullname;
-		if (StringUtils.startsWithIgnoreCase(fullname, folderPrefix)) {
-			shortname = fullname.substring(folderPrefix.length());
-		}
-		return shortname;
-	}
-	
-	public String getLastFolderName(String fullname) {
-		String lasttname = fullname;
-		if (lasttname.indexOf(folderSeparator) >= 0) {
-			lasttname = lasttname.substring(lasttname.lastIndexOf(folderSeparator) + 1);
-		}
-		return lasttname;
-	}
-	
-	public boolean deleteFolder(String fullname) throws MessagingException {
-		return deleteFolder(getFolder(fullname));
-	}
-	
-	public boolean deleteFolder(Folder folder) throws MessagingException {
-		for (Folder subfolder : folder.list()) {
-			deleteFolder(subfolder);
-		}
+	public void hideFolder(MailAccount account, String foldername) throws MessagingException {
+		Folder folder=account.getFolder(foldername);
 		try { folder.close(false); } catch(Throwable exc) {}
-		boolean retval = folder.delete(true);
-		if (retval) {
-			destroyFolderCache(getFolderCache(folder.getFullName()));
-		}
-		return retval;
+		account.destroyFolderCache(foldername);
+		if (account==mainAccount) us.setFolderHidden(foldername, true);
+		else us.setFolderHidden(mainAccount.getId()+"_"+foldername, true);
 	}
 	
-	public void hideFolder(String foldername) throws MessagingException {
-		Folder folder=getFolder(foldername);
-		try { folder.close(false); } catch(Throwable exc) {}
-		destroyFolderCache(getFolderCache(foldername));
-		us.setFolderHidden(foldername, true);
-	}
-	
-	public boolean emptyFolder(String fullname) throws MessagingException {
-		FolderCache fc = getFolderCache(fullname);
-		for (Folder child: fc.getFolder().list()) {
-			deleteFolder(child);
-		}
-		fc.deleteAllMessages();
-	  
-		return true;
-	}
-	
-	public FolderCache trashFolder(String fullname) throws MessagingException {
-		if (!isUnderTrashFolder(fullname)) {
-			String foldertrash=mprofile.getFolderTrash();
-			if (isUnderSharedFolder(fullname)) {
-				String mainfolder=getMainSharedFolder(fullname);
-				if (mainfolder!=null) {
-					foldertrash = mainfolder + folderSeparator + getLastFolderName(foldertrash);
-				}
-			}
-			return moveFolder(fullname,foldertrash);
-		}
-		else {
-			deleteFolder(fullname);
-			return null;
-		}
-	}
-	
-	public FolderCache moveFolder(String source, String dest) throws MessagingException {
-		Folder oldfolder = getFolder(source);
-		String oldname = oldfolder.getName();
-		//System.out.println("moveFolder "+source+" -> "+dest);
-		Folder newfolder;
-		if (dest != null && dest.trim().length() > 0) {
-			String newname = dest + getFolderSeparator() + oldname;
-			newfolder = getFolder(newname);
-		} else {
-			if (hasDifferentDefaultFolder()) {
-				String prefix=getDefaultFolder().getFullName();
-				String newname=oldname;
-				if (prefix!=null) newname=prefix+folderSeparator+newname;
-				newfolder=getFolder(newname);
-			} else {
-				String prefix = getFolderPrefix();
-				String newname = oldname;
-				if (prefix != null) {
-					newname = prefix + newname;
-				}
-				newfolder = getFolder(newname);
-			}
-		}
-		FolderCache fcsrc = getFolderCache(source);
-		if (fcsrc != null) {
-			destroyFolderCache(fcsrc);
-		}
-		//System.out.println(oldfolder.getFullName()+" renameTo "+newfolder.getFullName());
-		boolean done = oldfolder.renameTo(newfolder);
-		//System.out.println("done "+done);
-		if (done) {
-			if (dest != null) {
-				FolderCache tfc = getFolderCache(newfolder.getParent().getFullName());
-				return addFoldersCache(tfc, newfolder);
-			} else {
-				return addFoldersCache(fcRoot, newfolder);
-			}
-		}
-		return null;
-	}
-	
-	public String renameFolder(String orig, String newname) throws MessagingException {
-		FolderCache fc = getFolderCache(orig);
-		FolderCache fcparent = fc.getParent();
-		Folder oldfolder = fc.getFolder();
-		destroyFolderCache(fc);
-		Folder newfolder = fcparent.getFolder().getFolder(newname);
-		boolean done = oldfolder.renameTo(newfolder);
-		if (!done) {
-			throw new MessagingException("Rename failed");
-		}
-		
-		//trick for Dovecot on NethServer: under shared folders, create and destroy a fake folder
-		//or rename will not work correctly
-		if (isUnderSharedFolder(newfolder.getFullName())) {
-			Map<String,String> map=((IMAPStore)store).id(null);
-			if (map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot")) {
-				String trickName="_________"+System.currentTimeMillis();
-				Folder trickFolder=fcparent.getFolder().getFolder(trickName);
-				try {
-					trickFolder.create(Folder.READ_ONLY);
-					trickFolder.delete(true);
-				} catch(MessagingException exc) {
-
-				}
-			}
-		}
-		
-		addFoldersCache(fcparent, newfolder);
-		return newfolder.getFullName();
+	public boolean isFolderHidden(MailAccount account, String foldername) {
+		if (account==mainAccount) return us.isFolderHidden(foldername);
+		else return us.isFolderHidden(mainAccount.getId()+"_"+foldername);
 	}
 	
 	private InternetAddress getInternetAddress(String email) throws UnsupportedEncodingException, AddressException {
@@ -1023,7 +775,9 @@ public class Service extends BaseService {
 		} catch (Exception ex) {}
 		
 		try {
-			MimeMessage message = new MimeMessage(session);
+			MailAccount account=getAccount(ident);
+			
+			MimeMessage message = new MimeMessage(account.getMailSession());
 			message.setSubject(subject);
 			message.addFrom(new InternetAddress[] {from});
 
@@ -1061,9 +815,10 @@ public class Service extends BaseService {
 			}
 		}
 		String sentfolder = getSentFolder(ident);
+		MailAccount account=getAccount(ident);
 		try {
 			Transport.send(msg);
-			saveSent(msg, sentfolder);
+			saveSent(account, msg, sentfolder);
 			return true;
 			
 		} catch (Exception ex) {
@@ -1075,13 +830,14 @@ public class Service extends BaseService {
 	
 	public String getSentFolder(Identity ident) {
 		UserProfile profile = environment.getProfile();
-		String sentfolder = mprofile.getFolderSent();
+		String sentfolder = mainAccount.getFolderSent();
 		if (ident != null ) {
+			MailAccount account = getAccount(ident);
 			String mainfolder=ident.getMainFolder();
 			if (mainfolder != null && mainfolder.trim().length() > 0) {
-				String newsentfolder = mainfolder + folderSeparator + getLastFolderName(sentfolder);
+				String newsentfolder = mainfolder + account.getFolderSeparator() + account.getLastFolderName(sentfolder);
 				try {
-					Folder folder = getFolder(newsentfolder);
+					Folder folder = account.getFolder(newsentfolder);
 					if (folder.exists()) {
 						sentfolder = newsentfolder;
 					}
@@ -1090,6 +846,7 @@ public class Service extends BaseService {
 				}
 			}
 		}
+
 		return sentfolder;
 	}
 	
@@ -1112,6 +869,7 @@ public class Service extends BaseService {
 			}
 		}*/
 		String sentfolder=getSentFolder(ident);
+		MailAccount account=getAccount(ident);
 		Exception retexc = null;
 		Message msg = null;
 		try {
@@ -1124,7 +882,7 @@ public class Service extends BaseService {
 
 		//if sent succesful, save outgoing message
 		if (retexc == null && msg != null) {
-			retexc = saveSent(msg, sentfolder);
+			retexc = saveSent(account, msg, sentfolder);
 			
 		}
 		return retexc;
@@ -1135,11 +893,11 @@ public class Service extends BaseService {
 		UserProfile profile = environment.getProfile();
 		String sender = profile.getEmailAddress();
 		String name = profile.getDisplayName();
-		String replyto = mprofile.getReplyTo();
+		Identity from = msg.getFrom();
+		String replyto = getAccount(from).getReplyTo();
 		boolean isOtherIdentity=false;
 		
-		if (msg.getFrom() != null) {
-			Identity from = msg.getFrom();
+		if (from != null) {
 			isOtherIdentity=!from.isMainIdentity();
 			sender = from.getEmail();
 			name = from.getDisplayName();
@@ -1175,7 +933,7 @@ public class Service extends BaseService {
 		String[] bcc = SimpleMessage.breakAddr(smsg.getBcc());
 		String replyTo = smsg.getReplyTo();
 		
-		msg = new MimeMessage(session);
+		msg = new MimeMessage(mainAccount.getMailSession());
 		msg.setFrom(getInternetAddress(from));
 		InternetAddress ia = null;
 
@@ -1359,7 +1117,7 @@ public class Service extends BaseService {
 					if (oldParts[r] instanceof Message) {
 //                Service.logger.debug("Attachment is a message");
 						Message msgpart = (Message) oldParts[r];
-						MimeMessage mm = new MimeMessage(session);
+						MimeMessage mm = new MimeMessage(mainAccount.getMailSession());
 						mm.addFrom(msgpart.getFrom());
 						mm.setRecipients(Message.RecipientType.TO, msgpart.getRecipients(Message.RecipientType.TO));
 						mm.setRecipients(Message.RecipientType.CC, msgpart.getRecipients(Message.RecipientType.CC));
@@ -1442,11 +1200,11 @@ public class Service extends BaseService {
 		
 	}
 	
-	private Exception saveSent(Message msg, String sentfolder) {
+	private Exception saveSent(MailAccount account, Message msg, String sentfolder) {
 		Exception retexc = null;
 		try {
-			checkCreateFolder(sentfolder);
-			Folder outgoing = getFolder(sentfolder);
+			account.checkCreateFolder(sentfolder);
+			Folder outgoing = account.getFolder(sentfolder);
 			msg.setFlag(Flags.Flag.SEEN, true);
 			
 			Message[] saveMsgs = new MimeMessage[1];
@@ -1502,13 +1260,13 @@ public class Service extends BaseService {
 		UserProfile profile = environment.getProfile();
 		String sender = profile.getEmailAddress();
 		String name = profile.getDisplayName();
-		String replyto = mprofile.getReplyTo();
+		Identity from = msg.getFrom();
+		String replyto = getAccount(from).getReplyTo();
 		
-		if (msg.getFrom() != null) {
-			Identity from = msg.getFrom();
+		if (from != null) {
 			sender = from.getEmail();
 			name = from.getDisplayName();
-			replyto = sender;
+			if ( replyto==null|| replyto.trim().length()==0) replyto = sender;
 		}
 		
 		msg.setReplyTo(replyto);
@@ -1540,7 +1298,7 @@ public class Service extends BaseService {
 	}
 	
 	private SimpleMessage getForwardMsg(long id, Message msg, boolean richContent, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean attached) {
-		Message forward = new MimeMessage(session);
+		Message forward = new MimeMessage(mainAccount.getMailSession());
 		if (!attached) {
 			try {
 				StringBuffer htmlsb = new StringBuffer();
@@ -1773,8 +1531,8 @@ public class Service extends BaseService {
 	}
 
 	//CLONE OF ImapMessage.reply() that does not set the ANSWERED Flag
-    public Message reply(MimeMessage orig, boolean replyToAll, boolean fromSent) throws MessagingException {
-		MimeMessage reply = new MimeMessage(session);
+    public Message reply(MailAccount account, MimeMessage orig, boolean replyToAll, boolean fromSent) throws MessagingException {
+		MimeMessage reply = new MimeMessage(account.getMailSession());
 		/*
 		 * Have to manipulate the raw Subject header so that we don't lose
 		 * any encoding information.  This is safe because "Re:" isn't
@@ -1801,6 +1559,7 @@ public class Service extends BaseService {
 		reply.setRecipients(Message.RecipientType.TO, a);
 		if (replyToAll) {
 			Vector v = new Vector();
+			Session session=account.getMailSession();
 			// add my own address to list
 			InternetAddress me = InternetAddress.getLocalAddress(session);
 			if (me != null) {
@@ -1891,9 +1650,9 @@ public class Service extends BaseService {
 	// used above in reply()
 	private static final Flags answeredFlag = new Flags(Flags.Flag.ANSWERED);
 	
-	private SimpleMessage getReplyMsg(int id, Message msg, boolean replyAll, boolean fromSent, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle) {	
+	private SimpleMessage getReplyMsg(int id, MailAccount account, Message msg, boolean replyAll, boolean fromSent, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle) {	
 		try {
-			Message reply=reply((MimeMessage)msg,replyAll,fromSent);
+			Message reply=reply(account,(MimeMessage)msg,replyAll,fromSent);
 			
 			removeDestination(reply, myemail);
 			for (Identity ident : mprofile.getIdentities()) {
@@ -2295,22 +2054,9 @@ public class Service extends BaseService {
 			ast.cancel();
 		}
 		
-		if (fcRoot != null) {
-			fcRoot.cleanup(true);
+		for(MailAccount account: accounts.values()) {
+			account.cleanup();
 		}
-		fcRoot = null;
-		for (FolderCache fc : foldersCache.values()) {
-			fc.cleanup(true);
-		}
-		foldersCache.clear();
-		try {
-			logger.trace("disconnecting imap");
-			disconnect();
-			logger.trace("done");
-		} catch (Exception e) {
-			Service.logger.error("Exception",e);
-		}
-		validated = false;
 		logger.trace("exiting cleanup");
 	}
 	
@@ -2340,139 +2086,6 @@ public class Service extends BaseService {
         return ret;
     }
 	
-	public boolean isSentFolder(String fullname) {
-		String lastname = getLastFolderName(fullname);
-		String plastname = getLastFolderName(mprofile.getFolderSent());
-		if (lastname.equals(plastname)) {
-			return true;
-		}
-		return false;
-	}
-	
-	public boolean isTrashFolder(String fullname) {
-		String lastname = getLastFolderName(fullname);
-		String plastname = getLastFolderName(mprofile.getFolderTrash());
-		if (lastname.equals(plastname)) {
-			return true;
-		}
-		return false;
-	}
-	
-	public boolean isDraftsFolder(String fullname) {
-		String lastname = getLastFolderName(fullname);
-		String plastname = getLastFolderName(mprofile.getFolderDrafts());
-		if (lastname.equals(plastname)) {
-			return true;
-		}
-		return false;
-	}
-	
-	public boolean isArchiveFolder(String fullname) {
-		String farchive = mprofile.getFolderArchive();
-		if (farchive!=null) {
-			String lastname = getLastFolderName(fullname);
-			String plastname = getLastFolderName(farchive);
-			if (lastname.equals(plastname)) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public boolean isSpamFolder(String fullname) {
-		String lastname = getLastFolderName(fullname);
-		String plastname = getLastFolderName(mprofile.getFolderSpam());
-		if (lastname.equals(plastname)) {
-			return true;
-		}
-		return false;
-	}
-	
-	public boolean isSpecialFolder(String foldername) {
-		boolean retval = isTrashFolder(foldername)
-				|| isDraftsFolder(foldername)
-				|| isInboxFolder(foldername)
-				|| isSentFolder(foldername)
-				|| isArchiveFolder(foldername)
-				|| isSpamFolder(foldername);
-		return retval;
-	}
-	
-	public boolean isInboxFolder(String foldername) {
-		if (!hasDifferentDefaultFolder) {
-			//if is root inbox
-			if (foldername.equals("INBOX") || 
-					//or a shared inbox
-					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX"))
-			) return true;
-		} else {
-			return isDefaultFolder(foldername);
-		}
-		return false;
-	}
-	
-	public boolean isDefaultFolder(String foldername) {
-		Folder df=null;
-		try {
-			df=getDefaultFolder();
-		} catch(MessagingException exc) {
-			logger.error("Error getting default folder",exc);
-		}
-		if (df!=null) return df.getFullName().equals(foldername);
-		return false;
-	} 
-  
-	public boolean isUnderTrashFolder(String foldername) {
-		String str=mprofile.getFolderTrash()+folderSeparator;
-		return foldername.startsWith(str);
-	}
-	
-	public boolean isUnderSharedFolder(String foldername) {
-		boolean b = false;
-		String str = null;
-		for (String fn : sharedPrefixes) {
-			str = fn + folderSeparator;
-			if (foldername.startsWith(str)) {
-				b = true;
-				break;
-			}
-		}
-		return b;
-	}
-	
-	public boolean isUnderFolder(String parentname, String foldername) {
-		if (!parentname.endsWith(""+folderSeparator)) parentname = parentname + folderSeparator;
-		return (foldername.startsWith(parentname));
-	}
-	
-	public boolean isSharedFolder(String foldername) {
-		boolean b = false;
-		for (String fn : sharedPrefixes) {
-			if (foldername.equals(fn)) {
-				b = true;
-				break;
-			}
-		}
-		return b;
-	}
-	
-	public boolean isUnderSentFolder(String foldername) {	
-		   String str=mprofile.getFolderSent()+folderSeparator;
-		   return foldername.startsWith(str);
-	}  	
-	
-	public String getMainSharedFolder(String foldername) {
-		if (!foldername.endsWith(""+folderSeparator)) foldername+=folderSeparator;
-		for (String fn : sharedPrefixes) {
-			String str = fn + folderSeparator;
-			if (foldername.startsWith(str)) {
-				int ix=foldername.indexOf(folderSeparator,str.length());
-				if (ix>=0) return foldername.substring(0,ix);
-			}
-		}
-		return null;
-	}
-	
 	public boolean hasDmsDocumentArchiving() {
 		return RunContext.isPermitted(true, SERVICE_ID, "DMS_DOCUMENT_ARCHIVING");
 	}
@@ -2493,18 +2106,15 @@ public class Service extends BaseService {
 		return us.getDMSMethod().equals(MailSettings.ARCHIVING_DMS_METHOD_WEBTOP);
 	}
 	
-	public boolean isDmsFolder(String foldername) {
-		CoreManager core = WT.getCoreManager();
-		
-		UserProfile profile = environment.getProfile();
+	public boolean isDmsFolder(MailAccount account, String foldername) {
 		if (!hasDmsDocumentArchiving()) {
 			return false;
 		}
 		boolean b = false;
 		String df = us.getSimpleDMSArchivingMailFolder();
 		if (df != null && df.trim().length() > 0) {
-			String lfn = getLastFolderName(foldername);
-			String dfn = getLastFolderName(df);
+			String lfn = account.getLastFolderName(foldername);
+			String dfn = account.getLastFolderName(df);
 			if (lfn.equals(dfn)) {
 				b = true;
 			}
@@ -2560,7 +2170,7 @@ public class Service extends BaseService {
 	
 	public String getInternationalFolderPath(FolderCache fc) throws MessagingException {
 		String intpath = getInternationalFolderName(fc);
-		char sep = folderSeparator;
+		char sep = fc.getAccount().getFolderSeparator();
 		FolderCache parent = fc.getParent();
 		while (parent != null && parent.isRoot()) {
 			String intparent = getInternationalFolderName(parent);
@@ -2570,62 +2180,6 @@ public class Service extends BaseService {
 		return intpath;
 	}
 	
-	protected Folder getDefaultFolder() throws MessagingException {
-		String df=us.getDefaultFolder();
-		Folder f=null;
-		if (df!=null) f=store.getFolder(df);
-		else f=store.getDefaultFolder();
-		return f;
-	}
-	
-	protected String getInboxFolderFullName() {
-		String inboxFolder="INBOX";
-		try {
-			if (hasDifferentDefaultFolder()) inboxFolder=getDefaultFolder().getFullName();
-		} catch(MessagingException exc) {
-		}
-		return inboxFolder;
-	}
-  
-	protected Folder getFolder(String foldername) throws MessagingException {
-		return store.getFolder(foldername);
-	}
-	
-	public Folder checkCreateFolder(String foldername) throws MessagingException {
-		Folder folder = store.getFolder(foldername);
-		if (!folder.exists()) {
-			folder.create(Folder.HOLDS_MESSAGES | Folder.HOLDS_FOLDERS);
-		}
-		return folder;
-	}
-	
-	public FolderCache checkCreateAndCacheFolder(String fullname) throws MessagingException {
-		Folder folder=checkCreateFolder(fullname);
-		FolderCache fc=getFolderCache(fullname);
-		if (fc==null) {
-			FolderCache parent=fcRoot;
-			int ix=fullname.lastIndexOf(folderSeparator);
-			if (ix>0) parent=getFolderCache(fullname.substring(0,ix));
-			fc=addFoldersCache(parent, folder);
-		}
-		return fc;
-	}
-	
-	public FolderCache checkCreateAndCacheFolders(String fullname) throws MessagingException {
-		int x=fullname.indexOf(folderSeparator);
-		while(x>0) {
-			String fname=fullname.substring(0,x);
-			checkCreateAndCacheFolder(fname);
-			x=fullname.indexOf(folderSeparator,x+1);
-		}
-		return checkCreateAndCacheFolder(fullname);
-	}
-  
-	public boolean checkFolder(String foldername) throws MessagingException {
-		Folder folder=store.getFolder(foldername);
-		return folder.exists();
-	}	
-
 	public static int getPriority(Message m) throws MessagingException {
 		String xprio = null;
 		String h[] = m.getHeader("X-Priority");
@@ -2730,160 +2284,6 @@ public class Service extends BaseService {
 		return html;
 	}
 	
-	private FolderCache createFolderCache(Folder f) throws MessagingException {
-		FolderCache fc = new FolderCache(f, this, environment);
-		String fname = fc.getFolderName();
-		foldersCache.put(fname, fc);
-		return fc;
-	}
-	
-	private void loadFoldersCache() throws MessagingException {
-        Folder froot=getDefaultFolder();
-        fcRoot=createFolderCache(froot);
-		fcRoot.setIsRoot(true);
-		Folder children[] = fcRoot.getFolder().list();
-		final ArrayList<FolderCache> rootParents = new ArrayList<FolderCache>();
-		for (Folder child : children) {
-			if (us.isFolderHidden(child.getFullName())) continue;
-			if (!fcRoot.hasChild(child.getName())) {
-				FolderCache fcc=addSingleFoldersCache(fcRoot,child);
-				if (!fcc.isStartupLeaf()) rootParents.add(fcc);
-			}
-		}
-		
-		if (hasDifferentDefaultFolder) {
-			//check for other shared folders to be added
-			Folder rfolders[]=store.getDefaultFolder().list();
-			for(int i=0;i<sharedPrefixes.length;++i) {
-				for(int j=0;j<rfolders.length;++j) {
-					if (rfolders[j].getFullName().equals(sharedPrefixes[i])) {
-						FolderCache fcc=addSingleFoldersCache(fcRoot,rfolders[j]);
-						rootParents.add(fcc);
-					}
-				}
-			}
-		}
-		
-		Thread engine = new Thread(
-				new Runnable() {
-					public void run() {
-						synchronized (mft) {
-							try {
-								for (FolderCache fc : rootParents) {
-									_loadFoldersCache(fc);
-								}
-							} catch (MessagingException exc) {
-								Service.logger.error("Exception",exc);
-							}
-						}
-					}
-				}
-		);
-		engine.start();
-	}
-	
-	private void _loadFoldersCache(FolderCache fc) throws MessagingException {
-		Folder f = fc.getFolder();
-		Folder children[] = f.list();
-		for (Folder child : children) {
-			String cname=child.getFullName();
-			if (us.isFolderHidden(cname)) continue;
-			if (hasDifferentDefaultFolder && cname.equals(fcRoot.getFolderName())) continue;
-			FolderCache fcc = addFoldersCache(fc, child);
-		}
-		//If shared folders, check for same descriptions and in case add login
-		if (isSharedFolder(f.getFullName()) && fc.hasChildren()) {
-			HashMap<String, ArrayList<FolderCache>> hm = new HashMap<String, ArrayList<FolderCache>>();
-			//map descriptions to list of folders
-			for (FolderCache child : fc.getChildren()) {
-				String desc = child.getDescription();
-				ArrayList<FolderCache> al = hm.get(desc);
-				if (al == null) {
-					al = new ArrayList<FolderCache>();
-					al.add(child);
-					hm.put(desc, al);
-				} else {
-					al.add(child);
-				}
-			}
-			//for folders with list>1 change description to all elements
-			for (ArrayList<FolderCache> al : hm.values()) {
-				if (al.size() > 1) {
-					for (FolderCache fcc : al) {
-						SharedPrincipal sip = fcc.getSharedInboxPrincipal();
-						String user = sip.getUserId();
-						fcc.setWebTopUser(user);
-						fcc.setDescription(fcc.getDescription() + " [" + user + "]");
-					}
-				}
-			}
-		}
-	}
-	
-	private synchronized FolderCache addSingleFoldersCache(FolderCache parent, Folder child) throws MessagingException {
-		String cname = child.getFullName();
-		FolderCache fcChild=foldersCache.get(cname);
-		if (fcChild==null) {
-			fcChild=createFolderCache(child);
-			fcChild.setParent(parent);
-			parent.addChild(fcChild);
-			fcChild.setStartupLeaf(isLeaf((IMAPFolder)child));
-		}
-		
-		return fcChild;
-	}
-	
-	private boolean isLeaf(IMAPFolder folder) throws MessagingException {
-		String atts[] = folder.getAttributes();
-		boolean leaf = true;
-		boolean noinferiors = false;
-		for (String att : atts) {
-			if (att.equals("\\HasChildren")) {
-				leaf = false;
-			} else if (att.equals("\\Noinferiors")) {
-				noinferiors = true;
-			}
-		}
-		if (noinferiors) {
-			leaf = true;
-		}
-		return leaf;
-	}
-	
-	protected FolderCache addFoldersCache(FolderCache parent, Folder child) throws MessagingException {
-		logger.trace("adding {} to {}",child.getName(),parent.getFolderName());
-		FolderCache fcChild = addSingleFoldersCache(parent, child);
-		boolean leaf = fcChild.isStartupLeaf();
-		if (!leaf) {
-			_loadFoldersCache(fcChild);
-		}
-		return fcChild;
-	}
-	
-	private void destroyFolderCache(FolderCache fc) {
-		ArrayList<FolderCache> fcc = fc.getChildren();
-		if (fcc != null) {
-			FolderCache afc[] = null;
-			int len = fcc.size();
-			if (len > 0) {
-				afc = new FolderCache[len];
-				fc.getChildren().toArray(afc);
-				for (FolderCache child : afc) {
-					destroyFolderCache(child);
-				}
-			}
-		}
-		FolderCache fcp = fc.getParent();
-		if (fcp != null) {
-			fcp.removeChild(fc);
-		}
-		fc.cleanup(true);
-		try {
-			fc.close();
-		} catch (Exception exc) {
-		}
-	}
-	
 	private ArrayList<FolderCache> opened = new ArrayList<FolderCache>();
 
 	protected void poolOpened(FolderCache fc) {
@@ -2896,32 +2296,39 @@ public class Service extends BaseService {
 		}
 		opened.add(fc);
 	}
+	
+	private MailAccount getAccount(HttpServletRequest request) {
+		String accountId=request.getParameter("accountId");
+		if (accountId!=null) return accounts.get(accountId);
+		return mainAccount;
+	}
 
 	//Client service requests
 	public void processGetImapTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String pfoldername = request.getParameter("node");
+		MailAccount account=getAccount(request);
 		Folder folder = null;
 		try {
-			boolean connected=checkStoreConnected();
+			boolean connected=account.checkStoreConnected();
 			if (!connected) throw new Exception("Mail account authentication error");
 			
 			boolean isroot=pfoldername.equals("/");
-            if (isroot) folder=getDefaultFolder();
-			else folder = getFolder(pfoldername);
+            if (isroot) folder=account.getDefaultFolder();
+			else folder = account.getFolder(pfoldername);
 			
 			Folder folders[] = folder.list();
-			String fprefix = mprofile.getFolderPrefix();
+			String fprefix = account.getFolderPrefix();
 			boolean level1 = (fprefix != null && fprefix.equals("INBOX."));
 			out.print("{ data:[");
-			if (isroot && hasDifferentDefaultFolder) {
+			if (isroot && account.hasDifferentDefaultFolder()) {
 				Folder fcs[]=new Folder[0];
 				//check for other shared folders to be added
-				Folder rfolders[]=store.getDefaultFolder().list();
+				Folder rfolders[]=account.getRealDefaultFolder().list();
 				ArrayList<Folder> afcs=new ArrayList<Folder>();
-				for(int i=0;i<sharedPrefixes.length;++i) {
-					for(int j=0;j<rfolders.length;++j) {
-						if (rfolders[j].getFullName().equals(sharedPrefixes[i]))
-							afcs.add(rfolders[j]);
+				for(String sharedPrefix: account.getSharedPrefixes()) {
+					for(Folder rfolder: rfolders) {
+						if (rfolder.getFullName().equals(sharedPrefix))
+							afcs.add(rfolder);
 					}
 				}
 				if (afcs.size()>0) fcs=afcs.toArray(fcs);
@@ -2932,7 +2339,7 @@ public class Service extends BaseService {
 				if (fcs.length>0) System.arraycopy(fcs,0,xfolders,1+folders.length,fcs.length);
 				folders=xfolders;
 			}
-			outputFolders(folder, folders, level1, false, out);
+			outputFolders(account, folder, folders, level1, false, out);
 			out.println("], message: '' }");
 			
 		} catch (Exception exc) {
@@ -2941,80 +2348,44 @@ public class Service extends BaseService {
 		}
 	}
 	
-	Comparator<Folder> ucomp = new Comparator<Folder>() {
-		
-		public int compare(Folder f1, Folder f2) {
-			int ret = 0;
-			try {
-				FolderCache fc1 = getFolderCache(f1.getFullName());
-				FolderCache fc2 = getFolderCache(f2.getFullName());
-				String u1 = fc1.getWebTopUser();
-				String u2 = fc2.getWebTopUser();
-				ret = u1.compareTo(u2);
-			} catch (MessagingException exc) {
-				Service.logger.error("Exception",exc);
-			}
-			return ret;
-		}
-		
-	};
-	
-	Comparator<Folder> dcomp = new Comparator<Folder>() {
-		
-		public int compare(Folder f1, Folder f2) {
-			int ret = 0;
-			try {
-				FolderCache fc1 = getFolderCache(f1.getFullName());
-				FolderCache fc2 = getFolderCache(f2.getFullName());
-				String desc1 = fc1.getDescription();
-				String desc2 = fc2.getDescription();
-				ret = desc1.compareTo(desc2);
-			} catch (MessagingException exc) {
-				Service.logger.error("Exception",exc);
-			}
-			return ret;
-		}
-		
-	};
-	
-	private void outputFolders(Folder parent, Folder folders[], boolean level1, boolean favorites, PrintWriter out) throws Exception {
+	private void outputFolders(MailAccount account, Folder parent, Folder folders[], boolean level1, boolean favorites, PrintWriter out) throws Exception {
 		ArrayList<Folder> afolders;
-		if (!favorites) afolders=sortFolders(folders);
+		if (!favorites) afolders=sortFolders(account,folders);
 		else {
 			afolders=new ArrayList<Folder>();
 			for(Folder f: folders) afolders.add(f);
 		}
 		//If Shared Folders, sort on description
-		if (isSharedFolder(parent.getFullName())) {
+		if (account.isSharedFolder(parent.getFullName())) {
 			String ss = mprofile.getSharedSort();
 			if (ss.equals("D")) {
-				Collections.sort(afolders, dcomp);
+				Collections.sort(afolders, account.getDescriptionFolderComparator());
 			} else if (ss.equals("U")) {
-				Collections.sort(afolders, ucomp);
+				Collections.sort(afolders, account.getWebTopUserFolderComparator());
 			}
 		}
 		
 		for (Folder f : afolders) {
 			String foldername = f.getFullName();
 			//in case of moved root, check not to duplicate root elsewhere
-			if (hasDifferentDefaultFolder && isSharedFolder(parent.getFullName()) && foldername.equals(getInboxFolderFullName())) continue;
+			if (account.hasDifferentDefaultFolder() && account.isSharedFolder(parent.getFullName()) && foldername.equals(account.getInboxFolderFullName())) continue;
 			//skip hidden
 			if (us.isFolderHidden(foldername)) continue;
 
 			
-			FolderCache mc = getFolderCache(foldername);
+			FolderCache mc = account.getFolderCache(foldername);
 			if (mc == null) {
 				//continue;
 				//System.out.println("foldername="+foldername+" parentname="+parent.getFullName());
-				FolderCache fcparent=getFolderCache(parent.getFullName());
-				mc=addSingleFoldersCache(fcparent, f);
+				FolderCache fcparent=account.getFolderCache(parent.getFullName());
+				mc=account.addSingleFoldersCache(fcparent, f);
 			}
 			//String shortfoldername=getShortFolderName(foldername);
 			IMAPFolder imapf = (IMAPFolder) f;
 			String atts[] = imapf.getAttributes();
 			boolean leaf = true;
 			boolean noinferiors = false;
-			if (hasDifferentDefaultFolder && isDefaultFolder(foldername)) {
+			if (account.hasDifferentDefaultFolder() && account.isDefaultFolder(foldername)) {
 				
 			}
 			else if (!favorites) {
@@ -3088,14 +2459,14 @@ public class Service extends BaseService {
 			}
 			if (isSharedToSomeone) ss+=",isSharedToSomeone: true";
 			if (mc.isSharedFolder()) ss+=",isSharedRoot: true";
-			if (isUnderSharedFolder(foldername)) ss+=",isUnderShared: true";
+			if (account.isUnderSharedFolder(foldername)) ss+=",isUnderShared: true";
 			if (mc.isInbox()) {
 				ss += ",isInbox: true";
 			}
 			if (mc.isSent()) {
 				ss += ",isSent: true";
 			}
-			if (isUnderSentFolder(mc.getFolderName())) {
+			if (account.isUnderSentFolder(mc.getFolderName())) {
 				ss += ",isUnderSent: true";
 			}
 			if (mc.isDrafts()) {
@@ -3117,17 +2488,18 @@ public class Service extends BaseService {
 			} else if (mc.isScanEnabled()) {
 				ss += ", scanEnabled: true";
 			}
+			ss += ", accountId: '"+account.getId()+"'";
 			ss += "},";
 			out.print(ss);
 			if (!favorites) {
 				if (level1 && foldername.equals("INBOX")) {
-					outputFolders(f, f.list(), false, false, out);
+					outputFolders(account,f, f.list(), false, false, out);
 				}
 			}
 		}
 	}
 	
-	protected ArrayList<Folder> sortFolders(Folder folders[]) {
+	protected ArrayList<Folder> sortFolders(MailAccount account, Folder folders[]) {
 		ArrayList<Folder> afolders = new ArrayList<Folder>();
 		ArrayList<Folder> sfolders=new ArrayList<Folder>();
 		HashMap<String,Folder> mfolders=new HashMap<String,Folder>();
@@ -3140,16 +2512,16 @@ public class Service extends BaseService {
 		Folder spam = null;
 		for (Folder f : folders) {
 			String foldername = f.getFullName();
-			String shortfoldername = getShortFolderName(foldername);
+			String shortfoldername = account.getShortFolderName(foldername);
 			if (!mfolders.containsKey(shortfoldername)) {
 				mfolders.put(shortfoldername, f);
-				if (isInboxFolder(shortfoldername)) inbox=f;
-				else if (isSentFolder(shortfoldername)) sent=f;
-				else if (isDraftsFolder(shortfoldername)) drafts=f;
-				else if (isTrashFolder(shortfoldername)) trash=f;
-				else if (isSpamFolder(shortfoldername)) spam=f;
-				else if (isArchiveFolder(shortfoldername)) archive=f;
-				else if (isSharedFolder(foldername)) sfolders.add(f);
+				if (account.isInboxFolder(shortfoldername)) inbox=f;
+				else if (account.isSentFolder(shortfoldername)) sent=f;
+				else if (account.isDraftsFolder(shortfoldername)) drafts=f;
+				else if (account.isTrashFolder(shortfoldername)) trash=f;
+				else if (account.isSpamFolder(shortfoldername)) spam=f;
+				else if (account.isArchiveFolder(shortfoldername)) archive=f;
+				else if (account.isSharedFolder(foldername)) sfolders.add(f);
 				else afolders.add(f);
 			}
 		}
@@ -3194,13 +2566,57 @@ public class Service extends BaseService {
 		return afolders;
 	}
 	
+	public void processGetArchiveTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String pfoldername = request.getParameter("node");
+		MailAccount account=archiveAccount; //getAccount(request);
+		Folder folder = null;
+		try {
+			boolean connected=account.checkStoreConnected();
+			if (!connected) throw new Exception("Mail account authentication error");
+			
+			boolean isroot=pfoldername.equals("/");
+            if (isroot) folder=account.getDefaultFolder();
+			else folder = account.getFolder(pfoldername);
+			
+			Folder folders[] = folder.list();
+			String fprefix = account.getFolderPrefix();
+			boolean level1 = (fprefix != null && fprefix.equals("INBOX."));
+			out.print("{ data:[");
+			if (isroot && account.hasDifferentDefaultFolder()) {
+				Folder fcs[]=new Folder[0];
+				//check for other shared folders to be added
+				Folder rfolders[]=account.getRealDefaultFolder().list();
+				ArrayList<Folder> afcs=new ArrayList<Folder>();
+				for(String sharedPrefix: account.getSharedPrefixes()) {
+					for(Folder rfolder: rfolders) {
+						if (rfolder.getFullName().equals(sharedPrefix))
+							afcs.add(rfolder);
+					}
+				}
+				if (afcs.size()>0) fcs=afcs.toArray(fcs);
+				
+				Folder xfolders[]=new Folder[1+folders.length+fcs.length];
+				xfolders[0]=folder;
+				System.arraycopy(folders, 0, xfolders, 1, folders.length);
+				if (fcs.length>0) System.arraycopy(fcs,0,xfolders,1+folders.length,fcs.length);
+				folders=xfolders;
+			}
+			outputFolders(account, folder, folders, level1, false, out);
+			out.println("], message: '' }");
+			
+		} catch (Exception exc) {
+			new JsonResult(exc).printTo(out);
+			Service.logger.error("Exception",exc);
+		}
+	}
+	
 	public void processGetFavoritesTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			out.print("{ data:[");
 			MailUserSettings.Favorites favorites=us.getFavorites();
 			Folder folders[]=new Folder[favorites.size()];
-			for(int i=0;i<favorites.size();++i) folders[i]=getFolder(favorites.get(i));
-			outputFolders(getFolder(""),folders,false,true,out);
+			for(int i=0;i<favorites.size();++i) folders[i]=mainAccount.getFolder(favorites.get(i));
+			outputFolders(mainAccount,mainAccount.getFolder(""),folders,false,true,out);
 			out.println("], message: '' }");
 			
 		} catch (Exception exc) {
@@ -3227,6 +2643,7 @@ public class Service extends BaseService {
 	
 	
 	public void processMoveMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
 		String allfiltered = request.getParameter("allfiltered");
@@ -3238,26 +2655,26 @@ public class Service extends BaseService {
 		String sout = null;
 		boolean archiving = false;
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
-			FolderCache tomcache = getFolderCache(tofolder);
-			String foldertrash=mprofile.getFolderTrash();
-			String folderspam=mprofile.getFolderSpam();
-			String folderarchive=mprofile.getFolderArchive();
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
+			FolderCache tomcache = account.getFolderCache(tofolder);
+			String foldertrash=account.getFolderTrash();
+			String folderspam=account.getFolderSpam();
+			String folderarchive=account.getFolderArchive();
 			
 			//check if tofolder is my Spam, and there is spamadm, move there
 			if (tofolder.equals(folderspam)) {
 				String spamadmSpam=ss.getSpamadmSpam();
 				if (spamadmSpam!=null) {
 					folderspam=spamadmSpam;
-					FolderCache fc=getFolderCache(spamadmSpam);
+					FolderCache fc=account.getFolderCache(spamadmSpam);
 					if (fc!=null) tomcache=fc;
 				}
-				else if (isUnderSharedFolder(fromfolder)) {
-					String mainfolder=getMainSharedFolder(fromfolder);
+				else if (account.isUnderSharedFolder(fromfolder)) {
+					String mainfolder=account.getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
-						folderspam = mainfolder + folderSeparator + getLastFolderName(folderspam);
-						FolderCache fc=getFolderCache(folderspam);
+						folderspam = mainfolder + account.getFolderSeparator() + account.getLastFolderName(folderspam);
+						FolderCache fc=account.getFolderCache(folderspam);
 						if (fc!=null) tomcache=fc;
 					}
 				}
@@ -3265,22 +2682,22 @@ public class Service extends BaseService {
 			}
 			//if trashing, check for shared profile trash
 			else if (tofolder.equals(foldertrash)) {
-				if (isUnderSharedFolder(fromfolder)) {
-					String mainfolder=getMainSharedFolder(fromfolder);
+				if (account.isUnderSharedFolder(fromfolder)) {
+					String mainfolder=account.getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
-						foldertrash = mainfolder + folderSeparator + getLastFolderName(foldertrash);
-						FolderCache fc=getFolderCache(foldertrash);
+						foldertrash = mainfolder + account.getFolderSeparator() + account.getLastFolderName(foldertrash);
+						FolderCache fc=account.getFolderCache(foldertrash);
 						if (fc!=null) tomcache=fc;
 					}
 				}
 				tofolder=foldertrash;
 			}
 			//if archiving, determine destination folder based on settings and shared profile
-			else if (tofolder.equals(mprofile.getFolderArchive())) {
-					if (isUnderSharedFolder(fromfolder)) {
-						String mainfolder=getMainSharedFolder(fromfolder);
+			else if (tofolder.equals(account.getFolderArchive())) {
+					if (account.isUnderSharedFolder(fromfolder)) {
+						String mainfolder=account.getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
-						folderarchive = mainfolder + folderSeparator + getLastFolderName(folderarchive);
+						folderarchive = mainfolder + account.getFolderSeparator() + account.getLastFolderName(folderarchive);
 					}
 				}
 				tofolder=folderarchive;
@@ -3302,7 +2719,7 @@ public class Service extends BaseService {
 							int ix=uid.indexOf("|");
 							fromfolder=uid.substring(0,ix);
 							uid=uid.substring(ix+1);
-							mcache = getFolderCache(fromfolder);
+							mcache = account.getFolderCache(fromfolder);
 							iuids[0]=Long.parseLong(uid);
 							if (archiving) archiveMessages(mcache, folderarchive, iuids,fullthreads);
 							else moveMessages(mcache, tomcache, iuids,fullthreads);
@@ -3328,6 +2745,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processCopyMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
 		String allfiltered = request.getParameter("allfiltered");
@@ -3338,9 +2756,9 @@ public class Service extends BaseService {
 		String sout = null;
 		String uids[]=null;
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
-			FolderCache tomcache = getFolderCache(tofolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
+			FolderCache tomcache = account.getFolderCache(tofolder);
 			if (allfiltered == null) {
 				uids = request.getParameterValues("ids");
 				if (!multifolder) copyMessages(mcache, tomcache, toLongs(uids),fullthreads);
@@ -3350,7 +2768,7 @@ public class Service extends BaseService {
                         int ix=uid.indexOf("|");
                         fromfolder=uid.substring(0,ix);
                         uid=uid.substring(ix+1);
-						mcache = getFolderCache(fromfolder);
+						mcache = account.getFolderCache(fromfolder);
                         iuids[0]=Long.parseLong(uid);
                         copyMessages(mcache, tomcache, iuids,fullthreads);
 					}
@@ -3373,6 +2791,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processDmsArchiveMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String tofolder = request.getParameter("tofolder");
 		int ix = tofolder.indexOf("|");
@@ -3385,8 +2804,8 @@ public class Service extends BaseService {
 		String uids[]=null;
 		String sout = null;
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
 			uids = request.getParameterValues("ids");
 			if (!multifolder) dmsArchiveMessages(mcache, toLongs(uids), idcategory, idsubcategory, fullthreads);
 			else {
@@ -3395,7 +2814,7 @@ public class Service extends BaseService {
                     ix=uid.indexOf("|");
                     fromfolder=uid.substring(0,ix);
                     uid=uid.substring(ix+1);
-					mcache = getFolderCache(fromfolder);
+					mcache = account.getFolderCache(fromfolder);
                     iuids[0]=Integer.parseInt(uid);
                     dmsArchiveMessages(mcache, iuids, idcategory, idsubcategory, fullthreads);
 				}
@@ -3498,6 +2917,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processDeleteMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String allfiltered = request.getParameter("allfiltered");
 		String smultifolder = request.getParameter("multifolder");
@@ -3507,8 +2927,8 @@ public class Service extends BaseService {
 		String sout = null;
 		String uids[];
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
 			
 			if (allfiltered == null) {
 				uids = request.getParameterValues("ids");
@@ -3520,7 +2940,7 @@ public class Service extends BaseService {
 						int ix=uid.indexOf("|");
 						fromfolder=uid.substring(0,ix);
 						uid=uid.substring(ix+1);
-						mcache = getFolderCache(fromfolder);
+						mcache = account.getFolderCache(fromfolder);
 						iuids[0]=Long.parseLong(uid);
 						deleteMessages(mcache, iuids, fullthreads);
 					}
@@ -3539,6 +2959,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processFlagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
 		String flag = request.getParameter("flag");
@@ -3546,8 +2967,8 @@ public class Service extends BaseService {
 		boolean mf = multifolder != null && multifolder.equals("true");
 		String sout = null;
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
 			if (!mf) {
 				if (flag.equals("clear")) {
 					clearMessagesFlag(mcache, toLongs(uids));
@@ -3560,7 +2981,7 @@ public class Service extends BaseService {
                     int ix=uid.indexOf("|");
                     fromfolder=uid.substring(0,ix);
                     uid=uid.substring(ix+1);
-					mcache = getFolderCache(fromfolder);
+					mcache = account.getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
                     if (flag.equals("clear")) clearMessagesFlag(mcache, iuids);
                     else flagMessages(mcache, iuids, flag);
@@ -3575,14 +2996,15 @@ public class Service extends BaseService {
 	}
 	
 	public void processSeenMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		String sout = null;
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
 			if (!mf) {
 				setMessagesSeen(mcache, toLongs(uids));
 			} else {
@@ -3591,7 +3013,7 @@ public class Service extends BaseService {
                     int ix=uid.indexOf("|");
                     fromfolder=uid.substring(0,ix);
                     uid=uid.substring(ix+1);
-					mcache = getFolderCache(fromfolder);
+					mcache = account.getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
                     setMessagesSeen(mcache, iuids);
 				}
@@ -3606,14 +3028,15 @@ public class Service extends BaseService {
 	}
 	
 	public void processUnseenMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		String sout = null;
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
 			if (!mf) {
 				setMessagesUnseen(mcache, toLongs(uids));
 			} else {
@@ -3622,7 +3045,7 @@ public class Service extends BaseService {
                     int ix=uid.indexOf("|");
                     fromfolder=uid.substring(0,ix);
                     uid=uid.substring(ix+1);
-					mcache = getFolderCache(fromfolder);
+					mcache = account.getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
                     setMessagesUnseen(mcache, iuids);
 				}
@@ -3661,6 +3084,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSetScanFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		boolean value = false;
 		String svalue = request.getParameter("value");
@@ -3676,7 +3100,7 @@ public class Service extends BaseService {
 		Connection con = null;
 		try {
 			con = getConnection();
-			FolderCache fc = getFolderCache(folder);
+			FolderCache fc = account.getFolderCache(folder);
 			setScanFolder(con, fc, value, recursive);
 			sout = "{\nresult: true\n}";
 		} catch (Exception exc) {
@@ -3717,6 +3141,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSeenFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		boolean recursive = false;
 		String srecursive = request.getParameter("recursive");
@@ -3726,10 +3151,10 @@ public class Service extends BaseService {
 		String sout = null;
 		FolderCache mcache = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			boolean result = true;
 			sout = "{\n";
-			mcache = getFolderCache(folder);
+			mcache = account.getFolderCache(folder);
 			setMessagesSeen(mcache, true, recursive);
 			long millis = System.currentTimeMillis();
 			sout += "result: " + result + ", millis: " + millis + "\n}";
@@ -3741,6 +3166,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processUnseenFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		boolean recursive = false;
 		String srecursive = request.getParameter("recursive");
@@ -3750,10 +3176,10 @@ public class Service extends BaseService {
 		String sout = null;
 		FolderCache mcache = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			boolean result = true;
 			sout = "{\n";
-			mcache = getFolderCache(folder);
+			mcache = account.getFolderCache(folder);
 			setMessagesSeen(mcache, false, recursive);
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
@@ -3865,17 +3291,18 @@ public class Service extends BaseService {
 		
 	public void processSaveColumnVisibility(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
+			MailAccount account=getAccount(request);
 			String folder = ServletUtils.getStringParameter(request, "folder", true);
 			String name = ServletUtils.getStringParameter(request, "name", true);
 			Boolean visible = ServletUtils.getBooleanParameter(request, "visible", false);
 
 			ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(folder);
-			FolderCache fc = getFolderCache(folder);
+			FolderCache fc = account.getFolderCache(folder);
 
 			cvs.put(name, visible);
 			// Handle default cases...avoid data waste!
 			//if(ColumnVisibilitySetting.isDefault(fc.isSent(), name, cvs.get(name))) cvs.remove(name);
-			if(ColumnVisibilitySetting.isDefault(isUnderSentFolder(fc.getFolderName()), name, cvs.get(name))) cvs.remove(name);
+			if(ColumnVisibilitySetting.isDefault(account.isUnderSentFolder(fc.getFolderName()), name, cvs.get(name))) cvs.remove(name);
 
 			if(cvs.isEmpty()) {
 				us.clearColumnVisibilitySetting(folder);
@@ -3891,29 +3318,30 @@ public class Service extends BaseService {
 	}
 	
 	public void processNewFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String name = request.getParameter("name");
 		String sout = null;
 		FolderCache mcache = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			Folder newfolder = null;
 			boolean result = true;
 			sout = "{\n";
-			name = normalizeName(name);
+			name = account.normalizeName(name);
             if (
 					folder==null ||
-					(hasDifferentDefaultFolder && folder.trim().length()==0)
+					(account.hasDifferentDefaultFolder() && folder.trim().length()==0)
 				)
-				mcache=fcRoot;
+				mcache=account.getRootFolderCache();
             else
-				mcache=getFolderCache(folder);
+				mcache=account.getFolderCache(folder);
 			
 			newfolder = mcache.createFolder(name);
 			if (newfolder == null) {
 				result = false;
 			} else {
-				if (mcache != fcRoot) {
+				if (!account.isRoot(mcache)) {
 					sout += "parent: '" + StringEscapeUtils.escapeEcmaScript(mcache.getFolderName()) + "',\n";
 				} else {
 					sout += "parent: null,\n";
@@ -3930,17 +3358,18 @@ public class Service extends BaseService {
 	}
 	
 	public void processRenameFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String name = request.getParameter("name");
 		String sout = null;
 		FolderCache mcache = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			boolean result = true;
 			sout = "{\n";
-			mcache = getFolderCache(folder);
-			name = normalizeName(name);
-			String newid = renameFolder(folder, name);
+			mcache = account.getFolderCache(folder);
+			name = account.normalizeName(name);
+			String newid = account.renameFolder(folder, name);
 			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 			sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newid) + "',\n";
 			sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(name) + "',\n";
@@ -3952,25 +3381,18 @@ public class Service extends BaseService {
 		out.println(sout);
 	}
 	
-	private String normalizeName(String name) throws MessagingException {
-		String sep = "" + folderSeparator;
-		while (name.contains(sep)) {
-			name = name.replace(sep, "_");
-		}
-		return name;
-	}
-	
 	public void processHideFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String sout = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			boolean result = true;
 			sout = "{\n";
-			if (isSpecialFolder(folder)) {
+			if (account.isSpecialFolder(folder)) {
 				result = false;
 			} else {
-				hideFolder(folder);
+				hideFolder(account,folder);
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
@@ -3981,18 +3403,19 @@ public class Service extends BaseService {
 	}
 	
 	public void processDeleteFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String sout = null;
 		FolderCache mcache = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			boolean result = true;
 			sout = "{\n";
-			mcache = getFolderCache(folder);
-			if (!isUnderFolder(mprofile.getFolderArchive(),folder) && isSpecialFolder(folder)) {
+			mcache = account.getFolderCache(folder);
+			if (!account.isUnderFolder(account.getFolderArchive(),folder) && account.isSpecialFolder(folder)) {
 				result = false;
 			} else {
-				result = deleteFolder(folder);
+				result = account.deleteFolder(folder);
 				if (result) {
 					sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 				}
@@ -4006,18 +3429,19 @@ public class Service extends BaseService {
 	}
 	
 	public void processTrashFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String sout = null;
 		FolderCache mcache = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			boolean result = true;
 			sout = "{\n";
-			mcache = getFolderCache(folder);
-			if (!isUnderFolder(mprofile.getFolderArchive(),folder) && isSpecialFolder(folder)) {
+			mcache = account.getFolderCache(folder);
+			if (!account.isUnderFolder(account.getFolderArchive(),folder) && account.isSpecialFolder(folder)) {
 				result = false;
 			} else {
-				FolderCache newfc = trashFolder(folder);
+				FolderCache newfc = account.trashFolder(folder);
 				if (newfc!=null) { 
 					sout+="newid: '"+StringEscapeUtils.escapeEcmaScript(newfc.getFolder().getFullName())+"',\n";
 					sout+="trashid: '"+StringEscapeUtils.escapeEcmaScript(newfc.getParent().getFolder().getFullName())+"',\n";
@@ -4033,19 +3457,20 @@ public class Service extends BaseService {
 	}
 	
 	public void processMoveFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String to = request.getParameter("to");
 		String sout = null;
 		FolderCache mcache = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			boolean result = true;
 			sout = "{\n";
-			mcache = getFolderCache(folder);
-			if (isSpecialFolder(folder)) {
+			mcache = account.getFolderCache(folder);
+			if (account.isSpecialFolder(folder)) {
 				result = false;
 			} else {
-				FolderCache newfc = moveFolder(folder, to);
+				FolderCache newfc = account.moveFolder(folder, to);
 				Folder newf = newfc.getFolder();
 				sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 				sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newf.getFullName()) + "',\n";
@@ -4064,14 +3489,15 @@ public class Service extends BaseService {
 	}
 	
 	public void processEmptyFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String sout = null;
 		FolderCache mcache = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			sout = "{\n";
-			mcache = getFolderCache(folder);
-			emptyFolder(folder);
+			mcache = account.getFolderCache(folder);
+			account.emptyFolder(folder);
 			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 			sout += "result: true\n}";
 		} catch (MessagingException exc) {
@@ -4082,16 +3508,17 @@ public class Service extends BaseService {
 	}
 	
 	public void processGetSource(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String foldername = request.getParameter("folder");
 		String uid = request.getParameter("id");
 		String sheaders = request.getParameter("headers");
 		boolean headers = sheaders.equals("true");
 		String sout = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			//StringBuffer sb = new StringBuffer("<pre>");
 			StringBuffer sb = new StringBuffer();
-			FolderCache mcache = getFolderCache(foldername);
+			FolderCache mcache = account.getFolderCache(foldername);
 			Message msg = mcache.getMessage(Long.parseLong(uid));
 			//Folder folder=msg.getFolder();
 			for (Enumeration e = msg.getAllHeaders(); e.hasMoreElements();) {
@@ -4117,13 +3544,14 @@ public class Service extends BaseService {
 	}
 	
 	public void processSaveMail(HttpServletRequest request, HttpServletResponse response) {
+		MailAccount account=getAccount(request);
 		String foldername = request.getParameter("folder");
 		String uid = request.getParameter("id");
 		String sout = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			StringBuffer sb = new StringBuffer();
-			FolderCache mcache = getFolderCache(foldername);
+			FolderCache mcache = account.getFolderCache(foldername);
 			Message msg=mcache.getMessage(Long.parseLong(uid));
 			String subject = msg.getSubject();
 			String ctype = "binary/octet-stream";
@@ -4137,12 +3565,13 @@ public class Service extends BaseService {
 	}
 	
 	public void processDownloadMails(HttpServletRequest request, HttpServletResponse response) {
+		MailAccount account=getAccount(request);
 		String foldername = request.getParameter("folder");
 		String sout = null;
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			StringBuffer sb = new StringBuffer();
-			FolderCache mcache = getFolderCache(foldername);
+			FolderCache mcache = account.getFolderCache(foldername);
 			Message msgs[] = mcache.getAllMessages();
 			String zipname = "Webtop-mails-" + getInternationalFolderName(mcache);
 			response.setContentType("application/x-zip-compressed");
@@ -4153,7 +3582,7 @@ public class Service extends BaseService {
 			outputJarMailFolder(null, msgs, jos);
 			
 			int cut=foldername.length()+1;
-			cycleMailFolder(mcache.getFolder(), cut, jos);
+			cycleMailFolder(account, mcache.getFolder(), cut, jos);
 			
 			jos.close();
 			
@@ -4162,7 +3591,7 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void cycleMailFolder(Folder folder, int cut, JarOutputStream jos) throws Exception {
+	private void cycleMailFolder(MailAccount account, Folder folder, int cut, JarOutputStream jos) throws Exception {
 		for(Folder child: folder.list()) {
 			String fullname=child.getFullName();
 			String relname=fullname.substring(cut).replace(folder.getSeparator(), '/');
@@ -4170,9 +3599,9 @@ public class Service extends BaseService {
 			jos.putNextEntry(new JarEntry(relname+"/"));
 			jos.closeEntry();
 			
-			cycleMailFolder(child,cut,jos);
+			cycleMailFolder(account,child,cut,jos);
 			
-			FolderCache mcache=getFolderCache(fullname);
+			FolderCache mcache=account.getFolderCache(fullname);
 			Message msgs[]=mcache.getAllMessages();
 			if (msgs.length>0) outputJarMailFolder(relname, msgs, jos);
 		}
@@ -4202,6 +3631,7 @@ public class Service extends BaseService {
 	}
 
 	public void processGetReplyMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		UserProfile profile = environment.getProfile();
 		//WebTopApp webtopapp=environment.getWebTopApp();
 		String pfoldername = request.getParameter("folder");
@@ -4215,14 +3645,14 @@ public class Service extends BaseService {
 		try {
 			String format=us.getFormat();
 			boolean isHtml=format.equals("html");
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(pfoldername);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
 			Message m=mcache.getMessage(Long.parseLong(puidmessage));
 			if (m.isExpunged()) {
 				throw new MessagingException("Message " + puidmessage + " expunged");
 			}
 			SimpleMessage smsg = getReplyMsg(
-					getNewMessageID(), m, replyAll, isSentFolder(pfoldername), isHtml,
+					getNewMessageID(), account, m, replyAll, account.isSentFolder(pfoldername), isHtml,
 					profile.getEmailAddress(), mprofile.isIncludeMessageInReply(),
 					lookupResource(MailLocaleKey.MSG_FROMTITLE),
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
@@ -4287,6 +3717,7 @@ public class Service extends BaseService {
 	}
 
 	public void processGetForwardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		UserProfile profile = environment.getProfile();
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
@@ -4298,8 +3729,8 @@ public class Service extends BaseService {
 		try {
 			String format=us.getFormat();
 			boolean isHtml=format.equals("html");
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(pfoldername);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
 			Message m=mcache.getMessage(Long.parseLong(puidmessage));
 			if (m.isExpunged()) {
 				throw new MessagingException("Message " + puidmessage + " expunged");
@@ -4405,7 +3836,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		//CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, getEnv().getProfile().getDomainId());
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
@@ -4416,15 +3847,15 @@ public class Service extends BaseService {
 			if (editFormat == null) editFormat = EnumUtils.forSerializedName(us.getFormat(), MailEditFormat.HTML, MailEditFormat.class);
 			boolean isPlainEdit = MailEditFormat.PLAIN_TEXT.equals(editFormat);
 			
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(pfoldername);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
 			Message m = mcache.getMessage(Long.parseLong(puidmessage));
 			String vheader[] = m.getHeader("Disposition-Notification-To");
 			boolean receipt = false;
 			int priority = 3;
 			boolean recipients = false;
 			boolean toDelete=false;
-			if (isDraftsFolder(pfoldername)) {
+			if (account.isDraftsFolder(pfoldername)) {
 				if (vheader != null && vheader[0] != null) {
 					receipt = true;
 				}
@@ -4676,6 +4107,7 @@ public class Service extends BaseService {
 		 }
 		 }*/
 		try {
+			MailAccount account=getAccount(request);
 			//String emails[]=request.getParameterValues("recipients");
             Payload<MapItem, JsMessage> pl=ServletUtils.getPayload(request,JsMessage.class);
             JsMessage jsmsg=pl.data;
@@ -4713,7 +4145,7 @@ public class Service extends BaseService {
 
 			}
 			
-			checkStoreConnected();
+			account.checkStoreConnected();
 			//String attachments[] = request.getParameterValues("attachments");
 			//if (attachments == null) {
 			//	attachments = new String[0];
@@ -4724,12 +4156,12 @@ public class Service extends BaseService {
 			if (ifrom != null) {
 				from = ifrom.getEmail();
 			}
-			checkStoreConnected();
+			account.checkStoreConnected();
 			Exception exc = sendMessage(msg, jsmsg.attachments);
 			if (exc == null) {
 				//if is draft, check for deletion
 				if (jsmsg.draftuid>0 && jsmsg.draftfolder!=null && ss.isDefaultFolderDraftsDeleteMsgOnSend()) {
-					FolderCache fc=getFolderCache(jsmsg.draftfolder);
+					FolderCache fc=account.getFolderCache(jsmsg.draftfolder);
 					fc.deleteMessages(new long[] { jsmsg.draftuid }, false);
 				}
 				
@@ -4746,7 +4178,7 @@ public class Service extends BaseService {
 
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				
-				deleteAutosavedDraft(msgId);
+				deleteAutosavedDraft(account,msgId);
 				// TODO: Cloud integration!!! Destination emails added to share
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
 				 for(String hash: hashlinks) {
@@ -4755,7 +4187,7 @@ public class Service extends BaseService {
 				 }
 
 				 }*/
-				FolderCache fc = getFolderCache(mprofile.getFolderSent());
+				FolderCache fc = account.getFolderCache(account.getFolderSent());
 				fc.setForceRefresh();
 				//check for in-reply-to and set the answered flags
 				//String inreplyto = request.getParameter("inreplyto");
@@ -4768,14 +4200,14 @@ public class Service extends BaseService {
 				String foundfolder = null;
 				if (jsmsg.forwardedfrom != null && jsmsg.forwardedfrom.trim().length() > 0) {
 					try {
-						foundfolder = foundfolder=flagForwardedMessage(jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
+						foundfolder = foundfolder=flagForwardedMessage(account,jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					}
 				}
 				else if((jsmsg.inreplyto != null && jsmsg.inreplyto.trim().length()>0)||(jsmsg.replyfolder!=null&&jsmsg.replyfolder.trim().length()>0&&jsmsg.origuid>0)) {
 					try {
-						foundfolder=flagAnsweredMessage(jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
+						foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					}
@@ -4798,25 +4230,24 @@ public class Service extends BaseService {
         json.printTo(out);
 	}
 	
-    private String flagAnsweredMessage(String replyfolder, String id, long origuid) throws MessagingException {
+    private String flagAnsweredMessage(MailAccount account, String replyfolder, String id, long origuid) throws MessagingException {
 		String foundfolder = null;
 		if (replyfolder != null) {
-			if (_flagAnsweredMessage(replyfolder,origuid)) foundfolder=replyfolder;
+			if (_flagAnsweredMessage(account,replyfolder,origuid)) foundfolder=replyfolder;
 		}
 		if (foundfolder == null) {
-			SonicleIMAPFolder f = (SonicleIMAPFolder) store.getFolder("");
-			SonicleIMAPFolder.RecursiveSearchResult rsr = f.recursiveSearchByMessageID(id, skipReplyFolders);
+			SonicleIMAPFolder.RecursiveSearchResult rsr = account.recursiveSearchByMessageID("",id);
 			if (rsr != null) {
-				_flagAnsweredMessage(rsr.foldername, rsr.uid);
+				_flagAnsweredMessage(account,rsr.foldername, rsr.uid);
 				foundfolder = rsr.foldername;
 			}
 		}
 		return foundfolder;
 	}
 	
-	private boolean _flagAnsweredMessage(String foldername, long uid) throws MessagingException {
+	private boolean _flagAnsweredMessage(MailAccount account, String foldername, long uid) throws MessagingException {
 		Message msg = null;
-		SonicleIMAPFolder sifolder = (SonicleIMAPFolder) store.getFolder(foldername);
+		SonicleIMAPFolder sifolder = (SonicleIMAPFolder) account.getFolder(foldername);
 		sifolder.open(Folder.READ_WRITE);
 		msg = sifolder.getMessageByUID(uid);
 		boolean found = msg != null;
@@ -4827,25 +4258,24 @@ public class Service extends BaseService {
 		return found;
 	}
 	
-    private String flagForwardedMessage(String forwardedfolder, String id, long origuid) throws MessagingException {
+    private String flagForwardedMessage(MailAccount account, String forwardedfolder, String id, long origuid) throws MessagingException {
 		String foundfolder = null;
 		if (forwardedfolder != null) {
-			if (_flagForwardedMessage(forwardedfolder,origuid)) foundfolder=forwardedfolder;
+			if (_flagForwardedMessage(account,forwardedfolder,origuid)) foundfolder=forwardedfolder;
 		}
 		if (foundfolder == null) {
-			SonicleIMAPFolder f = (SonicleIMAPFolder) store.getFolder("");
-			SonicleIMAPFolder.RecursiveSearchResult rsr = f.recursiveSearchByMessageID(id, skipForwardFolders);
+			SonicleIMAPFolder.RecursiveSearchResult rsr = account.recursiveSearchByMessageID("",id);
 			if (rsr != null) {
-				_flagForwardedMessage(rsr.foldername, rsr.uid);
+				_flagForwardedMessage(account,rsr.foldername, rsr.uid);
 				foundfolder = rsr.foldername;
 			}
 		}
 		return foundfolder;
 	}
 	
-	private boolean _flagForwardedMessage(String foldername, long uid) throws MessagingException {
+	private boolean _flagForwardedMessage(MailAccount account, String foldername, long uid) throws MessagingException {
 		Message msg = null;
-		SonicleIMAPFolder sifolder = (SonicleIMAPFolder) store.getFolder(foldername);
+		SonicleIMAPFolder sifolder = (SonicleIMAPFolder) account.getFolder(foldername);
 		sifolder.open(Folder.READ_WRITE);
 		msg = sifolder.getMessageByUID(uid);
 		boolean found = msg != null;
@@ -4857,10 +4287,11 @@ public class Service extends BaseService {
 	}
 	
 	public void processSaveMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		JsonResult json = null;
 		CoreManager coreMgr=WT.getCoreManager();
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
             Payload<MapItem, JsMessage> pl=ServletUtils.getPayload(request,JsMessage.class);
             JsMessage jsmsg=pl.data;
             long msgId=ServletUtils.getLongParameter(request, "msgId", true);
@@ -4870,18 +4301,18 @@ public class Service extends BaseService {
 			//	attachments = new String[0];
 			//}
 			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false);
-			checkStoreConnected();
+			account.checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
-				fc = determineSentFolder(msg);
+				fc = determineSentFolder(account,msg);
 			} else {
-				fc = getFolderCache(savefolder);
+				fc = account.getFolderCache(savefolder);
 			}
 			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				
-				deleteAutosavedDraft(msgId);
+				deleteAutosavedDraft(account,msgId);
 				
 				if (pl.data.origuid>0 && pl.data.folder!=null && fc.getFolder().getFullName().equals(pl.data.folder)) {
 					fc.deleteMessages(new long[] { pl.data.origuid }, false);
@@ -4900,15 +4331,15 @@ public class Service extends BaseService {
         json.printTo(out);
 	}
 	
-	private FolderCache determineSentFolder(SimpleMessage msg) throws MessagingException {
-		String draftsfolder=mprofile.getFolderDrafts();
+	private FolderCache determineSentFolder(MailAccount account, SimpleMessage msg) throws MessagingException {
+		String draftsfolder=account.getFolderDrafts();
 		Identity ident = msg.getFrom();
 		if (ident != null ) {
 			String mainfolder=ident.getMainFolder();
 			if (mainfolder != null && mainfolder.trim().length() > 0) {
-				String newdraftsfolder = mainfolder + folderSeparator + getLastFolderName(draftsfolder);
+				String newdraftsfolder = mainfolder + account.getFolderSeparator() + account.getLastFolderName(draftsfolder);
 				try {
-					Folder folder = getFolder(newdraftsfolder);
+					Folder folder = account.getFolder(newdraftsfolder);
 					if (folder.exists()) {
 						draftsfolder = newdraftsfolder;
 					}
@@ -4917,7 +4348,7 @@ public class Service extends BaseService {
 				}
 			}
 		}
-		FolderCache fc = getFolderCache(draftsfolder);
+		FolderCache fc = account.getFolderCache(draftsfolder);
 		return fc;
 	}
 	
@@ -4925,7 +4356,8 @@ public class Service extends BaseService {
 		JsonResult json = null;
 		CoreManager coreMgr=WT.getCoreManager();
 		try {
-			checkStoreConnected();
+			MailAccount account=getAccount(request);
+			account.checkStoreConnected();
             Payload<MapItem, JsMessage> pl=ServletUtils.getPayload(request,JsMessage.class);
             JsMessage jsmsg=pl.data;
             long msgId=ServletUtils.getLongParameter(request, "msgId", true);
@@ -4938,18 +4370,18 @@ public class Service extends BaseService {
 				attachments = new String[0];
 			}*/
 			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false);
-			checkStoreConnected();
+			account.checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
-				fc = getFolderCache(mprofile.getFolderDrafts());
+				fc = account.getFolderCache(account.getFolderDrafts());
 			} else {
-				fc = getFolderCache(savefolder);
+				fc = account.getFolderCache(savefolder);
 			}
 			Exception exc = scheduleMessage(msg, jsmsg.attachments, fc, scheddate, schedtime, schednotify);
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				
-				deleteAutosavedDraft(msgId);
+				deleteAutosavedDraft(account,msgId);
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -4968,10 +4400,11 @@ public class Service extends BaseService {
 		JsonResult json = null;
 		CoreManager coreMgr=WT.getCoreManager();
 		try {
+			MailAccount account=getAccount(request);
 			long msgId=ServletUtils.getLongParameter(request, "msgId", true);
 			deleteCloudAttachments(msgId);
 			coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
-			deleteAutosavedDraft(msgId);
+			deleteAutosavedDraft(account,msgId);
 			json=new JsonResult();
 		} catch(Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -5239,14 +4672,15 @@ public class Service extends BaseService {
 	
 	public void processAttachFromMail(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
-			checkStoreConnected();
+			MailAccount account=getAccount(request);
+			account.checkStoreConnected();
 			
 			String tag = request.getParameter("tag");
 			String pfoldername = request.getParameter("folder");
 			String puidmessage = request.getParameter("idmessage");
 			String pidattach = request.getParameter("idattach");
 			
-			FolderCache mcache = getFolderCache(pfoldername);
+			FolderCache mcache = account.getFolderCache(pfoldername);
 			long uidmessage = Long.parseLong(puidmessage);
 			Message m = mcache.getMessage(uidmessage);
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
@@ -5288,7 +4722,8 @@ public class Service extends BaseService {
 	
 	public void processAttachFromMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
-			checkStoreConnected();
+			MailAccount account=getAccount(request);
+			account.checkStoreConnected();
 			
 			String tag = request.getParameter("tag");
 			String pfoldername = request.getParameter("folder");
@@ -5308,7 +4743,7 @@ public class Service extends BaseService {
 					suid=suid.substring(ix+1);
 				}
 				long uid=Long.parseLong(suid);
-				FolderCache mcache = getFolderCache(foldername);
+				FolderCache mcache = account.getFolderCache(foldername);
 				
 				Message msg=mcache.getMessage(uid);
 				File file = WT.createTempFile();
@@ -5341,7 +4776,8 @@ public class Service extends BaseService {
 	
 	public void processCopyAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
-			checkStoreConnected();
+			MailAccount account=getAccount(request);
+			account.checkStoreConnected();
 			UserProfile profile=environment.getProfile();
 			Locale locale=profile.getLocale();
 			
@@ -5350,8 +4786,8 @@ public class Service extends BaseService {
 			String puidmessage = request.getParameter("idmessage");
 			String pidattach = request.getParameter("idattach");
 			
-			FolderCache frommcache = getFolderCache(pfromfolder);
-			FolderCache tomcache = getFolderCache(ptofolder);
+			FolderCache frommcache = account.getFolderCache(pfromfolder);
+			FolderCache tomcache = account.getFolderCache(ptofolder);
 			long uidmessage = Long.parseLong(puidmessage);
 			Message m = frommcache.getMessage(uidmessage);
 			
@@ -5367,7 +4803,7 @@ public class Service extends BaseService {
 				msgContent = new MimeMessage((MimeMessage)content);
 			} else if(content instanceof IMAPInputStream) {
 				try {
-					msgContent = new MimeMessage(session, (IMAPInputStream)content);
+					msgContent = new MimeMessage(account.getMailSession(), (IMAPInputStream)content);
 				} catch(MessagingException ex1) {
 					logger.debug("Stream cannot be interpreted as MimeMessage", ex1);
 				}
@@ -5388,6 +4824,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSendReceipt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		UserProfile profile = environment.getProfile();
 		String subject = request.getParameter("subject");
 		//String from = request.getParameter("from");
@@ -5401,7 +4838,7 @@ public class Service extends BaseService {
 		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] è stato letto.\n\n"
 				+ "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			Exception exc = sendReceipt(ident, from, to, subject, body);
 			if (exc == null) {
 				new JsonResult().printTo(out);
@@ -5419,13 +4856,14 @@ public class Service extends BaseService {
 		ArrayList<JsPreviewMessage> items = new ArrayList<>();
 		
 		try {
+			MailAccount account=getAccount(request);
 			String query = ServletUtils.getStringParameter(request, "query", null);
 			int visibleRows=0;
 			int maxVisibleRows=20;
 			
 			if (query == null) {
 				String folderId = "INBOX";
-				FolderCache fc=getFolderCache(folderId);
+				FolderCache fc=account.getFolderCache(folderId);
 				Message msgs[]=fc.getMessages("unread","","",FolderCache.SORT_BY_DATE,false,true,-1,true,false);
 				fc.fetch(msgs, getMessageFetchProfile(),0,50);
 				for (Message msg: msgs) {
@@ -5475,7 +4913,7 @@ public class Service extends BaseService {
 					JsPreviewMessage jsmsg=new JsPreviewMessage(
 						simsg.getUID(), 
 						folderId,
-						getInternationalFolderName(getFolderCache(folderId)),
+						getInternationalFolderName(account.getFolderCache(folderId)),
 						simsg.getSubject(), 
 						from,
 						to,
@@ -5528,6 +4966,7 @@ public class Service extends BaseService {
 		String crud = null;
 			List<JsTag> items;
 		try {
+			MailAccount account=getAccount(request);
 			crud = ServletUtils.getStringParameter(request, "crud", true);
 			if (crud.equals(Crud.READ)) {
 				items=new ArrayList<>();
@@ -5550,7 +4989,7 @@ public class Service extends BaseService {
 				String oldTagId=tag.getTagId();
 			    newTagId=mailManager.sanitazeTagId(newTagId);				
 				mailManager.updateTag(tag,newTagId);
-				mailManager.updateFoldersTag(oldTagId,newTagId,foldersCache.values());
+				mailManager.updateFoldersTag(oldTagId,newTagId,account.getFolderCacheValues());
 				loadTags();
 				
 				items=new ArrayList<>();
@@ -5570,14 +5009,15 @@ public class Service extends BaseService {
 	}
 	
 	public void processTagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
 		String tagId = request.getParameter("tagId");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
 			if (!mf) {
 				tagMessages(mcache, toLongs(uids), tagId);
 			} else {
@@ -5586,7 +5026,7 @@ public class Service extends BaseService {
                     int ix=uid.indexOf("|");
                     fromfolder=uid.substring(0,ix);
                     uid=uid.substring(ix+1);
-					mcache = getFolderCache(fromfolder);
+					mcache = account.getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
                     tagMessages(mcache, iuids, tagId);
 				}
@@ -5599,14 +5039,15 @@ public class Service extends BaseService {
 	}	
 	
 	public void processUntagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
 		String tagId = request.getParameter("tagId");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
 			if (!mf) {
 				untagMessages(mcache, toLongs(uids), tagId);
 			} else {
@@ -5615,7 +5056,7 @@ public class Service extends BaseService {
                     int ix=uid.indexOf("|");
                     fromfolder=uid.substring(0,ix);
                     uid=uid.substring(ix+1);
-					mcache = getFolderCache(fromfolder);
+					mcache = account.getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
                     untagMessages(mcache, iuids, tagId);
 				}
@@ -5628,13 +5069,14 @@ public class Service extends BaseService {
 	}	
 	
 	public void processClearMessagesTags(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(fromfolder);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(fromfolder);
 			if (!mf) {
 				clearMessagesTags(mcache, toLongs(uids));
 			} else {
@@ -5643,7 +5085,7 @@ public class Service extends BaseService {
                     int ix=uid.indexOf("|");
                     fromfolder=uid.substring(0,ix);
                     uid=uid.substring(ix+1);
-					mcache = getFolderCache(fromfolder);
+					mcache = account.getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
                     clearMessagesTags(mcache, iuids);
 				}
@@ -5680,7 +5122,7 @@ public class Service extends BaseService {
 		}
 	}	*/
 	
-	private String getSharedFolderName(String mailUser, String folder) throws MessagingException {
+	private String getSharedFolderName(MailAccount account, String mailUser, String folder) throws MessagingException {
 		FolderCache folderCache = null;
 		String sharedFolderName = null;
 		String folderName = null;
@@ -5691,10 +5133,10 @@ public class Service extends BaseService {
 		// INBOX is a fake name, it's equals to user's direct folder
 		boolean isInbox=folder.equals("INBOX");
 		
-		FolderCache[] sharedCache = getSharedFoldersCache();
+		FolderCache[] sharedCache = account.getSharedFoldersCache();
 		for(FolderCache sharedFolder : sharedCache) {
 			sharedFolderName = sharedFolder.getFolderName();
-			folderCache = getFolderCache(sharedFolderName);
+			folderCache = account.getFolderCache(sharedFolderName);
 			for(Folder fo : folderCache.getFolder().list()) {
 				folderName = fo.getFullName(); 
 				char sep=fo.getSeparator();
@@ -5729,13 +5171,14 @@ public class Service extends BaseService {
 
 	public void processUploadToFolder (HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try{
+			MailAccount account=getAccount(request);
 			String currentFolder=request.getParameter("folder");
 			String uploadId=request.getParameter("uploadId");
 			
 			UploadedFile upfile=getUploadedFile(uploadId);
 			InputStream in = new FileInputStream(upfile.getFile());
-			MimeMessage msgContent = new MimeMessage(session, in);
-			FolderCache tomcache = getFolderCache(currentFolder);
+			MimeMessage msgContent = new MimeMessage(account.getMailSession(), in);
+			FolderCache tomcache = account.getFolderCache(currentFolder);
 			msgContent.setFlag(Flags.Flag.SEEN, true);
 			tomcache.appendMessage(msgContent);
 			new JsonResult().printTo(out);
@@ -5893,6 +5336,7 @@ public class Service extends BaseService {
 		UserProfile profile = environment.getProfile();
 		Locale locale = profile.getLocale();
 		java.util.Calendar cal = java.util.Calendar.getInstance(locale);
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		//String psortfield = request.getParameter("sort");
 		//String psortdir = request.getParameter("dir");
@@ -5926,7 +5370,7 @@ public class Service extends BaseService {
 		//System.out.println("timestamp="+ptimestamp);
 		long timestamp=Long.parseLong(ptimestamp);
 		
-		if (isSpecialFolder(pfoldername) || isSharedFolder(pfoldername)) {
+		if (account.isSpecialFolder(pfoldername) || account.isSharedFolder(pfoldername)) {
 			logger.debug("folder is special or shared, refresh forced");
 			refresh=true;
 		}
@@ -6028,24 +5472,24 @@ public class Service extends BaseService {
 		Folder folder = null;
 		boolean connected=false;
 		try {
-			connected=checkStoreConnected();
+			connected=account.checkStoreConnected();
 			if (!connected) throw new Exception("Mail account authentication error");
 
 				
 			int funread = 0;
 			if (pfoldername == null) {
-				folder = getDefaultFolder();
+				folder = account.getDefaultFolder();
 			} else {
-				folder = getFolder(pfoldername);
+				folder = account.getFolder(pfoldername);
 			}
-			boolean issent = isSentFolder(folder.getFullName());
-			boolean isundersent=isUnderSentFolder(folder.getFullName());
-			boolean isdrafts = isDraftsFolder(folder.getFullName());
-			boolean isundershared=isUnderSharedFolder(pfoldername);
+			boolean issent = account.isSentFolder(folder.getFullName());
+			boolean isundersent=account.isUnderSentFolder(folder.getFullName());
+			boolean isdrafts = account.isDraftsFolder(folder.getFullName());
+			boolean isundershared=account.isUnderSharedFolder(pfoldername);
 			if (!issent) {
-				String names[] = folder.getFullName().split("\\" + getFolderSeparator());
+				String names[] = folder.getFullName().split("\\" + account.getFolderSeparator());
 				for (String pname : names) {
-					if (isSentFolder(pname)) {
+					if (account.isSentFolder(pname)) {
 						issent = true;
 						break;
 					}
@@ -6054,7 +5498,7 @@ public class Service extends BaseService {
 			
 			String ctn = Thread.currentThread().getName();
 			String key = folder.getFullName();
-			FolderCache mcache = getFolderCache(key);
+			FolderCache mcache = account.getFolderCache(key);
 			if (mcache.toBeRefreshed()) refresh=true;
 			//Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,refresh);
 			if (ppattern != null && psearchfield != null) {
@@ -6130,7 +5574,7 @@ public class Service extends BaseService {
 				total=sgi.threaded?mcache.getThreadedCount():xmsgs.length;
 				if (start<max) {
 					
-					Folder fsent=getFolder(mprofile.getFolderSent());
+					Folder fsent=account.getFolder(account.getFolderSent());
 					boolean openedsent=false;
 					//Fetch others for these messages
 					mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
@@ -6460,7 +5904,7 @@ public class Service extends BaseService {
 				
 				long qlimit=-1;
 				long qusage=-1;
-				Quota quotas[]=((IMAPStore)store).getQuota("INBOX");
+				Quota quotas[]=account.getQuota("INBOX");
 				if (quotas!=null)
 					for(Quota q: quotas) {
 						if ((q.quotaRoot.equals("INBOX") || q.quotaRoot.equals("Quota")) && q.resources!=null) {
@@ -6526,6 +5970,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processGetMessagePage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puid = request.getParameter("uid");
 		String prowsperpage = request.getParameter("rowsperpage");
@@ -6574,18 +6019,18 @@ public class Service extends BaseService {
 		Folder folder = null;
 		boolean connected=false;
 		try {
-			connected=checkStoreConnected();
+			connected=account.checkStoreConnected();
 			if (!connected) throw new Exception("Mail account authentication error");
 
 				
 			if (pfoldername == null) {
-				folder = getDefaultFolder();
+				folder = account.getDefaultFolder();
 			} else {
-				folder = getFolder(pfoldername);
+				folder = account.getFolder(pfoldername);
 			}
 			
 			String key = folder.getFullName();
-			FolderCache mcache = getFolderCache(key);
+			FolderCache mcache = account.getFolderCache(key);
 			if (mcache.toBeRefreshed()) refresh=true;
 //			if (ppattern != null && psearchfield != null) {
 //				key += "|" + ppattern + "|" + psearchfield;
@@ -6758,6 +6203,7 @@ public class Service extends BaseService {
 	DateFormat df = null;
 	
 	public void processGetMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
@@ -6778,8 +6224,8 @@ public class Service extends BaseService {
 			boolean wasseen = false;
 			String sout = "{\nmessage: [\n";
 			if (providername == null) {
-				checkStoreConnected();
-				mcache = getFolderCache(pfoldername);
+				account.checkStoreConnected();
+				mcache = account.getFolderCache(pfoldername);
                 msguid=Long.parseLong(puidmessage);
                 m=mcache.getMessage(msguid);
                 if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
@@ -7056,6 +6502,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processGetMessageNote(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		UserProfile profile = environment.getProfile();
@@ -7063,8 +6510,8 @@ public class Service extends BaseService {
 		boolean result = false;
 		String text = "";
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(pfoldername);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
             long msguid=Long.parseLong(puidmessage);
             String id=getMessageID(mcache.getMessage(msguid));
 			con = getConnection();
@@ -7083,6 +6530,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processSaveMessageNote(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String text = request.getParameter("text").trim();
@@ -7091,8 +6539,8 @@ public class Service extends BaseService {
 		boolean result = false;
 		String message = "";
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(pfoldername);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
             long msguid=Long.parseLong(puidmessage);
             Message msg=mcache.getMessage(msguid);
 			String id = getMessageID(msg);
@@ -7146,6 +6594,7 @@ public class Service extends BaseService {
 	}
 
 	public void processGetAttachment(HttpServletRequest request, HttpServletResponse response) {
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
@@ -7157,11 +6606,11 @@ public class Service extends BaseService {
 		String psaveas = request.getParameter("saveas");
 		
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			FolderCache mcache = null;
 			Message m = null;
 			if (providername == null) {
-				mcache = getFolderCache(pfoldername);
+				mcache = account.getFolderCache(pfoldername);
                 long newmsguid=Long.parseLong(puidmessage);
                 m=mcache.getMessage(newmsguid);
 			} else {
@@ -7225,6 +6674,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processGetAttachments(HttpServletRequest request, HttpServletResponse response) {
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pids[] = request.getParameterValues("ids");
@@ -7232,11 +6682,11 @@ public class Service extends BaseService {
 		String providerid = request.getParameter("providerid");
 		
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			FolderCache mcache = null;
 			Message m = null;
 			if (providername == null) {
-				mcache = getFolderCache(pfoldername);
+				mcache = account.getFolderCache(pfoldername);
                 long newmsguid=Long.parseLong(puidmessage);
                 m=mcache.getMessage(newmsguid);
 			} else {
@@ -7315,7 +6765,8 @@ public class Service extends BaseService {
 	
 	public void processPreviewAttachment(HttpServletRequest request, HttpServletResponse response) {
 		try {
-			checkStoreConnected();
+			MailAccount account=getAccount(request);
+			account.checkStoreConnected();
 			String uploadId = request.getParameter("uploadId");
 			/*String cid = request.getParameter("cid");
 			Attachment att = null;
@@ -7343,7 +6794,8 @@ public class Service extends BaseService {
 	
 	public void processDocPreviewAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
-			checkStoreConnected();
+			MailAccount account=getAccount(request);
+			account.checkStoreConnected();
 			String uploadId = request.getParameter("uploadId");
 			/*String cid = request.getParameter("cid");
 			Attachment att = null;
@@ -7372,6 +6824,7 @@ public class Service extends BaseService {
 	
 	//view through onlyoffice doc viewer
 	public void processViewAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
@@ -7382,11 +6835,11 @@ public class Service extends BaseService {
 		String punknown = request.getParameter("unknown");
 		
 		try {
-			checkStoreConnected();
+			account.checkStoreConnected();
 			FolderCache mcache = null;
 			Message m = null;
 			if (providername == null) {
-				mcache = getFolderCache(pfoldername);
+				mcache = account.getFolderCache(pfoldername);
                 long newmsguid=Long.parseLong(puidmessage);
                 m=mcache.getMessage(newmsguid);
 			} else {
@@ -7444,13 +6897,14 @@ public class Service extends BaseService {
 	}
 	
 	public void processCalendarRequest(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
 		String pcalaction = request.getParameter("calaction");
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
 		try {
-			checkStoreConnected();
-			FolderCache mcache = getFolderCache(pfoldername);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
 			long newmsguid = Long.parseLong(puidmessage);
 			Message m = mcache.getMessage(newmsguid);
 			HTMLMailData mailData = mcache.getMailData((MimeMessage)m);
@@ -7461,7 +6915,7 @@ public class Service extends BaseService {
 			if (pcalaction.equals("accept")) {
 				Event ev = cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
 				String ekey = cm.getEventInstanceKey(ev.getEventId());
-				sendICalendarReply(ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED);
+				sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED);
 				new JsonResult(ekey).printTo(out);
 				
 			} else if (pcalaction.equals("import")) {
@@ -7483,19 +6937,20 @@ public class Service extends BaseService {
 	}
 	
     public void processDeclineInvitation(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
         String pfoldername=request.getParameter("folder");
         String puidmessage=request.getParameter("idmessage");
         String pidattach=request.getParameter("idattach");
         try {
-            checkStoreConnected();
-            FolderCache mcache=getFolderCache(pfoldername);
+            account.checkStoreConnected();
+            FolderCache mcache=account.getFolderCache(pfoldername);
             long newmsguid=Long.parseLong(puidmessage);
             Message m=mcache.getMessage(newmsguid);
             HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
             Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
             
 			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			sendICalendarReply(ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.DECLINED);
+			sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.DECLINED);
 			new JsonResult().printTo(out);
         } catch(Exception exc) {
             new JsonResult(false,exc.getMessage()).printTo(out);
@@ -7553,12 +7008,12 @@ public class Service extends BaseService {
 		
 	}*/
 	
-	private void sendICalendarReply(ICalendarRequest request, InternetAddress forAddress, PartStat response) throws Exception {
+	private void sendICalendarReply(MailAccount account, ICalendarRequest request, InternetAddress forAddress, PartStat response) throws Exception {
 		InternetAddress organizerAddress = InternetAddressUtils.toInternetAddress(request.getOrganizerAddress());
-		sendICalendarReply(request.getCalendar(), organizerAddress, forAddress, response, request.getSummary());
+		sendICalendarReply(account, request.getCalendar(), organizerAddress, forAddress, response, request.getSummary());
 	}
 	
-	private void sendICalendarReply(net.fortuna.ical4j.model.Calendar ical, InternetAddress organizerAddress, InternetAddress forAddress, PartStat response, String eventSummary) throws Exception {
+	private void sendICalendarReply(MailAccount account, net.fortuna.ical4j.model.Calendar ical, InternetAddress organizerAddress, InternetAddress forAddress, PartStat response, String eventSummary) throws Exception {
 		String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
 		net.fortuna.ical4j.model.Calendar icalReply = ICalendarUtils.buildInvitationReply(ical, prodId, forAddress, response);
 		if (icalReply == null) throw new WTException("Unable to build iCalendar");
@@ -7574,19 +7029,19 @@ public class Service extends BaseService {
 		
 		UserProfile.Data ud = WT.getUserData(getEnv().getProfileId());
 		InternetAddress from = InternetAddressUtils.toInternetAddress(ud.getFullEmailAddress());
-		Message message = createMessage(from, TplHelper.buildEventInvitationReplyEmailSubject(ud.getLocale(), response, eventSummary));
+		Message message = createMessage(account, from, TplHelper.buildEventInvitationReplyEmailSubject(ud.getLocale(), response, eventSummary));
 		message.addRecipient(RecipientType.TO, organizerAddress);
 		message.setContent(mmp);
 		
 		sendMsg(message);
 	}
 	
-	private MimeMessage createMessage(InternetAddress from, String subject) throws MessagingException {
+	private MimeMessage createMessage(MailAccount account, InternetAddress from, String subject) throws MessagingException {
 		try {
 			subject = MimeUtility.encodeText(subject);
 		} catch (Exception ex) {}
 		
-		MimeMessage message = new MimeMessage(session);
+		MimeMessage message = new MimeMessage(account.getMailSession());
 		message.setSubject(subject);
 		message.addFrom(new InternetAddress[] {from});
 		message.setSentDate(new java.util.Date());
@@ -7594,13 +7049,14 @@ public class Service extends BaseService {
 	}	
 	
     public void processUpdateCalendarReply(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
         String pfoldername=request.getParameter("folder");
         String puidmessage=request.getParameter("idmessage");
         String pidattach=request.getParameter("idattach");
         //UserProfile profile=environment.getUserProfile();
         try {
-            checkStoreConnected();
-            FolderCache mcache=getFolderCache(pfoldername);
+            account.checkStoreConnected();
+            FolderCache mcache=account.getFolderCache(pfoldername);
             long newmsguid=Long.parseLong(puidmessage);
             Message m=mcache.getMessage(newmsguid);
             HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
@@ -7659,6 +7115,7 @@ public class Service extends BaseService {
 				throw new Exception("Advanced search is still running!");
 			}
 			
+			MailAccount account=getAccount(request);
 			String folder = request.getParameter("folder");
             String strashspam=request.getParameter("trashspam");
 			String ssubfolders = request.getParameter("subfolders");
@@ -7676,12 +7133,12 @@ public class Service extends BaseService {
 			
 			if (folder.startsWith("folder:")) {
 				folder = folder.substring(7);
-				ast = new AdvancedSearchThread(this, folder, trashspam, subfolders, and, entries);
+				ast = new AdvancedSearchThread(this, account, folder, trashspam, subfolders, and, entries);
 			} else {
 				int folderType = folder.equals("personal") ? AdvancedSearchThread.FOLDERTYPE_PERSONAL
 						: folder.equals("shared") ? AdvancedSearchThread.FOLDERTYPE_SHARED
 								: AdvancedSearchThread.FOLDERTYPE_ALL;
-				ast = new AdvancedSearchThread(this, folderType, trashspam, subfolders, and, entries);
+				ast = new AdvancedSearchThread(this, account, folderType, trashspam, subfolders, and, entries);
 			}
 			ast.start();
 			out.println("{\nresult: true\n}");
@@ -7695,6 +7152,7 @@ public class Service extends BaseService {
 		CoreManager core = WT.getCoreManager();
 		
 		try {
+			MailAccount account=getAccount(request);
 			String sstart = request.getParameter("start");
 			int start = 0;
 			if (sstart != null) {
@@ -7737,7 +7195,7 @@ public class Service extends BaseService {
 					int mmm = cal.get(java.util.Calendar.MINUTE);
 					int sss = cal.get(java.util.Calendar.SECOND);
 					String xfolder = xm.getFolder().getFullName();
-					FolderCache fc = getFolderCache(xfolder);
+					FolderCache fc = account.getFolderCache(xfolder);
 					String folder = StringEscapeUtils.escapeEcmaScript(xfolder);
 					String foldername = StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(getInternationalFolderName(fc)));
 					//From
@@ -7877,6 +7335,7 @@ public class Service extends BaseService {
 			if (sst!=null && sst.isRunning())
 				sst.cancel();
 			
+			MailAccount account=getAccount(request);
 			String pattern=ServletUtils.getStringParameter(request, "pattern", true);
 			String folder=ServletUtils.getStringParameter(request, "folder", false);
 			boolean trashspam=ServletUtils.getBooleanParameter(request, "trashspam", false);
@@ -7890,7 +7349,7 @@ public class Service extends BaseService {
 			ArrayList<String> isnotpersonfilters=ServletUtils.getStringParameters(request, "isnotpersonfilters");
 			ArrayList<String> isfolderfilters=ServletUtils.getStringParameters(request, "isfolderfilters");
 			ArrayList<String> isnotfolderfilters=ServletUtils.getStringParameters(request, "isnotfolderfilters");
-			Set<String> _folderIds=foldersCache.keySet();
+			Set<String> _folderIds=account.getFolderCacheKeys();
 			
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
@@ -7901,15 +7360,15 @@ public class Service extends BaseService {
 				
 				//if folder selected, look only under that folder
 				if (folder!=null && folder.trim().length()>0) {
-					if (!folder.equals(folderId) && !isUnderFolder(folder, folderId))
+					if (!folder.equals(folderId) && !account.isUnderFolder(folder, folderId))
 						continue;
 				} else {
 					//else skip shared
-					if (isUnderSharedFolder(folderId)) continue;
+					if (account.isUnderSharedFolder(folderId)) continue;
 				}
 				
 				//skip trash & spam unless selected
-				if (!trashspam && (isTrashFolder(folderId)||isSpamFolder(folderId))) continue;
+				if (!trashspam && (account.isTrashFolder(folderId)||account.isSpamFolder(folderId))) continue;
 				
 				boolean skip=false;
 				for(String skipfolder: firstFolders) {
@@ -7921,7 +7380,7 @@ public class Service extends BaseService {
 				if (!skip) folderIds.add(folderId);
 			}
 			
-			sst=new SmartSearchThread(this,pattern,folderIds,fromme,tome,attachments,
+			sst=new SmartSearchThread(this,account,pattern,folderIds,fromme,tome,attachments,
 				ispersonfilters,isnotpersonfilters,isfolderfilters,isnotfolderfilters,
 				year,month,day);
 			sst.start();
@@ -7956,6 +7415,7 @@ public class Service extends BaseService {
 			if (pst!=null && pst.isRunning())
 				pst.cancel();
 			
+			MailAccount account=getAccount(request);
 			String pattern=ServletUtils.getStringParameter(request, "pattern", true);
 			String[] tokens = StringUtils.split(pattern, " ");
 			String patterns = "";
@@ -7967,7 +7427,7 @@ public class Service extends BaseService {
 				searchfields += "any";
 				first=false;
 			}
-			Set<String> _folderIds=foldersCache.keySet();
+			Set<String> _folderIds=account.getFolderCacheKeys();
 			
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
@@ -7976,15 +7436,15 @@ public class Service extends BaseService {
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
 				
-				if (isUnderSharedFolder(folderId)) continue;
+				if (account.isUnderSharedFolder(folderId)) continue;
 				//skip trash & spam unless selected
-				if (!trash && isTrashFolder(folderId)) continue;
-				if (!spam && isSpamFolder(folderId)) continue;
+				if (!trash && account.isTrashFolder(folderId)) continue;
+				if (!spam && account.isSpamFolder(folderId)) continue;
 				
 				folderIds.add(folderId);
 			}
 			
-			pst=new PortletSearchThread(this,patterns,searchfields,folderIds);
+			pst=new PortletSearchThread(this,account,patterns,searchfields,folderIds);
 			pst.start();
 			new JsonResult().printTo(out);
 		} catch (Exception exc) {
@@ -8029,29 +7489,20 @@ public class Service extends BaseService {
 		}
 	}
 	
-	public boolean isSharedSeen() throws MessagingException {
-		if (!hasAnnotations) return false;
+	public boolean isSharedSeen(MailAccount account) throws MessagingException {
+		if (!account.hasAnnotations()) return false;
 		
-		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) store.getFolder("INBOX");
+		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) account.getFolder("INBOX");
 		String annot = xfolder.getAnnotation("/vendor/cmu/cyrus-imapd/sharedseen", true);
 		return annot.equals("true");
 	}
 	
-	public void setSharedSeen(boolean b) throws MessagingException {
-		if (!hasAnnotations) return;
-		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) store.getFolder("INBOX");
+	public void setSharedSeen(MailAccount account, boolean b) throws MessagingException {
+		if (!account.hasAnnotations()) return;
+		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) account.getFolder("INBOX");
 		xfolder.setAnnotation("/vendor/cmu/cyrus-imapd/sharedseen", true, b ? "true" : "false");
 	}
 
-	private boolean isSharedFolderContainer(IMAPFolder folder) {
-		// If passed folder matches a shared prefix, we have taken shared 
-		// folders' container folder 
-		for(String prefix : sharedPrefixes) {
-			if(folder.getFullName().equals(prefix)) return true;
-		}
-		return false;
-	}
-	
 	protected boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
 		String scheme=ad.getDirUri().getScheme();
 		//return scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
@@ -8088,6 +7539,7 @@ public class Service extends BaseService {
 		Connection con=null;
 		try {
 			con=getConnection();
+			MailAccount account=getAccount(request);
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			String id=null;
 			Payload<MapItem, JsSharing> pl=null;
@@ -8099,7 +7551,7 @@ public class Service extends BaseService {
 				id=pl.data.id;
 			}
 			
-			FolderCache fc = getFolderCache(id);
+			FolderCache fc = account.getFolderCache(id);
 			SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
 			CoreManager core=WT.getCoreManager();
 			Sharing wtsharing=core.getSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, MailManager.IDENTITY_SHARING_ID);
@@ -8168,9 +7620,9 @@ public class Service extends BaseService {
 						//look for any custom mail user
 						OUserMap userMap=UserMapDAO.getInstance().selectById(con, pid.getDomainId(), pid.getUserId());
 						if (userMap!=null && !StringUtils.isEmpty(userMap.getMailUser())) {
-							if (userMap.getMailHost().equals(mprofile.getMailHost()) && 
-									userMap.getMailPort().equals(mprofile.getMailPort()) && 
-									userMap.getMailProtocol().equals(mprofile.getMailProtocol())) {
+							if (userMap.getMailHost().equals(account.getHost()) && 
+									userMap.getMailPort().equals(account.getPort()) && 
+									userMap.getMailProtocol().equals(account.getProtocol())) {
 								imapId=userMap.getMailUser();
 							}
 						} else {
@@ -8201,7 +7653,7 @@ public class Service extends BaseService {
 					String imapId=ss.isImapAclLowercase()?sr.imapId.toLowerCase(): sr.imapId ;
 					if (!pl.data.hasImapId(sr.imapId)) {
 						logger.debug("Folder ["+foldername+"] - remove acl for "+imapId+" recursive="+recursive);
-						removeFolderSharing(foldername,imapId,recursive);
+						account.removeFolderSharing(foldername,imapId,recursive);
 						updateIdentitySharingRights(newwtrights,sr.roleUid,false,false);
 					}
 				}
@@ -8212,7 +7664,7 @@ public class Service extends BaseService {
 					if (!StringUtils.isEmpty(sr.imapId)) {
 						String srights=sr.toString();
 						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+imapId+" recursive="+recursive);
-						setFolderSharing(foldername, imapId, srights, recursive);
+						account.setFolderSharing(foldername, imapId, srights, recursive);
 						updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard);
 					}
 				}
@@ -8241,132 +7693,6 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void removeFolderSharing(String foldername, String acluser, boolean recursive) throws MessagingException {
-		Folder folders[]=null;
-		if (StringUtils.isEmpty(foldername)) {
-		   folders=getDefaultFolder().list();
-		} else {
-			folders=new IMAPFolder[1];
-			folders[0]=(IMAPFolder)getFolderCache(foldername).getFolder();
-		}
-		for(Folder folder: folders)
-			_removeFolderSharing((IMAPFolder)folder, acluser, recursive);
-	}
-	
-	private void _removeFolderSharing(IMAPFolder folder, String acluser, boolean recursive) throws MessagingException {
-		if(isSharedFolderContainer(folder)) return; // Skip shared folder container
-		
-		if (recursive && !isLeaf(folder)) {
-			Folder children[]=folder.list();
-			for(Folder child: children) {
-				_removeFolderSharing((IMAPFolder)child, acluser, true);
-			}
-		}
-		try {
-			folder.removeACL(acluser);
-		} catch(MessagingException exc) {
-			logger.error("Error removing acl on folder "+folder.getFullName(),exc);
-		}
-		
-	}
-	
-	private void setFolderSharing(String foldername, String acluser, String rights, boolean recursive) throws MessagingException {
-		Folder folders[]=null;
-		if (StringUtils.isEmpty(foldername)) {
-		   folders=getDefaultFolder().list();
-		} else {
-			folders=new IMAPFolder[1];
-			folders[0]=(IMAPFolder)getFolderCache(foldername).getFolder();
-		}
-		for(Folder folder: folders)
-			_setFolderSharing((IMAPFolder)folder, acluser, rights, recursive);
-	}
-	
-	private void _setFolderSharing(IMAPFolder folder, String acluser, String rights, boolean recursive) throws MessagingException {
-		if(isSharedFolderContainer(folder)) return; // Skip shared folder container
-		
-		if (recursive && !isLeaf(folder)) {
-			Folder children[]=folder.list();
-			for(Folder child: children) {
-				_setFolderSharing((IMAPFolder)child, acluser, rights, true);
-			}
-		}
-		try {
-			folder.removeACL(acluser);
-			folder.addACL(new ACL(acluser,new Rights(rights)));
-		} catch(MessagingException exc) {
-			logger.error("Error setting acl on folder "+folder.getFullName(),exc);
-		}
-	}
-	// TODO: set folder sharing!
-	
-/*	public void setFolderSharing(String targetUser, String resource, String params) throws MessagingException {
-	 IMAPFolder imapf = null;
-	 String acluser = wtd.getMailUsername(targetUser);
-	 if(acluser == null) return;
-		
-	 FolderCache fc = null;
-	 if(!resource.equals("INBOX")) {
-		fc = getFolderCache(resource);
-		if(fc == null) return;
-	 }
-		
-	 ACL acl = new ACL(acluser, new Rights(params));
-	 if(fc != null) {
-		imapf = (IMAPFolder)fc.getFolder();
-		_setFolderSharing(imapf, acl);
-	 } else {
-		Folder folder = getDefaultFolder();
-		Folder children[] = folder.list();
-		for(Folder child: children) {
-			imapf = (IMAPFolder)child;
-			if(isSharedFolderContainer(imapf)) continue; // Skip shared folder container
-			_setFolderSharing(imapf, acl);
-		}
-	 }
-		
-	}
-	
-	private void _setFolderSharing(IMAPFolder folder, ACL acl) throws MessagingException {
-	 if (!isLeaf(folder)) {
-	 Folder children[]=folder.list();
-	 for(Folder child: children)
-	 _setFolderSharing((IMAPFolder)child, acl);
-	 }
-	 //logger.debug("set sharing on {} to {}",folder.getFullName(),acl.getName());
-	 folder.removeACL(acl.getName());
-	 folder.addACL(acl);			
-	 }
-	
-	 public void removeFolderSharing(String targetUser, String resource) throws MessagingException {
-	 logger.debug("removeFolderSharing({},{})",targetUser,resource);
-	 IMAPFolder imapf = null;
-	 String acluser = wtd.getMailUsername(targetUser);
-	 if (acluser == null) return;
-		
-	 FolderCache fc = null;
-	 if(!resource.equals("INBOX")) {
-		fc = getFolderCache(resource);
-		if(fc == null) return;
-	 }
-		
-	 if(fc != null) {
-		imapf = (IMAPFolder)fc.getFolder();
-		_removeFolderSharing(imapf, acluser);
-	 } else {
-		Folder folder = getDefaultFolder();
-		Folder children[] = folder.list();
-		for(Folder child: children) {
-			imapf = (IMAPFolder)child;
-			if(isSharedFolderContainer(imapf)) continue; // Skip shared folder container
-			_removeFolderSharing(imapf, acluser);
-		}
-	 }
-				
-	}
-	
-
-	*/
 	public SharedPrincipal getSharedPrincipal(String domainId, String mailUserId) {
 		SharedPrincipal p = null;
 		Connection con = null;
@@ -8475,7 +7801,7 @@ public class Service extends BaseService {
 			co.put("folderSpam", us.getFolderSpam());
 			co.put("folderTrash", us.getFolderTrash());
 			co.put("folderArchive", us.getFolderArchive());
-			co.put("folderSeparator", folderSeparator);
+			co.put("folderSeparator", mainAccount.getFolderSeparator());
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
 			co.put("fontSize", us.getFontSize());
@@ -8498,6 +7824,7 @@ public class Service extends BaseService {
 			co.put("autoResponderActive", mailManager.isAutoResponderActive());
 			co.put("showUpcomingEvents", us.getShowUpcomingEvents());
 			co.put("showUpcomingTasks", us.getShowUpcomingTasks());
+			co.put("isArchivingExternal", ss.isArchivingExternal());
 			
 			if (RunContext.isPermitted(true, SERVICE_ID, "FAX", "ACCESS")) {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());
@@ -8531,7 +7858,7 @@ public class Service extends BaseService {
 				// In case of auto identities we need to build real mainfolder
 				try {
 					String mailUser = getMailUsername(opid);
-					String mainfolder = getSharedFolderName(mailUser, "INBOX" /*id.getMainFolder()*/);
+					String mainfolder = getSharedFolderName(getAccount(id),mailUser, "INBOX" /*id.getMainFolder()*/);
 					id.setMainFolder(mainfolder);
 					if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, id.getMainFolder()));
 				} catch (Exception ex) {
@@ -8733,9 +8060,6 @@ public class Service extends BaseService {
 	
 	private WebTopSession getWts() {
 		return getEnv().getWebTopSession();
-	}
-	
-	
-	
-	
+	}	
+
 }

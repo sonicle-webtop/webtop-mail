@@ -75,9 +75,72 @@ public class MailSettings {
 	public static final String SHOW_UPCOMING_TASKS = "upcoming.tasks.show";
 	
 	
+	/**
+	 * [system+domain]
+	 * [boolean]
+	 * Is external archiving active. Defaults to false.
+	 */
+	public static final String ARCHIVING_EXTERNAL = "archiving.external";
 	
+	/**
+	 * [system+domain][default]
+	 * [string]
+	 * IMAP host of the external archiving account. Defaults to "localhost".
+	 */
+	public static final String ARCHIVING_EXTERNAL_HOST = "archiving.external.host";
 	
+	/**
+	 * [system+domain][default]
+	 * [int]
+	 * IMAP port of the external archiving account. Defaults to 143.
+	 */
+	public static final String ARCHIVING_EXTERNAL_PORT = "archiving.external.port";
 	
+	/**
+	 * [system+domain][default]
+	 * [int]
+	 * Protocol of the external archiving account. May be imap or imaps. Defaults to imap.
+	 */
+	public static final String ARCHIVING_EXTERNAL_PROTOCOL = "archiving.external.protocol";
+	
+	/**
+	 * [system+domain][default]
+	 * [string]
+	 * IMAP user of the external archiving account. Defaults to "domain-archive".
+	 */
+	public static final String ARCHIVING_EXTERNAL_USERNAME = "archiving.external.username";
+
+	/**
+	 * [system+domain][default]
+	 * [string]
+	 * IMAP password of the external archiving account. Defaults to "secret".
+	 */
+	public static final String ARCHIVING_EXTERNAL_PASSWORD = "archiving.external.password";
+
+	/**
+	 * [system+domain][default]
+	 * [string]
+	 * IMAP folder prefix of the external archiving account. Defaults to null.
+	 */
+	public static final String ARCHIVING_EXTERNAL_FOLDER_PREFIX = "archiving.external.folder.prefix";
+
+    public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
+	public static final String DMS_ARCHIVE = "archive";
+	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";
+	public static final String ATTACHMENT_DIR = "attachment.dir";
+	public static final String MESSAGE_VIEW_MAX_TOS = "message.view.max.tos";
+	public static final String MESSAGE_VIEW_MAX_CCS = "message.view.max.ccs";
+	public static final String SORT_FOLDERS = "sort.folders";
+	public static final String SPAMADM_SPAM = "spamadm.spam";
+	public static final String ADMIN_USER = "admin.user";
+	public static final String ADMIN_PASSWORD = "admin.password";
+	public static final String NETHTOP_VMAIL_SECRET = "nethtop.vmail.secret";
+	public static final String SCHEDULED_EMAILS_DISABLED = "scheduled-emails.disabled";
+	public static final String SIEVE_SPAMFILTER_DISABLED = "sieve.spamfilter.disabled";
+	public static final String IMAP_ACL_LOWERCASE="imap.acl.lowercase";
+
+
+
 	public static final String MESSAGE_QUICKPART = "message.quickpart@{0}"; // !IMPORTANT
 	public static final String MESSAGE_LIST_GROUP = "messagelist.group@{0}"; // was : "messagelist-group-{0}"
 	public static final String MESSAGE_LIST_SORT = "messagelist.sort@{0}"; // was : "messagelist-{0}-sort"
