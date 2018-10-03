@@ -33,7 +33,6 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.mail.imap.*;
@@ -41,7 +40,6 @@ import com.sonicle.mail.tnef.internet.*;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.mail.model.Tag;
 import com.sonicle.webtop.mail.ws.RecentMessage;
@@ -53,8 +51,6 @@ import java.util.*;
 import javax.mail.*;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
-import javax.mail.event.FolderEvent;
-import javax.mail.event.FolderListener;
 import javax.mail.event.MessageChangedEvent;
 import javax.mail.event.MessageChangedListener;
 import javax.mail.event.MessageCountEvent;
@@ -64,11 +60,9 @@ import javax.mail.search.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import net.fortuna.ical4j.data.*;
-import net.fortuna.ical4j.model.*;
-import net.fortuna.ical4j.model.component.*;
-import net.fortuna.ical4j.model.property.*;
 import org.joda.time.LocalDate;
 import org.jooq.tools.StringUtils;
+import com.sonicle.commons.collection.FifoMap;
 
 
 /**
@@ -94,7 +88,8 @@ public class FolderCache {
     
     private String foldername=null;
     private Folder folder=null;
-    private HashMap<Long, HTMLMailData> dhash=new HashMap<Long, HTMLMailData>();
+    //private HashMap<Long, HTMLMailData> dhash=new HashMap<Long, HTMLMailData>();
+	private FifoMap<Long, HTMLMailData> dhash=new FifoMap<>(100);
     private final HashMap<String, MessageSearchResult> msrs=new HashMap<>();
     private Message msgs[]=null;
     private boolean modified=false;
