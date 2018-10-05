@@ -6460,18 +6460,22 @@ public class Service extends BaseService {
 				
 				long qlimit=-1;
 				long qusage=-1;
-				Quota quotas[]=((IMAPStore)store).getQuota("INBOX");
-				if (quotas!=null)
-					for(Quota q: quotas) {
-						if ((q.quotaRoot.equals("INBOX") || q.quotaRoot.equals("Quota")) && q.resources!=null) {
-							for(Quota.Resource r: q.resources) {
-								if (r.name.equals("STORAGE")) {
-									qlimit=r.limit;
-									qusage=r.usage;
+				try {
+					Quota quotas[]=((IMAPStore)store).getQuota("INBOX");
+					if (quotas!=null)
+						for(Quota q: quotas) {
+							if ((q.quotaRoot.equals("INBOX") || q.quotaRoot.equals("Quota")) && q.resources!=null) {
+								for(Quota.Resource r: q.resources) {
+									if (r.name.equals("STORAGE")) {
+										qlimit=r.limit;
+										qusage=r.usage;
+									}
 								}
 							}
 						}
-					}
+				} catch(MessagingException exc) {
+					logger.debug("Error on QUOTA",exc);
+				}
 				
 				sout += "\n],\n";
 				sout += "total: "+(total-expunged)+",\n";
