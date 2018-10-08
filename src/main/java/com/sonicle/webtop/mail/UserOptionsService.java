@@ -149,7 +149,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("archiveKeepFoldersStructure")) mus.setArchiveKeepFoldersStructure(pl.data.archiveKeepFoldersStructure);
 				
 				// Account
-				if (RunContext.isImpersonated() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE")) {
+				if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE")) {
 					if (pl.map.has("protocol")) mus.setProtocol(pl.data.protocol);
 					if (pl.map.has("host")) mus.setHost(pl.data.host);
 					if (pl.map.has("port")) mus.setPort(pl.data.port);
