@@ -47,6 +47,13 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 		height: 350
 	},
 	promptConfirm: false,
+	
+	/**
+	 * @property {String} domainId
+	 * The referenced domain ID.
+	 */
+	domainId: null,
+	
 	full: true,
 	
 	html: '',
@@ -160,7 +167,8 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 					menu: {
 						xtype: 'sostoremenu',
 						store: Ext.create('WTA.store.PublicImages', {
-							autoLoad: true
+							autoLoad: true,
+							domainId: me.domainId
 						}),
 						textField: 'desc',
 						listeners: {

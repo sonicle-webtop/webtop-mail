@@ -170,8 +170,10 @@ public class MailManager extends BaseManager implements IMailManager {
 			oident.setMainFolder(ident.getMainFolder());
 			oident.setUserId(pid.getUserId());
 			idao.insert(con, oident);
-			newident=new Identity(oident);
-			identities.add(newident);
+			if (identities!=null) {
+				newident=new Identity(oident);
+				identities.add(newident);
+			}
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
@@ -186,8 +188,10 @@ public class MailManager extends BaseManager implements IMailManager {
 			con=WT.getConnection(SERVICE_ID);
 			IdentityDAO idao=IdentityDAO.getInstance();
 			idao.deleteById(con, ident.getIdentityId());
-			Identity dident=findIdentity(ident.getIdentityId());
-			identities.remove(dident);
+			if (identities!=null) {
+				Identity dident=findIdentity(ident.getIdentityId());
+				identities.remove(dident);
+			}
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
@@ -212,12 +216,14 @@ public class MailManager extends BaseManager implements IMailManager {
 			if (ident.getIdentityUid()==null) ident.setIdentityUid(IdentifierUtils.getUUIDTimeBased());
 			oident.setIdentityUid(ident.getIdentityUid());
 			idao.update(con, identityId, oident);
-			uident=findIdentity(ident.getIdentityId());
-			uident.setIdentityUid(ident.getIdentityUid());
-			uident.setDisplayName(ident.getDisplayName());
-			uident.setEmail(ident.getEmail());
-			uident.setFax(ident.isFax());
-			uident.setMainFolder(ident.getMainFolder());
+			if (identities!=null) {
+				uident=findIdentity(ident.getIdentityId());
+				uident.setIdentityUid(ident.getIdentityUid());
+				uident.setDisplayName(ident.getDisplayName());
+				uident.setEmail(ident.getEmail());
+				uident.setFax(ident.isFax());
+				uident.setMainFolder(ident.getMainFolder());
+			}
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {

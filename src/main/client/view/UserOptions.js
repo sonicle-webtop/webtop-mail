@@ -696,9 +696,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		});
 	},
 	
-	editMailcard: function(mailcardId, cmp) {
-		var me=this;
-		
+	editMailcard: function(mailcardId) {
+		var me = this;
 		WT.ajaxReq(me.ID, "ManageMailcard", {
 			params: {
 				id: me.profileId,
@@ -706,11 +705,12 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				crud: "read",
 				mailcardId: mailcardId
 			},
-			callback: function(success,json) {
+			callback: function(success, json) {
 				if (success) {
-					WT.createView(me.ID,'view.MailcardEditor',{
+					WT.createView(me.ID, 'view.MailcardEditor', {
 						viewCfg: {
 							mys: me,
+							domainId: me.profileId.split('@')[1],
 							html: json.data.html,
 							listeners: {
 								viewok: function(s,html) {

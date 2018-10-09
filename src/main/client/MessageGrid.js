@@ -465,7 +465,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						rootProperty: 'messages',
 						totalProperty: 'total',
 						idProperty: 'idmessage'
-					}
+					},
+					timeout: WT.getVar("ajaxSpecialTimeout")
 				},
 				model: smodel,
 				pageSize: me.pageSize
@@ -484,7 +485,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						rootProperty: 'messages',
 						totalProperty: 'total',
 						idProperty: 'idmessage'
-					}
+					},
+					timeout: WT.getVar("ajaxSpecialTimeout")
 				},
 				//purgePageCount: 3,
 				leadingBufferZone: 50,
