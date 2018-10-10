@@ -417,6 +417,7 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public boolean setDefaultFolder(String name) {
+		if (name!=null && name.trim().length()==0) name=null;
 		return setString(DEFAULT_FOLDER,name);
 	}
 	
