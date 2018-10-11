@@ -757,7 +757,6 @@ public class Service extends BaseService {
 			
 			msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
 			Exception exc = saveMessage(msg, null, fc);
-			if (exc!=null) logger.error("Error during saveMessage",exc);
 		} catch(Exception exc) {
 			logger.error("Error on autosave in drafts!",exc);
 		}
@@ -1482,6 +1481,7 @@ public class Service extends BaseService {
 			_saveMessage(msg, attachments, fc);
 		} catch (Exception exc) {
 			retexc = exc;
+			logger.error("Error during saveMessage in "+fc.getFolderName(),exc);
 		}
 		return retexc;
 	}
