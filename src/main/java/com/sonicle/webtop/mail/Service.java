@@ -764,15 +764,16 @@ public class Service extends BaseService {
 	
 	private void deleteAutosavedDraft(long msgId) throws MessagingException {
 		FolderCache fc=getFolderCache(mprofile.getFolderDrafts());
+		fc.open();
 		Folder folder=fc.getFolder();
-		boolean wasopen=folder.isOpen();
-		if (!wasopen) folder.open(Folder.READ_WRITE);
+		//boolean wasopen=folder.isOpen();
+		//if (!wasopen) folder.open(Folder.READ_WRITE);
 		Message[] oldmsgs=folder.search(new HeaderTerm(HEADER_X_WEBTOP_MSGID,""+msgId));
 		if (oldmsgs!=null && oldmsgs.length>0) {
 			for(Message m: oldmsgs) m.setFlag(Flags.Flag.DELETED, true);
 			folder.expunge();
 		}
-		if (!wasopen) folder.close(true);
+		//if (!wasopen) folder.close(true);
 	}
 	
 	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
@@ -1480,6 +1481,7 @@ public class Service extends BaseService {
 			_saveMessage(msg, attachments, fc);
 		} catch (Exception exc) {
 			retexc = exc;
+			logger.error("Error during saveMessage in "+fc.getFolderName(),exc);
 		}
 		return retexc;
 	}
@@ -2945,7 +2947,7 @@ public class Service extends BaseService {
 					}
 				}
 				//don't mind about just the Shared folder with no child (size=1)
-				if (afcs.size()>1) fcs=afcs.toArray(fcs);
+				if (afcs.size()>0) fcs=afcs.toArray(fcs);
 				
 				Folder xfolders[]=new Folder[1+folders.length+fcs.length];
 				xfolders[0]=folder;
