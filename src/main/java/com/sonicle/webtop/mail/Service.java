@@ -757,6 +757,7 @@ public class Service extends BaseService {
 			
 			msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
 			Exception exc = saveMessage(msg, null, fc);
+			if (exc!=null) logger.error("Error during saveMessage",exc);
 		} catch(Exception exc) {
 			logger.error("Error on autosave in drafts!",exc);
 		}
@@ -2945,7 +2946,7 @@ public class Service extends BaseService {
 					}
 				}
 				//don't mind about just the Shared folder with no child (size=1)
-				if (afcs.size()>1) fcs=afcs.toArray(fcs);
+				if (afcs.size()>0) fcs=afcs.toArray(fcs);
 				
 				Folder xfolders[]=new Folder[1+folders.length+fcs.length];
 				xfolders[0]=folder;
