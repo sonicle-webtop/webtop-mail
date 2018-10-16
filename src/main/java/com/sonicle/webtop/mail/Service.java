@@ -262,6 +262,7 @@ public class Service extends BaseService {
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
 	private boolean hasAnnotations=false;
+	private boolean isDovecot=false;
 	
 	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
 	private FolderCache fcRoot = null;
@@ -374,7 +375,8 @@ public class Service extends BaseService {
 		
 		sortfolders=ss.isSortFolder();
 		
-		hasDifferentDefaultFolder=us.getDefaultFolder()!=null;
+		String differentDefaultFolder=us.getDefaultFolder();
+		hasDifferentDefaultFolder=differentDefaultFolder!=null;
 		
 		session=environment.getSession().getMailSession();
 		//session=Session.getDefaultInstance(props, null);
@@ -403,6 +405,14 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			
 			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
+			
+			if (hasDifferentDefaultFolder) {
+				mprofile.setFolderSent(differentDefaultFolder+folderSeparator+mprofile.getFolderSent());
+				mprofile.setFolderDrafts(differentDefaultFolder+folderSeparator+mprofile.getFolderDrafts());
+				mprofile.setFolderTrash(differentDefaultFolder+folderSeparator+mprofile.getFolderTrash());
+				mprofile.setFolderSpam(differentDefaultFolder+folderSeparator+mprofile.getFolderSpam());
+				mprofile.setFolderArchive(differentDefaultFolder+folderSeparator+mprofile.getFolderArchive());
+			}
 			
 			//prepare special folders if not existant
 			if (ss.isAutocreateSpecialFolders()) {
@@ -546,6 +556,9 @@ public class Service extends BaseService {
 				sharedPrefixes[ix] = s;
 				++ix;
 			}
+			Map<String,String> map=((IMAPStore)store).id(null);
+			isDovecot=(map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot"));
+			
 		} catch (MessagingException exc) {
 			logger.error("Error connecting to the mail server", exc);
 			sucess = false;
@@ -751,15 +764,16 @@ public class Service extends BaseService {
 	
 	private void deleteAutosavedDraft(long msgId) throws MessagingException {
 		FolderCache fc=getFolderCache(mprofile.getFolderDrafts());
+		fc.open();
 		Folder folder=fc.getFolder();
-		boolean wasopen=folder.isOpen();
-		if (!wasopen) folder.open(Folder.READ_WRITE);
+		//boolean wasopen=folder.isOpen();
+		//if (!wasopen) folder.open(Folder.READ_WRITE);
 		Message[] oldmsgs=folder.search(new HeaderTerm(HEADER_X_WEBTOP_MSGID,""+msgId));
 		if (oldmsgs!=null && oldmsgs.length>0) {
 			for(Message m: oldmsgs) m.setFlag(Flags.Flag.DELETED, true);
 			folder.expunge();
 		}
-		if (!wasopen) folder.close(true);
+		//if (!wasopen) folder.close(true);
 	}
 	
 	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
@@ -1467,6 +1481,7 @@ public class Service extends BaseService {
 			_saveMessage(msg, attachments, fc);
 		} catch (Exception exc) {
 			retexc = exc;
+			logger.error("Error during saveMessage in "+fc.getFolderName(),exc);
 		}
 		return retexc;
 	}
@@ -2406,7 +2421,11 @@ public class Service extends BaseService {
 					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX"))
 			) return true;
 		} else {
-			return isDefaultFolder(foldername);
+			if (isDovecot)
+				return foldername.endsWith(folderSeparator+"INBOX");
+			
+			return (isDefaultFolder(foldername) ||
+					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX")));
 		}
 		return false;
 	}
@@ -2581,7 +2600,10 @@ public class Service extends BaseService {
 	protected String getInboxFolderFullName() {
 		String inboxFolder="INBOX";
 		try {
-			if (hasDifferentDefaultFolder()) inboxFolder=getDefaultFolder().getFullName();
+			if (hasDifferentDefaultFolder()) {
+				inboxFolder=getDefaultFolder().getFullName();
+				if (isDovecot) inboxFolder+=folderSeparator+"INBOX";
+			}
 		} catch(MessagingException exc) {
 		}
 		return inboxFolder;
@@ -2924,6 +2946,7 @@ public class Service extends BaseService {
 							afcs.add(rfolders[j]);
 					}
 				}
+				//don't mind about just the Shared folder with no child (size=1)
 				if (afcs.size()>0) fcs=afcs.toArray(fcs);
 				
 				Folder xfolders[]=new Folder[1+folders.length+fcs.length];
@@ -2986,18 +3009,27 @@ public class Service extends BaseService {
 		}
 		//If Shared Folders, sort on description
 		if (isSharedFolder(parent.getFullName())) {
-			String ss = mprofile.getSharedSort();
-			if (ss.equals("D")) {
-				Collections.sort(afolders, dcomp);
-			} else if (ss.equals("U")) {
-				Collections.sort(afolders, ucomp);
+			if (!hasDifferentDefaultFolder || !isDefaultFolder(parent.getFullName())) {
+				String ss = mprofile.getSharedSort();
+				if (ss.equals("D")) {
+					Collections.sort(afolders, dcomp);
+				} else if (ss.equals("U")) {
+					Collections.sort(afolders, ucomp);
+				}
 			}
 		}
 		
 		for (Folder f : afolders) {
 			String foldername = f.getFullName();
 			//in case of moved root, check not to duplicate root elsewhere
-			if (hasDifferentDefaultFolder && isSharedFolder(parent.getFullName()) && foldername.equals(getInboxFolderFullName())) continue;
+			if (hasDifferentDefaultFolder) {
+				if (isDovecot) {
+					if (isDefaultFolder(foldername)) continue;
+				} else {
+					//skip default folder under shared
+					if (isDefaultFolder(foldername) && !parent.getFullName().equals(foldername)) continue;
+				}
+			}
 			//skip hidden
 			if (us.isFolderHidden(foldername)) continue;
 
@@ -3020,7 +3052,7 @@ public class Service extends BaseService {
 			else if (!favorites) {
 				for(String att: atts) {
 					if (att.equals("\\HasChildren")) {
-						if (!level1 || !foldername.equals("INBOX")) leaf=false;
+						if (!level1 || !foldername.equals(getInboxFolderFullName())) leaf=false;
 					}
 					else if (att.equals("\\Noinferiors")) noinferiors=true;
 				}
@@ -3120,7 +3152,7 @@ public class Service extends BaseService {
 			ss += "},";
 			out.print(ss);
 			if (!favorites) {
-				if (level1 && foldername.equals("INBOX")) {
+				if (level1 && foldername.equals(getInboxFolderFullName())) {
 					outputFolders(f, f.list(), false, false, out);
 				}
 			}
@@ -5424,7 +5456,7 @@ public class Service extends BaseService {
 			int maxVisibleRows=20;
 			
 			if (query == null) {
-				String folderId = "INBOX";
+				String folderId = getInboxFolderFullName();
 				FolderCache fc=getFolderCache(folderId);
 				Message msgs[]=fc.getMessages("unread","","",FolderCache.SORT_BY_DATE,false,true,-1,true,false);
 				fc.fetch(msgs, getMessageFetchProfile(),0,50);
@@ -7899,7 +7931,7 @@ public class Service extends BaseService {
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
 			Collections.sort(folderIds);
-			String firstFolders[]={"INBOX", us.getFolderSent()};
+			String firstFolders[]={getInboxFolderFullName(), mprofile.getFolderSent()};
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
 				
@@ -7976,7 +8008,7 @@ public class Service extends BaseService {
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
 			Collections.sort(folderIds);
-			String firstFolders[]={"INBOX", us.getFolderSent()};
+			String firstFolders[]={getInboxFolderFullName(), mprofile.getFolderSent()};
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
 				
@@ -8473,12 +8505,13 @@ public class Service extends BaseService {
 				else loadIdentityMailcard(jsid);
 			}
 			
+			if (hasDifferentDefaultFolder) co.put("inboxFolder",getInboxFolderFullName());
 			co.put("attachmentMaxFileSize", ss.getAttachmentMaxFileSize(true));
-			co.put("folderDrafts", us.getFolderDrafts());
-			co.put("folderSent", us.getFolderSent());
-			co.put("folderSpam", us.getFolderSpam());
-			co.put("folderTrash", us.getFolderTrash());
-			co.put("folderArchive", us.getFolderArchive());
+			co.put("folderDrafts", mprofile.getFolderDrafts());
+			co.put("folderSent", mprofile.getFolderSent());
+			co.put("folderSpam", mprofile.getFolderSpam());
+			co.put("folderTrash", mprofile.getFolderTrash());
+			co.put("folderArchive", mprofile.getFolderArchive());
 			co.put("folderSeparator", folderSeparator);
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());

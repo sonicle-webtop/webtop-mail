@@ -1304,6 +1304,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	getFolderInbox: function() {
+		var df=this.getVar('inboxFolder');
+		if (df) return df;
 		return "INBOX";
 	},
 	
@@ -1662,11 +1664,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
     },	
 	
 	isDrafts: function(folder) {
-		return this.imapTree.getStore().getById(folder).get("isDrafts");
+		var rfolder=this.imapTree.getStore().getById(folder);
+		return rfolder?rfolder.get("isDrafts"):false;
 	},
 	
 	isTrash: function(folder) {
-		return this.imapTree.getStore().getById(folder).get("isTrash");
+		var rfolder=this.imapTree.getStore().getById(folder);
+		return rfolder?rfolder.get("isTrash"):false;
 	},
 	
 	updateCxmGrid: function(r) {
