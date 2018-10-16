@@ -71,7 +71,8 @@ Ext.define('Sonicle.webtop.mail.ArchiveTree', {
 					iconCls: 'wtmail-icon-archive-xs',
 					expanded: true
 				},
-				rootVisible: false
+				rootVisible: false,
+				acct: cfg.acct
 			})
 		});
 

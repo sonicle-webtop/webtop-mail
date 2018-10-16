@@ -71,7 +71,8 @@ Ext.define('Sonicle.webtop.mail.FavoritesTree', {
 					iconCls: 'wtmail-icon-favorites-xs',
 					expanded: true
 				},
-				rootVisible: false
+				rootVisible: false,
+				acct: cfg.acct
 			})
 		});
 

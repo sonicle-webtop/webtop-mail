@@ -2300,8 +2300,8 @@ public class Service extends BaseService {
 	}
 	
 	private MailAccount getAccount(HttpServletRequest request) {
-		String accountId=request.getParameter("accountId");
-		if (accountId!=null) return accounts.get(accountId);
+		String account=request.getParameter("account");
+		if (account!=null) return accounts.get(account);
 		return mainAccount;
 	}
 
@@ -2501,7 +2501,7 @@ public class Service extends BaseService {
 			} else if (mc.isScanEnabled()) {
 				ss += ", scanEnabled: true";
 			}
-			ss += ", accountId: '"+account.getId()+"'";
+			ss += ", account: '"+account.getId()+"'";
 			ss += "},";
 			out.print(ss);
 			if (!favorites) {

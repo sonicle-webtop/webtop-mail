@@ -123,7 +123,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 			});
 		}
 		
-		mv._showMessage(me.folder,me.idmessage,!me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen"));
+		mv._showMessage(me.account,me.folder,me.idmessage,!me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen"));
 	}
 	
 });

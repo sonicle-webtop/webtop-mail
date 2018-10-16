@@ -54,7 +54,7 @@ Ext.define('Sonicle.webtop.mail.model.ImapTreeModel', {
 		{ name: "scanOff" },
 		{ name: "scanOn" },
 		{ name: "scanEnabled" },
-		{ name: "accountId" }		
+		{ name: "account" }		
     ]
 });
 

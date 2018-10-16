@@ -239,7 +239,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
 	
-    _showMessage: function(folder, id, setseen) {
+    _showMessage: function(acct, folder, id, setseen) {
 		var me=this;/*,
 			idmessage=id,
 			params={service: me.mys.ID, action: 'GetMessage', folder: folder, idmessage: idmessage };*/
@@ -250,7 +250,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         me.folder=folder;
         me.latestId=id;
 		me.proxy.abort();
-		WTU.applyExtraParams(me.proxy,{ folder: folder, idmessage: id, setseen: setseen });
+		WTU.applyExtraParams(me.proxy,{ account: acct,  folder: folder, idmessage: id, setseen: setseen });
 		me.proxy.doRequest(
 			me.proxy.createOperation('read',{
 				url: WTF.requestBaseUrl(),
