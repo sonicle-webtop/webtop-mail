@@ -209,23 +209,43 @@ public class MailUserProfile {
     public String getFolderSent() {
         return folderSent;
     }
+	
+	public void setFolderSent(String name) {
+		folderSent=name;
+	}
 
     public String getFolderDrafts() {
         return folderDrafts;
     }
     
+	public void setFolderDrafts(String name) {
+		folderDrafts=name;
+	}
+
     public String getFolderTrash() {
         return folderTrash;
     }
     
+	public void setFolderTrash(String name) {
+		folderTrash=name;
+	}
+
     public String getFolderSpam() {
         return folderSpam;
     }
 	
+	public void setFolderSpam(String name) {
+		folderSpam=name;
+	}
+
     public String getFolderArchive() {
         return folderArchive;
     }
     
+	public void setFolderArchive(String name) {
+		folderArchive=name;
+	}
+
     public String getMailProtocol() {
         return mailProtocol;
     }

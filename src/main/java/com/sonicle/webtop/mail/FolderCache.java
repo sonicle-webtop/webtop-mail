@@ -991,7 +991,7 @@ public class FolderCache {
     public void save(Message msg) throws MessagingException {
         Message[] saveMsgs=new MimeMessage[1];
         saveMsgs[0]=msg;
-
+		open();
         getFolder().appendMessages(saveMsgs);
         setForceRefresh();
     }

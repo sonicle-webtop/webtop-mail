@@ -262,6 +262,7 @@ public class Service extends BaseService {
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
 	//private boolean hasAnnotations=false;
+	private boolean isDovecot=false;
 	
 	//private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
 	//private FolderCache fcRoot = null;
@@ -1225,6 +1226,7 @@ public class Service extends BaseService {
 			_saveMessage(msg, attachments, fc);
 		} catch (Exception exc) {
 			retexc = exc;
+			logger.error("Error during saveMessage in "+fc.getFolderName(),exc);
 		}
 		return retexc;
 	}
@@ -2331,6 +2333,7 @@ public class Service extends BaseService {
 							afcs.add(rfolder);
 					}
 				}
+				//don't mind about just the Shared folder with no child (size=1)
 				if (afcs.size()>0) fcs=afcs.toArray(fcs);
 				
 				Folder xfolders[]=new Folder[1+folders.length+fcs.length];
@@ -2357,18 +2360,28 @@ public class Service extends BaseService {
 		}
 		//If Shared Folders, sort on description
 		if (account.isSharedFolder(parent.getFullName())) {
-			String ss = mprofile.getSharedSort();
-			if (ss.equals("D")) {
-				Collections.sort(afolders, account.getDescriptionFolderComparator());
-			} else if (ss.equals("U")) {
-				Collections.sort(afolders, account.getWebTopUserFolderComparator());
+			if (!account.hasDifferentDefaultFolder() || !account.isDefaultFolder(parent.getFullName())) {
+				String ss = mprofile.getSharedSort();
+				if (ss.equals("D")) {
+					Collections.sort(afolders, account.getDescriptionFolderComparator());
+				} else if (ss.equals("U")) {
+					Collections.sort(afolders, account.getWebTopUserFolderComparator());
+				}
 			}
 		}
 		
 		for (Folder f : afolders) {
 			String foldername = f.getFullName();
 			//in case of moved root, check not to duplicate root elsewhere
-			if (account.hasDifferentDefaultFolder() && account.isSharedFolder(parent.getFullName()) && foldername.equals(account.getInboxFolderFullName())) continue;
+			if (account.hasDifferentDefaultFolder()) {
+				if (isDovecot) {
+					if (account.isDefaultFolder(foldername)) continue;
+				} else {
+					//skip default folder under shared
+					if (account.isDefaultFolder(foldername) && !parent.getFullName().equals(foldername)) continue;
+				}
+			}
+			
 			//skip hidden
 			if (us.isFolderHidden(foldername)) continue;
 
@@ -2391,7 +2404,7 @@ public class Service extends BaseService {
 			else if (!favorites) {
 				for(String att: atts) {
 					if (att.equals("\\HasChildren")) {
-						if (!level1 || !foldername.equals("INBOX")) leaf=false;
+						if (!level1 || !foldername.equals(account.getInboxFolderFullName())) leaf=false;
 					}
 					else if (att.equals("\\Noinferiors")) noinferiors=true;
 				}
@@ -2492,7 +2505,7 @@ public class Service extends BaseService {
 			ss += "},";
 			out.print(ss);
 			if (!favorites) {
-				if (level1 && foldername.equals("INBOX")) {
+				if (level1 && foldername.equals(account.getInboxFolderFullName())) {
 					outputFolders(account,f, f.list(), false, false, out);
 				}
 			}
@@ -4862,7 +4875,7 @@ public class Service extends BaseService {
 			int maxVisibleRows=20;
 			
 			if (query == null) {
-				String folderId = "INBOX";
+				String folderId = account.getInboxFolderFullName();
 				FolderCache fc=account.getFolderCache(folderId);
 				Message msgs[]=fc.getMessages("unread","","",FolderCache.SORT_BY_DATE,false,true,-1,true,false);
 				fc.fetch(msgs, getMessageFetchProfile(),0,50);
@@ -7358,7 +7371,7 @@ public class Service extends BaseService {
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
 			Collections.sort(folderIds);
-			String firstFolders[]={"INBOX", us.getFolderSent()};
+			String firstFolders[]={account.getInboxFolderFullName(), account.getFolderSent()};
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
 				
@@ -7436,7 +7449,7 @@ public class Service extends BaseService {
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
 			Collections.sort(folderIds);
-			String firstFolders[]={"INBOX", us.getFolderSent()};
+			String firstFolders[]={account.getInboxFolderFullName(), account.getFolderSent()};
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
 				
@@ -7799,6 +7812,7 @@ public class Service extends BaseService {
 				else loadIdentityMailcard(jsid);
 			}
 			
+			if (mainAccount.hasDifferentDefaultFolder()) co.put("inboxFolder",mainAccount.getInboxFolderFullName());
 			co.put("attachmentMaxFileSize", ss.getAttachmentMaxFileSize(true));
 			co.put("folderDrafts", us.getFolderDrafts());
 			co.put("folderSent", us.getFolderSent());

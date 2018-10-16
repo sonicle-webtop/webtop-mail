@@ -697,7 +697,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
 		me.reloadingFolder=true;
 		me.bcFolders.setSelection(node);
-		if(node.data.expandable && !node.isLoaded()) {
+		if(!node.data.leaf && node.data.expandable && !node.isLoaded()) {
 			var leaf=node.isLeaf();
 			me.bcFolders.getStore().load({
 				node:node,

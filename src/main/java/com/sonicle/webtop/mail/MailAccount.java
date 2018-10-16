@@ -90,6 +90,7 @@ public class MailAccount {
 	private String folderArchive = null;
 	private boolean validated = false;
 	private boolean hasAnnotations=false;
+	private boolean isDovecot=false;
 	private boolean hasDifferentDefaultFolder=false;
 	private String defaultFolderName= null;
 	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
@@ -122,6 +123,10 @@ public class MailAccount {
 	
 	public String getProtocol() {
 		return storeProtocol;
+	}
+	
+	public boolean isDovecot() {
+		return isDovecot;
 	}
 	
 	public void setDifferentDefaultFolder(String defaultFolderName) {
@@ -221,7 +226,7 @@ public class MailAccount {
 	}
 
 	public String getFolderSent() {
-		return folderSent;
+		return hasDifferentDefaultFolder?defaultFolderName+folderSeparator+folderSent:folderSent;
 	}
 
 	public void setFolderDrafts(String folderDrafts) {
@@ -229,7 +234,7 @@ public class MailAccount {
 	}
 
 	public String getFolderDrafts() {
-		return folderDrafts;
+		return hasDifferentDefaultFolder?defaultFolderName+folderSeparator+folderDrafts:folderDrafts;
 	}
 
 	public void setFolderTrash(String folderTrash) {
@@ -237,7 +242,7 @@ public class MailAccount {
 	}
 
 	public String getFolderTrash() {
-		return folderTrash;
+		return hasDifferentDefaultFolder?defaultFolderName+folderSeparator+folderTrash:folderTrash;
 	}
 
 	public void setFolderSpam(String folderSpam) {
@@ -245,7 +250,7 @@ public class MailAccount {
 	}
 
 	public String getFolderSpam() {
-		return folderSpam;
+		return hasDifferentDefaultFolder?defaultFolderName+folderSeparator+folderSpam:folderSpam;
 	}
 
 	public void setFolderArchive(String folderArchive) {
@@ -253,7 +258,7 @@ public class MailAccount {
 	}
 
 	public String getFolderArchive() {
-		return folderArchive;
+		return hasDifferentDefaultFolder?defaultFolderName+folderSeparator+folderArchive:folderArchive;
 	}
 
 	public void setFolderSeparator(char folderSeparator) {
@@ -292,7 +297,6 @@ public class MailAccount {
 	protected Folder getRealDefaultFolder() throws MessagingException {
 		return store.getDefaultFolder();
 	}
-
 
 	public boolean isValid() throws MessagingException {
 		if (!validated) {
@@ -352,7 +356,9 @@ public class MailAccount {
 				++ix;
 			}
 			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
-		} catch (MessagingException exc) {
+			Map<String,String> map=((IMAPStore)store).id(null);
+			isDovecot=(map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot"));
+					} catch (MessagingException exc) {
 			Service.logger.error("Error connecting to the mail server "+mailHost, exc);
 			sucess = false;
 		}
@@ -604,12 +610,16 @@ public class MailAccount {
 	protected String getInboxFolderFullName() {
 		String inboxFolder="INBOX";
 		try {
-			if (hasDifferentDefaultFolder) inboxFolder=getDefaultFolder().getFullName();
+			if (hasDifferentDefaultFolder) {
+				inboxFolder=getDefaultFolder().getFullName();
+				if (isDovecot) inboxFolder+=folderSeparator+"INBOX";
+			}
 		} catch(MessagingException exc) {
 		}
 		return inboxFolder;
 	}
   
+
 	protected Folder getFolder(String foldername) throws MessagingException {
 		return store.getFolder(foldername);
 	}
@@ -747,7 +757,11 @@ public class MailAccount {
 					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX"))
 			) return true;
 		} else {
-			return isDefaultFolder(foldername);
+			if (isDovecot)
+				return foldername.endsWith(folderSeparator+"INBOX");
+			
+			return (isDefaultFolder(foldername) ||
+					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX")));
 		}
 		return false;
 	}
@@ -826,15 +840,13 @@ public class MailAccount {
 	
 	public void deleteByHeaderValue(String header, String value) throws MessagingException {
 		FolderCache fc=getFolderCache(getFolderDrafts());
+		fc.open();
 		Folder folder=fc.getFolder();
-		boolean wasopen=folder.isOpen();
-		if (!wasopen) folder.open(Folder.READ_WRITE);
 		Message[] oldmsgs=folder.search(new HeaderTerm(header,value));
 		if (oldmsgs!=null && oldmsgs.length>0) {
 			for(Message m: oldmsgs) m.setFlag(Flags.Flag.DELETED, true);
 			folder.expunge();
 		}
-		if (!wasopen) folder.close(true);
 	}
 	
 	public boolean emptyFolder(String fullname) throws MessagingException {

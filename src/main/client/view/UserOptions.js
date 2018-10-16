@@ -690,7 +690,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				bind: '{record.defaultFolder}',
 				fieldLabel: me.res('opts.adv.fld-defaultFolder.lbl'),
 				width: 400,
-				needReload: true,
+				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}]
 		});
