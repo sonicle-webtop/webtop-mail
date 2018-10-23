@@ -247,6 +247,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         //if (this.folder==folder && this.idmessage==idmessage) return;
         me._clear();
         me.idmessage=id;
+		me.acct=acct;
         me.folder=folder;
         me.latestId=id;
 		me.proxy.abort();
@@ -452,6 +453,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     var aparams;
                     if (!provider) {
                         aparams={
+							acct: me.acct,
                             folder: me.folder,
                             idmessage: me.idmessage,
                             idattach: att.id
@@ -936,7 +938,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						ddel: ddel.dom.cloneNode(true),
 						params: params,
 						sourceEl: el,
-						repairXY: Ext.fly(el).getXY()
+						repairXY: Ext.fly(el).getXY(),
+						records: []
 					};
 				}
             },

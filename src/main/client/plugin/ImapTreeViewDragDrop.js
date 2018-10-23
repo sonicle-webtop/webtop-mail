@@ -115,7 +115,7 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 			if (targetNode.id==='/')
 				return Ext.dd.DropZone.prototype.dropNotAllowed;
 			
-			var ctrlKey=dragZone.ddGroup!=="attachment"?e.ctrlKey:false;
+			var ctrlKey=data.readonly||dragZone.ddGroup==="attachment"?true:e.ctrlKey;
 			Ext.tree.ViewDropZone.prototype.onNodeOver.call(this,node,dragZone,e,data);
 			data.copy=ctrlKey;
 			var returnCls=ctrlKey? Ext.baseCSSPrefix + 'tree-drop-ok-append': Ext.baseCSSPrefix + 'dd-drop-ok';

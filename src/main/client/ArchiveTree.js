@@ -66,10 +66,10 @@ Ext.define('Sonicle.webtop.mail.ArchiveTree', {
 				root: {
 					id: '/',
 					text: 'Archive Tree',
-					folder: WT.res("word.archive")+" - "+WT.getVar("userDisplayName"),
+					folder: cfg.mys.res("archive.external.lbl")+" ("+WT.getVar("userDisplayName")+")",
 					unread: 0,
 					iconCls: 'wtmail-icon-archive-xs',
-					expanded: true
+					expanded: false
 				},
 				rootVisible: false,
 				acct: cfg.acct

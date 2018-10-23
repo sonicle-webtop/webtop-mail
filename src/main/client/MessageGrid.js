@@ -365,6 +365,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	key2flag: ['clear','red','orange','green','blue','purple','yellow','black','gray','white'],
 	createPagingToolbar: false,
 	threaded: false,
+	readonly: false,
 	openThreads: {},
 	
     /**
@@ -440,7 +441,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
 			plugins: [
 				{
-					ptype: 'messagegridviewdragdrop'
+					ptype: 'messagegridviewdragdrop',
+					pluginId: 'messagegridviewdragdrop'
 				}
 			]
 
@@ -540,7 +542,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
         me.on('rowdblclick',function(grid, r, tr, rowIndex, e, eopts) {
 			var folder=me.multifolder?r.get("folder"):me.currentFolder,
-				acct=me.multifolder?me.mys.getAccount(r):me.currentAccount;
+				acct=me.currentAccount;
 			if (me.mys.isDrafts(acct,folder)) me.editMessage(r,true);
 			else me.openMessage(r);
 			//if(me.mys.getVar("seenOnOpen")) me.actionMarkSeenState(true);
@@ -549,7 +551,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			if (me.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {
 				if (r.get("note")) {
 					var folder=me.multifolder?r.get("folder"):me.currentFolder,
-						acct=me.multifolder?me.mys.getAccount(r):me.currentAccount;
+						acct=me.currentAccount;
 					me.editNote(acct,r.get("idmessage"),folder);
 				}
 			}
@@ -557,6 +559,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
         me.callParent(arguments);
     },
+	
+	setCurrentAccount: function(acct) {
+		var me=this,
+			plugin=me.getView().getPlugin("messagegridviewdragdrop");
+		me.currentAccount=acct;
+		me.readonly=acct==="archive";
+	},
 	
 	collapseClicked: function(rowIndex) {
 		var me=this;
@@ -648,7 +657,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.threaded=groupField==='threadId';
 			//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 		}
-		me.currentAccount = acct;
+		me.setCurrentAccount(acct);
 		me.currentFolder = folder_id;
 		me.initFolderState(!WT.plTags.desktop);
 		//me.hideFilterBar();
@@ -865,7 +874,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var win=WT.createView(me.mys.ID,'view.DockableMessageView',{
 			viewCfg: {
 				mys: me.mys,
-				account: r.get('folder')?me.mys.getAccount(r):me.currentAccount,
+				acct: me.currentAccount,
 				folder: r.get('folder')||me.currentFolder,
 				idmessage: r.get('idmessage'),
 				title: r.get('subject'),
@@ -897,7 +906,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	replyMessage: function(r,all) {
 		var me=this;
-        me.replyMessageById(r.get('folder')?me.mys.getAccount(r):me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),all);
+        me.replyMessageById(me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),all);
 	},
 	
 	replyMessageById: function(acct,idfolder,idmessage,all) {
@@ -947,7 +956,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	forwardMessage: function(r,eml) {
 		var me=this;
-        me.forwardMessageById(r.get('folder')?me.mys.getAccount(r):me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),eml);
+        me.forwardMessageById(me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),eml);
 	},
 	
 	forwardMessageById: function(acct,idfolder,idmessage,eml) {
@@ -990,7 +999,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     
     editMessage: function(r,isdraft) {
 		var me=this;
-        me.editMessageById(r.get('folder')?me.mys.getAccount(r):me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),isdraft);
+        me.editMessageById(me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),isdraft);
     },
     
     editMessageById: function(acct,idfolder,idmessage,isdraft) {
@@ -1036,7 +1045,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
     actionDelete: function() {
-		if (this.storeLoading) {
+		if (this.storeLoading || this.readonly) {
 			return;
 		}
 		
@@ -1059,14 +1068,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					me.focus();
 				},me);
           } else {
-              me.moveSelection(acct,curfolder,ftrash,selection);
+              me.moveSelection(acct,curfolder,acct,ftrash,selection);
               me.focus();
           }
         }
     },	
 	
     actionSpam: function() {
-		if (this.storeLoading) {
+		if (this.storeLoading || this.readonly) {
 			return;
 		}
 		
@@ -1080,13 +1089,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (!selection || selection.length==0) return;
 		
         if (fspam) {
-			me.moveSelection(acct,curfolder,fspam,selection);
+			me.moveSelection(acct,curfolder,acct,fspam,selection);
 			me.focus();
         }
     },
 
     actionArchive: function() {
-		if (this.storeLoading) {
+		if (this.storeLoading || this.readonly) {
 			return;
 		}
 		
@@ -1100,7 +1109,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (!selection || selection.length==0) return;
 		
         if (farchive) {
-			me.moveSelection(acct,curfolder,farchive,selection);
+			me.moveSelection(acct,curfolder,acct,farchive,selection);
 			me.focus();
 		}
     },
@@ -1114,7 +1123,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	actionMarkSeenState: function(seen) {
-		if (this.storeLoading) return;
+		if (this.storeLoading || this.readonly) return;
 		
 		var me=this;
 		me.markSelectionSeenState(
@@ -1128,6 +1137,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	actionMoveToFolder: function() {
 		var me=this;
+		if (this.readonly) return;
+		
 //		if (!me.mcmdialog) {
 			me.mcmdialog=WT.createView(me.mys.ID,'view.MoveCopyMessagesDialog',{
 				viewCfg: {
@@ -1244,7 +1255,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
     },	
 	
-    moveSelection: function(acct,from,to,selection) {
+    moveSelection: function(acctfrom,from,acctto,to,selection) {
         var me=this, 
             data=me.sel2ids(selection);
 		data.cb=function(result) {
@@ -1252,49 +1263,50 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.removeRecords(data.ids);
 			}
 		}
-        me.moveMessages(acct,from,to,data,selection);
+        me.moveMessages(acctfrom,from,acctto,to,data,selection);
     },
 	
-    copySelection: function(acct,from,to,selection) {
+    copySelection: function(acctfrom,from,acctto,to,selection) {
         var me=this, 
             data=me.sel2ids(selection);
-        me.copyMessages(acct,from,to,data,selection)
+        me.copyMessages(acctfrom,from,acctto,to,data,selection);
     },
 	
-    moveMessages: function(acct,from,to,data,selection) {
+    moveMessages: function(acctfrom,from,acctto,to,data,selection) {
 		var me=this;
 		
         me.fireEvent('moving',me);
 		
-        me.operateMessages("MoveMessages",acct,from,to,data,selection);
+        me.operateMessages("MoveMessages",acctfrom,from,acctto,to,data,selection);
     },	
 	
-    copyMessages: function(acct,from,to,data,selection) {
-        this.operateMessages("CopyMessages",acct,from,to,data,selection);
+    copyMessages: function(acctfrom,from,acctto,to,data,selection) {
+        this.operateMessages("CopyMessages",acctfrom,from,acctto,to,data,selection);
     },
 
 	//TODO: customer,causal
 	//operateMessages: function(action,from,to,data,customer_id,causal_id) {
-    operateMessages: function(action,acct,from,to,data,selection) {
+    operateMessages: function(action,acctfrom,from,acctto,to,data,selection) {
 		var me=this;
 		
 		me.checkBrokenThreads(selection,function(fullThreads) {
-			me._operateMessages(action,acct,from,to,data,fullThreads);
+			me._operateMessages(action,acctfrom,from,acctto,to,data,fullThreads);
 		});
     },
 	
-	_operateMessages: function(action,acct,from,to,data,fullThreads) {
+	_operateMessages: function(action,acctfrom,from,acctto,to,data,fullThreads) {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, action, {
 			params: {
 				//customer_id:customer_id,
 				//causal_id:causal_id
-				account: acct,
+				fromaccount: acctfrom,
 				fromfolder: from,
+				toaccount: acctto,
 				ids: data.ids,
 				tofolder: to,
 				multifolder: data.multifolder,
-				fullthreads: fullThreads,
+				fullthreads: fullThreads
 			},
 			callback: function(success,json) {
 				Ext.callback(data.cb,data.scope||me,[json.result]);
@@ -1482,7 +1494,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     
     markMessageSeenState: function(r,seen) {
         var me=this,
-			acct=me.mys.getAccount(r),
+			acct=me.currentAccount,
 			idmsg=r.get("idmessage"),
 			folder=me.multifolder?r.get("folder"):me.currentFolder,
             id=me.multifolder?folder+"|"+idmsg:idmsg,
@@ -1708,7 +1720,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			mp=me.mys.messagesPanel,
 			mv=mp.messageView;
 			ff=(me.multifolder?r.get("folder"):me.currentFolder),
-			acct=me.mys.getAccount(r);
+			acct=me.currentAccount;
 			idmessage=r.get("idmessage");
 	
 		if (mv.folder===ff && mv.idmessage===idmessage) {
@@ -1720,7 +1732,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     actionFlag: function(flagstring) {
         var me=this,
 			selection=me.getSelection(),
-			account=me.currentAccount,
+			acct=me.currentAccount,
 			folder=me.currentFolder,
 			data=me.sel2ids(selection),
 			ids=data.ids,
@@ -1779,10 +1791,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	actionAddNote: function() {
-		var r=this.getSelectionModel().getSelection()[0],
-			acct=me.mys.getAccount(r);
+		var me=this,r=me.getSelectionModel().getSelection()[0],
+			acct=me.currentAccount;
 	
-		this.editNote(acct,r.get('idmessage'),r.get("folder")||this.currentFolder);
+		me.editNote(acct,r.get('idmessage'),r.get("folder")||me.currentFolder);
 	},
 	
     editNote: function(acct,id,folder) {
@@ -1869,7 +1881,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	actionSaveMail: function() {
 		var me=this,
 			r=me.getSelectionModel().getSelection()[0],
-			acct=me.mys.getAccount(r);
+			acct=me.currentAccount;
 	
 		me.saveMail(acct,r.get('idmessage'),r.get("folder")||this.currentFolder);
 	},
@@ -1898,7 +1910,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     actionViewSource: function(headers) {
         var me=this,
 			r=me.getSelectionModel().getSelection()[0],
-			acct=me.mys.getAccount(r);
+			acct=me.currentAccount;
 	
 		WT.ajaxReq(me.mys.ID, 'GetSource', {
 			params: {

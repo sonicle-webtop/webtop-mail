@@ -429,7 +429,7 @@ public class Service extends BaseService {
 				mainAccount.getFolderTrash(),
 			});
 			
-			mainAccount.loadFoldersCache(mft);
+			mainAccount.loadFoldersCache(mft,false);
 			if (!imapDebug) mft.start();
 			
 			vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs");
@@ -458,10 +458,7 @@ public class Service extends BaseService {
 				archiveAccount.setFolderDrafts(mprofile.getFolderDrafts());
 				archiveAccount.setFolderSpam(mprofile.getFolderSpam());
 				archiveAccount.setFolderTrash(mprofile.getFolderTrash());
-				archiveAccount.setFolderArchive(mprofile.getFolderArchive());
-				
-				archiveAccount.checkStoreConnected();
-				archiveAccount.loadFoldersCache(archiveAccount);
+				archiveAccount.setFolderArchive(mprofile.getFolderArchive());				
 			}
 
 			
@@ -2304,6 +2301,10 @@ public class Service extends BaseService {
 		if (account!=null) return accounts.get(account);
 		return mainAccount;
 	}
+	
+	private MailAccount getAccount(String account) {
+		return accounts.get(account);
+	}
 
 	//Client service requests
 	public void processGetImapTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -2579,6 +2580,23 @@ public class Service extends BaseService {
 		return afolders;
 	}
 	
+	public void processShowArchive(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			boolean connected=archiveAccount.checkStoreConnected();
+			if (!connected) throw new Exception("Mail account authentication error");
+			if (!archiveAccount.hasFolderCache()) archiveAccount.loadFoldersCache(archiveAccount,false);
+			new JsonResult().printTo(out);
+		} catch (Exception exc) {
+			new JsonResult(exc).printTo(out);
+			Service.logger.error("Exception",exc);
+		}
+	}
+	
+	public void processHideArchive(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		archiveAccount.disconnect();
+		new JsonResult().printTo(out);
+	}
+	
 	public void processGetArchiveTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String pfoldername = request.getParameter("node");
 		MailAccount account=archiveAccount; //getAccount(request);
@@ -2586,6 +2604,7 @@ public class Service extends BaseService {
 		try {
 			boolean connected=account.checkStoreConnected();
 			if (!connected) throw new Exception("Mail account authentication error");
+			if (!account.hasFolderCache()) account.loadFoldersCache(account,true);
 			
 			boolean isroot=pfoldername.equals("/");
             if (isroot) folder=account.getDefaultFolder();
@@ -2656,8 +2675,9 @@ public class Service extends BaseService {
 	
 	
 	public void processMoveMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		MailAccount account=getAccount(request);
+		MailAccount fromaccount=getAccount(request.getParameter("fromaccount"));
 		String fromfolder = request.getParameter("fromfolder");
+		MailAccount toaccount=getAccount(request.getParameter("toaccount"));
 		String tofolder = request.getParameter("tofolder");
 		String allfiltered = request.getParameter("allfiltered");
 		String smultifolder = request.getParameter("multifolder");
@@ -2668,26 +2688,27 @@ public class Service extends BaseService {
 		String sout = null;
 		boolean archiving = false;
 		try {
-			account.checkStoreConnected();
-			FolderCache mcache = account.getFolderCache(fromfolder);
-			FolderCache tomcache = account.getFolderCache(tofolder);
-			String foldertrash=account.getFolderTrash();
-			String folderspam=account.getFolderSpam();
-			String folderarchive=account.getFolderArchive();
+			fromaccount.checkStoreConnected();
+			toaccount.checkStoreConnected();
+			FolderCache mcache = fromaccount.getFolderCache(fromfolder);
+			FolderCache tomcache = toaccount.getFolderCache(tofolder);
+			String foldertrash=toaccount.getFolderTrash();
+			String folderspam=toaccount.getFolderSpam();
+			String folderarchive=toaccount.getFolderArchive();
 			
 			//check if tofolder is my Spam, and there is spamadm, move there
 			if (tofolder.equals(folderspam)) {
 				String spamadmSpam=ss.getSpamadmSpam();
 				if (spamadmSpam!=null) {
 					folderspam=spamadmSpam;
-					FolderCache fc=account.getFolderCache(spamadmSpam);
+					FolderCache fc=toaccount.getFolderCache(spamadmSpam);
 					if (fc!=null) tomcache=fc;
 				}
-				else if (account.isUnderSharedFolder(fromfolder)) {
-					String mainfolder=account.getMainSharedFolder(fromfolder);
+				else if (toaccount.isUnderSharedFolder(fromfolder)) {
+					String mainfolder=toaccount.getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
-						folderspam = mainfolder + account.getFolderSeparator() + account.getLastFolderName(folderspam);
-						FolderCache fc=account.getFolderCache(folderspam);
+						folderspam = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(folderspam);
+						FolderCache fc=toaccount.getFolderCache(folderspam);
 						if (fc!=null) tomcache=fc;
 					}
 				}
@@ -2695,22 +2716,22 @@ public class Service extends BaseService {
 			}
 			//if trashing, check for shared profile trash
 			else if (tofolder.equals(foldertrash)) {
-				if (account.isUnderSharedFolder(fromfolder)) {
-					String mainfolder=account.getMainSharedFolder(fromfolder);
+				if (toaccount.isUnderSharedFolder(fromfolder)) {
+					String mainfolder=toaccount.getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
-						foldertrash = mainfolder + account.getFolderSeparator() + account.getLastFolderName(foldertrash);
-						FolderCache fc=account.getFolderCache(foldertrash);
+						foldertrash = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(foldertrash);
+						FolderCache fc=toaccount.getFolderCache(foldertrash);
 						if (fc!=null) tomcache=fc;
 					}
 				}
 				tofolder=foldertrash;
 			}
 			//if archiving, determine destination folder based on settings and shared profile
-			else if (tofolder.equals(account.getFolderArchive())) {
-					if (account.isUnderSharedFolder(fromfolder)) {
-						String mainfolder=account.getMainSharedFolder(fromfolder);
+			else if (tofolder.equals(toaccount.getFolderArchive())) {
+					if (toaccount.isUnderSharedFolder(fromfolder)) {
+						String mainfolder=toaccount.getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
-						folderarchive = mainfolder + account.getFolderSeparator() + account.getLastFolderName(folderarchive);
+						folderarchive = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(folderarchive);
 					}
 				}
 				tofolder=folderarchive;
@@ -2732,7 +2753,7 @@ public class Service extends BaseService {
 							int ix=uid.indexOf("|");
 							fromfolder=uid.substring(0,ix);
 							uid=uid.substring(ix+1);
-							mcache = account.getFolderCache(fromfolder);
+							mcache = fromaccount.getFolderCache(fromfolder);
 							iuids[0]=Long.parseLong(uid);
 							if (archiving) archiveMessages(mcache, folderarchive, iuids,fullthreads);
 							else moveMessages(mcache, tomcache, iuids,fullthreads);
@@ -2758,8 +2779,9 @@ public class Service extends BaseService {
 	}
 	
 	public void processCopyMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		MailAccount account=getAccount(request);
+		MailAccount fromaccount=getAccount(request.getParameter("fromaccount"));
 		String fromfolder = request.getParameter("fromfolder");
+		MailAccount toaccount=getAccount(request.getParameter("toaccount"));
 		String tofolder = request.getParameter("tofolder");
 		String allfiltered = request.getParameter("allfiltered");
 		String smultifolder = request.getParameter("multifolder");
@@ -2769,9 +2791,10 @@ public class Service extends BaseService {
 		String sout = null;
 		String uids[]=null;
 		try {
-			account.checkStoreConnected();
-			FolderCache mcache = account.getFolderCache(fromfolder);
-			FolderCache tomcache = account.getFolderCache(tofolder);
+			fromaccount.checkStoreConnected();
+			toaccount.checkStoreConnected();
+			FolderCache mcache = fromaccount.getFolderCache(fromfolder);
+			FolderCache tomcache = toaccount.getFolderCache(tofolder);
 			if (allfiltered == null) {
 				uids = request.getParameterValues("ids");
 				if (!multifolder) copyMessages(mcache, tomcache, toLongs(uids),fullthreads);
@@ -2781,7 +2804,7 @@ public class Service extends BaseService {
                         int ix=uid.indexOf("|");
                         fromfolder=uid.substring(0,ix);
                         uid=uid.substring(ix+1);
-						mcache = account.getFolderCache(fromfolder);
+						mcache = fromaccount.getFolderCache(fromfolder);
                         iuids[0]=Long.parseLong(uid);
                         copyMessages(mcache, tomcache, iuids,fullthreads);
 					}
@@ -4789,8 +4812,10 @@ public class Service extends BaseService {
 	
 	public void processCopyAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
-			MailAccount account=getAccount(request);
-			account.checkStoreConnected();
+			MailAccount fromaccount=getAccount(request.getParameter("fromaccount"));
+			MailAccount toaccount=getAccount(request.getParameter("toaccount"));
+			fromaccount.checkStoreConnected();
+			toaccount.checkStoreConnected();
 			UserProfile profile=environment.getProfile();
 			Locale locale=profile.getLocale();
 			
@@ -4799,8 +4824,8 @@ public class Service extends BaseService {
 			String puidmessage = request.getParameter("idmessage");
 			String pidattach = request.getParameter("idattach");
 			
-			FolderCache frommcache = account.getFolderCache(pfromfolder);
-			FolderCache tomcache = account.getFolderCache(ptofolder);
+			FolderCache frommcache = fromaccount.getFolderCache(pfromfolder);
+			FolderCache tomcache = toaccount.getFolderCache(ptofolder);
 			long uidmessage = Long.parseLong(puidmessage);
 			Message m = frommcache.getMessage(uidmessage);
 			
@@ -4816,7 +4841,7 @@ public class Service extends BaseService {
 				msgContent = new MimeMessage((MimeMessage)content);
 			} else if(content instanceof IMAPInputStream) {
 				try {
-					msgContent = new MimeMessage(account.getMailSession(), (IMAPInputStream)content);
+					msgContent = new MimeMessage(fromaccount.getMailSession(), (IMAPInputStream)content);
 				} catch(MessagingException ex1) {
 					logger.debug("Stream cannot be interpreted as MimeMessage", ex1);
 				}

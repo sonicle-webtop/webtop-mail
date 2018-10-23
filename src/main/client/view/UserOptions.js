@@ -274,6 +274,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		if (me.isProfileSelf()) {
 			identEdCfg = {
 				xtype: 'sotreecombo',
+				triggers: {
+					clear: WTF.clearTrigger()
+				},
 				store: Ext.create('Ext.data.TreeStore', {
 					model: 'Sonicle.webtop.mail.model.ImapTreeModel',
 					proxy: WTF.proxy(me.ID, 'GetImapTree'),

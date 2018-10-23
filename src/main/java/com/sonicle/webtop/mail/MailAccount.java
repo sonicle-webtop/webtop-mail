@@ -453,7 +453,11 @@ public class MailAccount {
 		}
 	}
 	
-	public void loadFoldersCache(final Object lock) throws MessagingException {
+	public boolean hasFolderCache() {
+		return fcRoot!=null;
+	}
+	
+	public void loadFoldersCache(final Object lock, boolean waitLoad) throws MessagingException {
         Folder froot=getDefaultFolder();
         fcRoot=createFolderCache(froot);
 		fcRoot.setIsRoot(true);
@@ -496,6 +500,11 @@ public class MailAccount {
 				}
 		);
 		engine.start();
+		try {
+			if (waitLoad) engine.join();
+		} catch(InterruptedException exc) {
+			Service.logger.error("Error waiting folder cache load",exc);
+		}
 	}
 	
 	private void _loadFoldersCache(FolderCache fc) throws MessagingException {
