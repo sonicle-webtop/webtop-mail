@@ -140,6 +140,12 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 					selectOnFocus: true
 				})
 			}),
+			'argtextarea': new Ext.grid.CellEditor({
+				field: Ext.create('Ext.form.field.TextArea', {
+					allowBlank: false,
+					selectOnFocus: true
+				})
+			}),
 			'argemail': new Ext.grid.CellEditor({
 				field: Ext.create('Ext.form.field.Text', {
 					allowBlank: false,
@@ -200,7 +206,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 	},
 	
 	onCellValidateEdit: function(ed, cntx) {
-		console.log('onCellBeforeEdit');
+		//console.log('onCellBeforeEdit');
 	},
 	
 	getArgumentEditor: function(rec, col) {
@@ -209,7 +215,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 				method = rec.get('method');
 		switch(method) {
 			case 'reject':
-				return me.getCellEditor('argtext', rec);
+				return me.getCellEditor('argtextarea', rec);
 			case 'redirect':
 				return me.getCellEditor('argemail', rec);
 			case 'fileinto':
