@@ -529,7 +529,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			]
 		}));
 		
-		
 		me.add(
 			me.htmlEditor=Ext.create({
 				xtype: 'wthtmleditor',

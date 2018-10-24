@@ -205,6 +205,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					store: Ext.create('WTA.store.TxtFont', {
 						autoLoad: true
 					}),
+					needReload: true,
 					fieldLabel: WT.res('word.font'),
 					width: 400,
 					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
