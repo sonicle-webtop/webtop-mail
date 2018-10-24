@@ -1911,8 +1911,10 @@ public class Service extends BaseService {
 			Message reply=reply((MimeMessage)msg,replyAll,fromSent);
 			
 			removeDestination(reply, myemail);
-			for (Identity ident : mprofile.getIdentities()) {
-				removeDestination(reply, ident.getEmail());
+			if (ss.getMessageReplyAllStripMyIdentities()) {
+				for (Identity ident : mprofile.getIdentities()) {
+					removeDestination(reply, ident.getEmail());
+				}
 			}
 
       // Setup the message body
