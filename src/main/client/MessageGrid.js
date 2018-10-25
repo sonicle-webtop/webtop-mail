@@ -2452,7 +2452,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			issentfolder=false;
 		
 		if (me.mys && me.currentFolder) {
-			var node=me.mys.getFolderNodeById(me.currentFolder);
+			var node=me.mys.getFolderNodeById(me.currentAccount, me.currentFolder);
 			if (node) issentfolder=(node.data.isSent||node.data.isUnderSent);
 		}
 	

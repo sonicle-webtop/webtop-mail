@@ -1189,17 +1189,18 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     
     showEml: function(t,urlparams) {
         var params=Ext.Object.fromQueryString(urlparams);
-        this.mys.openEml(params.folder,params.idmessage,params.idattach);
+        this.mys.openEml(me.acct, params.folder,params.idmessage,params.idattach);
     },
     
-    loadEml: function(folder,idmessage,idattach) {
+    loadEml: function(acct, folder,idmessage,idattach) {
 		var me=this;
         me._clear();
         me.idmessage=idmessage;
+		me.acct=acct,
         me.folder=folder;
         me.idattach=idattach;
 		me.proxy.abort();
-		WTU.applyExtraParams(me.proxy,{ folder: folder, idmessage: idmessage, idattach: idattach });
+		WTU.applyExtraParams(me.proxy,{ account: acct, folder: folder, idmessage: idmessage, idattach: idattach });
 		me.proxy.doRequest(
 			me.proxy.createOperation('read',{
 				url: WTF.requestBaseUrl(),

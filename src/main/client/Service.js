@@ -153,7 +153,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				rowclick: function(t, r, tr, ix, e, eopts) {
 					me.imapTree.setSelection(null);
 					if (me.archiveTree) me.archiveTree.setSelection(null);
-					me.folderClicked(r, tr, ix, e, eopts);
+					me.folderClicked(me.favoritesTree.acct, r, tr, ix, e, eopts);
 				}
 			}
 			
@@ -183,7 +183,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					rowclick: function(t, r, tr, ix, e, eopts) {
 						me.imapTree.setSelection(null);
 						me.favoritesTree.setSelection(null);
-						me.folderClicked(r, tr, ix, e, eopts);
+						me.folderClicked(me.archiveTree.acct, r, tr, ix, e, eopts);
 					}
 				}
 
@@ -217,7 +217,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				rowclick: function(t, r, tr, ix, e, eopts) {
 					me.favoritesTree.setSelection(null);
 					if (me.archiveTree) me.archiveTree.setSelection(null);
-					me.folderClicked(r, tr, ix, e, eopts);
+					me.folderClicked(me.imapTree.acct, r, tr, ix, e, eopts);
 				},
 				load: function(t,r,s,o,n) {
 					if (n.id==='/') {
@@ -275,7 +275,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		
 		me.acctTrees[me.imapTree.acct]=me.imapTree;
-		me.acctTrees[me.archiveTree.acct]=me.archiveTree;
+		if (me.archiveTree) me.acctTrees[me.archiveTree.acct]=me.archiveTree;
 		
 		//me.messagesPanel.setImapStore(me.imapTree.getStore());
 		
@@ -765,18 +765,20 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		
 		//archive tree menu
-		me.addRef('cxmArchiveTree', Ext.create({
-			xtype: 'menu',
-			items: [
-                me.getAct('advsearch'),
-                '-',
-                me.getAct('refresh'),
-                me.getAct('refreshtree'),
-                '-',
-                me.getAct('downloadmails')
-			]
-		}));
-		
+		if (me.archiveTree) {
+			me.addRef('cxmArchiveTree', Ext.create({
+				xtype: 'menu',
+				items: [
+					me.getAct('advsearch'),
+					'-',
+					me.getAct('refresh'),
+					me.getAct('refreshtree'),
+					'-',
+					me.getAct('downloadmails')
+				]
+			}));
+
+		}
 		//favorite tree menu
 		me.addRef('cxmFavorites', Ext.create({
 			xtype: 'menu',
@@ -818,10 +820,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		this.showFolder(folderid);
     },*/
 	
-	folderClicked: function(r, tr, ix, e, eopts) {
+	folderClicked: function(acct, r, tr, ix, e, eopts) {
 		if (e && e.target.classList.contains('x-tree-expander')) return;
         
-		var acct=this.getAccount(r);
 		var folderid=r.get("id");
 		this.showFolder(acct,folderid);
 	},
@@ -1263,7 +1264,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
     },
 	
-    actionNewMainFolder: function() {
+    actionNewMainFolder: function(s,e) {
 		var me=this,
 			node=me.getCtxNode(e),
 			acct=me.getAccount(node);
@@ -1546,7 +1547,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					n.expand(false,function(nodes) {
 						var newnode=n.findChild("text",newname);
 						v.setSelection(newnode);
-						me.folderClicked(newnode);
+						me.folderClicked(acct,newnode);
 					});
 				} else {
 					WT.error(json.text);
@@ -1621,7 +1622,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 								n=(json.parent?s.getNodeById(json.parent):s.getRoot());
 								if (n.get("leaf")) n.set("leaf",false);
 								n.expand(false,function(nodes) {
-									me.selectChildNode(n,json.newid);
+									me.selectChildNode(acct,n,json.newid);
 								});
 							}
 						} else {
@@ -1667,7 +1668,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					if (json.newid && json.trashid) {
 						n=s.getById(json.trashid);
 						n.set("leaf",false);
-						me.selectChildNode(n,json.newid);
+						me.selectChildNode(acct,n,json.newid);
 					}
 				} else {
 					WT.error(json.text);
@@ -1731,9 +1732,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});					
 	},	
 	
-	selectChildNode: function(parentNode, childId) {
+	selectChildNode: function(acct, parentNode, childId) {
 		var me=this,
-			acct=me.getAccount(parentNode),
 			tr=me.acctTrees[acct];
 	
 		if (parentNode.isExpanded()) {
@@ -1760,7 +1760,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var win=WT.createView(this.ID,'view.EmlMessageView',{
 			viewCfg: {
 				mys: this,
-				account: acct,
+				acct: acct,
 				folder: folder,
 				idmessage: idmessage,
 				idattach: idattach

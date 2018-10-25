@@ -45,6 +45,7 @@ Ext.define('Sonicle.webtop.mail.view.EmlMessageView', {
 	
 	mys: null,
 	messageView: null,
+	acct: null,
 	folder: null,
 	idmessage: null,
 	idattach: null,
@@ -79,7 +80,7 @@ Ext.define('Sonicle.webtop.mail.view.EmlMessageView', {
 
 		//TODO: loadEml from provider
 		
-		me.messageView.loadEml(me.folder,me.idmessage,me.idattach);
+		me.messageView.loadEml(me.acct, me.folder,me.idmessage,me.idattach);
 		
 	}
 	
