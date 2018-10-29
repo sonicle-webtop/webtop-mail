@@ -331,7 +331,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 							fileName: file.name,
 							cid: null,
 							inline: false,
-							fileSize: file.size
+							fileSize: file.size,
+							editable: resp.data.editable
 						});
 					}
 				}
@@ -585,7 +586,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 											fileName: file.name, 
 											cid: file.name,
 											inline: true,
-											fileSize: file.size 
+											fileSize: file.size,
+											editable: resp.data.editable
 										}
 								);
 								me.htmlEditor.execCommand('insertimage', false, 
@@ -1089,7 +1091,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 							fileName: d.name, 
 							cid: null,
 							inline: false,
-							fileSize: d.size 
+							fileSize: d.size,
+							editable: d.editable
 						}
 					);
 				} else {
@@ -1120,7 +1123,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								fileName: item.name, 
 								cid: null,
 								inline: false,
-								fileSize: item.size 
+								fileSize: item.size,
+								editable: item.editable
 							}
 						);
 					});
@@ -1296,7 +1300,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 			"<table border=0 cellspacing=0 cellpadding=0 class='wtmail-table-editor-attachment'>",
 			  "<tr>",
 				"<td class='wtmail-td-editor-attachment-icon'>",
-					"<div class='{[WTF.fileTypeCssIconCls(WTA.Util.getFileExtension(values['fileName']),'xs')]}' style='width:16px;height:16px'>",
+					"<div class='{[WTF.fileTypeCssIconCls(WTA.Util.getFileExtension(values['fileName']))]}' style='width:16px;height:16px'>",
 				"</td>",
 				"<td class='wtmail-td-editor-attachment-text'>",
 					"<a href='javascript:Ext.emptyFn()' title='{fileName}'>",
@@ -1323,13 +1327,51 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 				me.autosaveDirty=true;
 			}
 			else {
-				var href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",{
+				var params={
 					uploadId: r.get("uploadId")
-				});
-				Sonicle.URLMgr.open(href,true,"location=no,menubar=no,resizable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=no,top=10,left=10,width=770,height=480");
+				}
+				if (r.get("editable")) me.viewFile(params);
+				else {
+					var href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",params);
+					Sonicle.URLMgr.open(href,true,"location=no,menubar=no,resizable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=no,top=10,left=10,width=770,height=480");
+				}
 			}
 		}
 	},
+	
+    viewFile: function(params) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, 'DocPreviewAttachment', {
+			params: params,
+			callback: function(success, json) {
+				if (success) {
+					var editingCfg=json.data;
+					var vw = WT.createView(WT.ID, 'view.DocEditor', {
+						swapReturn: true,
+						viewCfg: {
+							editingId: editingCfg.editingId,
+							editorConfig: {
+								editable: editingCfg.writeSupported,
+								token: editingCfg.token,
+								docType: editingCfg.docType,
+								docExtension: editingCfg.docExtension,
+								docKey: editingCfg.docKey,
+								docTitle: editingCfg.docName,
+								docUrl: editingCfg.docUrl,
+								//autosave: false,
+								callbackUrl: editingCfg.callbackUrl
+							}
+						}
+					});
+					vw.showView(function() {
+						vw.begin('view');
+					});
+				}
+			}
+		});
+    },	
+	
+	
 	
 	addAttachment: function(config) {
 		this.getStore().add(config);

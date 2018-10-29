@@ -67,11 +67,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		
 		me.callParent(arguments);
 		
+		//The breadcrumb store will be set later through setImapStore, to avoid too early events
 		me.bcFolders=Ext.create({
 						xtype: 'sobreadcrumb',
-                        store: me.imapStore,
 						overflowHandler: 'scroller',
-//						hideMenu:true,
+						hidden: !WT.plTags.desktop,
 						minDepth: 1,
 							listeners: {
 							change: function(s, node) {
@@ -169,7 +169,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			mys: me.mys,
 			mp: me,
 			createPagingToolbar: true,
-			stateful: true,
+			stateful: WT.plTags.desktop?true:false,
 			baseStateId: me.mys.buildStateId('messagegrid'),			
 			dockedItems: [
 /*				Ext.create('Ext.toolbar.Toolbar',{
@@ -205,6 +205,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						me.mys._TB("delete",null,'small'),
 						me.mys._TB("spam",null,'small'),
 						'-',
+						me.mys._TB("special",null,'small'),
 						{
 							text: null,
 							iconCls: 'wtmail-icon-tag',
@@ -302,10 +303,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			} 
 		});
 		
-		me.folderList.on('totals',function(g,total,realTotal) {
+		me.folderList.on('totals',function(g,total,realTotal,quotaLimit,quotaUsage) {
 			var text=''+total;
 			if (me.folderList.threaded && realTotal)
 				text+=" ["+realTotal+"]";
+			if (quotaLimit) {
+				text+=" - "+WT.res("word.quota")+": "+Math.round(quotaUsage/1024)+"MB / "+
+						Math.round(quotaLimit/1024)+"MB ("+
+						Math.round(100*quotaUsage/quotaLimit)+"%)";
+			}
 			me.labelMessages.setText(text);
 		});
 		
@@ -329,7 +335,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			me.gridMonitor.start(10000);
 			me.gridMonitor.on('change',function(gm,idle) {
 				//console.log("idle change event: "+idle+" idleRefreshFolder="+me.folderList.idleRefreshFolder);
-				if (idle && me.currentFolder===me.folderList.idleRefreshFolder) {
+				if (idle && me.currentFolder && me.currentFolder===me.folderList.idleRefreshFolder) {
 					me._refreshIdleGrid();
 				}
 			});
@@ -402,17 +408,17 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
         me.messageViewContainer=Ext.create({
 			xtype: 'wtpanel',
-			stateful: true,
+			stateful: WT.plTags.desktop,
 			stateId: me.mys.buildStateId('ctmessageview'),
-            region: "east", //me.viewRegion,
+            region: WT.plTags.desktop?"east":"south", //me.viewRegion,
             cls: 'wtmail-mv-container',
             layout: 'fit',
             split: true,
             collapseMode: 'mini',
 			header: false,
-            collapsible : true,
+            collapsible : WT.plTags.desktop,
 			collapsed: false, //me.viewCollapsed,
-            height: '40%', //me.viewHeight,
+            height: WT.plTags.desktop?'40%':'60%', //me.viewHeight,
 			width: '40%', //me.viewWidth,
             bodyBorder: false,
             border: false,
@@ -468,6 +474,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
 
     },
+	
+	setImapStore: function(store) {
+		this.bcFolders.setStore(store);
+	},
 	
 	getAct: function(name) {
 		return this.mys.getAct(name);
@@ -676,7 +686,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		if (node) {
 			me._updateBreadcrumbAndReloadFolderList(node,config,uid,rid,page,tid,true);
 		} else {
-			me.mys.imapTree.expandNode(folderid,me.mys.getVar("folderSeparator"),false,null,function() {
+			me.mys.imapTree.expandNodePath(folderid,me.mys.getVar("folderSeparator"),false,null,function() {
 				node=me.bcFolders.getStore().getById(folderid);
 				me._updateBreadcrumbAndReloadFolderList(node,config,uid,rid,page,tid,false);
 			});
@@ -687,7 +697,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
 		me.reloadingFolder=true;
 		me.bcFolders.setSelection(node);
-		if(node.data.expandable && !node.isLoaded()) {
+		if(!node.data.leaf && node.data.expandable && !node.isLoaded()) {
 			var leaf=node.isLeaf();
 			me.bcFolders.getStore().load({
 				node:node,
@@ -729,19 +739,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
 	showMessage: function(folder,id) {
 		if (folder && id) {
-			var me=this,
-				tbar=me.messageViewContainer.getTopBar();
-			tbar.show();
-			//tbar.setHeight(24);
-			me.messageView._showMessage(folder,id);
+			var me=this;
+			if (WT.plTags.desktop) me.messageViewContainer.getTopBar().show();
+			me.messageView._showMessage(folder,id,!me.mys.getVar("manualSeen"));
 		}
 	},
 
     clearMessageView: function() {
-		var me=this,
-			tbar=me.messageViewContainer.getTopBar();
-		tbar.hide();
-		//tbar.setHeight(0);
+		var me=this;
+		if (WT.plTags.desktop) me.messageViewContainer.getTopBar().hide();
         me.messageView._clear();
     },
 	

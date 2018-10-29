@@ -465,7 +465,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						rootProperty: 'messages',
 						totalProperty: 'total',
 						idProperty: 'idmessage'
-					}
+					},
+					timeout: WT.getVar("ajaxSpecialTimeout")
 				},
 				model: smodel,
 				pageSize: me.pageSize
@@ -484,7 +485,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						rootProperty: 'messages',
 						totalProperty: 'total',
 						idProperty: 'idmessage'
-					}
+					},
+					timeout: WT.getVar("ajaxSpecialTimeout")
 				},
 				//purgePageCount: 3,
 				leadingBufferZone: 50,
@@ -540,7 +542,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			var folder=me.multifolder?r.get("folder"):me.currentFolder;
 			if (me.mys.isDrafts(folder)) me.editMessage(r,true);
 			else me.openMessage(r);
-			if(me.mys.getVar("seenOnOpen")) me.actionMarkSeenState(true);
+			//if(me.mys.getVar("seenOnOpen")) me.actionMarkSeenState(true);
 		});
 		me.on('cellclick',function(grid, td, cellIndex, r, rowIndex, e, eopts) {
 			if (me.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {
@@ -644,8 +646,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 		}
 		me.currentFolder = folder_id;
-		me.initFolderState();
-		me.hideFilterBar();
+		me.initFolderState(!WT.plTags.desktop);
+		//me.hideFilterBar();
 		me.getStore().clearFilter(true);
 		if (uid) {
 			me.autoselectUid=uid;
@@ -678,7 +680,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
      */
     initFolderState: function(reset){
         var me = this,
-            id = me.stateful && me.getStateId(),
+            id = /*me.stateful &&*/ me.getStateId(),
             hasListeners = me.hasListeners,
             state,
             combinedState,
@@ -764,11 +766,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		else if (!col.hidden) delete col.hidden;
 	},
  	
-	updateTotals: function(total,realTotal) {
+	updateTotals: function(total,realTotal,quotaLimit,quotaUsage) {
 		var me=this;
 		me.msgsTotal=total;
 		me.msgsRealTotal=realTotal;
-		me.fireEvent('totals',me,me.msgsTotal,me.msgsRealTotal);
+		me.fireEvent('totals',me,me.msgsTotal,me.msgsRealTotal,quotaLimit,quotaUsage);
 	},
 	
     loaded: function(s,r,o) {
@@ -777,7 +779,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			json=s.proxy.reader.rawData;
 
 		if (json) { 
-			me.updateTotals(json.total,json.realTotal);
+			me.updateTotals(json.total,json.realTotal,json.quotaLimit,json.quotaUsage);
 			me.fireEvent('load',me,me.currentFolder,json);
 		}
 		
@@ -2105,7 +2107,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					dcols[n++]=Ext.create({//Subject
 						xtype: 'gridcolumn',
 						header: me.res("column-subject"),
-						width: 200,
+						width: WT.plTags.desktop?400:200,
 						sortable: true,
 						dataIndex: 'subject',
 						stateId: 'stid-subject',
@@ -2247,7 +2249,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						},
 						iconSize: WTU.imgSizeToPx('xs'),
 						scope: me,
-						filter: { xtype: 'textfield'}
+						filter: {
+							xtype: 'soicononlycombobox',
+							editable: false,
+							width: 24,
+							listConfig: {
+								minWidth: 42
+							},
+							hideTrigger: true,
+							store: [
+								['','\u00a0',''],
+								["true",'\u00a0',WTF.cssIconCls(me.mys.XID, 'attachment', 'xs')]
+							]
+						}
 
 					});
 					break;
@@ -2389,7 +2403,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	createDefaultState: function() {
-        var me=this,n=0,stcols=new Array();
+        var me=this,n=0,stcols=new Array(),
+			issentfolder=false;
+		
+		if (me.mys && me.currentFolder) {
+			var node=me.mys.getFolderNodeById(me.currentFolder);
+			if (node) issentfolder=(node.data.isSent||node.data.isUnderSent);
+		}
+	
 		
 /*		a={"columns":[
 				{"id":"stid-priority","width":40},
@@ -2413,9 +2434,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         }
         stcols[n++]={ id: 'stid-priority', width: 40 };
         stcols[n++]={ id: 'stid-unread', width: 40 };
-        stcols[n++]={ id: 'stid-from', width: 198 };
-        stcols[n++]={ id: 'stid-to', width: 198 };
-        stcols[n++]={ id: 'stid-subject', width: 400 };
+        stcols[n++]={ id: 'stid-from', width: 198, hidden: issentfolder?true:false };
+        stcols[n++]={ id: 'stid-to', width: 198, hidden: issentfolder?false:true };
+        stcols[n++]={ id: 'stid-subject', width: WT.plTags.desktop?400:200 };
         stcols[n++]={ id: 'stid-date', width: 96 };
         stcols[n++]={ id: 'stid-gdate', width: 96 };
         stcols[n++]={ id: 'stid-sdate', width: 96 };

@@ -33,7 +33,6 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.mail.imap.*;
@@ -41,7 +40,6 @@ import com.sonicle.mail.tnef.internet.*;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.mail.model.Tag;
 import com.sonicle.webtop.mail.ws.RecentMessage;
@@ -53,8 +51,6 @@ import java.util.*;
 import javax.mail.*;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
-import javax.mail.event.FolderEvent;
-import javax.mail.event.FolderListener;
 import javax.mail.event.MessageChangedEvent;
 import javax.mail.event.MessageChangedListener;
 import javax.mail.event.MessageCountEvent;
@@ -64,11 +60,9 @@ import javax.mail.search.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import net.fortuna.ical4j.data.*;
-import net.fortuna.ical4j.model.*;
-import net.fortuna.ical4j.model.component.*;
-import net.fortuna.ical4j.model.property.*;
 import org.joda.time.LocalDate;
 import org.jooq.tools.StringUtils;
+import com.sonicle.commons.collection.FifoMap;
 
 
 /**
@@ -94,7 +88,8 @@ public class FolderCache {
     
     private String foldername=null;
     private Folder folder=null;
-    private HashMap<Long, HTMLMailData> dhash=new HashMap<Long, HTMLMailData>();
+    //private HashMap<Long, HTMLMailData> dhash=new HashMap<Long, HTMLMailData>();
+	private FifoMap<Long, HTMLMailData> dhash=new FifoMap<>(100);
     private final HashMap<String, MessageSearchResult> msrs=new HashMap<>();
     private Message msgs[]=null;
     private boolean modified=false;
@@ -988,7 +983,7 @@ public class FolderCache {
     public void save(Message msg) throws MessagingException {
         Message[] saveMsgs=new MimeMessage[1];
         saveMsgs[0]=msg;
-
+		open();
         getFolder().appendMessages(saveMsgs);
         setForceRefresh();
     }
@@ -1663,7 +1658,7 @@ public class FolderCache {
 		return xmsgs;
 	}
 	
-	private SonicleIMAPMessage[] _getThreadedMessages(String quickfilter, String patterns, String searchfields) throws MessagingException {
+	private SonicleIMAPMessage[] _getThreadedMessages(String quickfilter, String patterns, String searchfields) throws MessagingException, IOException {
 		SonicleIMAPMessage[] tmsgs=null;
 		open();
 
@@ -1700,17 +1695,25 @@ public class FolderCache {
 				openThreads=newOpenThreads;
 			}
 		}
+		if (quickfilter!=null && quickfilter.equals("attachment")) {
+			ArrayList<Message> amsgs=new ArrayList<Message>();
+			for(Message m: tmsgs) {
+				if (hasAttachements(m)) amsgs.add(m);
+			}
+			tmsgs=new SonicleIMAPMessage[amsgs.size()];
+			amsgs.toArray(tmsgs);
+		}
 		
 		return tmsgs;
 	}
-
-	private boolean isAttachment(Part part) throws MessagingException {
+	
+	protected boolean isAttachment(Part part) throws MessagingException {
 		return Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) 
 				|| Part.INLINE.equalsIgnoreCase(part.getDisposition()) 
 				|| (part.getDisposition() == null && part.getFileName() != null);
 	}
     
-    private boolean hasAttachements(Part p) throws MessagingException, IOException {
+    protected boolean hasAttachements(Part p) throws MessagingException, IOException {
         boolean retval=false;
         
         //String disp=p.getDisposition();
@@ -1754,7 +1757,16 @@ public class FolderCache {
             String pattern=entry.getValue();
             boolean negate=(method==AdvancedSearchEntry.METHOD_DOESNOTCONTAIN||method==AdvancedSearchEntry.METHOD_ISNOT);
             //Service.logger.debug("ADVSEARCH: pattern="+pattern+" searchfield="+searchfield);
-            if(searchfield.equals("subject")) {
+			if (searchfield.equals("any")) {
+				SearchTerm anyterms[]=new SearchTerm[6];
+				anyterms[0]=new SubjectTerm(pattern);
+				anyterms[1]=new RecipientStringTerm(Message.RecipientType.TO, pattern);
+				anyterms[2]=new RecipientStringTerm(Message.RecipientType.CC, pattern);
+				anyterms[3]=new RecipientStringTerm(Message.RecipientType.BCC, pattern);
+				anyterms[4]=new FromStringTerm(pattern);
+				anyterms[5]=new BodyTerm(pattern);
+				term=new OrTerm(anyterms);
+			} else if(searchfield.equals("subject")) {
               term=new SubjectTerm(pattern);
             } else if(searchfield.equals("to")) {
               term=new RecipientStringTerm(Message.RecipientType.TO, pattern);
@@ -2078,7 +2090,7 @@ public class FolderCache {
 					mailData.addAttachmentPart(dispPart);
 				}
             } else {
-                xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body><tt>");
+				xhtml.append("<html><head><meta content='text/html; charset="+charset+"' http-equiv='Content-Type'></head><body><tt>");
                 String line=null;
                 java.io.BufferedReader br=new java.io.BufferedReader(new java.io.InputStreamReader(istream,charset));
                 while((line=br.readLine())!=null) {
@@ -2460,6 +2472,7 @@ public class FolderCache {
     HTMLInputStream hstream=new HTMLInputStream(istream);
     XMLReader xmlparser=XMLReaderFactory.createXMLReader("org.cyberneko.html.parsers.SAXParser");
 	xmlparser.setProperty("http://xml.org/sax/properties/lexical-handler", saxHTMLMailParser);
+	xmlparser.setFeature("http://apache.org/xml/features/scanner/notify-char-refs", true);
     xmlparser.setContentHandler(saxHTMLMailParser);
     xmlparser.setErrorHandler(saxHTMLMailParser);
     while(!hstream.isRealEof()) {

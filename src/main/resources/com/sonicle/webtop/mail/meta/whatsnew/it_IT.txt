@@ -1,3 +1,9 @@
+$	5.3.2
+	%	Versione 5.3.2
+	*	<h1>Incolla email</h1>
+		<p>Un nuovo pulsante nell'editor dei messaggi consente di incollare elenchi di email
+		nei destinatari, per esempio da una colonna di Excel.</p>
+		<img src="5.3.2_pasteemails.png"/>
 $	5.3.0
 	%	Versione 5.3.0
 	*	<h1>Preferiti</h1>

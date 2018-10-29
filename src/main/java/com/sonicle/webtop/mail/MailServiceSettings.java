@@ -93,6 +93,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		}
 	}
 	
+	public boolean getMessageReplyAllStripMyIdentities() {
+		return getBoolean(MESSAGE_REPLYALL_STRIPMYIDENTITIES, true);
+	}
+	
 /*	public String getAttachDir() {
 		String adir=getString(ATTACHMENT_DIR,null);
 		if (adir==null) adir=new CoreServiceSettings(CoreManifest.ID, domainId).getTempPath();

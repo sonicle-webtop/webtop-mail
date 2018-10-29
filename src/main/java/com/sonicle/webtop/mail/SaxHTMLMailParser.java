@@ -70,6 +70,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 
   private HTMLMailData mailData=null;
   private String lastComment = null;
+  private String currentEntity = null;
 
   static {
     unenclosedTags.addElement("IMG");
@@ -262,7 +263,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 					ismailto = true;
 				}
 			}
-			pwriter.print(" " + aqname + "=\"" + avalue + "\"");
+			pwriter.print(" " + aqname + "=\"" + StringUtils.replace(avalue, "\"", "&quot;") + "\"");
 		}
 		if (ismailto) {
 			String email=mailtoParams;
@@ -328,9 +329,11 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 	  //skip any scripting
       //pwriter.write(chars, start, len);
     } else {
-	  //String html=MailUtils.htmlescape(chars, start, len);
-      //pwriter.print(html);
-	  pwriter.print(MailUtils.htmlescape(new String(chars, start, len)));
+	  //leave html entities as they are
+	  if (currentEntity==null)
+		pwriter.print(MailUtils.htmlescape(new String(chars, start, len)));
+	  else
+		pwriter.print("&"+currentEntity+";");
     }
   }
 
@@ -489,10 +492,14 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 	public void endDTD() throws SAXException {}
 
 	@Override
-	public void startEntity(String name) throws SAXException {}
+	public void startEntity(String name) throws SAXException {
+		currentEntity=name;
+	}
 
 	@Override
-	public void endEntity(String name) throws SAXException {}
+	public void endEntity(String name) throws SAXException {
+		currentEntity=null;
+	}
 
 	@Override
 	public void startCDATA() throws SAXException {}

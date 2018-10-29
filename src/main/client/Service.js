@@ -109,7 +109,22 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		me.viewmaxtos=me.getVar('messageViewMaxTos');
 		me.viewmaxccs=me.getVar('messageViewMaxCcs');
-		
+
+		//create early but set imap store later to avoid early events on Firefox
+		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
+			pageSize: me.getVar('pageRows'),
+			viewRegion: me.getVar('messageViewRegion','east'),
+			viewWidth: me.getVar('messageViewWidth',600),
+			viewHeight: me.getVar('messageViewHeight',400),
+			viewCollapsed: me.getVar('messageViewCollapsed',false),
+			saveColumnSizes: true,
+			saveColumnVisibility: true,
+			saveColumnOrder: true,
+			savePaneSize: true,
+			gridMenu: me.getRef('cxmGrid'),
+			mys: me
+		});
+		me.messagesPanel=mp;
 	
 		
 		me.favoritesTree=Ext.create('Sonicle.webtop.mail.FavoritesTree',{
@@ -169,11 +184,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						//keep enabled loadMask only for root loading
 						me.imapTree.getView().loadMask=false;
 						me.selectInbox();
-						//Ext.each(n.childNodes,function(cn,cx,an) {
-						//	if (cn.get("isSharedRoot")) {
-						//		cn.expand();
-						//	}
-						//});
 					}
 				},
 				foldersstaterestored: function(t,expandedNodes) {
@@ -220,23 +230,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				]
 		});
 		
+		me.messagesPanel.setImapStore(me.imapTree.getStore());
 		
-		
-		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
-			pageSize: me.getVar('pageRows'),
-			viewRegion: me.getVar('messageViewRegion','east'),
-			viewWidth: me.getVar('messageViewWidth',600),
-			viewHeight: me.getVar('messageViewHeight',400),
-			viewCollapsed: me.getVar('messageViewCollapsed',false),
-			saveColumnSizes: true,
-			saveColumnVisibility: true,
-			saveColumnOrder: true,
-			savePaneSize: true,
-			gridMenu: me.getRef('cxmGrid'),
-			mys: me,
-		    imapStore: me.imapTree.getStore()
-		});
-		me.messagesPanel=mp;
 		me.setMainComponent(me.messagesPanel);
 		if (me.getVar('showUpcomingEvents')) {
 			var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
@@ -421,7 +416,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("opennew",{ handler: me.gridAction(me,'OpenNew'), iconCls: '' });
         
         me.addAct("newfax",{ handler: function() { me.actionNewFax(); }, text: null });
-        me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print' });
+        me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print', hidden: !WT.plTags.desktop });
         me.addAct("reply",{ handler: me.gridAction(me,'Reply'), iconCls: 'wtmail-icon-reply'  });
         me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll'), iconCls: 'wtmail-icon-replyall' });
         me.addAct("forward",{ handler: me.gridAction(me,'Forward'), iconCls: 'wtmail-icon-forward'  });
@@ -760,7 +755,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	selectAndShowFolder: function(folderid,uid,rid,page,tid) {
 		var me=this;
 		
-		me.imapTree.expandNode(folderid,me.getVar("folderSeparator"),true);
+		me.imapTree.expandNodePath(folderid,me.getVar("folderSeparator"),true);
 		me.showFolder(folderid,uid,rid,page,tid);
 	},
 	
@@ -844,7 +839,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if (type==='desktop') {
 			var me=this;
 			WT.activateService(me.ID);
-			me.imapTree.expandNode(data.foldername,me.getVar("folderSeparator"),true);
+			me.imapTree.expandNodePath(data.foldername,me.getVar("folderSeparator"),true);
 			me.showFolder(data.foldername);
 		}
 	},
@@ -1309,6 +1304,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	getFolderInbox: function() {
+		var df=this.getVar('inboxFolder');
+		if (df) return df;
 		return "INBOX";
 	},
 	
@@ -1667,11 +1664,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
     },	
 	
 	isDrafts: function(folder) {
-		return this.imapTree.getStore().getById(folder).get("isDrafts");
+		var rfolder=this.imapTree.getStore().getById(folder);
+		return rfolder?rfolder.get("isDrafts"):false;
 	},
 	
 	isTrash: function(folder) {
-		return this.imapTree.getStore().getById(folder).get("isTrash");
+		var rfolder=this.imapTree.getStore().getById(folder);
+		return rfolder?rfolder.get("isTrash"):false;
 	},
 	
 	updateCxmGrid: function(r) {

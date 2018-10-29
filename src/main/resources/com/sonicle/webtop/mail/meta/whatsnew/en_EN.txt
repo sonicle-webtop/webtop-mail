@@ -1,3 +1,9 @@
+$	5.3.2
+	%	Version 5.3.2
+	*	<h1>Paste emails</h1>
+		<p>A new button in the mail editor allows to paste lists of emails as recipients,
+		for example from an Excel column.</p>
+		<img src="5.3.2_pasteemails.png"/>
 $	5.3.0
 	%	Version 5.3.0
 	*	<h1>Favorites</h1>

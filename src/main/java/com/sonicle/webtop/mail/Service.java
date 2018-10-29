@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.AlgoUtils;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.InternetAddressUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
@@ -48,6 +49,7 @@ import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
+import com.sonicle.commons.web.json.CompositeId;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.MapItemList;
@@ -64,10 +66,12 @@ import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
+import com.sonicle.webtop.core.app.DocEditorManager;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
+import com.sonicle.webtop.core.app.sdk.BaseDocEditorDocumentHandler;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
 import com.sonicle.webtop.core.bol.js.JsSimple;
@@ -78,7 +82,7 @@ import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
-import com.sonicle.webtop.core.servlet.ServletHelper;
+import com.sonicle.webtop.core.app.servlet.ServletHelper;
 import com.sonicle.webtop.core.util.ICal4jUtils;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.mail.bol.ONote;
@@ -258,6 +262,7 @@ public class Service extends BaseService {
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
 	private boolean hasAnnotations=false;
+	private boolean isDovecot=false;
 	
 	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
 	private FolderCache fcRoot = null;
@@ -370,7 +375,8 @@ public class Service extends BaseService {
 		
 		sortfolders=ss.isSortFolder();
 		
-		hasDifferentDefaultFolder=us.getDefaultFolder()!=null;
+		String differentDefaultFolder=us.getDefaultFolder();
+		hasDifferentDefaultFolder=differentDefaultFolder!=null;
 		
 		session=environment.getSession().getMailSession();
 		//session=Session.getDefaultInstance(props, null);
@@ -399,6 +405,14 @@ public class Service extends BaseService {
 			checkStoreConnected();
 			
 			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
+			
+			if (hasDifferentDefaultFolder) {
+				mprofile.setFolderSent(differentDefaultFolder+folderSeparator+mprofile.getFolderSent());
+				mprofile.setFolderDrafts(differentDefaultFolder+folderSeparator+mprofile.getFolderDrafts());
+				mprofile.setFolderTrash(differentDefaultFolder+folderSeparator+mprofile.getFolderTrash());
+				mprofile.setFolderSpam(differentDefaultFolder+folderSeparator+mprofile.getFolderSpam());
+				mprofile.setFolderArchive(differentDefaultFolder+folderSeparator+mprofile.getFolderArchive());
+			}
 			
 			//prepare special folders if not existant
 			if (ss.isAutocreateSpecialFolders()) {
@@ -542,6 +556,9 @@ public class Service extends BaseService {
 				sharedPrefixes[ix] = s;
 				++ix;
 			}
+			Map<String,String> map=((IMAPStore)store).id(null);
+			isDovecot=(map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot"));
+			
 		} catch (MessagingException exc) {
 			logger.error("Error connecting to the mail server", exc);
 			sucess = false;
@@ -749,11 +766,14 @@ public class Service extends BaseService {
 		FolderCache fc=getFolderCache(mprofile.getFolderDrafts());
 		fc.open();
 		Folder folder=fc.getFolder();
+		//boolean wasopen=folder.isOpen();
+		//if (!wasopen) folder.open(Folder.READ_WRITE);
 		Message[] oldmsgs=folder.search(new HeaderTerm(HEADER_X_WEBTOP_MSGID,""+msgId));
 		if (oldmsgs!=null && oldmsgs.length>0) {
 			for(Message m: oldmsgs) m.setFlag(Flags.Flag.DELETED, true);
 			folder.expunge();
 		}
+		//if (!wasopen) folder.close(true);
 	}
 	
 	public void moveMessages(FolderCache from, FolderCache to, long uids[], boolean fullthreads) throws MessagingException {
@@ -917,6 +937,23 @@ public class Service extends BaseService {
 		if (!done) {
 			throw new MessagingException("Rename failed");
 		}
+		
+		//trick for Dovecot on NethServer: under shared folders, create and destroy a fake folder
+		//or rename will not work correctly
+		if (isUnderSharedFolder(newfolder.getFullName())) {
+			Map<String,String> map=((IMAPStore)store).id(null);
+			if (map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot")) {
+				String trickName="_________"+System.currentTimeMillis();
+				Folder trickFolder=fcparent.getFolder().getFolder(trickName);
+				try {
+					trickFolder.create(Folder.READ_ONLY);
+					trickFolder.delete(true);
+				} catch(MessagingException exc) {
+
+				}
+			}
+		}
+		
 		addFoldersCache(fcparent, newfolder);
 		return newfolder.getFullName();
 	}
@@ -937,20 +974,28 @@ public class Service extends BaseService {
 	  return retia;
 	}
 	
-	public Exception sendReceipt(String from, String to, String subject, String body) {
-		return sendTextMsg(from, from, new String[]{to}, null, null, "Receipt: " + subject, body);
+	public Identity findIdentity(InternetAddress fromAddr) {
+		for(Identity ident: mprofile.getIdentities()) {
+			if (fromAddr.getAddress().equalsIgnoreCase(ident.getEmail()))
+				return ident;
+		}
+		return null;
 	}
 	
-	private Exception sendTextMsg(String fromAddr, String rplyAddr, String[] toAddr,
+	public Exception sendReceipt(Identity ident, String from, String to, String subject, String body) {
+		return sendTextMsg(ident, from, from, new String[]{to}, null, null, "Receipt: " + subject, body);
+	}
+	
+	private Exception sendTextMsg(Identity ident, String fromAddr, String rplyAddr, String[] toAddr,
 			String[] ccAddr,
 			String[] bccAddr, String subject, String body) {
 		
-		return sendTextMsg(fromAddr,
+		return sendTextMsg(ident, fromAddr,
 				rplyAddr, toAddr, ccAddr, bccAddr, subject, body, null);
 		
 	}
 	
-	private Exception sendTextMsg(String fromAddr, String rplyAddr, String[] toAddr, String[] ccAddr, String[] bccAddr,
+	private Exception sendTextMsg(Identity ident, String fromAddr, String rplyAddr, String[] toAddr, String[] ccAddr, String[] bccAddr,
 			String subject, String body, List<JsAttachment> attachments) {
 		
 		SimpleMessage smsg = new SimpleMessage(0);
@@ -963,6 +1008,8 @@ public class Service extends BaseService {
 
 		//set BCC recipients
 		smsg.addBcc(bccAddr);
+		
+		if (ident!=null) smsg.setFrom(ident);
 
 		//set Reply To address
 		if (rplyAddr != null && rplyAddr.length() > 0) {
@@ -980,6 +1027,10 @@ public class Service extends BaseService {
 	}
 	
 	public boolean sendMsg(InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) {
+		return sendMsg(null,from, to, cc, bcc, subject, part);
+	}
+	
+	public boolean sendMsg(Identity ident, InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) {
 		
 		try {
 			subject = MimeUtility.encodeText(subject);
@@ -1003,7 +1054,7 @@ public class Service extends BaseService {
 			message.setContent(part);
 			message.setSentDate(new java.util.Date());
 			
-			return sendMsg(message);
+			return sendMsg(ident,message);
 			
 		} catch(MessagingException ex) {
 			logger.warn("Unable to send message", ex);
@@ -1012,8 +1063,18 @@ public class Service extends BaseService {
 	}
 	
 	public boolean sendMsg(Message msg) {
-		UserProfile profile = environment.getProfile();
-		String sentfolder = mprofile.getFolderSent();
+		return sendMsg(null,msg);
+	}
+	
+	public boolean sendMsg(Identity ident, Message msg) {
+		if (ident==null) {
+			try {
+				ident=findIdentity((InternetAddress)(msg.getFrom()[0]));
+			} catch(Exception exc) {
+
+			}
+		}
+		String sentfolder = getSentFolder(ident);
 		try {
 			Transport.send(msg);
 			saveSent(msg, sentfolder);
@@ -1026,10 +1087,9 @@ public class Service extends BaseService {
 		
 	}
 	
-	public Exception sendMsg(String from, SimpleMessage smsg, List<JsAttachment> attachments) {
+	public String getSentFolder(Identity ident) {
 		UserProfile profile = environment.getProfile();
 		String sentfolder = mprofile.getFolderSent();
-		Identity ident = smsg.getFrom();
 		if (ident != null ) {
 			String mainfolder=ident.getMainFolder();
 			if (mainfolder != null && mainfolder.trim().length() > 0) {
@@ -1044,6 +1104,28 @@ public class Service extends BaseService {
 				}
 			}
 		}
+		return sentfolder;
+	}
+	
+	public Exception sendMsg(String from, SimpleMessage smsg, List<JsAttachment> attachments) {
+		//UserProfile profile = environment.getProfile();
+		//String sentfolder = mprofile.getFolderSent();
+		Identity ident = smsg.getFrom();
+		/*f (ident != null ) {
+			String mainfolder=ident.getMainFolder();
+			if (mainfolder != null && mainfolder.trim().length() > 0) {
+				String newsentfolder = mainfolder + folderSeparator + getLastFolderName(sentfolder);
+				try {
+					Folder folder = getFolder(newsentfolder);
+					if (folder.exists()) {
+						sentfolder = newsentfolder;
+					}
+				} catch (MessagingException exc) {
+					logger.error("Error on identity {}/{} Sent Folder", profile.getUserId(), ident.getEmail(), exc);
+				}
+			}
+		}*/
+		String sentfolder=getSentFolder(ident);
 		Exception retexc = null;
 		Message msg = null;
 		try {
@@ -1399,6 +1481,7 @@ public class Service extends BaseService {
 			_saveMessage(msg, attachments, fc);
 		} catch (Exception exc) {
 			retexc = exc;
+			logger.error("Error during saveMessage in "+fc.getFolderName(),exc);
 		}
 		return retexc;
 	}
@@ -1828,8 +1911,10 @@ public class Service extends BaseService {
 			Message reply=reply((MimeMessage)msg,replyAll,fromSent);
 			
 			removeDestination(reply, myemail);
-			for (Identity ident : mprofile.getIdentities()) {
-				removeDestination(reply, ident.getEmail());
+			if (ss.getMessageReplyAllStripMyIdentities()) {
+				for (Identity ident : mprofile.getIdentities()) {
+					removeDestination(reply, ident.getEmail());
+				}
 			}
 
       // Setup the message body
@@ -2338,7 +2423,11 @@ public class Service extends BaseService {
 					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX"))
 			) return true;
 		} else {
-			return isDefaultFolder(foldername);
+			if (isDovecot)
+				return foldername.endsWith(folderSeparator+"INBOX");
+			
+			return (isDefaultFolder(foldername) ||
+					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX")));
 		}
 		return false;
 	}
@@ -2513,7 +2602,10 @@ public class Service extends BaseService {
 	protected String getInboxFolderFullName() {
 		String inboxFolder="INBOX";
 		try {
-			if (hasDifferentDefaultFolder()) inboxFolder=getDefaultFolder().getFullName();
+			if (hasDifferentDefaultFolder()) {
+				inboxFolder=getDefaultFolder().getFullName();
+				if (isDovecot) inboxFolder+=folderSeparator+"INBOX";
+			}
 		} catch(MessagingException exc) {
 		}
 		return inboxFolder;
@@ -2856,6 +2948,7 @@ public class Service extends BaseService {
 							afcs.add(rfolders[j]);
 					}
 				}
+				//don't mind about just the Shared folder with no child (size=1)
 				if (afcs.size()>0) fcs=afcs.toArray(fcs);
 				
 				Folder xfolders[]=new Folder[1+folders.length+fcs.length];
@@ -2918,18 +3011,27 @@ public class Service extends BaseService {
 		}
 		//If Shared Folders, sort on description
 		if (isSharedFolder(parent.getFullName())) {
-			String ss = mprofile.getSharedSort();
-			if (ss.equals("D")) {
-				Collections.sort(afolders, dcomp);
-			} else if (ss.equals("U")) {
-				Collections.sort(afolders, ucomp);
+			if (!hasDifferentDefaultFolder || !isDefaultFolder(parent.getFullName())) {
+				String ss = mprofile.getSharedSort();
+				if (ss.equals("D")) {
+					Collections.sort(afolders, dcomp);
+				} else if (ss.equals("U")) {
+					Collections.sort(afolders, ucomp);
+				}
 			}
 		}
 		
 		for (Folder f : afolders) {
 			String foldername = f.getFullName();
 			//in case of moved root, check not to duplicate root elsewhere
-			if (hasDifferentDefaultFolder && isSharedFolder(parent.getFullName()) && foldername.equals(getInboxFolderFullName())) continue;
+			if (hasDifferentDefaultFolder) {
+				if (isDovecot) {
+					if (isDefaultFolder(foldername)) continue;
+				} else {
+					//skip default folder under shared
+					if (isDefaultFolder(foldername) && !parent.getFullName().equals(foldername)) continue;
+				}
+			}
 			//skip hidden
 			if (us.isFolderHidden(foldername)) continue;
 
@@ -2952,7 +3054,7 @@ public class Service extends BaseService {
 			else if (!favorites) {
 				for(String att: atts) {
 					if (att.equals("\\HasChildren")) {
-						if (!level1 || !foldername.equals("INBOX")) leaf=false;
+						if (!level1 || !foldername.equals(getInboxFolderFullName())) leaf=false;
 					}
 					else if (att.equals("\\Noinferiors")) noinferiors=true;
 				}
@@ -3052,7 +3154,7 @@ public class Service extends BaseService {
 			ss += "},";
 			out.print(ss);
 			if (!favorites) {
-				if (level1 && foldername.equals("INBOX")) {
+				if (level1 && foldername.equals(getInboxFolderFullName())) {
 					outputFolders(f, f.list(), false, false, out);
 				}
 			}
@@ -3184,6 +3286,14 @@ public class Service extends BaseService {
 					folderspam=spamadmSpam;
 					FolderCache fc=getFolderCache(spamadmSpam);
 					if (fc!=null) tomcache=fc;
+				}
+				else if (isUnderSharedFolder(fromfolder)) {
+					String mainfolder=getMainSharedFolder(fromfolder);
+					if (mainfolder!=null) {
+						folderspam = mainfolder + folderSeparator + getLastFolderName(folderspam);
+						FolderCache fc=getFolderCache(folderspam);
+						if (fc!=null) tomcache=fc;
+					}
 				}
 				tofolder=folderspam;
 			}
@@ -4282,7 +4392,8 @@ public class Service extends BaseService {
 									" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
 									" cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
 									" inline: "+inline+", "+
-									" fileSize: "+upfile.getSize()+" "+
+									" fileSize: "+upfile.getSize()+", "+
+									" editable: "+isFileEditableInDocEditor(filename)+" "+
 									" }";
 							first = false;
 							//TODO: change this weird matching of cids2urls!
@@ -4305,7 +4416,8 @@ public class Service extends BaseService {
 						" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
 						" cid: null, "+
 						" inline: false, "+
-						" fileSize: "+upfile.getSize()+" "+
+						" fileSize: "+upfile.getSize()+", "+
+						" editable: "+isFileEditableInDocEditor(filename)+" "+
 						" }";
 				sout += "\n ],\n";
 			}
@@ -5200,6 +5312,7 @@ public class Service extends BaseService {
 			data.add("uploadId", uploadedFile.getUploadId());
 			data.add("name", uploadedFile.getFilename());
 			data.add("size", uploadedFile.getSize());
+			data.add("editable", isFileEditableInDocEditor(filename));
 			new JsonResult(data).printTo(out);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -5250,6 +5363,7 @@ public class Service extends BaseService {
 				mi.add("uploadId", ufile.getUploadId());
 				mi.add("name", ufile.getFilename());
 				mi.add("size", ufile.getSize());
+				mi.add("editable", isFileEditableInDocEditor(ufile.getFilename()));
 				data.add(mi);
 			}
 			new JsonResult(data).printTo(out);
@@ -5310,19 +5424,19 @@ public class Service extends BaseService {
 	public void processSendReceipt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		UserProfile profile = environment.getProfile();
 		String subject = request.getParameter("subject");
-		String from = request.getParameter("from");
+		//String from = request.getParameter("from");
+		int identityId = Integer.parseInt(request.getParameter("identityId"));
 		String to = request.getParameter("to");
-		String folder = request.getParameter("folder");
-		String sout = "";
-		//Identity ident = mprofile.getIdentity(folder);
-		//if (ident != null) {
-		//	from = ident.toString();
-		//}
+		//String folder = request.getParameter("folder");
+		//String sout = "";
+		Identity ident = mprofile.getIdentity(identityId);
+		String from = ident.getDisplayName()+" <"+ident.getEmail()+">";
+		
 		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] è stato letto.\n\n"
 				+ "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
 		try {
 			checkStoreConnected();
-			Exception exc = sendReceipt(from, to, subject, body);
+			Exception exc = sendReceipt(ident, from, to, subject, body);
 			if (exc == null) {
 				new JsonResult().printTo(out);
 			} else {
@@ -5344,7 +5458,7 @@ public class Service extends BaseService {
 			int maxVisibleRows=20;
 			
 			if (query == null) {
-				String folderId = "INBOX";
+				String folderId = getInboxFolderFullName();
 				FolderCache fc=getFolderCache(folderId);
 				Message msgs[]=fc.getMessages("unread","","",FolderCache.SORT_BY_DATE,false,true,-1,true,false);
 				fc.fetch(msgs, getMessageFetchProfile(),0,50);
@@ -5908,6 +6022,8 @@ public class Service extends BaseService {
 					if (filter.property.equals("unread")) {
 						psearchfield+="status";
 						ppattern+=filter.value.equals("true")?"unread":"read";
+					} else if (filter.property.equals("atts")) {
+						pquickfilter="attachment";
 					} else {
 						psearchfield+=filter.property;
 						ppattern+=filter.value;
@@ -6175,7 +6291,7 @@ public class Service extends BaseService {
 							}
 						}*/
 
-						boolean hasAttachments=hasAttachements(xm);
+						boolean hasAttachments=mcache.hasAttachements(xm);
 
 						subject=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject));
 
@@ -6376,8 +6492,28 @@ public class Service extends BaseService {
 				}
 				else funread=0;
 				
+				long qlimit=-1;
+				long qusage=-1;
+				try {
+					Quota quotas[]=((IMAPStore)store).getQuota("INBOX");
+					if (quotas!=null)
+						for(Quota q: quotas) {
+							if ((q.quotaRoot.equals("INBOX") || q.quotaRoot.equals("Quota")) && q.resources!=null) {
+								for(Quota.Resource r: q.resources) {
+									if (r.name.equals("STORAGE")) {
+										qlimit=r.limit;
+										qusage=r.usage;
+									}
+								}
+							}
+						}
+				} catch(MessagingException exc) {
+					logger.debug("Error on QUOTA",exc);
+				}
+				
 				sout += "\n],\n";
 				sout += "total: "+(total-expunged)+",\n";
+				if (qlimit>=0 && qusage>=0) sout+=" quotaLimit: "+qlimit+", quotaUsage: "+qusage+",\n";
 				sout += "realTotal: "+(xmsgs.length-expunged)+",\n";
 				sout += "expunged: "+(expunged)+",\n";
 				sout += "metaData: {\n"
@@ -6585,37 +6721,6 @@ public class Service extends BaseService {
 		return cal;
 	}
 	
-	private boolean isAttachment(Part part) throws MessagingException {
-		String disposition=part.getDisposition();
-		
-		if (Part.INLINE.equalsIgnoreCase(disposition)) return false;
-		
-		return Part.ATTACHMENT.equalsIgnoreCase(disposition)
-				|| (disposition == null && part.getFileName() != null);
-	}
-	
-	protected boolean hasAttachements(Part p) throws MessagingException, IOException {
-		boolean retval = false;
-
-		//String disp=p.getDisposition();
-		if (isAttachment(p)) {
-			retval = true;
-		} //if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT)) retval=true;
-		else if (p.isMimeType("multipart/*")) {
-			Multipart mp = (Multipart) p.getContent();
-			int parts = mp.getCount();
-			for (int i = 0; i < parts; ++i) {
-				Part bp = mp.getBodyPart(i);
-				if (hasAttachements(bp)) {
-					retval = true;
-					break;
-				}
-			}
-		}
-		
-		return retval;
-	}
-	
 	class MessageListThread implements Runnable {
 		
 		FolderCache fc;
@@ -6698,6 +6803,7 @@ public class Service extends BaseService {
 		String providerid = request.getParameter("providerid");
 		int idattach = 0;
 		boolean isEditor = request.getParameter("editor") != null;
+		boolean setSeen = ServletUtils.getBooleanParameter(request, "setseen", true);
 		if (df == null) {
 			df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.MEDIUM, environment.getProfile().getLocale());
 		}
@@ -6822,7 +6928,8 @@ public class Service extends BaseService {
 			}
 						
 			if (!wasseen) {
-				if (us.isManualSeen()) {
+				//if (us.isManualSeen()) {
+				if (!setSeen) {
 					m.setFlag(Flags.Flag.SEEN, false);
 				} else {
 					//if no html part, flag seen is not set
@@ -6879,7 +6986,9 @@ public class Service extends BaseService {
 				int rsize = size - (lines * 2);//(p.getSize()/4)*3;
 				String iddata = ctype.equalsIgnoreCase("message/rfc822") ? "eml" : (inline ? "inlineattach" : "attach");
 				
-				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + "},\n";
+				boolean editable=isFileEditableInDocEditor(pname);
+				
+				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + ", editable: "+editable+" },\n";
 			}
 			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash() && !mcache.isArchive()) {
 				if (vheader != null && vheader[0] != null && !wasseen) {
@@ -7267,6 +7376,96 @@ public class Service extends BaseService {
 			}
 		} catch (Exception exc) {
 			logger.error("Error in PreviewAttachment", exc);
+		}
+	}
+	
+	public void processDocPreviewAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			checkStoreConnected();
+			String uploadId = request.getParameter("uploadId");
+			/*String cid = request.getParameter("cid");
+			Attachment att = null;
+			if (tempname != null) {
+				att = getAttachment(msgid, tempname);
+			} else if (cid != null) {
+				att = getAttachmentByCid(msgid, cid);
+			}*/
+			if (uploadId != null && hasUploadedFile(uploadId)) {
+				WebTopSession.UploadedFile upl = getUploadedFile(uploadId);
+				
+				String fileHash=AlgoUtils.md5Hex(new CompositeId("previewattach",uploadId).toString());
+				AttachmentViewerDocumentHandler docHandler = new AttachmentViewerDocumentHandler(false, getEnv().getProfileId(), fileHash, upl.getFile());
+				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, upl.getFilename(), upl.getFile().lastModified());
+				
+				new JsonResult(config).printTo(out);
+				
+				
+			} else {
+				Service.logger.debug("uploadId was not valid!");
+			}
+		} catch (Exception exc) {
+			logger.error("Error in PreviewAttachment", exc);
+		}
+	}
+	
+	//view through onlyoffice doc viewer
+	public void processViewAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String pfoldername = request.getParameter("folder");
+		String puidmessage = request.getParameter("idmessage");
+		String pidattach = request.getParameter("idattach");
+		String providername = request.getParameter("provider");
+		String providerid = request.getParameter("providerid");
+		String pcid = request.getParameter("cid");
+		String purl = request.getParameter("url");
+		String punknown = request.getParameter("unknown");
+		
+		try {
+			checkStoreConnected();
+			FolderCache mcache = null;
+			Message m = null;
+			if (providername == null) {
+				mcache = getFolderCache(pfoldername);
+                long newmsguid=Long.parseLong(puidmessage);
+                m=mcache.getMessage(newmsguid);
+			} else {
+				mcache = fcProvided;
+				m = mcache.getProvidedMessage(providername, providerid);
+			}
+			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
+			Part part = null;
+			if (pcid != null) {
+				part = mailData.getCidPart(pcid);
+			} else if (purl != null) {
+				part = mailData.getUrlPart(purl);
+			} else if (pidattach != null) {
+				part = mailData.getAttachmentPart(Integer.parseInt(pidattach));
+			} else if (punknown != null) {
+				part = mailData.getUnknownPart(Integer.parseInt(punknown));
+			}
+
+			if (part!=null) {
+				String name=part.getFileName();
+				if (name==null) name="";
+				try {
+					name=MailUtils.decodeQString(name);
+				} catch(Exception exc) {
+				}
+ 	            name=name.trim();
+				if (providername==null) {
+					Folder folder=mailData.getFolder();
+					if (!folder.isOpen()) folder.open(Folder.READ_ONLY);
+				}				
+				
+				String fileHash=AlgoUtils.md5Hex(new CompositeId(pfoldername,puidmessage,pidattach).toString());
+				long lastModified=m.getReceivedDate().getTime();
+				AttachmentViewerDocumentHandler docHandler = new AttachmentViewerDocumentHandler(false, getEnv().getProfileId(), fileHash, part, lastModified);
+				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, name, lastModified);
+				
+				new JsonResult(config).printTo(out);
+				
+			}			
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -7734,7 +7933,7 @@ public class Service extends BaseService {
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
 			Collections.sort(folderIds);
-			String firstFolders[]={"INBOX", us.getFolderSent()};
+			String firstFolders[]={getInboxFolderFullName(), mprofile.getFolderSent()};
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
 				
@@ -7811,7 +8010,7 @@ public class Service extends BaseService {
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
 			Collections.sort(folderIds);
-			String firstFolders[]={"INBOX", us.getFolderSent()};
+			String firstFolders[]={getInboxFolderFullName(), mprofile.getFolderSent()};
 			for(String folderId: firstFolders) folderIds.add(folderId);
 			for(String folderId: _folderIds) {
 				
@@ -8308,12 +8507,13 @@ public class Service extends BaseService {
 				else loadIdentityMailcard(jsid);
 			}
 			
+			if (hasDifferentDefaultFolder) co.put("inboxFolder",getInboxFolderFullName());
 			co.put("attachmentMaxFileSize", ss.getAttachmentMaxFileSize(true));
-			co.put("folderDrafts", us.getFolderDrafts());
-			co.put("folderSent", us.getFolderSent());
-			co.put("folderSpam", us.getFolderSpam());
-			co.put("folderTrash", us.getFolderTrash());
-			co.put("folderArchive", us.getFolderArchive());
+			co.put("folderDrafts", mprofile.getFolderDrafts());
+			co.put("folderSent", mprofile.getFolderSent());
+			co.put("folderSpam", mprofile.getFolderSpam());
+			co.put("folderTrash", mprofile.getFolderTrash());
+			co.put("folderArchive", mprofile.getFolderArchive());
 			co.put("folderSeparator", folderSeparator);
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
@@ -8527,4 +8727,54 @@ public class Service extends BaseService {
 			}
 		}
 	}
+	
+	private static class AttachmentViewerDocumentHandler extends BaseDocEditorDocumentHandler {
+		private final File file;
+		private final Part part;
+		private final long lastModified;
+		
+		public AttachmentViewerDocumentHandler(boolean writeCapability, UserProfileId targetProfileId, String documentUniqueId, Part part, long lastModified) {
+			super(writeCapability, targetProfileId, documentUniqueId);
+			this.part = part;
+			this.lastModified = lastModified;
+			this.file=null;
+		}
+		
+		public AttachmentViewerDocumentHandler(boolean writeCapability, UserProfileId targetProfileId, String documentUniqueId, File file) {
+			super(writeCapability, targetProfileId, documentUniqueId);
+			this.file=file;
+			this.lastModified = file.lastModified();
+			this.part = null;
+		}
+		
+		@Override
+		public long getLastModifiedTime() throws IOException {
+			return lastModified;
+		}
+		
+		@Override
+		public InputStream readDocument() throws IOException {
+			try {
+				if (part!=null) return part.getInputStream();
+				if (file!=null) return new FileInputStream(file);
+				throw new IOException("Unable to find part or file");
+			} catch(MessagingException ex) {
+				throw new IOException("Unable to read document", ex);
+			}
+		}
+		
+		@Override
+		public void writeDocument(InputStream is) throws IOException {
+			throw new IOException("Write not supported");
+		}
+		
+	}
+	
+	private WebTopSession getWts() {
+		return getEnv().getWebTopSession();
+	}
+	
+	
+	
+	
 }
