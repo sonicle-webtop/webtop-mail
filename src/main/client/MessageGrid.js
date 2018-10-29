@@ -432,6 +432,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				var unread=record.get('unread');
 				var tdy=record.get('istoday');
 				//var ti=record.get('threadIndent');
+				
+				var todayMailColor  = me.mys.getVar('todayMailColor');
+				Sonicle.CssUtils.addRule('.wtmail-row-today', 'background:' + todayMailColor);
+				
+				var bestContrast =  Sonicle.ColorUtils.getBestContrast(todayMailColor);
+				
+				var colorOnSelection;
+				if(bestContrast == '#FFFFFF') {
+					colorOnSelection = Sonicle.ColorUtils.lightenDarken(todayMailColor, 25);
+				}
+				else {
+					 colorOnSelection = Sonicle.ColorUtils.lightenDarken(todayMailColor, -50);
+				}
+				Sonicle.CssUtils.addRule('table.x-grid-item-selected .wtmail-row-today', 'background:' + colorOnSelection);
+				
 				cls1=unread?'wtmail-row-unread':'';
 				cls2=tdy?'wtmail-row-today':'';
 				//cls3=ti>0?'wtmail-row-hidden':'';

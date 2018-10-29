@@ -144,6 +144,15 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}),
 			{
+				xtype: 'sopalettefield',
+				bind: '{record.todayMailColor}',
+				colors: WT.getColorPalette(),
+				fieldLabel: me.res('opts.account.fld-color.lbl'),
+				width: 110+100,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			},
+			{
 				xtype: 'soformseparator',
 				title: me.res('opts.main.panels.tit')
 			}, {

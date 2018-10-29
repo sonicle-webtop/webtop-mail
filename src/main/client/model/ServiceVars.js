@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.model.ServiceVars', {
 		{ name: 'messageViewWidth', type: 'int' },
 		{ name: 'messageViewHeight', type: 'int' },
 		{ name: 'columnSizes', type: 'string' },
+		WTF.field('todayMailColor', 'string', true),
 		WTF.field('showUpcomingEvents', 'boolean', true),
 		WTF.field('showUpcomingTasks', 'boolean', true)
 	],
