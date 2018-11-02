@@ -90,6 +90,7 @@ public class MailAccount {
 	private String folderArchive = null;
 	private boolean validated = false;
 	private boolean hasAnnotations=false;
+	private boolean hasInboxFolder=false;
 	private boolean isDovecot=false;
 	private boolean hasDifferentDefaultFolder=false;
 	private String defaultFolderName= null;
@@ -127,6 +128,14 @@ public class MailAccount {
 	
 	public boolean isDovecot() {
 		return isDovecot;
+	}
+	
+	public void setHasInboxFolder(boolean b) {
+		hasInboxFolder=b;
+	}
+	
+	public boolean hasInboxFolder() {
+		return hasInboxFolder;
 	}
 	
 	public void setDifferentDefaultFolder(String defaultFolderName) {
@@ -359,6 +368,8 @@ public class MailAccount {
 			if (((IMAPStore)store).hasCapability("ID")) {
 				Map<String,String> map=((IMAPStore)store).id(null);
 				isDovecot=(map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot"));
+				//leave hasInboxFolder as it was set in case it's not Dovecot
+				if (isDovecot) hasInboxFolder=true;
 			}
 					
 		} catch (MessagingException exc) {
@@ -624,7 +635,7 @@ public class MailAccount {
 		try {
 			if (hasDifferentDefaultFolder) {
 				inboxFolder=getDefaultFolder().getFullName();
-				if (isDovecot) inboxFolder+=folderSeparator+"INBOX";
+				if (hasInboxFolder) inboxFolder+=folderSeparator+"INBOX";
 			}
 		} catch(MessagingException exc) {
 		}
@@ -769,7 +780,7 @@ public class MailAccount {
 					(isUnderSharedFolder(foldername) && LangUtils.charOccurrences(folderSeparator, foldername)==2 && getLastFolderName(foldername).equals("INBOX"))
 			) return true;
 		} else {
-			if (isDovecot)
+			if (hasInboxFolder)
 				return foldername.endsWith(folderSeparator+"INBOX");
 			
 			return (isDefaultFolder(foldername) ||

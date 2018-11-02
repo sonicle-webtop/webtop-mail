@@ -455,6 +455,7 @@ public class Service extends BaseService {
 				//}
 				
 				//defaults to WebTop External Archive
+				archiveAccount.setHasInboxFolder(true); //archive copy creates INBOX folder under user archive
 				String defaultFolder=us.getArchiveExternalUserFolder();
 				if (defaultFolder==null || defaultFolder.trim().length()==0)
 					defaultFolder=profile.getUserId();
