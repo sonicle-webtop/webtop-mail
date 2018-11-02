@@ -74,6 +74,13 @@ public class MailSettings {
 	 */
 	public static final String SHOW_UPCOMING_TASKS = "upcoming.tasks.show";
 	
+	/**
+	 * [domain+system]
+	 * [boolean]
+	 * If false, disables recipients removing if included in my identities. Default to true.
+	 */
+	public static final String MESSAGE_REPLYALL_STRIPMYIDENTITIES = "message.replyall.stripmyidentities";
+	
 	
 	/**
 	 * [system+domain]
