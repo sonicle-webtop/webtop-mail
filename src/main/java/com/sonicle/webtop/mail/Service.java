@@ -5226,18 +5226,18 @@ public class Service extends BaseService {
                 String content=jsmsg.content;
                 String pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&amp;service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
                 String pattern2=RegexUtils.escapeRegexSpecialChars("&amp;cid=");
-                content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "cid:");
+                content=StringUtils.replacePattern(content, pattern1+".{39}"+pattern2, "cid:");
                 pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&cid=");
-                content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "cid:");
+                content=StringUtils.replacePattern(content, pattern1+".{39}"+pattern2, "cid:");
 				
                 //URLs
                 pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&amp;service="+SERVICE_ID+"&amp;action=PreviewAttachment&amp;nowriter=true&amp;uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&amp;url=");
-                content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
+                content=StringUtils.replacePattern(content, pattern1+".{39}"+pattern2, "");
                 pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&url=");
-                content=StringUtils.replacePattern(content, pattern1+".{36}"+pattern2, "");
+                content=StringUtils.replacePattern(content, pattern1+".{39}"+pattern2, "");
                 
 				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
 				String htmlcontent = MailUtils.htmlescapefixsource(content).trim();
