@@ -1189,7 +1189,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     
     showEml: function(t,urlparams) {
         var params=Ext.Object.fromQueryString(urlparams);
-        this.mys.openEml(me.acct, params.folder,params.idmessage,params.idattach);
+        this.mys.openEml(params.acct, params.folder,params.idmessage,params.idattach);
     },
     
     loadEml: function(acct, folder,idmessage,idattach) {
