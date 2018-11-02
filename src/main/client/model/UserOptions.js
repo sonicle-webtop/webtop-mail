@@ -42,6 +42,8 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('dmsSimpleMailFolder', 'string', true),
 		WTF.field('dmsMethod', 'string', true),
 		WTF.field('archiveMode', 'string', true),
+		WTF.field('archiveKeepFoldersStructure', 'boolean', true),
+		WTF.field('archiveExternalUserFolder', 'string', true),
 		WTF.field('sharedSeen', 'boolean', false),
 		WTF.field('manualSeen', 'boolean', false),
 		WTF.field('ingridPreview', 'boolean', true),

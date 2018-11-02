@@ -50,6 +50,10 @@ public class MailServiceSettings extends BaseServiceSettings {
         return getBoolean(ARCHIVING_EXTERNAL,false);
 	}
 	
+	public String getArchivingExternalType() {
+		return getString(ARCHIVING_EXTERNAL_TYPE,"imapsync");
+	}
+	
 	public String getArchivingExternalHost() {
 		return getString(ARCHIVING_EXTERNAL_HOST,"localhost");
 	}

@@ -83,6 +83,13 @@ public class MailSettings {
 	public static final String ARCHIVING_EXTERNAL = "archiving.external";
 	
 	/**
+	 * [system+domain]
+	 * [string]
+	 * Type of external archiving: imapsync | mailstore
+	 */
+	public static final String ARCHIVING_EXTERNAL_TYPE = "archiving.external.type";
+	
+	/**
 	 * [system+domain][default]
 	 * [string]
 	 * IMAP host of the external archiving account. Defaults to "localhost".
@@ -195,6 +202,7 @@ public class MailSettings {
 	 */
 	public static final String ARCHIVING_MODE = "archiving.mode";
 	public static final String ARCHIVING_KEEP_FOLDERS_STRUCTURE = "archiving.keep-folders-structure";
+	public static final String ARCHIVING_EXTERNAL_USERFOLDER = "archiving.external.userfolder";
 	public static final String ARCHIVING_DMS_METHOD = "archiving.dms-method";
 	
 	public static final String ARCHIVING_MODE_SINGLE = "single";

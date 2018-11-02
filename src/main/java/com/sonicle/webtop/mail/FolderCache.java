@@ -978,7 +978,11 @@ public class FolderCache {
     public void open() throws MessagingException {
         if(!folder.isOpen()) {
             if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
-              folder.open(Folder.READ_WRITE);
+              try {
+				  folder.open(Folder.READ_WRITE);
+			  } catch(MessagingException exc) {
+				  folder.open(Folder.READ_ONLY);
+			  }
             } else {
               folder.open(Folder.READ_ONLY);
             }

@@ -80,6 +80,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.dmsMethod = mus.getDMSMethod();
 				jso.archiveMode = mus.getArchiveMode();
 				jso.archiveKeepFoldersStructure = mus.isArchiveKeepFoldersStructure();
+				jso.archiveExternalUserFolder = mus.getArchiveExternalUserFolder();
 				jso.ingridPreview = mus.getShowMessagePreviewOnRow();
 				jso.sharedSeen = mus.isSharedSeen();
 				jso.manualSeen = mus.isManualSeen();
@@ -147,6 +148,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				// Archive
 				if (pl.map.has("archiveMode")) mus.setArchiveMode(pl.data.archiveMode);
 				if (pl.map.has("archiveKeepFoldersStructure")) mus.setArchiveKeepFoldersStructure(pl.data.archiveKeepFoldersStructure);
+				if (pl.map.has("archiveExternalUserFolder")) mus.setArchiveExternalUserFolder(pl.data.archiveExternalUserFolder);
 				
 				// Account
 				if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE")) {

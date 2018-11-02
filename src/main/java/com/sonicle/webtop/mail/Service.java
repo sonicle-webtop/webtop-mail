@@ -443,6 +443,23 @@ public class Service extends BaseService {
 			//if external archive, initialize account
 			if (ss.isArchivingExternal()) {
 				archiveAccount=createAccount(ARCHIVE_ACCOUNT_ID);
+				
+				//MailStore support dropped for poor imap implementation
+				//
+				//if (ss.getArchivingExternalType().equals("mailstore")) {
+				//	String defaultFolder=us.getArchiveExternalUserFolder();
+				//	if (defaultFolder==null || defaultFolder.trim().length()==0)
+				//		defaultFolder=profile.getEmailAddress();
+				//	//MailStore produces a strange tree with two times the same account name
+				//	archiveAccount.setDifferentDefaultFolder(defaultFolder+"/"+defaultFolder);
+				//}
+				
+				//defaults to WebTop External Archive
+				String defaultFolder=us.getArchiveExternalUserFolder();
+				if (defaultFolder==null || defaultFolder.trim().length()==0)
+					defaultFolder=profile.getUserId();
+				archiveAccount.setDifferentDefaultFolder(defaultFolder);
+				
 				archiveAccount.setFolderPrefix(ss.getArchivingExternalFolderPrefix());
 				archiveAccount.setProtocol(ss.getArchivingExternalProtocol());
 

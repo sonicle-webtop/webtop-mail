@@ -356,9 +356,12 @@ public class MailAccount {
 				++ix;
 			}
 			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
-			Map<String,String> map=((IMAPStore)store).id(null);
-			isDovecot=(map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot"));
-					} catch (MessagingException exc) {
+			if (((IMAPStore)store).hasCapability("ID")) {
+				Map<String,String> map=((IMAPStore)store).id(null);
+				isDovecot=(map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot"));
+			}
+					
+		} catch (MessagingException exc) {
 			Service.logger.error("Error connecting to the mail server "+mailHost, exc);
 			sucess = false;
 		}
