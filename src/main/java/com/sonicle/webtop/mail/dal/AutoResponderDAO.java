@@ -104,9 +104,9 @@ public class AutoResponderDAO extends BaseDAO {
 			//.set(AUTORESPONDERS.SUBJECT, item.getSubject())
 			.set(AUTORESPONDERS.MESSAGE, item.getMessage())
 			.set(AUTORESPONDERS.ADDRESSES, item.getAddresses())	
-			//.set(AUTORESPONDERS.DAYS_INTERVAL, item.getDaysInterval())
-			//.set(AUTORESPONDERS.START_DATE, item.getStartDate())
-			//.set(AUTORESPONDERS.END_DATE, item.getEndDate())
+			.set(AUTORESPONDERS.DAYS_INTERVAL, item.getDaysInterval())
+			.set(AUTORESPONDERS.START_DATE, item.getStartDate())
+			.set(AUTORESPONDERS.END_DATE, item.getEndDate())
 			//.set(AUTORESPONDERS.SKIP_MAILING_LISTS, item.getSkipMailingLists())
 			.where(
 				AUTORESPONDERS.DOMAIN_ID.equal(item.getDomainId())

@@ -52,6 +52,25 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		me.callParent([cfg]);
 		
 		WTU.applyFormulas(me.getVM(), {
+			activationStartDate: {
+				bind: {bindTo: '{record.autoResponder.activationStartDate}'},
+				get: function(val) {
+					return (val) ? Ext.Date.clone(val): null;
+				},
+				set: function(val) {
+					this.get('record.autoResponder').setActivationStartDate(val);
+				}
+			},
+			activationEndDate: {
+				bind: {bindTo: '{record.autoResponder.activationEndDate}'},
+				get: function(val) {
+					return (val) ? Ext.Date.clone(val): null;
+				},
+				set: function(val) {
+					this.get('record.autoResponder').setActivationEndDate(val);
+				}
+			},
+			
 			foSieveAvail: WTF.foCompare('record', 'scriptsCount', function(v) {
 				return v !== -1;
 			}),
@@ -206,6 +225,40 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					emptyText: me.mys.res('sieveFilter.autoResponder.fld-addresses.emp'),
 					anchor: '100%'
 				}, {
+					xtype: 'fieldcontainer',
+					layout: 'hbox',
+					anchor: '100%',
+					fieldLabel:me.mys.res('sieveFilter.autoResponder.fld-startDate-endDate.lbl'),
+					
+						items: [{
+							xtype: 'datefield',
+							format: WT.getShortDateFmt(),
+							minValue: new Date(),
+							bind: {
+								value: '{activationStartDate}',
+								disabled: '{!fldAutoRespEnabled.checked}'
+							 }
+							 
+						},		{
+							xtype: 'datefield',
+							format: WT.getShortDateFmt(),
+							minValue: new Date(),
+							bind: {
+								value: '{activationEndDate}',
+								disabled: '{!fldAutoRespEnabled.checked}'
+							 }
+						}]
+				 },
+					{
+					xtype: 'textfield',
+					bind: {
+						value: '{record.autoResponder.daysInterval}',
+						disabled: '{!fldAutoRespEnabled.checked}'
+					},
+					fieldLabel:me.mys.res('sieveFilter.autoResponder.fld-daysInterval.lbl'),
+					anchor: '100%'
+				},
+				{
 					xtype: 'sospacer'
 				}],
 				width: '100%'
@@ -214,7 +267,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		
 		me.on('viewload', me.onViewLoad);
 	},
-	
+			
 	onViewLoad: function(s, success) {
 		if (!success) return;
 		var me = this,

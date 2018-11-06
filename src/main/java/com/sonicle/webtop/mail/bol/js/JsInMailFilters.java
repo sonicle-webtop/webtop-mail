@@ -34,6 +34,7 @@
 package com.sonicle.webtop.mail.bol.js;
 
 import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.mail.model.AutoResponder;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
@@ -41,6 +42,10 @@ import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.DateTimeFormatter;
 
 /**
  *
@@ -52,11 +57,13 @@ public class JsInMailFilters {
 	public String activeScript;
 	public JsAutoResponder autoResponder;
 	public ArrayList<JsMailFilter> filters = new ArrayList<>();
+	public static DateTimeZone profileTimeZone;
 	
-	public JsInMailFilters(int scriptsCount, String activeScript, AutoResponder autoResponder, List<MailFilter> mailFilters) {
+	public JsInMailFilters(int scriptsCount, String activeScript, AutoResponder autoResponder, List<MailFilter> mailFilters, DateTimeZone profileTimeZone) {
 		this.scriptsCount = scriptsCount;
 		this.activeScript = activeScript;
 		this.autoResponder = createJsAutoResponder(autoResponder);
+		this.profileTimeZone = profileTimeZone;
 		
 		for(MailFilter filter : mailFilters) {
 			JsMailFilter jsmf = new JsMailFilter(this.id);
@@ -76,6 +83,9 @@ public class JsInMailFilters {
 		js.enabled = aut.getEnabled();
 		js.message = aut.getMessage();
 		js.addresses = aut.getAddresses();
+		js.activationStartDate = DateTimeUtils.printYmdHmsWithZone(aut.getActivationStartDate(), profileTimeZone);
+		js.activationEndDate = DateTimeUtils.printYmdHmsWithZone(aut.getActivationEndDate(), profileTimeZone);
+		js.daysInterval = aut.getDaysInterval();
 		return js;
 	}
 	
@@ -84,7 +94,35 @@ public class JsInMailFilters {
 		aut.setEnabled(jsimf.autoResponder.enabled);
 		aut.setMessage(jsimf.autoResponder.message);
 		aut.setAddresses(jsimf.autoResponder.addresses);
+		
+		DateTime activationStartDate = null;
+		DateTime activationEndDate = null;
+		if(jsimf.autoResponder.activationStartDate != null) {
+			activationStartDate = changeTimeTo(DateTime.parse(jsimf.autoResponder.activationStartDate), 0, 0, 0);
+		   
+		}
+		if(jsimf.autoResponder.activationEndDate != null) {
+			 activationEndDate = changeTimeTo(DateTime.parse(jsimf.autoResponder.activationEndDate), 0, 0, 0);
+		}
+		
+		String activationStartDateWithoutMillis = removeMillis(activationStartDate);
+		String activationEndDateWithoutMillis = removeMillis(activationEndDate);
+		
+		aut.setActivationStartDate(DateTimeUtils.parseYmdHmsWithZone(activationStartDateWithoutMillis, profileTimeZone));
+		aut.setActivationEndDate(DateTimeUtils.parseYmdHmsWithZone(activationEndDateWithoutMillis, profileTimeZone));
+		aut.setDaysInterval(jsimf.autoResponder.daysInterval);
 		return aut;
+	}
+	
+	private static String removeMillis(DateTime dateTime) {
+		if(dateTime == null) return null;
+		String dateTimeString = dateTime.toString();
+		return dateTimeString.substring(0, dateTimeString.indexOf("."));	
+	}
+	
+	private static DateTime changeTimeTo(DateTime dateTime, int hour, int minutes, int seconds) {
+		if(dateTime == null) return null;
+		return dateTime.withHourOfDay(hour).withMinuteOfHour(minutes).withSecondOfMinute(seconds);
 	}
 	
 	public static MailFilter createMailFilter(JsMailFilter jsmf) {

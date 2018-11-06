@@ -8643,6 +8643,8 @@ public class Service extends BaseService {
 	public void processManageMailFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			DateTimeZone profileTimeZone = getEnv().getProfile().getTimeZone();
+			
 			if(crud.equals(Crud.READ)) {
 				String id = ServletUtils.getStringParameter(request, "id", true);
 				
@@ -8661,7 +8663,7 @@ public class Service extends BaseService {
 				MailFiltersType type = EnumUtils.forSerializedName(id, MailFiltersType.class);
 				List<MailFilter> filters = mailManager.getMailFilters(type);
 				
-				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, autoResp, filters);
+				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, autoResp, filters, profileTimeZone);
 				
 				new JsonResult(js).printTo(out);
 				
