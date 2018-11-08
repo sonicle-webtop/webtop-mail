@@ -1430,6 +1430,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var me=this,oparams=me.store.proxy.extraParams,
 			params={
 				action: action,
+				fromaccount: acct,
+				toaccount: acct,
 				account: acct,
 				fromfolder: from,
 				tofolder: to,

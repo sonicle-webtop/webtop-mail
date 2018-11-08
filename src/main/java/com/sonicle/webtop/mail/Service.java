@@ -262,7 +262,6 @@ public class Service extends BaseService {
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
 	//private boolean hasAnnotations=false;
-	private boolean isDovecot=false;
 	
 	//private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
 	//private FolderCache fcRoot = null;
@@ -2395,7 +2394,7 @@ public class Service extends BaseService {
 			String foldername = f.getFullName();
 			//in case of moved root, check not to duplicate root elsewhere
 			if (account.hasDifferentDefaultFolder()) {
-				if (isDovecot) {
+				if (account.isDovecot()) {
 					if (account.isDefaultFolder(foldername)) continue;
 				} else {
 					//skip default folder under shared
@@ -2717,7 +2716,7 @@ public class Service extends BaseService {
 			String folderarchive=toaccount.getFolderArchive();
 			
 			//check if tofolder is my Spam, and there is spamadm, move there
-			if (tofolder.equals(folderspam)) {
+			if (toaccount.isSpamFolder(tofolder)) {
 				String spamadmSpam=ss.getSpamadmSpam();
 				if (spamadmSpam!=null) {
 					folderspam=spamadmSpam;
@@ -2735,7 +2734,7 @@ public class Service extends BaseService {
 				tofolder=folderspam;
 			}
 			//if trashing, check for shared profile trash
-			else if (tofolder.equals(foldertrash)) {
+			else if (toaccount.isTrashFolder(tofolder)) {
 				if (toaccount.isUnderSharedFolder(fromfolder)) {
 					String mainfolder=toaccount.getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
@@ -2747,7 +2746,7 @@ public class Service extends BaseService {
 				tofolder=foldertrash;
 			}
 			//if archiving, determine destination folder based on settings and shared profile
-			else if (tofolder.equals(toaccount.getFolderArchive())) {
+			else if (toaccount.isArchiveFolder(tofolder)) {
 					if (toaccount.isUnderSharedFolder(fromfolder)) {
 						String mainfolder=toaccount.getMainSharedFolder(fromfolder);
 					if (mainfolder!=null) {
