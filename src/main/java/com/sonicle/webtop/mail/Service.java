@@ -1431,6 +1431,7 @@ public class Service extends BaseService {
 						mbps[e].setHeader("Content-ID", "<" + attach.cid + ">");
 						mbps[e].setHeader("X-Attachment-Id", attach.cid);
 						mbps[e].setDisposition(Part.INLINE);
+						mp.setSubType("related");
 					}
 				} //end for e
 
