@@ -52,10 +52,10 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		me.callParent([cfg]);
 		
 		WTU.applyFormulas(me.getVM(), {
-			foSieveAvail: WTF.foCompare('record', 'scriptsCount', function(v) {
+			foSieveAvail: WTF.foGetFn('record', 'scriptsCount', function(v) {
 				return v !== -1;
 			}),
-			foActiveScriptVisible: WTF.foCompare('record', 'scriptsCount', function(v) {
+			foActiveScriptVisible: WTF.foGetFn('record', 'scriptsCount', function(v) {
 				return v >= 2;
 			}),
 			foAutoRespEnabled: WTF.checkboxBind('record.autoResponder', 'enabled')
