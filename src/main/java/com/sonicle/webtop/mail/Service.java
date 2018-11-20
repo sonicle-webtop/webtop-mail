@@ -2068,6 +2068,7 @@ public class Service extends BaseService {
 					sb.append("</BLOCKQUOTE>");
 				}
 			} else {
+				/*
 				//String ubody = body.toUpperCase();
 				while (true) {
 					int ix1 = StringUtils.indexOfIgnoreCase(body,"<BODY");
@@ -2086,7 +2087,8 @@ public class Service extends BaseService {
 					}
 				}
 				//body=removeStartEndTag(body,unwantedTags);
-
+				*/
+				
 				sb.append(body);
 			}
 			htmlAppendAttachmentNames(sb, attnames);
@@ -2211,6 +2213,23 @@ public class Service extends BaseService {
 		boolean isHtml = false;
 		String disp = p.getDisposition();
 		if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT) && !p.isMimeType("message/*")) {
+			if (attnames != null) {
+				String id[] = p.getHeader("Content-ID");
+				if (id==null || id[0]==null) {
+					String filename = p.getFileName();
+					if (filename != null) {
+						if (filename.startsWith("<")) {
+							filename = filename.substring(1);
+						}
+						if (filename.endsWith(">")) {
+							filename = filename.substring(0, filename.length() - 1);
+						}
+					}
+					if (filename != null) {
+						attnames.add(filename);
+					}
+				}
+			}
 			return false;
 		}
 		if (p.isMimeType("text/html")) {
@@ -2278,22 +2297,6 @@ public class Service extends BaseService {
 				isHtml = true;
 			}
 		} else {
-			String filename = p.getFileName();
-			String id[] = p.getHeader("Content-ID");
-			if (id != null || filename != null) {
-				if (id != null) {
-					filename = id[0];
-				}
-				if (filename.startsWith("<")) {
-					filename = filename.substring(1);
-				}
-				if (filename.endsWith(">")) {
-					filename = filename.substring(0, filename.length() - 1);
-				}
-			}
-			if (filename != null && attnames != null) {
-				attnames.add(filename);
-			}
 		}
 		textsb.append('\n');
 		textsb.append('\n');
@@ -4256,8 +4259,9 @@ public class Service extends BaseService {
 			if (m.isExpunged()) {
 				throw new MessagingException("Message " + puidmessage + " expunged");
 			}
+			int newmsgid=getNewMessageID();
 			SimpleMessage smsg = getReplyMsg(
-					getNewMessageID(), m, replyAll, isSentFolder(pfoldername), isHtml,
+					newmsgid, m, replyAll, isSentFolder(pfoldername), isHtml,
 					profile.getEmailAddress(), mprofile.isIncludeMessageInReply(),
 					lookupResource(MailLocaleKey.MSG_FROMTITLE),
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
@@ -4305,6 +4309,47 @@ public class Service extends BaseService {
 			sout += " origuid:"+puidmessage+",\n";
 			if (isHtml) {
 				String html = smsg.getContent();
+				
+				//cid inline attachments and relative html href substitution
+				HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
+				first = true;
+				sout += " attachments: [\n";
+
+				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
+					try{
+						Part part = maildata.getAttachmentPart(i);
+						String filename = getPartName(part);
+						String cids[] = part.getHeader("Content-ID");
+						if (cids!=null && cids[0]!=null) {
+							String cid = cids[0];
+							if (cid.startsWith("<")) cid=cid.substring(1);
+							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
+							String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
+							UploadedFile upfile=addAsUploadedFile(""+newmsgid, filename, mime, part.getInputStream());
+							if (!first) {
+								sout += ",\n";
+							}
+							sout += "{ "+
+									" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
+									" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
+									" cid: '" + StringEscapeUtils.escapeEcmaScript(cid) + "', "+
+									" inline: true, "+									
+									" fileSize: "+upfile.getSize()+", "+
+									" editable: "+isFileEditableInDocEditor(filename)+" "+
+									" }";
+							first = false;
+							//TODO: change this weird matching of cids2urls!
+							html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+						}
+					} catch (Exception exc) {
+						Service.logger.error("Exception",exc);
+					}
+				}
+
+				sout += "\n ],\n";
+
+				
+				
 				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
 			} else {
 				String text = smsg.getTextContent();
@@ -4312,7 +4357,7 @@ public class Service extends BaseService {
 			}
             sout += " format:'"+format+"'\n";
 			sout += "\n}";
-		} catch (MessagingException exc) {
+		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
 		}

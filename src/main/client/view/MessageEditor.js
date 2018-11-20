@@ -584,7 +584,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 											msgId: me.msgId, 
 											uploadId: uid, 
 											fileName: file.name, 
-											cid: file.name,
+											cid: uid,
 											inline: true,
 											fileSize: file.size,
 											editable: resp.data.editable
@@ -593,7 +593,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								me.htmlEditor.execCommand('insertimage', false, 
 									WTF.processBinUrl(me.mys.ID,"PreviewAttachment",{
 										uploadId: uid,
-										cid: file.name
+										cid: uid
 									})
 								);
 							}
