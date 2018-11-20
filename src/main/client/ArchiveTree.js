@@ -32,35 +32,54 @@
  * the words "Powered by Sonicle WebTop".
  */
 
-Ext.define('Sonicle.webtop.mail.plugin.MessageGridViewDragDrop', {
-    extend: 'Ext.grid.plugin.DragDrop',
-	alias: 'plugin.messagegridviewdragdrop',
+Ext.define('Sonicle.webtop.mail.ArchiveTree', {
+	extend: 'Sonicle.webtop.mail.SimpleImapTree',
 	
-	dragGroup: 'mail',
-	enabledDrop: false,
-	
-	dragZone: {
+	constructor: function(cfg) {
+		var me = this;
 		
-		onInitDrag: function(x, y) {
-			Ext.view.DragZone.prototype.onInitDrag.call(this,x,y);
-			this.proxy.el.removeCls(Ext.baseCSSPrefix + 'dd-drop-ok');
-			this.proxy.el.removeCls(Ext.baseCSSPrefix + 'tree-drop-ok-append');
-			return true;
-		},
-		
-		getDragData: function(e) {
-			var o=Ext.view.DragZone.prototype.getDragData.call(this,e);
-			if (o) {
-				o.srcAccount=o.view.grid.currentAccount;
-				o.srcFolder=o.view.grid.currentFolder;
-				o.grid=o.view.grid;
-				o.copy=o.grid.readonly||e.ctrlKey;
-				o.readonly=o.grid.readonly;
-			}
-			return o;
-		}
+		Ext.apply(cfg,{
+			viewConfig: {
+/*				plugins: { 
+					ptype: 'imaptreeviewdragdrop' ,
+					moveFolder: function(src,dst) {
+						cfg.mys.moveFolder(src,dst);
+					},
+					moveMessages: function(data,dst) {
+						data.view.grid.moveSelection(data.srcFolder,dst,data.records);
+					},
+					copyMessages: function(data,dst) {
+						data.view.grid.copySelection(data.srcFolder,dst,data.records);
+					},
+					copyAttachment: function(data,dst) {
+						cfg.mys.copyAttachment(data.params.folder,dst,data.params.idmessage,data.params.idattach);
+					}
+				},*/
+				markDirty: false,
+				loadMask: true,
+				animate: true
+			},
+			
+			store: Ext.create('Ext.data.TreeStore', {
+				model: 'Sonicle.webtop.mail.model.ImapTreeModel',
+				proxy: WTF.proxy(cfg.mys.ID,'GetArchiveTree'),
+				root: {
+					id: '/',
+					text: 'Archive Tree',
+					folder: cfg.mys.res("archive.external.lbl")+" ("+WT.getVar("userDisplayName")+")",
+					unread: 0,
+					iconCls: 'wtmail-icon-archive-xs',
+					expanded: false
+				},
+				rootVisible: false,
+				acct: cfg.acct
+			})
+		});
+
+		me.callParent([cfg]);
 		
 	}
 	
 	
 });
+

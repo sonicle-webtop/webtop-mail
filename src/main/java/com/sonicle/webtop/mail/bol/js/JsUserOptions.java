@@ -45,6 +45,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean permDomainMailcardManage;	
 	public String archiveMode;
 	public boolean archiveKeepFoldersStructure;
+	public String archiveExternalUserFolder;
 	public String dmsSimpleMailFolder;
 	public String dmsMethod;
 	public boolean sharedSeen;

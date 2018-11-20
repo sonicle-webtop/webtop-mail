@@ -75,13 +75,15 @@ public class SmartSearchThread extends Thread {
 	private JsSmartSearchTotals sst=new JsSmartSearchTotals();
 
     private final Service ms;
+	private MailAccount account;
 	
-    public SmartSearchThread(Service ms, String pattern, ArrayList<String> folderIds, 
+    public SmartSearchThread(Service ms, MailAccount account, String pattern, ArrayList<String> folderIds, 
 			boolean fromme, boolean tome, boolean attachments,
 			ArrayList<String> ispersonfilters, ArrayList<String> isnotpersonfilters,
 			ArrayList<String> isfolderfilters, ArrayList<String> isnotfolderfilters,
 			int year, int month, int day) throws MessagingException {
         this.ms=ms;
+		this.account=account;
 		this.pattern=pattern;
 		this.folderIds=folderIds;
 		this.fromme=fromme;
@@ -119,7 +121,7 @@ public class SmartSearchThread extends Thread {
 				if (isfolderfilters.size()>0 && !isfolderfilters.contains(folderId)) skipfolder=true;
 				if (isnotfolderfilters.contains(folderId)) skipfolder=true;
 				
-				FolderCache fc=ms.getFolderCache(folderId);
+				FolderCache fc=account.getFolderCache(folderId);
                 curfolder=fc;
 				sst.curfoldername=fc.getFolderName();
 				
@@ -272,7 +274,7 @@ public class SmartSearchThread extends Thread {
 								}
 								sst.addMessage(msg.getUID(), 
 										folderId, 
-										ms.getInternationalFolderName(ms.getFolderCache(folderId)),
+										ms.getInternationalFolderName(account.getFolderCache(folderId)),
 										msg.getSubject(), 
 										from,
 										to,

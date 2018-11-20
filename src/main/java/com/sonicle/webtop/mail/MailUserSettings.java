@@ -84,6 +84,14 @@ public class MailUserSettings extends BaseUserSettings {
 		return setString(ARCHIVING_MODE, value);
 	}
 	
+	public String getArchiveExternalUserFolder() {
+		return getString(ARCHIVING_EXTERNAL_USERFOLDER, null);
+	}
+	
+	public boolean setArchiveExternalUserFolder(String value) {
+		return setString(ARCHIVING_EXTERNAL_USERFOLDER, value);
+	}
+	
 	public boolean isArchiveKeepFoldersStructure() {
 		return getBoolean(ARCHIVING_KEEP_FOLDERS_STRUCTURE, false);
 	}

@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 	mys: null,
 	messageView: null,
 	messageGrid: null,
+	acct: null,
 	folder: null,
 	idmessage: null,
 	title: null,
@@ -70,25 +71,25 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 				}),
 				me.addAct("delete",{
 					handler: function() {
-						me.messageGrid.deleteMessage(me.folder,me.idmessage,me);
+						me.messageGrid.deleteMessage(me.acct,me.folder,me.idmessage,me);
 					},
 					iconCls: 'wt-icon-delete'
 				}),
 				me.addAct("reply",{
 					handler: function() {
-						me.messageGrid.replyMessageById(me.folder,me.idmessage,false);
+						me.messageGrid.replyMessageById(me.acct,me.folder,me.idmessage,false);
 					},
 					iconCls: 'wtmail-icon-reply'
 				}),
 				me.addAct("replyall",{
 					handler: function() {
-						me.messageGrid.replyMessageById(me.folder,me.idmessage,true);
+						me.messageGrid.replyMessageById(me.acct,me.folder,me.idmessage,true);
 					},
 					iconCls: 'wtmail-icon-replyall'
 				}),
 				me.addAct("forward",{
 					handler: function() {
-						me.messageGrid.forwardMessageById(me.folder,me.idmessage);
+						me.messageGrid.forwardMessageById(me.acct,me.folder,me.idmessage);
 					},
 					iconCls: 'wtmail-icon-forward'
 				})
@@ -123,7 +124,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 			});
 		}
 		
-		mv._showMessage(me.folder,me.idmessage,!me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen"));
+		mv._showMessage(me.acct,me.folder,me.idmessage,!me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen"));
 	}
 	
 });

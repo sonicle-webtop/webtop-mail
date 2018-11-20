@@ -49,16 +49,16 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 				plugins: { 
 					ptype: 'imaptreeviewdragdrop' ,
 					moveFolder: function(src,dst) {
-						cfg.mys.moveFolder(src,dst);
+						cfg.mys.moveFolder(me.acct,src,dst);
 					},
 					moveMessages: function(data,dst) {
-						data.view.grid.moveSelection(data.srcFolder,dst,data.records);
+						data.view.grid.moveSelection(data.srcAccount,data.srcFolder,me.acct,dst,data.records);
 					},
 					copyMessages: function(data,dst) {
-						data.view.grid.copySelection(data.srcFolder,dst,data.records);
+						data.view.grid.copySelection(data.srcAccount,data.srcFolder,me.acct,dst,data.records);
 					},
 					copyAttachment: function(data,dst) {
-						cfg.mys.copyAttachment(data.params.folder,dst,data.params.idmessage,data.params.idattach);
+						cfg.mys.copyAttachment(data.params.acct,data.params.folder,me.acct,dst,data.params.idmessage,data.params.idattach);
 					}
 				},
 				markDirty: false,
@@ -77,7 +77,8 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 					iconCls: 'wtmail-icon-emailaccount-xs',
 					expanded: true
 				},
-				rootVisible: false
+				rootVisible: false,
+				acct: cfg.acct
 			})
 		});
 

@@ -1053,7 +1053,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				},
 				callback: function(success,json) {
 					if (success) {
-						if (me.mys.isDrafts(me.mys.currentFolder)) {
+						if (me.mys.isDrafts(me.mys.currentAccount, me.mys.currentFolder)) {
 							me.mys.reloadFolderList();
 							me.mys.messagesPanel.clearMessageView();
 						}

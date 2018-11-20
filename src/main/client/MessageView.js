@@ -239,7 +239,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
 	
-    _showMessage: function(folder, id, setseen) {
+    _showMessage: function(acct, folder, id, setseen) {
 		var me=this;/*,
 			idmessage=id,
 			params={service: me.mys.ID, action: 'GetMessage', folder: folder, idmessage: idmessage };*/
@@ -247,10 +247,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         //if (this.folder==folder && this.idmessage==idmessage) return;
         me._clear();
         me.idmessage=id;
+		me.acct=acct;
         me.folder=folder;
         me.latestId=id;
 		me.proxy.abort();
-		WTU.applyExtraParams(me.proxy,{ folder: folder, idmessage: id, setseen: setseen });
+		WTU.applyExtraParams(me.proxy,{ account: acct,  folder: folder, idmessage: id, setseen: setseen });
 		me.proxy.doRequest(
 			me.proxy.createOperation('read',{
 				url: WTF.requestBaseUrl(),
@@ -452,6 +453,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     var aparams;
                     if (!provider) {
                         aparams={
+							acct: me.acct,
                             folder: me.folder,
                             idmessage: me.idmessage,
                             idattach: att.id
@@ -936,7 +938,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						ddel: ddel.dom.cloneNode(true),
 						params: params,
 						sourceEl: el,
-						repairXY: Ext.fly(el).getXY()
+						repairXY: Ext.fly(el).getXY(),
+						records: []
 					};
 				}
             },
@@ -1186,17 +1189,18 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     
     showEml: function(t,urlparams) {
         var params=Ext.Object.fromQueryString(urlparams);
-        this.mys.openEml(params.folder,params.idmessage,params.idattach);
+        this.mys.openEml(params.acct, params.folder,params.idmessage,params.idattach);
     },
     
-    loadEml: function(folder,idmessage,idattach) {
+    loadEml: function(acct, folder,idmessage,idattach) {
 		var me=this;
         me._clear();
         me.idmessage=idmessage;
+		me.acct=acct,
         me.folder=folder;
         me.idattach=idattach;
 		me.proxy.abort();
-		WTU.applyExtraParams(me.proxy,{ folder: folder, idmessage: idmessage, idattach: idattach });
+		WTU.applyExtraParams(me.proxy,{ account: acct, folder: folder, idmessage: idmessage, idattach: idattach });
 		me.proxy.doRequest(
 			me.proxy.createOperation('read',{
 				url: WTF.requestBaseUrl(),

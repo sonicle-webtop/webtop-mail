@@ -45,6 +45,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 	full: true,
 	
 	mys: null,
+	account: null,
 	multifolder: false,
 	grid: null,
 	fromFolder: null,
@@ -73,9 +74,9 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			handler: function() {
 				me.disable();
                 if (chkfiltered.getValue()) {
-                    me.grid.operateAllFiltered("MoveMessages",me.fromFolder,me.curnode.id,me.ajaxResultCallback,me);
+                    me.grid.operateAllFiltered("MoveMessages",me.account,me.fromFolder,me.curnode.id,me.ajaxResultCallback,me);
                 } else {
-                    me.grid.moveSelection(me.fromFolder,me.curnode.id,me.grid.getSelection());
+                    me.grid.moveSelection(me.account, me.fromFolder, me.account, me.curnode.id,me.grid.getSelection());
 					me.enable();
 					me.closeView(false);
                 }
@@ -89,9 +90,9 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			handler: function() {
 				me.disable();
                 if (chkfiltered.getValue()) {
-                    me.grid.operateAllFiltered("CopyMessages",me.fromFolder,me.curnode.id,me.ajaxResultCallback,me);
+                    me.grid.operateAllFiltered("CopyMessages",me.account,me.fromFolder,me.curnode.id,me.ajaxResultCallback,me);
                 } else {
-                    me.grid.copySelection(me.fromFolder,me.curnode.id,me.grid.getSelection());
+                    me.grid.copySelection(me.account, me.fromFolder, me.account, me.curnode.id,me.grid.getSelection());
 					me.enable();
 					me.closeView(false);
                 }
@@ -107,9 +108,9 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 					if (bid==='yes') {
 						me.disable();
 						if (chkfiltered.getValue()) {
-							me.grid.operateAllFiltered("DeleteMessages",me.fromFolder,null,me.ajaxResultCallback,me);
+							me.grid.operateAllFiltered("DeleteMessages",me.account,me.fromFolder,null,me.ajaxResultCallback,me);
 						} else {
-							me.grid.deleteSelection(me.fromFolder,me.grid.getSelection());
+							me.grid.deleteSelection(me.account, me.fromFolder,me.grid.getSelection());
 							me.enable();
 							me.closeView(false);
 						}
@@ -127,9 +128,9 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 				var tofolder=me.mys.getFolderArchive();
 				me.disable();
                 if (chkfiltered.getValue()) {
-                    me.grid.operateAllFiltered("MoveMessages",me.fromFolder,tofolder,me.ajaxResultCallback,me);
+                    me.grid.operateAllFiltered("MoveMessages",me.account,me.fromFolder,tofolder,me.ajaxResultCallback,me);
                 } else {
-                    me.grid.moveSelection(me.fromFolder,tofolder,me.grid.getSelection());
+                    me.grid.moveSelection(me.account, me.fromFolder, me.account, tofolder,me.grid.getSelection());
 					me.enable();
 					me.closeView(false);
                 }

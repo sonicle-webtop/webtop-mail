@@ -75,8 +75,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						minDepth: 1,
 							listeners: {
 							change: function(s, node) {
-								if(node && !me.reloadingFolder) {
-									me.mys.selectAndShowFolder(node.getId());
+								if(node && node.getId()!=='/' && !me.reloadingFolder) {
+									me.mys.selectAndShowFolder(me.currentAccount,node.getId());
 								}
 							}
 						},
@@ -451,10 +451,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			var sel=me.folderList.getSelection();
 			if (sel.length==1) {
 				var r=sel[0],
+					acct=me.currentAccount,
 					id=r.get('idmessage'),
 					fldr=r.get('fromfolder');
 				if (!fldr) fldr=me.currentFolder;
-				me.showMessage(fldr,id);
+				me.showMessage(acct,fldr,id);
 			} else {
 				me.clearMessageView();
 			}
@@ -475,9 +476,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
     },
 	
-	setImapStore: function(store) {
-		this.bcFolders.setStore(store);
-	},
+	//setImapStore: function(store) {
+	//	this.bcFolders.setStore(store);
+	//},
 	
 	getAct: function(name) {
 		return this.mys.getAct(name);
@@ -522,7 +523,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			mv=me.messageView,
 			mvc=me.messageViewContainer,
 			idm=mv.idmessage,
-			idf=mv.folder;
+			idf=mv.folder,
+			acct=mv.account;
 	
 		//TODO: necessary???
 		////trick for switched user forced as south standard, no save
@@ -548,7 +550,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.updateLayout();
 		if (me.viewCollapsed) mvc.collapse();
 		//if (save) me.saveMessageView();
-		me.showMessage(idf,idm);
+		me.showMessage(acct,idf,idm);
 		me.movingPanel=false;
 	},
 	
@@ -678,22 +680,25 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         this.folderList.getSelectionModel().deselectAll();
     },
     
-    reloadFolder: function(folderid,config,uid,rid,page,tid) {
-		var me=this;
+    reloadFolder: function(acct,folderid,config,uid,rid,page,tid) {
+		var me=this,
+			tree=me.mys.acctTrees[acct];
+        me.currentAccount=acct;
         me.currentFolder=folderid;
+		me.bcFolders.setStore(tree.getStore());
 		var node=me.bcFolders.getStore().getById(folderid);
 		//node may be a favorite, so may not be already loaded in imap tree
 		if (node) {
-			me._updateBreadcrumbAndReloadFolderList(node,config,uid,rid,page,tid,true);
+			me._updateBreadcrumbAndReloadFolderList(acct,node,config,uid,rid,page,tid,true);
 		} else {
-			me.mys.imapTree.expandNodePath(folderid,me.mys.getVar("folderSeparator"),false,null,function() {
+			tree.expandNodePath(folderid,me.mys.getVar("folderSeparator"),false,null,function() {
 				node=me.bcFolders.getStore().getById(folderid);
-				me._updateBreadcrumbAndReloadFolderList(node,config,uid,rid,page,tid,false);
+				me._updateBreadcrumbAndReloadFolderList(acct,node,config,uid,rid,page,tid,false);
 			});
 		}
     },
 	
-	_updateBreadcrumbAndReloadFolderList: function(node,config,uid,rid,page,tid,updateLeafState) {
+	_updateBreadcrumbAndReloadFolderList: function(acct,node,config,uid,rid,page,tid,updateLeafState) {
 		var me=this;
 		me.reloadingFolder=true;
 		me.bcFolders.setSelection(node);
@@ -709,13 +714,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				}
 			});
 		}
-		me.folderList.reloadFolder(node.id,config,uid,rid,page,tid);
+		me.folderList.reloadFolder(acct,node.id,config,uid,rid,page,tid);
 		me.reloadingFolder=false;
 	},
 
 	 reloadCurrentFolder: function(config) {
 		var me=this;
-        me.folderList.reloadFolder(me.currentFolder,config);
+        me.folderList.reloadFolder(me.currentAccount,me.currentFolder,config);
     },
 	
 	//TODO no more ctrlshift?
@@ -725,11 +730,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		if (!me.messageViewContainer.collapsed) {
 			//if (c==1&&!ctrlshift) {
 			if (c===1) {
-				var id=r[0].get('idmessage');
-				var fldr=r[0].get('fromfolder');
+				var id=r[0].get('idmessage'),
+					fldr=r[0].get('fromfolder'),
+					acct=me.currentAccount;
+				
 				if (!fldr) fldr=this.currentFolder;
 				if (id!==me.messageView.idmessage)
-					me.showMessage(fldr,id);
+					me.showMessage(acct,fldr,id);
 			} else {
 				me.clearMessageView();
 			}
@@ -737,11 +744,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.fireEvent('gridselectionchanged',sm/*,ctrlshift*/);
     },
     
-	showMessage: function(folder,id) {
-		if (folder && id) {
+	showMessage: function(acct,folder,id) {
+		if (acct && folder && id) {
 			var me=this;
 			if (WT.plTags.desktop) me.messageViewContainer.getTopBar().show();
-			me.messageView._showMessage(folder,id,!me.mys.getVar("manualSeen"));
+			me.messageView._showMessage(acct,folder,id,!me.mys.getVar("manualSeen"));
 		}
 	},
 

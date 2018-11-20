@@ -365,6 +365,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	key2flag: ['clear','red','orange','green','blue','purple','yellow','black','gray','white'],
 	createPagingToolbar: false,
 	threaded: false,
+	readonly: false,
 	openThreads: {},
 	
     /**
@@ -440,7 +441,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
 			plugins: [
 				{
-					ptype: 'messagegridviewdragdrop'
+					ptype: 'messagegridviewdragdrop',
+					pluginId: 'messagegridviewdragdrop'
 				}
 			]
 
@@ -539,22 +541,31 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
 		
         me.on('rowdblclick',function(grid, r, tr, rowIndex, e, eopts) {
-			var folder=me.multifolder?r.get("folder"):me.currentFolder;
-			if (me.mys.isDrafts(folder)) me.editMessage(r,true);
+			var folder=me.multifolder?r.get("folder"):me.currentFolder,
+				acct=me.currentAccount;
+			if (me.mys.isDrafts(acct,folder)) me.editMessage(r,true);
 			else me.openMessage(r);
 			//if(me.mys.getVar("seenOnOpen")) me.actionMarkSeenState(true);
 		});
 		me.on('cellclick',function(grid, td, cellIndex, r, rowIndex, e, eopts) {
 			if (me.getColumnManager().getHeaderAtIndex(cellIndex).dataIndex==="note") {
 				if (r.get("note")) {
-					var folder=me.multifolder?r.get("folder"):me.currentFolder;
-					me.editNote(r.get("idmessage"),folder);
+					var folder=me.multifolder?r.get("folder"):me.currentFolder,
+						acct=me.currentAccount;
+					me.editNote(acct,r.get("idmessage"),folder);
 				}
 			}
 		});
 		
         me.callParent(arguments);
     },
+	
+	setCurrentAccount: function(acct) {
+		var me=this,
+			plugin=me.getView().getPlugin("messagegridviewdragdrop");
+		me.currentAccount=acct;
+		me.readonly=acct==="archive";
+	},
 	
 	collapseClicked: function(rowIndex) {
 		var me=this;
@@ -605,7 +616,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		return this.pageSize;
 	},
 	
-	reloadFolder: function(folder_id, config, uid, rid, page, tid){
+	reloadFolder: function(acct,folder_id, config, uid, rid, page, tid){
 		var me = this,
 			proxy = me.store.getProxy();
 	
@@ -617,6 +628,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			start: 0,
 			limit: me.pageSize,
 			refresh: 1,
+			account: acct,
 			folder: folder_id,
 			timestamp: Date.now()
 		});
@@ -629,7 +641,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		proxy.setExtraParams(Ext.apply(proxy.getExtraParams(), config));
 
 
-		var groupField=me.mys.getFolderGroup(folder_id),
+		var groupField=me.mys.getFolderGroup(acct,folder_id),
 			s=me.store,
 			meta=s.getProxy().getReader().metaData;
 		if (groupField && groupField!=='none' && groupField!=='threadId' && groupField!=='') {
@@ -645,6 +657,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.threaded=groupField==='threadId';
 			//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 		}
+		me.setCurrentAccount(acct);
 		me.currentFolder = folder_id;
 		me.initFolderState(!WT.plTags.desktop);
 		//me.hideFilterBar();
@@ -702,7 +715,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				defaultState=true;
 			}
 			
-			var node=me.mys.getFolderNodeById(me.currentFolder),
+			var node=me.mys.getFolderNodeById(me.currentAccount,me.currentFolder),
 				issentfolder=node?(node.data.isSent||node.data.isUnderSent):false;
 
 			if (state.storeState) {
@@ -861,6 +874,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var win=WT.createView(me.mys.ID,'view.DockableMessageView',{
 			viewCfg: {
 				mys: me.mys,
+				acct: me.currentAccount,
 				folder: r.get('folder')||me.currentFolder,
 				idmessage: r.get('idmessage'),
 				title: r.get('subject'),
@@ -891,14 +905,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	replyMessage: function(r,all) {
-        this.replyMessageById(r.get('folder')||this.currentFolder,r.get("idmessage"),all);        
+		var me=this;
+        me.replyMessageById(me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),all);
 	},
 	
-	replyMessageById: function(idfolder,idmessage,all) {
+	replyMessageById: function(acct,idfolder,idmessage,all) {
         var me=this;
         
 		WT.ajaxReq(me.mys.ID, 'GetReplyMessage', {
 			params: {
+				account: acct,
 				folder: idfolder,
 				idmessage: idmessage,
 				replyall: (all?'1':'0')
@@ -940,14 +956,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	forwardMessage: function(r,eml) {
-        this.forwardMessageById(r.get('folder')||this.currentFolder,r.get("idmessage"),eml);
+		var me=this;
+        me.forwardMessageById(me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),eml);
 	},
 	
-	forwardMessageById: function(idfolder,idmessage,eml) {
+	forwardMessageById: function(acct,idfolder,idmessage,eml) {
 		var me=this,msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
 		
 		WT.ajaxReq(me.mys.ID, 'GetForwardMessage', {
 			params: {
+				account: acct,
 				folder: idfolder,
 				idmessage: idmessage,
 				attached: eml?1:0,
@@ -981,14 +999,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
     
     editMessage: function(r,isdraft) {
-        this.editMessageById(r.get('folder')||this.currentFolder,r.get("idmessage"),isdraft);
+		var me=this;
+        me.editMessageById(me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),isdraft);
     },
     
-    editMessageById: function(idfolder,idmessage,isdraft) {
+    editMessageById: function(acct,idfolder,idmessage,isdraft) {
         var me=this,msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
         
 		WT.ajaxReq(me.mys.ID, 'GetEditMessage', {
 			params: {
+				account: acct,
 				folder: idfolder,
 				idmessage: idmessage,
                 newmsgid: msgId
@@ -1026,11 +1046,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
     actionDelete: function() {
-		if (this.storeLoading) {
+		if (this.storeLoading || this.readonly) {
 			return;
 		}
 		
 		var me=this,
+			acct=me.currentAccount,
 			curfolder=me.currentFolder,
 			sm=me.getSelectionModel(),
 			selection=sm.getSelection(),
@@ -1039,27 +1060,28 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (!selection || selection.length==0) return;
 		
         if (ftrash) {
-			if (!me.multifolder && me.mys.isTrash(curfolder)) {
+			if (!me.multifolder && me.mys.isTrash(acct,curfolder)) {
 				//TODO: warning
 				WT.confirm(me.res('sureprompt'),function(bid) {
 					if (bid==='yes') {
-						me.deleteSelection(curfolder,selection);
+						me.deleteSelection(acct,curfolder,selection);
 					}
 					me.focus();
 				},me);
           } else {
-              me.moveSelection(curfolder,ftrash,selection);
+              me.moveSelection(acct,curfolder,acct,ftrash,selection);
               me.focus();
           }
         }
     },	
 	
     actionSpam: function() {
-		if (this.storeLoading) {
+		if (this.storeLoading || this.readonly) {
 			return;
 		}
 		
 		var me=this,
+			acct=me.currentAccount,
 			curfolder=me.currentFolder,
 			sm=me.getSelectionModel(),
 			selection=sm.getSelection(),
@@ -1068,17 +1090,18 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (!selection || selection.length==0) return;
 		
         if (fspam) {
-			me.moveSelection(curfolder,fspam,selection);
+			me.moveSelection(acct,curfolder,acct,fspam,selection);
 			me.focus();
         }
     },
 
     actionArchive: function() {
-		if (this.storeLoading) {
+		if (this.storeLoading || this.readonly) {
 			return;
 		}
 		
 		var me=this,
+			acct=me.currentAccount,
 			curfolder=me.currentFolder,
 			sm=me.getSelectionModel(),
 			selection=sm.getSelection(),
@@ -1087,7 +1110,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (!selection || selection.length==0) return;
 		
         if (farchive) {
-			me.moveSelection(curfolder,farchive,selection);
+			me.moveSelection(acct,curfolder,acct,farchive,selection);
 			me.focus();
 		}
     },
@@ -1101,10 +1124,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	actionMarkSeenState: function(seen) {
-		if (this.storeLoading) return;
+		if (this.storeLoading || this.readonly) return;
 		
 		var me=this;
 		me.markSelectionSeenState(
+			me.currentAccount,
 			me.currentFolder,
 			me.getSelectionModel().getSelection(),
 			seen
@@ -1114,10 +1138,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	actionMoveToFolder: function() {
 		var me=this;
+		if (this.readonly) return;
+		
 //		if (!me.mcmdialog) {
 			me.mcmdialog=WT.createView(me.mys.ID,'view.MoveCopyMessagesDialog',{
 				viewCfg: {
 					mys: me,
+					account: me.currentAccount,
 					multifolder: me.multifolder,
 					fromFolder: me.currentFolder,
 					grid: me
@@ -1163,28 +1190,29 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.getSelectionModel().removeIds(ids,{ timestamp: Date.now() });
 	},
 	
-    deleteSelection: function(from,selection) {
+    deleteSelection: function(acct,from,selection) {
         var me=this,data=me.sel2ids(selection);
 		data.cb=function(result) {
 			if (result) {
 				me.removeRecords(data.ids);
 			}
 		}
-        me.deleteMessages(from,data,selection);
+        me.deleteMessages(acct,from,data,selection);
     },
 
-    deleteMessages: function(folder,data,selection) {
+    deleteMessages: function(acct,folder,data,selection) {
 		var me=this;
 		me.checkBrokenThreads(selection,function(fullThreads) {
-			me._deleteMessages(folder,data,fullThreads);
+			me._deleteMessages(acct,folder,data,fullThreads);
 		});
 	},
 	
-    _deleteMessages: function(folder,data,fullThreads) {
+    _deleteMessages: function(acct,folder,data,fullThreads) {
 		var me=this;
 			me.fireEvent('deleting',me);
 		WT.ajaxReq(me.mys.ID, 'DeleteMessages', {
 			params: {
+				account: acct,
 				fromfolder: folder,
 				ids: data.ids,
 				multifolder: data.multifolder,
@@ -1200,7 +1228,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
     },
 
-    deleteMessage: function(folder,idmessage,dview) {
+    deleteMessage: function(acct,folder,idmessage,dview) {
 		var me=this,
 			curfolder=me.currentFolder,
 			data={ 
@@ -1214,21 +1242,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			},
 			ftrash=me.mys.getFolderTrash();
 		
-		if (me.mys.isTrash(curfolder)) {
+		if (me.mys.isTrash(acct,curfolder)) {
 			//TODO: warning
 			WT.confirm(me.res('sureprompt'),function(bid) {
 				if (bid==='yes') {
-					me.deleteMessages(folder,data);
+					me.deleteMessages(acct,folder,data);
 					dview.closeView();
 				}
 			});
 		} else {
-			me.moveMessages(folder,ftrash,data);
+			me.moveMessages(acct,folder,ftrash,data);
 			dview.closeView();
 		}
     },	
 	
-    moveSelection: function(from,to,selection) {
+    moveSelection: function(acctfrom,from,acctto,to,selection) {
         var me=this, 
             data=me.sel2ids(selection);
 		data.cb=function(result) {
@@ -1236,48 +1264,50 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.removeRecords(data.ids);
 			}
 		}
-        me.moveMessages(from,to,data,selection);
+        me.moveMessages(acctfrom,from,acctto,to,data,selection);
     },
 	
-    copySelection: function(from,to,selection) {
+    copySelection: function(acctfrom,from,acctto,to,selection) {
         var me=this, 
             data=me.sel2ids(selection);
-        me.copyMessages(from,to,data,selection)
+        me.copyMessages(acctfrom,from,acctto,to,data,selection);
     },
 	
-    moveMessages: function(from,to,data,selection) {
+    moveMessages: function(acctfrom,from,acctto,to,data,selection) {
 		var me=this;
 		
         me.fireEvent('moving',me);
 		
-        me.operateMessages("MoveMessages",from,to,data,selection);
+        me.operateMessages("MoveMessages",acctfrom,from,acctto,to,data,selection);
     },	
 	
-    copyMessages: function(from,to,data,selection) {
-        this.operateMessages("CopyMessages",from,to,data,selection);
+    copyMessages: function(acctfrom,from,acctto,to,data,selection) {
+        this.operateMessages("CopyMessages",acctfrom,from,acctto,to,data,selection);
     },
 
 	//TODO: customer,causal
 	//operateMessages: function(action,from,to,data,customer_id,causal_id) {
-    operateMessages: function(action,from,to,data,selection) {
+    operateMessages: function(action,acctfrom,from,acctto,to,data,selection) {
 		var me=this;
 		
 		me.checkBrokenThreads(selection,function(fullThreads) {
-			me._operateMessages(action,from,to,data,fullThreads);
+			me._operateMessages(action,acctfrom,from,acctto,to,data,fullThreads);
 		});
     },
 	
-	_operateMessages: function(action,from,to,data,fullThreads) {
+	_operateMessages: function(action,acctfrom,from,acctto,to,data,fullThreads) {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, action, {
 			params: {
 				//customer_id:customer_id,
 				//causal_id:causal_id
+				fromaccount: acctfrom,
 				fromfolder: from,
+				toaccount: acctto,
 				ids: data.ids,
 				tofolder: to,
 				multifolder: data.multifolder,
-				fullthreads: fullThreads,
+				fullthreads: fullThreads
 			},
 			callback: function(success,json) {
 				Ext.callback(data.cb,data.scope||me,[json.result]);
@@ -1327,7 +1357,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					*/
 				   
 				    //if archiving, reload archive branch
-					if (json.archiving) me._refreshArchiveNode(json.tofolder);
+					if (json.archiving) me._refreshArchiveNode(acct,json.tofolder);
 				} else {
 					WT.error(json.text);
 				}
@@ -1335,9 +1365,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});							
 	},
 	
-	_refreshArchiveNode: function(fname) {
+	_refreshArchiveNode: function(acct,fname) {
 		var me=this,
-			tree=me.mys.imapTree,
+			tree=me.mys.acctTrees[acct],
 			s=tree.getStore(),
 			n=s.getNodeById(fname);
 		if (!n) {
@@ -1397,10 +1427,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		Ext.callback(cb,scope||me,false);
 	},
 		
-    operateAllFiltered: function(action,from,to,handler,scope) {
+    operateAllFiltered: function(action,acct,from,to,handler,scope) {
 		var me=this,oparams=me.store.proxy.extraParams,
 			params={
 				action: action,
+				fromaccount: acct,
+				toaccount: acct,
+				account: acct,
 				fromfolder: from,
 				tofolder: to,
 				allfiltered: true
@@ -1436,7 +1469,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//	info.millis=o.millis;
 					//	this.ms.updateUnreads(options.tofolder,info,false);
 					//}
-					if (json.archiving) me._refreshArchiveNode(json.tofolder);
+					if (json.archiving) me._refreshArchiveNode(acct,json.tofolder);
 				} else {
 					WT.error(json.text);
 				}
@@ -1445,7 +1478,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});							
     },	
 	
-    markSelectionSeenState: function(from,selection,seen) {
+    markSelectionSeenState: function(acct,from,selection,seen) {
         var me=this, 
             data=me.sel2ids(selection);
 	
@@ -1459,11 +1492,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				);
 			}
 		}
-        me.markMessagesSeenState(from,data,seen);
+        me.markMessagesSeenState(acct,from,data,seen);
     },
     
     markMessageSeenState: function(r,seen) {
         var me=this,
+			acct=me.currentAccount,
 			idmsg=r.get("idmessage"),
 			folder=me.multifolder?r.get("folder"):me.currentFolder,
             id=me.multifolder?folder+"|"+idmsg:idmsg,
@@ -1474,13 +1508,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                     me.updateRecordSeenState(r,seen);
                 }
             };
-        me.markMessagesSeenState(folder,data,seen);
+        me.markMessagesSeenState(acct,folder,data,seen);
     },
 
-    markMessagesSeenState: function(folder,data,seen) {
+    markMessagesSeenState: function(acct,folder,data,seen) {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, seen?"SeenMessages":"UnseenMessages", {
 			params: {
+				account: acct,
 				fromfolder: folder,
 				ids: data.ids,
 				multifolder: data.multifolder
@@ -1688,22 +1723,25 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			mp=me.mys.messagesPanel,
 			mv=mp.messageView;
 			ff=(me.multifolder?r.get("folder"):me.currentFolder),
+			acct=me.currentAccount;
 			idmessage=r.get("idmessage");
 	
 		if (mv.folder===ff && mv.idmessage===idmessage) {
 			mp.clearMessageView();
-			mp.showMessage(ff,idmessage);
+			mp.showMessage(acct,ff,idmessage);
 		}
 	},
 	
     actionFlag: function(flagstring) {
         var me=this,
 			selection=me.getSelection(),
+			acct=me.currentAccount,
 			folder=me.currentFolder,
 			data=me.sel2ids(selection),
 			ids=data.ids,
 			params={
                 flag: flagstring,
+				account: acct,
                 fromfolder: folder,
                 ids: ids,
                 multifolder: data.multifolder
@@ -1756,15 +1794,17 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	actionAddNote: function() {
-		var r=this.getSelectionModel().getSelection()[0];
+		var me=this,r=me.getSelectionModel().getSelection()[0],
+			acct=me.currentAccount;
 	
-		this.editNote(r.get('idmessage'),r.get("folder")||this.currentFolder);
+		me.editNote(acct,r.get('idmessage'),r.get("folder")||me.currentFolder);
 	},
 	
-    editNote: function(id,folder) {
+    editNote: function(acct,id,folder) {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, 'GetMessageNote', {
 			params: {
+				account: acct,
                 folder: folder,
                 idmessage: id
 			},
@@ -1774,7 +1814,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						title: me.res("mailnote"),
 						fn: function(btn,text) {
 							if (btn=='ok') {
-								me.saveNote(folder,id,text);
+								me.saveNote(acct,folder,id,text);
 							}
 						},
 						scope: me,
@@ -1789,10 +1829,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
     },
     
-    saveNote: function(folder,id,text) {
+    saveNote: function(acct,folder,id,text) {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, 'SaveMessageNote', {
 			params: {
+				account: acct,
                 folder: folder,
                 idmessage: id,
                 text: text
@@ -1841,13 +1882,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},	
 	
 	actionSaveMail: function() {
-		var r=this.getSelectionModel().getSelection()[0];
+		var me=this,
+			r=me.getSelectionModel().getSelection()[0],
+			acct=me.currentAccount;
 	
-		this.saveMail(r.get('idmessage'),r.get("folder")||this.currentFolder);
+		me.saveMail(acct,r.get('idmessage'),r.get("folder")||this.currentFolder);
 	},
 	
-	saveMail: function(id,folder) {
+	saveMail: function(acct,id,folder) {
         var params={
+			account: acct,
             folder: folder,
             id: id
         };
@@ -1868,10 +1912,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 
     actionViewSource: function(headers) {
         var me=this,
-			r=me.getSelectionModel().getSelection()[0];
+			r=me.getSelectionModel().getSelection()[0],
+			acct=me.currentAccount;
 	
 		WT.ajaxReq(me.mys.ID, 'GetSource', {
 			params: {
+				account: acct,
                 folder: r.get('folder')||me.currentFolder,
                 id: r.get('idmessage'),
                 headers: !!headers
@@ -1905,6 +1951,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		WT.ajaxReq(me.mys.ID, 'GroupChanged', {
 			params: {
                 group: newgroup,
+				account: me.currentAccount,
                 folder: me.currentFolder
 			},
 			callback: function(success,json) {
@@ -1915,8 +1962,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						s.sort('date', 'DESC');
 						//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 					}
-					me.mys.setFolderGroup(me.currentFolder,newgroup);
-					me.mys.showFolder(me.currentFolder);
+					me.mys.setFolderGroup(me.currentAccount,me.currentFolder,newgroup);
+					me.mys.showFolder(me.currentAccount,me.currentFolder);
 				} else {
 					WT.error(json.text);
 				}
@@ -2408,7 +2455,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			issentfolder=false;
 		
 		if (me.mys && me.currentFolder) {
-			var node=me.mys.getFolderNodeById(me.currentFolder);
+			var node=me.mys.getFolderNodeById(me.currentAccount, me.currentFolder);
 			if (node) issentfolder=(node.data.isSent||node.data.isUnderSent);
 		}
 	

@@ -46,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 	
 	mys: null,
 	pattern: null,
+	myFoldersText: null,
 	
 	searchToolbar: null,
 	
@@ -53,6 +54,8 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		var me = this;
 		
 		me.pattern=me.pattern||'';
+		
+		if (!me.myFoldersText) me.myFoldersText=me.mys.res('smartsearch-view-fldfolder-empty.lbl');
 		
 		me.searchToolbar=new Ext.Toolbar({
 			items: [
@@ -67,10 +70,10 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					triggers: {
 						clear: WTF.clearTrigger()
 					},
-					emptyText: me.mys.res('smartsearch-view-fldfolder-empty.lbl'),
+					emptyText: me.myFoldersText,
 					store: Ext.create('Ext.data.TreeStore', {
 						model: 'Sonicle.webtop.mail.model.ImapTreeModel',
-						proxy: WTF.proxy(me.mys.ID,'GetImapTree'),
+						proxy: WTF.proxy(me.mys.ID,me.acct=='archive'?'GetArchiveTree':'GetImapTree'),
 						root: {
 							id: '/',
 							text: 'Imap Tree',
@@ -383,6 +386,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 									
 										WT.ajaxReq(me.mys.ID, 'GetMessagePage', {
 											params: {
+												account: me.acct,
 												folder: folderid,
 												uid: uid,
 												rowsperpage: 50
@@ -469,6 +473,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		WT.ajaxReq(me.mys.ID, 'RunSmartSearch', {
 			params: {
 				pattern: pattern,
+				account: me.acct,
 				folder: folder,
 				trashspam: me.lref("chkTrashSpam").getValue(),
 				fromme: me.lref("chkFromMe").getValue(),
@@ -610,6 +615,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 		var win=WT.createView(me.mys.ID,'view.DockableMessageView',{
 			viewCfg: {
 				mys: me.mys,
+				acct: me.acct,
 				folder: r.get('folderid'),
 				idmessage: r.get('uid'),
 				title: r.get('subject'),

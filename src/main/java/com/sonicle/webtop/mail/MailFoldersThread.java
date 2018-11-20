@@ -44,6 +44,7 @@ public class MailFoldersThread extends Thread {
     
     private int threadCountMailFolders=1;
     Service ms;
+	MailAccount account;
     boolean abort=false;
     boolean failed=false;
     String failMessage=null;
@@ -54,10 +55,11 @@ public class MailFoldersThread extends Thread {
     int sleepCount=0;
     boolean checkAll=false;
     
-    public MailFoldersThread(Service ms, PrivateEnvironment env) {
+    public MailFoldersThread(Service ms, PrivateEnvironment env, MailAccount account) {
         super();
         this.setName("MailFoldersThread"+(threadCountMailFolders++)+"-"+env.getProfile().getUserId());
         this.ms=ms;
+		this.account=account;
     }
 
     public void setSleepInbox(int seconds) {
@@ -85,24 +87,24 @@ public class MailFoldersThread extends Thread {
         failMessage=null;
         sleepCount=0;
         try {
-            FolderCache fcroot=ms.getRootFolderCache();
+            FolderCache fcroot=account.getRootFolderCache();
             //Service.logger.debug("Entering MFT loop");
             FolderCache fcinbox=null;
-			if (ms.hasDifferentDefaultFolder()) fcinbox=fcroot;
-			else fcinbox=ms.getFolderCache("INBOX");
+			if (account.hasDifferentDefaultFolder()) fcinbox=fcroot;
+			else fcinbox=account.getFolderCache("INBOX");
 			//Check inbox only once, then via idle
 			fcinbox.checkFolder();
             while(!abort) {
                 //Service.logger.debug("MFT Synchronizing");
                     synchronized(this) {
-                        ms.checkStoreConnected();                      
+                        account.checkStoreConnected();                      
 						if (sleepCount>0) {
                             //Service.logger.debug("MailFolderThread: Checking inbox messages");
 							
 							//Don't check here inbox, it's in idle mode
                             //fcinbox.checkFolder();
 							
-                            FolderCache sfc[]=ms.getSharedFoldersCache();
+                            FolderCache sfc[]=account.getSharedFoldersCache();
                             if (sfc!=null) {
                                 for(FolderCache fc: sfc) {
                                     if (fc!=null) {

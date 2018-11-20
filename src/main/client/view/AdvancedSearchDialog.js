@@ -45,7 +45,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 	full: true,
 	
 	mys: null,
-	
+	acct: null,
 	folder: null,
 	folderText: null,
 	folderHasChildren: false,
@@ -268,6 +268,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 			pageSize: 50,
 			mys: me.mys
 		});
+		me.messageGrid.setCurrentAccount(me.acct);
 		me.add(me.messageGrid);
 		
 		if (me.gridMenu) {
@@ -348,6 +349,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 
 		WT.ajaxReq(me.mys.ID, 'RunAdvancedSearch', {
 			params: {
+				account: me.acct,
                 folder: me.searchCombo.getValue(),
                 subfolders: me.searchCheckbox.getValue(),
                 trashspam: me.searchTrashSpam.getValue(),
@@ -363,7 +365,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 					me.messageGrid.getStore().reload({
 						callback: me.gridLoaded, 
 						scope: me, 
-						params: { start: 0 }, 
+						params: { account: me.acct, start: 0 }, 
 						addRecords: false 
 					});
 				} else {
@@ -401,7 +403,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 			s=me.messageGrid.getStore(),
 			n=s.getCount();
 	
-        s.reload({ callback: me.gridLoaded, scope: me, params: { start: n }, addRecords: true });
+        s.reload({ callback: me.gridLoaded, scope: me, params: { account: me.acct, start: n }, addRecords: true });
     },
 
     gridLoaded: function() {

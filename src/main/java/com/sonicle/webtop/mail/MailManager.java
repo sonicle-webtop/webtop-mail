@@ -125,11 +125,16 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	@Override
 	public boolean sendMessage(InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) throws WTException {
+		com.sonicle.webtop.mail.Service mail = findMailService();
+		return mail.sendMsg(from, to, cc, bcc, subject, part);
+	}
+	
+	public com.sonicle.webtop.mail.Service findMailService() throws WTException {
 		WebTopSession wts = SessionContext.getCurrent();
 		if (wts == null) throw new WTException("Unable to get session");
 		com.sonicle.webtop.mail.Service mail = (com.sonicle.webtop.mail.Service)wts.getPrivateServiceById(SERVICE_ID);
 		if (mail == null) throw new WTException("Unable to get service");
-		return mail.sendMsg(from, to, cc, bcc, subject, part);
+		return mail;
 	}
 	
 	public List<Identity> listIdentities() throws WTException {
@@ -251,7 +256,8 @@ public class MailManager extends BaseManager implements IMailManager {
 			IdentityDAO idao=IdentityDAO.getInstance();
 			List<OIdentity> items=idao.selectByDomainUser(con, pid.getDomainId(),pid.getUserId());
 			for(OIdentity oi: items) {
-				idents.add(new Identity(oi));
+				Identity ident=new Identity(oi);
+				idents.add(ident);
 			}
 			
 			//add automatic shared identities

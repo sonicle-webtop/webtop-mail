@@ -296,6 +296,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		if (me.isProfileSelf()) {
 			identEdCfg = {
 				xtype: 'sotreecombo',
+				triggers: {
+					clear: WTF.clearTrigger()
+				},
 				store: Ext.create('Ext.data.TreeStore', {
 					model: 'Sonicle.webtop.mail.model.ImapTreeModel',
 					proxy: WTF.proxy(me.ID, 'GetImapTree'),
@@ -504,6 +507,10 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			xtype: 'wtopttabsection',
 			title: me.res('opts.arch.tit'),
 			items: [
+				{
+					xtype: 'soformseparator',
+					title: me.res('opts.arch.local.tit')
+				},
 				WTF.lookupCombo('id', 'desc', {
 					bind: '{record.archiveMode}',
 					store: Ext.create('Sonicle.webtop.mail.store.ArchiveMode', {
@@ -518,6 +525,23 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					fieldLabel: me.res('opts.arch.fld-keepFoldersStructure.lbl'),
 					width: 100,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				},
+				{
+					xtype: 'soformseparator',
+					title: me.res('opts.arch.external.tit')
+				},
+				{
+					xtype: 'textfield',
+					bind: {
+						value: '{record.archiveExternalUserFolder}',
+						emptyText: me.res('opts.account.fld-username-empty.lbl')
+					},
+					fieldLabel: me.res('opts.arch.fld-archiveExternalUserFolder.lbl'),
+					width: 440,
+					submitEmptyText: false,
+					needLogin: true,
+					disabled: !WT.isAdmin(),
+					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 				}
 			]
 		});
