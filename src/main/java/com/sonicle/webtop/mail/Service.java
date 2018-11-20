@@ -1190,6 +1190,7 @@ public class Service extends BaseService {
 						mbps[e].setHeader("Content-ID", "<" + attach.cid + ">");
 						mbps[e].setHeader("X-Attachment-Id", attach.cid);
 						mbps[e].setDisposition(Part.INLINE);
+						mp.setSubType("related");
 					}
 				} //end for e
 
@@ -1976,7 +1977,7 @@ public class Service extends BaseService {
 			//String htmlcontent=(String)p.getContent();
 			String htmlcontent = getTextContentAsString(p);
 			textsb.append(MailUtils.htmlToText(MailUtils.htmlunescapesource(htmlcontent)));
-			htmlsb.append(MailUtils.htmlescapefixsource(getBodyInnerHtml(htmlcontent)));
+			htmlsb.append(MailUtils.htmlescapefixsource(/*getBodyInnerHtml(*/htmlcontent/*)*/));
 			isHtml = true;
 		} else if (p.isMimeType("text/plain")) {
 			String content = getTextContentAsString(p);
