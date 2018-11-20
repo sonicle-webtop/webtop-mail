@@ -35,6 +35,7 @@ package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.AlgoUtils;
 import com.sonicle.commons.EnumUtils;
+import com.sonicle.commons.IdentifierUtils;
 import com.sonicle.commons.InternetAddressUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.CoreLocaleKey;
@@ -44,7 +45,9 @@ import java.nio.channels.*;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.RegexUtils;
+import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.http.HttpClientUtils;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.DispositionType;
@@ -72,6 +75,7 @@ import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
 import com.sonicle.webtop.core.app.sdk.BaseDocEditorDocumentHandler;
+import com.sonicle.webtop.core.app.servlet.ResourceRequest;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
 import com.sonicle.webtop.core.bol.js.JsSimple;
@@ -132,11 +136,13 @@ import com.sonicle.webtop.vfs.IVfsManager;
 import com.sun.mail.imap.*;
 import com.sun.mail.util.PropUtil;
 import java.io.*;
+import java.net.URI;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.jar.*;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.activation.*;
 import javax.mail.*;
@@ -150,6 +156,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
+import org.apache.http.client.HttpClient;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -4693,7 +4700,48 @@ public class Service extends BaseService {
                 pattern1=RegexUtils.escapeRegexSpecialChars("service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=");
                 pattern2=RegexUtils.escapeRegexSpecialChars("&url=");
                 content=StringUtils.replacePattern(content, pattern1+".{39}"+pattern2, "");
-                
+				
+				//My resources as cids?
+				if (ss.isPublicResourceLinksAsInlineAttachments()) {
+					ArrayList<JsAttachment> rescids=new ArrayList<>();
+					String match="\""+URIUtils.concat(getEnv().getCoreServiceSettings().getPublicBaseUrl(),ResourceRequest.URL);
+					while(StringUtils.contains(content, match)) {					
+						pattern1=RegexUtils.escapeRegexSpecialChars(match);
+						pattern2=RegexUtils.escapeRegexSpecialChars("\"");
+						Pattern pattern=Pattern.compile(pattern1+".*"+pattern2);
+						Matcher matcher=pattern.matcher(content);
+						matcher.find();
+						String matched=matcher.group();
+						String url=matched.substring(1,matched.length()-1);
+						URI uri=new URI(url);
+
+						// Retrieve macthed URL 
+						// and save it locally
+						logger.debug("Downloading resource file as uploaded file from URL [{}]", url);
+						HttpClient httpCli = null;
+						try {
+							httpCli = HttpClientUtils.createBasicHttpClient(HttpClientUtils.configureSSLAcceptAll(), uri);
+							InputStream is=HttpClientUtils.getContent(httpCli, uri);
+							String tag=""+msgId;
+							String filename=PathUtils.getFileName(uri.getPath());
+							UploadedFile ufile=addAsUploadedFile(tag,filename,ServletHelper.guessMediaType(filename),is);
+							rescids.add(new JsAttachment(ufile.getUploadId(),filename,ufile.getUploadId(),true,ufile.getSize()));
+							content=matcher.replaceFirst("\"cid:"+ufile.getUploadId()+"\"");
+						} catch(IOException ex) {
+							throw new WTException(ex, "Unable to retrieve webcal [{0}]", uri);
+						} finally {
+							HttpClientUtils.closeQuietly(httpCli);
+						}
+					}
+
+					//add new resource cids as attachments
+					if (rescids.size()>0) {
+						if (jsmsg.attachments==null) jsmsg.attachments=new ArrayList<>();
+						jsmsg.attachments.addAll(rescids);
+					}
+				}
+				
+				
 				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
 				String htmlcontent = MailUtils.htmlescapefixsource(content).trim();
 				if (htmlcontent.length()<6 || !htmlcontent.substring(0,6).toLowerCase().equals("<html>")) {

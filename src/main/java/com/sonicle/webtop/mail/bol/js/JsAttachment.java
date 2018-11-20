@@ -44,5 +44,17 @@ public class JsAttachment {
     public String cid;
     public Boolean inline;
     public Long fileSize;
+	
+	public JsAttachment() {
+		
+	}
+	
+	public JsAttachment(String uploadId, String fileName, String cid, boolean inline, long fileSize) {
+		this.uploadId=uploadId;
+		this.fileName=fileName;
+		this.cid=cid;
+		this.inline=inline;
+		this.fileSize=fileSize;
+	}
     
 }

@@ -158,6 +158,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(IMAP_ACL_LOWERCASE,false);
 	}
 	
+	public boolean isPublicResourceLinksAsInlineAttachments() {
+		return getBoolean(PUBLIC_RESOURCE_LINKS_AS_INLINE_ATTACHMENTS, false);
+	}
+	
 	//DEFAULTS
 	
 	public String getDefaultFolderPrefix() {
@@ -259,4 +263,5 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public long getDefaultAttachmentMaxFileSize() {
 		return getLong(DEFAULT_PREFIX + ATTACHMENT_MAXFILESIZE, (long)10485760); // 10MB
 	}
+	
 }

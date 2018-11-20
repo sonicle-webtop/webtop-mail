@@ -138,6 +138,13 @@ public class MailSettings {
 	 */
 	public static final String ARCHIVING_EXTERNAL_FOLDER_PREFIX = "archiving.external.folder.prefix";
 
+	/**
+	 * [system+domain][default]
+	 * [string]
+	 * Transform WebTop Public Resource links (e.g. Public images for mailcards) into attached inline images (cids).
+	 */
+	public static final String PUBLIC_RESOURCE_LINKS_AS_INLINE_ATTACHMENTS = "public.resource.links.as.inline.attachments";
+	
     public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
 	public static final String DMS_ARCHIVE = "archive";
 	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";

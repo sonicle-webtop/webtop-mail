@@ -1721,7 +1721,7 @@ public class FolderCache {
 	
 	protected boolean isAttachment(Part part) throws MessagingException {
 		return Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) 
-				|| Part.INLINE.equalsIgnoreCase(part.getDisposition()) 
+				/*|| Part.INLINE.equalsIgnoreCase(part.getDisposition())*/
 				|| (part.getDisposition() == null && part.getFileName() != null);
 	}
     
