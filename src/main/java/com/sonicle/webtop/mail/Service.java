@@ -2068,6 +2068,7 @@ public class Service extends BaseService {
 					sb.append("</BLOCKQUOTE>");
 				}
 			} else {
+				/*
 				//String ubody = body.toUpperCase();
 				while (true) {
 					int ix1 = StringUtils.indexOfIgnoreCase(body,"<BODY");
@@ -2086,7 +2087,8 @@ public class Service extends BaseService {
 					}
 				}
 				//body=removeStartEndTag(body,unwantedTags);
-
+				*/
+				
 				sb.append(body);
 			}
 			htmlAppendAttachmentNames(sb, attnames);
