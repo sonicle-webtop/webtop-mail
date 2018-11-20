@@ -8643,7 +8643,7 @@ public class Service extends BaseService {
 	public void processManageMailFilters(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			DateTimeZone profileTimeZone = getEnv().getProfile().getTimeZone();
+			DateTimeZone profileTz = getEnv().getProfile().getTimeZone();
 			
 			if(crud.equals(Crud.READ)) {
 				String id = ServletUtils.getStringParameter(request, "id", true);
@@ -8663,7 +8663,7 @@ public class Service extends BaseService {
 				MailFiltersType type = EnumUtils.forSerializedName(id, MailFiltersType.class);
 				List<MailFilter> filters = mailManager.getMailFilters(type);
 				
-				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, autoResp, filters, profileTimeZone);
+				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, autoResp, filters, profileTz);
 				
 				new JsonResult(js).printTo(out);
 				
@@ -8672,7 +8672,7 @@ public class Service extends BaseService {
 				
 				if (EnumUtils.equals(pl.data.id, MailFiltersType.INCOMING)) {
 					List<MailFilter> filters = JsInMailFilters.createMailFilterList(pl.data);
-					mailManager.updateAutoResponder(JsInMailFilters.createAutoResponder(pl.data));
+					mailManager.updateAutoResponder(JsInMailFilters.createAutoResponder(pl.data, profileTz));
 					mailManager.updateMailFilters(pl.data.id, filters);
 					
 					boolean isWTScript = StringUtils.equals(pl.data.activeScript, MailManager.SIEVE_WEBTOP_SCRIPT);
