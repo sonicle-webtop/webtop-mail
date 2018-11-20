@@ -81,7 +81,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean noMailcardOnReplyForward;
 	public boolean showUpcomingEvents;
 	public boolean showUpcomingTasks;
-	public String todayMailColor;
+	public String todayRowColor;
 	
 	public JsUserOptions() {}
 	

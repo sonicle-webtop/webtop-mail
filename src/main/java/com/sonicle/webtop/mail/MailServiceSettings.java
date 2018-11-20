@@ -258,8 +258,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getLong(DEFAULT_PREFIX + ATTACHMENT_MAXFILESIZE, (long)10485760); // 10MB
 	}
 	
-	public String getDefaultTodayMailColor() {
-		return getString(DEFAULT_PREFIX + MailSettings.TODAY_MAIL_COLOR, "#ffff00");
+	public String getDefaultTodayRowColor() {
+		return getString(DEFAULT_PREFIX + MailSettings.GRID_TODAY_ROW_COLOR, "#F8F8C8");
 	}
-	
 }

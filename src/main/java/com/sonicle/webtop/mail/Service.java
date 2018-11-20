@@ -8537,7 +8537,7 @@ public class Service extends BaseService {
 			co.put("autoResponderActive", mailManager.isAutoResponderActive());
 			co.put("showUpcomingEvents", us.getShowUpcomingEvents());
 			co.put("showUpcomingTasks", us.getShowUpcomingTasks());
-			co.put("todayMailColor", us.getTodayMailColor());
+			co.put("todayRowColor", us.getTodayRowColor());
 			
 			if (RunContext.isPermitted(true, SERVICE_ID, "FAX", "ACCESS")) {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());

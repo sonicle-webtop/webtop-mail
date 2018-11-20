@@ -113,7 +113,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.noMailcardOnReplyForward = mus.isNoMailcardOnReplyForward();
 				jso.showUpcomingEvents = mus.getShowUpcomingEvents();
 				jso.showUpcomingTasks = mus.getShowUpcomingTasks();
-				jso.todayMailColor = mus.getTodayMailColor();
+				jso.todayRowColor = mus.getTodayRowColor();
 
 				new JsonResult(jso).printTo(out);
 
@@ -134,7 +134,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("sharedSort")) mus.setSharedSort(pl.data.sharedSort);
 				if (pl.map.has("showUpcomingEvents")) mus.setShowUpcomingEvents(pl.data.showUpcomingEvents);
 				if (pl.map.has("showUpcomingTasks")) mus.setShowUpcomingTasks(pl.data.showUpcomingTasks);
-				if(pl.map.has("todayMailColor")) mus.setTodayMailColor(pl.data.todayMailColor);
+				if (pl.map.has("todayRowColor")) mus.setTodayRowColor(pl.data.todayRowColor);
 				
 				// Editing
 				if (pl.map.has("format")) mus.setFormat(pl.data.format);

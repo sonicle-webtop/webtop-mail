@@ -57,7 +57,17 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			seenOnOpen: WTF.checkboxBind('record', 'seenOnOpen'),
 			ingridPreview: WTF.checkboxBind('record', 'ingridPreview'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
-			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks')
+			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks'),
+			todayRowColor: {
+				bind: {bindTo: '{record.todayRowColor}'},
+				get: function(val) {
+					return !Ext.isEmpty(val) ? val.replace('#','') : val;
+				},
+				set: function(val) {
+					var rec = this.get('record');
+					rec.set('todayRowColor', !Ext.isEmpty(val) ? '#'+val : val);
+				}
+			}
 		}
 	},
 		
@@ -105,13 +115,6 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}), {
 				xtype: 'checkbox',
-				bind: '{ingridPreview}',
-				hideEmptyLabel: false,
-				boxLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
-				needReload: true,
-				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-			}, {
-				xtype: 'checkbox',
 				bind: '{sharedSeen}',
 				hideEmptyLabel: false,
 				boxLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
@@ -144,13 +147,22 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}),
 			{
-				xtype: 'sopalettefield',
-				bind: '{record.todayMailColor}',
-				colors: WT.getColorPalette(),
-				fieldLabel: me.res('opts.account.fld-color.lbl'),
-				width: 110+100,
+				xtype: 'soformseparator',
+				title: me.res('opts.main.grid.tit')
+			}, {
+				xtype: 'colorfield',
+				bind: '{todayRowColor}',
+				fieldLabel: me.res('opts.main.fld-todayRowColor.lbl'),
+				width: 140+100,
 				needReload: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
+				xtype: 'checkbox',
+				bind: '{ingridPreview}',
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
+				needReload: true,
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			},
 			{
 				xtype: 'soformseparator',

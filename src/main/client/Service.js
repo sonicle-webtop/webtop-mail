@@ -45,6 +45,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		'Sonicle.menu.StoreMenu',
 		'Sonicle.webtop.mail.model.Tag'
 	],
+	uses: [
+		'Sonicle.ColorUtils'
+	],
 
 	favoritesTree: null,
 	imapTree: null,
@@ -92,9 +95,19 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	init: function() {
-		var me=this,
-		sue = me.getVar('showUpcomingEvents'),
-		sut = me.getVar('showUpcomingTasks');
+		var me = this,
+				sue = me.getVar('showUpcomingEvents'),
+				sut = me.getVar('showUpcomingTasks'),
+				todayColor = me.getVar('todayRowColor'),
+				todaySelColor;
+		
+		if (Sonicle.ColorUtils.getBestContrast(todayColor) === '#FFFFFF') {
+			todaySelColor = Sonicle.ColorUtils.lightenDarken(todayColor, 50);
+		} else {
+			todaySelColor = Sonicle.ColorUtils.lightenDarken(todayColor, -50);
+		}
+		Sonicle.CssUtils.addRule('.wtmail-row-today', 'background:' + todayColor);
+		Sonicle.CssUtils.addRule('table.x-grid-item-selected .wtmail-row-today', 'background:' + todaySelColor);
 
 		me.initActions();
 

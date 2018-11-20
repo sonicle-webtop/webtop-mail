@@ -61,6 +61,13 @@ public class MailSettings {
 	public static final String SHOW_MESSAGE_PREVIEW_ON_ROW = "ingrid.preview";
 	
 	/**
+	 * [user][default] (#F8F8C8)
+	 * [string]
+	 * Define the row background color for today messages.
+	 */
+	public static final String GRID_TODAY_ROW_COLOR = "grid.today.color";
+	
+	/**
 	 * [user][default]
 	 * [boolean]
 	 * Activate a view showing all upcoming events.
@@ -126,7 +133,6 @@ public class MailSettings {
 	public static final String PRIORITY = "priority";
 	public static final String NO_MAILCARD_ON_REPLY_FORWARD = "no.mailcard.on.reply.forward";
 	public static final String READ_RECEIPT_CONFIRMATION = "readreceiptconfirmation";
-	public static final String TODAY_MAIL_COLOR = "todayMailColor";
 	
 	
 	/**

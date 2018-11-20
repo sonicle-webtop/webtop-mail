@@ -530,16 +530,14 @@ public class MailUserSettings extends BaseUserSettings {
 		return setObject(FAVORITES, value, Favorites.class);
 	}
 	
-	public boolean setTodayMailColor(String value) {
-		return setString(TODAY_MAIL_COLOR, value);
+	public boolean setTodayRowColor(String value) {
+		return setString(GRID_TODAY_ROW_COLOR, value);
 	}
 	
-	public String getTodayMailColor() {
-		String todayMailColor = getString(TODAY_MAIL_COLOR, null);
-		if (todayMailColor == null) todayMailColor = mss.getDefaultTodayMailColor();
-		return todayMailColor;
+	public String getTodayRowColor() {
+		String value = getString(GRID_TODAY_ROW_COLOR, null);
+		return (value != null) ? value : mss.getDefaultTodayRowColor();
 	}
-	
 	
 	public static class Favorites extends ArrayList<String> {
 		public Favorites() {
