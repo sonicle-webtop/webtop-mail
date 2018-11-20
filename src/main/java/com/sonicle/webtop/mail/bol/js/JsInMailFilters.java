@@ -34,6 +34,7 @@
 package com.sonicle.webtop.mail.bol.js;
 
 import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.mail.model.AutoResponder;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
@@ -41,6 +42,7 @@ import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.util.ArrayList;
 import java.util.List;
+import org.joda.time.DateTimeZone;
 
 /**
  *
@@ -53,10 +55,10 @@ public class JsInMailFilters {
 	public JsAutoResponder autoResponder;
 	public ArrayList<JsMailFilter> filters = new ArrayList<>();
 	
-	public JsInMailFilters(int scriptsCount, String activeScript, AutoResponder autoResponder, List<MailFilter> mailFilters) {
+	public JsInMailFilters(int scriptsCount, String activeScript, AutoResponder autoResponder, List<MailFilter> mailFilters, DateTimeZone profileTz) {
 		this.scriptsCount = scriptsCount;
 		this.activeScript = activeScript;
-		this.autoResponder = createJsAutoResponder(autoResponder);
+		this.autoResponder = createJsAutoResponder(autoResponder, profileTz);
 		
 		for(MailFilter filter : mailFilters) {
 			JsMailFilter jsmf = new JsMailFilter(this.id);
@@ -71,19 +73,25 @@ public class JsInMailFilters {
 		}
 	}
 	
-	private JsAutoResponder createJsAutoResponder(AutoResponder aut) {
+	private JsAutoResponder createJsAutoResponder(AutoResponder aut, DateTimeZone profileTz) {
 		JsAutoResponder js = new JsAutoResponder();
 		js.enabled = aut.getEnabled();
 		js.message = aut.getMessage();
 		js.addresses = aut.getAddresses();
+		js.activationStartDate = DateTimeUtils.printYmdHmsWithZone(aut.getActivationStartDate(), profileTz);
+		js.activationEndDate = DateTimeUtils.printYmdHmsWithZone(aut.getActivationEndDate(), profileTz);
+		js.daysInterval = aut.getDaysInterval();
 		return js;
 	}
 	
-	public static AutoResponder createAutoResponder(JsInMailFilters jsimf) {
+	public static AutoResponder createAutoResponder(JsInMailFilters jsimf, DateTimeZone profileTz) {
 		AutoResponder aut = new AutoResponder();
 		aut.setEnabled(jsimf.autoResponder.enabled);
 		aut.setMessage(jsimf.autoResponder.message);
 		aut.setAddresses(jsimf.autoResponder.addresses);
+		aut.setDaysInterval(jsimf.autoResponder.daysInterval);
+		aut.setActivationStartDate(DateTimeUtils.withTimeAtStartOfDay(DateTimeUtils.parseYmdHmsWithZone(jsimf.autoResponder.activationStartDate, profileTz)));
+		aut.setActivationEndDate(DateTimeUtils.withTimeAtStartOfDay(DateTimeUtils.parseYmdHmsWithZone(jsimf.autoResponder.activationEndDate, profileTz)));
 		return aut;
 	}
 	

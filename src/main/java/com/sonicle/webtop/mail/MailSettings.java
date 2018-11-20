@@ -61,6 +61,13 @@ public class MailSettings {
 	public static final String SHOW_MESSAGE_PREVIEW_ON_ROW = "ingrid.preview";
 	
 	/**
+	 * [user][default] (#F8F8C8)
+	 * [string]
+	 * Define the row background color for today messages.
+	 */
+	public static final String GRID_TODAY_ROW_COLOR = "grid.today.color";
+	
+	/**
 	 * [user][default]
 	 * [boolean]
 	 * Activate a view showing all upcoming events.

@@ -41,4 +41,7 @@ public class JsAutoResponder {
 	public Boolean enabled;
 	public String message;
 	public String addresses;
+	public String activationStartDate;
+	public String activationEndDate;
+	public short daysInterval;
 }

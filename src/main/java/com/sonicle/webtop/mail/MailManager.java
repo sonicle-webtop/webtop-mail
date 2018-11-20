@@ -793,7 +793,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		logger.debug("Working on autoresponder...");
 		AutoResponder autoResp = getAutoResponder();
 		if (autoResp.getEnabled()) {
-			ssb.setVacation(autoResp.toSieveVacation(ud.getPersonalEmail()));
+			ssb.setVacation(autoResp.toSieveVacation(ud.getPersonalEmail(), ud.getTimeZone()));
 		}
 		
 		logger.debug("Working on incoming filters...");

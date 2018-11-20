@@ -38,6 +38,40 @@ Ext.define('Sonicle.webtop.mail.model.AutoResponder', {
 	fields: [
 		WTF.field('enabled', 'boolean', false),
 		WTF.field('message', 'string', true),
-		WTF.field('addresses', 'string', true)
-	]
+		WTF.field('addresses', 'string', true),
+		WTF.field('daysInterval', 'int', true),
+		//WTF.field('skipMailingLists', 'boolean', false),
+		WTF.field('activationStartDate', 'date', true, {dateFormat: 'Y-m-d H:i:s'}),
+		WTF.field('activationEndDate', 'date', true, {dateFormat: 'Y-m-d H:i:s'})
+	],
+	
+	setActivationStartDate: function(date) {
+		var me = this,
+				startDate = Ext.isDate(date) ? date :  null;
+		
+		me.setDatePart('activationStartDate', startDate);
+		me.ensureEndCoherence(date, me.get('activationEndDate'));
+	},
+	
+	setActivationEndDate: function(date) {
+		var me = this,
+				endDate = Ext.isDate(date) ? date : null;
+		
+		me.setDatePart('activationEndDate', endDate);
+		me.ensureStartCoherence(me.get('activationStartDate'), date);
+	},
+	
+	privates: {
+		ensureEndCoherence: function(start, end) {
+			if (Ext.isDate(start) && Ext.isDate(end) && (start > end)) {
+				this.set('activationEndDate', start);
+			}
+		},
+		
+		ensureStartCoherence: function(start, end) {
+			if (Ext.isDate(start) && Ext.isDate(end) && (end < start)) {
+				this.set('activationStartDate', end);
+			}
+		}
+	}
 });

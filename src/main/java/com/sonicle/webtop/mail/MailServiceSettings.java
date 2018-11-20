@@ -60,6 +60,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public static final String SCHEDULED_EMAILS_DISABLED = "scheduled-emails.disabled";
 	public static final String SIEVE_SPAMFILTER_DISABLED = "sieve.spamfilter.disabled";
 	public static final String IMAP_ACL_LOWERCASE="imap.acl.lowercase";
+	
 
 /*	public static final String DEFAULT_FOLDER_PEFFIX = "default.folder.prefix";
 	public static final String DEFAULT_SCAN_ALL = "default.scan.all";
@@ -255,5 +256,9 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public long getDefaultAttachmentMaxFileSize() {
 		return getLong(DEFAULT_PREFIX + ATTACHMENT_MAXFILESIZE, (long)10485760); // 10MB
+	}
+	
+	public String getDefaultTodayRowColor() {
+		return getString(DEFAULT_PREFIX + MailSettings.GRID_TODAY_ROW_COLOR, "#F8F8C8");
 	}
 }

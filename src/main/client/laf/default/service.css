@@ -111,14 +111,11 @@
 .wtmail-icon-htmleditor-template-xs { background-image: url('htmleditor_template_16.png') !important; }
 
 .wtmail-row-unread TD DIV { font-weight: bold; }
-.wtmail-row-today { background-color: #F8F8C8; }
 .wtmail-row-hidden { display: none; }
 /* .wtmail-icon-testaction { background-image: url('mail_16.png') !important; }*/
 
 .wtmail-row-body { max-height: 30; color: gray }
 .wtmail-row-body-hidden { display: none; }
-
-table.x-grid-item-selected .wtmail-row-today { background-color: #e0e0b0; }
 
 /* message view classes */
 .wtmail-mv-container { padding: 0px 0px 0px 0px; background-color: #ffffff; }

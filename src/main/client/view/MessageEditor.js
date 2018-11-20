@@ -530,7 +530,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			]
 		}));
 		
-		
 		me.add(
 			me.htmlEditor=Ext.create({
 				xtype: 'wthtmleditor',
@@ -1262,7 +1261,27 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	res: function(key) {
 		return this.mys.res(key);
-	}	
+	},	
+	
+	showConfirm: function() {
+		var me = this, msg;
+		msg = me.confirmMsg || WT.res('confirm.areyousure');
+			WT.confirm(msg, function(bid) {
+				if (bid === 'yes') {
+					me.onDiscardView();
+				}
+				else if(bid === 'cancel') {
+					me.saveMessage();
+				}
+			}, me, {
+				config: {
+					buttonText: {
+						cancel: me.res('act-save.lbl')
+					}
+				}
+			});	
+				
+	}
 	
 });
 
@@ -1366,6 +1385,5 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 	clearAutosaveDirty: function() {
 		this.autosaveDirty=false;
 	}
-	
 });
 

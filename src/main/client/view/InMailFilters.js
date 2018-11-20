@@ -35,6 +35,10 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
 		'Sonicle.webtop.mail.model.InMailFilters',
+		'Sonicle.webtop.mail.store.SieveVacationDays'
+	],
+	uses: [
+		'Sonicle.Date',
 		'Sonicle.webtop.mail.view.SieveFilter'
 	],
 	
@@ -42,7 +46,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		title: '{inMailFilters.tit}',
 		iconCls: 'wtmail-icon-inMailFilters',
 		width: 560,
-		height: 500,
+		height: 600,
 		modal: true
 	},
 	modelName: 'Sonicle.webtop.mail.model.InMailFilters',
@@ -58,7 +62,54 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 			foActiveScriptVisible: WTF.foGetFn('record', 'scriptsCount', function(v) {
 				return v >= 2;
 			}),
-			foAutoRespEnabled: WTF.checkboxBind('record.autoResponder', 'enabled')
+			foAutoRespEnabled: WTF.checkboxBind('record.autoResponder', 'enabled'),
+			foAutoRespStartEnabled: {
+				bind: {bindTo: '{record.autoResponder.activationStartDate}'},
+				get: function(val) {
+					return Ext.isDate(val);
+				},
+				set: function(val) {
+					var rec = this.get('record.autoResponder');
+					if (val === true) {
+						rec.setActivationStartDate(new Date());
+					} else {
+						rec.set('activationStartDate', null);
+					}
+				}
+			},
+			foAutoRespStartDate: {
+				bind: {bindTo: '{record.autoResponder.activationStartDate}'},
+				get: function(val) {
+					return (val) ? Ext.Date.clone(val): null;
+				},
+				set: function(val) {
+					this.get('record.autoResponder').setActivationStartDate(val);
+				}
+			},
+			foAutoRespEndEnabled: {
+				bind: {bindTo: '{record.autoResponder.activationEndDate}'},
+				get: function(val) {
+					return Ext.isDate(val);
+				},
+				set: function(val) {
+					var rec = this.get('record.autoResponder');
+					if (val === true) {
+						var sdt = rec.get('activationStartDate');
+						rec.setActivationEndDate(Sonicle.Date.add(Ext.isDate(sdt) ? sdt : new Date(), {days: 1}, true));
+					} else {
+						rec.set('activationEndDate', null);
+					}
+				}
+			},
+			foAutoRespEndDate: {
+				bind: {bindTo: '{record.autoResponder.activationEndDate}'},
+				get: function(val) {
+					return (val) ? Ext.Date.clone(val): null;
+				},
+				set: function(val) {
+					this.get('record.autoResponder').setActivationEndDate(val);
+				}
+			}
 		});
 	},
 	
@@ -205,8 +256,77 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					fieldLabel: me.mys.res('sieveFilter.autoResponder.fld-addresses.lbl'),
 					emptyText: me.mys.res('sieveFilter.autoResponder.fld-addresses.emp'),
 					anchor: '100%'
+				},
+				WTF.lookupCombo('id', 'desc', {
+					bind: {
+						value: '{record.autoResponder.daysInterval}',
+						disabled: '{!fldAutoRespEnabled.checked}'
+					},
+					store: {
+						type: 'wtmailsievevacationdays',
+						autoLoad: true
+					},
+					fieldLabel: me.mys.res('sieveFilter.autoResponder.fld-daysInterval.lbl'),
+					emptyText: '1',
+					width: 230
+				}),
+				{
+					xtype: 'soformseparator',
+					bind: {
+						disabled: '{!fldAutoRespEnabled.checked}'
+					}
 				}, {
-					xtype: 'sospacer'
+					xtype: 'fieldcontainer',
+					bind: {
+						disabled: '{!fldAutoRespEnabled.checked}'
+					},
+					defaults: {
+						margin: '0 0 0 10'
+					},
+					layout: 'hbox',
+					items: [{
+						xtype: 'checkbox',
+						reference: 'fldautorespstartenabled',
+						bind: '{foAutoRespStartEnabled}',
+						hideEmptyLabel: true,
+						boxLabel: me.mys.res('sieveFilter.autoResponder.fld-enableOn.lbl'),
+						width: 220
+					}, {
+						xtype: 'datefield',
+						bind: {
+							value: '{foAutoRespStartDate}',
+							disabled: '{!fldautorespstartenabled.checked}'
+						},
+						startDay: WT.getStartDay(),
+						format: WT.getShortDateFmt(),
+						width: 140
+					}]
+				}, {
+					xtype: 'fieldcontainer',
+					bind: {
+						disabled: '{!fldAutoRespEnabled.checked}'
+					},
+					defaults: {
+						margin: '0 0 0 10'
+					},
+					layout: 'hbox',
+					items: [{
+						xtype: 'checkbox',
+						reference: 'fldautorespendenabled',
+						bind: '{foAutoRespEndEnabled}',
+						hideEmptyLabel: true,
+						boxLabel: me.mys.res('sieveFilter.autoResponder.fld-disableOn.lbl'),
+						width: 220
+					}, {
+						xtype: 'datefield',
+						bind: {
+							value: '{foAutoRespEndDate}',
+							disabled: '{!fldautorespendenabled.checked}'
+						},
+						startDay: WT.getStartDay(),
+						format: WT.getShortDateFmt(),
+						width: 140
+					}]
 				}],
 				width: '100%'
 			}]
@@ -214,7 +334,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		
 		me.on('viewload', me.onViewLoad);
 	},
-	
+			
 	onViewLoad: function(s, success) {
 		if (!success) return;
 		var me = this,
