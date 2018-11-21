@@ -142,11 +142,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						
 						case "mail":
 							me.attachFromMessages(data.grid,data.srcFolder,data.records);
+							break;
+						case "cloudAttachmentsId":
+							me.attachFromCloud(data.cloudData);
 					}
                     return true;
                 }
             });		
 			dz.addToGroup("mail");
+			dz.addToGroup("cloudAttachmentsId");
         });
 		
 		me.recgrid=Ext.create({
@@ -1133,7 +1137,38 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 			}
 		});
-    },	
+    },
+	
+	attachFromCloud: function(data) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, "AttachFromCloud", {
+			params: {
+				fileId: data.fileId,
+                mtype: data.mtype,
+				name: data.name,
+				size: data.size,
+				type: data.type,
+				path: data.path,
+				storeId: data.storeId
+			},
+			callback: function(success,json) {
+				if (success) {
+					var d=json.data;
+					me.attlist.addAttachment(
+						{ 
+							fileName: d.name, 
+							cid: null,
+							inline: false,
+							fileSize: d.size,
+							uploadId: d.uploadId
+						}
+					);
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});
+	},
 	
 	reloadQuickParts: function() {
 		var me=this;

@@ -157,6 +157,7 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.http.client.HttpClient;
+import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 
@@ -4924,6 +4925,39 @@ public class Service extends BaseService {
 		}
 	}
 	
+	public void processAttachFromCloud(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String fileId = request.getParameter("fileId");
+			String mType = request.getParameter("mtype");
+			String name = request.getParameter("name");
+			String size = request.getParameter("size");
+			String path = request.getParameter("path");
+			int storeId = Integer.valueOf(request.getParameter("storeId"));
+			
+			FileObject fileObject = vfsmanager.getStoreFile(storeId, path);
+			
+			name = MailUtils.decodeQString(name);
+			
+			File file = WT.createTempFile();
+			int fileSize=IOUtils.copy(fileObject.getContent().getInputStream(), new FileOutputStream(file));
+			WebTopSession.UploadedFile uploadedFile = new WebTopSession.UploadedFile(false, this.SERVICE_ID, file.getName(), null, name, fileSize, mType);
+			environment.getSession().addUploadedFile(uploadedFile);
+			
+			MapItem data = new MapItem();
+			data.add("uploadId", uploadedFile.getUploadId());
+			data.add("name", uploadedFile.getFilename());
+			data.add("size", uploadedFile.getSize());
+			new JsonResult(data).printTo(out);
+			
+		} catch (FileSystemException | WTException ex) {
+			Service.logger.error("Exception",ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		} catch (Exception ex) {
+			Service.logger.error("Exception",ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+
 	public void processCopyAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			MailAccount fromaccount=getAccount(request.getParameter("fromaccount"));
