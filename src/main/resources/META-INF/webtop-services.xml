@@ -82,6 +82,10 @@
 		<publicServiceClassName></publicServiceClassName>
 		<jobServiceClassName>JobService</jobServiceClassName>
 		
+		<restApis>
+			<restApi oasFile="openapi-v1.json" />
+		</restApis>
+		
 		<permissions>
 			<permission group="DMS_DOCUMENT_MANAGEMENT" actions="ACCESS" />
 			<permission group="MAIL_WORKFLOW" actions="ACCESS" />

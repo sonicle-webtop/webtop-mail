@@ -14,12 +14,17 @@
 	</parent>
 	
 	<properties>
+		<!-- OVERRIDE DEFAULT JAVA VERSION (remove when whole transition is completed) -->
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		
 		<!-- WEBTOP SERVICE CONFIGURATION -->
 		<webtop.service.package>com.sonicle.webtop.mail</webtop.service.package>
 		<webtop.service.jsPackage>Sonicle.webtop.mail</webtop.service.jsPackage>
 		<webtop.service.i18n.languages>en,it,es,de,hr</webtop.service.i18n.languages>
 		<webtop.service.i18n.tx.push.languages>it</webtop.service.i18n.tx.push.languages>
 		<webtop.service.i18n.tx.pull.languages>es,de,hr</webtop.service.i18n.tx.pull.languages>
+		<webtop.service.restApi.oas>openapi-v1.json</webtop.service.restApi.oas>
 	</properties>
 	
 	<dependencies>

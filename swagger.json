@@ -1,0 +1,99 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "version" : "v1",
+    "title" : "WebTop Mail",
+    "contact" : {
+      "email" : "dev-team@sonicle.com"
+    }
+  },
+  "security" : [ {
+    "Basic authentication" : [ ]
+  } ],
+  "paths" : {
+    "/settings/external-archiving" : {
+      "get" : {
+        "tags" : [ "settings" ],
+        "summary" : "Get configuration data",
+        "operationId" : "getExternalArchivingConfiguration",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "targetProfileId",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/ExternalArchivingSettings"
+            }
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions" : {
+    "Basic authentication" : {
+      "type" : "basic"
+    }
+  },
+  "definitions" : {
+    "ApiError" : {
+      "type" : "object",
+      "required" : [ "code" ],
+      "properties" : {
+        "code" : {
+          "type" : "integer",
+          "minimum" : 400,
+          "maximum" : 599
+        },
+        "description" : {
+          "type" : "string",
+          "example" : "Bad query parameter [$size]: Invalid integer value [abc]"
+        }
+      },
+      "description" : "This general detailed error structure is used throughout this API.",
+      "example" : "{\n  \"code\": 400,\n  \"description\": \"Bad query parameter [$size]: Invalid integer value [abc]\"\n}"
+    },
+    "ExternalArchivingSettings" : {
+      "type" : "object",
+      "required" : [ "enabled", "host", "port", "protocol", "type" ],
+      "properties" : {
+        "enabled" : {
+          "type" : "boolean",
+          "description" : "Enabled status"
+        },
+        "type" : {
+          "type" : "string",
+          "description" : "Archiving type"
+        },
+        "host" : {
+          "type" : "string",
+          "description" : "IMAP server host"
+        },
+        "port" : {
+          "type" : "integer",
+          "description" : "IMAP server port"
+        },
+        "protocol" : {
+          "type" : "string",
+          "description" : "IMAP server protocol"
+        },
+        "username" : {
+          "type" : "string",
+          "description" : "Account username"
+        },
+        "password" : {
+          "type" : "string",
+          "description" : "Account password"
+        },
+        "folderPrexif" : {
+          "type" : "string",
+          "description" : "IMAP folder prefix"
+        }
+      }
+    }
+  }
+}
