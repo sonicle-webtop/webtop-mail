@@ -14,7 +14,7 @@ import javax.validation.Valid;
 
 @Path("/settings")
 @Api(description = "the settings API")
-@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2018-11-21T12:32:34.177+01:00")
+@javax.annotation.Generated(value = "io.swagger.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2018-11-22T11:28:07.387+01:00")
 public abstract class SettingsApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET

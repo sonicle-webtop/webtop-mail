@@ -89,9 +89,13 @@
           "type" : "string",
           "description" : "Account password"
         },
-        "folderPrexif" : {
+        "folderPrefix" : {
           "type" : "string",
           "description" : "IMAP folder prefix"
+        },
+        "minage" : {
+          "type" : "integer",
+          "description" : "Archive messages older than days"
         }
       }
     }

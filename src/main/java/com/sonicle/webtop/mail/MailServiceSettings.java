@@ -78,6 +78,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(ARCHIVING_EXTERNAL_FOLDER_PREFIX,null);
 	}
 	
+	public int getArchivingExternalMinAge() {
+		return getInteger(ARCHIVING_EXTERNAL_MINAGE, 365*5);
+	}
+	
     public boolean isAutocreateSpecialFolders() {
         return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);
     }
