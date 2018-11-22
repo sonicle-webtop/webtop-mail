@@ -303,7 +303,7 @@ public class MailUserProfile {
     }
 	
 	private boolean schemeWantsUserWithDomain(String directoryScheme) {
-		return "ad".equals(directoryScheme) || "ldap".equals(directoryScheme);
+		return "ad".equals(directoryScheme) || directoryScheme.startsWith("ldap");
 	}
     
 	private boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
