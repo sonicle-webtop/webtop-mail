@@ -69,29 +69,6 @@ public class Settings extends SettingsApi {
 			return respError(ex);
 		}
 	}
-
-	/*
-	public Response getExternalArchivingConfiguration222(String targetProfileId) {
-		UserProfileId currentProfileId = RunContext.getRunProfileId();
-		
-		try {
-			//TODO: Allow calls for domain admin
-			RunContext.ensureIsWebTopAdmin();
-			
-			if (RunContext.isSysAdmin()) {
-				if (StringUtils.isBlank(domainId)) return respErrorBadRequest("Missing parameter [domainId]");
-			}
-			MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, domainId);
-			
-			ExternalArchivingSettings item = createExternalArchivingSettings(mss);
-			return respOk(item);
-			
-		} catch(Exception ex) {
-			logger.error("[{}] getExternalArchivingConfiguration()", currentProfileId, ex);
-			return respError(ex);
-		}
-	}
-	*/
 	
 	private ExternalArchivingSettings createExternalArchivingSettings(MailServiceSettings mss) {
 		return new ExternalArchivingSettings()
@@ -102,7 +79,8 @@ public class Settings extends SettingsApi {
 				.protocol(mss.getArchivingExternalProtocol())
 				.username(mss.getArchivingExternalUsername())
 				.password(mss.getArchivingExternalPassword())
-				.folderPrexif(mss.getArchivingExternalFolderPrefix());
+				.folderPrefix(mss.getArchivingExternalFolderPrefix())
+				.minage(mss.getArchivingExternalMinAge());
 	}
 	
 	@Override

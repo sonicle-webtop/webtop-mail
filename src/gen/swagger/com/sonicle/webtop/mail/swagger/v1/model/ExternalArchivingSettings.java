@@ -18,7 +18,8 @@ public class ExternalArchivingSettings   {
   private @Valid String protocol = null;
   private @Valid String username = null;
   private @Valid String password = null;
-  private @Valid String folderPrexif = null;
+  private @Valid String folderPrefix = null;
+  private @Valid Integer minage = null;
 
   /**
    * Enabled status
@@ -154,19 +155,37 @@ public class ExternalArchivingSettings   {
   /**
    * IMAP folder prefix
    **/
-  public ExternalArchivingSettings folderPrexif(String folderPrexif) {
-    this.folderPrexif = folderPrexif;
+  public ExternalArchivingSettings folderPrefix(String folderPrefix) {
+    this.folderPrefix = folderPrefix;
     return this;
   }
 
   
   @ApiModelProperty(value = "IMAP folder prefix")
-  @JsonProperty("folderPrexif")
-  public String getFolderPrexif() {
-    return folderPrexif;
+  @JsonProperty("folderPrefix")
+  public String getFolderPrefix() {
+    return folderPrefix;
   }
-  public void setFolderPrexif(String folderPrexif) {
-    this.folderPrexif = folderPrexif;
+  public void setFolderPrefix(String folderPrefix) {
+    this.folderPrefix = folderPrefix;
+  }
+
+  /**
+   * Archive messages older than days
+   **/
+  public ExternalArchivingSettings minage(Integer minage) {
+    this.minage = minage;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "Archive messages older than days")
+  @JsonProperty("minage")
+  public Integer getMinage() {
+    return minage;
+  }
+  public void setMinage(Integer minage) {
+    this.minage = minage;
   }
 
 
@@ -186,12 +205,13 @@ public class ExternalArchivingSettings   {
         Objects.equals(protocol, externalArchivingSettings.protocol) &&
         Objects.equals(username, externalArchivingSettings.username) &&
         Objects.equals(password, externalArchivingSettings.password) &&
-        Objects.equals(folderPrexif, externalArchivingSettings.folderPrexif);
+        Objects.equals(folderPrefix, externalArchivingSettings.folderPrefix) &&
+        Objects.equals(minage, externalArchivingSettings.minage);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(enabled, type, host, port, protocol, username, password, folderPrexif);
+    return Objects.hash(enabled, type, host, port, protocol, username, password, folderPrefix, minage);
   }
 
   @Override
@@ -206,7 +226,8 @@ public class ExternalArchivingSettings   {
     sb.append("    protocol: ").append(toIndentedString(protocol)).append("\n");
     sb.append("    username: ").append(toIndentedString(username)).append("\n");
     sb.append("    password: ").append(toIndentedString(password)).append("\n");
-    sb.append("    folderPrexif: ").append(toIndentedString(folderPrexif)).append("\n");
+    sb.append("    folderPrefix: ").append(toIndentedString(folderPrefix)).append("\n");
+    sb.append("    minage: ").append(toIndentedString(minage)).append("\n");
     sb.append("}");
     return sb.toString();
   }

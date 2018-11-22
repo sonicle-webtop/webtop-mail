@@ -104,46 +104,53 @@ public class MailSettings {
 	public static final String ARCHIVING_EXTERNAL_TYPE = "archiving.external.type";
 	
 	/**
-	 * [system+domain][default]
+	 * [system+domain]
 	 * [string]
 	 * IMAP host of the external archiving account. Defaults to "localhost".
 	 */
 	public static final String ARCHIVING_EXTERNAL_HOST = "archiving.external.host";
 	
 	/**
-	 * [system+domain][default]
+	 * [system+domain]
 	 * [int]
 	 * IMAP port of the external archiving account. Defaults to 143.
 	 */
 	public static final String ARCHIVING_EXTERNAL_PORT = "archiving.external.port";
 	
 	/**
-	 * [system+domain][default]
+	 * [system+domain]
 	 * [int]
 	 * Protocol of the external archiving account. May be imap or imaps. Defaults to imap.
 	 */
 	public static final String ARCHIVING_EXTERNAL_PROTOCOL = "archiving.external.protocol";
 	
 	/**
-	 * [system+domain][default]
+	 * [system+domain]
 	 * [string]
 	 * IMAP user of the external archiving account. Defaults to "domain-archive".
 	 */
 	public static final String ARCHIVING_EXTERNAL_USERNAME = "archiving.external.username";
 
 	/**
-	 * [system+domain][default]
+	 * [system+domain]
 	 * [string]
 	 * IMAP password of the external archiving account. Defaults to "secret".
 	 */
 	public static final String ARCHIVING_EXTERNAL_PASSWORD = "archiving.external.password";
 
 	/**
-	 * [system+domain][default]
+	 * [system+domain]
 	 * [string]
 	 * IMAP folder prefix of the external archiving account. Defaults to null.
 	 */
 	public static final String ARCHIVING_EXTERNAL_FOLDER_PREFIX = "archiving.external.folder.prefix";
+	
+	/**
+	 * [system+domain]
+	 * [integer]
+	 * Messages older that X days will be archived, newer messages will be skipped.
+	 */
+	public static final String ARCHIVING_EXTERNAL_MINAGE = "archiving.external.minage";
 
 	/**
 	 * [system+domain][default]
