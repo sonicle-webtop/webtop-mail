@@ -61,7 +61,7 @@ public class MailUserProfile {
     
 	public final static Logger logger = (Logger) LoggerFactory.getLogger(MailUserProfile.class);
 	
-    private PrivateEnvironment env;
+    //private PrivateEnvironment env;
     private String folderPrefix;
     private boolean scanAll;
     private int scanSeconds;
@@ -83,18 +83,20 @@ public class MailUserProfile {
 	private int numMessageList;
     private MailManager mman;
 
-    public MailUserProfile(PrivateEnvironment env, Service ms) {
-        this.env=env;
-		UserProfile profile=env.getProfile();
+    //public MailUserProfile(PrivateEnvironment env, Service ms) {
+    public MailUserProfile(Connection con, MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile) {
+        //this.env=env;
+		//UserProfile profile=env.getProfile();
         
-		Connection con=null;
+		//Connection con=null;
 		try {
-			con=ms.getConnection();
-            mman=(MailManager)WT.getServiceManager(ms.SERVICE_ID);
+			//con=ms.getConnection();
+            //mman=(MailManager)WT.getServiceManager(ms.SERVICE_ID);
+			this.mman=mman;
 			
 			Principal principal=profile.getPrincipal();
 			
-			MailUserSettings mus=ms.getMailUserSettings();
+			//MailUserSettings mus=ms.getMailUserSettings();
 			mailProtocol=mus.getProtocol();
 			mailHost=mus.getHost();
 			mailPort=mus.getPort();
@@ -124,12 +126,12 @@ public class MailUserProfile {
 			//If LDAP overwrite any null value with specific LDAP default values
 			com.sonicle.security.auth.directory.AbstractDirectory dir=DirectoryManager.getManager().getDirectory(ad.getDirUri().getScheme());
 			if (ad!=null && dir!=null && dir instanceof com.sonicle.security.auth.directory.AbstractLdapDirectory) {
-				MailServiceSettings mss=ms.getMailServiceSettings();
+				//MailServiceSettings mss=ms.getMailServiceSettings();
 				if (mailHost==null) mailHost=mss.getDefaultHost();
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
 				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
-				if (ms.schemeWantsUserWithDomain(ad)) mailUsername+="@"+ad.getInternetName();
+				if (schemeWantsUserWithDomain(ad)) mailUsername+="@"+ad.getInternetName();
 				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
 			}
 			
@@ -190,6 +192,11 @@ public class MailUserProfile {
 		}
     }
     
+	private boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
+		String scheme=ad.getDirUri().getScheme();
+		return scheme.equals("ad")||scheme.startsWith("ldap");
+	}
+	
     public String getFolderPrefix() {
         return folderPrefix;
     }
