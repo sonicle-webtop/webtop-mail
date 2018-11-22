@@ -32,6 +32,28 @@
           }
         }
       }
+    },
+    "/accounts" : {
+      "get" : {
+        "tags" : [ "accounts" ],
+        "summary" : "Lists accounts",
+        "operationId" : "getAccounts",
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "targetProfileId",
+          "in" : "query",
+          "required" : false,
+          "type" : "string"
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "Success",
+            "schema" : {
+              "$ref" : "#/definitions/Account"
+            }
+          }
+        }
+      }
     }
   },
   "securityDefinitions" : {
@@ -96,6 +118,20 @@
         "minage" : {
           "type" : "integer",
           "description" : "Archive messages older than days"
+        }
+      }
+    },
+    "Account" : {
+      "type" : "object",
+      "properties" : {
+        "userId" : {
+          "type" : "string"
+        },
+        "displayName" : {
+          "type" : "string"
+        },
+        "mailUsername" : {
+          "type" : "string"
         }
       }
     }

@@ -38,10 +38,14 @@ import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.CredentialAlgorithm;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.DirectoryManager;
+import com.sonicle.security.auth.directory.AbstractDirectory;
+import com.sonicle.security.auth.directory.AbstractLdapDirectory;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
+import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.util.Encryption;
 import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.model.Identity;
@@ -83,14 +87,120 @@ public class MailUserProfile {
 	private int numMessageList;
     private MailManager mman;
 
-    //public MailUserProfile(PrivateEnvironment env, Service ms) {
-    public MailUserProfile(Connection con, MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile) {
+    public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, String dirScheme) {
+		this.mman=mman;
+		UserProfileId profile = mman.getTargetProfileId();
+		Connection con = null;
+		
+		try {
+			Principal principal = RunContext.getPrincipal();
+			con = WT.getConnection(mman.SERVICE_ID);
+			
+			//MailUserSettings mus=ms.getMailUserSettings();
+			mailProtocol=mus.getProtocol();
+			mailHost=mus.getHost();
+			mailPort=mus.getPort();
+			mailUsername=mus.getUsername();
+			mailPassword=mus.getPassword();
+			
+			//Use AD properties if it can provide them
+			//AuthenticationDomain ad=principal.getAuthenticationDomain();
+/*			if (ad!=null && ad.getProperty("mail.protocol",null)!=null) {
+				mailProtocol=ad.getProperty("mail.protocol",null);
+				mailHost=ad.getProperty("mail.host",null);
+				mailPort=ad.getProperty("mail.port",0);
+				mailUsername=ad.getProperty("mail.username",null);
+				mailPassword=ad.getProperty("mail.password",null);
+			} else {*/
+				OUserMap omap=UserMapDAO.getInstance().selectById(con, profile.getDomainId(), profile.getUserId());
+				if (omap!=null) {
+					mailProtocol=omap.getMailProtocol();
+					mailHost=omap.getMailHost();
+					mailPort=omap.getMailPort();
+					mailUsername=omap.getMailUser();
+					mailPassword=omap.getMailPassword();
+				}
+			//}
+			
+
+			//If LDAP overwrite any null value with specific LDAP default values
+			com.sonicle.security.auth.directory.AbstractDirectory dir=DirectoryManager.getManager().getDirectory(dirScheme);
+			if (dir!=null && dir instanceof com.sonicle.security.auth.directory.AbstractLdapDirectory) {
+				//MailServiceSettings mss=ms.getMailServiceSettings();
+				if (mailHost==null) mailHost=mss.getDefaultHost();
+				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
+				if (mailPort==0) mailPort=mss.getDefaultPort();
+				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=profile.getUserId();
+				if (schemeWantsUserWithDomain(dirScheme)) mailUsername+="@"+WT.getDomainInternetName(profile.getDomainId());
+				if (principal!=null && (mailPassword==null||mailPassword.trim().length()==0)) mailPassword=new String(principal.getPassword());
+			}
+			
+			//If still something is invalid, provides defaults
+			if (mailHost==null) mailHost="localhost";
+			if (mailProtocol==null) mailProtocol="imap";
+			if (mailPort==0) {
+				switch(mailProtocol) {
+					case "imap":
+						mailPort=143;
+						break;
+						
+					case "imaps":
+						mailPort=993;
+						break;
+				}
+			}
+			
+			//TODO: encrypted mail password
+			//CredentialAlgorithm encpasswordType=principal.getCredentialAlgorithm();
+			//String encpassword=principal.getCredential();
+			//if (encpasswordType==null) encpassword=new String(principal.getPassword());
+
+			if (mailUsername==null||mailUsername.trim().length()==0 && principal!=null) mailUsername=profile.getUserId();
+			if (principal!=null && (mailPassword==null||mailPassword.trim().length()==0)) mailPassword=new String(principal.getPassword());
+			//else {
+			//	if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
+			//		mailPassword=Encryption.decipher(mailPassword,encpassword);
+			//}
+			
+			folderPrefix=mus.getFolderPrefix();
+			scanAll=mus.isScanAll();
+			scanSeconds=mus.getScanSeconds();
+			scanCycles=mus.getScanCycles();
+			folderSent=mus.getFolderSent();
+			folderDrafts=mus.getFolderDrafts();
+			folderTrash=mus.getFolderTrash();
+			folderArchive=mus.getFolderArchive();
+			folderSpam=mus.getFolderSpam();
+			replyTo=mus.getReplyTo();
+			sharedSort=mus.getSharedSort();
+			includeMessageInReply=mus.isIncludeMessageInReply();
+			numMessageList=mus.getPageRows();
+			
+			//List<OIdentity> oids=IdentityDAO.getInstance().selectByDomainUser(con, profile.getDomainId(), profile.getUserId());
+			//identities=new Identity[oids.size()];
+			//int i=0;
+			//for(OIdentity oid: oids) {
+            //    Identity ident=new Identity(oid.getIdentityId(),oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
+			//	identities[i++]=ident;
+			//}
+			identities=mman.listIdentities();
+			
+			
+		} catch(Exception ex) {
+			logger.error("Error mapping mail user", ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	
+    public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile) {
         //this.env=env;
 		//UserProfile profile=env.getProfile();
         
-		//Connection con=null;
+		Connection con=null;
 		try {
-			//con=ms.getConnection();
+			con = WT.getConnection(mman.SERVICE_ID);
             //mman=(MailManager)WT.getServiceManager(ms.SERVICE_ID);
 			this.mman=mman;
 			
@@ -191,6 +301,10 @@ public class MailUserProfile {
 			DbUtils.closeQuietly(con);
 		}
     }
+	
+	private boolean schemeWantsUserWithDomain(String directoryScheme) {
+		return "ad".equals(directoryScheme) || "ldap".equals(directoryScheme);
+	}
     
 	private boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
 		String scheme=ad.getDirUri().getScheme();

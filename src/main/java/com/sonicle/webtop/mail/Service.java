@@ -340,11 +340,7 @@ public class Service extends BaseService {
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
 		us = new MailUserSettings(profile.getId(),ss);
 		//mprofile = new MailUserProfile(environment,this);
-		try {
-			mprofile = new MailUserProfile(getConnection(),mailManager,ss,us,profile);
-		} catch(SQLException exc) {
-			logger.debug("Error getting service db connection",exc);
-		}
+		mprofile = new MailUserProfile(mailManager,ss,us,profile);
 		String mailUsername = mprofile.getMailUsername();
 		String mailPassword = mprofile.getMailPassword();
 		String authorizationId=mailUsername;
