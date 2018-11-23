@@ -268,7 +268,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		me.imapTree.getPlugin('cellediting').on("beforeedit",function(editor , context , eOpts) {
 			var r=context.record;
-			if (r.get("isSharedRoot")||r.get("isInbox")||r.get("isDrafts")||r.get("isSent")||r.get("isTrash")||r.get("isSpam")||r.get("isArchive")||!r.get("canRename")) return false;
+			if (!r.get("canRename")) return false;
 		});
 
 		var trees=[
