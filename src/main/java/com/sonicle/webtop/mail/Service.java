@@ -2535,6 +2535,11 @@ public class Service extends BaseService {
 			} else if (mc.isScanEnabled()) {
 				ss += ", scanEnabled: true";
 			}
+			
+			boolean canRename=true;
+			if (mc.isInbox() || mc.isSpecial() || mc.isSharedFolder() || (mc.getParent()!=null && mc.getParent().isSharedFolder())) canRename=false;
+			ss += ", canRename: "+canRename;
+			
 			ss += ", account: '"+account.getId()+"'";
 			ss += "},";
 			out.print(ss);
