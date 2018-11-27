@@ -1,3 +1,12 @@
+$	5.5.0
+	%	Version 5.5.0
+	*	<h1>External Archive</h1>
+		<p>If external archiving is configured by the administrator, a new context menu of the tree 
+		allows to show or hide the archive area, enabling access to older mails when necessary.</p>
+		<img src="5.5.0_externalarchive.png"/>
+	*	<h1>Customize today's rows background color</h1>
+		<p>A new mail user option allows to customize the background color of today's mail rows.</p>
+		<img src="5.5.0_todayscolor.png"/>
 $	5.3.2
 	%	Version 5.3.2
 	*	<h1>Paste emails</h1>

@@ -1,3 +1,12 @@
+$	5.5.0
+	%	Versione 5.5.0
+	*	<h1>Archivio Esterno</h1>
+		<p>Se l'archiviazione esterna è configurata dall'amministratore, una nuova voce di menu contestuale all'albero
+		consente di mostrare o nascondere l'area di archiviazione, permettendo l'accesso alle mail vecchie quando necessario.</p>
+		<img src="5.5.0_externalarchive.png"/>
+	*	<h1>Personalizzazione colore di sfondo delle righe mail di oggi</h1>
+		<p>Una nuova opzione utente permette di personalizzare il colore di sfondo delle righe mail di oggi.</p>
+		<img src="5.5.0_todayscolor.png"/>
 $	5.3.2
 	%	Versione 5.3.2
 	*	<h1>Incolla email</h1>
