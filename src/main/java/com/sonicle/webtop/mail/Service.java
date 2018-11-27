@@ -4933,21 +4933,23 @@ public class Service extends BaseService {
 	
 	public void processAttachFromCloud(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
-			String fileId = request.getParameter("fileId");
-			String mType = request.getParameter("mtype");
-			String name = request.getParameter("name");
-			String size = request.getParameter("size");
-			String path = request.getParameter("path");
-			int storeId = Integer.valueOf(request.getParameter("storeId"));
+			int storeId = ServletUtils.getIntParameter(request, "storeId", true);
+			String path = ServletUtils.getStringParameter(request, "path", true);
+			String tag = ServletUtils.getStringParameter(request, "tag", true);
 			
-			FileObject fileObject = vfsmanager.getStoreFile(storeId, path);
-			
-			name = MailUtils.decodeQString(name);
-			
-			File file = WT.createTempFile();
-			int fileSize=IOUtils.copy(fileObject.getContent().getInputStream(), new FileOutputStream(file));
-			WebTopSession.UploadedFile uploadedFile = new WebTopSession.UploadedFile(false, this.SERVICE_ID, file.getName(), null, name, fileSize, mType);
-			environment.getSession().addUploadedFile(uploadedFile);
+			WebTopSession.UploadedFile uploadedFile = null;
+			FileObject fo = vfsmanager.getStoreFile(storeId, path);
+			if (fo == null) throw new WTException("Unable to get file [{}, {}]", storeId, path);
+			InputStream is = null;
+			try {
+				is = fo.getContent().getInputStream();
+				String name = fo.getName().getBaseName();
+				String mediaType = ServletHelper.guessMediaType(name, true);
+				uploadedFile = addAsUploadedFile(tag, name, mediaType, is);
+			} finally {
+				IOUtils.closeQuietly(is);
+			}
+			if (uploadedFile == null) throw new WTException("Unable to prepare uploaded file");
 			
 			MapItem data = new MapItem();
 			data.add("uploadId", uploadedFile.getUploadId());
