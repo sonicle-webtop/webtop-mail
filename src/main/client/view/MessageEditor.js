@@ -139,18 +139,19 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						case "attachment":
 							me.attachFromMail(data.params);
 							break;
-						
 						case "mail":
 							me.attachFromMessages(data.grid,data.srcFolder,data.records);
 							break;
-						case "cloudAttachmentsId":
-							me.attachFromCloud(data.cloudData);
+						case "wtvfs-storefile":
+							if (data.storeFile) {
+								me.attachFromCloud(data.storeFile);
+							}
 					}
                     return true;
                 }
             });		
 			dz.addToGroup("mail");
-			dz.addToGroup("cloudAttachmentsId");
+			dz.addToGroup("wtvfs-storefile");
         });
 		
 		me.recgrid=Ext.create({
@@ -1139,30 +1140,24 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		});
     },
 	
-	attachFromCloud: function(data) {
-		var me=this;
-		WT.ajaxReq(me.mys.ID, "AttachFromCloud", {
+	attachFromCloud: function(storeFileData) {
+		var me = this;
+		WT.ajaxReq(me.mys.ID, 'AttachFromCloud', {
 			params: {
-				fileId: data.fileId,
-                mtype: data.mtype,
-				name: data.name,
-				size: data.size,
-				type: data.type,
-				path: data.path,
-				storeId: data.storeId
+				storeId: storeFileData.storeId,
+				path: storeFileData.path,
+				tag: me.msgId
 			},
 			callback: function(success,json) {
 				if (success) {
-					var d=json.data;
-					me.attlist.addAttachment(
-						{ 
-							fileName: d.name, 
-							cid: null,
-							inline: false,
-							fileSize: d.size,
-							uploadId: d.uploadId
-						}
-					);
+					var data = json.data;
+					me.attlist.addAttachment({ 
+						fileName: data.name, 
+						cid: null,
+						inline: false,
+						fileSize: data.size,
+						uploadId: data.uploadId
+					});
 				} else {
 					WT.error(json.message);
 				}
