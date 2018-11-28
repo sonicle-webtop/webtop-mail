@@ -607,8 +607,12 @@ public class Service extends BaseService {
 		from.markDmsArchivedMessages(nuids,fullthreads);
 	}
 	
-	private void deleteAutosavedDraft(MailAccount account, long msgId) throws MessagingException {
-		account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
+	private void deleteAutosavedDraft(MailAccount account, long msgId) {
+		try {
+			account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
+		} catch(MessagingException exc) {
+			logger.error("Error deleting automatic draft",exc);
+		}
 	}
 	
 	private MailAccount getAccount(Identity ident) {
