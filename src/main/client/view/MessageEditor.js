@@ -724,10 +724,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			rg=me.recgrid,
 			c=rg.getRecipientsCount();
 	
-        me.getModel().setExtraParams({
-            msgId: me.msgId
-        });
-        
         //me.sendMask=new Ext.LoadMask(me.htmlEditor.wrap, {msg:WT.res("loading")});
 		if (c===1) {
 			var r=c-1,
@@ -769,6 +765,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		if (data.receipt) me.getRef("chkReceipt").toggle(true);
 		if (data.priority) me.getRef("chkPriority").toggle(true);
+		
 		me.beginNew({
 			data: data
 		});
@@ -815,6 +812,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	sendMessage: function() {
         var me=this;
         me.getModel().setExtraParams({
+			msgId: me.msgId,
             action: 'SendMessage',
 			sendAction: 'send',
 			isFax: me.fax
@@ -868,6 +866,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     saveMessage: function() {
         var me=this;
         me.getModel().setExtraParams({
+			msgId: me.msgId,
             action: 'SaveMessage',
 			sendAction: 'save'
         });
@@ -928,6 +927,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	schedule: function(date,time,notify) {
         var me=this;
         me.getModel().setExtraParams({
+			msgId: me.msgId,
             action: 'ScheduleMessage',
 			sendAction: 'schedule',
 			scheddate: Ext.Date.format(date,'d/m/Y'),
