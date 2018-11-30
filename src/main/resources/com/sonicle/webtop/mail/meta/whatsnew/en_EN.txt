@@ -7,6 +7,9 @@ $	5.5.0
 	*	<h1>Customize today's rows background color</h1>
 		<p>A new mail user option allows to customize the background color of today's mail rows.</p>
 		<img src="5.5.0_todayscolor.png"/>
+	*	<h1>Vacation start/end dates</h1>
+		<p>The vacation management panel allows now to specify start and end dates for the auto-responder.</p>
+		<img src="5.5.0_sievevacationdates.png"/>
 $	5.3.2
 	%	Version 5.3.2
 	*	<h1>Paste emails</h1>

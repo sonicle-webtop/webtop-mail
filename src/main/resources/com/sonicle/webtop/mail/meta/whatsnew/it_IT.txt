@@ -7,6 +7,9 @@ $	5.5.0
 	*	<h1>Personalizzazione colore di sfondo delle righe mail di oggi</h1>
 		<p>Una nuova opzione utente permette di personalizzare il colore di sfondo delle righe mail di oggi.</p>
 		<img src="5.5.0_todayscolor.png"/>
+	*	<h1>Date inizio/fine per messaggio assenza</h1>
+		<p>Il pannello di gestione del messaggio di assenza, consente ora di specificare anche la data inizio/fine per il risponditore automatico.</p>
+		<img src="5.5.0_sievevacationdates.png"/>
 $	5.3.2
 	%	Versione 5.3.2
 	*	<h1>Incolla email</h1>
