@@ -163,7 +163,6 @@ import org.slf4j.Logger;
 
 public class Service extends BaseService {
 	
-	boolean imapDebug=false;
 	public final static Logger logger = WT.getLogger(Service.class);
 	
 	class WebtopFlag {
@@ -388,7 +387,6 @@ public class Service extends BaseService {
 		mainAccount.setDifferentDefaultFolder(us.getDefaultFolder());
 		
 		mainAccount.setMailSession(environment.getSession().getMailSession());
-		mainAccount.setSessionDebug(imapDebug);
 
 		mainAccount.setPort(mprofile.getMailPort());
 		mainAccount.setHost(mprofile.getMailHost());
@@ -439,7 +437,7 @@ public class Service extends BaseService {
 			});
 			
 			mainAccount.loadFoldersCache(mft,false);
-			if (!imapDebug) mft.start();
+			if (!mainAccount.getMailSession().getDebug()) mft.start();
 			
 			vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs");
 			//cloud uploads goes here
@@ -474,7 +472,6 @@ public class Service extends BaseService {
 				archiveAccount.setProtocol(ss.getArchivingExternalProtocol());
 
 				archiveAccount.setMailSession(environment.getSession().getMailSession());
-				archiveAccount.setSessionDebug(imapDebug);
 
 				archiveAccount.setPort(ss.getArchivingExternalPort());
 				archiveAccount.setHost(ss.getArchivingExternalHost());

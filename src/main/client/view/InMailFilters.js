@@ -267,7 +267,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 						autoLoad: true
 					},
 					fieldLabel: me.mys.res('sieveFilter.autoResponder.fld-daysInterval.lbl'),
-					emptyText: '1',
+					emptyText: '7',
 					width: 230
 				}),
 				{

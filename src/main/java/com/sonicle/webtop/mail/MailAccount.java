@@ -167,10 +167,6 @@ public class MailAccount {
 		return session;
 	}
 	
-	public void setSessionDebug(boolean b) {
-		this.session.setDebug(b);
-	}
-	
 	public void setHost(String host) {
 		this.mailHost=host;
 	}

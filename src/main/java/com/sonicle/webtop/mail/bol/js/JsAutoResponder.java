@@ -43,5 +43,5 @@ public class JsAutoResponder {
 	public String addresses;
 	public String activationStartDate;
 	public String activationEndDate;
-	public short daysInterval;
+	public Short daysInterval;
 }
