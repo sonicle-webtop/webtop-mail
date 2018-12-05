@@ -33,17 +33,24 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.mail.cyrus.CyrusManager;
+import com.sonicle.webtop.core.CoreManager;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.auth.LdapWebTopDirectory;
+import com.sonicle.webtop.core.app.auth.WebTopDirectory;
+import com.sonicle.webtop.core.app.sdk.interfaces.IControllerUserEvents;
 import com.sonicle.webtop.core.sdk.BaseController;
 import com.sonicle.webtop.core.sdk.ServiceVersion;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.interfaces.IControllerHandlesProfiles;
+import javax.mail.MessagingException;
 
 /**
  *
  * @author malbinola
  */
-public class MailController extends BaseController implements IControllerHandlesProfiles {
+public class MailController extends BaseController implements IControllerUserEvents, IControllerHandlesProfiles {
 	
 	private static ServiceVersion SV_5_0_14=new ServiceVersion("5.0.14");
 	
@@ -64,5 +71,43 @@ public class MailController extends BaseController implements IControllerHandles
 			MailManager manager = new MailManager(true, profileId);
 			manager.addBuiltinTags();
 		}
+	}
+
+	@Override
+	public void onUserAdded(UserProfileId profileId) throws WTException {
+		CoreManager coreMgr = WT.getCoreManager(profileId);
+		String dirScheme = coreMgr.getAuthDirectoryScheme();
+		if (WebTopDirectory.SCHEME.equals(dirScheme) || LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
+			// Defines the mailbox's username
+			String mailboxUser = null;
+			if (LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
+				mailboxUser = WT.buildDomainInternetAddress(profileId.getDomainId(), profileId.getUserId(), null).getAddress();
+			} else {
+				mailboxUser = profileId.getUserId();
+			}
+			
+			// Creates the Cyrus mailbox
+			try {
+				MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, profileId.getDomainId());
+				String host = mss.getDefaultHost();
+				int port = mss.getDefaultPort();
+				String protocol = mss.getDefaultProtocol();
+				String adminUser = mss.getAdminUser();
+				String adminPassword = mss.getAdminPassword();
+
+				CyrusManager cyrMgr = new CyrusManager(host, port, protocol, adminUser, adminPassword);
+				cyrMgr.addMailbox(mailboxUser);
+
+			} catch(MessagingException ex) {
+				throw new WTException("Unable to create user's mailbox [{}]", mailboxUser, ex);
+			}
+		}
+		//TODO: maybe add here the default directory structure
+	}
+
+	@Override
+	public void onUserRemoved(UserProfileId profileId) throws WTException {
+		//TODO: Mailbox deletion can be a lengthy operation, maybe add some configuration to reject the "deleted" recipient
+		//https://www.howtoforge.com/community/threads/postfix-reject-incoming-email-for-specific-user.31433/
 	}
 }
