@@ -605,6 +605,7 @@ public class Service extends BaseService {
 	}
 	
 	private void deleteAutosavedDraft(MailAccount account, long msgId) {
+		//fix me
 		try {
 			account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
 		} catch(MessagingException exc) {
@@ -616,6 +617,15 @@ public class Service extends BaseService {
 		if (ident==null) return mainAccount;
 		MailAccount account=ident.getAccount();
 		return account!=null?account:mainAccount;
+	}
+	
+	protected InputStream getAttachmentInputStream(String accountId, String foldername, long uidmessage, int idattach) throws MessagingException, IOException {
+		MailAccount account=getAccount(accountId);
+		FolderCache fc = account.getFolderCache(foldername);
+		Message m = fc.getMessage(uidmessage);
+
+		HTMLMailData mailData = fc.getMailData((MimeMessage) m);
+		return mailData.getAttachmentPart(idattach).getInputStream();
 	}
 	
 	public void processManageAutosave(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
