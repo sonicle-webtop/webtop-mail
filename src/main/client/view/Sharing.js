@@ -35,6 +35,7 @@
 Ext.define('Sonicle.webtop.mail.view.Sharing', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
+		'Sonicle.webtop.core.model.RoleLkp',
 		'Sonicle.webtop.mail.model.Sharing'
 	],
 	
