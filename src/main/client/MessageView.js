@@ -48,6 +48,9 @@ Ext.define('Sonicle.webtop.mail.MessageViewModel', {
 
 Ext.define('Sonicle.webtop.mail.MessageView',{
 	extend: 'Ext.container.Container',
+	mixins: [
+		'WTA.mixin.Waitable'
+	],
 	
     bodyBorder: false,
     border: false,
@@ -169,12 +172,57 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				new Ext.Action({text: me.mys.res("attachmenu.saveall"),handler:function() {
 					var el=me.attachMenu.activeElement;
 					if (el.linkSaveAll) window.open(el.linkSaveAll);
-				}, scope:me, iconCls: 'wt-icon-save-all-xs'})
+				}, scope:me, iconCls: 'wt-icon-save-all-xs'}),
+				new Ext.Action({text: me.mys.res("attachment.savetocloud"),
+					disabled: !WT.getApp().hasDescriptor('com.sonicle.webtop.vfs'),
+					handler: function() {
+						var el = me.attachMenu.activeElement;
+						if (el.linkSave) {
+							var api = WT.getApp().getServiceApi('com.sonicle.webtop.vfs');
+							api.chooseFolder({
+								callback: function(s, file) {
+									if (s === false) return;
+									me.saveInCloud({
+										fileId : file.fileId,
+										path : file.path,
+										storeId : file.storeId,
+										folder : el.attachItem.folder,
+										idAttach : el.attachItem.idAttach,
+										idMessage : el.attachItem.idMessage
+									});
+								}
+							});
+						}
+					},
+				scope:me, iconCls: 'wt-icon-save-xs'})
 			]
 		});
-		
-		
     },
+	
+	saveInCloud: function(data) {
+		var me = this;
+		//TODO: provide a better loading indicator (maybe a such sort of background task)
+		me.wait();
+		WT.ajaxReq(me.mys.ID, "SaveFileToCloud", {
+			params: {
+				fileId: data.fileId,
+				path: data.path,
+				storeId: data.storeId,
+				folder : data.folder,
+				idAttach : data.idAttach,
+				idMessage : data.idMessage
+			},
+			callback: function(success, json) {
+				if (success) {
+					Ext.defer(function() {
+						me.unwait();
+					}, 500);
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});
+	},
 	
 	onRender: function(parentNode, containerIdx) {
 		var me=this;
@@ -914,10 +962,15 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     _setAttachElements: function(el,vparams) {
         var me=this,i=0;
         while(el) {
-            var href=el.first().dom.href;
+            var href=el.first().dom.href,
+					attachItem = {
+						folder : vparams[i].folder,
+						idMessage : vparams[i].idmessage,
+						idAttach : vparams[i].idattach
+					};
 			//TODO isIE saveas=1?
             if (!Ext.isIE) href+="&saveas=1";
-            me.setAttachElement(el,href,me.divAttach.first().first().dom.href);
+            me.setAttachElement(el,href,me.divAttach.first().first().dom.href, attachItem);
             
             me._setDD(el,vparams[i]);
             
@@ -1257,13 +1310,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			format: me.mys.getVar("format")
 		});
 	},
-
-    setAttachElement: function(e,linkSave,linkSaveAll) {
+ 
+    setAttachElement: function(e,linkSave,linkSaveAll, attachItem) {
 		var me=this;
         if (me.attachMenu) {
             e.linkSave=linkSave;
             e.linkSaveAll=linkSaveAll;
             e.mys=me;
+			e.attachItem = attachItem;
             me.setElementContextMenu(e,me.attachMenu);
         }
     },

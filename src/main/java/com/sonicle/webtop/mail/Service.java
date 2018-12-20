@@ -35,7 +35,6 @@ package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.AlgoUtils;
 import com.sonicle.commons.EnumUtils;
-import com.sonicle.commons.IdentifierUtils;
 import com.sonicle.commons.InternetAddressUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.CoreLocaleKey;
@@ -4965,6 +4964,37 @@ public class Service extends BaseService {
 			Service.logger.error("Exception",ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
 		}
+	}
+	
+	public void processSaveFileToCloud(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			MailAccount account=getAccount(request);
+			String path = ServletUtils.getStringParameter(request, "path", true);
+			String fileId = ServletUtils.getStringParameter(request, "fileId", true);
+			int storeId = ServletUtils.getIntParameter(request, "storeId", true);
+			String folder = ServletUtils.getStringParameter(request, "folder", true);
+			int idAttach = ServletUtils.getIntParameter(request, "idAttach", true);
+			int idMessage = ServletUtils.getIntParameter(request, "idMessage", true);
+			
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(folder);
+			Message m = mcache.getMessage(idMessage);
+			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
+			Part part = mailData.getAttachmentPart(idAttach);
+			String fileName = part.getFileName();
+			InputStream is = part.getInputStream();
+			
+			vfsmanager.addStoreFileFromStream(storeId, path, fileName, is);
+			
+			MapItem data = new MapItem();
+			data.add("success", true);
+			new JsonResult(data).printTo(out);
+		}
+		catch(Exception ex) {
+			Service.logger.error("Exception", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+		
 	}
 
 	public void processCopyAttachment(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
