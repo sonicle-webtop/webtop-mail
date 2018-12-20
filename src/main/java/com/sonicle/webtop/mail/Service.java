@@ -5556,6 +5556,13 @@ public class Service extends BaseService {
 		return new SortGroupInfo(sortby,psortdir.equals("ASC"),sortgroup,groupascending,threaded);
 	}
 	
+	public void processSearchFilterChanged(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String searchFilter=request.getParameter("newFilter");
+		String folder=request.getParameter("folder");
+		us.setMessageSearchFilter(folder, searchFilter);
+		new JsonResult(true).printTo(out);
+	}
+	
 	public void processListMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		CoreManager core = WT.getCoreManager();
 		UserProfile profile = environment.getProfile();
@@ -5568,7 +5575,6 @@ public class Service extends BaseService {
 		String pstart = request.getParameter("start");
 		String plimit = request.getParameter("limit");
 		String ppage = request.getParameter("page");
-		String psearchfield = request.getParameter("searchfield");
 		String ppattern = request.getParameter("pattern");
 		String pquickfilter=request.getParameter("quickfilter");
 		String prefresh = request.getParameter("refresh");
@@ -5576,9 +5582,7 @@ public class Service extends BaseService {
         String pthreaded=request.getParameter("threaded");
 		String pthreadaction=request.getParameter("threadaction");
 		String pthreadactionuid=request.getParameter("threadactionuid");
-		if (psearchfield != null && psearchfield.trim().length() == 0) {
-			psearchfield = null;
-		}
+
 		if (ppattern != null && ppattern.trim().length() == 0) {
 			ppattern = null;
 		}
@@ -5604,6 +5608,8 @@ public class Service extends BaseService {
 		if (group == null) {
 			group = "";
 		}
+		
+		String psearchfield = us.getMessageSearchFilter(pfoldername);
 
 		String psortfield = "date";
 		String psortdir = "DESC";
@@ -6156,7 +6162,8 @@ public class Service extends BaseService {
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
                         + "  threaded: "+sgi.threaded+",\n"
-						+ "  groupField: '" + (sgi.threaded?"threadId":group) + "',\n";
+						+ "  groupField: '" + (sgi.threaded?"threadId":group) + "',\n"
+						+ "  searchFilter: '" + psearchfield + "',\n";
 				
 /*				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
 				ColumnsOrderSetting cos = us.getColumnsOrderSetting();

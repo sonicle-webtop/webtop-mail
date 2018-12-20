@@ -131,6 +131,14 @@ public class MailUserSettings extends BaseUserSettings {
 		return setString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),group);
 	}
 	
+	public String getMessageSearchFilter(String folderName) {
+		return getString(MessageFormat.format(MESSAGE_SEARCH_FIELD, folderName), "subject");
+	}
+	
+	public boolean setMessageSearchFilter(String folderName, String searchFilter) {
+		return setString(MessageFormat.format(MESSAGE_SEARCH_FIELD, folderName), searchFilter);
+	}
+	
 	public int getColumnSize(String name) {
 		return getInteger(MessageFormat.format(COLUMN_SIZE,name),100);
 	}

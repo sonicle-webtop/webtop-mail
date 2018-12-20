@@ -359,6 +359,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             var gg=meta.groupField;
 			if (gg==='') gg='none';
             me.groupCombo.setValue(gg);
+			me.filterCombo.setValue(meta.searchFilter);
             //me.bThreaded.toggle(meta.threaded);
         });
         
@@ -616,7 +617,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     filterAction: function(tf,smart) {
         var me=this,
 			filterType=me.filterCombo.getValue();
-		if (smart||filterType==="smart") me.mys.runSmartSearch();
+		if (smart||filterType==="smart") {
+			me.mys.runSmartSearch();
+			me.changeSearchFilter(filterType);
+		}
 		else me.reloadFiltered(me.quickFilterCombo.getValue(),filterType,tf.getValue());
     },
 	
@@ -624,10 +628,23 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
 		me.reloadFiltered(me.quickFilterCombo.getValue(),me.filterCombo.getValue(),me.filterTextField.getValue());
 	},
+	
+	changeSearchFilter: function(newFilter) {
+		var me=this;
+		WT.ajaxReq(me.mys.ID, 'SearchFilterChanged', {
+			params: {
+                newFilter: newFilter,
+                folder: me.currentFolder
+			}
+		});					
+	},
+	
 	    
 	reloadFiltered: function(quickfilter,field,pattern) {
 		var me=this;
         me.depressMultiSearchButton();
+		me.changeSearchFilter(field);
+		
 //        me.folderList.store.baseParams={service: 'mail', action: 'ListMessages', folder: this.currentFolder, quickfilter: quickfilter, searchfield: field, pattern: pattern, refresh:1};
 //        me.folderList.store.reload({
 //          params: {start:0,limit:me.ms.pageRows}

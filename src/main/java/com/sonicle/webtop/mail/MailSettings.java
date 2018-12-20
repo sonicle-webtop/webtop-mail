@@ -176,6 +176,7 @@ public class MailSettings {
 
 
 
+	public static final String MESSAGE_SEARCH_FIELD = "message.searchfilter@{0}";
 	public static final String MESSAGE_QUICKPART = "message.quickpart@{0}"; // !IMPORTANT
 	public static final String MESSAGE_LIST_GROUP = "messagelist.group@{0}"; // was : "messagelist-group-{0}"
 	public static final String MESSAGE_LIST_SORT = "messagelist.sort@{0}"; // was : "messagelist-{0}-sort"
