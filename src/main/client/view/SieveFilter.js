@@ -56,7 +56,8 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 		me.callParent([cfg]);
 		
 		WTU.applyFormulas(me.getVM(), {
-			foEnabled: WTF.checkboxBind('record', 'enabled')
+			foEnabled: WTF.checkboxBind('record', 'enabled'),
+			foMatchUnconditionally: WTF.foIsEqual('record', 'match', 'allmsg')
 		});
 	},
 	
@@ -104,6 +105,9 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 				items: [{
 					xtype: 'wtmailsieverulegrid',
 					reference: 'gprules',
+					bind: {
+						disabled: '{foMatchUnconditionally}'
+					},
 					title: me.mys.res('sieveFilter.rules.tit'),
 					store: Ext.create('Ext.data.ArrayStore', {
 						model: 'Sonicle.webtop.mail.model.SieveRule'
@@ -132,7 +136,7 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 	},
 	
 	onViewLoad: function(s, success) {
-		if(!success) return;
+		if (!success) return;
 		var me = this,
 				mo = me.getModel();
 		
