@@ -77,6 +77,7 @@ import com.sonicle.webtop.mail.model.Tag;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.MessageFormat;
@@ -135,6 +136,15 @@ public class MailManager extends BaseManager implements IMailManager {
 		com.sonicle.webtop.mail.Service mail = (com.sonicle.webtop.mail.Service)wts.getPrivateServiceById(SERVICE_ID);
 		if (mail == null) throw new WTException("Unable to get service");
 		return mail;
+	}
+	
+	public InputStream getAttachmentInputStream(String accountId, String foldername, long uidmessage, int idattach) throws WTException {
+		try {
+			Service s=findMailService();
+			return s.getAttachmentInputStream(accountId, foldername, uidmessage, idattach);
+		} catch(Exception exc) {
+			throw new WTException(exc);
+		}
 	}
 	
 	public List<Identity> listIdentities() throws WTException {
