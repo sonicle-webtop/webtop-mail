@@ -8057,6 +8057,7 @@ public class Service extends BaseService {
 			co.put("messageViewCollapsed",us.getMessageViewCollapsed());
 			co.put("messageViewMaxTos",ss.getMessageViewMaxTos());
 			co.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
+			co.put("messageEditSubject", ss.isMessageEditSubject());
 			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes()));
 			co.put("autoResponderActive", mailManager.isAutoResponderActive());
 			co.put("showUpcomingEvents", us.getShowUpcomingEvents());
@@ -8219,6 +8220,29 @@ public class Service extends BaseService {
 		} catch(Exception ex) {
 			logger.error("Error in ManageFilters", ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processEditEmailSubject(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String newSubject = ServletUtils.getStringParameter(request, "subject", true);
+			int messageId = ServletUtils.getIntParameter(request, "messageId", true);
+			String currentFolder = ServletUtils.getStringParameter(request, "currentFolder", true);
+			
+			MailAccount account=getAccount(request);
+			FolderCache folderCache = account.getFolderCache(currentFolder);
+			Message currentMessage = folderCache.getMessage(messageId);
+			
+			MimeMessage newMessage = new MimeMessage((MimeMessage)currentMessage);
+			newMessage.setSubject(newSubject);
+			folderCache.appendMessage(newMessage);
+			folderCache.deleteMessages(new long[]{messageId}, true);
+			
+			new JsonResult(true).printTo(out);
+			
+		} catch(Exception ex) {
+			logger.error("Error in EditEmailSubject", ex);
+			new JsonResult(ex).printTo(out);
 		}
 	}
 	

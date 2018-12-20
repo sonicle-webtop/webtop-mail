@@ -165,6 +165,7 @@ public class MailSettings {
 	public static final String ATTACHMENT_DIR = "attachment.dir";
 	public static final String MESSAGE_VIEW_MAX_TOS = "message.view.max.tos";
 	public static final String MESSAGE_VIEW_MAX_CCS = "message.view.max.ccs";
+	public static final String MESSAGE_EDIT_SUBJECT = "message.edit.subject";
 	public static final String SORT_FOLDERS = "sort.folders";
 	public static final String SPAMADM_SPAM = "spamadm.spam";
 	public static final String ADMIN_USER = "admin.user";

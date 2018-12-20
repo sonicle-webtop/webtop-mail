@@ -990,6 +990,52 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
 	},
 	
+	actionEditSubject: function(rowIndex) {
+        this._actionEditSubject(rowIndex);
+    },
+	
+	_actionEditSubject: function(rowIndex) {
+        var me=this,
+			recs=(rowIndex>=0)?
+				me.getStore().getAt(rowIndex):
+				me.getSelection();
+        me.editSubject(recs[0]);
+    },
+	
+	editSubject: function(email) {
+		var me = this;
+		var messageId = email.data.idmessage;
+		var subject = email.data.subject;
+		var currentFolder=me.currentFolder;
+		
+		 WT.prompt('',{
+			title: me.res("act-editSubject.lbl"),
+			value: subject,
+			fn: function(btn,value) {
+				if (btn==="ok" && value && value!=="") me.changeSubject(messageId, currentFolder, value);
+			}
+		});
+	},
+	
+	changeSubject: function(messageId, currentFolder, newSubject) {
+		var me = this;
+		
+		WT.ajaxReq(me.mys.ID, 'EditEmailSubject', {
+			params: {
+                messageId: messageId,
+				currentFolder: currentFolder,
+				subject: newSubject
+			},
+			callback: function(success,json) {
+				if (success) {
+					me.mys.reloadFolderList();
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});
+	},
+	
     actionOpenNew: function(rowIndex) {
         var me=this,
 			recs=(rowIndex>=0)?

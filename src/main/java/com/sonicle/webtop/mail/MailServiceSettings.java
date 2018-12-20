@@ -125,6 +125,14 @@ public class MailServiceSettings extends BaseServiceSettings {
 		setInteger(MESSAGE_VIEW_MAX_CCS,maxccs);
 	}
 	
+	public boolean isMessageEditSubject() {
+		return getBoolean(MESSAGE_EDIT_SUBJECT, false);
+	}
+	
+	public void setMessageEditSubject(boolean messageEditSubject) {
+		setBoolean(MESSAGE_EDIT_SUBJECT, messageEditSubject);
+	}
+	
 	public boolean isSortFolder() {
 		return getBoolean(SORT_FOLDERS,false);
 	}
