@@ -504,7 +504,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 							acct: me.acct,
                             folder: me.folder,
                             idmessage: me.idmessage,
-                            idattach: att.id
+                            idattach: att.id,
+							fileName: name
                         }
                     } else {
                         aparams={
@@ -983,13 +984,21 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		var me=this;
 		new Ext.dd.DragZone(el,{
             params: params,
+			//TODO: provide a standard and unique group name eg. 'wtmail-msgattachment'
             ddGroup : 'attachment', 
             getDragData: function(ev) {
 				var ddel=el;
 				if (ddel.contains(ev.getTarget())) {
 					return {
 						ddel: ddel.dom.cloneNode(true),
-						params: params,
+						params: params, // We cannot move to the new property below, we have to ensure compatibility with legacy code
+						msgAttachment: {
+							accountId: params.acct,
+							folder: params.folder,
+							msgId: params.idmessage,
+							attachId: params.idattach,
+							attachName: params.fileName
+						},
 						sourceEl: el,
 						repairXY: Ext.fly(el).getXY(),
 						records: []
