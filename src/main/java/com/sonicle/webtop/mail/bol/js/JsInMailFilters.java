@@ -76,6 +76,7 @@ public class JsInMailFilters {
 	private JsAutoResponder createJsAutoResponder(AutoResponder aut, DateTimeZone profileTz) {
 		JsAutoResponder js = new JsAutoResponder();
 		js.enabled = aut.getEnabled();
+		js.subject = aut.getSubject();
 		js.message = aut.getMessage();
 		js.addresses = aut.getAddresses();
 		js.activationStartDate = DateTimeUtils.printYmdHmsWithZone(aut.getActivationStartDate(), profileTz);
@@ -87,6 +88,7 @@ public class JsInMailFilters {
 	public static AutoResponder createAutoResponder(JsInMailFilters jsimf, DateTimeZone profileTz) {
 		AutoResponder aut = new AutoResponder();
 		aut.setEnabled(jsimf.autoResponder.enabled);
+		aut.setSubject(jsimf.autoResponder.subject);
 		aut.setMessage(jsimf.autoResponder.message);
 		aut.setAddresses(jsimf.autoResponder.addresses);
 		aut.setDaysInterval(jsimf.autoResponder.daysInterval);

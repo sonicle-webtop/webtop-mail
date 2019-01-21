@@ -101,7 +101,7 @@ public class AutoResponderDAO extends BaseDAO {
 		return dsl
 			.update(AUTORESPONDERS)
 			.set(AUTORESPONDERS.ENABLED, item.getEnabled())
-			//.set(AUTORESPONDERS.SUBJECT, item.getSubject())
+			.set(AUTORESPONDERS.SUBJECT, item.getSubject())
 			.set(AUTORESPONDERS.MESSAGE, item.getMessage())
 			.set(AUTORESPONDERS.ADDRESSES, item.getAddresses())	
 			.set(AUTORESPONDERS.DAYS_INTERVAL, item.getDaysInterval())

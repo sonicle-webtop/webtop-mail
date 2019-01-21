@@ -239,6 +239,15 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					hideEmptyLabel: false,
 					boxLabel: me.mys.res('sieveFilter.autoResponder.fld-enabled.lbl')
 				}, {
+					xtype: 'textfield',
+					bind: {
+						value: '{record.autoResponder.subject}',
+						disabled: '{!fldAutoRespEnabled.checked}'
+					},
+					fieldLabel: me.mys.res('sieveFilter.autoResponder.fld-subject.lbl'),
+					emptyText: me.mys.res('sieveFilter.autoResponder.fld-subject.emp'),
+					anchor: '100%'
+				},{
 					xtype: 'textareafield',
 					bind: {
 						value: '{record.autoResponder.message}',

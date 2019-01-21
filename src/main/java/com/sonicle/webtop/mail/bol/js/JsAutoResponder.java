@@ -39,6 +39,7 @@ package com.sonicle.webtop.mail.bol.js;
  */
 public class JsAutoResponder {
 	public Boolean enabled;
+	public String subject;
 	public String message;
 	public String addresses;
 	public String activationStartDate;
