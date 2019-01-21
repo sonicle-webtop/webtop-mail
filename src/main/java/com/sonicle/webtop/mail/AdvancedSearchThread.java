@@ -68,7 +68,7 @@ public class AdvancedSearchThread extends Thread {
     ArrayList<FolderCache> folders=new ArrayList<FolderCache>();
     ArrayList<Message> result=new ArrayList<Message>();
 
-    public AdvancedSearchThread(Service ms, MailAccount acount, String folder, boolean trashspam, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
+    public AdvancedSearchThread(Service ms, MailAccount account, String folder, boolean trashspam, boolean subfolders, boolean and, AdvancedSearchEntry entries[]) throws MessagingException {
         this.ms=ms;
 		this.account=account;
         this.folderType=FOLDERTYPE_SPECIFIC;
