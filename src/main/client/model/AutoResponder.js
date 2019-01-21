@@ -37,6 +37,7 @@ Ext.define('Sonicle.webtop.mail.model.AutoResponder', {
 	identifier: 'negative',
 	fields: [
 		WTF.field('enabled', 'boolean', false),
+		WTF.field('subject', 'string', true),
 		WTF.field('message', 'string', true),
 		WTF.field('addresses', 'string', true),
 		WTF.field('daysInterval', 'int', true),
