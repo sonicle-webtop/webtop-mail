@@ -2283,6 +2283,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						hidden: true,
 						dataIndex: 'gdate',
 						stateId: 'stid-gdate',
+						hideable: false,
 						filter: {}
 					});
 					break;
@@ -2294,6 +2295,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						hidden: true,
 						dataIndex: 'sdate',
 						stateId: 'stid-sdate',
+						hideable: false,
 						filter: {}
 					});
 					break;
@@ -2305,6 +2307,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						hidden: true,
 						dataIndex: 'xdate',
 						stateId: 'stid-xdate',
+						hideable: false,
 						filter: {}
 					});
 					break;
