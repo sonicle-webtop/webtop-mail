@@ -436,7 +436,7 @@ public class Service extends BaseService {
 			});
 			
 			mainAccount.loadFoldersCache(mft,false);
-			if (!mainAccount.getMailSession().getDebug()) mft.start();
+			//if (!mainAccount.getMailSession().getDebug()) mft.start();
 			
 			vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs");
 			//cloud uploads goes here
