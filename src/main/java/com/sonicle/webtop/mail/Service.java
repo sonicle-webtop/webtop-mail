@@ -2400,7 +2400,11 @@ public class Service extends BaseService {
 		if (!favorites) afolders=sortFolders(account,folders);
 		else {
 			afolders=new ArrayList<Folder>();
-			for(Folder f: folders) afolders.add(f);
+			for(Folder f: folders) {
+				if(f != null) {
+					afolders.add(f);
+				}
+			}
 		}
 		//If Shared Folders, sort on description
 		if (account.isSharedFolder(parent.getFullName())) {
@@ -2693,15 +2697,25 @@ public class Service extends BaseService {
 	public void processGetFavoritesTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			out.print("{ data:[");
-			MailUserSettings.Favorites favorites=us.getFavorites();
-			Folder folders[]=new Folder[favorites.size()];
-			for(int i=0;i<favorites.size();++i) folders[i]=mainAccount.getFolder(favorites.get(i));
-			outputFolders(mainAccount,mainAccount.getFolder(""),folders,false,true,out);
+			MailUserSettings.Favorites favorites = us.getFavorites();
+			MailUserSettings.Favorites newFavorites = new MailUserSettings.Favorites();
+			Folder folders[] = new Folder[ favorites.size() ];
+			for( int i = 0; i < favorites.size(); ++i) {
+				String folderName = favorites.get(i);
+				Folder folder = mainAccount.getFolder(folderName);
+				if (folder.exists()) {
+					newFavorites.add(folderName);
+					folders[i] = folder;
+				}
+			}
+			us.setFavorites(newFavorites);
+			
+			outputFolders(mainAccount, mainAccount.getFolder(""), folders, false, true, out);
 			out.println("], message: '' }");
 			
 		} catch (Exception exc) {
+			Service.logger.error("Exception", exc);
 			new JsonResult(exc).printTo(out);
-			Service.logger.error("Exception",exc);
 		}
 	}
 	
@@ -3431,7 +3445,7 @@ public class Service extends BaseService {
 					sout += "parent: null,\n";
 				}
 				sout += "name: '" + StringEscapeUtils.escapeEcmaScript(newfolder.getName()) + "',\n";
-				sout += "fullname: '" + StringEscapeUtils.escapeEcmaScript(newfolder.getFullName()) + "',\n";
+				sout += "fullname: '" + StringEscapeUtils.escapeEcmaScript(newfolder.getFullName()) + "',\n";	
 			}
 			sout += "result: " + result + "\n}";
 		} catch (MessagingException exc) {
@@ -3447,6 +3461,8 @@ public class Service extends BaseService {
 		String name = request.getParameter("name");
 		String sout = null;
 		FolderCache mcache = null;
+		MailUserSettings.Favorites favorites = us.getFavorites();
+		
 		try {
 			account.checkStoreConnected();
 			boolean result = true;
@@ -3454,6 +3470,12 @@ public class Service extends BaseService {
 			mcache = account.getFolderCache(folder);
 			name = account.normalizeName(name);
 			String newid = account.renameFolder(folder, name);
+			
+			if (favorites.contains(folder)) {
+				favorites.remove(folder);
+				favorites.add(newid);
+				us.setFavorites(favorites);
+			}
 			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 			sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newid) + "',\n";
 			sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(name) + "',\n";
