@@ -3914,7 +3914,7 @@ public class Service extends BaseService {
 					try{
 						Part part = maildata.getAttachmentPart(i);
 						String filename = getPartName(part);
-						if (filename != null && !part.isMimeType("message/*")) {
+						if (!part.isMimeType("message/*")) {
 							String cids[] = part.getHeader("Content-ID");
 							String cid = null;
 							//String cid=filename;
@@ -3923,6 +3923,8 @@ public class Service extends BaseService {
 								if (cid.startsWith("<")) cid=cid.substring(1);
 								if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
 							}
+							
+							if (filename == null) filename = cid;
 							String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
 							UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
 							boolean inline = false;
@@ -4149,7 +4151,7 @@ public class Service extends BaseService {
             for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
                 Part part = maildata.getAttachmentPart(i);
                 String filename = getPartName(part);
-                if (filename != null) {
+                
                     String cids[] = part.getHeader("Content-ID");
                     String cid = null;
                     //String cid=filename;
@@ -4158,6 +4160,10 @@ public class Service extends BaseService {
                         if (cid.startsWith("<")) cid=cid.substring(1);
                         if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
                     }
+					
+					if( filename == null ) {
+						filename = cid;
+					}
                     String mime=part.getContentType();
                     UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
                     boolean inline = false;
@@ -4177,7 +4183,7 @@ public class Service extends BaseService {
                     first = false;
 					//TODO: change this weird matching of cids2urls!
                     html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
-                }
+             
             }
             sout += "\n ],\n";
             
