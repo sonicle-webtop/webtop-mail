@@ -822,7 +822,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				if (success) {
 					me.needReload=true;
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});
@@ -860,7 +860,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							}
 							me.needReload=true;
 						} else {
-							WT.error(json.text);
+							WT.error(json.message);
 						}
 					}
 				});

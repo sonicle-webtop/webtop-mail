@@ -65,8 +65,10 @@ import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.mail.sieve.SieveAction;
 import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.mail.sieve.SieveMatch;
+import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.SessionContext;
 import com.sonicle.webtop.core.app.WebTopSession;
+import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
 import com.sonicle.webtop.mail.bol.OTag;
@@ -414,15 +416,20 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 
 	public void setEmailMailcard(String domainId, String email, String html) {
-		writeMailcard(domainId, "mailcard_" + email, html);
+		if (RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE"))
+			writeMailcard(domainId, "mailcard_" + email, html);
+		else throw new AuthException("You have no permission to write email mailcard");
 	}
 
 	public void setEmailDomainMailcard(String domainId, String email, String html) {
-		int index = email.indexOf("@");
-		if (index < 0) {
-			return;
+		if (RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE")) {
+			int index = email.indexOf("@");
+			if (index < 0) {
+				return;
+			}
+			writeMailcard(domainId, "mailcard_" + email.substring(index + 1), html);
 		}
-		writeMailcard(domainId, "mailcard_" + email.substring(index + 1), html);
+		else throw new AuthException("You have no permission to write domain mailcard");
 	}
 
 	public void setUserMailcard(String domainId, String user, String html) {
