@@ -938,7 +938,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			var me=this;
 			WT.activateService(me.ID);
 			me.imapTree.expandNodePath(data.foldername,me.getVar("folderSeparator"),true);
-			me.showFolder(data.foldername);
+			me.showFolder(me.imapTree.acct,data.foldername);
 		}
 	},
 	
