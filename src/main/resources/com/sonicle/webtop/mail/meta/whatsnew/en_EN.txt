@@ -1,3 +1,18 @@
+$	5.5.1
+	%	Version 5.5.1
+	*	<h1>Customize subject of the auto-responder</h1>
+		<p>The auto-responder settings window now allows to customize the subject of the generated emails</p>
+		<img src="5.5.1_respondersubject.png"/>
+	*	<h1>Drag attachments into the Cloud</h1>
+		<p>It's now possible to drag and drop attachments from the message preview to the Cloud folders</p>
+	*	<h1>Save attachments into the Cloud</h1>
+		<p>The attachments context menu of the mail preview now allows to save them directly in a Cloud folder</p>
+		<img src="5.5.1_saveoncloud.png"/>
+	*	<h1>Change subject of a received email</h1>
+		<p>The mail grid context menu now allows to change the subject of a received email, if the system administrator enabled this feature</p>
+		<img src="5.5.1_changesubject.png"/>
+	*	<h1>Search field by folder</h1>
+		<p>The system now remembers the last quick search field used by folder</p>
 $	5.5.0
 	%	Version 5.5.0
 	*	<h1>External Archive</h1>

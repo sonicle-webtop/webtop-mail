@@ -1,3 +1,18 @@
+$	5.5.1
+	%	Versione 5.5.1
+	*	<h1>Personalizzazione dell'oggetto nella risposta automatica di assenza</h1>
+		<p>La finestra di attivazione della risposta automatica, consente di personalizzarne l'oggetto della mail generata</p>
+		<img src="5.5.1_respondersubject.png"/>
+	*	<h1>Trascinamento allegati nelle cartelle Cloud</h1>
+		<p>E' ora possibile trascinare allegati dall'anteprima messaggio nelle cartelle Cloud</p>
+	*	<h1>Salvataggio allegati nelle cartelle Cloud</h1>
+		<p>Il menu contestuale degli allegati nella anteprima email, consente di salvare direttamente nelle cartelle Cloud</p>
+		<img src="5.5.1_saveoncloud.png"/>
+	*	<h1>Modifica oggetto email riecvuta</h1>
+		<p>Il menu contestuale della griglia email, consente la modifica dell'oggetto di una mail ricevuta</p>
+		<img src="5.5.1_changesubject.png"/>
+	*	<h1>Campo di ricerca per cartella</h1>
+		<p>Il sistema ora ricorda l'ultimo campo di ricerca veloce utilizzato, per cartella</p>
 $	5.5.0
 	%	Versione 5.5.0
 	*	<h1>Archivio Esterno</h1>
