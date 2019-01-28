@@ -6370,10 +6370,11 @@ public class Service extends BaseService {
 					msgs=fc.getMessages(quickfilter,pattern,searchfield,sortby,ascending,refresh, sort_group, groupascending,threaded);
 				} catch (Exception exc) {
 					Service.logger.error("Exception",exc);
+				} finally {
+					finished = true;
+					lock.notifyAll();
 				}
-				lock.notifyAll();
 			}
-			finished = true;
 		}
 	}
 	
