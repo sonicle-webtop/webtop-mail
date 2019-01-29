@@ -1098,6 +1098,7 @@ public class Service extends BaseService {
 		if ((newAttach > 0) || (noAttach > 0) || !smsg.getMime().equalsIgnoreCase("text/plain")) {
 			// create the main Multipart
 			MimeMultipart mp = new MimeMultipart("mixed");
+			MimeMultipart unrelated = null;
 			
 			String textcontent = smsg.getTextContent();
       //if is text, or no alternative text is available, add the content as one single body part
@@ -1210,13 +1211,30 @@ public class Service extends BaseService {
 						mbps[e].setHeader("Content-ID", "<" + attach.cid + ">");
 						mbps[e].setHeader("X-Attachment-Id", attach.cid);
 						mbps[e].setDisposition(Part.INLINE);
-						mp.setSubType("related");
+						if (unrelated==null) unrelated=new MimeMultipart("mixed");
 					}
 				} //end for e
 
 				//add the new attachment parts
-				for (int r = 0; r < newAttach; r++) {
-					mp.addBodyPart(mbps[r]);
+				if (unrelated==null) {
+					for (int r = 0; r < newAttach; r++)
+						mp.addBodyPart(mbps[r]);
+				} else {
+					//mp becomes the related part with text parts and cids
+					MimeMultipart related = mp;
+					related.setSubType("related");
+					//nest the related part into the mixed part
+					mp=unrelated;
+					MimeBodyPart mbd=new MimeBodyPart();
+					mbd.setContent(related);
+					mp.addBodyPart(mbd);
+					for (int r = 0; r < newAttach; r++) {
+						if (mbps[r].getHeader("Content-ID")!=null) {
+							related.addBodyPart(mbps[r]);
+						} else {
+							mp.addBodyPart(mbps[r]);
+						}
+					}
 				}
 				
 			} //end if, adding new attachments
