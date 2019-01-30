@@ -976,6 +976,7 @@ public class FolderCache {
     }
     
     public void open() throws MessagingException {
+		account.checkStoreConnected();
         if(!folder.isOpen()) {
             if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
               try {
