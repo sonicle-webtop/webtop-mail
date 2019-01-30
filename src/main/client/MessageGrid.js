@@ -1297,7 +1297,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				}
 			});
 		} else {
-			me.moveMessages(acct,folder,ftrash,data);
+			me.moveMessages(acct,folder,acct, ftrash, data);
 			dview.closeView();
 		}
     },	
