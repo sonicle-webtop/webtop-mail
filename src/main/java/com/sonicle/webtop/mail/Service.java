@@ -605,12 +605,21 @@ public class Service extends BaseService {
 	}
 	
 	private void deleteAutosavedDraft(MailAccount account, long msgId) {
-		//fix me
-		try {
-			account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
-		} catch(MessagingException exc) {
-			logger.error("Error deleting automatic draft",exc);
+		int retry=3;
+		while(retry>0) {
+			try {
+				account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
+				if (retry<3) logger.error("Retry deleting automatic draft succeded");
+				break;
+			} catch(Throwable t) {
+				logger.error("Error deleting automatic draft",t);
+			}
+			if (--retry >0) {
+				logger.error("Retrying delete of automatic draft after exception");
+				try { Thread.sleep(1000); } catch(InterruptedException exc) {}
+			}
 		}
+		if (retry==0) logger.error("Delete of automatic draft failed");
 	}
 	
 	private MailAccount getAccount(Identity ident) {
