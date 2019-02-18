@@ -266,7 +266,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 			} else if (crud.equals(Crud.UPDATE)) {
 				String html = ServletUtils.getStringParameter(request, "html", true);
 				if (mailcardId.equals("emaildomain")) {
-					mman.setEmailDomainMailcard(domainId,emailAddress,html);
+					mman.setEmailDomainMailcard(emailAddress,html);
 					mc = mman.getEmailDomainMailcard(domainId,emailAddress);
 
 				} else if (StringUtils.startsWith(mailcardId, "identity")) {
@@ -275,11 +275,11 @@ public class UserOptionsService extends BaseUserOptionsService {
 					if (identityId == 0) {
 						String target = ServletUtils.getStringParameter(request, "target", true);
 						if (target.equals(Mailcard.TYPE_EMAIL)) {
-							mman.setEmailMailcard(domainId, emailAddress, html);
-							mman.setUserMailcard(domainId, userId, null);
+							mman.setEmailMailcard(emailAddress, html);
+							mman.setUserMailcard(null);
 						} else {
-							mman.setUserMailcard(domainId, userId, html);
-							mman.setEmailMailcard(domainId, emailAddress, null);
+							mman.setUserMailcard(html);
+							mman.setEmailMailcard(emailAddress, null);
 						}
 						mc = mman.getMailcard(profileId);
 						ppi = WT.getUserPersonalInfo(profileId);
@@ -295,15 +295,15 @@ public class UserOptionsService extends BaseUserOptionsService {
 
 			} else if (crud.equals(Crud.DELETE)) {
 				if (mailcardId.equals("emaildomain")) {
-					mman.setEmailDomainMailcard(domainId, emailAddress, null);
+					mman.setEmailDomainMailcard(emailAddress, null);
 					mc = mman.getEmailDomainMailcard(domainId, emailAddress);
 
 				} else if (StringUtils.startsWith(mailcardId, "identity")) {
 					String[] tokens = StringUtils.split(mailcardId, '|');
 					int identId = Integer.parseInt(tokens[1]);
 					if (identId == 0) {
-						mman.setEmailMailcard(domainId, emailAddress, null);
-						mman.setUserMailcard(domainId, userId, null);
+						mman.setEmailMailcard(emailAddress, null);
+						mman.setUserMailcard(null);
 						mc = mman.getMailcard(profileId);
 						ppi = WT.getUserPersonalInfo(profileId);
 					} else {
