@@ -74,7 +74,7 @@ import org.slf4j.Logger;
  * @author gabriele.bulfon
  */
 public class JobService extends BaseJobService {
-	private static final Logger logger = WT.getLogger(com.sonicle.webtop.core.JobService.class);
+	private static final Logger logger = WT.getLogger(com.sonicle.webtop.mail.JobService.class);
 	
 	@Override
 	public void initialize() throws Exception {
@@ -132,6 +132,8 @@ public class JobService extends BaseJobService {
 					CoreManager domainCm=WT.getCoreManager(adminPid);
 					Session session=WT.getGlobalMailSession(domainId);
 					MailServiceSettings mss = getMailServiceSettings(domainId);
+					String defaultHost=mss.getDefaultHost();
+					logger.debug(" default host for domain "+domainId+" is "+defaultHost);
 					if (mss.isScheduledEmailsDisabled()) {
 						logger.debug(" skipping domain "+domainId+" : scheduled-emails disabled");
 						continue;
@@ -146,6 +148,11 @@ public class JobService extends BaseJobService {
 							UserProfileId pid=new UserProfileId(domainId,userId);
 							MailUserSettings mus=getMailUserSettings(pid, mss);
 							String host=mus.getHost();
+							if (!defaultHost.equals(host)) {
+								logger.debug("  skipping host "+host+" for user "+userId+"@"+domainId);
+								continue;
+							}
+							
 							int port=mus.getPort();
 							String protocol=mus.getProtocol();
 							if (vmailSecret==null) {
