@@ -98,6 +98,7 @@ import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.internet.MimeUtility;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.format.DateTimeFormatter;
 import org.jooq.exception.DataAccessException;
 import org.slf4j.Logger;
@@ -411,29 +412,36 @@ public class MailManager extends BaseManager implements IMailManager {
 
 	public void setIdentityMailcard(Identity ident, String html) {
 		String domainId=getTargetProfileId().getDomainId();
-		if (ident.getIdentityUid()==null) setEmailMailcard(domainId,ident.getEmail(),html);
+		if (ident.getIdentityUid()==null) setEmailMailcard(ident.getEmail(),html);
 		else writeMailcard(domainId, "mailcard_" + ident.getEmail() + "_"+ident.getIdentityUid(), html);
 	}
-
-	public void setEmailMailcard(String domainId, String email, String html) {
-		if (RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE"))
-			writeMailcard(domainId, "mailcard_" + email, html);
-		else throw new AuthException("You have no permission to write email mailcard");
-	}
-
-	public void setEmailDomainMailcard(String domainId, String email, String html) {
-		if (RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE")) {
-			int index = email.indexOf("@");
-			if (index < 0) {
-				return;
-			}
-			writeMailcard(domainId, "mailcard_" + email.substring(index + 1), html);
+	
+	public void setUserMailcard(String html) {
+		ensureProfileDomain(true);
+		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE")) {
+			writeMailcard(getTargetProfileId().getDomainId(), "mailcard_" + getTargetProfileId().getUserId(), html);
+		} else {
+			throw new AuthException("You have insufficient rights to perform the operation [{}]", "MAILCARD_SETTINGS:CHANGE");
 		}
-		else throw new AuthException("You have no permission to write domain mailcard");
+	}
+	
+	public void setEmailMailcard(String email, String html) {
+		ensureProfileDomain(true);
+		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE")) {
+			writeMailcard(getTargetProfileId().getDomainId(), "mailcard_" + email, html);
+		} else {
+			throw new AuthException("You have insufficient rights to perform the operation [{}]", "MAILCARD_SETTINGS:CHANGE");
+		}
 	}
 
-	public void setUserMailcard(String domainId, String user, String html) {
-		writeMailcard(domainId, "mailcard_" + user, html);
+	public void setEmailDomainMailcard(String email, String html) {
+		ensureProfileDomain(true);
+		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE")) {
+			if (!StringUtils.contains(email, "@")) return;
+			writeMailcard(getTargetProfileId().getDomainId(), "mailcard_" + StringUtils.substringAfterLast(email, "@"), html);
+		} else {
+			throw new AuthException("You have insufficient rights to perform the operation [{}]", "DOMAIN_MAILCARD_SETTINGS:CHANGE");
+		}
 	}
 
 	private void writeMailcard(String domainId, String filename, String html) {
