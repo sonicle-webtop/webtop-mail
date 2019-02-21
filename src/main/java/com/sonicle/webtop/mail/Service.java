@@ -4826,8 +4826,7 @@ public class Service extends BaseService {
 					String match="\""+URIUtils.concat(getEnv().getCoreServiceSettings().getPublicBaseUrl(),ResourceRequest.URL);
 					while(StringUtils.contains(content, match)) {					
 						pattern1=RegexUtils.escapeRegexSpecialChars(match);
-						pattern2=RegexUtils.escapeRegexSpecialChars("\"");
-						Pattern pattern=Pattern.compile(pattern1+".*"+pattern2);
+						Pattern pattern=Pattern.compile(pattern1+"\\S*");
 						Matcher matcher=pattern.matcher(content);
 						matcher.find();
 						String matched=matcher.group();
