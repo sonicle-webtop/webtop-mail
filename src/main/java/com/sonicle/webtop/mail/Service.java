@@ -3114,7 +3114,7 @@ public class Service extends BaseService {
 		String flag = request.getParameter("flag");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
-		String sout = null;
+		
 		try {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(fromfolder);
@@ -3136,12 +3136,11 @@ public class Service extends BaseService {
                     else flagMessages(mcache, iuids, flag);
 				}
 			}
-			sout = "{\nresult: true\n}";
+			new JsonResult().printTo(out);
 		} catch (MessagingException exc) {
 			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			new JsonResult(false, lookupResource(MailLocaleKey.PERMISSION_DENIED)).printTo(out);
 		}
-		out.println(sout);
 	}
 	
 	public void processSeenMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3704,16 +3703,13 @@ public class Service extends BaseService {
 		MailAccount account=getAccount(request);
 		String foldername = request.getParameter("folder");
 		String uid = request.getParameter("id");
-		String sout = null;
+		
 		try {
 			account.checkStoreConnected();
-			StringBuffer sb = new StringBuffer();
 			FolderCache mcache = account.getFolderCache(foldername);
 			Message msg=mcache.getMessage(Long.parseLong(uid));
 			String subject = msg.getSubject();
-			String ctype = "binary/octet-stream";
-			response.setContentType(ctype);
-			response.setHeader("Content-Disposition", "inline; filename=\"" + subject + ".eml\"");
+			ServletUtils.setFileStreamHeadersForceDownload(response, subject + ".eml");
 			OutputStream out = response.getOutputStream();
 			msg.writeTo(out);
 		} catch (Exception exc) {
@@ -5347,7 +5343,7 @@ public class Service extends BaseService {
 			new JsonResult().printTo(out);
 		} catch (MessagingException exc) {
 		   logger.error("Error managing tags", exc);
-		   new JsonResult(false, "Error managing tags").printTo(out);
+		   new JsonResult(false, lookupResource(MailLocaleKey.PERMISSION_DENIED)).printTo(out);
 		}
 	}	
 	
