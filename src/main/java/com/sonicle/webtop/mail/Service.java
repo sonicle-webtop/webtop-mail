@@ -3091,7 +3091,7 @@ public class Service extends BaseService {
 		String flag = request.getParameter("flag");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
-		String sout = null;
+		
 		try {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(fromfolder);
@@ -3113,12 +3113,11 @@ public class Service extends BaseService {
                     else flagMessages(mcache, iuids, flag);
 				}
 			}
-			sout = "{\nresult: true\n}";
+			new JsonResult().printTo(out);
 		} catch (MessagingException exc) {
 			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			new JsonResult(false, lookupResource(MailLocaleKey.PERMISSION_DENIED)).printTo(out);
 		}
-		out.println(sout);
 	}
 	
 	public void processSeenMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -5321,7 +5320,7 @@ public class Service extends BaseService {
 			new JsonResult().printTo(out);
 		} catch (MessagingException exc) {
 		   logger.error("Error managing tags", exc);
-		   new JsonResult(false, "Error managing tags").printTo(out);
+		   new JsonResult(false, lookupResource(MailLocaleKey.PERMISSION_DENIED)).printTo(out);
 		}
 	}	
 	

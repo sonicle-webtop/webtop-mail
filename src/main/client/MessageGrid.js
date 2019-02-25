@@ -1668,7 +1668,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   if (dorel) this.mys.reloadFolderList();
 
               } else {
-                  WT.error(json.text);
+                  WT.error(json.message);
               }
 			}
 		});					
@@ -1798,7 +1798,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		WT.ajaxReq(me.mys.ID, 'FlagMessages', {
 			params: params,
 			callback: function(success,json) {
-              if (json.result) {
+              if (success) {
                   var dorel=false,
 					  fl=me.mys.messagesPanel.folderList,
 					  fs=flagstring;
@@ -1832,7 +1832,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   if (dorel) this.mys.reloadFolderList();
 
               } else {
-                  WT.error(json.text);
+                  WT.error(json.message);
               }
 			}
 		});					
