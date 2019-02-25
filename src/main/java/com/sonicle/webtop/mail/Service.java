@@ -3681,16 +3681,13 @@ public class Service extends BaseService {
 		MailAccount account=getAccount(request);
 		String foldername = request.getParameter("folder");
 		String uid = request.getParameter("id");
-		String sout = null;
+		
 		try {
 			account.checkStoreConnected();
-			StringBuffer sb = new StringBuffer();
 			FolderCache mcache = account.getFolderCache(foldername);
 			Message msg=mcache.getMessage(Long.parseLong(uid));
 			String subject = msg.getSubject();
-			String ctype = "binary/octet-stream";
-			response.setContentType(ctype);
-			response.setHeader("Content-Disposition", "inline; filename=\"" + subject + ".eml\"");
+			ServletUtils.setFileStreamHeadersForceDownload(response, subject + ".eml");
 			OutputStream out = response.getOutputStream();
 			msg.writeTo(out);
 		} catch (Exception exc) {
