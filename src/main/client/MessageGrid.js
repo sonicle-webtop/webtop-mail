@@ -47,10 +47,15 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
     
 	getRowClass: function(record, index, rowParams, store ) {
 		//TODO : manage threading state
-		var unread=record.get('unread');
-		console.log("index "+index+" unread="+unread);
+		var unread=record.get('unread'),
+			pecstatus=record.get('pecstatus');
 		var cls=unread?'wtmail-row-unread':'';
-		if (!this.grid.getSelectionModel().isSelected(index)) {
+		
+		if (pecstatus) {
+			if (pecstatus=='accettazione') cls+=' wtmail-row-pec-accepted';
+			else if (pecstatus=='avvenuta-consegna') cls+=' wtmail-row-pec-delivered';
+		}
+		else if (!this.grid.getSelectionModel().isSelected(index)) {
 			var tdy=record.get('istoday');
 			cls+=tdy?' wtmail-row-today':'';
 		}
@@ -431,11 +436,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			loadMask: { msg: WT.res("loading") },
 			getRowClass: function(record, index, rowParams, store ) {
 				var unread=record.get('unread');
-				var tdy=record.get('istoday');
-				//var ti=record.get('threadIndent');
-				cls1=unread?'wtmail-row-unread':'';
-				cls2=tdy?'wtmail-row-today':'';
-				//cls3=ti>0?'wtmail-row-hidden':'';
+				    pecstatus=record.get('pecstatus'),
+				    tdy=record.get('istoday'),
+					cls1=unread?'wtmail-row-unread':'',
+					cls2=tdy?'wtmail-row-today':'';
+					/*cls3=(pecstatus=='accettazione')?'wtmail-row-pec-accepted':
+							(pecstatus=='avvenuta-consegna')?'wtmail-row-pec-delivered':
+							(pecstatus=='errore')?'wtmail-row-pec-error':'';*/
 				return cls1+' '+cls2/*+' '+cls3*/;
 			},
 			
@@ -2147,7 +2154,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						stateId: 'stid-unread',
 						hidden: scol.hidden,
 						getIconCls: function(value,rec) {
-							return Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'status-'+(value?"seen":"unseen"), 'xs');
+							var cls=Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'status-'+(value?"seen":"unseen"), 'xs');
+							return cls;
+						},
+						getCellCls: function(value,rec) {
+							var pecstatus=rec.get('pecstatus'),
+								cls=(pecstatus==='accettazione')?'wtmail-row-pec-accepted':
+									(pecstatus==='avvenuta-consegna')?'wtmail-row-pec-delivered':
+									(pecstatus==='errore')?'wtmail-row-pec-error':null;
+							return cls;
 						},
 						handler: function(grid, rix, cix, e, rec) {
 							var newunread=!rec.get('unread');

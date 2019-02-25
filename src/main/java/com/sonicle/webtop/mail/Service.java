@@ -229,6 +229,18 @@ public class Service extends BaseService {
 	
 	private FetchProfile FP = new FetchProfile();
 	private FetchProfile draftsFP=new FetchProfile();
+	private FetchProfile pecFP=new FetchProfile();
+	
+	private static final String HDR_PEC_PROTOCOLLO="X-Protocollo";
+	private static final String HDR_PEC_RIFERIMENTO_MESSAGE_ID="X-Riferimento-Message-ID";
+	private static final String HDR_PEC_TRASPORTO="X-Trasporto";
+	private static final String HDR_PEC_RICEVUTA="X-Ricevuta";
+	private static final String HDR_PEC_TIPORICEVUTA="X-Tiporicevuta";
+	
+	private static final String HDR_PEC_RICEVUTA_VALUE_ACCETTAZIONE="accettazione";
+	private static final String HDR_PEC_RICEVUTA_VALUE_AVVENUTA_CONSEGNA="avvenuta-consegna";
+	private static final String HDR_PEC_TIPORICEVUTA_VALUE_BREVE="breve";
+	private static final String HDR_PEC_TIPORICEVUTA_VALUE_COMPLETA="completa";
 	
 	private boolean sortfolders=false;
 	
@@ -380,7 +392,18 @@ public class Service extends BaseService {
 			FP.add("X-WT-Archived");
 			draftsFP.add("X-WT-Archived");
 		}
-		
+		pecFP.add(FetchProfile.Item.ENVELOPE);
+		pecFP.add(FetchProfile.Item.FLAGS);
+		pecFP.add(FetchProfile.Item.CONTENT_INFO);
+		pecFP.add(UIDFolder.FetchProfileItem.UID);
+		pecFP.add("Message-ID");
+		pecFP.add("X-Priority");
+		pecFP.add(HDR_PEC_PROTOCOLLO);
+		pecFP.add(HDR_PEC_RIFERIMENTO_MESSAGE_ID);
+		pecFP.add(HDR_PEC_TRASPORTO);
+		pecFP.add(HDR_PEC_RICEVUTA);
+		pecFP.add(HDR_PEC_TIPORICEVUTA);
+
 		sortfolders=ss.isSortFolder();
 		
 		mainAccount.setDifferentDefaultFolder(us.getDefaultFolder());
@@ -5482,11 +5505,21 @@ public class Service extends BaseService {
 	class MessagesInfo {
 		Message messages[];
 		long millis;
+		private MessageListThread mlt;
 		
-		MessagesInfo(Message msgs[], long millis) {
+		MessagesInfo(Message msgs[], MessageListThread mlt) {
 			this.messages=msgs;
-			this.millis=millis;
+			this.millis=mlt.millis;
+			this.mlt=mlt;
 		}
+		
+		public boolean isPEC() {
+			return mlt.isPec;
+		}
+		
+		public boolean checkSkipPEC(Message xm) throws MessagingException {
+			return mlt.checkSkipPEC(xm);
+		}		
 	}
 	
 	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, String pattern, String searchfield, SortGroupInfo sgi, String pquickfilter, long timestamp) throws MessagingException {
@@ -5550,7 +5583,7 @@ public class Service extends BaseService {
 			//}
 		}
 
-		return new MessagesInfo(xmsgs,mlt.millis);
+		return new MessagesInfo(xmsgs,mlt);
 	}
 	
 	class SortGroupInfo {
@@ -5810,6 +5843,21 @@ public class Service extends BaseService {
 			MessagesInfo messagesInfo=listMessages(mcache,key,refresh,ppattern,psearchfield,sgi,pquickfilter,timestamp);
             Message xmsgs[]=messagesInfo.messages;
 			
+			//TODO: check pec from folder cache
+			/*boolean isPec=mcache.getFolder().getName().startsWith("pec");
+			HashMap<String,Message> hpecsent=null;
+			
+			if (isPec) {
+				Message pmsgs[]=mcache.searchMessagesByXHeader(HDR_PEC_RICEVUTA,HDR_PEC_RICEVUTA_VALUE_AVVENUTA_CONSEGNA);
+				mcache.fetch(pmsgs, pecFP);
+				hpecsent=new HashMap<>();
+				for(Message pmsg: pmsgs) {
+					String hdrs[]=pmsg.getHeader(HDR_PEC_RIFERIMENTO_MESSAGE_ID);
+					if (hdrs!=null && hdrs.length>0)
+						hpecsent.put(hdrs[0], pmsg);
+				}
+			}*/
+			
 			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
 				long actuid=Long.parseLong(pthreadactionuid);
 				mcache.setThreadOpen(actuid, pthreadaction.equals("open"));
@@ -5873,7 +5921,7 @@ public class Service extends BaseService {
 					Folder fsent=account.getFolder(account.getFolderSent());
 					boolean openedsent=false;
 					//Fetch others for these messages
-					mcache.fetch(xmsgs,(isdrafts?draftsFP:FP), start, max);
+					mcache.fetch(xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max);
 					long tId=0;
 					for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 						int ix = start + i;
@@ -5886,6 +5934,22 @@ public class Service extends BaseService {
 							--i;
 							continue;
 						}
+						
+						/*if (isPec) {
+							String hdrs[]=xm.getHeader(HDR_PEC_RICEVUTA);
+							if (hdrs!=null && hdrs.length>0 && hdrs[0].equals(HDR_PEC_RICEVUTA_VALUE_ACCETTAZIONE)) {							
+								hdrs=xm.getHeader(HDR_PEC_RIFERIMENTO_MESSAGE_ID);
+								if (hdrs!=null && hdrs.length>0) {
+									if (hpecsent.containsKey(hdrs[0])) continue;
+								}
+							}
+						}*/
+						if (messagesInfo.checkSkipPEC(xm)) {
+							--i;
+							continue;
+						}
+
+						
 						/*String ids[]=null;
 						 try {
 						 ids=xm.getHeader("Message-ID");
@@ -6139,6 +6203,18 @@ public class Service extends BaseService {
 							}
 						}
 						
+						String pecstatus=null;
+						if (messagesInfo.isPEC()) {
+							String hdrs[]=xm.getHeader(HDR_PEC_TRASPORTO);
+							if (hdrs!=null && hdrs.length>0 && hdrs[0].equals("errore"))
+								pecstatus="errore";
+							else {
+								hdrs=xm.getHeader(HDR_PEC_RICEVUTA);
+								if (hdrs!=null && hdrs.length>0)
+									pecstatus=hdrs[0];
+							}
+						}
+						
 						sout += "{idmessage:'" + nuid + "',"
 							+ "priority:" + priority + ","
 							+ "status:'" + status + "',"
@@ -6157,6 +6233,7 @@ public class Service extends BaseService {
 							+ "unread: " + unread + ","
 							+ "size:" + msgsize + ","
 							+ (svtags!=null ? "tags: "+svtags+",":"")
+							+ (pecstatus!=null ? "pecstatus: '"+pecstatus+"',":"")
 							+ "flag:'" + cflag + "'"
 							+ (hasNote ? ",note:true" : "")
 							+ (archived ? ",arch:true" : "")
@@ -6442,6 +6519,9 @@ public class Service extends BaseService {
 		boolean refresh;
 		long millis;
 		
+		boolean isPec=false;
+		HashMap<String,Message> hpecsent=null;
+		
 		boolean threaded=false;
 		
 		Message msgs[] = null;
@@ -6470,6 +6550,20 @@ public class Service extends BaseService {
 				try {
 					this.millis = System.currentTimeMillis();
 					msgs=fc.getMessages(quickfilter,pattern,searchfield,sortby,ascending,refresh, sort_group, groupascending,threaded);
+					//TODO: check pec from folder cache
+					isPec=fc.getFolder().getName().startsWith("pec");
+
+					if (isPec) {
+						Message pmsgs[]=fc.searchMessagesByXHeader(HDR_PEC_RICEVUTA,HDR_PEC_RICEVUTA_VALUE_AVVENUTA_CONSEGNA);
+						fc.fetch(pmsgs, pecFP);
+						hpecsent=new HashMap<>();
+						for(Message pmsg: pmsgs) {
+							String hdrs[]=pmsg.getHeader(HDR_PEC_RIFERIMENTO_MESSAGE_ID);
+							if (hdrs!=null && hdrs.length>0)
+								hpecsent.put(hdrs[0], pmsg);
+						}
+						System.out.println("loaded PEC hash");
+					}
 				} catch (Exception exc) {
 					Service.logger.error("Exception",exc);
 				} finally {
@@ -6478,6 +6572,20 @@ public class Service extends BaseService {
 				}
 			}
 		}
+		
+		public boolean checkSkipPEC(Message xm) throws MessagingException {
+			if (isPec) {
+				String hdrs[]=xm.getHeader(HDR_PEC_RICEVUTA);
+				if (hdrs!=null && hdrs.length>0 && hdrs[0].equals(HDR_PEC_RICEVUTA_VALUE_ACCETTAZIONE)) {							
+					hdrs=xm.getHeader(HDR_PEC_RIFERIMENTO_MESSAGE_ID);
+					if (hdrs!=null && hdrs.length>0) {
+						return hpecsent.containsKey(hdrs[0]);
+					}
+				}
+			}
+			return false;
+		}
+		
 	}
 	
 	private String getJSTagsArray(Flags flags) {

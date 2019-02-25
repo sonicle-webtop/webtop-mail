@@ -117,6 +117,10 @@
 .wtmail-row-body { max-height: 30; color: gray }
 .wtmail-row-body-hidden { display: none; }
 
+.wtmail-row-pec-error { background: red; }
+.wtmail-row-pec-accepted { background: lightsalmon; }
+.wtmail-row-pec-delivered { background: lightgreen; }
+
 /* message view classes */
 .wtmail-mv-container { padding: 0px 0px 0px 0px; background-color: #ffffff; }
 .wtmail-mv-main {

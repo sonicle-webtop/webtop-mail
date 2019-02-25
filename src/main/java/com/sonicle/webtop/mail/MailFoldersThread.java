@@ -131,7 +131,7 @@ public class MailFoldersThread extends Thread {
                     sleepCount-=sleepInbox;
             }
         } catch(Throwable exc) {
-            Service.logger.error("Exception",exc);
+            Service.logger.debug("Exception",exc);
             abort=true;
             failed=true;
             failMessage=exc.getMessage();

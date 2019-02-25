@@ -838,6 +838,15 @@ public class FolderCache {
         open();
         ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
     }
+	
+	public Message[] searchMessagesByXHeader(String headerName, String headerValue) throws MessagingException {
+		open();
+		Message[] msgs=((SonicleIMAPFolder)getFolder()).sort(
+				new DateSortTerm(true),
+				new TextSearchTerm(headerName+": "+headerValue)
+		);
+		return msgs;
+	}
     
 	public Message[] getMessages(String quickfilter, String pattern, String searchfield, int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) throws MessagingException, IOException {
         boolean rebuilt=false;

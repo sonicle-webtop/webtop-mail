@@ -387,7 +387,7 @@ public class MailAccount {
 	public boolean disconnect() {
 		
 		try {
-			if (store.isConnected()) {
+			if (store!=null && store.isConnected()) {
 				disconnecting = true;
 				store.close();
 			}
