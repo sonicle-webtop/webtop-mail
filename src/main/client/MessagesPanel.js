@@ -456,7 +456,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 					id=r.get('idmessage'),
 					fldr=r.get('fromfolder');
 				if (!fldr) fldr=me.currentFolder;
-				me.showMessage(acct,fldr,id);
+				me.showMessage(acct,fldr,id,r);
 			} else {
 				me.clearMessageView();
 			}
@@ -551,7 +551,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.updateLayout();
 		if (me.viewCollapsed) mvc.collapse();
 		//if (save) me.saveMessageView();
-		me.showMessage(acct,idf,idm);
+		me.showMessage(acct,idf,idm,mv.model);
 		me.movingPanel=false;
 	},
 	
@@ -753,7 +753,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				
 				if (!fldr) fldr=this.currentFolder;
 				if (id!==me.messageView.idmessage)
-					me.showMessage(acct,fldr,id);
+					me.showMessage(acct,fldr,id,r[0]);
 			} else {
 				me.clearMessageView();
 			}
@@ -761,11 +761,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.fireEvent('gridselectionchanged',sm/*,ctrlshift*/);
     },
     
-	showMessage: function(acct,folder,id) {
+	showMessage: function(acct,folder,id,rec) {
 		if (acct && folder && id) {
 			var me=this;
 			if (WT.plTags.desktop) me.messageViewContainer.getTopBar().show();
-			me.messageView._showMessage(acct,folder,id,!me.mys.getVar("manualSeen"));
+			me.messageView._showMessage(acct,folder,id,!me.mys.getVar("manualSeen"),rec);
 		}
 	},
 

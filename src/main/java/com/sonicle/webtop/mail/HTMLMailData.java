@@ -55,12 +55,25 @@ public class HTMLMailData {
   
   private ICalendarRequest icalRequest=null;
   private boolean hasICalAttachment=false;
+  
+  private boolean isPec=false;
 
-  public HTMLMailData(MimeMessage msg, Folder folder) throws MessagingException {
+  public HTMLMailData(MimeMessage msg, FolderCache fc) throws MessagingException {
     this.message=msg;
-    this.folder=folder;
+    this.folder=fc.getFolder();
     if (msg instanceof SonicleIMAPMessage)
 		this.nuid=((SonicleIMAPMessage)msg).getUID();
+	
+	if (fc.isPEC()) {
+		String hdrs[]=msg.getHeader(Service.HDR_PEC_TRASPORTO);
+		if (hdrs!=null && hdrs.length>0 && hdrs[0].equals("posta-certificata")) {
+			isPec=true;
+		}
+	}
+  }
+  
+  public boolean isPEC() {
+	  return isPec;
   }
 
   public Folder getFolder() {

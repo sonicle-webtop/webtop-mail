@@ -280,6 +280,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.htmlparts=null;
             me.cleared=true;
             me.idmessage=null;
+			me.model=null;
 			me.icalmethod=null;
 			me.icaluid=null;
 			me.icalwebtopid=0;
@@ -287,7 +288,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
 	
-    _showMessage: function(acct, folder, id, setseen) {
+    _showMessage: function(acct, folder, id, setseen, rec, nopec) {
 		var me=this;/*,
 			idmessage=id,
 			params={service: me.mys.ID, action: 'GetMessage', folder: folder, idmessage: idmessage };*/
@@ -298,8 +299,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		me.acct=acct;
         me.folder=folder;
         me.latestId=id;
+		me.model=rec;
 		me.proxy.abort();
 		WTU.applyExtraParams(me.proxy,{ account: acct,  folder: folder, idmessage: id, setseen: setseen });
+		if (nopec) WTU.applyExtraParams(me.proxy,{ nopec: true });
 		me.proxy.doRequest(
 			me.proxy.createOperation('read',{
 				url: WTF.requestBaseUrl(),
@@ -429,11 +432,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				},
 				this
 			);*/
-			
+
+			var tdPEC=(me.pec?"<td style='width:24px; padding-right:8px; background-repeat: no-repeat' class='wtmail-pec'><a data-qtip='Visualizza busta completa' data-qtitle='Posta Certificata' href='javascript:Ext.emptyFn()' certificata=1 style='text-decoration:none'>&nbsp;&nbsp;&nbsp;</a></td>":"");
 			if (me.mp && WT.plTags.desktop) {
 				var wticon=(me.mp.getViewRegion()==='east'?'wt-icon-panel-bottom-xs':'wt-icon-panel-right-xs');
 				me.divSubject.update(
 					"<table class='wtmail-mv-subject-table'><tr>"+
+					tdPEC+
 					"<td>"+me.subject+"</td>"+
 					"<td class='"+wticon+"' style='width:24px; padding-right:8px; background-repeat: no-repeat'><a data-qtip='Click me!' data-qtitle='Panel mover' href='javascript:Ext.emptyFn()' panelmover=1>&nbsp;&nbsp;&nbsp;</a></td>"+
 					"</tr></table>"
@@ -450,10 +455,35 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			} else {
 				me.divSubject.update(
 					"<table class='wtmail-mv-subject-table'><tr>"+
+					tdPEC+
 					"<td>"+me.subject+"</td>"+
 					"</tr></table>"
 				);
 			}
+			Ext.each(me.divSubject.query("a[certificata]"),function(o) { 
+				Ext.get(o).on("click",
+					function(e,t,o) { 
+						var win=WT.createView(me.mys.ID,'view.DockableMessageView',{
+							viewCfg: {
+								mys: me.mys,
+								acct: me.acct,
+								folder: me.folder,
+								idmessage: me.idmessage,
+								title: me.subject,
+								model: me.model,
+								messageGrid: me.mys.messagesPanel.folderList,
+								nopec: true
+							}
+						});
+						win.show(false,function() {
+							win.getView().showMessage();
+						});
+						
+						e.stopEvent(); 
+						return false;
+					}
+				);
+			});
 			//TODO: update tooltips (necessary???)
             //me.divFromName.set({ 'data-qtitle': me.fromName, 'data-qtip': me.fromEmail })
             me.divFromName.update(
@@ -1156,6 +1186,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
 		
 		me.tags=me.proxy.getReader().rawData.tags;
+		me.pec=me.proxy.getReader().rawData.pec;
     },
     
     appendEmail: function(name, desc, email) {

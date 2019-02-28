@@ -108,6 +108,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 			mv=me.messageView;
 		
 		if (me.model) {
+			mv.model=me.model;
 			mv.on('messageviewed',function() {
 				if (!me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen")) {
 					var r=me.model;
@@ -124,7 +125,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 			});
 		}
 		
-		mv._showMessage(me.acct,me.folder,me.idmessage,!me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen"));
+		mv._showMessage(me.acct,me.folder,me.idmessage,!me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen"),me.model,me.nopec);
 	}
 	
 });

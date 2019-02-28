@@ -450,15 +450,26 @@ public class FolderCache {
     public boolean isSharedFolder() {
         return isSharedFolder;
     }
+	
+	public boolean isUnderSharedFolder() {
+		return isUnderSharedFolder;
+	}
 
     public boolean isSharedInbox() {
         return isSharedInbox;
     }
 
     public SharedPrincipal getSharedInboxPrincipal() {
+		SharedPrincipal sp=sharedInboxPrincipal;
+		FolderCache fc=this;
+		while(sp==null) {
+			fc=fc.getParent();
+			if (fc==null) break;
+			sp=fc.getSharedInboxPrincipal();
+		}
         return sharedInboxPrincipal;
     }
-
+	
     public void setScanForcedOff(boolean b) {
         scanForcedOff=b;
     }
@@ -1572,6 +1583,7 @@ public class FolderCache {
 		switch(sort_group) {
 			case SORT_BY_DATE:
 				gsort=new DateSortTerm(!groupascending);
+				//gsort=new ArrivalSortTerm(!groupascending);
 				break;
 			case SORT_BY_FLAG:
 				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
@@ -2239,7 +2251,7 @@ public class FolderCache {
   }
 
   public synchronized HTMLMailData prepareHTMLMailData(MimeMessage msg) throws MessagingException, IOException {
-    HTMLMailData mailData=new HTMLMailData(msg,folder);
+    HTMLMailData mailData=new HTMLMailData(msg,this);
 
     prepareHTMLMailData(msg, mailData);
 	if (mailData.getDisplayPartCount()==0 && mailData.getAttachmentPartCount()>0) {
@@ -2301,7 +2313,6 @@ public class FolderCache {
       Part p=null;
       for(int i=0; i<parts; ++i) {
         p=mp.getBodyPart(i);
-        String ctype=p.getContentType();
         if(p.isMimeType("multipart/alternative")) {
           Part ap=getAlternativePart((Multipart)p.getContent(),mailData);
           if(ap!=null) {
@@ -2313,7 +2324,7 @@ public class FolderCache {
           prepareHTMLMailData(p, mailData);
         } else if(p.isMimeType("text/html")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
-            mailData.addDisplayPart(p);
+            /*if (!mailData.isPEC())*/ mailData.addDisplayPart(p);
           else mailData.addAttachmentPart(p);
         } else if(p.isMimeType("text/plain")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
@@ -2326,7 +2337,7 @@ public class FolderCache {
               mailData.addDisplayPart(p);
           else mailData.addAttachmentPart(p);
         } else if(p.isMimeType("message/rfc822")) {
-          if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
+          if (!mailData.isPEC() && (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE)))
               mailData.addDisplayPart(p);
           else mailData.addAttachmentPart(p);
           prepareHTMLMailData((Message)p.getContent(), mailData);
@@ -2517,6 +2528,21 @@ public class FolderCache {
     return parserThread.getParsedHTML();
   }
   
+	public boolean isPEC() {
+		boolean isPec=false; 
+		UserProfileId profileId=environment.getProfileId();
+		String domainId=profileId.getDomainId();
+		if (isUnderSharedFolder()) {
+			SharedPrincipal sp=getSharedInboxPrincipal();
+			if (sp!=null) profileId=new UserProfileId(domainId, sp.getUserId());
+			else profileId=null;
+		}
+		if (profileId!=null)
+			isPec=RunContext.hasRole(profileId, WT.getGroupUidForPecAccounts(profileId.getDomainId()));
+
+		return isPec;
+	}
+
   class MessageSearchResult {
 	  String quickfilter;
       String pattern;
@@ -2557,7 +2583,7 @@ public class FolderCache {
 //              }
 //          }
       }
-      
+	  
       protected void cleanup() {
           //this.mylist.clear();
           this.msgs=null;

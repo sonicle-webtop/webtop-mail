@@ -2108,7 +2108,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					
 				case 'stid-priority':
 					dcols[n++]=Ext.create({//Priority
-						xtype: 'gridcolumn',
+						//xtype: 'gridcolumn',
+						xtype: 'soiconcolumn',
 						//header: '<i class="wtmail-icon-header-priority-xs">\u00a0\u00a0\u00a0\u00a0\u00a0</i>',
 						header: WTF.headerWithGlyphIcon('fa fa-exclamation'),
 						cls: 'wtmail-header-text-clip',
@@ -2118,13 +2119,38 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						dataIndex: 'priority',
 						stateId: 'stid-priority',
 						hidden: scol.hidden,
-						renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+						/*renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 								var tag;
 								var others="border=0";
 								if (value<3) tag=WTF.imageTag(me.mys.ID,'priorityhigh_16.gif',others);
 								else tag=WTF.globalImageTag('empty.gif',7,16,others);
 								return tag;
+						},*/
+						getIconCls: function(value,rec) {
+							var cls=value<3?WTF.cssIconCls(me.mys.XID, 'priority-high', 'xs'):WTF.cssIconCls(WT.XID, 'empty', 'xs'),
+								pecstatus=rec.get('pecstatus');
+							if (pecstatus) {
+								switch (pecstatus) {
+									case 'posta-certificata':
+										cls='wtmail-pec'; break;
+									case 'accettazione':
+										cls='wtmail-pec-accepted'; break;
+									case 'avvenuta-consegna':
+										cls='wtmail-pec-delivered'; break;
+									case 'errore':
+										cls='wtmail-pec-error'; break;
+								} 
+							}
+							
+							return cls;
 						},
+						/*getCellCls: function(value,rec) {
+							var pecstatus=rec.get('pecstatus'),
+								cls=(pecstatus==='accettazione')?'wtmail-row-pec-accepted':
+									(pecstatus==='avvenuta-consegna')?'wtmail-row-pec-delivered':
+									(pecstatus==='errore')?'wtmail-row-pec-error':null;
+							return cls;
+						},*/
 						scope: me,
 						filter: {
 							xtype: 'soicononlycombobox',
@@ -2155,13 +2181,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						hidden: scol.hidden,
 						getIconCls: function(value,rec) {
 							var cls=Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'status-'+(value?"seen":"unseen"), 'xs');
-							return cls;
-						},
-						getCellCls: function(value,rec) {
-							var pecstatus=rec.get('pecstatus'),
-								cls=(pecstatus==='accettazione')?'wtmail-row-pec-accepted':
-									(pecstatus==='avvenuta-consegna')?'wtmail-row-pec-delivered':
-									(pecstatus==='errore')?'wtmail-row-pec-error':null;
 							return cls;
 						},
 						handler: function(grid, rix, cix, e, rec) {
