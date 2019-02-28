@@ -2135,6 +2135,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 										cls='wtmail-pec'; break;
 									case 'accettazione':
 										cls='wtmail-pec-accepted'; break;
+									case 'non-accettazione':
+										cls='wtmail-pec-not-accepted'; break;
 									case 'avvenuta-consegna':
 										cls='wtmail-pec-delivered'; break;
 									case 'errore':

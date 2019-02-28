@@ -119,6 +119,7 @@
 
 .wtmail-pec { background-image: url('pec_16.svg') !important; background-size: contain; }
 .wtmail-pec-accepted { background-image: url('pec-accepted_16.svg') !important; background-size: contain; }
+.wtmail-pec-not-accepted { background-image: url('pec-notaccepted_16.svg') !important; background-size: contain; }
 .wtmail-pec-delivered { background-image: url('pec-delivered_16.svg') !important; background-size: contain; }
 .wtmail-pec-error { background-image: url('pec-error_16.svg') !important; background-size: contain; }
 

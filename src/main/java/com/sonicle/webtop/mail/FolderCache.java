@@ -467,7 +467,7 @@ public class FolderCache {
 			if (fc==null) break;
 			sp=fc.getSharedInboxPrincipal();
 		}
-        return sharedInboxPrincipal;
+        return sp;
     }
 	
     public void setScanForcedOff(boolean b) {

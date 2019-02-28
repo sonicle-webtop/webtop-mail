@@ -238,6 +238,7 @@ public class Service extends BaseService {
 	public static final String HDR_PEC_TIPORICEVUTA="X-Tiporicevuta";
 	
 	public static final String HDR_PEC_RICEVUTA_VALUE_ACCETTAZIONE="accettazione";
+	public static final String HDR_PEC_RICEVUTA_VALUE_NON_ACCETTAZIONE="non-accettazione";
 	public static final String HDR_PEC_RICEVUTA_VALUE_AVVENUTA_CONSEGNA="avvenuta-consegna";
 	public static final String HDR_PEC_TIPORICEVUTA_VALUE_BREVE="breve";
 	public static final String HDR_PEC_TIPORICEVUTA_VALUE_COMPLETA="completa";
