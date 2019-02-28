@@ -555,9 +555,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					if (doEdit) docedit=" docedit='"+Ext.Object.toQueryString(aparams)+"'";
                     var ics=null;
                     if (name.toLowerCase().endsWith(".ics")) ics=" ics='"+Ext.Object.toQueryString(aparams)+"'";
+					var vcf = null;
+					if(name.toLowerCase().endsWith(".vcf")) vcf = " vcf='" + Ext.Object.toQueryString(aparams)+"'";
                     var eml=null;
                     if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
-                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+(docedit!=null?docedit:"")+"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
+                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+ (vcf !== null ? vcf : "") + (docedit!=null?docedit:"")+"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
@@ -660,6 +662,17 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						var xel=t; //sometimes returns SPAN or IMG instead of A
 						if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
 						me.showEml(xel,xel.getAttribute("eml")); 
+						e.stopEvent(); 
+						return false;
+					},me );
+				},me);
+				
+				Ext.each(me.divAttach.query("a[vcf]"),function(o) {
+					Ext.get(o).on("click",function(e,t,o) { 
+						var xel=t; //sometimes returns SPAN or IMG instead of A
+						if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
+						var params = Ext.Object.fromQueryString(xel.getAttribute("vcf"));
+						me.confirmImportAttachAsContact(params.folder, params.idmessage, params.idattach);
 						e.stopEvent(); 
 						return false;
 					},me );
@@ -1279,7 +1292,32 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		}
 		return data;
 	},
-    
+	
+	confirmImportAttachAsContact: function(folder, messageId, attachId) {
+		var me = this;
+		WT.confirm(me.res('act-importAttachAsContact.lbl'), function(bid) {
+			if (bid === 'yes') me.addContactFromVCard(folder, messageId, attachId, WT.uiid(Ext.id()));
+		});
+	},
+	
+	addContactFromVCard: function(folder, messageId, attachId, uploadTag) {
+		var me = this,
+				contApi = WT.getServiceApi('com.sonicle.webtop.contacts');
+		if (contApi) {
+			WT.ajaxReq(me.mys.ID, "GetContactFromVCard", {
+				params: {
+					folder: folder,
+					messageId: messageId,
+					attachId: attachId,
+					uploadTag: uploadTag
+				},
+				callback: function(success, json) {
+					if (success) contApi.addContact(json.data, {dirty: true, uploadTag: uploadTag});
+				}
+			});
+		}
+	},
+	
     showEml: function(t,urlparams) {
         var params=Ext.Object.fromQueryString(urlparams);
         this.mys.openEml(params.acct, params.folder,params.idmessage,params.idattach);

@@ -66,6 +66,9 @@ import com.sonicle.security.auth.directory.LdapNethDirectory;
 import com.sonicle.webtop.calendar.model.GetEventScope;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
+import com.sonicle.webtop.contacts.io.ContactInput;
+import com.sonicle.webtop.contacts.io.VCardInput;
+import com.sonicle.webtop.contacts.model.ContactPictureWithBytes;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.DocEditorManager;
@@ -91,6 +94,7 @@ import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OScan;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
+import com.sonicle.webtop.mail.bol.js.JsContactData;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsInMailFilters;
 import com.sonicle.webtop.mail.bol.js.JsMailAutosave;
@@ -6804,7 +6808,6 @@ public class Service extends BaseService {
 				int lines = (size / 76);
 				int rsize = size - (lines * 2);//(p.getSize()/4)*3;
 				String iddata = ctype.equalsIgnoreCase("message/rfc822") ? "eml" : (inline ? "inlineattach" : "attach");
-				
 				boolean editable=isFileEditableInDocEditor(pname);
 				
 				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + ", editable: "+editable+" },\n";
@@ -6913,6 +6916,52 @@ public class Service extends BaseService {
 //            if (!wasopen) folder.close(false);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
+		}
+	}
+	
+	public void processGetContactFromVCard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String folder = ServletUtils.getStringParameter(request, "folder", true);
+			int messageId = ServletUtils.getIntParameter(request, "messageId", true);
+			int attachId = ServletUtils.getIntParameter(request, "attachId", true);
+			String uploadTag = ServletUtils.getStringParameter(request, "uploadTag", true);
+			
+			MailAccount account = getAccount(request);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(folder);
+			Message m = mcache.getMessage(messageId);
+			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
+			Part part = mailData.getAttachmentPart(attachId);
+			String filename = MailUtils.getPartFilename(part);
+			
+			InputStream is = part.getInputStream();
+			try {
+				List<ContactInput> results = new VCardInput().fromVCardFile(is, null);
+				ContactInput ci = results.get(0);
+				
+				JsContactData js = new JsContactData(ci.contact);
+
+				if (ci.contact.hasPicture()) {
+					ContactPictureWithBytes picture = (ContactPictureWithBytes)ci.contact.getPicture();
+					WebTopSession.UploadedFile upl = null;
+					ByteArrayInputStream bais = null;
+					try {
+						bais = new ByteArrayInputStream(picture.getBytes());
+						upl = addAsUploadedFile("com.sonicle.webtop.contacts", uploadTag, StringUtils.defaultIfBlank(filename, "idAttach"), "text/vcard", bais);
+					} finally {
+						IOUtils.closeQuietly(bais);
+					}
+					if (upl != null) js.picture = upl.getUploadId();
+				}
+				new JsonResult(js).printTo(out);
+				
+			} finally {
+				IOUtils.closeQuietly(is);
+			}
+			
+		} catch (Exception ex) {
+			Service.logger.error("Exception",ex);
+			new JsonResult(ex).printTo(out);
 		}
 	}
 	
