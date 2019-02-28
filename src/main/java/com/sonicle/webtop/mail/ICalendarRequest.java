@@ -237,7 +237,7 @@ public class ICalendarRequest {
 		if (p==null) return NOEMAIL;
 		String value=p.getValue();
 		if (value==null) return NOEMAIL;
-		if (value.startsWith("mailto:")) return value.substring(7);
+		if (StringUtils.startsWithIgnoreCase(value, "MAILTO:")) return value.substring(7);
 		return NOEMAIL;
 	}
 	

@@ -7431,7 +7431,7 @@ public class Service extends BaseService {
 	private void sendICalendarReply(MailAccount account, net.fortuna.ical4j.model.Calendar ical, InternetAddress organizerAddress, InternetAddress forAddress, PartStat response, String eventSummary) throws Exception {
 		String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
 		net.fortuna.ical4j.model.Calendar icalReply = ICalendarUtils.buildInvitationReply(ical, prodId, forAddress, response);
-		if (icalReply == null) throw new WTException("Unable to build iCalendar");
+		if (icalReply == null) throw new WTException("Unable to build ICalendar reply or maybe you are not into attendee list");
 		
 		// Creates base message parts
 		net.fortuna.ical4j.model.property.Method icalMethod = net.fortuna.ical4j.model.property.Method.REPLY;
