@@ -8171,6 +8171,8 @@ public class Service extends BaseService {
 				//get mapped webtop user
 				ouser=UserDAO.getInstance().selectByDomainUser(con, domainId, omap.getUserId());
 			} else {
+				//remove @domain if present
+				mailUserId=StringUtils.substringBefore(mailUserId, "@");
 				logger.debug("mapping not found, looking for a webtop user with id = {}",mailUserId);
 				//try looking for a webtop user with userId=mailUserId
 				ouser=UserDAO.getInstance().selectByDomainUser(con, domainId, mailUserId);
