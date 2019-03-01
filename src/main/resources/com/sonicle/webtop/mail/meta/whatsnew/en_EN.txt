@@ -1,3 +1,11 @@
+$	5.5.5
+	%	Version 5.5.5
+	*	<h1>Italian PEC View</h1>
+		<p>The system is now able to recognize folders of Italian PEC accounts, and use a custom simplified view</p>
+		<img src="5.5.5_pec.png"/>
+	*	<h1>Import contact from vcf attachment</h1>
+		<p>It is possible to import a contact in the addressbook by clicking on a received vcf attachment</p>
+		<img src="5.5.5_importvcf.png"/>
 $	5.5.1
 	%	Version 5.5.1
 	*	<h1>Customize subject of the auto-responder</h1>

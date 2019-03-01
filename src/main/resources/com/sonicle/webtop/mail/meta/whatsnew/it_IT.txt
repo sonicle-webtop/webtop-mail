@@ -1,3 +1,11 @@
+$	5.5.5
+	%	Versione 5.5.5
+	*	<h1>Visualizzazione Posta Certificata</h1>
+		<p>Il sisema è ora in grado di riconoscere le cartelle PEC e mostrare una visualizzazione specifica semplificata</p>
+		<img src="5.5.5_pec.png"/>
+	*	<h1>Importazione contatto da allegato vcf</h1>
+		<p>E' possibile importare un contatto in rubrica cliccando direttanmente su un allegato vcf ricevuto</p>
+		<img src="5.5.5_importvcf.png"/>
 $	5.5.1
 	%	Versione 5.5.1
 	*	<h1>Personalizzazione dell'oggetto nella risposta automatica di assenza</h1>
