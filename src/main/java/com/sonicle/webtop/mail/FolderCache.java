@@ -2529,16 +2529,21 @@ public class FolderCache {
   }
   
 	public boolean isPEC() {
-		boolean isPec=false; 
-		UserProfileId profileId=environment.getProfileId();
-		String domainId=profileId.getDomainId();
-		if (isUnderSharedFolder()) {
-			SharedPrincipal sp=getSharedInboxPrincipal();
-			if (sp!=null) profileId=new UserProfileId(domainId, sp.getUserId());
-			else profileId=null;
+		boolean isPec=false;
+		try {
+			UserProfileId profileId=environment.getProfileId();
+			String domainId=profileId.getDomainId();
+			if (isUnderSharedFolder()) {
+				SharedPrincipal sp=getSharedInboxPrincipal();
+				if (sp!=null) profileId=new UserProfileId(domainId, sp.getUserId());
+				else profileId=null;
+			}
+			if (profileId!=null)
+				isPec=RunContext.hasRole(profileId, WT.getGroupUidForPecAccounts(profileId.getDomainId()));
+			
+		} catch(Throwable t) {
+			
 		}
-		if (profileId!=null)
-			isPec=RunContext.hasRole(profileId, WT.getGroupUidForPecAccounts(profileId.getDomainId()));
 
 		return isPec;
 	}
