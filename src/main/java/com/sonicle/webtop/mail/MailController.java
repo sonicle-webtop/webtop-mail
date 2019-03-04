@@ -38,41 +38,35 @@ import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.auth.LdapWebTopDirectory;
 import com.sonicle.webtop.core.app.auth.WebTopDirectory;
+import com.sonicle.webtop.core.app.sdk.interfaces.IControllerServiceHooks;
 import com.sonicle.webtop.core.app.sdk.interfaces.IControllerUserEvents;
 import com.sonicle.webtop.core.sdk.BaseController;
 import com.sonicle.webtop.core.sdk.ServiceVersion;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
-import com.sonicle.webtop.core.sdk.interfaces.IControllerHandlesProfiles;
 import javax.mail.MessagingException;
 
 /**
  *
  * @author malbinola
  */
-public class MailController extends BaseController implements IControllerUserEvents, IControllerHandlesProfiles {
-	
-	private static ServiceVersion SV_5_0_14=new ServiceVersion("5.0.14");
+public class MailController extends BaseController implements IControllerServiceHooks, IControllerUserEvents {
+	private static ServiceVersion V_5_0_14 = new ServiceVersion("5.0.14");
 	
 	@Override
-	public void addProfile(UserProfileId profileId) throws WTException {
+	public void initProfile(ServiceVersion current, UserProfileId profileId) throws WTException {
 		MailManager manager = new MailManager(true, profileId);
 		manager.addBuiltinTags();
 	}
-
+	
 	@Override
-	public void removeProfile(UserProfileId profileId, boolean deep) throws WTException {
-	}
-
-	@Override
-	public void upgradeProfile(UserProfileId profileId, ServiceVersion current, ServiceVersion lastSeen) throws WTException {
-		//Add default tag labels on v5.0.14
-		if (current.compareTo(SV_5_0_14)>=0 && lastSeen.compareTo(SV_5_0_14)<0) {
+	public void upgradeProfile(ServiceVersion current, UserProfileId profileId, ServiceVersion profileLastSeen) throws WTException {
+		if (current.compareTo(V_5_0_14)>=0 && profileLastSeen.compareTo(V_5_0_14)<0) {
 			MailManager manager = new MailManager(true, profileId);
 			manager.addBuiltinTags();
 		}
 	}
-
+	
 	@Override
 	public void onUserAdded(UserProfileId profileId) throws WTException {
 		CoreManager coreMgr = WT.getCoreManager(profileId);
