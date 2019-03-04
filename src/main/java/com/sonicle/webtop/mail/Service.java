@@ -1554,7 +1554,8 @@ public class Service extends BaseService {
 //          sb.append("</BLOCKQUOTE>");
 				}
 			} else {
-				sb.append(getBodyInnerHtml(body));
+				//sb.append(getBodyInnerHtml(body));
+				sb.append(body);
 			}
 			if (format == SimpleMessage.FORMAT_HTML) {
 //        sb.append("</td></tr></table>");
