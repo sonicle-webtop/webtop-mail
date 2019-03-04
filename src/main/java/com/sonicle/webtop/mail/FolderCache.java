@@ -1627,6 +1627,7 @@ public class FolderCache {
 				break;
 			case SORT_BY_PRIORITY:
 				sort=new PrioritySortTerm(!ascending);
+				sort.append(new DateSortTerm(true));
 				break;
 			case SORT_BY_RCPT:
 				sort=new ToSortTerm(!ascending);
@@ -1639,6 +1640,7 @@ public class FolderCache {
 				break;
 			case SORT_BY_STATUS:
 				sort=new StatusSortTerm(!ascending);
+				sort.append(new DateSortTerm(true));
 				break;
 			case SORT_BY_SUBJECT:
 				sort=new SubjectSortTerm(!ascending);
