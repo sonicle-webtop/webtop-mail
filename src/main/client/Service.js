@@ -106,10 +106,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				todayColor = me.getVar('todayRowColor'),
 				todaySelColor;
 		
-		if (Sonicle.ColorUtils.getBestContrast(todayColor) === '#FFFFFF') {
-			todaySelColor = Sonicle.ColorUtils.lightenDarken(todayColor, 50);
+		if (Sonicle.ColorUtils.bestForeColor(todayColor) === '#FFFFFF') {
+			todaySelColor = Ext.util.Color.create(todayColor).createLighter().toHex();
 		} else {
-			todaySelColor = Sonicle.ColorUtils.lightenDarken(todayColor, -50);
+			todaySelColor = Ext.util.Color.create(todayColor).createDarker().toHex();
 		}
 		Sonicle.CssUtils.addRule('.wtmail-row-today', 'background:' + todayColor);
 		Sonicle.CssUtils.addRule('table.x-grid-item-selected .wtmail-row-today', 'background:' + todaySelColor);
