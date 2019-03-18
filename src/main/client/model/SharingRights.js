@@ -32,20 +32,11 @@
  * the words "Powered by Sonicle WebTop".
  */
 Ext.define('Sonicle.webtop.mail.model.SharingRights', {
-	alternateClassName: 'WTA.sdk.model.SharingRights',
 	extend: 'WTA.model.Base',
 	
 	identifier: 'negativestring',
 	idProperty: 'roleUid',
 	fields: [
-		/*
-		WTF.field('_fk', 'string', true, {
-			reference: {
-				parent: 'Sonicle.webtop.core.sdk.model.Sharing',
-				inverse: 'rights'
-			}
-		}),
-		*/
 		WTF.fkField('string'),
 		WTF.field('roleUid', 'string', false),
 		WTF.field('roleDescription', 'string', false),
