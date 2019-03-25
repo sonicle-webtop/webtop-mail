@@ -63,7 +63,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 	public static final Logger logger = WT.getLogger(UserOptionsService.class);
 
 	@Override
-	public void processUserOptions(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
+	public void processUserOptions(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 
@@ -119,7 +119,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				new JsonResult(jso).printTo(out);
 
 			} else if (crud.equals(Crud.UPDATE)) {
-				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(payload, JsUserOptions.class);
+				Payload<MapItem, JsUserOptions> pl = ServletUtils.getPayload(request, JsUserOptions.class);
 				
 				if (pl.map.has("dmsSimpleMailFolder")) mus.setSimpleArchivingMailFolder(pl.data.dmsSimpleMailFolder);
 				if (pl.map.has("dmsMethod")) mus.setDMSMethod(pl.data.dmsMethod);
@@ -182,7 +182,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 		}
 	}
 
-	public void processListIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
+	public void processListIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			String type = ServletUtils.getStringParameter(request, "type", true);
 			boolean any = type.equals("any");
@@ -204,13 +204,13 @@ public class UserOptionsService extends BaseUserOptionsService {
 		}
 	}
 
-	public void processManageIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
+	public void processManageIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String crud = null;
 		try {
 			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 			crud = ServletUtils.getStringParameter(request, "crud", true);
 			if (crud.equals(Crud.READ)) {
-				processListIdentities(request, response, out, crud);
+				processListIdentities(request, response, out);
 			} else if (crud.equals(Crud.CREATE)) {
 				Payload<MapItem, Identity> pl = ServletUtils.getPayload(request, Identity.class);
 				Identity ident=pl.data;
@@ -235,7 +235,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 		}
 	}
 
-	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out, String payload) {
+	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 
 		try {
 			UserProfileId profileId=getTargetProfileId();

@@ -38,9 +38,6 @@ Ext.define('Sonicle.webtop.mail.model.Mailcard', {
     extend: 'WTA.model.Base',
 	
 	proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'ManageMailcard', 'data', {
-		extraParams: {
-			options: true
-		},
 		writer: {
 			type: 'sojson',
 			writeAssociations: true

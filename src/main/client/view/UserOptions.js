@@ -406,9 +406,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								model: 'Sonicle.webtop.mail.model.Identity',
 								proxy: WTF.apiProxy(me.ID, 'ManageIdentities', 'identities', {
 									extraParams: {
-										id: me.profileId,
-										type: 'user',
-										options: true
+										optionsProfile: me.profileId,
+										type: 'user'
 									}
 								}),
 								listeners: {
@@ -475,9 +474,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								model: 'Sonicle.webtop.mail.model.Identity',
 								proxy: WTF.apiProxy(me.ID, 'ListIdentities', 'identities', {
 									extraParams: {
-										id: me.profileId,
-										type: 'auto',
-										options: true
+										optionsProfile: me.profileId,
+										type: 'auto'
 									}
 								})
 							},
@@ -746,8 +744,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		var me = this;
 		WT.ajaxReq(me.ID, "ManageMailcard", {
 			params: {
-				id: me.profileId,
-				options: true,
+				optionsProfile: me.profileId,
 				crud: "read",
 				mailcardId: mailcardId
 			},
@@ -811,8 +808,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		
 		WT.ajaxReq(me.ID, "ManageMailcard", {
 			params: {
-				id: me.profileId,
-				options: true,
+				optionsProfile: me.profileId,
 				crud: "update",
 				mailcardId: mailcardId,
 				target: target,
@@ -841,8 +837,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				if(bid === 'no') return;
 				WT.ajaxReq(me.ID, "ManageMailcard", {
 					params: {
-						id: me.profileId,
-						options: true,
+						optionsProfile: me.profileId,
 						crud: "delete",
 						mailcardId: mailcardId
 					},
