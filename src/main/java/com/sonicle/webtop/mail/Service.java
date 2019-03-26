@@ -7243,9 +7243,8 @@ public class Service extends BaseService {
 			}*/
 			if (uploadId != null && hasUploadedFile(uploadId)) {
 				WebTopSession.UploadedFile upl = getUploadedFile(uploadId);
-				String ctype = upl.getMediaType();
-				response.setContentType(ctype+"; name=\"" + upl.getFilename() + "\"");
-				response.setHeader("Content-Disposition", "filename=\"" + upl.getFilename() + "\"");
+				String ctype = ServletHelper.guessMediaType(upl.getFilename(),upl.getMediaType());
+				ServletUtils.setFileStreamHeaders(response, ctype,DispositionType.INLINE,upl.getFilename());
 				
 				InputStream is = new FileInputStream(upl.getFile());
 				OutputStream oout = response.getOutputStream();
