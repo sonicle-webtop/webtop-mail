@@ -65,6 +65,7 @@
 		<shortName>wtmail</shortName>
 		<version>@@webtop.service.version@@</version>
 		<buildDate>@@webtop.service.buildDate@@</buildDate>
+		<buildType>@@webtop.service.buildType@@</buildType>
 		
 		<company>Sonicle S.r.l.</company>
 		<companyEmail>sonicle@sonicle.com</companyEmail>
