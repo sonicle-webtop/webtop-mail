@@ -34,7 +34,7 @@
 Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 	extend: 'WTA.sdk.model.UserOptions',
 	
-	proxy: WT.optionsProxy('com.sonicle.webtop.mail'),
+	proxy: WTF.optionsProxy('com.sonicle.webtop.mail'),
 	fields: [
 		WTF.roField('permAccountManage', 'boolean'),
 		WTF.roField('permMailcardManage', 'boolean'),
