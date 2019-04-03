@@ -86,6 +86,10 @@ public class MailServiceSettings extends BaseServiceSettings {
         return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);
     }
 	
+    public boolean isPreviewBalanceTags() {
+        return getBoolean(PREVIEW_BALANCE_TAGS,true);
+    }
+	
 	public String getDmsArchivePath() {
 		return getString(DMS_ARCHIVE,null);
 	}

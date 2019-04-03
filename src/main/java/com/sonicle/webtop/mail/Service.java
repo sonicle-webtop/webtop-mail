@@ -306,6 +306,8 @@ public class Service extends BaseService {
 	private SmartSearchThread sst;
 	private PortletSearchThread pst;
 	
+	private boolean previewBalanceTags=true;
+	
 	static {
 		inlineableMimes.add("image/gif");
 		inlineableMimes.add("image/jpeg");
@@ -375,6 +377,8 @@ public class Service extends BaseService {
 		}
 		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword);
 		fcProvided = new FolderCache(this, environment);
+		
+		previewBalanceTags=ss.isPreviewBalanceTags();
 		
 		mainAccount=createAccount(MAIN_ACCOUNT_ID);
 		mainAccount.setFolderPrefix(mprofile.getFolderPrefix());
@@ -4038,6 +4042,10 @@ public class Service extends BaseService {
 		}
 	}
 	
+	private boolean isPreviewBalanceTags(InternetAddress ia) {
+		return previewBalanceTags;
+	}
+	
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
@@ -4134,10 +4142,11 @@ public class Service extends BaseService {
 			
             Identity ident=null;
 			Address from[]=m.getFrom();
+			InternetAddress iafrom=null;
 			if (from!=null && from.length>0) {
-				InternetAddress ia=(InternetAddress)from[0];
-				String email=ia.getAddress();
-				String displayname=ia.getPersonal();
+				iafrom=(InternetAddress)from[0];
+				String email=iafrom.getAddress();
+				String displayname=iafrom.getPersonal();
 				if (displayname==null) displayname=email;
 				//sout+=" from: { email: '"+StringEscapeUtils.escapeEcmaScript(email)+"', displayname: '"+StringEscapeUtils.escapeEcmaScript(displayname)+"' },\n";
                 ident=mprofile.getIdentity(displayname, email);
@@ -4194,7 +4203,8 @@ public class Service extends BaseService {
 			sout += " ],\n";
 			
 			String html = "";
-			ArrayList<String> htmlparts = mcache.getHTMLParts((MimeMessage) m, newmsgid, true);
+			boolean balanceTags=isPreviewBalanceTags(iafrom);
+			ArrayList<String> htmlparts = mcache.getHTMLParts((MimeMessage) m, newmsgid, true, balanceTags);
 			for (String xhtml : htmlparts) {
 				html += xhtml + "<BR><BR>";
 			}
@@ -6686,10 +6696,11 @@ public class Service extends BaseService {
 			String fromName = "";
 			String fromEmail = "";
 			Address as[] = m.getFrom();
+			InternetAddress iafrom=null;
 			if (as != null && as.length > 0) {
-				InternetAddress ia = (InternetAddress) as[0];
-				fromName = ia.getPersonal();
-				fromEmail = adjustEmail(ia.getAddress());
+				iafrom = (InternetAddress) as[0];
+				fromName = iafrom.getPersonal();
+				fromEmail = adjustEmail(iafrom.getAddress());
 				if (fromName == null) {
 					fromName = fromEmail;
 				}
@@ -6735,10 +6746,11 @@ public class Service extends BaseService {
                     ++recs;
                 }
 			ArrayList<String> htmlparts = null;
+			boolean balanceTags=isPreviewBalanceTags(iafrom);
 			if (providername == null) {
-				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false);
+				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false, balanceTags);
 			} else {
-				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid);
+				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid, balanceTags);
 			}
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			ICalendarRequest ir=mailData.getICalRequest();

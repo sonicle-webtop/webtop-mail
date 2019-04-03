@@ -2029,15 +2029,15 @@ public class FolderCache {
 		return threadRoots+totalOpenThreadChildren;
 	}
     
-    public ArrayList<String> getHTMLParts(MimeMessage m, long msguid, boolean forEdit) throws MessagingException, IOException {
-        return getHTMLParts(m, msguid, null, null, forEdit);
+    public ArrayList<String> getHTMLParts(MimeMessage m, long msguid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
+        return getHTMLParts(m, msguid, null, null, forEdit, balanceTags);
     }
     
-    public ArrayList<String> getHTMLParts(MimeMessage m, String provider, String providerid) throws MessagingException, IOException {
-        return getHTMLParts(m, -1, provider, providerid, false);
+    public ArrayList<String> getHTMLParts(MimeMessage m, String provider, String providerid, boolean balanceTags) throws MessagingException, IOException {
+        return getHTMLParts(m, -1, provider, providerid, false, balanceTags);
     }
     
-    private ArrayList<String> getHTMLParts(MimeMessage m, long msguid, String provider, String providerid, boolean forEdit) throws MessagingException, IOException {
+    private ArrayList<String> getHTMLParts(MimeMessage m, long msguid, String provider, String providerid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
       ArrayList<String> htmlparts=new ArrayList<>();
       //WebTopApp webtopapp=environment.getWebTopApp();
       //Session wts=environment.get();
@@ -2088,8 +2088,8 @@ public class FolderCache {
                 Object tlock=new Object();
                 String uri=environment.getSessionRefererUri();
                 HTMLMailParserThread parserThread=null;
-                if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msguid, forEdit);
-                else parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, provider, providerid);
+                if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msguid, forEdit, balanceTags);
+                else parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, provider, providerid, balanceTags);
                 try {
                     java.io.BufferedReader breader=startHTMLMailParser(parserThread,mailData,false);
                     char chars[]=new char[8192];
@@ -2457,20 +2457,23 @@ public class FolderCache {
     Object threadLock=null;
     SaxHTMLMailParser saxHTMLMailParser=null;
     String appUrl=null;
+	boolean balanceTags=true;
     
-    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, long msguid, boolean forEdit) {
+    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, long msguid, boolean forEdit, boolean balanceTags) {
         this.threadLock=tlock;
         this.istream=istream;
         this.charset=charset;
         this.appUrl=appUrl;
+		this.balanceTags=balanceTags;
         this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),forEdit,msguid);
     }
     
-    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, String provider, String providerid) {
+    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, String provider, String providerid, boolean balanceTags) {
         this.threadLock=tlock;
         this.istream=istream;
         this.charset=charset;
         this.appUrl=appUrl;
+		this.balanceTags=balanceTags;
         this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),provider,providerid);
     }
     
@@ -2481,7 +2484,7 @@ public class FolderCache {
 
     public void run() {
       try {
-        FolderCache.this.doHTMLMailParse(saxHTMLMailParser,istream,charset);
+        FolderCache.this.doHTMLMailParse(saxHTMLMailParser,istream,charset,balanceTags);
         synchronized(threadLock) {
           threadLock.wait(60000); //give up after one minute
         }
@@ -2503,11 +2506,12 @@ public class FolderCache {
 
   }
 
-  private void doHTMLMailParse(SaxHTMLMailParser saxHTMLMailParser, InputStream istream, String charset) throws SAXException, IOException {
+  private void doHTMLMailParse(SaxHTMLMailParser saxHTMLMailParser, InputStream istream, String charset, boolean balanceTags) throws SAXException, IOException {
     HTMLInputStream hstream=new HTMLInputStream(istream);
     XMLReader xmlparser=XMLReaderFactory.createXMLReader("org.cyberneko.html.parsers.SAXParser");
 	xmlparser.setProperty("http://xml.org/sax/properties/lexical-handler", saxHTMLMailParser);
 	xmlparser.setFeature("http://apache.org/xml/features/scanner/notify-char-refs", true);
+	xmlparser.setFeature("http://cyberneko.org/html/features/balance-tags", balanceTags);
     xmlparser.setContentHandler(saxHTMLMailParser);
     xmlparser.setErrorHandler(saxHTMLMailParser);
     while(!hstream.isRealEof()) {

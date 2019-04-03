@@ -54,6 +54,14 @@ public class MailSettings {
 	public static final String SIEVE_PORT = "sieve.port";
 	
 	/**
+	 * [system+domain][default]
+	 * [boolean]
+	 * Turns on/off balance-tags during preparation of html mail preview.
+	 * Default is true (on).
+	 */
+	public static final String PREVIEW_BALANCE_TAGS = "preview.balancetags";
+	
+	/**
 	 * [user][default]
 	 * [boolean]
 	 * Activate or not message body preview in messages grid
