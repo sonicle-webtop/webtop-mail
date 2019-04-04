@@ -4060,7 +4060,9 @@ public class Service extends BaseService {
 			
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
-			Message m = mcache.getMessage(Long.parseLong(puidmessage));
+			IMAPMessage m = (IMAPMessage)mcache.getMessage(Long.parseLong(puidmessage));
+			m.setPeek(us.isManualSeen());
+			//boolean wasseen = m.isSet(Flags.Flag.SEEN);
 			String vheader[] = m.getHeader("Disposition-Notification-To");
 			boolean receipt = false;
 			int priority = 3;
@@ -4209,6 +4211,12 @@ public class Service extends BaseService {
 				html += xhtml + "<BR><BR>";
 			}
             HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
+			//if(!wasseen){
+			//	if (us.isManualSeen()) {
+			//		m.setFlag(Flags.Flag.SEEN, false);
+			//	}
+			//}
+			
             boolean first = true;
             sout += " attachments: [\n";
             for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
@@ -4258,6 +4266,8 @@ public class Service extends BaseService {
             sout += " format:'"+EnumUtils.toSerializedName(editFormat)+"'\n";
 			sout += "\n}";
 
+			m.setPeek(false);
+			
 			if (toDelete) {
 				m.setFlag(Flags.Flag.DELETED, true);
 				m.getFolder().expunge();
@@ -6629,6 +6639,7 @@ public class Service extends BaseService {
 		try {
 			FolderCache mcache = null;
 			Message m = null;
+			IMAPMessage im=null;
 			int recs = 0;
 			long msguid=-1;
 			String vheader[] = null;
@@ -6640,6 +6651,8 @@ public class Service extends BaseService {
 				mcache = account.getFolderCache(pfoldername);
                 msguid=Long.parseLong(puidmessage);
                 m=mcache.getMessage(msguid);
+				im=(IMAPMessage)m;
+				im.setPeek(us.isManualSeen());
                 if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
 				vheader = m.getHeader("Disposition-Notification-To");
 				wasseen = m.isSet(Flags.Flag.SEEN);
@@ -6764,7 +6777,7 @@ public class Service extends BaseService {
 			    }
 			}
 						
-			if (!wasseen) {
+			/*if (!wasseen) {
 				//if (us.isManualSeen()) {
 				if (!setSeen) {
 					m.setFlag(Flags.Flag.SEEN, false);
@@ -6772,7 +6785,9 @@ public class Service extends BaseService {
 					//if no html part, flag seen is not set
 					if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
 				}
-			}
+			}*/
+			if (!us.isManualSeen())
+				if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
 			
 			
 			int acount = mailData.getAttachmentPartCount();
@@ -6927,6 +6942,9 @@ public class Service extends BaseService {
 
 			sout += "total:" + recs + ",\nmillis:" + millis + "\n}\n";
 			out.println(sout);
+			
+			if (im!=null) im.setPeek(false);
+			
 //            if (!wasopen) folder.close(false);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -7095,6 +7113,8 @@ public class Service extends BaseService {
 				mcache = fcProvided;
 				m = mcache.getProvidedMessage(providername, providerid);
 			}
+			IMAPMessage im=(IMAPMessage)m;
+			im.setPeek(us.isManualSeen());
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			Part part = null;
 			if (pcid != null) {
@@ -7107,7 +7127,7 @@ public class Service extends BaseService {
 				part = mailData.getUnknownPart(Integer.parseInt(punknown));
 			}
 
-			boolean wasseen = m.isSet(Flags.Flag.SEEN);
+			//boolean wasseen = m.isSet(Flags.Flag.SEEN);
 			if (part!=null) {
 				String ctype="binary/octet-stream";
 				if (psaveas==null) {
@@ -7140,12 +7160,14 @@ public class Service extends BaseService {
 				fastStreamCopy(is, out);
 				is.close();
 				out.close();
-				if(!wasseen){
-				   if (us.isManualSeen()) {
-					m.setFlag(Flags.Flag.SEEN, false);
-				   }
-				}
-			}			
+				//if(!wasseen){
+				//   if (us.isManualSeen()) {
+				//	m.setFlag(Flags.Flag.SEEN, false);
+				//   }
+				//}
+			}	
+			im.setPeek(false);
+			
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
