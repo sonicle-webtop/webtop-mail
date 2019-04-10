@@ -31,63 +31,29 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.bol.js;
 
-import com.sonicle.webtop.core.sdk.bol.js.JsUserOptionsBase;
-
-/**
- *
- * @author malbinola
- */
-public class JsUserOptions extends JsUserOptionsBase {
-	public boolean permAccountManage;
-	public boolean permExternalAccountManage;
-	public boolean permMailcardManage;	
-	public boolean permDomainMailcardManage;	
-	public String archiveMode;
-	public boolean archiveKeepFoldersStructure;
-	public String archiveExternalUserFolder;
-	public String dmsSimpleMailFolder;
-	public String dmsMethod;
-	public boolean sharedSeen;
-	public boolean manualSeen;
-	public boolean seenOnOpen;
-	public boolean ingridPreview;
-	public boolean scanAll;
-	public int scanSeconds;
-	public int scanCycles;
-	public String folderPrefix;
-	public String folderSent;
-	public String folderDrafts;
-	public String folderTrash;
-	public String folderSpam;
-	public String folderArchive;
-	public char folderSeparator;
-	public String mainEmail;
-	public String replyTo;
-	public String sharedSort;
-	public String readReceiptConfirmation;
-	public boolean includeMessageInReply;
-	public String host;
-	public int port;
-	public String username;
-	public String password;
-	public String protocol;
-	public String defaultFolder;
-	public String format;
-	public String font;
-	public String fontColor;
-	public int fontSize;
-	public boolean receipt;
-	public boolean priority;
-	public boolean noMailcardOnReplyForward;
-	public boolean showUpcomingEvents;
-	public boolean showUpcomingTasks;
-	public String todayRowColor;
+Ext.define('Sonicle.webtop.mail.model.ExternalAccount', {
+    extend: 'WTA.model.Base',
 	
-	public JsUserOptions() {}
+	proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'ManageExternalAccounts', 'data'),
 	
-	public JsUserOptions(String id) {
-		super(id);
-	}
-}
+	identifier: 'negative',
+	idProperty: 'externalAccountId',
+    fields: [
+		WTF.field('externalAccountId', 'int', false),
+		WTF.field('displayName', 'string', false),
+		WTF.field('accountDescription', 'string', false),
+		WTF.field('email', 'string', false),
+		WTF.field('protocol', 'string', false),
+		WTF.field('host', 'string', false),
+		WTF.field('port', 'int', false),
+		WTF.field('userName', 'string', false),
+		WTF.field('password', 'string', false),
+		WTF.field('folderPrefix', 'string', true),
+		WTF.field('folderSent', 'string', false),
+		WTF.field('folderDrafts', 'string', false),
+		WTF.field('folderTrash', 'string', false),
+		WTF.field('folderSpam', 'string', false),
+		WTF.field('folderArchive', 'string', false)
+	]
+});

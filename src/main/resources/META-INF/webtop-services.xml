@@ -91,6 +91,7 @@
 			<permission group="DMS_DOCUMENT_MANAGEMENT" actions="ACCESS" />
 			<permission group="MAIL_WORKFLOW" actions="ACCESS" />
 			<permission group="ACCOUNT_SETTINGS" actions="CHANGE" />
+			<permission group="EXTERNAL_ACCOUNT_SETTINGS" actions="CHANGE" />
 			<permission group="SHARING_UNKNOWN_ROLES" actions="SHOW" />
 			<permission group="MAILCARD_SETTINGS" actions="CHANGE" />
 			<permission group="DOMAIN_MAILCARD_SETTINGS" actions="CHANGE" />

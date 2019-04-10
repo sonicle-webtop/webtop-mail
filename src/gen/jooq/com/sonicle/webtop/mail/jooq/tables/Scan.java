@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Scan extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord> {
 
-	private static final long serialVersionUID = -203760398;
+	private static final long serialVersionUID = -1495959548;
 
 	/**
 	 * The reference instance of <code>mail.scan</code>
@@ -73,7 +73,7 @@ public class Scan extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.t
 	 */
 	@Override
 	public org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord> getPrimaryKey() {
-		return com.sonicle.webtop.mail.jooq.Keys.MAILSCAN_PKEY;
+		return com.sonicle.webtop.mail.jooq.Keys.SCAN_PKEY;
 	}
 
 	/**
@@ -81,7 +81,7 @@ public class Scan extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.t
 	 */
 	@Override
 	public java.util.List<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord>> getKeys() {
-		return java.util.Arrays.<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord>>asList(com.sonicle.webtop.mail.jooq.Keys.MAILSCAN_PKEY);
+		return java.util.Arrays.<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.ScanRecord>>asList(com.sonicle.webtop.mail.jooq.Keys.SCAN_PKEY);
 	}
 
 	/**

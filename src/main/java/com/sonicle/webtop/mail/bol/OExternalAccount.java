@@ -31,63 +31,14 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.bol.js;
+package com.sonicle.webtop.mail.bol;
 
-import com.sonicle.webtop.core.sdk.bol.js.JsUserOptionsBase;
+import com.sonicle.webtop.mail.jooq.tables.pojos.ExternalAccounts;
 
 /**
  *
- * @author malbinola
+ * @author Inis
  */
-public class JsUserOptions extends JsUserOptionsBase {
-	public boolean permAccountManage;
-	public boolean permExternalAccountManage;
-	public boolean permMailcardManage;	
-	public boolean permDomainMailcardManage;	
-	public String archiveMode;
-	public boolean archiveKeepFoldersStructure;
-	public String archiveExternalUserFolder;
-	public String dmsSimpleMailFolder;
-	public String dmsMethod;
-	public boolean sharedSeen;
-	public boolean manualSeen;
-	public boolean seenOnOpen;
-	public boolean ingridPreview;
-	public boolean scanAll;
-	public int scanSeconds;
-	public int scanCycles;
-	public String folderPrefix;
-	public String folderSent;
-	public String folderDrafts;
-	public String folderTrash;
-	public String folderSpam;
-	public String folderArchive;
-	public char folderSeparator;
-	public String mainEmail;
-	public String replyTo;
-	public String sharedSort;
-	public String readReceiptConfirmation;
-	public boolean includeMessageInReply;
-	public String host;
-	public int port;
-	public String username;
-	public String password;
-	public String protocol;
-	public String defaultFolder;
-	public String format;
-	public String font;
-	public String fontColor;
-	public int fontSize;
-	public boolean receipt;
-	public boolean priority;
-	public boolean noMailcardOnReplyForward;
-	public boolean showUpcomingEvents;
-	public boolean showUpcomingTasks;
-	public String todayRowColor;
+public class OExternalAccount extends ExternalAccounts {
 	
-	public JsUserOptions() {}
-	
-	public JsUserOptions(String id) {
-		super(id);
-	}
 }

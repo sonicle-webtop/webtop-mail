@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Autoresponders extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.tables.records.AutorespondersRecord> {
 
-	private static final long serialVersionUID = -1796745394;
+	private static final long serialVersionUID = -1761506820;
 
 	/**
 	 * The reference instance of <code>mail.autoresponders</code>
@@ -108,7 +108,7 @@ public class Autoresponders extends org.jooq.impl.TableImpl<com.sonicle.webtop.m
 	 */
 	@Override
 	public org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.AutorespondersRecord> getPrimaryKey() {
-		return com.sonicle.webtop.mail.jooq.Keys.AUTORESPONDER_PKEY;
+		return com.sonicle.webtop.mail.jooq.Keys.AUTORESPONDERS_PKEY;
 	}
 
 	/**
@@ -116,7 +116,7 @@ public class Autoresponders extends org.jooq.impl.TableImpl<com.sonicle.webtop.m
 	 */
 	@Override
 	public java.util.List<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.AutorespondersRecord>> getKeys() {
-		return java.util.Arrays.<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.AutorespondersRecord>>asList(com.sonicle.webtop.mail.jooq.Keys.AUTORESPONDER_PKEY);
+		return java.util.Arrays.<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.AutorespondersRecord>>asList(com.sonicle.webtop.mail.jooq.Keys.AUTORESPONDERS_PKEY);
 	}
 
 	/**

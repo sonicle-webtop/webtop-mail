@@ -37,9 +37,11 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		'WTA.store.MailboxProtocols',
 		'Sonicle.webtop.mail.model.ServiceVars',
 		'Sonicle.webtop.mail.model.Identity',
+		'Sonicle.webtop.mail.model.GridExternalAccount',
 		'Sonicle.webtop.mail.store.ArchiveMode',
 		'Sonicle.webtop.mail.store.EditingFormat',
-		'Sonicle.webtop.mail.store.ReadReceiptConfirmation'
+		'Sonicle.webtop.mail.store.ReadReceiptConfirmation',
+		'Sonicle.webtop.mail.view.ExternalAccount'
 	],
 	uses: [
 		'Sonicle.webtop.mail.view.MailcardEditor'
@@ -88,6 +90,10 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			foCanManageDomainMailcard: function(get) {
 				if (WT.isAdmin() || me.isAdminOnBehalf()) return true;
 				return get('record.permDomainMailcardManage');
+			},
+			foCanManageExternalAccounts: function(get) {
+				if (WT.isAdmin() || me.isAdminOnBehalf()) return true;
+				return get('record.permExternalAccountManage');
 			}
 		}));
 		
@@ -687,6 +693,144 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		
 		me.add({
 			xtype: 'wtopttabsection',
+			title: me.res('opts.external.accounts.tit'),
+			bind: {
+				permStatus: '{record.permExternalAccountManage}'
+			},
+			plugins: [{
+				ptype: 'wttabpermstatus',
+				isAdmin: WT.isAdmin() || me.isAdminOnBehalf(),
+				info: 'EXTERNAL_ACCOUNT_SETTINGS:CHANGE'
+			}],
+			layout: 'fit',
+			items: [{
+					xtype: 'wtpanel',
+					layout: 'border',
+					items: [{
+							region: 'north',
+							xtype: 'toolbar',
+							items: [{
+								xtype: 'button',
+								text: WT.res('act-add.lbl'),
+								iconCls: 'wt-icon-add-xs',
+								bind: {
+										disabled: '{!foCanManageExternalAccounts}'
+								},
+								needLogin: true,
+								scope: me,
+								handler: function() {
+										me.addExternalAccount({
+											callback: function(success) {
+												if(success) me.reloadExternalAccounts();
+											}
+										});
+									}
+							}, {
+								xtype: 'button',
+								text: WT.res('act-delete.lbl'),
+								reference: 'deleteExternalAccount',
+								iconCls: 'wt-icon-delete',
+								needLogin: true,
+								scope: me,
+								handler: function() {
+									var sel = me.lref('gpExternalAccounts').getSelection();
+									if (sel.length > 0) {
+										WT.confirm(me.res('sureprompt'),function(bid) {
+												if (bid==='yes') {
+													me.deleteExternalAccount(sel[0].get('externalAccountId'));
+												}
+										},me);
+									}
+								},
+								disabled: true
+							}, '->', {
+								xtype: 'button',
+								text: WT.res('act-edit.lbl'),
+								reference: 'editExternalAccount',
+								iconCls: 'wt-icon-edit-xs',
+								needLogin: true,
+								scope: me,
+								handler: function() {
+									var sel = me.lref('gpExternalAccounts').getSelection(),
+									externalId = sel[0].get('externalAccountId');
+									
+									me.editExternalAccount(externalId, {
+										callback: function(success) {
+											if(success) me.reloadExternalAccounts();
+										}
+									})
+								},
+								disabled: true
+							},{
+								xtype: 'button',
+								text: WT.res('act-refresh.lbl'),
+								iconCls: 'wt-icon-refresh',
+								bind: {
+									disabled: '{!foCanManageExternalAccounts}'
+								},
+								needLogin: true,
+								scope: me,
+								handler: function() {
+									me.reloadExternalAccounts();
+								}
+							}]
+						}, {
+							region: 'center',
+							xtype: 'gridpanel',
+							reference: 'gpExternalAccounts',
+							bind: {
+									disabled: '{!foCanManageExternalAccounts}'
+								},
+							needLogin: true,
+							scope: me,
+							store: {
+								autoLoad: true,
+								autoSync: true,
+								model: 'Sonicle.webtop.mail.model.GridExternalAccount',
+								proxy: WTF.apiProxy(me.ID, 'ManageExternalAccountsGrid', 'externalAccount', {
+									extraParams: {
+										optionsProfile: me.profileId
+									}
+								}),
+								listeners: {
+									beforesync: function() {
+										me.needReload = true;
+									}
+								}
+							},
+							columns: [ {
+									dataIndex: 'accountDescription',
+									header: me.res('opts.external.accounts.accountDescription.lbl'),
+									scope: me,
+									flex: 2
+								}, {
+									dataIndex: 'email',
+									header: me.res('opts.external.accounts.email.lbl'),
+									needLogin: true,
+									scope: me,
+									flex: 2
+							}],
+							listeners: {
+								selectionchange: function(s,recs) {
+									me.lref('deleteExternalAccount').setDisabled(!recs.length);
+									me.lref('editExternalAccount').setDisabled(!recs.length);
+								},
+								rowdblclick: function(s, rec) {
+									var externalAccountId = rec.get('externalAccountId');
+									
+									me.editExternalAccount(externalAccountId, {
+										callback: function(success) {
+											if(success) me.reloadExternalAccounts();
+										}
+									});
+								}
+							}
+							}]
+				}]
+		});
+		
+		me.add({
+			xtype: 'wtopttabsection',
 			title: me.res('opts.adv.tit'),
 			items: [{
 				xtype: 'checkbox',
@@ -738,6 +882,73 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}]
 		});
+	},
+	
+	addExternalAccount: function(opts) {
+		var me = this,
+				defaultSentFolder = me.getVar
+			view = WT.createView(me.ID, 'view.ExternalAccount', {
+				swapReturn: true, 
+				viewCfg: {
+					profileId: me.profileId
+				}
+			});
+		
+		view.on('viewsave', function(s, success, model) {
+			Ext.callback(opts.callback, opts.scope || me, [success, model]);
+		});
+		
+		view.showView(function(s) {
+			view.begin('new', {
+				data: {
+					_profileId: 'ownerId',
+					categoryId: 'categoryId'
+				}
+			});
+		});
+	},
+	
+	editExternalAccount: function(externalAccountId, opts) {
+		var me = this,
+			view = WT.createView(me.ID, 'view.ExternalAccount', {
+				swapReturn: true, 
+				viewCfg: {
+					profileId: me.profileId
+				}
+			});
+	
+		view.on('viewsave', function(s, success, model) {
+			Ext.callback(opts.callback, opts.scope || me, [success, model]);
+		});
+		
+		view.showView(function(s) {
+			view.begin('edit', {
+				data: {
+					externalAccountId: externalAccountId
+				}
+			});
+		});
+	},
+	
+	deleteExternalAccount: function(externalAccountId) {
+		var me = this;
+		WT.ajaxReq(me.ID, "ManageExternalAccounts", {
+			params: {
+				crud: 'delete',
+				optionsProfile: me.profileId,
+				externalAccountId: externalAccountId
+			},
+			callback: function(success, json) {
+				if(success)
+					me.reloadExternalAccounts();
+			}
+		});
+	},
+	
+	reloadExternalAccounts: function() {
+		var me = this,
+			store = me.lref('gpExternalAccounts').getStore();
+			store.load();
 	},
 	
 	editMailcard: function(mailcardId) {

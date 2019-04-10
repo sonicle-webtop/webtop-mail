@@ -62,8 +62,6 @@ import com.sonicle.webtop.mail.dal.InFilterDAO;
 import com.sonicle.webtop.mail.model.AutoResponder;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
-import com.sonicle.mail.sieve.SieveAction;
-import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.mail.sieve.SieveMatch;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.SessionContext;
@@ -71,8 +69,11 @@ import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
+import com.sonicle.webtop.mail.bol.OExternalAccount;
 import com.sonicle.webtop.mail.bol.OTag;
+import com.sonicle.webtop.mail.dal.ExternalAccountDAO;
 import com.sonicle.webtop.mail.dal.TagDAO;
+import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
 import com.sonicle.webtop.mail.model.Tag;
@@ -87,16 +88,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
-import java.util.logging.Level;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
-import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.mail.internet.MimeUtility;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.format.DateTimeFormatter;
@@ -298,6 +296,143 @@ public class MailManager extends BaseManager implements IMailManager {
 			DbUtils.closeQuietly(con);
 		}
 		return idents;
+	}
+	
+	public List<ExternalAccount> listExternalAccounts() throws WTException {
+			List<ExternalAccount> externalAccountList =  new ArrayList<>();
+			Connection connection = null;
+			ExternalAccountDAO dao = ExternalAccountDAO.getInstance();
+		try {
+			
+			connection = WT.getConnection(SERVICE_ID);
+			UserProfileId userProfileId = getTargetProfileId();
+			List<OExternalAccount> externalAccounts = dao.selectByDomainUser(connection, userProfileId.getDomainId(), userProfileId.getUserId());
+			
+			externalAccountList = externalAccounts.stream().map(mapToExternalAccount()).collect(Collectors.toList());
+		} catch (SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(connection);
+		}
+		return externalAccountList;
+	}
+	
+	public ExternalAccount getExternalAccount(int externalAccountId) throws WTException {
+		ExternalAccount externalAccount = null;
+		Connection connection = null;
+		ExternalAccountDAO dao = ExternalAccountDAO.getInstance();
+		
+		try {
+			connection = WT.getConnection(SERVICE_ID);
+			externalAccount = mapToExternalAccount().apply(dao.selectById(connection, externalAccountId));
+			
+		} catch (SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(connection);
+		}
+		return externalAccount;
+	}
+	
+	public void addExternalAccount(ExternalAccount account) throws WTException {
+		Connection connection = null;
+		ExternalAccountDAO dao = ExternalAccountDAO.getInstance();
+		
+		try {
+			OExternalAccount externalAccount = mapToOExternalAccount().apply(account);
+			connection = WT.getConnection(SERVICE_ID);
+			externalAccount.setExternalAccountId(dao.getSequence(connection).intValue());
+			
+			UserProfileId userProfileId = getTargetProfileId();
+			externalAccount.setDomainId(userProfileId.getDomainId());
+			externalAccount.setUserId(userProfileId.getUserId());
+			dao.insert(connection, externalAccount);
+			
+		} catch (SQLException | DAOException ex) {
+			StackTraceElement[] els = ex.getStackTrace();
+			for(StackTraceElement st : els)
+				System.out.println(st.toString());
+			System.out.println(ex.getCause());
+			System.out.println(ex.getMessage());
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(connection);
+		}
+	}
+	
+	public void removeExternalAccount(int externalAccountId) throws WTException {
+		Connection connection = null;
+		ExternalAccountDAO dao = ExternalAccountDAO.getInstance();
+		
+		try {
+			connection = WT.getConnection(SERVICE_ID);
+			dao.deleteById(connection, externalAccountId);
+			
+		} catch (SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(connection);
+		}
+	}
+  	
+	public void updateExternalAccount(ExternalAccount account) throws WTException {
+		Connection connection = null;
+		ExternalAccountDAO dao = ExternalAccountDAO.getInstance();
+		
+		try {
+			OExternalAccount externalAccount = mapToOExternalAccount().apply(account);
+			connection = WT.getConnection(SERVICE_ID);
+			dao.update(connection, externalAccount);
+			
+		} catch (SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(connection);
+		}
+	}
+	
+	private Function<OExternalAccount, ExternalAccount> mapToExternalAccount() {
+		return externalAccount -> {
+			ExternalAccount account = new ExternalAccount();
+			account.setExternalAccountId(externalAccount.getExternalAccountId());
+			account.setDisplayName(externalAccount.getDisplayName());
+			account.setAccountDescription(externalAccount.getDescription());
+			account.setEmail(externalAccount.getEmail());
+			account.setProtocol(externalAccount.getProtocol());
+			account.setHost(externalAccount.getHost());
+			account.setPort(externalAccount.getPort());
+			account.setUserName(externalAccount.getUsername());
+			account.setPassword(externalAccount.getPassword());
+			account.setFolderPrefix(externalAccount.getFolderPrefix());
+			account.setFolderSent(externalAccount.getFolderSent());
+			account.setFolderDrafts(externalAccount.getFolderDrafts());
+			account.setFolderTrash(externalAccount.getFolderTrash());
+			account.setFolderSpam(externalAccount.getFolderSpam());
+			account.setFolderArchive(externalAccount.getFolderArchive());
+			return account;
+		};	
+	}
+	
+	private Function<ExternalAccount, OExternalAccount> mapToOExternalAccount() {
+		return externalAccount -> {
+			OExternalAccount account = new OExternalAccount();
+			account.setExternalAccountId(externalAccount.getExternalAccountId());
+			account.setDisplayName(externalAccount.getDisplayName());
+			account.setDescription(externalAccount.getAccountDescription());
+			account.setEmail(externalAccount.getEmail());
+			account.setProtocol(externalAccount.getProtocol());
+			account.setHost(externalAccount.getHost());
+			account.setPort(externalAccount.getPort());
+			account.setUsername(externalAccount.getUserName());
+			account.setPassword(externalAccount.getPassword());
+			account.setFolderPrefix(externalAccount.getFolderPrefix());
+			account.setFolderSent(externalAccount.getFolderSent());
+			account.setFolderDrafts(externalAccount.getFolderDrafts());
+			account.setFolderTrash(externalAccount.getFolderTrash());
+			account.setFolderSpam(externalAccount.getFolderSpam());
+			account.setFolderArchive(externalAccount.getFolderArchive());
+			return account;
+		};	
 	}
 	
 	public Mailcard getMailcard() {

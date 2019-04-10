@@ -33,7 +33,9 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sonicle.commons.web.Crud;
+import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
@@ -43,9 +45,13 @@ import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseUserOptionsService;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.UserProfile.PersonalInfo;
+import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.mail.bol.js.JsExternalAccount;
+import com.sonicle.webtop.mail.bol.js.JsGridExternalAccount;
 import com.sonicle.webtop.mail.bol.js.JsUserOptions;
 import com.sonicle.webtop.mail.bol.js.JsMailcard;
 import com.sonicle.webtop.mail.bol.model.Identity;
+import com.sonicle.webtop.mail.model.ExternalAccount;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
@@ -73,6 +79,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 			if (crud.equals(Crud.READ)) {
 				JsUserOptions jso = new JsUserOptions(getTargetProfileId().toString());
 				jso.permAccountManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE");
+				jso.permExternalAccountManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "EXTERNAL_ACCOUNT_SETTINGS", "CHANGE");
 				jso.permMailcardManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE");
 				jso.permDomainMailcardManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE");
 				
@@ -234,7 +241,63 @@ public class UserOptionsService extends BaseUserOptionsService {
 			new JsonResult(false, "Error managing quickparts").printTo(out);
 		}
 	}
-
+	
+	public void processManageExternalAccountsGrid(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			MailManager mailManager = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
+			
+			if(crud.equals(Crud.READ)) {
+				List<JsGridExternalAccount> jsList = new ArrayList<>();
+			
+				List<ExternalAccount> externalAccounts = mailManager.listExternalAccounts();
+				externalAccounts.forEach(account -> {
+				jsList.add(new JsGridExternalAccount(account));
+			});
+			
+			new JsonResult("externalAccount", jsList).printTo(out);
+			} 
+		} catch (ParameterException | WTException ex) {
+			logger.error("Error in managing external accounts grid");
+			new JsonResult(false, "Error in managing external accounts grid").printTo(out);
+		} 
+	}
+	
+	public void processManageExternalAccounts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			MailManager mailManager = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
+			
+			if(crud.equals(Crud.READ)) {
+				String id = ServletUtils.getStringParameter(request, "id", true);
+				int accountId = Integer.parseInt(id);
+				
+				ExternalAccount externalAccount = mailManager.getExternalAccount(accountId);
+				JsExternalAccount item = new JsExternalAccount(externalAccount);
+				new JsonResult(item).printTo(out);
+			} else if(crud.equals(Crud.CREATE)) {
+				Payload<MapItem, JsExternalAccount> pl = ServletUtils.getPayload(request, JsExternalAccount.class);
+				ExternalAccount account = JsExternalAccount.createExternalAccount(pl.data);
+				mailManager.addExternalAccount(account);
+				new JsonResult().printTo(out);
+				
+			} else if(crud.equals(Crud.DELETE)) {
+				String id = ServletUtils.getStringParameter(request, "externalAccountId", true);
+				int accountId = Integer.parseInt(id);
+				
+				mailManager.removeExternalAccount(accountId);
+				new JsonResult().printTo(out);
+			} else if(crud.equals(Crud.UPDATE)) {
+				Payload<MapItem, JsExternalAccount> pl = ServletUtils.getPayload(request, JsExternalAccount.class);
+				ExternalAccount account = JsExternalAccount.createExternalAccount(pl.data);
+				mailManager.updateExternalAccount(account);
+				new JsonResult().printTo(out);
+			}
+		} catch (Exception ex) {
+			logger.error("Error in managing external accounts");
+		}
+	}
+	
 	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 
 		try {
