@@ -33,7 +33,6 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.ServletUtils;
@@ -46,6 +45,7 @@ import com.sonicle.webtop.core.sdk.BaseUserOptionsService;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.UserProfile.PersonalInfo;
 import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.mail.MailSettings.ExternalProvider;
 import com.sonicle.webtop.mail.bol.js.JsExternalAccount;
 import com.sonicle.webtop.mail.bol.js.JsGridExternalAccount;
 import com.sonicle.webtop.mail.bol.js.JsUserOptions;
@@ -296,6 +296,26 @@ public class UserOptionsService extends BaseUserOptionsService {
 		} catch (Exception ex) {
 			logger.error("Error in managing external accounts");
 		}
+	}
+	
+	public void processExternalAccountProviders(HttpServletRequest request, HttpServletResponse respomse , PrintWriter out) {
+		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetDomainId());
+		MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
+		
+		List<ExternalProvider> list = mss.getExternalProviders();
+		
+		list.forEach(item -> {
+			if(item.id.equals("internet")) {
+				item.protocol = "imaps";
+				item.port = 993;
+				item.folderArchive = mus.getFolderArchive();
+				item.folderSent = mus.getFolderSent();
+				item.folderDrafts = mus.getFolderDrafts();
+				item.folderSpam = mus.getFolderSpam();
+				item.folderTrash = mus.getFolderTrash();
+			}
+		});
+		new JsonResult("data", list).printTo(out);
 	}
 	
 	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {

@@ -33,6 +33,9 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.web.json.JsonResult;
+import java.util.ArrayList;
+
 /**
  *
  * @author malbinola
@@ -250,5 +253,35 @@ public class MailSettings {
 	 */
 	public static final String ARCHIVING_SIMPLE_DMS_MAIL_FOLDER = "archiving.dms-simple.mailfolder";
 	
+	public static final String EXTERNAL_ACCOUNT_PROVIDERS = "[\n" +
+					" { 'id': 'internet', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/1/1b/Internet_Explorer_9_icon.svg'}, " +
+					" { 'id': 'gmail', 'email': '@gmail.com', 'server': 'imap.gmail.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' },\n" +
+					" { 'id': 'yahoo', 'email': '@yahoo.com', 'server': 'imap.yahoo.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Yahoo%21_logo.svg' }\n" +
+					"]";
 	
+	public static class ExternalProvider {
+		public String id;
+		public String email;
+		public String server;
+		public String protocol;
+		public int port;
+		public String folderPrefix;
+		public String folderSent;
+		public String folderDrafts;
+		public String folderTrash;
+		public String folderSpam;
+		public String folderArchive;
+		public String iconUrl;
+		
+		public static class List extends ArrayList<ExternalProvider> {
+			public static ExternalProvider.List fromJson(String value) {
+				return JsonResult.gson.fromJson(value, ExternalProvider.List.class);
+			}
+
+			public static String toJson(ExternalProvider.List value) {
+				return JsonResult.gson.toJson(value, ExternalProvider.List.class);
+			}
+		}
+		
+	}
 }

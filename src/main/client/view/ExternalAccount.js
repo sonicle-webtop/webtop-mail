@@ -46,6 +46,17 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 	},
 	
 	profileId: null,
+	externalAccountProviderId: null,
+	email: null,
+	server: null,
+	protocol: null,
+	port: null,
+	folderPrefix: null,
+	folderSent: null,
+	folderDrafts: null,
+	folderTrash: null,
+	folderSpam: null,
+	folderArchive: null,
 	confirm: 'yn',
 	autoToolbar: false,
 	modelName: 'Sonicle.webtop.mail.model.ExternalAccount',
@@ -101,6 +112,7 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 					fieldLabel: me.res('externalAccount.fld-displayName.lbl')
 				}, {
 					xtype: 'textfield',
+					reference: 'emailField',
 					bind: '{record.email}',
 					fieldLabel: me.res('externalAccount.fld-email.lbl')
 				}, WTF.lookupCombo('id', 'desc', {
@@ -118,6 +130,7 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 					}
 				}), {
 					xtype: 'textfield',
+					reference: 'hostField',
 					bind: '{record.host}',
 					fieldLabel: me.res('externalAccount.fld-host.lbl')
 				}, {
@@ -138,6 +151,7 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 					fieldLabel: me.res('externalAccount.fld-password.lbl')
 				}, {
 					xtype: 'textfield',
+					reference: 'folderPrefixField',
 					bind: '{record.folderPrefix}',
 					fieldLabel: me.res('externalAccount.fld-folderPrefix.lbl')
 				}, {
@@ -208,14 +222,17 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 			});
 	
 			if(me.mode === 'new') {
-				me.lref('protocolField').setValue('imaps');
-				me.lref('portField').setValue(993);
-				me.lref('folderSentField').setValue(me.mys.getVar('folderSent'));
-				me.lref('folderDraftsField').setValue(me.mys.getVar('folderDrafts'));
-				me.lref('folderTrashField').setValue(me.mys.getVar('folderTrash'));
-				me.lref('folderSpamField').setValue(me.mys.getVar('folderSpam'));
-				me.lref('folderArchiveField').setValue(me.mys.getVar('folderArchive'));
-			}
+					me.lref('emailField').setValue(me.email);
+					me.lref('hostField').setValue(me.server);
+					me.lref('protocolField').setValue(me.protocol);
+					me.lref('portField').setValue(me.port);
+					me.lref('folderSentField').setValue(me.folderSent);
+					me.lref('folderPrefixField').setValue(me.folderPrefix);
+					me.lref('folderDraftsField').setValue(me.folderDrafts);
+					me.lref('folderTrashField').setValue(me.folderTrash);
+					me.lref('folderSpamField').setValue(me.folderSpam);
+					me.lref('folderArchiveField').setValue(me.folderArchive);
+				}
 	}
 	
 });

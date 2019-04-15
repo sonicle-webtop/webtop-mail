@@ -41,7 +41,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		'Sonicle.webtop.mail.store.ArchiveMode',
 		'Sonicle.webtop.mail.store.EditingFormat',
 		'Sonicle.webtop.mail.store.ReadReceiptConfirmation',
-		'Sonicle.webtop.mail.view.ExternalAccount'
+		'Sonicle.webtop.mail.view.ExternalAccount',
+		'Sonicle.webtop.mail.model.ExternalAccountProvider'
 	],
 	uses: [
 		'Sonicle.webtop.mail.view.MailcardEditor'
@@ -709,23 +710,36 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					items: [{
 							region: 'north',
 							xtype: 'toolbar',
-							items: [{
-								xtype: 'button',
-								text: WT.res('act-add.lbl'),
-								iconCls: 'wt-icon-add-xs',
-								bind: {
-										disabled: '{!foCanManageExternalAccounts}'
-								},
-								needLogin: true,
-								scope: me,
-								handler: function() {
-										me.addExternalAccount({
-											callback: function(success) {
-												if(success) me.reloadExternalAccounts();
-											}
-										});
+							items: [ {
+									xtype: 'splitbutton',
+									text: WT.res('act-add.lbl'),
+									iconCls: 'wt-icon-add-xs',
+									handler: function(s) {
+											s.maybeShowMenu();
+									},
+									menu: {
+										xtype: 'sostoremenu',
+										store: {
+												autoLoad: true,
+												model: 'Sonicle.webtop.mail.model.ExternalAccountProvider',
+												proxy: WTF.apiProxy(me.ID, 'ExternalAccountProviders', 'data', {
+														extraParams: {
+															optionsProfile: me.profileId
+														}
+												})
+										},
+									textField: 'label',
+									listeners: {
+										click: function(s,item) {
+											me.addExternalAccount(s, item.getItemId(), {
+												callback: function(success) {
+													if(success) me.reloadExternalAccounts();
+												}
+											});
 									}
-							}, {
+								}
+									}
+								}, {
 								xtype: 'button',
 								text: WT.res('act-delete.lbl'),
 								reference: 'deleteExternalAccount',
@@ -884,13 +898,36 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		});
 	},
 	
-	addExternalAccount: function(opts) {
+	getExternalProviderData: function(comp, id) {
 		var me = this,
-				defaultSentFolder = me.getVar
+				items = comp.getStore().data.items,
+				itemData;
+		items.forEach(function(element) {
+			if(element.id === id) {
+				itemData = element.data;
+			}
+		});
+		return itemData;
+	},
+	
+	addExternalAccount: function(comp, itemId, opts) {
+		var me = this,
+				itemData = me.getExternalProviderData(comp, itemId),
 			view = WT.createView(me.ID, 'view.ExternalAccount', {
 				swapReturn: true, 
 				viewCfg: {
-					profileId: me.profileId
+					profileId: me.profileId,
+					externalAccountProviderId: itemData.id,
+					email: itemData.email,
+					server: itemData.server,
+					protocol: itemData.protocol,
+					port: itemData.port,
+					folderPrefix: itemData.folderPrefix,
+					folderSent: itemData.folderSent,
+					folderDrafts: itemData.folderDrafts,
+					folderTrash: itemData.folderTrash,
+					folderSpam: itemData.folderSpam,
+					folderArchive: itemData.folderArchive
 				}
 			});
 		
