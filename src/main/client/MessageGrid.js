@@ -1108,7 +1108,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			curfolder=me.currentFolder,
 			sm=me.getSelectionModel(),
 			selection=sm.getSelection(),
-			ftrash=me.mys.getFolderTrash();
+			ftrash=me.mys.getFolderTrash(acct);
 	
 		if (!selection || selection.length==0) return;
 		

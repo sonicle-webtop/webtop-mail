@@ -149,6 +149,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			mys: me,
 			acct: 'main',
 			width: '100%',
+			hideHeaders: true,
 			rootVisible: true,
 			padding: '0 0 20 0',
 			border: false,
@@ -164,8 +165,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
 				rowclick: function(t, r, tr, ix, e, eopts) {
-					me.imapTree.setSelection(null);
-					if (me.archiveTree) me.archiveTree.setSelection(null);
+					//me.imapTree.setSelection(null);
+					//if (me.archiveTree) me.archiveTree.setSelection(null);
+					me._unselectAllTreesBut(me.favoritesTree);
 					me.folderClicked(me.favoritesTree.acct, r, tr, ix, e, eopts);
 				}
 			}
@@ -194,8 +196,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
 					},
 					rowclick: function(t, r, tr, ix, e, eopts) {
-						me.imapTree.setSelection(null);
-						me.favoritesTree.setSelection(null);
+						//me.imapTree.setSelection(null);
+						//me.favoritesTree.setSelection(null);
+						me._unselectAllTreesBut(me.archiveTree);
 						me.folderClicked(me.archiveTree.acct, r, tr, ix, e, eopts);
 					}
 				}
@@ -210,6 +213,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//region: 'center',
 			hideHeaders: true,
 			rootVisible: true,
+			padding: '0 0 20 0',
 			border: false,
 			bodyStyle: {
 				borderTopColor: 'transparent'
@@ -228,8 +232,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
 				rowclick: function(t, r, tr, ix, e, eopts) {
-					me.favoritesTree.setSelection(null);
-					if (me.archiveTree) me.archiveTree.setSelection(null);
+					//me.favoritesTree.setSelection(null);
+					//if (me.archiveTree) me.archiveTree.setSelection(null);
+					me._unselectAllTreesBut(me.imapTree);
 					me.folderClicked(me.imapTree.acct, r, tr, ix, e, eopts);
 				},
 				load: function(t,r,s,o,n) {
@@ -274,10 +279,81 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var trees=[
 			me.favoritesTree,
 		];
-		if (me.archiveTree) trees.push(me.archiveTree);
+		if (me.archiveTree) {
+			trees.push(me.archiveTree);
+			me.acctTrees[me.archiveTree.acct]=me.archiveTree;
+		}
 		
 		trees.push(me.imapTree);
+		me.acctTrees[me.imapTree.acct]=me.imapTree;
 		
+		var extacc=me.getVar("externalAccounts");
+		if (extacc.length>0) {
+			var extids=extacc.split(",");
+			Ext.each(extids,function(extid) {
+				var tree=Ext.create('Sonicle.webtop.mail.ExternalAccountTree',{
+					mys: me,
+					acct: extid,
+					width: '100%',
+					//region: 'center',
+					hideHeaders: true,
+					rootVisible: true,
+					padding: '0 0 20 0',
+					border: false,
+					bodyStyle: {
+						borderTopColor: 'transparent'
+					},
+
+					//stateEvents : ['collapsenode', 'expandnode'],
+					//stateId : 'imaptree-state-id',
+					//statefulFolders : true,
+
+					listeners: {
+						itemcontextmenu: function(v, rec, itm, i, e, eopts) {
+							me.updateCxmTree(rec);
+							WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
+						},
+						containercontextmenu: function(v, e, eopts) {
+							WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
+						},
+						rowclick: function(t, r, tr, ix, e, eopts) {
+							//me.favoritesTree.setSelection(null);
+							//if (me.archiveTree) me.archiveTree.setSelection(null);
+							me._unselectAllTreesBut(tree);
+							me.folderClicked(tree.acct, r, tr, ix, e, eopts);
+						},
+						load: function(t,r,s,o,n) {
+							if (n.id==='/') {
+								//keep enabled loadMask only for root loading
+								tree.getView().loadMask=false;
+							}
+						},
+						edit: function(ed, e) {
+							if (e.colIdx===0)
+								me.renameFolder(e.record,e.originalValue,e.value);
+						},
+						columnshow: function(ct,c) {
+							if (c.getIndex()==2)
+								me.getRef("mnuShowSharings").setChecked(true,true);
+						},
+						columnhide: function(ct,c) {
+							if (c.getIndex()==2)
+								me.getRef("mnuShowSharings").setChecked(false,true);
+						}
+					}
+				});
+
+				tree.getPlugin('cellediting').on("beforeedit",function(editor , context , eOpts) {
+					var r=context.record;
+					if (!r.get("canRename")) return false;
+				});
+
+				trees.push(tree);
+				me.acctTrees[extid]=tree;
+
+			});
+
+		}
 		me.trees=Ext.create({
 				xtype: 'panel',
 				border: false,
@@ -286,9 +362,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				scrollable: true,
 				items: trees
 		});
-		
-		me.acctTrees[me.imapTree.acct]=me.imapTree;
-		if (me.archiveTree) me.acctTrees[me.archiveTree.acct]=me.archiveTree;
 		
 		//me.messagesPanel.setImapStore(me.imapTree.getStore());
 		
@@ -419,6 +492,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			if (me.tasksTool) me.tasksTool.refresh();
 		});
 		
+	},
+	
+	_unselectAllTreesBut: function(tree) {
+		var me=this;
+		Ext.iterate(me.acctTrees,function(k,i) {
+			if (i!==tree) i.setSelection(null);
+		});
+		if (tree!==me.favoritesTree) me.favoritesTree.setSelection(null);
 	},
 	
 	_calendarTool_buildDateTimeInfo: function(start) {
@@ -887,8 +968,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	unreadChanged: function(msg,unreadOnly) {
 		var me=this,
 		pl=msg.payload,
-		node=me.imapTree.getStore().getById(pl.foldername),
-		fnode=me.favoritesTree.getStore().getById(pl.foldername);
+		tree=me.acctTrees[pl.accountid],
+		node=tree.getStore().getById(pl.foldername),
+		fnode=(pl.accountid=='main')?me.favoritesTree.getStore().getById(pl.foldername):null;
 		if (node) {
 			var folder=node.get("folder");
 			var oldunread=node.get("unread");
@@ -921,6 +1003,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				title: Ext.String.ellipsis(pl.from,30),
 				body: pl.subject,
 				data: {
+					account: pl.accountid,
 					foldername: pl.foldername
 				}
 			}, {
@@ -928,17 +1011,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			});
 			
 		}
-		if (me.currentFolder===pl.foldername) {
+		if (me.currentAccount===pl.accountid && me.currentFolder===pl.foldername) {
 			me.messagesPanel.refreshGridWhenIdle(pl.foldername);
 		}
 	},
 	
 	notificationCallback: function(type, tag, data) {
 		if (type==='desktop') {
-			var me=this;
+			var me=this,
+				tree=me.acctTrees[data.account];
 			WT.activateService(me.ID);
-			me.imapTree.expandNodePath(data.foldername,me.getVar("folderSeparator"),true);
-			me.showFolder(me.imapTree.acct,data.foldername);
+			tree.expandNodePath(data.foldername,me.getVar("folderSeparator"),true);
+			me.showFolder(data.account,data.foldername);
 		}
 	},
 	
@@ -1478,8 +1562,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return this.getVar('folderSpam');
 	},
 	
-	getFolderTrash: function() {
-		return this.getVar('folderTrash');
+	getFolderTrash: function(id) {
+		if (!id || id=='main' || id=='archive') return this.getVar('folderTrash');
+		return this.getVar('externalAccountTrash.'+id);
 	},
 	
 	getFolderArchive: function() {
@@ -1492,7 +1577,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
     downloadMails: function(acct,folder) {
         var params={
-			acctoun: acct,
+			account: acct,
             folder: folder
         };
         var url=WTF.processBinUrl(this.ID,"DownloadMails",params);;
@@ -1576,7 +1661,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			},
 			callback: function(success,json) {
 				if (json.result) {
-					var tr=me.imapTree,
+					var tr=me.acctTrees[acct],
 					v=tr.getView(),
 					s=tr.store,
 					n=(parent?s.getNodeById(parent):s.getRoot()),
@@ -1886,26 +1971,38 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.getAct('deletefolder').setDisabled(me.specialFolders[id]);
 		me.getAct('renamefolder').setDisabled(me.specialFolders[id]);
 		me.getAct('movetomain').setDisabled(me.specialFolders[id]?true:(r.parentNode.get("id")===rootid));
-		me.getAct('sharing').setDisabled(d.isUnderShared||d.isSharedRoot);
 
-		var as=me.getAct('scanfolder');
-		var mi=me.getRef("mnuScan");
-		if (r.get("scanOff")) { as.setDisabled(true); mi.setChecked(false,true); }
-		else if (r.get("scanOn")) { as.setDisabled(true); mi.setChecked(true,true); }
-		else {
-			as.setDisabled(false);
-			if (r.get("scanEnabled")) mi.setChecked(true,true);
-            else mi.setChecked(false,true);
+		var ismain=(acct=='main');
+		me.getAct('sharing').setDisabled(!ismain);
+		me.getAct('showsharings').setDisabled(!ismain);
+		me.getAct('showarchive').setDisabled(!ismain);
+		me.getAct('scanfolder').setDisabled(!ismain);
+		me.getAct('managehiddenfolders').setDisabled(!ismain);
+		me.getAct('hidefolder').setDisabled(!ismain);
+		
+		if (ismain) {
+			me.getAct('sharing').setDisabled(d.isUnderShared||d.isSharedRoot);
+
+			var as=me.getAct('scanfolder');
+			var mi=me.getRef("mnuScan");
+			if (r.get("scanOff")) { as.setDisabled(true); mi.setChecked(false,true); }
+			else if (r.get("scanOn")) { as.setDisabled(true); mi.setChecked(true,true); }
+			else {
+				as.setDisabled(false);
+				if (r.get("scanEnabled")) mi.setChecked(true,true);
+				else mi.setChecked(false,true);
+			}
+			/*var as=this.aScan;
+			var mi=this.miScan;
+			if (a.scanOff) {as.setDisabled(true);mi.setChecked(false,true);}
+			else if (a.scanOn) {as.setDisabled(true);mi.setChecked(true,true);}
+			else {
+				this.aScan.setDisabled(false);
+				if (a.scanEnabled) mi.setChecked(true,true);
+				else mi.setChecked(false,true);
+			}*/
+		} else {
 		}
-        /*var as=this.aScan;
-        var mi=this.miScan;
-        if (a.scanOff) {as.setDisabled(true);mi.setChecked(false,true);}
-        else if (a.scanOn) {as.setDisabled(true);mi.setChecked(true,true);}
-        else {
-            this.aScan.setDisabled(false);
-            if (a.scanEnabled) mi.setChecked(true,true);
-            else mi.setChecked(false,true);
-        }*/
 	},
 	
 	getCalendarApi: function() {

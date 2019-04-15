@@ -39,11 +39,13 @@ package com.sonicle.webtop.mail.bol.js;
  */
 public class JsRecentMessage {
 	
+	String accountid;
 	String foldername;
 	String from;
 	String subject;
 	
-	public JsRecentMessage(String foldername, String from, String subject) {
+	public JsRecentMessage(String accountid, String foldername, String from, String subject) {
+		this.accountid=accountid;
 		this.foldername=foldername;
 		this.from=from;
 		this.subject=subject;

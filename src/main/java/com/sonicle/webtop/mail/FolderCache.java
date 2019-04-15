@@ -594,12 +594,12 @@ public class FolderCache {
 	
 	private void sendUnreadChangedMessage() {
 		this.environment.notify(
-				new UnreadChangedMessage(foldername, unread, hasUnreadChildren)
+				new UnreadChangedMessage(account.getId(),foldername, unread, hasUnreadChildren)
 		);
 	}
 
 	private void sendRecentMessage(String from, String subject) {
-		this.environment.notify(new RecentMessage(foldername, from, subject)
+		this.environment.notify(new RecentMessage(account.getId(),foldername, from, subject)
 		);
 	}
 	

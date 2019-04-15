@@ -31,23 +31,72 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.ws;
 
-import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.sdk.ServiceMessage;
-import com.sonicle.webtop.mail.Service;
-import com.sonicle.webtop.mail.bol.js.JsUnreadChangedMessage;
+Ext.define('Sonicle.webtop.mail.ExternalAccountTree', {
+	extend: 'Sonicle.webtop.mail.SimpleImapTree',
+	
+	plugins: {
+        ptype: 'cellediting',
+		pluginId: 'cellediting',
+        clicksToEdit: 2
+    },	
+	
+	constructor: function(cfg) {
+		var me = this;
+		
+		Ext.apply(cfg,{
+			viewConfig: {
+				plugins: { 
+					ptype: 'imaptreeviewdragdrop' ,
+					moveFolder: function(src,dst) {
+						cfg.mys.moveFolder(me.acct,src,dst);
+					},
+					moveMessages: function(data,dst) {
+						data.view.grid.moveSelection(data.srcAccount,data.srcFolder,me.acct,dst,data.records);
+					},
+					copyMessages: function(data,dst) {
+						data.view.grid.copySelection(data.srcAccount,data.srcFolder,me.acct,dst,data.records);
+					},
+					copyAttachment: function(data,dst) {
+						cfg.mys.copyAttachment(data.params.acct,data.params.folder,me.acct,dst,data.params.idmessage,data.params.idattach);
+					}
+				},
+				markDirty: false,
+				loadMask: true,
+				animate: true
+			},
+			
+			store: Ext.create('Ext.data.TreeStore', {
+				model: 'Sonicle.webtop.mail.model.ImapTreeModel',
+				proxy: WTF.proxy(cfg.mys.ID,'GetImapTree','data',{
+					extraParams: {
+						account: cfg.acct
+					}
+				}),
+				root: {
+					id: '/',
+					text: 'External Account Tree',
+					folder: cfg.mys.getVar('externalAccountDescription.'+cfg.acct),
+					unread: 0,
+					iconCls: 'wtmail-icon-emailaccount-xs',
+					expanded: false
+				},
+				rootVisible: false,
+				acct: cfg.acct
+			})
+		});
 
-/**
- *
- * @author gbulfon
- */
-public class UnreadChangedMessage extends ServiceMessage {
+		me.callParent([cfg]);
+		
+	},
 	
-	public static final String ACTION_UNREAD="unread";
-	
-	public UnreadChangedMessage(String accountid, String foldername, int unread, boolean hasUnreadChildren) {
-		super(WT.findServiceId(Service.class),ACTION_UNREAD,new JsUnreadChangedMessage(accountid,foldername,unread,hasUnreadChildren));
+	startEdit: function(record,c) {
+		var me=this;
+		me.getPlugin('cellediting').startEdit(record, me.getView().ownerCt.getColumnManager().getHeaderAtIndex(c));
 	}
 	
-}
+	
+	
+	
+});
+

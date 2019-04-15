@@ -112,6 +112,7 @@ import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.model.AutoResponder;
+import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.MailEditFormat;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
@@ -156,6 +157,7 @@ import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
@@ -268,7 +270,9 @@ public class Service extends BaseService {
 	private MailManager mailManager;
 	private MailAccount mainAccount=null;
 	private MailAccount archiveAccount=null;
+	private ArrayList<MailAccount> externalAccounts=new ArrayList<MailAccount>();
 	private HashMap<String,MailAccount> accounts=new HashMap<>();
+	private HashMap<String,ExternalAccount> externalAccountsMap=new HashMap<>();
 	//private Session session;
 	//private Store store;
 	//private String storeProtocol;
@@ -511,6 +515,33 @@ public class Service extends BaseService {
 				archiveAccount.setFolderSpam(mprofile.getFolderSpam());
 				archiveAccount.setFolderTrash(mprofile.getFolderTrash());
 				archiveAccount.setFolderArchive(mprofile.getFolderArchive());				
+			}
+			
+			//add any configured external account
+			for(ExternalAccount extacc: mailManager.listExternalAccounts()) {
+				String id=extacc.getExternalAccountId().toString();
+				externalAccountsMap.put(id,extacc);
+				
+				MailAccount acct=createAccount(id);
+				acct.setFolderPrefix(extacc.getFolderPrefix());
+				acct.setProtocol(extacc.getProtocol());
+
+				acct.setMailSession(environment.getSession().getMailSession());
+
+				acct.setPort(extacc.getPort());
+				acct.setHost(extacc.getHost());
+				acct.setUsername(extacc.getUserName());
+				acct.setPassword(extacc.getPassword());
+				
+				acct.setFolderSent(extacc.getFolderSent());
+				acct.setFolderDrafts(extacc.getFolderDrafts());
+				acct.setFolderSpam(extacc.getFolderSpam());
+				acct.setFolderTrash(extacc.getFolderTrash());
+				acct.setFolderArchive(extacc.getFolderArchive());
+				
+				externalAccounts.add(acct);
+				acct.checkStoreConnected();
+				acct.loadFoldersCache(new Object(),false);
 			}
 
 			
@@ -2421,7 +2452,7 @@ public class Service extends BaseService {
 			
 			Folder folders[] = folder.list();
 			String fprefix = account.getFolderPrefix();
-			boolean level1 = (fprefix != null && fprefix.equals("INBOX."));
+			boolean level1 = (fprefix != null /*&& fprefix.equals("INBOX.")*/ && fprefix.trim().length()>0);
 			out.print("{ data:[");
 			if (isroot && account.hasDifferentDefaultFolder()) {
 				Folder fcs[]=new Folder[0];
@@ -2453,6 +2484,9 @@ public class Service extends BaseService {
 	}
 	
 	private void outputFolders(MailAccount account, Folder parent, Folder folders[], boolean level1, boolean favorites, PrintWriter out) throws Exception {
+		boolean hasPrefix=!StringUtils.isBlank(account.getFolderPrefix());
+		String prefixMatch=StringUtils.stripEnd(account.getFolderPrefix(),account.getFolderSeparator()+"");
+		ArrayList<Folder> postPrefixList=new ArrayList<Folder>();
 		ArrayList<Folder> afolders;
 		if (!favorites) afolders=sortFolders(account,folders);
 		else {
@@ -2475,6 +2509,20 @@ public class Service extends BaseService {
 			}
 		}
 		
+		//If at level 1, look for the prefix folder in the list
+		Folder prefixFolder=null;
+		if (level1) {
+			for(Folder f : afolders ) {
+				if (f.getFullName().equals(prefixMatch)) {
+					prefixFolder=f;
+					break;
+				}
+			}
+			//remove it and use it later
+			if (prefixFolder!=null) afolders.remove(prefixFolder);
+		}
+		
+		//now scan and output folders
 		for (Folder f : afolders) {
 			String foldername = f.getFullName();
 			//in case of moved root, check not to duplicate root elsewhere
@@ -2521,104 +2569,113 @@ public class Service extends BaseService {
 			//	if (!level1 || !foldername.equals("INBOX")) leaf=false;
 			//}
 			
-			String iconCls = "wtmail-icon-imap-folder-xs";
-			int unread = 0;
-			boolean hasUnread = false;
-			boolean nounread = false;
-			if (mc.isSharedFolder()) {
-				iconCls = "wtmail-icon-shared-folder-xs";
-				nounread = true;
-			} else if (mc.isInbox()) {
-				iconCls = "wtmail-icon-inbox-folder-xs";
-			} else if (mc.isSent()) {
-				iconCls = "wtmail-icon-sent-folder-xs";
-				nounread = true;
-			} else if (mc.isDrafts()) {
-				iconCls = "wtmail-icon-drafts-folder-xs";
-				nounread = true;
-			} else if (mc.isTrash()) {
-				iconCls = "wtmail-icon-trash-folder-xs";
-				nounread = true;
-			} else if (mc.isArchive()) {
-				iconCls = "wtmail-icon-archive-folder-xs";
-				nounread = true;
-			} else if (mc.isSpam()) {
-				iconCls = "wtmail-icon-spam-folder-xs";
-				nounread = true;
-			} else if (mc.isDms()) {
-				iconCls = "wtmail-icon-dms-folder-xs";
-			} else if (mc.isSharedInbox()) {
-				iconCls = "wtmail-icon-inbox-folder-xs";
+			if (!favorites && prefixFolder!=null && !foldername.equals("INBOX") && !foldername.startsWith(account.getFolderPrefix())) {
+				postPrefixList.add(f);
 			}
-			if (!nounread) {
-				unread = mc.getUnreadMessagesCount();
-				hasUnread = mc.hasUnreadChildren();
-			}
-			String text = mc.getDescription();
-			String group = us.getMessageListGroup(foldername);
-			if (group == null) {
-				group = "";
-			}
-			
-			String ss = "{id:'" + StringEscapeUtils.escapeEcmaScript(foldername)
-					+ "',text:'" + StringEscapeUtils.escapeEcmaScript(text)
-					+ "',folder:'" + StringEscapeUtils.escapeEcmaScript(text)
-					+ "',leaf:" + leaf
-					+ ",iconCls: '" + iconCls
-					+ "',unread:" + unread
-					+ ",hasUnread:" + hasUnread
-					+ ",group: '"+group+"'";
-
-			boolean isSharedToSomeone=false;
-			try {
-				isSharedToSomeone=mc.isSharedToSomeone();
-			} catch(Exception exc) {
-				
-			}
-			if (isSharedToSomeone) ss+=",isSharedToSomeone: true";
-			if (mc.isSharedFolder()) ss+=",isSharedRoot: true";
-			if (account.isUnderSharedFolder(foldername)) ss+=",isUnderShared: true";
-			if (mc.isInbox()) {
-				ss += ",isInbox: true";
-			}
-			if (mc.isSent()) {
-				ss += ",isSent: true";
-			}
-			if (account.isUnderSentFolder(mc.getFolderName())) {
-				ss += ",isUnderSent: true";
-			}
-			if (mc.isDrafts()) {
-				ss += ",isDrafts: true";
-			}
-			if (mc.isTrash()) {
-				ss += ",isTrash: true";
-			}
-			if (mc.isArchive()) {
-				ss += ",isArchive: true";
-			}
-			if (mc.isSpam()) {
-				ss += ",isSpam: true";
-			}
-			if (mc.isScanForcedOff()) {
-				ss += ", scanOff: true";
-			} else if (mc.isScanForcedOn()) {
-				ss += ", scanOn: true";
-			} else if (mc.isScanEnabled()) {
-				ss += ", scanEnabled: true";
-			}
-			
-			boolean canRename=true;
-			if (mc.isInbox() || mc.isSpecial() || mc.isSharedFolder() || (mc.getParent()!=null && mc.getParent().isSharedFolder())) canRename=false;
-			ss += ", canRename: "+canRename;
-			
-			ss += ", account: '"+account.getId()+"'";
-			ss += "},";
-			out.print(ss);
-			if (!favorites) {
-				if (level1 && foldername.equals(account.getInboxFolderFullName())) {
-					outputFolders(account,f, f.list(), false, false, out);
+			else {
+				String iconCls = "wtmail-icon-imap-folder-xs";
+				int unread = 0;
+				boolean hasUnread = false;
+				boolean nounread = false;
+				if (mc.isSharedFolder()) {
+					iconCls = "wtmail-icon-shared-folder-xs";
+					nounread = true;
+				} else if (mc.isInbox()) {
+					iconCls = "wtmail-icon-inbox-folder-xs";
+				} else if (mc.isSent()) {
+					iconCls = "wtmail-icon-sent-folder-xs";
+					nounread = true;
+				} else if (mc.isDrafts()) {
+					iconCls = "wtmail-icon-drafts-folder-xs";
+					nounread = true;
+				} else if (mc.isTrash()) {
+					iconCls = "wtmail-icon-trash-folder-xs";
+					nounread = true;
+				} else if (mc.isArchive()) {
+					iconCls = "wtmail-icon-archive-folder-xs";
+					nounread = true;
+				} else if (mc.isSpam()) {
+					iconCls = "wtmail-icon-spam-folder-xs";
+					nounread = true;
+				} else if (mc.isDms()) {
+					iconCls = "wtmail-icon-dms-folder-xs";
+				} else if (mc.isSharedInbox()) {
+					iconCls = "wtmail-icon-inbox-folder-xs";
 				}
+				if (!nounread) {
+					unread = mc.getUnreadMessagesCount();
+					hasUnread = mc.hasUnreadChildren();
+				}
+				String text = mc.getDescription();
+				String group = us.getMessageListGroup(foldername);
+				if (group == null) {
+					group = "";
+				}
+
+				String ss = "{id:'" + StringEscapeUtils.escapeEcmaScript(foldername)
+						+ "',text:'" + StringEscapeUtils.escapeEcmaScript(text)
+						+ "',folder:'" + StringEscapeUtils.escapeEcmaScript(text)
+						+ "',leaf:" + leaf
+						+ ",iconCls: '" + iconCls
+						+ "',unread:" + unread
+						+ ",hasUnread:" + hasUnread
+						+ ",group: '"+group+"'";
+
+				boolean isSharedToSomeone=false;
+				try {
+					isSharedToSomeone=mc.isSharedToSomeone();
+				} catch(Exception exc) {
+
+				}
+				if (isSharedToSomeone) ss+=",isSharedToSomeone: true";
+				if (mc.isSharedFolder()) ss+=",isSharedRoot: true";
+				if (account.isUnderSharedFolder(foldername)) ss+=",isUnderShared: true";
+				if (mc.isInbox()) {
+					ss += ",isInbox: true";
+				}
+				if (mc.isSent()) {
+					ss += ",isSent: true";
+				}
+				if (account.isUnderSentFolder(mc.getFolderName())) {
+					ss += ",isUnderSent: true";
+				}
+				if (mc.isDrafts()) {
+					ss += ",isDrafts: true";
+				}
+				if (mc.isTrash()) {
+					ss += ",isTrash: true";
+				}
+				if (mc.isArchive()) {
+					ss += ",isArchive: true";
+				}
+				if (mc.isSpam()) {
+					ss += ",isSpam: true";
+				}
+				if (mc.isScanForcedOff()) {
+					ss += ", scanOff: true";
+				} else if (mc.isScanForcedOn()) {
+					ss += ", scanOn: true";
+				} else if (mc.isScanEnabled()) {
+					ss += ", scanEnabled: true";
+				}
+
+				boolean canRename=true;
+				if (mc.isInbox() || mc.isSpecial() || mc.isSharedFolder() || (mc.getParent()!=null && mc.getParent().isSharedFolder())) canRename=false;
+				ss += ", canRename: "+canRename;
+
+				ss += ", account: '"+account.getId()+"'";
+				ss += "},";
+
+				out.print(ss);
+
 			}
+		}
+		
+		//if we have a prefix folder output remaining folders
+		if (!favorites && prefixFolder!=null) {
+			for(Folder ff: prefixFolder.list()) postPrefixList.add(ff);					
+			ArrayList<Folder> sortedFolders=sortFolders(account,postPrefixList.toArray(new Folder[postPrefixList.size()]));
+			outputFolders(account, prefixFolder, sortedFolders.toArray(new Folder[sortedFolders.size()]), false, false, out);
 		}
 	}
 	
@@ -8300,6 +8357,20 @@ public class Service extends BaseService {
 			if (RunContext.isPermitted(true, SERVICE_ID, "FAX", "ACCESS")) {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());
 			}
+			
+			String extids="";
+			for(MailAccount acct: externalAccounts) {
+				String id=acct.getId();
+				if (extids.length()>0) extids+=",";
+				extids+=id;
+				
+				co.put("externalAccountDescription."+id,externalAccountsMap.get(id).getAccountDescription());
+				co.put("externalAccountDrafts."+id,externalAccountsMap.get(id).getFolderDrafts());
+				co.put("externalAccountSent."+id,externalAccountsMap.get(id).getFolderSent());
+				co.put("externalAccountTrash."+id,externalAccountsMap.get(id).getFolderTrash());
+				co.put("externalAccountSpam."+id,externalAccountsMap.get(id).getFolderSpam());
+			}
+			co.put("externalAccounts",extids);
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	

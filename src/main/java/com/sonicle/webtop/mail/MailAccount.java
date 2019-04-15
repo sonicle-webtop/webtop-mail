@@ -426,7 +426,7 @@ public class MailAccount {
 	}
 	
 	protected FolderCache addFoldersCache(FolderCache parent, Folder child) throws MessagingException {
-		Service.logger.trace("adding {} to {}",child.getName(),parent.getFolderName());
+		//Service.logger.trace("adding {} to {}",child.getName(),parent.getFolderName());
 		FolderCache fcChild = addSingleFoldersCache(parent, child);
 		boolean leaf = fcChild.isStartupLeaf();
 		if (!leaf) {
@@ -560,8 +560,10 @@ public class MailAccount {
 		FolderCache fcChild=foldersCache.get(cname);
 		if (fcChild==null) {
 			fcChild=createFolderCache(child);
-			fcChild.setParent(parent);
-			parent.addChild(fcChild);
+			if (parent!=null) {
+				fcChild.setParent(parent);
+				parent.addChild(fcChild);
+			}
 			fcChild.setStartupLeaf(isLeaf((IMAPFolder)child));
 		}
 		

@@ -728,29 +728,32 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 														}
 												})
 										},
-									textField: 'label',
-									listeners: {
-										click: function(s,item) {
-											me.addExternalAccount(s, item.getItemId(), {
-												callback: function(success) {
-													if(success) me.reloadExternalAccounts();
-												}
-											});
-									}
-								}
+										textField: 'label',
+										listeners: {
+											click: function(s,item) {
+												me.addExternalAccount(s, item.getItemId(), {
+													callback: function(success) {
+														if(success) {
+															me.needLogin=true;
+															me.reloadExternalAccounts();
+														}
+													}
+												});
+											}
+										}
 									}
 								}, {
 								xtype: 'button',
 								text: WT.res('act-delete.lbl'),
 								reference: 'deleteExternalAccount',
 								iconCls: 'wt-icon-delete',
-								needLogin: true,
 								scope: me,
 								handler: function() {
 									var sel = me.lref('gpExternalAccounts').getSelection();
 									if (sel.length > 0) {
 										WT.confirm(me.res('sureprompt'),function(bid) {
 												if (bid==='yes') {
+													me.needLogin=true;
 													me.deleteExternalAccount(sel[0].get('externalAccountId'));
 												}
 										},me);
@@ -762,7 +765,6 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								text: WT.res('act-edit.lbl'),
 								reference: 'editExternalAccount',
 								iconCls: 'wt-icon-edit-xs',
-								needLogin: true,
 								scope: me,
 								handler: function() {
 									var sel = me.lref('gpExternalAccounts').getSelection(),
@@ -770,7 +772,10 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									
 									me.editExternalAccount(externalId, {
 										callback: function(success) {
-											if(success) me.reloadExternalAccounts();
+											if(success) {
+												me.needLogin=true;
+												me.reloadExternalAccounts();
+											}
 										}
 									})
 								},
@@ -782,7 +787,6 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								bind: {
 									disabled: '{!foCanManageExternalAccounts}'
 								},
-								needLogin: true,
 								scope: me,
 								handler: function() {
 									me.reloadExternalAccounts();
@@ -795,7 +799,6 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							bind: {
 									disabled: '{!foCanManageExternalAccounts}'
 								},
-							needLogin: true,
 							scope: me,
 							store: {
 								autoLoad: true,

@@ -39,11 +39,13 @@ package com.sonicle.webtop.mail.bol.js;
  */
 public class JsUnreadChangedMessage {
 	
+	String accountid;
 	String foldername;
 	int unread;
 	boolean hasUnreadChildren;
 	
-	public JsUnreadChangedMessage(String foldername, int unread, boolean hasUnreadChildren) {
+	public JsUnreadChangedMessage(String accountid, String foldername, int unread, boolean hasUnreadChildren) {
+		this.accountid=accountid;
 		this.foldername=foldername;
 		this.unread=unread;
 		this.hasUnreadChildren=hasUnreadChildren;
