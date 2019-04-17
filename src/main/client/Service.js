@@ -1383,11 +1383,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	actionManageHiddenFolders: function(s,e) {
-		var me=this;
+		var me=this,
+			acct = me.acctTrees.main.acct;
 		WT.createView(me.ID,'view.HiddenFolders',{
 			viewCfg: {
 				callback: function() {
-					me.reloadTree();
+					me.reloadTree(acct);
 				}
 			}
 		}).show();
