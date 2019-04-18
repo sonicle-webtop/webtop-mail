@@ -310,6 +310,8 @@ public class Service extends BaseService {
 	private SmartSearchThread sst;
 	private PortletSearchThread pst;
 	
+	private boolean previewBalanceTags=true;
+	
 	static {
 		inlineableMimes.add("image/gif");
 		inlineableMimes.add("image/jpeg");
@@ -379,6 +381,8 @@ public class Service extends BaseService {
 		}
 		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword);
 		fcProvided = new FolderCache(this, environment);
+		
+		previewBalanceTags=ss.isPreviewBalanceTags();
 		
 		mainAccount=createAccount(MAIN_ACCOUNT_ID);
 		mainAccount.setFolderPrefix(mprofile.getFolderPrefix());
@@ -4100,6 +4104,10 @@ public class Service extends BaseService {
 		}
 	}
 	
+	private boolean isPreviewBalanceTags(InternetAddress ia) {
+		return previewBalanceTags;
+	}
+	
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
@@ -4114,7 +4122,9 @@ public class Service extends BaseService {
 			
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
-			Message m = mcache.getMessage(Long.parseLong(puidmessage));
+			IMAPMessage m = (IMAPMessage)mcache.getMessage(Long.parseLong(puidmessage));
+			m.setPeek(us.isManualSeen());
+			//boolean wasseen = m.isSet(Flags.Flag.SEEN);
 			String vheader[] = m.getHeader("Disposition-Notification-To");
 			boolean receipt = false;
 			int priority = 3;
@@ -4196,10 +4206,11 @@ public class Service extends BaseService {
 			
             Identity ident=null;
 			Address from[]=m.getFrom();
+			InternetAddress iafrom=null;
 			if (from!=null && from.length>0) {
-				InternetAddress ia=(InternetAddress)from[0];
-				String email=ia.getAddress();
-				String displayname=ia.getPersonal();
+				iafrom=(InternetAddress)from[0];
+				String email=iafrom.getAddress();
+				String displayname=iafrom.getPersonal();
 				if (displayname==null) displayname=email;
 				//sout+=" from: { email: '"+StringEscapeUtils.escapeEcmaScript(email)+"', displayname: '"+StringEscapeUtils.escapeEcmaScript(displayname)+"' },\n";
                 ident=mprofile.getIdentity(displayname, email);
@@ -4256,11 +4267,18 @@ public class Service extends BaseService {
 			sout += " ],\n";
 			
 			String html = "";
-			ArrayList<String> htmlparts = mcache.getHTMLParts((MimeMessage) m, newmsgid, true);
+			boolean balanceTags=isPreviewBalanceTags(iafrom);
+			ArrayList<String> htmlparts = mcache.getHTMLParts((MimeMessage) m, newmsgid, true, balanceTags);
 			for (String xhtml : htmlparts) {
 				html += xhtml + "<BR><BR>";
 			}
             HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
+			//if(!wasseen){
+			//	if (us.isManualSeen()) {
+			//		m.setFlag(Flags.Flag.SEEN, false);
+			//	}
+			//}
+			
             boolean first = true;
             sout += " attachments: [\n";
             for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
@@ -4310,6 +4328,8 @@ public class Service extends BaseService {
             sout += " format:'"+EnumUtils.toSerializedName(editFormat)+"'\n";
 			sout += "\n}";
 
+			m.setPeek(false);
+			
 			if (toDelete) {
 				m.setFlag(Flags.Flag.DELETED, true);
 				m.getFolder().expunge();
@@ -6681,6 +6701,7 @@ public class Service extends BaseService {
 		try {
 			FolderCache mcache = null;
 			Message m = null;
+			IMAPMessage im=null;
 			int recs = 0;
 			long msguid=-1;
 			String vheader[] = null;
@@ -6692,6 +6713,8 @@ public class Service extends BaseService {
 				mcache = account.getFolderCache(pfoldername);
                 msguid=Long.parseLong(puidmessage);
                 m=mcache.getMessage(msguid);
+				im=(IMAPMessage)m;
+				im.setPeek(us.isManualSeen());
                 if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
 				vheader = m.getHeader("Disposition-Notification-To");
 				wasseen = m.isSet(Flags.Flag.SEEN);
@@ -6748,10 +6771,11 @@ public class Service extends BaseService {
 			String fromName = "";
 			String fromEmail = "";
 			Address as[] = m.getFrom();
+			InternetAddress iafrom=null;
 			if (as != null && as.length > 0) {
-				InternetAddress ia = (InternetAddress) as[0];
-				fromName = ia.getPersonal();
-				fromEmail = adjustEmail(ia.getAddress());
+				iafrom = (InternetAddress) as[0];
+				fromName = iafrom.getPersonal();
+				fromEmail = adjustEmail(iafrom.getAddress());
 				if (fromName == null) {
 					fromName = fromEmail;
 				}
@@ -6797,10 +6821,11 @@ public class Service extends BaseService {
                     ++recs;
                 }
 			ArrayList<String> htmlparts = null;
+			boolean balanceTags=isPreviewBalanceTags(iafrom);
 			if (providername == null) {
-				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false);
+				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false, balanceTags);
 			} else {
-				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid);
+				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid, balanceTags);
 			}
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			ICalendarRequest ir=mailData.getICalRequest();
@@ -6814,7 +6839,7 @@ public class Service extends BaseService {
 			    }
 			}
 						
-			if (!wasseen) {
+			/*if (!wasseen) {
 				//if (us.isManualSeen()) {
 				if (!setSeen) {
 					m.setFlag(Flags.Flag.SEEN, false);
@@ -6822,7 +6847,9 @@ public class Service extends BaseService {
 					//if no html part, flag seen is not set
 					if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
 				}
-			}
+			}*/
+			if (!us.isManualSeen())
+				if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
 			
 			
 			int acount = mailData.getAttachmentPartCount();
@@ -6977,6 +7004,9 @@ public class Service extends BaseService {
 
 			sout += "total:" + recs + ",\nmillis:" + millis + "\n}\n";
 			out.println(sout);
+			
+			if (im!=null) im.setPeek(false);
+			
 //            if (!wasopen) folder.close(false);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -7145,6 +7175,8 @@ public class Service extends BaseService {
 				mcache = fcProvided;
 				m = mcache.getProvidedMessage(providername, providerid);
 			}
+			IMAPMessage im=(IMAPMessage)m;
+			im.setPeek(us.isManualSeen());
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			Part part = null;
 			if (pcid != null) {
@@ -7157,7 +7189,7 @@ public class Service extends BaseService {
 				part = mailData.getUnknownPart(Integer.parseInt(punknown));
 			}
 
-			boolean wasseen = m.isSet(Flags.Flag.SEEN);
+			//boolean wasseen = m.isSet(Flags.Flag.SEEN);
 			if (part!=null) {
 				String ctype="binary/octet-stream";
 				if (psaveas==null) {
@@ -7190,12 +7222,14 @@ public class Service extends BaseService {
 				fastStreamCopy(is, out);
 				is.close();
 				out.close();
-				if(!wasseen){
-				   if (us.isManualSeen()) {
-					m.setFlag(Flags.Flag.SEEN, false);
-				   }
-				}
-			}			
+				//if(!wasseen){
+				//   if (us.isManualSeen()) {
+				//	m.setFlag(Flags.Flag.SEEN, false);
+				//   }
+				//}
+			}	
+			im.setPeek(false);
+			
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
@@ -7305,9 +7339,8 @@ public class Service extends BaseService {
 			}*/
 			if (uploadId != null && hasUploadedFile(uploadId)) {
 				WebTopSession.UploadedFile upl = getUploadedFile(uploadId);
-				String ctype = upl.getMediaType();
-				response.setContentType(ctype+"; name=\"" + upl.getFilename() + "\"");
-				response.setHeader("Content-Disposition", "filename=\"" + upl.getFilename() + "\"");
+				String ctype = ServletHelper.guessMediaType(upl.getFilename(),upl.getMediaType());
+				ServletUtils.setFileStreamHeaders(response, ctype,DispositionType.INLINE,upl.getFilename());
 				
 				InputStream is = new FileInputStream(upl.getFile());
 				OutputStream oout = response.getOutputStream();

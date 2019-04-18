@@ -65,7 +65,7 @@ public class Mailcard {
 	public static final String TYPE_EMAIL_DOMAIN = "emaildomain";
 	
 	public String source = Mailcard.TYPE_EMPTY;
-	public String html = "<br>";
+	public String html = "<br>&#160;";
 	public String text = "";
 	
 	public Mailcard() {
