@@ -54,10 +54,11 @@ public class MailFoldersThread extends Thread {
     int sleepOthers=sleepInbox*sleepCycles;
     int sleepCount=0;
     boolean checkAll=false;
+	boolean inboxOnly=false;
     
     public MailFoldersThread(Service ms, PrivateEnvironment env, MailAccount account) {
         super();
-        this.setName("MailFoldersThread"+(threadCountMailFolders++)+"-"+env.getProfile().getUserId());
+        this.setName("MFT"+(threadCountMailFolders++)+"-"+env.getProfile().getUserId()+"-"+account);
         this.ms=ms;
 		this.account=account;
     }
@@ -74,6 +75,10 @@ public class MailFoldersThread extends Thread {
     public void setCheckAll(boolean b) {
         checkAll=b;
     }
+	
+	public void setInboxOnly(boolean b) {
+		this.inboxOnly=b;
+	}
     
     public void abort() {
         this.abort=true;
@@ -94,7 +99,7 @@ public class MailFoldersThread extends Thread {
 			else fcinbox=account.getFolderCache("INBOX");
 			//Check inbox only once, then via idle
 			fcinbox.checkFolder();
-            while(!abort) {
+            while(!abort && !inboxOnly) {
                 //Service.logger.debug("MFT Synchronizing");
                     synchronized(this) {
                         account.checkStoreConnected();                      
@@ -125,7 +130,7 @@ public class MailFoldersThread extends Thread {
                             }
                         }
                     }
-                    Service.logger.debug("MailFolderThread: Sleeping....");
+                    //Service.logger.debug("MailFolderThread: Sleeping....");
                     if (sleepCount<=0) sleepCount=sleepOthers;
                     sleep(1000*sleepInbox);
                     sleepCount-=sleepInbox;
@@ -136,7 +141,7 @@ public class MailFoldersThread extends Thread {
             failed=true;
             failMessage=exc.getMessage();
         }
-        Service.logger.debug("Exiting MFT");
+        //Service.logger.debug("Exiting MFT");
     }
     
 }

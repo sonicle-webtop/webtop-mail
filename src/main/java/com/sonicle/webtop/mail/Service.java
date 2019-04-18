@@ -540,8 +540,13 @@ public class Service extends BaseService {
 				acct.setFolderArchive(extacc.getFolderArchive());
 				
 				externalAccounts.add(acct);
+
+				mft = new MailFoldersThread(this, environment, acct);
+				mft.setInboxOnly(true);
+				
 				acct.checkStoreConnected();
-				acct.loadFoldersCache(new Object(),false);
+				acct.loadFoldersCache(mft,false);
+				mft.start();
 			}
 
 			

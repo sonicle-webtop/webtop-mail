@@ -1551,15 +1551,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	getFolderDrafts: function() {
-		return this.getVar('folderDrafts');
+		if (!id || id=='main' || id=='archive') return this.getVar('folderDrafts');
+		return this.getVar('externalAccountDrafts.'+id);
 	},
 	
 	getFolderSent: function() {
-		return this.getVar('folderSent');
+		if (!id || id=='main' || id=='archive') return this.getVar('folderSent');
+		return this.getVar('externalAccountSent.'+id);
 	},
 	
 	getFolderSpam: function() {
-		return this.getVar('folderSpam');
+		if (!id || id=='main' || id=='archive') return this.getVar('folderSpam');
+		return this.getVar('externalAccountSpam.'+id);
 	},
 	
 	getFolderTrash: function(id) {
@@ -1568,7 +1571,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	getFolderArchive: function() {
-		return this.getVar('folderArchive');
+		if (!id || id=='main' || id=='archive') return this.getVar('folderArchive');
+		return this.getVar('externalAccountArchive.'+id);
 	},
 	
 	getFolderNodeById: function(acct,foldername) {
