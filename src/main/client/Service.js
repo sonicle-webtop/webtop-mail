@@ -1427,17 +1427,26 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	actionFavorite: function(s, e) {
 		var me = this,
 			n = me.getCtxNode(e),
-			folder = n.get("id");
+			folder = n.get("id"),
+			name = n.get("name"),
+			acct=me.getAccount(n);
 	
-		me.addToFavorites(folder);
+        WT.prompt('',{
+			title: me.res("act-newfavorite.lbl"),
+			value: name,
+			fn: function(btn,value) {
+				if (btn==="ok" && value && value!=="") me.addToFavorites(acct,folder,value);
+			}
+		});
 	},
 	
 	actionRemoveFavorite: function(s, e) {
 		var me = this,
 			n = me.getCtxNode(e),
-			folder = n.get("id");
+			folder = n.get("id"),
+			acct=me.getAccount(n);
 			
-		me.removeFavorite(folder);
+		me.removeFavorite(acct,folder);
 	},
 	
 	actionScanFolder: function(mi,e) {
@@ -1606,11 +1615,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});					
 	},	
 	
-	addToFavorites: function(folder) {
+	addToFavorites: function(acct,folder,desc) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'AddToFavorites', {
 			params: {
-				folder: folder
+				account: acct,
+				folder: folder,
+				description: desc
 			},
 			callback: function(success,json) {
 				if (success) {
@@ -1622,10 +1633,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});					
 	},	
 	
-	removeFavorite: function(folder) {
+	removeFavorite: function(acct,folder) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'RemoveFavorite', {
 			params: {
+				account: acct,
 				folder: folder
 			},
 			callback: function(success,json) {
