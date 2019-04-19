@@ -56,6 +56,7 @@ public class JsExternalAccount {
 	public String folderTrash;
 	public String folderSpam;
 	public String folderArchive;
+	public boolean readonlyProvider;
 	
 	public JsExternalAccount(ExternalAccount externalAccount) {
 		externalAccountId = externalAccount.getExternalAccountId();
@@ -73,6 +74,7 @@ public class JsExternalAccount {
 		folderTrash = externalAccount.getFolderTrash();
 		folderSpam = externalAccount.getFolderSpam();
 		folderArchive = externalAccount.getFolderArchive();
+		readonlyProvider = externalAccount.isReadonlyProvider();
 	}
 	
 	public static ExternalAccount createExternalAccount(JsExternalAccount jsExternalAccount) {
@@ -92,6 +94,7 @@ public class JsExternalAccount {
 		account.setFolderTrash(jsExternalAccount.folderTrash);
 		account.setFolderSpam(jsExternalAccount.folderSpam);
 		account.setFolderArchive(jsExternalAccount.folderArchive);
+		account.setReadonlyProvider(jsExternalAccount.readonlyProvider);
 		
 		return account;
 	}

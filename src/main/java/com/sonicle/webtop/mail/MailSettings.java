@@ -262,9 +262,9 @@ public class MailSettings {
 	public static final String ARCHIVING_SIMPLE_DMS_MAIL_FOLDER = "archiving.dms-simple.mailfolder";
 	
 	public static final String EXTERNAL_ACCOUNT_PROVIDERS = "[\n" +
-					" { 'id': 'internet', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/1/1b/Internet_Explorer_9_icon.svg'}, " +
-					" { 'id': 'gmail', 'email': '@gmail.com', 'server': 'imap.gmail.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg' },\n" +
-					" { 'id': 'yahoo', 'email': '@yahoo.com', 'server': 'imap.yahoo.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Yahoo%21_logo.svg' }\n" +
+					" { 'id': 'internet', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/1/1b/Internet_Explorer_9_icon.svg', 'readonlyProvider': 'false'}, " +
+					" { 'id': 'gmail', 'email': '@gmail.com', 'server': 'imap.gmail.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg', 'readonlyProvider': 'true' },\n" +
+					" { 'id': 'yahoo', 'email': '@yahoo.com', 'server': 'imap.yahoo.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Yahoo%21_logo.svg', 'readonlyProvider': 'false' }\n" +
 					"]";
 	
 	public static class ExternalProvider {
@@ -280,6 +280,7 @@ public class MailSettings {
 		public String folderSpam;
 		public String folderArchive;
 		public String iconUrl;
+		public boolean readonlyProvider;
 		
 		public static class List extends ArrayList<ExternalProvider> {
 			public static ExternalProvider.List fromJson(String value) {

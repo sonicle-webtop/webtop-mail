@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ExternalAccounts extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord> {
 
-	private static final long serialVersionUID = -556876411;
+	private static final long serialVersionUID = -108996150;
 
 	/**
 	 * The reference instance of <code>mail.external_accounts</code>
@@ -115,6 +115,11 @@ public class ExternalAccounts extends org.jooq.impl.TableImpl<com.sonicle.webtop
 	 * The column <code>mail.external_accounts.folder_archive</code>.
 	 */
 	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord, java.lang.String> FOLDER_ARCHIVE = createField("folder_archive", org.jooq.impl.SQLDataType.VARCHAR.length(255), this, "");
+
+	/**
+	 * The column <code>mail.external_accounts.readonly_provider</code>.
+	 */
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord, java.lang.Boolean> READONLY_PROVIDER = createField("readonly_provider", org.jooq.impl.SQLDataType.BOOLEAN, this, "");
 
 	/**
 	 * Create a <code>mail.external_accounts</code> table reference

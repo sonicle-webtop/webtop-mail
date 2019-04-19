@@ -51,6 +51,7 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 	server: null,
 	protocol: null,
 	port: null,
+	readonlyProvider: false,
 	folderPrefix: null,
 	folderSent: null,
 	folderDrafts: null,
@@ -70,6 +71,10 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 				optionsProfile: me.profileId
 			});
 		};
+		
+		WTU.applyFormulas(me.getVM(), {
+			isReadonly: WTF.checkboxBind('record', 'readonlyProvider')
+		});
 	},
 	
 	initComponent: function() {
@@ -145,6 +150,11 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 					xtype: 'textfield',
 					bind: '{record.userName}',
 					fieldLabel: me.res('externalAccount.fld-userName.lbl')
+				}, {
+					xtype: 'checkbox',
+					reference: 'readonlyProviderField',
+					bind: '{isReadonly}',
+					fieldLabel: me.res('externalAccount.fld-readonlyProvider.lbl')
 				}, {
 					xtype: 'sopasswordfield',
 					bind: '{record.password}',
@@ -227,12 +237,20 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 					me.lref('protocolField').setValue(me.protocol);
 					me.lref('portField').setValue(me.port);
 					me.lref('folderSentField').setValue(me.folderSent);
+					me.lref('readonlyProviderField').setValue(me.readonlyProvider);
 					me.lref('folderPrefixField').setValue(me.folderPrefix);
 					me.lref('folderDraftsField').setValue(me.folderDrafts);
 					me.lref('folderTrashField').setValue(me.folderTrash);
 					me.lref('folderSpamField').setValue(me.folderSpam);
 					me.lref('folderArchiveField').setValue(me.folderArchive);
+					if(me.readonlyProvider)
+					me.lref('readonlyProviderField').setDisabled(true);
 				}
+			else if(me.mode === 'edit') {
+				var checkBox = me.lref('readonlyProviderField');
+				if(me.getModel().data.readonlyProvider)
+					checkBox.setDisabled(true);
+			}
 	}
 	
 });

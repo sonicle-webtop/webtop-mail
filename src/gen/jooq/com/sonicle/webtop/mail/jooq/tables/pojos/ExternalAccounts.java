@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables.pojos;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ExternalAccounts implements java.io.Serializable {
 
-	private static final long serialVersionUID = 1071299318;
+	private static final long serialVersionUID = -2043143188;
 
 	private java.lang.Integer externalAccountId;
 	private java.lang.String  domainId;
@@ -35,6 +35,7 @@ public class ExternalAccounts implements java.io.Serializable {
 	private java.lang.String  folderTrash;
 	private java.lang.String  folderSpam;
 	private java.lang.String  folderArchive;
+	private java.lang.Boolean readonlyProvider;
 
 	public ExternalAccounts() {}
 
@@ -55,7 +56,8 @@ public class ExternalAccounts implements java.io.Serializable {
 		java.lang.String  folderDrafts,
 		java.lang.String  folderTrash,
 		java.lang.String  folderSpam,
-		java.lang.String  folderArchive
+		java.lang.String  folderArchive,
+		java.lang.Boolean readonlyProvider
 	) {
 		this.externalAccountId = externalAccountId;
 		this.domainId = domainId;
@@ -74,6 +76,7 @@ public class ExternalAccounts implements java.io.Serializable {
 		this.folderTrash = folderTrash;
 		this.folderSpam = folderSpam;
 		this.folderArchive = folderArchive;
+		this.readonlyProvider = readonlyProvider;
 	}
 
 	public java.lang.Integer getExternalAccountId() {
@@ -210,5 +213,13 @@ public class ExternalAccounts implements java.io.Serializable {
 
 	public void setFolderArchive(java.lang.String folderArchive) {
 		this.folderArchive = folderArchive;
+	}
+
+	public java.lang.Boolean getReadonlyProvider() {
+		return this.readonlyProvider;
+	}
+
+	public void setReadonlyProvider(java.lang.Boolean readonlyProvider) {
+		this.readonlyProvider = readonlyProvider;
 	}
 }

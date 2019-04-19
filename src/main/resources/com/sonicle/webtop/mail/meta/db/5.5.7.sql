@@ -27,3 +27,9 @@ WITH (OIDS=FALSE)
 
 ;
 
+-- ---------------------------------------------------------
+-- Add readonly_provider column in table external_accounts
+-- ---------------------------------------------------------
+
+ALTER TABLE mail.external_accounts
+ADD COLUMN readonly_provider BOOLEAN;

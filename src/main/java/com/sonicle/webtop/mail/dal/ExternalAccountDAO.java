@@ -109,6 +109,7 @@ public class ExternalAccountDAO extends BaseDAO {
 			.set(EXTERNAL_ACCOUNTS.PROTOCOL, externalAccount.getProtocol())
 			.set(EXTERNAL_ACCOUNTS.HOST, externalAccount.getHost())
 			.set(EXTERNAL_ACCOUNTS.PORT, externalAccount.getPort())
+			.set(EXTERNAL_ACCOUNTS.READONLY_PROVIDER, externalAccount.getReadonlyProvider())
 			.set(EXTERNAL_ACCOUNTS.USERNAME, externalAccount.getUsername())
 			.set(EXTERNAL_ACCOUNTS.PASSWORD, externalAccount.getPassword())
 			.set(EXTERNAL_ACCOUNTS.FOLDER_PREFIX, externalAccount.getFolderPrefix())

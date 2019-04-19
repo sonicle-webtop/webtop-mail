@@ -728,7 +728,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 														}
 												})
 										},
-										textField: 'label',
+										textField: 'id',
+										iconField: 'iconUrl',
 										listeners: {
 											click: function(s,item) {
 												me.addExternalAccount(s, item.getItemId(), {
@@ -925,6 +926,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					server: itemData.server,
 					protocol: itemData.protocol,
 					port: itemData.port,
+					readonlyProvider: itemData.readonlyProvider,
 					folderPrefix: itemData.folderPrefix,
 					folderSent: itemData.folderSent,
 					folderDrafts: itemData.folderDrafts,
