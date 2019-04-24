@@ -537,13 +537,40 @@ public class MailUserSettings extends BaseUserSettings {
 	public boolean setShowUpcomingTasks(boolean value) {
 		return setBoolean(SHOW_UPCOMING_TASKS, value);
 	}
-	
+
+	/**
+	 * @deprecated
+	 * Remove when transition to new setting is completed
+	 */	
 	public Favorites getFavorites() {
 		return getObject(FAVORITES, new Favorites(), Favorites.class);
 	}
 	
+	/**
+	 * @deprecated
+	 * Remove when transition to new setting is completed
+	 */	
 	public boolean setFavorites(Favorites value) {
 		return setObject(FAVORITES, value, Favorites.class);
+	}
+	
+	public void deleteOldFavoritesSetting() {
+		this.clear(FAVORITES);
+	}
+	
+	/***
+	 * new favorites implementation
+	 */
+	public boolean hasFavoriteFolders() {
+		return getString(FAVORITE_FOLDERS,null)!=null;
+	}
+	
+	public FavoriteFolders getFavoriteFolders() {
+		return getObject(FAVORITE_FOLDERS, new FavoriteFolders(), FavoriteFolders.class);
+	}
+	
+	public boolean setFavoriteFolders(FavoriteFolders value) {
+		return setObject(FAVORITE_FOLDERS, value, FavoriteFolders.class);
 	}
 	
 	public boolean setTodayRowColor(String value) {
@@ -555,6 +582,59 @@ public class MailUserSettings extends BaseUserSettings {
 		return (value != null) ? value : mss.getDefaultTodayRowColor();
 	}
 	
+	public static class FavoriteFolder {
+		String accountId;
+		String folderId;
+		String description;
+		
+		public FavoriteFolder(String accountId, String folderId, String description) {
+			this.accountId=accountId;
+			this.folderId=folderId;
+			this.description=description;
+		}
+	}
+	
+	public static class FavoriteFolders extends ArrayList<FavoriteFolder> {
+		public FavoriteFolders() {
+			super();
+		}
+		
+		public static FavoriteFolders fromJson(String value) {
+			return JsonResult.gson.fromJson(value, FavoriteFolders.class);
+		}
+		
+		public static String toJson(FavoriteFolders value) {
+			return JsonResult.gson.toJson(value, FavoriteFolders.class);
+		}
+		
+		public FavoriteFolder remove(String accountId, String folderId) {
+			for(FavoriteFolder ff: this) {
+				if (ff.accountId.equals(accountId) && ff.folderId.equals(folderId)) {
+					remove(ff);
+					return ff;
+				}
+			}
+			return null;
+		}
+		
+		public boolean contains(String accountId, String folderId) {
+			for(FavoriteFolder ff: this) {
+				if (ff.accountId.equals(accountId) && ff.folderId.equals(folderId)) {
+					return true;
+				}
+			}
+			return false;
+		}
+		
+		public void add(String accountId, String folderId, String description) {
+			add(new FavoriteFolder(accountId, folderId, description));
+		}
+	}
+	
+	/**
+	 * @deprecated
+	 * Remove when transition to new setting is completed
+	 */	
 	public static class Favorites extends ArrayList<String> {
 		public Favorites() {
 			super();
@@ -567,6 +647,6 @@ public class MailUserSettings extends BaseUserSettings {
 		public static String toJson(Favorites value) {
 			return JsonResult.gson.toJson(value, Favorites.class);
 		}
+		
 	}
-	
 }

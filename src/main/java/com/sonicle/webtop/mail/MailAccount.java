@@ -99,6 +99,7 @@ public class MailAccount {
 	private FolderCache[] fcShared = null;
 	private String skipReplyFolders[] = new String[]{};
 	private String skipForwardFolders[] = new String[]{};
+	private MailFoldersThread mft=null;
 
 	public MailAccount(String id, Service mailService, PrivateEnvironment environment) {
 		this.id=id;
@@ -108,6 +109,14 @@ public class MailAccount {
 
 	public String getId() {
 		return id;
+	}
+	
+	public MailFoldersThread getFoldersThread() {
+		return mft;
+	}
+	
+	public void setFoldersThread(MailFoldersThread mft) {
+		this.mft=mft;
 	}
 	
 	public void setFolderPrefix(String folderPrefix) {

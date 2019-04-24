@@ -32,4 +32,4 @@ WITH (OIDS=FALSE)
 -- ---------------------------------------------------------
 
 ALTER TABLE mail.external_accounts
-ADD COLUMN readonly_provider BOOLEAN;
+ADD COLUMN readonly_provider BOOLEAN DEFAULT FALSE;

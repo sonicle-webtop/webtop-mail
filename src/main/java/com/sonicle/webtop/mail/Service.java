@@ -96,6 +96,7 @@ import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsContactData;
 import com.sonicle.webtop.mail.bol.js.JsFilter;
+import com.sonicle.webtop.mail.bol.js.JsFolder;
 import com.sonicle.webtop.mail.bol.js.JsInMailFilters;
 import com.sonicle.webtop.mail.bol.js.JsMailAutosave;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
@@ -545,12 +546,14 @@ public class Service extends BaseService {
 				
 				externalAccounts.add(acct);
 
-				mft = new MailFoldersThread(this, environment, acct);
-				mft.setInboxOnly(true);
+				MailFoldersThread xmft = new MailFoldersThread(this, environment, acct);
+				xmft.setInboxOnly(true);
 				
+				acct.setFoldersThread(xmft);
 				acct.checkStoreConnected();
-				acct.loadFoldersCache(mft,false);
-				mft.start();
+				acct.loadFoldersCache(xmft,false);
+				
+				//MFT start postponed to first processGetFavoritesTree
 			}
 
 			
@@ -2446,8 +2449,10 @@ public class Service extends BaseService {
 		return accounts.get(account);
 	}
 
+	
 	//Client service requests
 	public void processGetImapTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		
 		String pfoldername = request.getParameter("node");
 		MailAccount account=getAccount(request);
 		Folder folder = null;
@@ -2462,7 +2467,8 @@ public class Service extends BaseService {
 			Folder folders[] = folder.list();
 			String fprefix = account.getFolderPrefix();
 			boolean level1 = (fprefix != null /*&& fprefix.equals("INBOX.")*/ && fprefix.trim().length()>0);
-			out.print("{ data:[");
+			ArrayList<JsFolder> jsFolders=new ArrayList<>();
+			//out.print("{ data:[");
 			if (isroot && account.hasDifferentDefaultFolder()) {
 				Folder fcs[]=new Folder[0];
 				//check for other shared folders to be added
@@ -2483,8 +2489,9 @@ public class Service extends BaseService {
 				if (fcs.length>0) System.arraycopy(fcs,0,xfolders,1+folders.length,fcs.length);
 				folders=xfolders;
 			}
-			outputFolders(account, folder, folders, level1, false, out);
-			out.println("], message: '' }");
+			outputFolders(account, folder, folders, level1, false, jsFolders);
+			new JsonResult("data", jsFolders).printTo(out,false);
+			//out.println("], message: '' }");
 			
 		} catch (Exception exc) {
 			new JsonResult(exc).printTo(out);
@@ -2492,7 +2499,7 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void outputFolders(MailAccount account, Folder parent, Folder folders[], boolean level1, boolean favorites, PrintWriter out) throws Exception {
+	private void outputFolders(MailAccount account, Folder parent, Folder folders[], boolean level1, boolean favorites, ArrayList<JsFolder> jsFolders) throws Exception {
 		boolean hasPrefix=!StringUtils.isBlank(account.getFolderPrefix());
 		String prefixMatch=StringUtils.stripEnd(account.getFolderPrefix(),account.getFolderSeparator()+"");
 		ArrayList<Folder> postPrefixList=new ArrayList<Folder>();
@@ -2507,7 +2514,7 @@ public class Service extends BaseService {
 			}
 		}
 		//If Shared Folders, sort on description
-		if (account.isSharedFolder(parent.getFullName())) {
+		if (parent!=null && account.isSharedFolder(parent.getFullName())) {
 			if (!account.hasDifferentDefaultFolder() || !account.isDefaultFolder(parent.getFullName())) {
 				String ss = mprofile.getSharedSort();
 				if (ss.equals("D")) {
@@ -2540,7 +2547,7 @@ public class Service extends BaseService {
 					if (account.isDefaultFolder(foldername)) continue;
 				} else {
 					//skip default folder under shared
-					if (account.isDefaultFolder(foldername) && !parent.getFullName().equals(foldername)) continue;
+					if (account.isDefaultFolder(foldername) && parent!=null && !parent.getFullName().equals(foldername)) continue;
 				}
 			}
 			
@@ -2549,7 +2556,7 @@ public class Service extends BaseService {
 
 			
 			FolderCache mc = account.getFolderCache(foldername);
-			if (mc == null) {
+			if (mc == null && parent!=null) {
 				//continue;
 				//System.out.println("foldername="+foldername+" parentname="+parent.getFullName());
 				FolderCache fcparent=account.getFolderCache(parent.getFullName());
@@ -2582,6 +2589,7 @@ public class Service extends BaseService {
 				postPrefixList.add(f);
 			}
 			else {
+/*				
 				String iconCls = "wtmail-icon-imap-folder-xs";
 				int unread = 0;
 				boolean hasUnread = false;
@@ -2622,7 +2630,7 @@ public class Service extends BaseService {
 				}
 
 				String ss = "{id:'" + StringEscapeUtils.escapeEcmaScript(foldername)
-						+ "',text:'" + StringEscapeUtils.escapeEcmaScript(text)
+						+ "',text:'" + StringEscapeUtils.escapeEcmaScript(description)
 						+ "',folder:'" + StringEscapeUtils.escapeEcmaScript(text)
 						+ "',leaf:" + leaf
 						+ ",iconCls: '" + iconCls
@@ -2676,7 +2684,8 @@ public class Service extends BaseService {
 				ss += "},";
 
 				out.print(ss);
-
+*/
+				jsFolders.add(createJsFolder(mc,leaf));
 			}
 		}
 		
@@ -2684,8 +2693,90 @@ public class Service extends BaseService {
 		if (!favorites && prefixFolder!=null) {
 			for(Folder ff: prefixFolder.list()) postPrefixList.add(ff);					
 			ArrayList<Folder> sortedFolders=sortFolders(account,postPrefixList.toArray(new Folder[postPrefixList.size()]));
-			outputFolders(account, prefixFolder, sortedFolders.toArray(new Folder[sortedFolders.size()]), false, false, out);
+			outputFolders(account, prefixFolder, sortedFolders.toArray(new Folder[sortedFolders.size()]), false, false, jsFolders);
 		}
+	}
+	
+	private JsFolder createJsFolder(FolderCache fc, boolean leaf) {
+		String foldername=fc.getFolderName();
+		MailAccount account=fc.getAccount();
+		String iconCls = "wtmail-icon-imap-folder-xs";
+		int unread = 0;
+		boolean hasUnread = false;
+		boolean nounread = false;
+		if (fc.isSharedFolder()) {
+			iconCls = "wtmail-icon-shared-folder-xs";
+			nounread = true;
+		} else if (fc.isInbox()) {
+			iconCls = "wtmail-icon-inbox-folder-xs";
+		} else if (fc.isSent()) {
+			iconCls = "wtmail-icon-sent-folder-xs";
+			nounread = true;
+		} else if (fc.isDrafts()) {
+			iconCls = "wtmail-icon-drafts-folder-xs";
+			nounread = true;
+		} else if (fc.isTrash()) {
+			iconCls = "wtmail-icon-trash-folder-xs";
+			nounread = true;
+		} else if (fc.isArchive()) {
+			iconCls = "wtmail-icon-archive-folder-xs";
+			nounread = true;
+		} else if (fc.isSpam()) {
+			iconCls = "wtmail-icon-spam-folder-xs";
+			nounread = true;
+		} else if (fc.isDms()) {
+			iconCls = "wtmail-icon-dms-folder-xs";
+		} else if (fc.isSharedInbox()) {
+			iconCls = "wtmail-icon-inbox-folder-xs";
+		}
+		if (!nounread) {
+			unread = fc.getUnreadMessagesCount();
+			hasUnread = fc.hasUnreadChildren();
+		}
+		String text = fc.getDescription();
+		String group = us.getMessageListGroup(foldername);
+		if (group == null) {
+			group = "";
+		}
+		
+		JsFolder jsFolder=new JsFolder();
+		jsFolder.id=foldername;
+		jsFolder.text=text;
+		jsFolder.folder=text;
+		jsFolder.leaf=leaf;
+		jsFolder.iconCls=iconCls;
+		jsFolder.unread=unread;
+		jsFolder.hasUnread=hasUnread;
+		jsFolder.group=group;
+
+		boolean isSharedToSomeone=false;
+		try {
+			isSharedToSomeone=fc.isSharedToSomeone();
+		} catch(Exception exc) {
+
+		}
+		if (isSharedToSomeone) jsFolder.isSharedToSomeone=true;
+		if (fc.isSharedFolder()) jsFolder.isSharedRoot=true;
+		if (account.isUnderSharedFolder(foldername)) jsFolder.isUnderShared=true;
+		if (fc.isInbox()) jsFolder.isInbox=true;
+		if (fc.isSent()) jsFolder.isSent=true;
+		if (account.isUnderSentFolder(fc.getFolderName())) jsFolder.isUnderSent=true;
+		if (fc.isDrafts()) jsFolder.isDrafts=true;
+		if (fc.isTrash()) jsFolder.isTrash=true;
+		if (fc.isArchive()) jsFolder.isArchive=true;
+		if (fc.isSpam()) jsFolder.isSpam=true;
+
+		if (fc.isScanForcedOff()) jsFolder.scanOff=true;
+		else if (fc.isScanForcedOn()) jsFolder.scanOn=true;
+		else if (fc.isScanEnabled()) jsFolder.scanEnabled=true;
+
+		boolean canRename=true;
+		if (fc.isInbox() || fc.isSpecial() || fc.isSharedFolder() || (fc.getParent()!=null && fc.getParent().isSharedFolder())) canRename=false;
+		jsFolder.canRename=canRename;
+
+		jsFolder.account=account.getId();
+
+		return jsFolder;
 	}
 	
 	protected ArrayList<Folder> sortFolders(MailAccount account, Folder folders[]) {
@@ -2788,7 +2879,8 @@ public class Service extends BaseService {
 			Folder folders[] = folder.list();
 			String fprefix = account.getFolderPrefix();
 			boolean level1 = (fprefix != null && fprefix.equals("INBOX."));
-			out.print("{ data:[");
+			ArrayList<JsFolder> jsFolders=new ArrayList<>();
+			//out.print("{ data:[");
 			if (isroot && account.hasDifferentDefaultFolder()) {
 				Folder fcs[]=new Folder[0];
 				//check for other shared folders to be added
@@ -2808,8 +2900,10 @@ public class Service extends BaseService {
 				if (fcs.length>0) System.arraycopy(fcs,0,xfolders,1+folders.length,fcs.length);
 				folders=xfolders;
 			}
-			outputFolders(account, folder, folders, level1, false, out);
-			out.println("], message: '' }");
+			outputFolders(account, folder, folders, level1, false, jsFolders);
+			new JsonResult("data", jsFolders).printTo(out,false);
+			//out.println("], message: '' }");
+			
 			
 		} catch (Exception exc) {
 			new JsonResult(exc).printTo(out);
@@ -2817,24 +2911,73 @@ public class Service extends BaseService {
 		}
 	}
 	
+	class FavoriteFolderData {
+		FolderCache folderCache;
+		String description;
+		
+		FavoriteFolderData(FolderCache fc, String desc) {
+			this.folderCache=fc;
+			this.description=desc;
+		}
+	}
+	
+	private boolean getFavoritesTreeDone=false;
+	
 	public void processGetFavoritesTree(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		try {
-			out.print("{ data:[");
-			MailUserSettings.Favorites favorites = us.getFavorites();
-			MailUserSettings.Favorites newFavorites = new MailUserSettings.Favorites();
-			Folder folders[] = new Folder[ favorites.size() ];
-			for( int i = 0; i < favorites.size(); ++i) {
-				String folderName = favorites.get(i);
-				Folder folder = mainAccount.getFolder(folderName);
-				if (folder.exists()) {
-					newFavorites.add(folderName);
-					folders[i] = folder;
-				}
+		//first call runs external checks
+		if (!getFavoritesTreeDone) {
+			for(MailAccount extacc: externalAccounts) {
+				extacc.getFoldersThread().start();
 			}
-			us.setFavorites(newFavorites);
-			
-			outputFolders(mainAccount, mainAccount.getFolder(""), folders, false, true, out);
-			out.println("], message: '' }");
+			getFavoritesTreeDone=true;
+		}
+		
+		try {
+			//synchronized(mft) {
+				ArrayList<JsFolder> jsFolders=new ArrayList<>();
+				//out.print("{ data:[");
+
+				MailUserSettings.FavoriteFolders favorites;
+				boolean removeOldSetting=false;
+				//use new setting if exists
+				if (us.hasFavoriteFolders())
+					favorites = us.getFavoriteFolders();
+				//convert old setting
+				else {
+					MailUserSettings.Favorites off=us.getFavorites();
+					favorites = new MailUserSettings.FavoriteFolders();
+					for(String foldername: off) {
+						favorites.add(new MailUserSettings.FavoriteFolder(MAIN_ACCOUNT_ID, foldername, foldername));
+					}
+					removeOldSetting=true;
+				}
+				MailUserSettings.FavoriteFolders newFavorites = new MailUserSettings.FavoriteFolders();
+				ArrayList<FavoriteFolderData> ffds = new ArrayList<>();
+				for( int i = 0; i < favorites.size(); ++i) {
+					MailUserSettings.FavoriteFolder ff=favorites.get(i);
+					MailAccount account=getAccount(ff.accountId);
+					Folder folder=account.getFolder(ff.folderId);
+					if (folder.exists()) {
+						FolderCache fc = new FolderCache(account, folder, this, environment);
+						newFavorites.add(ff);
+						ffds.add(new FavoriteFolderData(fc,ff.description));
+					}
+				}
+				us.setFavoriteFolders(newFavorites);
+				//remove old setting if present
+				if (removeOldSetting) {
+					us.deleteOldFavoritesSetting();
+				}
+
+				for(FavoriteFolderData ffd: ffds) {
+					JsFolder jsFolder=createJsFolder(ffd.folderCache, true);
+					jsFolder.folder=ffd.description;
+					jsFolders.add(jsFolder);
+				}
+				//outputFolders(mainAccount, mainAccount.getDefaultFolder(), folders, false, true, jsFolders);
+				new JsonResult("data", jsFolders).printTo(out,false);
+				//out.println("], message: '' }");
+			//}
 			
 		} catch (Exception exc) {
 			Service.logger.error("Exception", exc);
@@ -2843,18 +2986,22 @@ public class Service extends BaseService {
 	}
 	
 	public void processAddToFavorites(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String account = request.getParameter("account");
 		String folder = request.getParameter("folder");
-		MailUserSettings.Favorites favorites=us.getFavorites();
-		favorites.add(folder);
-		us.setFavorites(favorites);
+		String description = request.getParameter("description");
+		
+		MailUserSettings.FavoriteFolders favorites=us.getFavoriteFolders();
+		favorites.add(account,folder,description);
+		us.setFavoriteFolders(favorites);
 		new JsonResult().printTo(out);
 	}	
 	
 	public void processRemoveFavorite(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String account = request.getParameter("account");
 		String folder = request.getParameter("folder");
-		MailUserSettings.Favorites favorites=us.getFavorites();
-		favorites.remove(folder);
-		us.setFavorites(favorites);
+		MailUserSettings.FavoriteFolders favorites=us.getFavoriteFolders();
+		favorites.remove(account,folder);
+		us.setFavoriteFolders(favorites);
 		new JsonResult().printTo(out);
 	}	
 	
@@ -3583,7 +3730,7 @@ public class Service extends BaseService {
 		String name = request.getParameter("name");
 		String sout = null;
 		FolderCache mcache = null;
-		MailUserSettings.Favorites favorites = us.getFavorites();
+		MailUserSettings.FavoriteFolders favorites = us.getFavoriteFolders();
 		
 		try {
 			account.checkStoreConnected();
@@ -3593,10 +3740,10 @@ public class Service extends BaseService {
 			name = account.normalizeName(name);
 			String newid = account.renameFolder(folder, name);
 			
-			if (favorites.contains(folder)) {
-				favorites.remove(folder);
-				favorites.add(newid);
-				us.setFavorites(favorites);
+			if (favorites.contains(account.getId(),folder)) {
+				favorites.remove(account.getId(),folder);
+				favorites.add(account.getId(),newid,name);
+				us.setFavoriteFolders(favorites);
 			}
 			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 			sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newid) + "',\n";

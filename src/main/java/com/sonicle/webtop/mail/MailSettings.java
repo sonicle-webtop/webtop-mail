@@ -211,7 +211,14 @@ public class MailSettings {
 	public static final String FOLDER_ARCHIVE = "folder.archive";
 	public static final String FOLDER_SPAM = "folder.spam";
 	public static final String DEFAULT_FOLDER = "defaultfolder";
+	
+	/**
+	 * @deprecated
+	 * Remove when transition to new setting is completed
+	 */
 	public static final String FAVORITES = "favorites";
+	public static final String FAVORITE_FOLDERS = "favorite.folders";
+	
 	public static final String FOLDER_DRAFTS_DELETEMSGONSEND = "folder.drafts.deletemsgonsend";
 	public static final String REPLY_TO = "reply.to";
 	public static final String SHARED_SORT = "shared.sort";

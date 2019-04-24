@@ -699,11 +699,22 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
     reloadFolder: function(acct,folderid,config,uid,rid,page,tid) {
 		var me=this,
-			tree=me.mys.acctTrees[acct];
+			tree=me.mys.acctTrees[acct],
+			store=tree.getStore();
         me.currentAccount=acct;
         me.currentFolder=folderid;
-		me.bcFolders.setStore(tree.getStore());
-		var node=me.bcFolders.getStore().getById(folderid);
+		me.bcFolders.setStore(store);
+		if (store.getCount()>1) me._runReloadFolder(tree,store,acct,folderid,config,uid,rid,page,tid);
+		else {
+			tree.expandNode(tree.getRootNode(),false,function() {
+				me._runReloadFolder(tree,store,acct,folderid,config,uid,rid,page,tid);
+			});
+		}
+    },
+	
+	_runReloadFolder: function(tree,store,acct,folderid,config,uid,rid,page,tid) {
+		var me=this,
+			node=store.getById(folderid);
 		//node may be a favorite, so may not be already loaded in imap tree
 		if (node) {
 			me._updateBreadcrumbAndReloadFolderList(acct,node,config,uid,rid,page,tid,true);
@@ -713,7 +724,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				me._updateBreadcrumbAndReloadFolderList(acct,node,config,uid,rid,page,tid,false);
 			});
 		}
-    },
+	},
 	
 	_updateBreadcrumbAndReloadFolderList: function(acct,node,config,uid,rid,page,tid,updateLeafState) {
 		var me=this;

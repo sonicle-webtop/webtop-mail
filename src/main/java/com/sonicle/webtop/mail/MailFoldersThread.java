@@ -101,7 +101,10 @@ public class MailFoldersThread extends Thread {
 			fcinbox.checkFolder();
             while(!abort && !inboxOnly) {
                 //Service.logger.debug("MFT Synchronizing");
-                    synchronized(this) {
+
+				//ensures to start only when the cache load is finished
+				synchronized(this) {
+				}
                         account.checkStoreConnected();                      
 						if (sleepCount>0) {
                             //Service.logger.debug("MailFolderThread: Checking inbox messages");
@@ -129,7 +132,6 @@ public class MailFoldersThread extends Thread {
                                 Service.logger.error("Exception",exc);
                             }
                         }
-                    }
                     //Service.logger.debug("MailFolderThread: Sleeping....");
                     if (sleepCount<=0) sleepCount=sleepOthers;
                     sleep(1000*sleepInbox);

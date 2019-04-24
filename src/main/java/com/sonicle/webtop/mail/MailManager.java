@@ -307,8 +307,27 @@ public class MailManager extends BaseManager implements IMailManager {
 			connection = WT.getConnection(SERVICE_ID);
 			UserProfileId userProfileId = getTargetProfileId();
 			List<OExternalAccount> externalAccounts = dao.selectByDomainUser(connection, userProfileId.getDomainId(), userProfileId.getUserId());
-			
-			externalAccountList = externalAccounts.stream().map(mapToExternalAccount()).collect(Collectors.toList());
+			for(OExternalAccount externalAccount: externalAccounts) {
+				ExternalAccount account = new ExternalAccount();
+				account.setExternalAccountId(externalAccount.getExternalAccountId());
+				account.setDisplayName(externalAccount.getDisplayName());
+				account.setAccountDescription(externalAccount.getDescription());
+				account.setEmail(externalAccount.getEmail());
+				account.setProtocol(externalAccount.getProtocol());
+				account.setHost(externalAccount.getHost());
+				account.setPort(externalAccount.getPort());
+				account.setReadonlyProvider(externalAccount.getReadonlyProvider());
+				account.setUserName(externalAccount.getUsername());
+				account.setPassword(externalAccount.getPassword());
+				account.setFolderPrefix(externalAccount.getFolderPrefix());
+				account.setFolderSent(externalAccount.getFolderSent());
+				account.setFolderDrafts(externalAccount.getFolderDrafts());
+				account.setFolderTrash(externalAccount.getFolderTrash());
+				account.setFolderSpam(externalAccount.getFolderSpam());
+				account.setFolderArchive(externalAccount.getFolderArchive());
+				externalAccountList.add(account);
+			}
+			//externalAccountList = externalAccounts.stream().map(mapToExternalAccount()).collect(Collectors.toList());
 		} catch (SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
