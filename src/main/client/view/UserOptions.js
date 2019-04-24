@@ -719,6 +719,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									},
 									menu: {
 										xtype: 'sostoremenu',
+										cls: 'wtmail-providers-menu',
 										store: {
 												autoLoad: true,
 												model: 'Sonicle.webtop.mail.model.ExternalAccountProvider',

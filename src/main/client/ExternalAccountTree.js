@@ -78,7 +78,7 @@ Ext.define('Sonicle.webtop.mail.ExternalAccountTree', {
 					text: 'External Account Tree',
 					folder: cfg.mys.getVar('externalAccountDescription.'+cfg.acct),
 					unread: 0,
-					iconCls: 'wtmail-icon-emailaccount-xs',
+					icon: cfg.mys.getVar('externalAccountIcon.'+cfg.acct),
 					expanded: false
 				},
 				rootVisible: false,

@@ -59,6 +59,7 @@ public class JsExternalAccount {
 	public boolean readOnly;
 	public String providerId;
 	public String iconUrl;
+	public boolean readOnlyProvider;
 	
 	public JsExternalAccount(ExternalAccount externalAccount) {
 		externalAccountId = externalAccount.getExternalAccountId();

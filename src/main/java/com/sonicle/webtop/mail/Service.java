@@ -543,7 +543,7 @@ public class Service extends BaseService {
 				acct.setFolderSpam(extacc.getFolderSpam());
 				acct.setFolderTrash(extacc.getFolderTrash());
 				acct.setFolderArchive(extacc.getFolderArchive());
-				acct.setReadOnly(extacc.isReadonlyProvider());
+				acct.setReadOnly(extacc.isReadOnly());
 				
 				externalAccounts.add(acct);
 
@@ -8554,6 +8554,10 @@ public class Service extends BaseService {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());
 			}
 			
+			List<MailSettings.ExternalProvider> providers=ss.getExternalProviders();
+			HashMap<String,String> providerIcons=new HashMap<>();
+			for(MailSettings.ExternalProvider provider: providers) providerIcons.put(provider.id, provider.iconUrl);
+			
 			String extids="";
 			for(MailAccount acct: externalAccounts) {
 				String id=acct.getId();
@@ -8565,7 +8569,8 @@ public class Service extends BaseService {
 				co.put("externalAccountSent."+id,externalAccountsMap.get(id).getFolderSent());
 				co.put("externalAccountTrash."+id,externalAccountsMap.get(id).getFolderTrash());
 				co.put("externalAccountSpam."+id,externalAccountsMap.get(id).getFolderSpam());
-				co.put("externalAccountReadOnly."+id,externalAccountsMap.get(id).isReadonlyProvider());
+				co.put("externalAccountReadOnly."+id,externalAccountsMap.get(id).isReadOnly());
+				co.put("externalAccountIcon."+id,providerIcons.get(externalAccountsMap.get(id).getProviderId()));
 			}
 			co.put("externalAccounts",extids);
 			

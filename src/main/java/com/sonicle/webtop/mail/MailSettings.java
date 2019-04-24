@@ -269,9 +269,11 @@ public class MailSettings {
 	public static final String ARCHIVING_SIMPLE_DMS_MAIL_FOLDER = "archiving.dms-simple.mailfolder";
 	
 	public static final String EXTERNAL_ACCOUNT_PROVIDERS = "[\n" +
-					" { 'id': 'internet', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/1/1b/Internet_Explorer_9_icon.svg', 'readOnly': 'false'}, " +
-					" { 'id': 'gmail', 'email': '@gmail.com', 'server': 'imap.gmail.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg', 'readOnly': 'true' },\n" +
-					" { 'id': 'yahoo', 'email': '@yahoo.com', 'server': 'imap.yahoo.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'iconUrl': 'https://upload.wikimedia.org/wikipedia/commons/2/24/Yahoo%21_logo.svg', 'readOnly': 'false' }\n" +
+					" { 'id': 'imap', 'readOnly': 'false'}, " +
+					" { 'id': 'gmail', 'email': '@gmail.com', 'server': 'imap.gmail.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'[Gmail]/', 'folderSent': 'Sent Mail', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'readOnly': 'true' },\n" +
+					" { 'id': 'outlook', 'email': '@outlook.com', 'server': 'imap.outlook.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'readOnly': 'false' },\n" +
+					" { 'id': 'icloud', 'email': '@icloud.com', 'server': 'imap.icloud.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent Messages', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'readOnly': 'false' },\n" +
+					" { 'id': 'yahoo', 'email': '@yahoo.com', 'server': 'imap.yahoo.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'readOnly': 'false' }\n" +
 					"]";
 	
 	public static class ExternalProvider {

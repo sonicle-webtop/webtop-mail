@@ -232,6 +232,8 @@ div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 .wtmail-no-message-tit-font { font-size:1.2em; }
 .wtmail-no-message-subtit-font { font-size:0.9em; }
 
+.wtmail-providers-menu .x-menu-item-icon { background-size: contain; }
+
 blockquote { 
     display: block;
     margin-left: 5px;

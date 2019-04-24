@@ -256,7 +256,7 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 			else if(me.mode === 'edit') {
 				var checkBox = me.lref('readOnlyField');
 				me.createCssClass(me.getModel().data.iconUrl);
-				if(me.getModel().data.readOnly)
+				if(me.getModel().data.readOnlyProvider)
 					checkBox.setDisabled(true);
 			}
 			me.setIconCls('wtmail-icon-email-external-account');

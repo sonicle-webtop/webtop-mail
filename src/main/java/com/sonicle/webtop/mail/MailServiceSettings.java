@@ -36,6 +36,8 @@ package com.sonicle.webtop.mail;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sonicle.webtop.core.app.CoreManifest;
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
 import static com.sonicle.webtop.mail.MailSettings.*;
 import java.io.IOException;
@@ -43,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.jooq.tools.StringUtils;
 
 /**
  *
@@ -294,6 +297,11 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public List<ExternalProvider> getExternalProviders() {
 		ExternalProvider.List externalProviders = ExternalProvider.List.fromJson(EXTERNAL_ACCOUNT_PROVIDERS);
+		for(ExternalProvider externalProvider: externalProviders) {
+			if (StringUtils.isEmpty(externalProvider.iconUrl)) {
+				externalProvider.iconUrl=WT.getServiceLafUrl(domainId, CoreManifest.ID, "default")+"/emailproviders/"+externalProvider.id+".svg";
+			}
+		}
 		return externalProviders;
 	}
 }
