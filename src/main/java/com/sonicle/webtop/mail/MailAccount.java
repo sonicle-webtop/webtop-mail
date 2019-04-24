@@ -75,6 +75,7 @@ public class MailAccount {
 	private boolean isImpersonated=false;
 	private String vmailSecret=null;
 	private String replyTo=null;
+	private boolean readonly=false;
 
 	private Session session;
 	private Store store;
@@ -137,6 +138,14 @@ public class MailAccount {
 	
 	public boolean isDovecot() {
 		return isDovecot;
+	}
+	
+	public boolean isReadOnly() {
+		return readonly;
+	}
+	
+	public void setReadOnly(boolean b) {
+		readonly=b;
 	}
 	
 	public void setHasInboxFolder(boolean b) {

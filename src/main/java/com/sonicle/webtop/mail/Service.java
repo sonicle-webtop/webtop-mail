@@ -543,6 +543,7 @@ public class Service extends BaseService {
 				acct.setFolderSpam(extacc.getFolderSpam());
 				acct.setFolderTrash(extacc.getFolderTrash());
 				acct.setFolderArchive(extacc.getFolderArchive());
+				acct.setReadOnly(extacc.isReadonlyProvider());
 				
 				externalAccounts.add(acct);
 
@@ -8554,6 +8555,7 @@ public class Service extends BaseService {
 				co.put("externalAccountSent."+id,externalAccountsMap.get(id).getFolderSent());
 				co.put("externalAccountTrash."+id,externalAccountsMap.get(id).getFolderTrash());
 				co.put("externalAccountSpam."+id,externalAccountsMap.get(id).getFolderSpam());
+				co.put("externalAccountReadOnly."+id,externalAccountsMap.get(id).isReadonlyProvider());
 			}
 			co.put("externalAccounts",extids);
 			

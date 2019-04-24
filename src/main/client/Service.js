@@ -297,6 +297,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				var tree=Ext.create('Sonicle.webtop.mail.ExternalAccountTree',{
 					mys: me,
 					acct: extid,
+					readOnly: me.getVar('externalAccountReadOnly.'+extid),
 					width: '100%',
 					//region: 'center',
 					hideHeaders: true,
@@ -1587,17 +1588,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return "INBOX";
 	},
 	
-	getFolderDrafts: function() {
+	getFolderDrafts: function(id) {
 		if (!id || id=='main' || id=='archive') return this.getVar('folderDrafts');
 		return this.getVar('externalAccountDrafts.'+id);
 	},
 	
-	getFolderSent: function() {
+	getFolderSent: function(id) {
 		if (!id || id=='main' || id=='archive') return this.getVar('folderSent');
 		return this.getVar('externalAccountSent.'+id);
 	},
 	
-	getFolderSpam: function() {
+	getFolderSpam: function(id) {
 		if (!id || id=='main' || id=='archive') return this.getVar('folderSpam');
 		return this.getVar('externalAccountSpam.'+id);
 	},
@@ -1607,7 +1608,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return this.getVar('externalAccountTrash.'+id);
 	},
 	
-	getFolderArchive: function() {
+	getFolderArchive: function(id) {
 		if (!id || id=='main' || id=='archive') return this.getVar('folderArchive');
 		return this.getVar('externalAccountArchive.'+id);
 	},
@@ -2007,14 +2008,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			d=r.getData(),
 			id=r.get("id"),
 			acct=me.getAccount(r),
-			rootid=me.acctTrees[acct].getRootNode().get("id");
+			rootid=me.acctTrees[acct].getRootNode().get("id"),
+			readonly=me.getVar('externalAccountReadOnly.'+acct);
 	
-		me.getAct('emptyfolder').setDisabled(!r.get("isTrash")&&!r.get("isSpam"));
+		me.getAct('emptyfolder').setDisabled(readonly || (!r.get("isTrash")&&!r.get("isSpam")));
 
 		me.getAct('hidefolder').setDisabled(me.specialFolders[id]);
-		me.getAct('deletefolder').setDisabled(me.specialFolders[id]);
-		me.getAct('renamefolder').setDisabled(me.specialFolders[id]);
-		me.getAct('movetomain').setDisabled(me.specialFolders[id]?true:(r.parentNode.get("id")===rootid));
+		me.getAct('deletefolder').setDisabled(readonly || me.specialFolders[id]);
+		me.getAct('renamefolder').setDisabled(readonly || me.specialFolders[id]);
+		me.getAct('movetomain').setDisabled(readonly || (me.specialFolders[id]?true:(r.parentNode.get("id")===rootid)));
+		me.getAct('newfolder').setDisabled(readonly);
+		me.getAct('newmainfolder').setDisabled(readonly);
 
 		var ismain=(acct=='main');
 		me.getAct('sharing').setDisabled(!ismain);

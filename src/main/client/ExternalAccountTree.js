@@ -48,7 +48,7 @@ Ext.define('Sonicle.webtop.mail.ExternalAccountTree', {
 			viewConfig: {
 				plugins: { 
 					ptype: 'imaptreeviewdragdrop' ,
-					moveFolder: function(src,dst) {
+					moveFolder: cfg.readOnly ? Ext.emptyFn : function(src,dst) {
 						cfg.mys.moveFolder(me.acct,src,dst);
 					},
 					moveMessages: function(data,dst) {
@@ -92,7 +92,8 @@ Ext.define('Sonicle.webtop.mail.ExternalAccountTree', {
 	
 	startEdit: function(record,c) {
 		var me=this;
-		me.getPlugin('cellediting').startEdit(record, me.getView().ownerCt.getColumnManager().getHeaderAtIndex(c));
+		if (!me.readOnly)
+			me.getPlugin('cellediting').startEdit(record, me.getView().ownerCt.getColumnManager().getHeaderAtIndex(c));
 	}
 	
 	
