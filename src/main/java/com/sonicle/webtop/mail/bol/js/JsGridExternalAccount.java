@@ -44,11 +44,13 @@ public class JsGridExternalAccount {
 	public Integer externalAccountId;
 	public String email;
 	public String accountDescription;
+	public String iconUrl;
 	
-	public JsGridExternalAccount(ExternalAccount externalAccount) {
+	public JsGridExternalAccount(ExternalAccount externalAccount, String iconUrl) {
 		externalAccountId = externalAccount.getExternalAccountId();
 		accountDescription = externalAccount.getAccountDescription();
 		email = externalAccount.getEmail();
+		this.iconUrl = iconUrl;
 	}
 	
 }

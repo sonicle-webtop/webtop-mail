@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.mail.model.ExternalAccountProvider', {
 		WTF.field('server', 'string', false),
 		WTF.field('protocol', 'string', false),
 		WTF.field('port', 'int', false),
-		WTF.field('readonlyProvider', 'boolean', false),
+		WTF.field('readOnly', 'boolean', false),
 		WTF.field('folderPrefix', 'string', false),
 		WTF.field('folderSent', 'string', false),
 		WTF.field('folderDrafts', 'string', false),

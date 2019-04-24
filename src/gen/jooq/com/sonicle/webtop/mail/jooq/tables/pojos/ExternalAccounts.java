@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables.pojos;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ExternalAccounts implements java.io.Serializable {
 
-	private static final long serialVersionUID = -2043143188;
+	private static final long serialVersionUID = 172810620;
 
 	private java.lang.Integer externalAccountId;
 	private java.lang.String  domainId;
@@ -35,7 +35,8 @@ public class ExternalAccounts implements java.io.Serializable {
 	private java.lang.String  folderTrash;
 	private java.lang.String  folderSpam;
 	private java.lang.String  folderArchive;
-	private java.lang.Boolean readonlyProvider;
+	private java.lang.Boolean readOnly;
+	private java.lang.String  providerId;
 
 	public ExternalAccounts() {}
 
@@ -57,7 +58,8 @@ public class ExternalAccounts implements java.io.Serializable {
 		java.lang.String  folderTrash,
 		java.lang.String  folderSpam,
 		java.lang.String  folderArchive,
-		java.lang.Boolean readonlyProvider
+		java.lang.Boolean readOnly,
+		java.lang.String  providerId
 	) {
 		this.externalAccountId = externalAccountId;
 		this.domainId = domainId;
@@ -76,7 +78,8 @@ public class ExternalAccounts implements java.io.Serializable {
 		this.folderTrash = folderTrash;
 		this.folderSpam = folderSpam;
 		this.folderArchive = folderArchive;
-		this.readonlyProvider = readonlyProvider;
+		this.readOnly = readOnly;
+		this.providerId = providerId;
 	}
 
 	public java.lang.Integer getExternalAccountId() {
@@ -215,11 +218,19 @@ public class ExternalAccounts implements java.io.Serializable {
 		this.folderArchive = folderArchive;
 	}
 
-	public java.lang.Boolean getReadonlyProvider() {
-		return this.readonlyProvider;
+	public java.lang.Boolean getReadOnly() {
+		return this.readOnly;
 	}
 
-	public void setReadonlyProvider(java.lang.Boolean readonlyProvider) {
-		this.readonlyProvider = readonlyProvider;
+	public void setReadOnly(java.lang.Boolean readOnly) {
+		this.readOnly = readOnly;
+	}
+
+	public java.lang.String getProviderId() {
+		return this.providerId;
+	}
+
+	public void setProviderId(java.lang.String providerId) {
+		this.providerId = providerId;
 	}
 }

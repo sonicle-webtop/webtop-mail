@@ -41,17 +41,17 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 	dockableConfig: {
 		width: 480,
 		height: 520,
-		title: '{externalAccount.tit}',
-		iconCls: 'wtmail-icon-emailaccount-xs'
+		title: '{externalAccount.tit}'
 	},
 	
 	profileId: null,
-	externalAccountProviderId: null,
+	providerId: null,
+	iconUrl: null,
 	email: null,
 	server: null,
 	protocol: null,
 	port: null,
-	readonlyProvider: false,
+	readOnly: false,
 	folderPrefix: null,
 	folderSent: null,
 	folderDrafts: null,
@@ -73,7 +73,7 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 		};
 		
 		WTU.applyFormulas(me.getVM(), {
-			isReadonly: WTF.checkboxBind('record', 'readonlyProvider')
+			isReadonly: WTF.checkboxBind('record', 'readOnly')
 		});
 	},
 	
@@ -152,9 +152,14 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 					fieldLabel: me.res('externalAccount.fld-userName.lbl')
 				}, {
 					xtype: 'checkbox',
-					reference: 'readonlyProviderField',
+					reference: 'readOnlyField',
 					bind: '{isReadonly}',
-					fieldLabel: me.res('externalAccount.fld-readonlyProvider.lbl')
+					fieldLabel: me.res('externalAccount.fld-readOnly.lbl')
+				}, {
+					xtype: 'hiddenfield',
+					reference: 'providerIdField',
+					name: 'providerId',
+					bind: '{record.providerId}'
 				}, {
 					xtype: 'sopasswordfield',
 					bind: '{record.password}',
@@ -232,25 +237,34 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 			});
 	
 			if(me.mode === 'new') {
+					me.createCssClass(me.iconUrl);
 					me.lref('emailField').setValue(me.email);
 					me.lref('hostField').setValue(me.server);
 					me.lref('protocolField').setValue(me.protocol);
 					me.lref('portField').setValue(me.port);
 					me.lref('folderSentField').setValue(me.folderSent);
-					me.lref('readonlyProviderField').setValue(me.readonlyProvider);
+					me.lref('readOnlyField').setValue(me.readOnly);
+					me.lref('providerIdField').setValue(me.providerId);
 					me.lref('folderPrefixField').setValue(me.folderPrefix);
 					me.lref('folderDraftsField').setValue(me.folderDrafts);
 					me.lref('folderTrashField').setValue(me.folderTrash);
 					me.lref('folderSpamField').setValue(me.folderSpam);
 					me.lref('folderArchiveField').setValue(me.folderArchive);
-					if(me.readonlyProvider)
-					me.lref('readonlyProviderField').setDisabled(true);
+					if(me.readOnly)
+					me.lref('readOnlyField').setDisabled(true);
 				}
 			else if(me.mode === 'edit') {
-				var checkBox = me.lref('readonlyProviderField');
-				if(me.getModel().data.readonlyProvider)
+				var checkBox = me.lref('readOnlyField');
+				me.createCssClass(me.getModel().data.iconUrl);
+				if(me.getModel().data.readOnly)
 					checkBox.setDisabled(true);
 			}
+			me.setIconCls('wtmail-icon-email-external-account');
+	},
+	
+	createCssClass: function(iconUrl) {
+		var me = this;
+		Sonicle.CssUtils.addRule('.wtmail-icon-email-external-account', ' background-image: url(' + "'" + iconUrl + "'" + ') !important; background-size: contain; ');
 	}
 	
 });

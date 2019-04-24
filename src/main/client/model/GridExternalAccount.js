@@ -39,6 +39,7 @@ Ext.define('Sonicle.webtop.mail.model.GridExternalAccount', {
 	idProperty: 'externalAccountId',
     fields: [
 		WTF.field('externalAccountId', 'int', false),
+		WTF.field('iconUrl', 'string', false),
 		WTF.field('email', 'string', false),
 		WTF.field('accountDescription', 'string', false)
 	]

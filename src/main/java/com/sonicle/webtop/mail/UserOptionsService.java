@@ -252,7 +252,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 			
 				List<ExternalAccount> externalAccounts = mailManager.listExternalAccounts();
 				externalAccounts.forEach(account -> {
-				jsList.add(new JsGridExternalAccount(account));
+					
+				String iconUrl = getIconUrlFromExternalProvider(account.getProviderId());
+				jsList.add(new JsGridExternalAccount(account, iconUrl));
 			});
 			
 			new JsonResult("externalAccount", jsList).printTo(out);
@@ -274,6 +276,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				
 				ExternalAccount externalAccount = mailManager.getExternalAccount(accountId);
 				JsExternalAccount item = new JsExternalAccount(externalAccount);
+				item.iconUrl = getIconUrlFromExternalProvider(item.providerId);
 				new JsonResult(item).printTo(out);
 			} else if(crud.equals(Crud.CREATE)) {
 				Payload<MapItem, JsExternalAccount> pl = ServletUtils.getPayload(request, JsExternalAccount.class);
@@ -316,6 +319,15 @@ public class UserOptionsService extends BaseUserOptionsService {
 			}
 		});
 		new JsonResult("data", list).printTo(out);
+	}
+	
+	private String getIconUrlFromExternalProvider(String providerId) {
+		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetDomainId());
+		MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
+		
+		List<ExternalProvider> list = mss.getExternalProviders();
+		
+		return list.stream().filter(provider -> provider.id.equals(providerId)).findAny().orElse(new ExternalProvider()).iconUrl;
 	}
 	
 	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {

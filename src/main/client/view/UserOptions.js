@@ -817,6 +817,16 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								}
 							},
 							columns: [ {
+									dataIndex: 'iconUrl',
+									header: me.res('opts.external.accounts.icon.lbl'),
+									flex: 1,
+									width: 2,
+									renderer: function(value) {
+										if(value !== null)
+										return '<img src="' + value + '" style="width:25px; height:25px"/>';
+									}
+									
+								}, {
 									dataIndex: 'accountDescription',
 									header: me.res('opts.external.accounts.accountDescription.lbl'),
 									scope: me,
@@ -921,12 +931,13 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				swapReturn: true, 
 				viewCfg: {
 					profileId: me.profileId,
-					externalAccountProviderId: itemData.id,
+					providerId: itemData.id,
+					iconUrl: itemData.iconUrl,
 					email: itemData.email,
 					server: itemData.server,
 					protocol: itemData.protocol,
 					port: itemData.port,
-					readonlyProvider: itemData.readonlyProvider,
+					readOnly: itemData.readOnly,
 					folderPrefix: itemData.folderPrefix,
 					folderSent: itemData.folderSent,
 					folderDrafts: itemData.folderDrafts,

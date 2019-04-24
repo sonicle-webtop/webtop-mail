@@ -316,7 +316,8 @@ public class MailManager extends BaseManager implements IMailManager {
 				account.setProtocol(externalAccount.getProtocol());
 				account.setHost(externalAccount.getHost());
 				account.setPort(externalAccount.getPort());
-				account.setReadonlyProvider(externalAccount.getReadonlyProvider());
+				account.setReadOnly(externalAccount.getReadOnly());
+				account.setProviderId(externalAccount.getProviderId());
 				account.setUserName(externalAccount.getUsername());
 				account.setPassword(externalAccount.getPassword());
 				account.setFolderPrefix(externalAccount.getFolderPrefix());
@@ -420,7 +421,8 @@ public class MailManager extends BaseManager implements IMailManager {
 			account.setProtocol(externalAccount.getProtocol());
 			account.setHost(externalAccount.getHost());
 			account.setPort(externalAccount.getPort());
-			account.setReadonlyProvider(externalAccount.getReadonlyProvider());
+			account.setReadOnly(externalAccount.getReadOnly());
+			account.setProviderId(externalAccount.getProviderId());
 			account.setUserName(externalAccount.getUsername());
 			account.setPassword(externalAccount.getPassword());
 			account.setFolderPrefix(externalAccount.getFolderPrefix());
@@ -443,7 +445,8 @@ public class MailManager extends BaseManager implements IMailManager {
 			account.setProtocol(externalAccount.getProtocol());
 			account.setHost(externalAccount.getHost());
 			account.setPort(externalAccount.getPort());
-			account.setReadonlyProvider(externalAccount.isReadonlyProvider());
+			account.setReadOnly(externalAccount.isReadOnly());
+			account.setProviderId(externalAccount.getProviderId());
 			account.setUsername(externalAccount.getUserName());
 			account.setPassword(externalAccount.getPassword());
 			account.setFolderPrefix(externalAccount.getFolderPrefix());
