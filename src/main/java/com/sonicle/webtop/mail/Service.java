@@ -6059,6 +6059,9 @@ public class Service extends BaseService {
 			
 			String ctn = Thread.currentThread().getName();
 			String key = folder.getFullName();
+			
+			if(!pfoldername.equals("/")) {
+				
 			FolderCache mcache = account.getFolderCache(key);
 			if (mcache.toBeRefreshed()) refresh=true;
 			//Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,refresh);
@@ -6508,6 +6511,13 @@ public class Service extends BaseService {
 				if (messagesInfo.isPEC()) sout += "isPEC: true,\n";
 				sout += "realTotal: "+(xmsgs.length-expunged)+",\n";
 				sout += "expunged: "+(expunged)+",\n";
+			}
+			else {
+				sout += "messages: [],\n" 
+						+"total: 0,\n"
+						+"realTotal: 0,\n"
+						+"expunged:0,\n";
+			}
 				sout += "metaData: {\n"
 						+ "  root: 'messages', total: 'total', idProperty: 'idmessage',\n"
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"

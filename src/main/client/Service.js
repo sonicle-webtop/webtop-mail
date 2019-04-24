@@ -169,7 +169,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					//if (me.archiveTree) me.archiveTree.setSelection(null);
 					me._unselectAllTreesBut(me.favoritesTree);
 					me.folderClicked(r.get("account"), r, tr, ix, e, eopts);
-				}
+					
+					if(t.getSelection()[0].isRoot()) {
+						var messagePanel = me.messagesPanel;
+						messagePanel.clearGridSelections();
+						messagePanel.messageView.createEmptyItem();
+					}				}
 			}
 			
 		});
@@ -200,6 +205,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						//me.favoritesTree.setSelection(null);
 						me._unselectAllTreesBut(me.archiveTree);
 						me.folderClicked(me.archiveTree.acct, r, tr, ix, e, eopts);
+						
+						if(t.getSelection()[0].isRoot()) {
+							var messagePanel = me.messagesPanel;
+							messagePanel.clearGridSelections();
+							messagePanel.messageView.createEmptyItem();
+						}
+						
 					}
 				}
 
@@ -236,6 +248,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					//if (me.archiveTree) me.archiveTree.setSelection(null);
 					me._unselectAllTreesBut(me.imapTree);
 					me.folderClicked(me.imapTree.acct, r, tr, ix, e, eopts);
+					
+					if(t.getSelection()[0].isRoot()) {
+						var messagePanel = me.messagesPanel;
+						messagePanel.clearGridSelections();
+						messagePanel.messageView.createEmptyItem();
+					}
 				},
 				load: function(t,records,s,o,n) {
 					if (n.id==='/') {
@@ -325,6 +343,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 							//if (me.archiveTree) me.archiveTree.setSelection(null);
 							me._unselectAllTreesBut(tree);
 							me.folderClicked(tree.acct, r, tr, ix, e, eopts);
+							
+							if(t.getSelection()[0].isRoot()) {
+								var messagePanel = me.messagesPanel;
+								messagePanel.clearGridSelections();
+								messagePanel.messageView.createEmptyItem();
+							}
 						},
 						load: function(t,records,s,o,n) {
 							if (n.id==='/') {
@@ -966,6 +990,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         
 		var params={start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2};
         mp.reloadFolder(acct,folderid,params,uid,rid,page,tid);
+		mp.messageView.createEmptyItem();
 	}, 
 	
 	getAccount: function(node) {

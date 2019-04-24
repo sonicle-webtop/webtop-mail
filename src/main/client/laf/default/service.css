@@ -196,6 +196,10 @@
 .wtmail-mv-subject-table { width: 100%; border: none; }
 .wtmail-mv-subject-table TR TD { border: none; padding: 0px; }
 
+.wtmail-mv-no-msg-centered {
+	text-align: center;
+}
+
 div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 
 .wtmail-element-toclick {
@@ -225,6 +229,8 @@ div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 .wtmail-td-editor-attachment-delete-icon { width:16px }
 .wtmail-td-editor-attachment-delete-icon IMG { width: 16px; height: 16px; }
 
+.wtmail-no-message-tit-font { font-size:1.2em; }
+.wtmail-no-message-subtit-font { font-size:0.9em; }
 
 blockquote { 
     display: block;

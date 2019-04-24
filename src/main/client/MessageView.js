@@ -241,6 +241,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         td.className="wtmail-mv-bodycell";
         me.tdBody=Ext.get(td);
 
+		me.createEmptyItem();
 		me.callParent(arguments);
 	},
 	
@@ -285,8 +286,44 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.icaluid=null;
 			me.icalwebtopid=0;
             me.iframes=new Array();
+			if(me.tdBody !== null) {
+				me.clearBody();
+			}	
         }
     },
+	
+	createEmptyItem: function() {
+		var me = this,
+		    divContainer = document.createElement("div"),
+			title = document.createElement("label"),
+			text = document.createElement("label"),
+			newRow = document.createElement("br");
+		
+		divContainer.className = 'wtmail-mv-no-msg-centered';
+		title.innerText = me.mys.res('messagePreview.no.tit');
+		title.className = 'wt-theme-text-tit wtmail-no-message-tit-font';
+		text.innerText = me.mys.res('messagePreview.no.txt');
+		text.className = 'wt-theme-text-sub wtmail-no-message-subtit-font';
+		
+		divContainer.appendChild(title);
+		divContainer.appendChild(newRow);
+		divContainer.appendChild(text);
+		
+		if(me.tdBody !== null) {
+			me.clearBody();
+			me.tdBody.dom.appendChild(divContainer);
+		}	
+	},
+	
+	clearBody: function() {
+		var me = this,
+			 dom = me.tdBody.dom;
+            if ( dom.hasChildNodes() ) {
+                while ( dom.childNodes.length > 0 ) {
+                    dom.removeChild( dom.firstChild );
+                }
+		}
+	},
 	
     _showMessage: function(acct, folder, id, setseen, rec, nopec) {
 		var me=this;/*,
