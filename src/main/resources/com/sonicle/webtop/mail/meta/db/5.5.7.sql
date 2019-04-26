@@ -39,11 +39,11 @@ ADD COLUMN readonly_provider BOOLEAN DEFAULT FALSE;
 -- ---------------------------------------------------------
 
 ALTER TABLE mail.external_accounts 
-RENAME COLUMN readonly_provider TO read_only
+RENAME COLUMN readonly_provider TO read_only;
 
 -- ---------------------------------------------------------
 -- Add provider_id column in table external_accounts
 -- ---------------------------------------------------------
 
 ALTER TABLE mail.external_accounts 
-ADD  COLUMN provider_id VARCHAR
+ADD  COLUMN provider_id VARCHAR;

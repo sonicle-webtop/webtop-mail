@@ -268,7 +268,9 @@ public class MailSettings {
 	 */
 	public static final String ARCHIVING_SIMPLE_DMS_MAIL_FOLDER = "archiving.dms-simple.mailfolder";
 	
-	public static final String EXTERNAL_ACCOUNT_PROVIDERS = "[\n" +
+	public static final String EXTERNAL_ACCOUNT_PROVIDERS = "external-account.providers";
+	
+	public static final String EXTERNAL_ACCOUNT_DEFAULT_PROVIDERS = "[\n" +
 					" { 'id': 'imap', 'readOnly': 'false'}, " +
 					" { 'id': 'gmail', 'email': '@gmail.com', 'server': 'imap.gmail.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'[Gmail]/', 'folderSent': 'Sent Mail', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'readOnly': 'true' },\n" +
 					" { 'id': 'outlook', 'email': '@outlook.com', 'server': 'imap.outlook.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'readOnly': 'false' },\n" +

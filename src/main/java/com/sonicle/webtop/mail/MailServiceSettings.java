@@ -296,7 +296,8 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}
 	
 	public List<ExternalProvider> getExternalProviders() {
-		ExternalProvider.List externalProviders = ExternalProvider.List.fromJson(EXTERNAL_ACCOUNT_PROVIDERS);
+		String json=getString(EXTERNAL_ACCOUNT_PROVIDERS, EXTERNAL_ACCOUNT_DEFAULT_PROVIDERS);
+		ExternalProvider.List externalProviders = ExternalProvider.List.fromJson(json);
 		for(ExternalProvider externalProvider: externalProviders) {
 			if (StringUtils.isEmpty(externalProvider.iconUrl)) {
 				externalProvider.iconUrl=WT.getServiceLafUrl(domainId, CoreManifest.ID, "default")+"/emailproviders/"+externalProvider.id+".svg";
