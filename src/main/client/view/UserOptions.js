@@ -714,6 +714,9 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									xtype: 'splitbutton',
 									text: WT.res('act-add.lbl'),
 									iconCls: 'wt-icon-add-xs',
+									bind: {
+										disabled: '{!foCanManageExternalAccounts}'
+									},
 									handler: function(s) {
 											s.maybeShowMenu();
 									},
