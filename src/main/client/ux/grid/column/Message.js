@@ -98,6 +98,15 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				'</div>',
 			'</div>',
 			'<div class="wtmail-messagecolumn-head">',
+				'<tpl if="threaded">',
+					'<tpl if="threadIndent == 0 && threadHasChildren">',
+						'<div class="wtmail-messagecolumn-thread x-grid-group-hd-collapsible <tpl if="!threadOpen">x-grid-group-hd-collapsed</tpl>" style="{threadIndentStyle}">',
+							'<span class="x-grid-group-title wtmail-element-toclick" onclick="{threadOnclick}">&nbsp;</span>',
+						'</div>',	
+					'<tpl else>',
+						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
+					'</tpl>',					
+				'</tpl>',
 				'<tpl if="headIconCls">',
 					'<div class="wtmail-messagecolumn-icon {headIconCls}" style="margin-right:2px;height:16px;"></div>',
 				'</tpl>',
@@ -116,6 +125,9 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				'</tpl>',
 			'</div>',
 			'<div class="wtmail-messagecolumn-body">',
+				'<tpl if="threaded">',
+					'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
+				'</tpl>',
 				'<tpl if="bodyIconCls">',
 					'<div class="wtmail-messagecolumn-icon {bodyIconCls}" style="margin-right:2px;height:16px;"></div>',
 				'</tpl>',
@@ -130,11 +142,17 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	
 	defaultRenderer: function(val, meta, rec, ridx, cidx, sto) {
 		//TODO: display the right recipient (from or to) according to folder type
-		//TODO: handle threading
 		var me = this,
+				threaded = me.getThreaded(),
 				data = {};
 		
 		Ext.apply(data, {
+			threaded: threaded,
+			threadOpen: threaded ? rec.get('threadOpen') : false,
+			threadHasChildren: threaded ? rec.get('threadHasChildren') : false,
+			threadIndent: threaded ? rec.get('threadIndent') : -1,
+			threadIndentStyle: threaded ? me.buildThreadIndentStyle(rec.get('threadIndent')) : '',
+			threadOnclick: threaded ? "WT.getApp().getService('com.sonicle.webtop.mail').messagesPanel.folderList.collapseClicked("+ridx+");" : '', //TODO: handle click directly!
 			date: me.buildDate(sto, rec.get('istoday'), rec.get('fmtd'), rec.get('date')),
 			rcpt: {text: rec.get('from'), tooltip: rec.get('fromemail')},
 			subject: me.buildSubject(rec.get('subject')),
@@ -146,6 +164,14 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			headIconCls: me.buildStatusIcon(rec.get('status'))
 		});
 		return this.tpl.apply(data);
+	},
+	
+	buildThreadIndentStyle: function(indent) {
+		var mright = 0;
+		if (Ext.isNumber(indent)) {
+			mright = indent * 5;
+		}
+		return 'margin-right:' + mright + 'px;';
 	},
 	
 	buildSubject: function(subject) {
