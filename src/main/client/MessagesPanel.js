@@ -382,8 +382,52 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			items:[
 				//{ xtype: 'tbspacer', width: 250 },
 				'->',
-				me.filterCombo,
-				me.filterTextField,
+				{
+					xtype: 'wtsearchfield',
+					fields: [{
+						name: 'from',
+						type: 'string',
+						label: 'Da'
+					}, {
+						name: 'to',
+						type: 'string',
+						label: 'A'
+					}, {
+						name: 'subject',
+						type: 'string',
+						label: 'Oggetto'
+					}, {
+						name: 'message',
+						type: 'string',
+						label: 'Messaggio'
+					}, {
+						name: 'everywhere',
+						type: 'string',
+						label: 'Ovunque',
+						textSink: true
+					}, {
+						name: 'after',
+						type: 'date',
+						labelAlign: 'left',
+						label: 'Dalla data'
+					}, {
+						name: 'before',
+						type: 'date',
+						labelAlign: 'left',
+						label: 'Alla data'
+					}, {
+						name: 'attachment',
+						type: 'boolean',
+						label: 'Contiene allegati'
+					}],
+					listeners: {
+						query: function(s, value, qObj) {
+							me.queryMails(qObj);
+						}
+					}
+				},			
+				//me.filterCombo,
+				//me.filterTextField,
 				me.quickFilterCombo,
 				{ xtype: 'tbspacer', width: 100 },
 				me.res("groupby")+":",
@@ -480,6 +524,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	//setImapStore: function(store) {
 	//	this.bcFolders.setStore(store);
 	//},
+	
+	queryMails: function(query) {
+		var isString = Ext.isString(query),
+			obj = {
+				allText: isString ? query : query.anyText,
+				conditions: isString ? [] : query.conditionArray
+			};
+		this.reloadMails({query: Ext.JSON.encode(obj)});
+	},
 	
 	getAct: function(name) {
 		return this.mys.getAct(name);
@@ -770,6 +823,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}
 		}
         me.fireEvent('gridselectionchanged',sm/*,ctrlshift*/);
+		if(r.length === 0)
+			me.messageView.createEmptyItem();
     },
     
 	showMessage: function(acct,folder,id,rec) {
