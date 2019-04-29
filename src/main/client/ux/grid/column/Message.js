@@ -169,7 +169,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	buildThreadIndentStyle: function(indent) {
 		var mright = 0;
 		if (Ext.isNumber(indent)) {
-			mright = indent * 5;
+			mright = indent * 15;
 		}
 		return 'margin-right:' + mright + 'px;';
 	},

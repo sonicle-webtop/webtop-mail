@@ -8530,6 +8530,7 @@ public class Service extends BaseService {
 			co.put("fontColor", us.getFontColor());
 			co.put("receipt", us.isReceipt());
 			co.put("priority", us.isPriority());
+			co.put("viewMode", us.getViewMode());
 			co.put("noMailcardOnReplyForward", us.isNoMailcardOnReplyForward());
 			co.put("pageRows", us.getPageRows());
 			co.put("schedDisabled",ss.isScheduledEmailsDisabled());

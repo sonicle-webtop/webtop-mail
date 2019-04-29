@@ -104,6 +104,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.mainEmail = WT.getUserData(getTargetProfileId()).getEmailAddress();
 				jso.replyTo = mus.getReplyTo();
 				jso.sharedSort = mus.getSharedSort();
+				jso.viewMode = mus.getViewMode();
 				jso.readReceiptConfirmation = mus.getReadReceiptConfirmation();
 				jso.includeMessageInReply = mus.isIncludeMessageInReply();
 				jso.host = mus.getHost();
@@ -134,6 +135,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				
 				// Main
 				if (pl.map.has("replyTo")) mus.setReplyTo(pl.data.replyTo);
+				if (pl.map.has("viewMode")) mus.setViewMode(pl.data.viewMode);
 				if (pl.map.has("readReceiptConfirmation")) mus.setReadReceiptConfirmation(pl.data.readReceiptConfirmation);
 				if (pl.map.has("ingridPreview")) mus.setShowMessagePreviewOnRow(pl.data.ingridPreview);
 				if (pl.map.has("manualSeen")) mus.setManualSeen(pl.data.manualSeen);

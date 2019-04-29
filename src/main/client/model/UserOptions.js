@@ -65,6 +65,7 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('mainEmail', 'string', true),
 		WTF.field('replyTo', 'string', true),
 		WTF.field('sharedSort', 'string', false),
+		WTF.field('viewMode', 'string', false),
 		WTF.field('readReceiptConfirmation', 'string', false),
 		WTF.field('includeMessageInReply', 'boolean', false),
 		WTF.field('host', 'string', true),

@@ -41,6 +41,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		'Sonicle.webtop.mail.store.ArchiveMode',
 		'Sonicle.webtop.mail.store.EditingFormat',
 		'Sonicle.webtop.mail.store.ReadReceiptConfirmation',
+		'Sonicle.webtop.mail.store.ViewMode',
 		'Sonicle.webtop.mail.view.ExternalAccount',
 		'Sonicle.webtop.mail.model.ExternalAccountProvider'
 	],
@@ -113,6 +114,15 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, WTF.lookupCombo('id', 'desc', {
+				bind: '{record.viewMode}',
+				store: Ext.create('Sonicle.webtop.mail.store.ViewMode', {
+					autoLoad: true
+				}),
+				fieldLabel: me.res('opts.account.fld-viewmode.lbl'),
+				width: 440,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}), WTF.lookupCombo('id', 'desc', {
 				bind: '{record.readReceiptConfirmation}',
 				store: Ext.create('Sonicle.webtop.mail.store.ReadReceiptConfirmation', {
 					autoLoad: true

@@ -168,6 +168,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			pageSize: 50,//me.pageSize,
 			mys: me.mys,
 			mp: me,
+			compactView: me.mys.getVar("viewMode")==="compact",
 			createPagingToolbar: true,
 			stateful: WT.plTags.desktop?true:false,
 			baseStateId: me.mys.buildStateId('messagegrid'),			

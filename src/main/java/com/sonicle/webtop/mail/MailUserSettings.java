@@ -320,6 +320,15 @@ public class MailUserSettings extends BaseUserSettings {
 		return setString(SHARED_SORT,sharedSort);
 	}
 	
+	public String getViewMode() {
+		String s=getString(VIEW_MODE,"columns");
+		return s;
+	}
+	
+	public boolean setViewMode(String mode) {
+		return setString(VIEW_MODE, mode);
+	}
+	
 	public String getReadReceiptConfirmation() {
 		String s=getString(READ_RECEIPT_CONFIRMATION,null);
 		if (s==null) s="ask";
