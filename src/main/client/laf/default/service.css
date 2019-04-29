@@ -240,3 +240,74 @@ blockquote {
     border-left: solid 2px blue;
     padding-left: 10px;
 }
+
+/* --- UX grid.column.Message --- */
+.wtmail-grid-cell-messagecolumn .wtmail-grid-cell-messagecolumn-unread {
+	font-weight: bold !important;
+	color: initial !important;
+}
+.wtmail-grid-cell-messagecolumn hr {
+	margin-top: 5px;
+	margin-bottom: 5px;
+	border: 0;
+	border-top: 1px solid #eee;
+}
+/* make label boxes, actually not used!
+.wtmail-messagecolumn-label {
+	line-height: 16px;
+	padding: 0 4px;
+	margin: 0 0 0 4px;
+	display: inline-block;
+	overflow: visible;
+	text-align: center;
+	font-weight: 400;
+	border-radius: 3px;
+}
+*/
+.wtmail-messagecolumn-icon {
+	display: inline-block;
+	width: 16px;
+	text-align: center;
+}
+.wtmail-messagecolumn-glyph {
+	display: inline-block;
+	margin: 0 0 0 2px;
+	text-align: center;
+}
+.wtmail-messagecolumn-head {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: #767676;
+}
+.wtmail-messagecolumn-head > span {
+	color: #767676;
+}
+.wtmail-messagecolumn-head-float {
+	display: inline-block;
+	float: right;
+}
+.wtmail-messagecolumn-head-float > span {
+	color: #767676;
+}
+.wtmail-messagecolumn-head-float > .wtmail-messagecolumn-glyph {
+	margin-left: 2px;
+	font-size: 1.1em;
+}
+.wtmail-messagecolumn-body {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-top: 5px;
+}
+.wtmail-messagecolumn-body-float {
+	display: inline-block;
+	float: right;
+	margin-top: 5px;
+}
+.wtmail-messagecolumn-preview {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+/* ------------------------------ */

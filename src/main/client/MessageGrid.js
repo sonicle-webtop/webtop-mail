@@ -432,7 +432,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//preserveScrollOnRefresh: true,
 			preserveScrollOnReload: true,
 			markDirty: false,
-			emptyText: me.mys.res('empty.folder.messages.txt'),
+			emptyText: me.mys.res('messageGrid.emp'),
 			navigationModel: Ext.create('Sonicle.webtop.mail.NavigationModel',{}),
 			loadMask: { msg: WT.res("loading") },
 			getRowClass: function(record, index, rowParams, store ) {
