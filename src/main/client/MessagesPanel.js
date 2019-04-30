@@ -383,7 +383,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			items:[
 				//{ xtype: 'tbspacer', width: 250 },
 				'->',
-				{
+				/*{
 					xtype: 'wtsearchfield',
 					fields: [{
 						name: 'from',
@@ -426,9 +426,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 							me.queryMails(qObj);
 						}
 					}
-				},			
-				//me.filterCombo,
-				//me.filterTextField,
+				},*/			
+				me.filterCombo,
+				me.filterTextField,
 				me.quickFilterCombo,
 				{ xtype: 'tbspacer', width: 100 },
 				me.res("groupby")+":",
