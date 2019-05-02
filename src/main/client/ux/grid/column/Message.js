@@ -36,7 +36,8 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	alias: 'widget.wtmail-mailmessagecolumn',
 	
 	config: {
-		threaded: false
+		threaded: false,
+		sentMode: false
 	},
 	
 	/**
@@ -102,15 +103,20 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 					'<tpl if="threadIndent == 0 && threadHasChildren">',
 						'<div class="wtmail-messagecolumn-thread x-grid-group-hd-collapsible <tpl if="!threadOpen">x-grid-group-hd-collapsed</tpl>" style="{threadIndentStyle}">',
 							'<span class="x-grid-group-title wtmail-element-toclick" onclick="{threadOnclick}">&nbsp;</span>',
-						'</div>',	
+						'</div>',
 					'<tpl else>',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
-					'</tpl>',					
+					'</tpl>',
 				'</tpl>',
 				'<tpl if="headIconCls">',
 					'<div class="wtmail-messagecolumn-icon {headIconCls}" style="margin-right:2px;height:16px;"></div>',
 				'</tpl>',
-				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{rcpt.tooltip}">{rcpt.text}</span>',
+				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{rcpt.tooltip}">',
+					'<tpl if="threaded && !threadOpen && threadUnseenChildren &gt; 0">',
+						'<b>+{threadUnseenChildren}</b>&nbsp;',
+					'</tpl>',
+					'{rcpt.text}',
+				'</span>',
 			'</div>',
 			'<div class="wtmail-messagecolumn-body-float">',
 				'<tpl for="tags">',
@@ -141,20 +147,27 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	],
 	
 	defaultRenderer: function(val, meta, rec, ridx, cidx, sto) {
-		//TODO: display the right recipient (from or to) according to folder type
 		var me = this,
 				threaded = me.getThreaded(),
-				data = {};
+				data = {},
+				rcpt;
+		
+		if (me.getSentMode()) {
+			rcpt = {text: rec.get('to'), tooltip: rec.get('toemail')};
+		} else {
+			rcpt = {text: rec.get('from'), tooltip: rec.get('fromemail')};
+		}
 		
 		Ext.apply(data, {
 			threaded: threaded,
 			threadOpen: threaded ? rec.get('threadOpen') : false,
 			threadHasChildren: threaded ? rec.get('threadHasChildren') : false,
+			threadUnseenChildren: threaded ? rec.get('threadUnseenChildren') : -1,
 			threadIndent: threaded ? rec.get('threadIndent') : -1,
 			threadIndentStyle: threaded ? me.buildThreadIndentStyle(rec.get('threadIndent')) : '',
 			threadOnclick: threaded ? "WT.getApp().getService('com.sonicle.webtop.mail').messagesPanel.folderList.collapseClicked("+ridx+");" : '', //TODO: handle click directly!
 			date: me.buildDate(sto, rec.get('istoday'), rec.get('fmtd'), rec.get('date')),
-			rcpt: {text: rec.get('from'), tooltip: rec.get('fromemail')},
+			rcpt: rcpt,
 			subject: me.buildSubject(rec.get('subject')),
 			//preview: rec.get('msgtext')
 			atts: rec.get('atts'),
