@@ -282,7 +282,6 @@ blockquote {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
-	color: #767676;
 }
 .wtmail-messagecolumn-head > span {
 	color: #767676;
