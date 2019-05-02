@@ -49,7 +49,7 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
 		//TODO : manage threading state
 		var unread=record.get('unread'),
 			pecstatus=record.get('pecstatus');
-		var cls=unread?'wtmail-row-unread':'';
+		var cls=unread && !this.grid.compactView ?'wtmail-row-unread':'';
 		
 		if (pecstatus) {
 			if (pecstatus=='accettazione') cls+=' wtmail-row-pec-accepted';
@@ -441,7 +441,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				var unread=record.get('unread');
 				    pecstatus=record.get('pecstatus'),
 				    tdy=record.get('istoday'),
-					cls1=unread?'wtmail-row-unread':'',
+					cls1=(unread && !this.grid.compactView) ?'wtmail-row-unread':'',
 					cls2=tdy?'wtmail-row-today':'';
 					/*cls3=(pecstatus=='accettazione')?'wtmail-row-pec-accepted':
 							(pecstatus=='avvenuta-consegna')?'wtmail-row-pec-delivered':
@@ -2083,13 +2083,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var me=this,n=0,dcols=new Array();
 		
 		if (me.compactView) {
+			var node=me.mys.getFolderNodeById(me.currentAccount,me.currentFolder),
+				issentfolder=node?(node.data.isSent||node.data.isUnderSent):false;
 			dcols[n++]=me.createPriorityColumn(false);
 			dcols[n++]=me.createUnreadColumn(false);
 			dcols[n++]=Ext.create({//Folder
 				xtype: 'wtmail-mailmessagecolumn',
 				tagsStore: me.mys.tagsStore,
 				flex: 1,
-				threaded: me.threaded
+				threaded: me.threaded,
+				sentMode: issentfolder
 			});
 		} else {
 			Ext.each(state.columns,function(scol) {
