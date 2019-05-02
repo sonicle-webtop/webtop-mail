@@ -2090,9 +2090,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			dcols[n++]=Ext.create({//Folder
 				xtype: 'wtmail-mailmessagecolumn',
 				tagsStore: me.mys.tagsStore,
-				flex: 1,
 				threaded: me.threaded,
-				sentMode: issentfolder
+				sentMode: issentfolder,
+				dateShortFormat: WT.getShortDateFmt(),
+				dateLongFormat: WT.getLongDateFmt(),
+				timeShortFormat: WT.getShortTimeFmt(),
+				timeLongFormat: WT.getLongTimeFmt(),
+				collapseHandler: function(view, ridx) {
+					me.mys.messagesPanel.folderList.collapseClicked(ridx);
+				},
+				flex: 1
 			});
 		} else {
 			Ext.each(state.columns,function(scol) {

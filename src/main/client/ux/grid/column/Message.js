@@ -41,6 +41,15 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	},
 	
 	/**
+	 * @cfg {Boolean} [stopSelection=false]
+	 * Prevent grid selection upon click.
+	 * Beware that if you allow for the selection to happen then the selection model will steal focus from
+	 * any possible floating window (like a message box) raised in the handler. This will prevent closing the
+	 * window when pressing the Escape button since it will no longer contain a focused component.
+	 */
+	stopSelection: true,
+	
+	/**
 	 * @cfg {Number} [maxTags=3]
 	 * The maximum number of visible tags.
 	 */
@@ -50,6 +59,24 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	 * @cfg {Ext.data.Store} tagsStore
 	 */
 	tagsStore: null,
+	
+	/**
+	 * @cfg {Function/String} collapseHandler
+	 * A function called when the thread collapse/expand icon is clicked.
+	 * @cfg {Ext.view.Table} handler.view The owning TableView.
+	 * @cfg {Number} handler.rowIndex The row index clicked on.
+	 * @cfg {Number} handler.colIndex The column index clicked on.
+	 * @cfg {Event} handler.e The click event.
+	 * @cfg {Ext.data.Model} handler.record The Record underlying the clicked row.
+	 * @cfg {HTMLElement} handler.row The table row clicked upon.
+	 */
+	
+	/**
+	 * @cfg {Object} scope
+	 * The scope (`this` reference) in which the `{@link #collapseHandler}`
+	 * functions are executed.
+	 * Defaults to this Column.
+	 */
 	
 	/**
 	 * Array of flag colors
@@ -69,6 +96,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		pink: '#e91e63'
 	},
 	
+	collapseTooltip: 'Expand/collapse discussion threads',
 	noRcptText: '[No recipient]',
 	noSubjectText: '[No subject]',
 	flagsTexts: {
@@ -88,6 +116,13 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		special: 'Special'
 	},
 	
+	dateShortFormat: 'm/d/Y',
+	dateLongFormat: 'M d Y',
+	timeShortFormat: 'g:i A',
+	timeLongFormat: 'H:i:s',
+	
+	threadCollapseSelector: '.x-grid-group-title',
+	
 	tpl: [
 		'<div class="wtmail-grid-cell-messagecolumn">',
 			'<div class="wtmail-messagecolumn-head-float">',
@@ -101,8 +136,8 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			'<div class="wtmail-messagecolumn-head">',
 				'<tpl if="threaded">',
 					'<tpl if="threadIndent == 0 && threadHasChildren">',
-						'<div class="wtmail-messagecolumn-thread x-grid-group-hd-collapsible <tpl if="!threadOpen">x-grid-group-hd-collapsed</tpl>" style="{threadIndentStyle}">',
-							'<span class="x-grid-group-title wtmail-element-toclick" onclick="{threadOnclick}">&nbsp;</span>',
+						'<div class="wtmail-messagecolumn-thread x-grid-group-hd-collapsible <tpl if="!threadOpen">x-grid-group-hd-collapsed</tpl>" style="{threadIndentStyle}" data-qtip="{collapseTooltip}">',
+							'<span class="x-grid-group-title wtmail-element-toclick">&nbsp;</span>',
 						'</div>',
 					'<tpl else>',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
@@ -144,6 +179,44 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		'</div>'
 	],
 	
+	constructor: function(cfg) {
+		var me = this;
+		me.origScope = cfg.scope || me.scope;
+		me.scope = cfg.scope = null;
+		me.callParent([cfg]);
+	},
+	
+	processEvent: function(type, view, cell, recordIndex, cellIndex, e, record, row) {
+		var me = this,
+			isClick = type === 'click',
+			disabled = me.disabled,
+			ret, callback;
+		
+		if (!disabled && isClick) {
+			if (e.getTarget(me.threadCollapseSelector)) {
+				callback = true;
+				Ext.callback(me.collapseHandler, me.origScope, [view, recordIndex, cellIndex, e, record, row], undefined, me);
+				
+			}/* else if (e.getTarget(me.threadExpanderSelector)) {
+				callback = true;
+				fire = '';
+			}*/
+			
+			if (callback) {
+				// Flag event to tell SelectionModel not to process it.
+				e.stopSelection = me.stopSelection;
+
+				// Do not allow focus to follow from this mousedown unless the grid is already in actionable mode 
+				if (isClick && !view.actionableMode) {
+					e.preventDefault();
+				}
+			}
+		} else {
+			ret = me.callParent(arguments);
+		}
+		return ret;
+	},
+	
 	defaultRenderer: function(val, meta, rec, ridx, cidx, sto) {
 		var me = this,
 				threaded = me.getThreaded(),
@@ -172,7 +245,8 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			flag: me.buildFlag(rec.get('flag')),
 			tags: me.buildTags(rec.get('tags')),
 			unread: rec.get('unread') === true,
-			headIconCls: me.buildStatusIcon(rec.get('status'))
+			headIconCls: me.buildStatusIcon(rec.get('status')),
+			collapseTooltip: me.collapseTooltip
 		});
 		return this.tpl.apply(data);
 	},
@@ -190,13 +264,14 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	},
 	
 	buildDate: function(store, today, fmtd, date) {
-		var textFmt, tipFmt;
+		var me = this,
+				textFmt, tipFmt;
 		if (!fmtd && (today || (store.getGroupField && store.getGroupField() === 'gdate'))) {
-			textFmt = WT.getShortTimeFmt();
-			tipFmt = WT.getShortDateFmt() + ' ' + WT.getLongTimeFmt();
+			textFmt = me.timeShortFormat;
+			tipFmt = me.dateShortFormat + ' ' + me.timeLongFormat;
 		} else {
-			textFmt = WT.getLongDateFmt();
-			tipFmt = WT.getShortDateFmt() + ' ' + WT.getLongTimeFmt();
+			textFmt = me.dateLongFormat;
+			tipFmt = me.dateShortFormat + ' ' + me.timeLongFormat;
 		}
 		return {
 			text: Ext.Date.format(date, textFmt),
