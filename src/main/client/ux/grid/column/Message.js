@@ -96,7 +96,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		pink: '#e91e63'
 	},
 	
-	collapseTooltip: 'Expand/collapse discussion threads',
+	collapseTooltip: 'Click to expand/collapse discussion threads',
 	noRcptText: '[No recipient]',
 	noSubjectText: '[No subject]',
 	flagsTexts: {
@@ -190,19 +190,10 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		var me = this,
 			isClick = type === 'click',
 			disabled = me.disabled,
-			ret, callback;
+			ret;
 		
 		if (!disabled && isClick) {
 			if (e.getTarget(me.threadCollapseSelector)) {
-				callback = true;
-				Ext.callback(me.collapseHandler, me.origScope, [view, recordIndex, cellIndex, e, record, row], undefined, me);
-				
-			}/* else if (e.getTarget(me.threadExpanderSelector)) {
-				callback = true;
-				fire = '';
-			}*/
-			
-			if (callback) {
 				// Flag event to tell SelectionModel not to process it.
 				e.stopSelection = me.stopSelection;
 
@@ -210,6 +201,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				if (isClick && !view.actionableMode) {
 					e.preventDefault();
 				}
+				Ext.callback(me.collapseHandler, me.origScope, [view, recordIndex, cellIndex, e, record, row], undefined, me);
 			}
 		} else {
 			ret = me.callParent(arguments);

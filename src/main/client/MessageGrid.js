@@ -2485,6 +2485,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				var cls=Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'status-'+(value?"seen":"unseen"), 'xs');
 				return cls;
 			},
+			getTip: function(value) {
+				return me.mys.res('messageGrid.readstatus.' + (value ? 'read' : 'unread'));
+			},
 			handler: function(grid, rix, cix, e, rec) {
 				var newunread=!rec.get('unread');
 				me.markMessageSeenState(rec,!newunread);
