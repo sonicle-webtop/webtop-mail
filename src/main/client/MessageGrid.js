@@ -2085,9 +2085,20 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (me.compactView) {
 			var node=me.mys.getFolderNodeById(me.currentAccount,me.currentFolder),
 				issentfolder=node?(node.data.isSent||node.data.isUnderSent):false;
-			dcols[n++]=me.createPriorityColumn(false);
+			//dcols[n++]=me.createPriorityColumn(false);
+			dcols[n++]={
+				xtype: 'soavatarcolumn',
+				sortable: false,
+				groupable: false,
+				sentMode: issentfolder,
+				getName: function(v, rec) {
+					var fld = this.sentMode ? 'to' : 'from';
+					return Ext.isEmpty(rec.get(fld)) ? rec.get(fld+'email') : rec.get(fld);
+				},
+				width: 60
+			};
 			dcols[n++]=me.createUnreadColumn(false);
-			dcols[n++]=Ext.create({//Folder
+			dcols[n++]={//Folder
 				xtype: 'wtmail-mailmessagecolumn',
 				tagsStore: me.mys.tagsStore,
 				threaded: me.threaded,
@@ -2100,7 +2111,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					me.mys.messagesPanel.folderList.collapseClicked(ridx);
 				},
 				flex: 1
-			});
+			};
 		} else {
 			Ext.each(state.columns,function(scol) {
 

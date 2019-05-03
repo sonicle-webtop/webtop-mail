@@ -246,6 +246,9 @@ blockquote {
 	font-weight: bold !important;
 	color: initial !important;
 }
+.wtmail-grid-cell-messagecolumn .x-grid-group-title {
+	cursor: pointer;
+}
 .wtmail-grid-cell-messagecolumn hr {
 	margin-top: 5px;
 	margin-bottom: 5px;
@@ -282,18 +285,23 @@ blockquote {
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+	height: 20px;
 }
 .wtmail-messagecolumn-head > span {
+	vertical-align: top;
 	color: #767676;
 }
 .wtmail-messagecolumn-head-float {
 	display: inline-block;
 	float: right;
+	height: 20px;
 }
 .wtmail-messagecolumn-head-float > span {
+	vertical-align: top;
 	color: #767676;
 }
 .wtmail-messagecolumn-head-float > .wtmail-messagecolumn-glyph {
+	vertical-align: top;
 	margin-left: 2px;
 	font-size: 1.1em;
 }

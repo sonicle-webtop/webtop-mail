@@ -126,6 +126,9 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	tpl: [
 		'<div class="wtmail-grid-cell-messagecolumn">',
 			'<div class="wtmail-messagecolumn-head-float">',
+				'<tpl if="headFloatIcon">',
+					'<div class="wtmail-messagecolumn-icon {headFloatIcon.iconCls}" style="margin-right:5px;height:16px;" data-qtip="{headFloatIcon.tooltip}"></div>',
+				'</tpl>',
 				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{date.tooltip}">{date.text}</span>',
 				'<div class="wtmail-messagecolumn-glyph" style="width:16px;text-align:center;">',
 					'<tpl if="atts">',
@@ -137,7 +140,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				'<tpl if="threaded">',
 					'<tpl if="threadIndent == 0 && threadHasChildren">',
 						'<div class="wtmail-messagecolumn-thread x-grid-group-hd-collapsible <tpl if="!threadOpen">x-grid-group-hd-collapsed</tpl>" style="{threadIndentStyle}" data-qtip="{collapseTooltip}">',
-							'<span class="x-grid-group-title wtmail-element-toclick">&nbsp;</span>',
+							'<span class="x-grid-group-title">&nbsp;</span>',
 						'</div>',
 					'<tpl else>',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
@@ -167,10 +170,16 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				'<tpl if="threaded">',
 					'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
 				'</tpl>',
-				'<tpl if="bodyIconCls">',
-					'<div class="wtmail-messagecolumn-icon {bodyIconCls}" style="margin-right:2px;height:16px;"></div>',
+				'<tpl if="highPriority">',
+					'<div class="wtmail-messagecolumn-glyph" style="margin-right:5px;color:#f44336;">',
+						'<i class="fa fa-exclamation"></i>',
+					'</div>',
 				'</tpl>',
-				'<span data-qtip="{subject}">{subject}</span>',
+				'<tpl if="threaded && !threadOpen && threadUnseenChildren &gt; 0">',
+					'<span data-qtip="{subject}"><u>{subject}</u></span>',
+				'<tpl else>',
+					'<span data-qtip="{subject}">{subject}</span>',
+				'</tpl>',
 			'</div>',
 				'<tpl if="preview">',
 					'<hr>',
@@ -196,7 +205,6 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			if (e.getTarget(me.threadCollapseSelector)) {
 				// Flag event to tell SelectionModel not to process it.
 				e.stopSelection = me.stopSelection;
-
 				// Do not allow focus to follow from this mousedown unless the grid is already in actionable mode 
 				if (isClick && !view.actionableMode) {
 					e.preventDefault();
@@ -228,16 +236,16 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			threadUnseenChildren: threaded ? rec.get('threadUnseenChildren') : -1,
 			threadIndent: threaded ? rec.get('threadIndent') : -1,
 			threadIndentStyle: threaded ? me.buildThreadIndentStyle(rec.get('threadIndent')) : '',
-			threadOnclick: threaded ? "WT.getApp().getService('com.sonicle.webtop.mail').messagesPanel.folderList.collapseClicked("+ridx+");" : '', //TODO: handle click directly!
+			highPriority: rec.get('priority')<3 ? true : false,
 			date: me.buildDate(sto, rec.get('istoday'), rec.get('fmtd'), rec.get('date')),
 			rcpt: rcpt,
 			subject: me.buildSubject(rec.get('subject')),
-			//preview: rec.get('msgtext')
 			atts: rec.get('atts'),
 			flag: me.buildFlag(rec.get('flag')),
 			tags: me.buildTags(rec.get('tags')),
 			unread: rec.get('unread') === true,
-			headIconCls: me.buildStatusIcon(rec.get('status')),
+			headIconCls: me.buildStatusIcon(rec),
+			headFloatIcon: me.buildTypeIcon(rec),
 			collapseTooltip: me.collapseTooltip
 		});
 		return this.tpl.apply(data);
@@ -303,18 +311,39 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		}
 	},
 	
-	buildStatusIcon: function(status) {
+	buildStatusIcon: function(rec) {
+		var status = rec.get('status');
 		switch(status) {
 			case 'new':
+				//return 'fa-envelope';
 				return 'wtmail-icon-status-new';
 			case 'replied':
+				//return 'fa-reply';
 				return 'wtmail-icon-status-replied';
 			case 'forwarded':
+				//return 'fa-share';
 				return 'wtmail-icon-status-forwarded';
 			case 'repfwd':
+				//return 'fa-retweet';
 				return 'wtmail-icon-status-replied-forwarded';
-			default:
-				return null;
 		}
+		return null;
+	},
+	
+	buildTypeIcon: function(rec) {
+		var pstatus = rec.get('pecstatus');
+		switch(pstatus) {
+			case 'posta-certificata':
+				return {iconCls: 'wtmail-pec', tooltip: 'Messaggio PEC'};
+			case 'accettazione':
+				return {iconCls: 'wtmail-pec-accepted', tooltip: 'PEC (ricevuta di accettazione)'};
+			case 'non-accettazione':
+				return {iconCls: 'wtmail-pec-not-accepted', tooltip: 'PEC (ricevuta di NON accettazione)'};
+			case 'avvenuta-consegna':
+				return {iconCls: 'wtmail-pec-delivered', tooltip: 'PEC (ricevuta di consegna)'};
+			case 'errore':
+				return {iconCls: 'wtmail-pec-error', tooltip: 'PEC (errore)'};
+		}
+		return null;
 	}
 });
