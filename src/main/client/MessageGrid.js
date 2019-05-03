@@ -2085,7 +2085,31 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (me.compactView) {
 			var node=me.mys.getFolderNodeById(me.currentAccount,me.currentFolder),
 				issentfolder=node?(node.data.isSent||node.data.isUnderSent):false;
-			//dcols[n++]=me.createPriorityColumn(false);
+			
+			//hidden columns holding header titles for groupings
+			dcols[n++]=Ext.create({//Date
+				xtype: 'gridcolumn',
+				header: me.res("column-date"),
+				hidden: true,
+				dataIndex: 'gdate',
+				hideable: false,
+				filter: {}
+			});
+			dcols[n++]=Ext.create({//From
+				xtype: 'gridcolumn',
+				header: me.res("column-from"),
+				dataIndex: 'from',
+				hidden: true,
+				filter: {}
+			});
+			dcols[n++]=Ext.create({//To
+				xtype: 'gridcolumn',
+				header: me.res("column-to"),
+				dataIndex: 'to',
+				hidden: true,
+				filter: { }
+			});
+			
 			dcols[n++]={
 				xtype: 'soavatarcolumn',
 				sortable: false,
@@ -2097,6 +2121,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				},
 				width: 60
 			};
+			//dcols[n++]=me.createPriorityColumn(false);
 			dcols[n++]=me.createUnreadColumn(false);
 			dcols[n++]={//Folder
 				xtype: 'wtmail-mailmessagecolumn',
@@ -2112,7 +2137,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				},
 				flex: 1
 			};
+			me.setHideHeaders(true);
 		} else {
+			me.setHideHeaders(false);
 			Ext.each(state.columns,function(scol) {
 
 				switch(scol.id) {
