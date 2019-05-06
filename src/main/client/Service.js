@@ -1022,12 +1022,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me = this,
 			pl = msg.payload,
 			email = pl.email,
-			content = pl.content;
+			personal = pl.personal;
 			
 		if(me.getVar('autoAddContact')) {
 			var contactService = WT.getServiceApi('com.sonicle.webtop.contacts');
 			var data = {
-				notes: content,
+				displayName: personal,
 				email1: email
 			};
 			contactService.addContact(data);

@@ -40,10 +40,10 @@ package com.sonicle.webtop.mail.bol.js;
 public class JsAddContactMessage {
 	
 	String email;
-	String content;
+	String personal;
 	
-	public JsAddContactMessage(String email, String content) {
+	public JsAddContactMessage(String email, String personal) {
 		this.email = email;
-		this.content = content;
+		this.personal = personal;
 	}
 }

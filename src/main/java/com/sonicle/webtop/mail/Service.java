@@ -4649,13 +4649,13 @@ public class Service extends BaseService {
 				else if((jsmsg.inreplyto != null && jsmsg.inreplyto.trim().length()>0)||(jsmsg.replyfolder!=null&&jsmsg.replyfolder.trim().length()>0&&jsmsg.origuid>0)) {
 					try {
 						
-						String content = "";
-						String contactEmail = "";
 						String[] toRecipients = SimpleMessage.breakAddr(msg.getTo());
 						
 						for(String toRecipient : toRecipients) {
 							InternetAddress internetAddress = getInternetAddress(toRecipient);
-							contactEmail = internetAddress.getAddress();
+							String contactEmail = internetAddress.getAddress();
+							String contactPersonal = internetAddress.getPersonal();
+							
 							
 							Condition<ContactQuery> predicate = new ContactQuery().email().eq(contactEmail);
 							
@@ -4666,8 +4666,7 @@ public class Service extends BaseService {
 							boolean existsContact = contactsManager.existContact(myCategories, predicate);
 							
 							if(!existsContact) {
-								content = msg.getContent();
-								sendAddContactMessage(contactEmail, content);
+								sendAddContactMessage(contactEmail, contactPersonal);
 								break;
 							}
 						}
@@ -4695,8 +4694,8 @@ public class Service extends BaseService {
         json.printTo(out);
 	}
 	
-	private void sendAddContactMessage(String email, String content) {
-		this.environment.notify(new AddContactMessage(email, content)
+	private void sendAddContactMessage(String email, String personal) {
+		this.environment.notify(new AddContactMessage(email, personal)
 		);
 	}
 	

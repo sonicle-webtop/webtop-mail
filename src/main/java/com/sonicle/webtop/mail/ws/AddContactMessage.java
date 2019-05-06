@@ -46,7 +46,7 @@ public class AddContactMessage extends ServiceMessage {
 	
 	public static final String ACTION_NO_CONTACT_EXISTS = "addContact";
 	
-	public AddContactMessage(String email, String content) {
-		super(WT.findServiceId(Service.class) ,ACTION_NO_CONTACT_EXISTS, new JsAddContactMessage(email, content));
+	public AddContactMessage(String email, String personal) {
+		super(WT.findServiceId(Service.class) ,ACTION_NO_CONTACT_EXISTS, new JsAddContactMessage(email, personal));
 	}
 }
