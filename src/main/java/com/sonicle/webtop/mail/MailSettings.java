@@ -238,6 +238,7 @@ public class MailSettings {
 	public static final String FONT_SIZE = "font.size";
 	public static final String FONT_COLOR = "font.color";
 	public static final String RECEIPT = "receipt";
+	public static final String AUTO_ADD_CONTACT = "autoAddContact";
 	public static final String PRIORITY = "priority";
 	public static final String NO_MAILCARD_ON_REPLY_FORWARD = "no.mailcard.on.reply.forward";
 	public static final String VIEW_MODE = "viewmode";

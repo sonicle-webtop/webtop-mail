@@ -66,9 +66,11 @@ import com.sonicle.security.auth.directory.LdapNethDirectory;
 import com.sonicle.webtop.calendar.model.GetEventScope;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
+import com.sonicle.webtop.contacts.IContactsManager;
 import com.sonicle.webtop.contacts.io.ContactInput;
 import com.sonicle.webtop.contacts.io.VCardInput;
 import com.sonicle.webtop.contacts.model.ContactPictureWithBytes;
+import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.DocEditorManager;
@@ -118,6 +120,7 @@ import com.sonicle.webtop.mail.model.MailEditFormat;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.webtop.mail.model.Tag;
+import com.sonicle.webtop.mail.ws.AddContactMessage;
 import com.sonicle.webtop.vfs.IVfsManager;
 // TODO: Fix imported classes
 //import com.sonicle.webtop.Mailcard;
@@ -158,13 +161,13 @@ import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.vfs2.FileObject;
 import org.apache.http.client.HttpClient;
 import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTimeZone;
+import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -4518,6 +4521,7 @@ public class Service extends BaseService {
 	public void processSendMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		JsonResult json = null;
 		CoreManager coreMgr=WT.getCoreManager();
+		IContactsManager contactsManager = (IContactsManager)WT.getServiceManager("com.sonicle.webtop.contacts", true, environment.getProfileId());
 
 		// TODO: Cloud integration!!!
 /*        VFSService vfs=(VFSService)wts.getServiceByName("vfs");
@@ -4644,6 +4648,30 @@ public class Service extends BaseService {
 				}
 				else if((jsmsg.inreplyto != null && jsmsg.inreplyto.trim().length()>0)||(jsmsg.replyfolder!=null&&jsmsg.replyfolder.trim().length()>0&&jsmsg.origuid>0)) {
 					try {
+						
+						String content = "";
+						String contactEmail = "";
+						String[] toRecipients = SimpleMessage.breakAddr(msg.getTo());
+						
+						for(String toRecipient : toRecipients) {
+							InternetAddress internetAddress = getInternetAddress(toRecipient);
+							contactEmail = internetAddress.getAddress();
+							
+							Condition<ContactQuery> predicate = new ContactQuery().email().eq(contactEmail);
+							
+							List<Integer> myCategories = contactsManager.listCategoryIds();
+							List<Integer> sharedCategories = contactsManager.listIncomingCategoryIds();
+							myCategories.addAll(sharedCategories);
+							
+							boolean existsContact = contactsManager.existContact(myCategories, predicate);
+							
+							if(!existsContact) {
+								content = msg.getContent();
+								sendAddContactMessage(contactEmail, content);
+								break;
+							}
+						}
+						
 						foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
@@ -4665,6 +4693,11 @@ public class Service extends BaseService {
             json=new JsonResult(false, msg);
 		}
         json.printTo(out);
+	}
+	
+	private void sendAddContactMessage(String email, String content) {
+		this.environment.notify(new AddContactMessage(email, content)
+		);
 	}
 	
     private String flagAnsweredMessage(MailAccount account, String replyfolder, String id, long origuid) throws MessagingException {
@@ -8529,6 +8562,7 @@ public class Service extends BaseService {
 			co.put("fontSize", us.getFontSize());
 			co.put("fontColor", us.getFontColor());
 			co.put("receipt", us.isReceipt());
+			co.put("autoAddContact", us.isAutoAddContact());
 			co.put("priority", us.isPriority());
 			co.put("viewMode", us.getViewMode());
 			co.put("noMailcardOnReplyForward", us.isNoMailcardOnReplyForward());

@@ -459,6 +459,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		me.onMessage('unread',me.unreadChanged,me);
 		me.onMessage('recent',me.recentMessage,me);
+		me.onMessage('addContact', me.addContact, me);
 		
         var xb=new Array();
 		xx=0;
@@ -1015,6 +1016,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			}
 		}
 		me.updateFavoritesUnreads(pl.accountid,pl.foldername,pl.unread);
+	},
+	
+	addContact: function(msg) {
+		var me = this,
+			pl = msg.payload,
+			email = pl.email,
+			content = pl.content;
+			
+		if(me.getVar('autoAddContact')) {
+			var contactService = WT.getServiceApi('com.sonicle.webtop.contacts');
+			var data = {
+				notes: content,
+				email1: email
+			};
+			contactService.addContact(data);
+		}
+			
 	},
 	
 	updateFavoritesUnreads: function(account,foldername,unread) {

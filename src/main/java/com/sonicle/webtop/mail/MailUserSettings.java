@@ -500,6 +500,16 @@ public class MailUserSettings extends BaseUserSettings {
 		return setBoolean(RECEIPT,b);
 	}
 	
+	public boolean isAutoAddContact() {
+		Boolean b = getBoolean(AUTO_ADD_CONTACT, null);
+		if (b == null) b = false;
+		return b;
+	}
+	
+	public boolean setAutoAddContact(boolean b) {
+		return setBoolean(AUTO_ADD_CONTACT, b);
+	}
+	
 	public boolean isPriority() {
 		Boolean b=getBoolean(PRIORITY,null);
 		if (b==null) b=false;

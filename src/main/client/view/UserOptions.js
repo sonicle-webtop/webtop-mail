@@ -52,6 +52,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	viewModel: {
 		formulas: {
 			receipt: WTF.checkboxBind('record', 'receipt'),
+			autoAddContact: WTF.checkboxBind('record', 'autoAddContact'),
 			priority: WTF.checkboxBind('record', 'priority'),
 			noMailcardOnReplyForward: WTF.checkboxBind('record', 'noMailcardOnReplyForward'),
 			archiveKeepFoldersStructure: WTF.checkboxBind('record', 'archiveKeepFoldersStructure'),
@@ -267,6 +268,12 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'checkbox',
 					bind: '{receipt}',
 					boxLabel: me.res('opts.editing.fld-receipt.lbl'),
+					hideEmptyLabel: false,
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				}, {
+					xtype: 'checkbox',
+					bind: '{autoAddContact}',
+					boxLabel: me.res('opts.editing.fld-autoAddContact.lbl'),
 					hideEmptyLabel: false,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
