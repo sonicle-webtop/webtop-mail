@@ -322,3 +322,12 @@ blockquote {
 	white-space: nowrap;
 }
 /* ------------------------------ */
+
+
+.wtmail-menu-title {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-weight: bold;
+}

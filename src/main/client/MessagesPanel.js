@@ -50,8 +50,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     
     filterTextField: null,
     filterCombo: null,
-    groupCombo: null,
-    bMultiSearch: null,
+    //groupCombo: null,
 	labelMessages: null,
     folderList: null,
     messageView: null,
@@ -146,7 +145,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}
 			
         });
-        me.groupCombo=Ext.create(WTF.localCombo('id', 'desc', {
+        /*me.groupCombo=Ext.create(WTF.localCombo('id', 'desc', {
             width: 120,
 			matchFieldWidth: false,
 			listConfig: { width: 100 },
@@ -161,125 +160,29 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 					me.folderList.changeGrouping(r.get('id'));
 				}
 			}
-        }));
+        }));*/
+		
+		var compactView=me.mys.getVar("viewMode")==="compact";
 		
         me.folderList=Ext.create('Sonicle.webtop.mail.MessageGrid',{
             region:'center',
 			pageSize: 50,//me.pageSize,
 			mys: me.mys,
 			mp: me,
-			compactView: me.mys.getVar("viewMode")==="compact",
+			compactView: compactView,
+			breadcrumb: me.bcFolders,
 			createPagingToolbar: true,
 			stateful: WT.plTags.desktop?true:false,
 			baseStateId: me.mys.buildStateId('messagegrid'),			
-			dockedItems: [
-/*				Ext.create('Ext.toolbar.Toolbar',{
-					border: false,
-					bodyStyle: {
-						borderTopColor: 'transparent'
-					},
-					items: [
-						me.filterCombo,
-						me.filterTextField,
-						me.quickFilterCombo,
-						"->",
-						me.res("groupby")+":",
-						me.groupCombo,
-						'-',
-						me.res('messages')+":",
-						me.labelMessages,
-					]
-				}),*/
+/*			dockedItems: [
 				Ext.create('Ext.toolbar.Toolbar',{
 					border: false,
 					bodyStyle: {
 						borderTopColor: 'transparent'
 					},
-					items: [
-						me.bcFolders,
-						'->',
-						me.mys._TB("reply",null,'small'),
-						me.mys._TB("replyall",null,'small'),
-						me.mys._TB("forward",null,'small'),
-						'-',
-						me.mys._TB("print",null,'small'),
-						me.mys._TB("delete",null,'small'),
-						me.mys._TB("spam",null,'small'),
-						'-',
-						me.mys._TB("special",null,'small'),
-						{
-							text: null,
-							iconCls: 'wtmail-icon-tag',
-							menu: Ext.create({
-								xtype: 'sostoremenu',
-								itemClass: 'Ext.menu.CheckItem',
-								textField: 'html',
-								tagField: 'tagId',
-								textAsHtml: true,
-								staticItems: [
-									me.getAct('managetags'),
-									'-',
-								],
-								store: me.mys.tagsStore,
-								listeners: {
-									click: function(menu,item,e) {
-										if (item.tag) {
-											var grid=me.mys.getCtxGrid(e);
-											if (item.checked)
-												grid.actionTag(item.tag);
-											else
-												grid.actionUntag(item.tag);
-										}
-									},
-									show: function(menu) {
-										var sel=me.folderList.getSelection(),
-											tagsStore=me.mys.tagsStore;
-										tagsStore.each(function(xr) {
-											menu.getComponent(xr.get("hashId")).setChecked(false,true);
-										});
-										if (sel && sel.length===1) {
-											var r=sel[0];
-												tags=r.get("tags");
-											if (tags) {
-												Ext.iterate(tags,function(tag) {
-													var xr=tagsStore.findRecord('tagId',tag);
-													if (xr) menu.getComponent(xr.get("hashId")).setChecked(true,true);
-												});
-											}
-										}
-									}
-								}
-							})
-						},
-						{
-							text: null,
-							iconCls: 'wtmail-icon-flagred-xs',
-							menu: {
-								items: [
-									me.mys.getAct('flagred'),
-									me.mys.getAct('flagorange'),
-									me.mys.getAct('flaggreen'),
-									me.mys.getAct('flagblue'),
-									me.mys.getAct('flagpurple'),
-									me.mys.getAct('flagyellow'),
-									me.mys.getAct('flagblack'),
-									me.mys.getAct('flaggray'),
-									me.mys.getAct('flagwhite'),
-									me.mys.getAct('flagbrown'),
-									me.mys.getAct('flagazure'),
-									me.mys.getAct('flagpink'),
-									'-',
-									me.mys.getAct('flagcomplete'),
-									//me.getAct('addmemo'),
-									me.mys.getAct('clear')
-								]
-							}
-						},
-						'-',
-						me.bMultiSearch=me.mys._TB("multisearch",null,'small')
-					]
+					items: tbitems
 				})
-			]
+			]*/
         });
 		if (me.gridMenu) {
 			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
@@ -316,18 +219,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			me.labelMessages.setText(text);
 		});
 		
-		me.folderList.on('showfilterbar',function() {
-			if (me.bMultiSearch && !me.bMultiSearch.pressed) {
-				me.bMultiSearch.toggle();
-			}
-		});
-
-		me.folderList.on('hidefilterbar',function() {
-			if (me.bMultiSearch && me.bMultiSearch.pressed) {
-				me.bMultiSearch.toggle();
-			}
-		});
-		
 		me.folderList.on("afterrender",function() {
 			me.gridMonitor = Ext.create('Sonicle.ActivityMonitor', {
 				trackMoveEvents: false,
@@ -359,96 +250,27 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.folderList.store.on("metachange",function(s,meta) {
             var gg=meta.groupField;
 			if (gg==='') gg='none';
-            me.groupCombo.setValue(gg);
+            //me.groupCombo.setValue(gg);
 			me.filterCombo.setValue(meta.searchFilter);
             //me.bThreaded.toggle(meta.threaded);
         });
         
         me.toolbar=Ext.create('Ext.toolbar.Toolbar',{ 
-/*			items:[
-				me.bMultiSearch=me.mys._TB("multisearch"),
-				"-",
-				me.quickFilterCombo,
-                "-",
-				me.filterCombo,
-                me.filterTextField,
-				me.mys._TB("advsearch"),
-                "-",
-                me.res("groupby")+":",
-                me.groupCombo
-            ]*/
 			defaults: {
 				scale: WT.getHeaderScale()
 			},			
 			items:[
-				//{ xtype: 'tbspacer', width: 250 },
 				'->',
-				/*{
-					xtype: 'wtsearchfield',
-					fields: [{
-						name: 'from',
-						type: 'string',
-						label: 'Da'
-					}, {
-						name: 'to',
-						type: 'string',
-						label: 'A'
-					}, {
-						name: 'subject',
-						type: 'string',
-						label: 'Oggetto'
-					}, {
-						name: 'message',
-						type: 'string',
-						label: 'Messaggio'
-					}, {
-						name: 'everywhere',
-						type: 'string',
-						label: 'Ovunque',
-						textSink: true
-					}, {
-						name: 'after',
-						type: 'date',
-						labelAlign: 'left',
-						label: 'Dalla data'
-					}, {
-						name: 'before',
-						type: 'date',
-						labelAlign: 'left',
-						label: 'Alla data'
-					}, {
-						name: 'attachment',
-						type: 'boolean',
-						label: 'Contiene allegati'
-					}],
-					listeners: {
-						query: function(s, value, qObj) {
-							me.queryMails(qObj);
-						}
-					}
-				},*/			
 				me.filterCombo,
 				me.filterTextField,
 				me.quickFilterCombo,
 				{ xtype: 'tbspacer', width: 100 },
-				me.res("groupby")+":",
-				me.groupCombo,
+				//me.res("groupby")+":",
+				//me.groupCombo,
 				{ xtype: 'tbspacer', width: 100 },
 				'->',
 				me.res('messages')+":",
-				me.labelMessages,
-				//me.mys._TB("inMailFilters"),
-				/*me.res('messages')+":",
-				me.labelMessages,
-				'-',*/
-				//me.mys._TB("advsearch")
-/*                "-",
-                me.res("groupby")+":",
-                me.groupCombo,
-                "-",
-				me.quickFilterCombo,
-				me.filterCombo,
-                me.filterTextField*/
+				me.labelMessages
 			]
 		});
 
@@ -715,11 +537,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	},
      
     depressMultiSearchButton: function() {
-		var me=this;
-        if (me.bMultiSearch && me.bMultiSearch.pressed) {
-            me.bMultiSearch.toggle();
-            me.folderList.hideFilterBar();
-        }
+		this.folderList.depressMultiSearchButton();
     },
     
 	setPageSize: function(size) {
@@ -731,12 +549,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	},
      
     actionMultiSearch: function() {
-		var me=this;
-        if (me.bMultiSearch.pressed) me.folderList.showFilterBar();
-        else {
-			me.folderList.clearFilterBar();
-			me.folderList.hideFilterBar();
-		}
+		this.folderList.actionMultiSearch();
     },
 
 /*	actionThreaded: function() {

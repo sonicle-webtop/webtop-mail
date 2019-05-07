@@ -373,6 +373,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	createPagingToolbar: false,
 	threaded: false,
 	readonly: false,
+    bMultiSearch: null,
 	openThreads: {},
 	
     /**
@@ -568,8 +569,280 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});
 		
         me.callParent(arguments);
+		
+		var tbitems=[
+			me.breadcrumb,
+			'->',
+			me.mys._TB("reply",null,'small'),
+			me.mys._TB("replyall",null,'small'),
+			me.mys._TB("forward",null,'small'),
+			'-',
+			me.mys._TB("print",null,'small'),
+			me.mys._TB("delete",null,'small'),
+			me.mys._TB("spam",null,'small'),
+			'-',
+			me.mys._TB("special",null,'small'),
+			{
+				text: null,
+				iconCls: 'wtmail-icon-tag',
+				menu: Ext.create({
+					xtype: 'sostoremenu',
+					itemClass: 'Ext.menu.CheckItem',
+					textField: 'html',
+					tagField: 'tagId',
+					textAsHtml: true,
+					staticItems: [
+						me.mys.getAct('managetags'),
+						'-',
+					],
+					store: me.mys.tagsStore,
+					listeners: {
+						click: function(menu,item,e) {
+							if (item.tag) {
+								if (item.checked)
+									me.actionTag(item.tag);
+								else
+									me.actionUntag(item.tag);
+							}
+						},
+						show: function(menu) {
+							var sel=me.getSelection(),
+								tagsStore=me.mys.tagsStore;
+							tagsStore.each(function(xr) {
+								menu.getComponent(xr.get("hashId")).setChecked(false,true);
+							});
+							if (sel && sel.length===1) {
+								var r=sel[0];
+									tags=r.get("tags");
+								if (tags) {
+									Ext.iterate(tags,function(tag) {
+										var xr=tagsStore.findRecord('tagId',tag);
+										if (xr) menu.getComponent(xr.get("hashId")).setChecked(true,true);
+									});
+								}
+							}
+						}
+					}
+				})
+			},
+			{
+				text: null,
+				iconCls: 'wtmail-icon-flagred-xs',
+				menu: {
+					items: [
+						me.mys.getAct('flagred'),
+						me.mys.getAct('flagorange'),
+						me.mys.getAct('flaggreen'),
+						me.mys.getAct('flagblue'),
+						me.mys.getAct('flagpurple'),
+						me.mys.getAct('flagyellow'),
+						me.mys.getAct('flagblack'),
+						me.mys.getAct('flaggray'),
+						me.mys.getAct('flagwhite'),
+						me.mys.getAct('flagbrown'),
+						me.mys.getAct('flagazure'),
+						me.mys.getAct('flagpink'),
+						'-',
+						me.mys.getAct('flagcomplete'),
+						//me.getAct('addmemo'),
+						me.mys.getAct('clear')
+					]
+				}
+			},
+			'-'
+		];
+		if (!me.compactView) {
+			tbitems.push(me.bMultiSearch=me.mys._TB("multisearch",null,'small'));
+			me.on('showfilterbar',function() {
+				if (!me.bMultiSearch.pressed) {
+					me.bMultiSearch.toggle();
+				}
+			});
+
+			me.on('hidefilterbar',function() {
+				if (me.bMultiSearch.pressed) {
+					me.bMultiSearch.toggle();
+				}
+			});
+		}
+		
+		tbitems.push(			
+			{
+				text: null,
+				iconCls: 'wt-icon-sort',
+				tooltip: me.res('sortgroup.tip'),
+				menu: {
+					
+					items: [
+						{
+							xtype: 'somenuheader',
+							text: 'Ordinamento'
+						},
+						{
+							xtype: 'menucheckitem',
+							reference: 'itmsmgfrom',
+							text: me.mys.res('sortmenu.from'), 
+							group: 'sortmailgrid', 
+							inputValue: 'from',
+							handler: function() { me.store.sort('from','ASC'); }
+						},
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmsgmto',
+							text: me.mys.res('sortmenu.to'), 
+							group: 'sortmailgrid', 
+							inputValue: 'to',
+							handler: function() { me.store.sort('to','ASC'); }
+						},
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmsmgsubject',
+							text: me.mys.res('sortmenu.subject'), 
+							group: 'sortmailgrid', 
+							inputValue: 'subject',
+							handler: function() { me.store.sort('subject','ASC'); }
+						},
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmsmgdate',
+							text: me.mys.res('sortmenu.date'), 
+							group: 'sortmailgrid', 
+							inputValue: 'date',
+							handler: function() { me.store.sort('date','DESC'); }
+						},
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmsmgsize',
+							text: me.mys.res('sortmenu.size'), 
+							group: 'sortmailgrid', 
+							inputValue: 'size',
+							handler: function() { me.store.sort('size','DESC'); }
+						},
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmsmgatts',
+							text: me.mys.res('sortmenu.atts'), 
+							group: 'sortmailgrid', 
+							inputValue: 'atts',
+							handler: function() { me.store.sort('atts','DESC'); }
+						},
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmsmgpriority',
+							text: me.mys.res('sortmenu.priority'), 
+							group: 'sortmailgrid', 
+							inputValue: 'priority',
+							handler: function() { me.store.sort('priority','ASC'); }
+						},
+						
+						'-',
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmdsmgasc',
+							text: me.mys.res('sortmenu.ascending'), 
+							group: 'dsortmailgrid', 
+							inputValue: 'ASC',
+							handler: function() { 
+								var s=me.store;
+									meta=s.getProxy().getReader().metaData,
+									sf=meta?meta.sortInfo.field:'date';
+								s.sort(sf,'ASC'); 
+							}
+						},
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmdsmgdesc',
+							text: me.mys.res('sortmenu.descending'), 
+							group: 'dsortmailgrid', 
+							inputValue: 'ASC',
+							handler: function() { 
+								var s=me.store;
+									meta=s.getProxy().getReader().metaData,
+									sf=meta?meta.sortInfo.field:'date';
+								s.sort(sf,'DESC'); 
+							}
+						},
+						
+						'-',
+						
+						{
+							xtype: 'somenuheader',
+							text: 'Raggruppamento'
+						},
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmgmgnone',
+							text: me.mys.res('groupmenu.none'), 
+							group: 'groupmailgrid', 
+							inputValue: 'none',
+							handler: function() { me.changeGrouping('none'); }
+						},					
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmgmggdate',
+							text: me.mys.res('groupmenu.gdate'), 
+							group: 'groupmailgrid', 
+							inputValue: 'gdate',
+							handler: function() { me.changeGrouping('gdate'); }
+						},					
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmgmgfrom',
+							text: me.mys.res('groupmenu.from'), 
+							group: 'groupmailgrid', 
+							inputValue: 'from',
+							handler: function() { me.changeGrouping('from'); }
+						},					
+						{ 
+							xtype: 'menucheckitem',
+							reference: 'itmgmgto',
+							text: me.mys.res('groupmenu.to'), 
+							group: 'groupmailgrid', 
+							inputValue: 'to',
+							handler: function() { me.changeGrouping('to'); }
+						},					
+						{ 
+							reference: 'itmgmgthreadId',
+							xtype: 'menucheckitem',
+							text: me.mys.res('groupmenu.threadId'), 
+							group: 'groupmailgrid', 
+							inputValue: 'threadId',
+							handler: function() { me.changeGrouping('threadId'); }
+						}
+					]
+				}
+			}
+		);
+		
+		me.addDocked({
+			xtype: 'toolbar',
+			dock: 'top',
+			border: false,
+			referenceHolder: true,
+			bodyStyle: {
+				borderTopColor: 'transparent'
+			},
+			items: tbitems
+		});
     },
 	
+    depressMultiSearchButton: function() {
+		var me=this;
+        if (me.bMultiSearch && me.bMultiSearch.pressed) {
+            me.bMultiSearch.toggle();
+            me.hideFilterBar();
+        }
+    },
+    
+    actionMultiSearch: function() {
+		var me=this;
+        if (me.bMultiSearch.pressed) me.showFilterBar();
+        else {
+			me.clearFilterBar();
+			me.hideFilterBar();
+		}
+    },
+
 	setCurrentAccount: function(acct) {
 		var me=this,
 			plugin=me.getView().getPlugin("messagegridviewdragdrop");
@@ -667,6 +940,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.threaded=groupField==='threadId';
 			//s.unblockLoad(false); //TODO: We are using ExtJs 6.2, is this still necessary?
 		}
+		
 		me.setCurrentAccount(acct);
 		me.currentFolder = folder_id;
 		me.initFolderState(!WT.plTags.desktop);
@@ -803,6 +1077,24 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			json=s.proxy.reader.rawData;
 
 		if (json) { 
+			
+			var tba=me.getDockedItems('toolbar[dock="top"]');
+			var tb=tba.length>0? tba[0]:null;
+			if (tb) {
+				var gf=json.metaData.groupField;
+				if (!gf || gf==='') gf='none';
+				var itm=tb.lookupReference('itmgmg'+gf);
+				if (itm) itm.setChecked(true);
+
+				var sf=json.metaData?json.metaData.sortInfo.field:'date';
+				itm=tb.lookupReference('itmsmg'+sf);
+				if (itm) itm.setChecked(true);
+
+				var dir=json.metaData?json.metaData.sortInfo.direction:'ASC';
+				itm=tb.lookupReference('itmdsmg'+((dir==='DESC')?'desc':'asc'));
+				if (itm) itm.setChecked(true);
+			}
+			
 			me.updateTotals(json.total,json.realTotal,json.quotaLimit,json.quotaUsage);
 			me.fireEvent('load',me,me.currentFolder,json);
 		}
