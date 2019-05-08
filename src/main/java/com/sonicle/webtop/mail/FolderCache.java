@@ -2508,10 +2508,11 @@ public class FolderCache {
 
   private void doHTMLMailParse(SaxHTMLMailParser saxHTMLMailParser, InputStream istream, String charset, boolean balanceTags) throws SAXException, IOException {
     HTMLInputStream hstream=new HTMLInputStream(istream);
-    XMLReader xmlparser=XMLReaderFactory.createXMLReader("org.cyberneko.html.parsers.SAXParser");
+    //XMLReader xmlparser=XMLReaderFactory.createXMLReader("org.cyberneko.html.parsers.SAXParser");
+	XMLReader xmlparser=XMLReaderFactory.createXMLReader("net.sourceforge.htmlunit.cyberneko.parsers.SAXParser");
 	xmlparser.setProperty("http://xml.org/sax/properties/lexical-handler", saxHTMLMailParser);
 	xmlparser.setFeature("http://apache.org/xml/features/scanner/notify-char-refs", true);
-	xmlparser.setFeature("http://cyberneko.org/html/features/balance-tags", balanceTags);
+	//xmlparser.setFeature("http://cyberneko.org/html/features/balance-tags", balanceTags);
     xmlparser.setContentHandler(saxHTMLMailParser);
     xmlparser.setErrorHandler(saxHTMLMailParser);
     while(!hstream.isRealEof()) {
