@@ -291,6 +291,9 @@ blockquote {
 	vertical-align: top;
 	color: #767676;
 }
+.wtmail-messagecolumn-head > b {
+	vertical-align: top;
+}
 .wtmail-messagecolumn-head-float {
 	display: inline-block;
 	float: right;
@@ -299,6 +302,7 @@ blockquote {
 .wtmail-messagecolumn-head-float > span {
 	vertical-align: top;
 	color: #767676;
+	padding-left: 5px;
 }
 .wtmail-messagecolumn-head-float > .wtmail-messagecolumn-glyph {
 	vertical-align: top;
@@ -316,6 +320,16 @@ blockquote {
 	float: right;
 	margin-top: 5px;
 }
+.wtmail-messagecolumn-body-float > span {
+	color: #767676;
+	font-size: 0.8em;
+	padding-left: 5px;
+}
+
+
+
+
+
 .wtmail-messagecolumn-preview {
 	overflow: hidden;
 	text-overflow: ellipsis;

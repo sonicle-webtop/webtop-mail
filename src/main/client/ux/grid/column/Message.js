@@ -34,6 +34,9 @@
 Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	extend: 'Ext.grid.column.Template',
 	alias: 'widget.wtmail-mailmessagecolumn',
+	uses: [
+		'Sonicle.Bytes'
+	],
 	
 	config: {
 		threaded: false,
@@ -127,14 +130,9 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		'<div class="wtmail-grid-cell-messagecolumn">',
 			'<div class="wtmail-messagecolumn-head-float">',
 				'<tpl if="headFloatIcon">',
-					'<div class="wtmail-messagecolumn-icon {headFloatIcon.iconCls}" style="margin-right:5px;height:16px;" data-qtip="{headFloatIcon.tooltip}"></div>',
+					'<div class="wtmail-messagecolumn-icon {headFloatIcon.iconCls}" style="height:16px;" data-qtip="{headFloatIcon.tooltip}"></div>',
 				'</tpl>',
 				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{date.tooltip}">{date.text}</span>',
-				'<div class="wtmail-messagecolumn-glyph" style="width:16px;text-align:center;">',
-					'<tpl if="atts">',
-						'<i class="fa fa-paperclip"></i>',
-					'</tpl>',
-				'</div>',
 			'</div>',
 			'<div class="wtmail-messagecolumn-head">',
 				'<tpl if="threaded">',
@@ -148,9 +146,11 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 					'<tpl if="!threadOpen && threadUnseenChildren &gt; 0">',
 						'<b>+{threadUnseenChildren}&nbsp;</b>',
 					'</tpl>',
+				'<tpl else>',
+					'<div class="wtmail-messagecolumn-thread"></div>',
 				'</tpl>',
 				'<tpl if="headIconCls">',
-					'<div class="wtmail-messagecolumn-icon {headIconCls}" style="margin-right:2px;height:16px;"></div>',
+					'<div class="wtmail-messagecolumn-icon {headIconCls}" style="margin-right:4px;height:16px;"></div>',
 				'</tpl>',
 				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{rcpt.tooltip}">{rcpt.text}</span>',
 			'</div>',
@@ -165,27 +165,31 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 						'<i class="fa fa-{flag.glyph}"></i>',
 					'</div>',
 				'</tpl>',
+				'<span data-qtip="{size.tooltip}">{size.text}</span>',
 			'</div>',
 			'<div class="wtmail-messagecolumn-body">',
 				'<tpl if="threaded">',
-					'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
+					'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}">',
+				'<tpl else>',
+					'<div class="wtmail-messagecolumn-thread">',
 				'</tpl>',
+					'<tpl if="hasAttachment">',
+						'<div class="wtmail-messagecolumn-glyph" style="font-size:1.1em;">',
+							'<i class="fa fa-paperclip"></i>',
+						'</div>',
+					'</tpl>',
+					'</div>',
 				'<tpl if="highPriority">',
 					'<div class="wtmail-messagecolumn-glyph" style="margin-right:5px;color:#f44336;">',
 						'<i class="fa fa-exclamation"></i>',
 					'</div>',
 				'</tpl>',
 				'<tpl if="threaded && !threadOpen && threadUnseenChildren &gt; 0">',
-					'<span data-qtip="{subject}"><u>{subject}</u></span>',
+					'<span data-qtip="{subject.tooltip}"><u>{subject.text}</u></span>',
 				'<tpl else>',
-					'<span data-qtip="{subject}">{subject}</span>',
+					'<span data-qtip="{subject.tooltip}">{subject.text}</span>',
 				'</tpl>',
-			'</div>',
-				'<tpl if="preview">',
-					'<hr>',
-					'<div class="wtmail-messagecolumn-preview">{preview}</div>',
-				'</tpl>',
-		'</div>'
+			'</div>'
 	],
 	
 	constructor: function(cfg) {
@@ -236,11 +240,12 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			threadUnseenChildren: threaded ? rec.get('threadUnseenChildren') : -1,
 			threadIndent: threaded ? rec.get('threadIndent') : -1,
 			threadIndentStyle: threaded ? me.buildThreadIndentStyle(rec.get('threadIndent')) : '',
-			highPriority: rec.get('priority')<3 ? true : false,
 			date: me.buildDate(sto, rec.get('istoday'), rec.get('fmtd'), rec.get('date')),
+			size: me.buildSize(rec.get('size')),
 			rcpt: rcpt,
 			subject: me.buildSubject(rec.get('subject')),
-			atts: rec.get('atts'),
+			highPriority: rec.get('priority') < 3 ? true : false,
+			hasAttachment: rec.get('atts'),
 			flag: me.buildFlag(rec.get('flag')),
 			tags: me.buildTags(rec.get('tags')),
 			unread: rec.get('unread') === true,
@@ -259,10 +264,6 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		return 'margin-right:' + mright + 'px;';
 	},
 	
-	buildSubject: function(subject) {
-		return Ext.isEmpty(subject) ? this.noSubjectText : subject;
-	},
-	
 	buildDate: function(store, today, fmtd, date) {
 		var me = this,
 				textFmt, tipFmt;
@@ -276,6 +277,21 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		return {
 			text: Ext.Date.format(date, textFmt),
 			tooltip: Ext.Date.format(date, tipFmt)
+		};
+	},
+	
+	buildSize: function(size) {
+		return {
+			text: Sonicle.Bytes.format(size, {decimals: 0}),
+			tooltip: Sonicle.Bytes.format(size)
+		};
+	},
+	
+	buildSubject: function(subject) {
+		var sub = Ext.isEmpty(subject) ? this.noSubjectText : subject;
+		return {
+			text: sub,
+			tooltip: sub
 		};
 	},
 	
@@ -332,6 +348,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	
 	buildTypeIcon: function(rec) {
 		var pstatus = rec.get('pecstatus');
+		//TODO: add support other message types (eg. appointment invitation)
 		switch(pstatus) {
 			case 'posta-certificata':
 				return {iconCls: 'wtmail-pec', tooltip: 'Messaggio PEC'};
