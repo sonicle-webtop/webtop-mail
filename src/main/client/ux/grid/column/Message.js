@@ -35,6 +35,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	extend: 'Ext.grid.column.Template',
 	alias: 'widget.wtmail-mailmessagecolumn',
 	uses: [
+		'Sonicle.String',
 		'Sonicle.Bytes'
 	],
 	
@@ -82,26 +83,41 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	 */
 	
 	/**
-	 * Array of flag colors
+	 * Map of flag CSS classes
 	 */
-	flagColors: {
-		red: '#f44336',
-		orange: '#ff9800',
-		green: '#4caf50',
-		blue: '#3f51b5',
-		purple: '#9c27b0',
-		yellow: '#ffc107',
-		black: '#000000',
-		gray: '#9e9e9e',
-		white: '#cccccc',
-		brown: '#795548',
-		azure: '#03a9f4',
-		pink: '#e91e63'
+	flagsCls: {
+		red: 'wtmail-flag-red',
+		orange: 'wtmail-flag-orange',
+		green: 'wtmail-flag-green',
+		blue: 'wtmail-flag-blue',
+		purple: 'wtmail-flag-purple',
+		yellow: 'wtmail-flag-yellow',
+		black: 'wtmail-flag-black',
+		gray: 'wtmail-flag-gray',
+		white: 'wtmail-flag-white',
+		brown: 'wtmail-flag-brown',
+		azure: 'wtmail-flag-azure',
+		pink: 'wtmail-flag-pink',
+		special: 'wtmail-flag-special',
+		complete: 'wtmail-flag-complete'
 	},
 	
+	/**
+	 * Map of flag glyph CSS classes
+	 */
+	flagsGlyphs: {
+		flag: 'fa fa-bookmark',
+		special: 'fa fa-star',
+		complete: 'fa fa-check'
+	},
+	
+	dateShortFormat: 'm/d/Y',
+	dateLongFormat: 'M d Y',
+	timeShortFormat: 'g:i A',
+	timeLongFormat: 'H:i:s',
+	
 	collapseTooltip: 'Click to expand/collapse discussion threads',
-	noRcptText: '[No recipient]',
-	noSubjectText: '[No subject]',
+	noSubjectText: '[no subject]',
 	flagsTexts: {
 		red: 'Red marker',
 		orange: 'Orange marker',
@@ -115,14 +131,9 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		brown: 'Brown marker',
 		azure: 'Azure marker',
 		pink: 'Pink marker',
-		completed: 'Completed',
+		complete: 'Completed',
 		special: 'Special'
 	},
-	
-	dateShortFormat: 'm/d/Y',
-	dateLongFormat: 'M d Y',
-	timeShortFormat: 'g:i A',
-	timeLongFormat: 'H:i:s',
 	
 	threadCollapseSelector: '.x-grid-group-title',
 	
@@ -152,7 +163,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				'<tpl if="headIconCls">',
 					'<div class="wtmail-messagecolumn-icon {headIconCls}" style="margin-right:4px;height:16px;"></div>',
 				'</tpl>',
-				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{rcpt.tooltip}">{rcpt.text}</span>',
+				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{address.tooltip}">{address.text}</span>',
 			'</div>',
 			'<div class="wtmail-messagecolumn-body-float">',
 				'<tpl for="tags">',
@@ -161,8 +172,17 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 					'</div>',
 				'</tpl>',
 				'<tpl if="flag">',
-					'<div class="wtmail-messagecolumn-glyph" style="color:{flag.color};" data-qtip="{flag.tooltip}">',
-						'<i class="fa fa-{flag.glyph}"></i>',
+					//'<div class="wtmail-messagecolumn-glyph" style="color:{flag.color};" data-qtip="{flag.tooltip}">',
+					//	'<i class="fa fa-{flag.glyph}"></i>',
+					//'</div>',
+					
+					'<div class="wtmail-messagecolumn-glyph {flag.colorCls}" data-qtip="{flag.tooltip}">',
+						'<i class="{flag.glyphCls}"></i>',
+					'</div>',
+				'</tpl>',
+				'<tpl if="star">',
+					'<div class="wtmail-messagecolumn-glyph {star.colorCls}" data-qtip="{star.tooltip}">',
+						'<i class="{star.glyphCls}"></i>',
 					'</div>',
 				'</tpl>',
 				'<span data-qtip="{size.tooltip}">{size.text}</span>',
@@ -224,14 +244,9 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	defaultRenderer: function(val, meta, rec, ridx, cidx, sto) {
 		var me = this,
 				threaded = me.getThreaded(),
-				data = {},
-				rcpt;
-		
-		if (me.getSentMode()) {
-			rcpt = {text: rec.get('to'), tooltip: rec.get('toemail')};
-		} else {
-			rcpt = {text: rec.get('from'), tooltip: rec.get('fromemail')};
-		}
+				addr = me.getSentMode() ? rec.get('to') : rec.get('from'),
+				addremail = me.getSentMode() ? rec.get('toemail') : rec.get('fromemail'),
+				data = {};
 		
 		Ext.apply(data, {
 			threaded: threaded,
@@ -242,11 +257,12 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			threadIndentStyle: threaded ? me.buildThreadIndentStyle(rec.get('threadIndent')) : '',
 			date: me.buildDate(sto, rec.get('istoday'), rec.get('fmtd'), rec.get('date')),
 			size: me.buildSize(rec.get('size')),
-			rcpt: rcpt,
+			address: {text: addr, tooltip: addremail},
 			subject: me.buildSubject(rec.get('subject')),
 			highPriority: rec.get('priority') < 3 ? true : false,
 			hasAttachment: rec.get('atts'),
 			flag: me.buildFlag(rec.get('flag')),
+			star: rec.get('starred') ? me.buildFlag('special') : null,
 			tags: me.buildTags(rec.get('tags')),
 			unread: rec.get('unread') === true,
 			headIconCls: me.buildStatusIcon(rec),
@@ -310,21 +326,24 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	},
 	
 	buildFlag: function(flag) {
-		var txts = this.flagsTexts;
 		if (Ext.isEmpty(flag)) return null;
-		if (flag === 'special') {
-			return {glyph: 'star', color: '#ffc107', tooltip: txts['special']};
-		} else if (flag === 'complete') {
-			return {glyph: 'check', color: 'initial', tooltip: txts['completed']};
+		var textMap = this.flagsTexts,
+				colorClsMap = this.flagsCls,
+				glyphClsMap = this.flagsGlyphs,
+				key = Sonicle.String.removeEnd(flag, '-complete'),
+				completed = Ext.String.endsWith(flag, '-complete'),
+				colorCls, glyphCls, tip;
+		
+		if (completed) {
+			glyphCls = glyphClsMap['complete'];
+			colorCls = colorClsMap[key];
+			tip = Ext.String.format('{0} ({1})', textMap[key], Sonicle.String.toLowerCase(textMap['complete']));
 		} else {
-			var k = Sonicle.String.removeEnd(flag, '-complete'),
-					co = this.flagColors[k];
-			if (Ext.String.endsWith(flag, '-complete')) {
-				return {glyph: 'check-square', color: co, tooltip: Ext.String.format('{0} ({1})', txts[k], txts['completed'].toLowerCase())};
-			} else {
-				return {glyph: 'bookmark', color: co, tooltip: txts[k]};
-			}
+			glyphCls = (['special', 'complete'].indexOf(key) !== -1) ? glyphClsMap[key] : glyphClsMap['flag'];
+			colorCls = colorClsMap[key];
+			tip = textMap[key];
 		}
+		return {glyphCls: glyphCls, colorCls: colorCls, tooltip: tip};
 	},
 	
 	buildStatusIcon: function(rec) {

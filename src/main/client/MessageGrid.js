@@ -627,7 +627,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			},
 			{
 				text: null,
-				iconCls: 'wtmail-icon-flagred-xs',
+				glyph: 'xf02e@FontAwesome',
 				menu: {
 					items: [
 						me.mys.getAct('flagred'),
@@ -2424,6 +2424,24 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				dateLongFormat: WT.getLongDateFmt(),
 				timeShortFormat: WT.getShortTimeFmt(),
 				timeLongFormat: WT.getLongTimeFmt(),
+				collapseTooltip: me.mys.res('wtmailmailmessagecolumn.collapseTooltip'),
+				noSubjectText: me.mys.res('wtmailmailmessagecolumn.nosubject'),
+				flagsTexts: {
+					red: me.mys.res('message.flag.red'),
+					orange: me.mys.res('message.flag.orange'),
+					green: me.mys.res('message.flag.green'),
+					blue: me.mys.res('message.flag.blue'),
+					purple: me.mys.res('message.flag.purple'),
+					yellow: me.mys.res('message.flag.yellow'),
+					black: me.mys.res('message.flag.black'),
+					gray: me.mys.res('message.flag.gray'),
+					white: me.mys.res('message.flag.white'),
+					brown: me.mys.res('message.flag.brown'),
+					azure: me.mys.res('message.flag.azure'),
+					pink: me.mys.res('message.flag.pink'),
+					complete: me.mys.res('message.flag.complete'),
+					special: me.mys.res('message.flag.special')
+				},
 				collapseHandler: function(view, ridx) {
 					me.mys.messagesPanel.folderList.collapseClicked(ridx);
 				},

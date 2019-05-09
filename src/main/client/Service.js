@@ -609,20 +609,20 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.addAct("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi', enableToggle: true });
 		
 		
-        me.addAct("special",{ handler: me.gridAction(me,'Flag','special') });
-        me.addAct("flagred",{ handler: me.gridAction(me,'Flag','red')});
-        me.addAct("flagblue",{ handler: me.gridAction(me,'Flag','blue')});
-        me.addAct("flagyellow",{ handler: me.gridAction(me,'Flag','yellow')});
-        me.addAct("flaggreen",{ handler: me.gridAction(me,'Flag','green')});
-        me.addAct("flagorange",{ handler: me.gridAction(me,'Flag','orange')});
-        me.addAct("flagpurple",{ handler: me.gridAction(me,'Flag','purple')});
-        me.addAct("flagblack",{ handler: me.gridAction(me,'Flag','black')});
-        me.addAct("flaggray",{ handler: me.gridAction(me,'Flag','gray')});
-        me.addAct("flagwhite",{ handler: me.gridAction(me,'Flag','white')});
-        me.addAct("flagbrown",{ handler: me.gridAction(me,'Flag','brown')});
-        me.addAct("flagazure",{ handler: me.gridAction(me,'Flag','azure')});
-        me.addAct("flagpink",{ handler: me.gridAction(me,'Flag','pink')});
-        me.addAct("flagcomplete",{ handler: me.gridAction(me,'Flag','complete')});
+        me.addAct("special",{ text: me.res('message.flag.special'), glyph: 'xf005@FontAwesome', iconCls: 'wtmail-flag-special', handler: me.gridAction(me,'Flag','special') });
+        me.addAct("flagred",{ text: me.res('message.flag.red'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-red', handler: me.gridAction(me,'Flag','red')});
+        me.addAct("flagblue",{ text: me.res('message.flag.blue'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-blue', handler: me.gridAction(me,'Flag','blue')});
+        me.addAct("flagyellow",{ text: me.res('message.flag.yellow'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-yellow', handler: me.gridAction(me,'Flag','yellow')});
+        me.addAct("flaggreen",{ text: me.res('message.flag.green'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-green', handler: me.gridAction(me,'Flag','green')});
+        me.addAct("flagorange",{ text: me.res('message.flag.orange'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-orange', handler: me.gridAction(me,'Flag','orange')});
+        me.addAct("flagpurple",{ text: me.res('message.flag.purple'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-purple', handler: me.gridAction(me,'Flag','purple')});
+        me.addAct("flagblack",{ text: me.res('message.flag.black'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-black', handler: me.gridAction(me,'Flag','black')});
+        me.addAct("flaggray",{ text: me.res('message.flag.gray'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-gray', handler: me.gridAction(me,'Flag','gray')});
+        me.addAct("flagwhite",{ text: me.res('message.flag.white'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-white', handler: me.gridAction(me,'Flag','white')});
+        me.addAct("flagbrown",{ text: me.res('message.flag.brown'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-brown', handler: me.gridAction(me,'Flag','brown')});
+        me.addAct("flagazure",{ text: me.res('message.flag.azure'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-azure', handler: me.gridAction(me,'Flag','azure')});
+        me.addAct("flagpink",{ text: me.res('message.flag.pink'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-pink', handler: me.gridAction(me,'Flag','pink')});
+        me.addAct("flagcomplete",{ text: me.res('message.flag.complete'), glyph: 'xf00c@FontAwesome', iconCls: 'wtmail-flag-complete', handler: me.gridAction(me,'Flag','complete')});
         me.addAct("clear",{ handler: me.gridAction(me,'Flag','clear'), iconCls: '' });
 		
         //me.addAct("newtag",{ handler: me.gridAction(me,'NewTag') });

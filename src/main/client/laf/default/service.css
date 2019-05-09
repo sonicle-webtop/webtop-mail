@@ -117,6 +117,21 @@
 .wtmail-row-body { max-height: 30; color: gray }
 .wtmail-row-body-hidden { display: none; }
 
+.wtmail-flag-red { color: #f44336; opacity: 1 !important; }
+.wtmail-flag-orange { color: #ff9800; opacity: 1 !important; }
+.wtmail-flag-green { color: #4caf50; opacity: 1 !important; }
+.wtmail-flag-blue { color: #3f51b5; opacity: 1 !important; }
+.wtmail-flag-purple { color: #9c27b0; opacity: 1 !important; }
+.wtmail-flag-yellow { color: #ffc107; opacity: 1 !important; }
+.wtmail-flag-black { color: #000000; opacity: 1 !important; }
+.wtmail-flag-gray { color: #9e9e9e; opacity: 1 !important; }
+.wtmail-flag-white { color: #cccccc; opacity: 1 !important; }
+.wtmail-flag-brown { color: #795548; opacity: 1 !important; }
+.wtmail-flag-azure { color: #03a9f4; opacity: 1 !important; }
+.wtmail-flag-pink { color: #e91e63; opacity: 1 !important; }
+.wtmail-flag-special { color: #ffc107; opacity: 1 !important; }
+.wtmail-flag-complete { color: initial;}
+
 .wtmail-pec { background-image: url('pec_16.svg') !important; background-size: contain; }
 .wtmail-pec-accepted { background-image: url('pec-accepted_16.svg') !important; background-size: contain; }
 .wtmail-pec-not-accepted { background-image: url('pec-notaccepted_16.svg') !important; background-size: contain; }
