@@ -169,6 +169,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			pageSize: 50,//me.pageSize,
 			mys: me.mys,
 			mp: me,
+			currentAccount: me.currentAccount,
 			compactView: compactView,
 			breadcrumb: me.bcFolders,
 			createPagingToolbar: true,
