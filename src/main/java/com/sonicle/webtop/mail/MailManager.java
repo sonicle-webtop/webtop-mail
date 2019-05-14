@@ -90,11 +90,11 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMultipart;
+import javax.mail.search.SearchTerm;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.format.DateTimeFormatter;
@@ -711,12 +711,12 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	public void updateFoldersTag(String oldTagId , String newTagId, Collection<FolderCache> folders){
+	public void updateFoldersTag(String oldTagId , String newTagId, Collection<FolderCache> folders, SearchTerm searchTerm){
 		
 		for(FolderCache fc: folders){
 			Message msgs[] = null;
 			try {
-				msgs = fc.getMessages(null,oldTagId,"flag",FolderCache.SORT_BY_DATE,false,true,-1,true,false);
+				msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, true, false, searchTerm);
 				long[] uid = new long[msgs.length];
 				for (int i=0;i<msgs.length;i++) {
 					uid[i]=fc.getUID(msgs[i]);

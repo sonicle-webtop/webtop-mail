@@ -41,6 +41,7 @@ import com.sun.mail.imap.IMAPFolder;
 import java.util.ArrayList;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
+import javax.mail.search.SearchTerm;
 
 /**
  *
@@ -50,8 +51,6 @@ public class PortletSearchThread extends Thread {
 
     private static final int MAXRESULTS=500;
 	
-	private final String patterns;
-	private final String searchfields;
 	private final ArrayList<String> folderIds;
 	
 	private boolean cancel=false;
@@ -61,16 +60,16 @@ public class PortletSearchThread extends Thread {
     private int progress=0;
     private FolderCache curfolder;
 	private JsPortletSearchResult psr=new JsPortletSearchResult();
+	private SearchTerm searchTerm;
 
     private final Service ms;
 	private MailAccount account;
 	
-    public PortletSearchThread(Service ms, MailAccount account, String patterns, String searchfields, ArrayList<String> folderIds) throws MessagingException {
-        this.ms=ms;
-		this.account=account;
-		this.patterns=patterns;
-		this.folderIds=folderIds;
-		this.searchfields=searchfields;
+    public PortletSearchThread(Service ms, MailAccount account, ArrayList<String> folderIds, SearchTerm searchTerm) throws MessagingException {
+        this.ms = ms;
+		this.account = account;
+		this.folderIds = folderIds;
+		this.searchTerm = searchTerm;
     }
 
     public void cancel() {
@@ -111,7 +110,7 @@ public class PortletSearchThread extends Thread {
 				Message msgs[]=null;
 				//some folders (e.g. NS7 Public) may not allow search
 				try {
-					msgs=fc.getMessages(null, patterns, searchfields, FolderCache.SORT_BY_DATE, false, true, -1, true, false);
+					msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, true, false, searchTerm);
 				} catch(MessagingException mexc) {
 				}
                 

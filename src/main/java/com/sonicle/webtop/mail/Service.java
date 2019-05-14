@@ -97,7 +97,6 @@ import com.sonicle.webtop.mail.bol.OScan;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.js.JsAttachment;
 import com.sonicle.webtop.mail.bol.js.JsContactData;
-import com.sonicle.webtop.mail.bol.js.JsFilter;
 import com.sonicle.webtop.mail.bol.js.JsFolder;
 import com.sonicle.webtop.mail.bol.js.JsInMailFilters;
 import com.sonicle.webtop.mail.bol.js.JsMailAutosave;
@@ -168,6 +167,12 @@ import org.apache.http.client.HttpClient;
 import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTimeZone;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
+import com.sonicle.commons.web.ParameterException;
+import com.sonicle.commons.web.json.bean.QueryObj;
+import com.sonicle.webtop.mail.bol.model.ImapQuery;
+import javax.mail.search.AndTerm;
+import javax.mail.search.OrTerm;
+import javax.mail.search.SearchTerm;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -3203,17 +3208,7 @@ public class Service extends BaseService {
 	String[] getMessageUIDs(FolderCache mcache,HttpServletRequest request) throws MessagingException, IOException {
 		String psortfield = request.getParameter("sort");
 		String psortdir = request.getParameter("dir");
-		String pquickfilter=request.getParameter("quickfilter");
-		String psearchfield = request.getParameter("searchfield");
-		String ppattern = request.getParameter("pattern");
 		String pthreaded=null; //request.getParameter("threaded");
-		if (pquickfilter!=null && pquickfilter.trim().length()==0) pquickfilter=null;
-		if (psearchfield != null && psearchfield.trim().length() == 0) {
-			psearchfield = null;
-		}
-		if (ppattern != null && ppattern.trim().length() == 0) {
-			ppattern = null;
-		}
 		if (psortfield == null) {
 			psortfield = "date";
 		}
@@ -3271,7 +3266,7 @@ public class Service extends BaseService {
 			sort_group = MessageComparator.SORT_BY_FLAG;
 		}
 		
-		Message msgs[]=mcache.getMessages(pquickfilter,ppattern,psearchfield,sortby,ascending,false,sort_group,groupascending,threaded);
+		Message msgs[] = mcache.getMessages(sortby, ascending, false, sort_group, groupascending, threaded, null);
 		ArrayList<String> aids = new ArrayList<String>();
 		for (Message m : msgs) {
 			aids.add(""+mcache.getUID(m));
@@ -5441,7 +5436,7 @@ public class Service extends BaseService {
 			if (query == null) {
 				String folderId = account.getInboxFolderFullName();
 				FolderCache fc=account.getFolderCache(folderId);
-				Message msgs[]=fc.getMessages("unread","","",FolderCache.SORT_BY_DATE,false,true,-1,true,false);
+				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, null);
 				fc.fetch(msgs, getMessageFetchProfile(),0,50);
 				for (Message msg: msgs) {
 					SonicleIMAPMessage simsg=(SonicleIMAPMessage)msg;
@@ -5566,7 +5561,7 @@ public class Service extends BaseService {
 				String oldTagId=tag.getTagId();
 			    newTagId=mailManager.sanitazeTagId(newTagId);				
 				mailManager.updateTag(tag,newTagId);
-				mailManager.updateFoldersTag(oldTagId,newTagId,account.getFolderCacheValues());
+				mailManager.updateFoldersTag(oldTagId, newTagId, account.getFolderCacheValues(), null);
 				loadTags();
 				
 				items=new ArrayList<>();
@@ -5786,7 +5781,7 @@ public class Service extends BaseService {
 		}*/
 	}
 	
-	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, String pattern, String searchfield, SortGroupInfo sgi, String pquickfilter, long timestamp) throws MessagingException {
+	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, SortGroupInfo sgi, long timestamp, SearchTerm searchTerm) throws MessagingException {
 		MessageListThread mlt = null;
 		synchronized(mlThreads) {
 			mlt = mlThreads.get(key);
@@ -5795,7 +5790,7 @@ public class Service extends BaseService {
 				//	System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
 				//else
 				//	System.out.println(page+": mlt not found");
-				mlt = new MessageListThread(mcache,pquickfilter,pattern,searchfield,sgi.sortby,sgi.sortascending,refresh,sgi.sortgroup,sgi.groupascending,sgi.threaded);
+				mlt = new MessageListThread(mcache, sgi.sortby, sgi.sortascending, refresh, sgi.sortgroup, sgi.groupascending, sgi.threaded, searchTerm);
 				mlt.lastRequest = timestamp;
 				mlThreads.put(key, mlt);
 			}
@@ -5918,13 +5913,6 @@ public class Service extends BaseService {
 		return new SortGroupInfo(sortby,psortdir.equals("ASC"),sortgroup,groupascending,threaded);
 	}
 	
-	public void processSearchFilterChanged(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String searchFilter=request.getParameter("newFilter");
-		String folder=request.getParameter("folder");
-		us.setMessageSearchFilter(folder, searchFilter);
-		new JsonResult(true).printTo(out);
-	}
-	
 	public void processListMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		CoreManager core = WT.getCoreManager();
 		UserProfile profile = environment.getProfile();
@@ -5937,18 +5925,22 @@ public class Service extends BaseService {
 		String pstart = request.getParameter("start");
 		String plimit = request.getParameter("limit");
 		String ppage = request.getParameter("page");
-		String ppattern = request.getParameter("pattern");
-		String pquickfilter=request.getParameter("quickfilter");
 		String prefresh = request.getParameter("refresh");
 		String ptimestamp = request.getParameter("timestamp");
         String pthreaded=request.getParameter("threaded");
 		String pthreadaction=request.getParameter("threadaction");
 		String pthreadactionuid=request.getParameter("threadactionuid");
-
-		if (ppattern != null && ppattern.trim().length() == 0) {
-			ppattern = null;
+		
+		QueryObj queryObj = null;
+		SearchTerm searchTerm = null;	
+	try {
+			queryObj = ServletUtils.getObjectParameter(request, "query", new QueryObj(), QueryObj.class);
 		}
-		if (pquickfilter!=null && pquickfilter.trim().length()==0) pquickfilter=null;
+		
+		catch(ParameterException parameterException) {
+				logger.error("Exception getting query obejct parameter", parameterException);
+		}
+		
 		boolean refresh = (prefresh != null && prefresh.equals("true"));
 		//boolean threaded=(pthreaded!=null && pthreaded.equals("1"));
 		
@@ -5971,7 +5963,6 @@ public class Service extends BaseService {
 			group = "";
 		}
 		
-		String psearchfield = us.getMessageSearchFilter(pfoldername);
 
 		String psortfield = "date";
 		String psortdir = "DESC";
@@ -6005,38 +5996,6 @@ public class Service extends BaseService {
 		SortGroupInfo sgi=getSortGroupInfo(psortfield,psortdir,group);
 		
 		//Save search requests
-		if (psearchfield != null && psearchfield.trim().length() > 0 && ppattern != null && ppattern.trim().length() > 0) {
-			// TODO: save filter!!!!
-			//wts.setServiceStoreEntry(getName(), "filter"+psearchfield, ppattern.toUpperCase(),ppattern);
-		}
-		
-		//Check for multiple filters
-		try {
-			JsFilter.List filterList=ServletUtils.getObjectParameter(request,"filter",JsFilter.List.class,false);
-			if (filterList!=null) {
-				psearchfield="";
-				ppattern="";
-				boolean first=true;
-				for(JsFilter filter: filterList) {
-					if (!first) {
-						psearchfield+="|";
-						ppattern+="|";
-					}
-					if (filter.property.equals("unread")) {
-						psearchfield+="status";
-						ppattern+=filter.value.equals("true")?"unread":"read";
-					} else if (filter.property.equals("atts")) {
-						pquickfilter="attachment";
-					} else {
-						psearchfield+=filter.property;
-						ppattern+=filter.value;
-					}
-					first=false;
-				}
-			}
-		} catch(Exception exc) {
-			logger.error("Excetpion",exc);
-		}
 		
 		int start=Integer.parseInt(pstart);
 		int limit=Integer.parseInt(plimit);
@@ -6097,17 +6056,12 @@ public class Service extends BaseService {
 			FolderCache mcache = account.getFolderCache(key);
 			if (mcache.toBeRefreshed()) refresh=true;
 			//Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,refresh);
-			if (ppattern != null && psearchfield != null) {
-				key += "|" + ppattern + "|" + psearchfield;
-			}
 			if (psortfield !=null && psortdir != null) {
 				key += "|" + psortdir + "|" + psortfield;
 			}
-			if (pquickfilter !=null) {
-				key +="|" + pquickfilter;
-			}
 			
-			MessagesInfo messagesInfo=listMessages(mcache,key,refresh,ppattern,psearchfield,sgi,pquickfilter,timestamp);
+			searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, this.atags, queryObj, profile.getTimeZone());
+			MessagesInfo messagesInfo=listMessages(mcache, key, refresh, sgi, timestamp, searchTerm);
             Message xmsgs[]=messagesInfo.messages;
 			
 			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
@@ -6310,7 +6264,7 @@ public class Service extends BaseService {
 
 						//Unread
 						boolean unread=!xm.isSet(Flags.Flag.SEEN);
-						if (ppattern==null && unread) ++funread;
+						if (queryObj != null && unread) ++funread;
 						//Priority
 						int priority=getPriority(xm);
 						//Status
@@ -6555,8 +6509,7 @@ public class Service extends BaseService {
 						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
 						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
                         + "  threaded: "+sgi.threaded+",\n"
-						+ "  groupField: '" + (sgi.threaded?"threadId":group) + "',\n"
-						+ "  searchFilter: '" + psearchfield + "',\n";
+						+ "  groupField: '" + (sgi.threaded?"threadId":group) + "',\n";
 				
 /*				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
 				ColumnsOrderSetting cos = us.getColumnsOrderSetting();
@@ -6671,7 +6624,7 @@ public class Service extends BaseService {
 //				key +="|" + pquickfilter;
 //			}
 			
-			MessagesInfo messagesInfo=listMessages(mcache,key,refresh,null,null,sgi,null,0);
+			MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, 0, null);
             Message xmsgs[]=messagesInfo.messages;
 			if (xmsgs!=null) {
 				boolean found=false;
@@ -6760,7 +6713,6 @@ public class Service extends BaseService {
 	class MessageListThread implements Runnable {
 		
 		FolderCache fc;
-		String quickfilter;
 		String pattern;
 		String searchfield;
 		int sortby;
@@ -6769,6 +6721,7 @@ public class Service extends BaseService {
 		boolean groupascending;
 		boolean refresh;
 		long millis;
+		SearchTerm searchTerm;
 		
 		boolean isPec=false;
 		HashMap<String,Message> hpecsent=null;
@@ -6781,17 +6734,15 @@ public class Service extends BaseService {
 		final Object lock = new Object();
 		long lastRequest = 0;
 		
-		MessageListThread(FolderCache fc, String quickfilter, String pattern, String searchfield, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded) {
+		MessageListThread(FolderCache fc, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm) {
 			this.fc = fc;
-			this.quickfilter=quickfilter;
-			this.pattern = pattern;
-			this.searchfield = searchfield;
 			this.sortby = sortby;
 			this.ascending = ascending;
 			this.refresh = refresh;
 			this.sort_group = sort_group;
 			this.groupascending = groupascending;
 			this.threaded=threaded;
+			this.searchTerm = searchTerm;
 		}
 		
 		public void run() {
@@ -6800,7 +6751,7 @@ public class Service extends BaseService {
 			synchronized (lock) {
 				try {
 					this.millis = System.currentTimeMillis();
-					msgs=fc.getMessages(quickfilter,pattern,searchfield,sortby,ascending,refresh, sort_group, groupascending,threaded);
+					msgs = fc.getMessages(sortby, ascending, refresh, sort_group, groupascending, threaded, searchTerm);
 					
 					/*
 					UserProfileId profileId=getEnv().getProfileId();
@@ -8086,6 +8037,7 @@ public class Service extends BaseService {
 			if (sst!=null && sst.isRunning())
 				sst.cancel();
 			
+			UserProfile profile = environment.getProfile();
 			MailAccount account=getAccount(request);
 			String pattern=ServletUtils.getStringParameter(request, "pattern", true);
 			String folder=ServletUtils.getStringParameter(request, "folder", false);
@@ -8102,6 +8054,9 @@ public class Service extends BaseService {
 			ArrayList<String> isnotfolderfilters=ServletUtils.getStringParameters(request, "isnotfolderfilters");
 			Set<String> _folderIds=account.getFolderCacheKeys();
 			
+			ArrayList<SearchTerm> terms = new ArrayList<>();
+			SearchTerm searchTerm = null;
+				
 			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
 			Collections.sort(folderIds);
@@ -8131,9 +8086,20 @@ public class Service extends BaseService {
 				if (!skip) folderIds.add(folderId);
 			}
 			
-			sst=new SmartSearchThread(this,account,pattern,folderIds,fromme,tome,attachments,
-				ispersonfilters,isnotpersonfilters,isfolderfilters,isnotfolderfilters,
-				year,month,day);
+			terms.add(new OrTerm(ImapQuery.toAnySearchTerm(pattern)));
+			int n = terms.size();
+			
+			if(n == 1)
+				searchTerm = terms.get(0);
+			else if (n>1) {
+				SearchTerm vterms[] = new SearchTerm[n];
+					terms.toArray(vterms);
+					searchTerm = new AndTerm(vterms);
+			}
+			
+			sst = new SmartSearchThread(this ,account, folderIds, fromme, tome, attachments,
+				ispersonfilters, isnotpersonfilters, isfolderfilters, isnotfolderfilters,
+				year, month, day, searchTerm);
 			sst.start();
 			new JsonResult().printTo(out);
 		} catch (Exception exc) {
@@ -8160,24 +8126,19 @@ public class Service extends BaseService {
 	
 	public void processPortletRunSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
+			UserProfile profile = environment.getProfile();
 			boolean trash=false;
 			boolean spam=false;
+			ArrayList<SearchTerm> terms = new ArrayList<SearchTerm>();
+			SearchTerm searchTerm = null;	
 			
 			if (pst!=null && pst.isRunning())
 				pst.cancel();
 			
 			MailAccount account=getAccount(request);
-			String pattern=ServletUtils.getStringParameter(request, "pattern", true);
-			String[] tokens = StringUtils.split(pattern, " ");
-			String patterns = "";
-			String searchfields = "";
-			boolean first=true;
-			for(String token : tokens) {
-				if (!first) { patterns+="|"; searchfields+="|"; }
-				patterns += token;
-				searchfields += "any";
-				first=false;
-			}
+			
+			String pattern = ServletUtils.getStringParameter(request, "pattern", true);
+			
 			Set<String> _folderIds=account.getFolderCacheKeys();
 			
 			//sort folders, placing first interesting ones
@@ -8195,7 +8156,17 @@ public class Service extends BaseService {
 				folderIds.add(folderId);
 			}
 			
-			pst=new PortletSearchThread(this,account,patterns,searchfields,folderIds);
+			terms.add(new OrTerm(ImapQuery.toAnySearchTerm(pattern)));
+			int n = terms.size();
+			
+			if(n == 1)
+				searchTerm = terms.get(0);
+			else if (n>1) {
+				SearchTerm vterms[] = new SearchTerm[n];
+					terms.toArray(vterms);
+					searchTerm = new AndTerm(vterms);
+			}
+			pst = new PortletSearchThread(this, account, folderIds, searchTerm);
 			pst.start();
 			new JsonResult().printTo(out);
 		} catch (Exception exc) {

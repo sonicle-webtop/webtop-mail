@@ -35,15 +35,14 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.MailUtils;
-import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
 import com.sun.mail.imap.IMAPFolder;
 import java.text.DateFormatSymbols;
 import java.util.ArrayList;
-import java.util.Set;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
+import javax.mail.search.SearchTerm;
 
 /**
  *
@@ -53,7 +52,6 @@ public class SmartSearchThread extends Thread {
 
     private static final int MAXRESULTS=500;
 	
-	private final String pattern;
 	private final ArrayList<String> folderIds;
 	private final boolean fromme;
 	private final boolean tome;
@@ -65,6 +63,7 @@ public class SmartSearchThread extends Thread {
 	private final int year;
 	private final int month;
 	private final int day;
+	private SearchTerm searchTerm;
 	
 	private boolean cancel=false;
     private boolean finished=false;
@@ -77,14 +76,14 @@ public class SmartSearchThread extends Thread {
     private final Service ms;
 	private MailAccount account;
 	
-    public SmartSearchThread(Service ms, MailAccount account, String pattern, ArrayList<String> folderIds, 
+    public SmartSearchThread(Service ms, MailAccount account, ArrayList<String> folderIds, 
 			boolean fromme, boolean tome, boolean attachments,
 			ArrayList<String> ispersonfilters, ArrayList<String> isnotpersonfilters,
 			ArrayList<String> isfolderfilters, ArrayList<String> isnotfolderfilters,
-			int year, int month, int day) throws MessagingException {
+			int year, int month, int day, SearchTerm searchTerm) throws MessagingException {
         this.ms=ms;
 		this.account=account;
-		this.pattern=pattern;
+		this.searchTerm = searchTerm;
 		this.folderIds=folderIds;
 		this.fromme=fromme;
 		this.tome=tome;
@@ -136,23 +135,11 @@ public class SmartSearchThread extends Thread {
                     break;
                 }
 				
-				String searchfields="any";
-				String patterns=pattern;
-				if (month>0) {
-					String smonth=(new DateFormatSymbols(ms.getEnv().getProfile().getLocale()).getMonths()[month-1]).substring(0,3).toLowerCase();
-					patterns+="|"+smonth+" "+year;
-					searchfields+="|date";
-				}
-				else if (year>0) {
-					patterns+="|"+year;
-					searchfields+="|date";
-				}
-				
                 Service.logger.info("SMART SEARCH IN "+fc.getFolderName());
 				Message msgs[]=null;
 				//some folders (e.g. NS7 Public) may not allow search
 				try {
-					msgs=fc.getMessages("any", patterns, searchfields, FolderCache.SORT_BY_DATE, false, true, -1, false, false);
+					msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, false, false, searchTerm);
 				} catch(MessagingException mexc) {
 				}
                 

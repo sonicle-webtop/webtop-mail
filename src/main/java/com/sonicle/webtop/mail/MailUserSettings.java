@@ -41,7 +41,6 @@ import com.sonicle.webtop.core.sdk.UserProfileId;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 /**
  *
@@ -129,14 +128,6 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public boolean setMessageListGroup(String foldername, String group) {
 		return setString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),group);
-	}
-	
-	public String getMessageSearchFilter(String folderName) {
-		return getString(MessageFormat.format(MESSAGE_SEARCH_FIELD, folderName), "subject");
-	}
-	
-	public boolean setMessageSearchFilter(String folderName, String searchFilter) {
-		return setString(MessageFormat.format(MESSAGE_SEARCH_FIELD, folderName), searchFilter);
 	}
 	
 	public int getColumnSize(String name) {

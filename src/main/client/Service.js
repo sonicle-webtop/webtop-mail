@@ -985,11 +985,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.setActDisabled('spam',(folderid===me.getFolderSpam()));
 		me.currentAccount=acct;
         me.currentFolder=folderid;
-		//TODO: clear filter textfield
-        mp.filterTextField.setValue('');
-		mp.quickFilterCombo.setValue('any');
-        
-		var params={start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2};
+		
+		var params,
+		 keepFilters = mp.keepFilterButton.getValue();
+		
+		if(keepFilters)
+			params={start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2};
+		else {
+			mp.searchComponent.setValue('');
+			params = {start:0,limit:mp.getPageSize(),refresh:refresh,quickfilter:'any',threaded:2, query:'{"allText":"","conditions":[]}'};
+		}
+		
         mp.reloadFolder(acct,folderid,params,uid,rid,page,tid);
 		mp.messageView.createEmptyItem();
 	}, 
@@ -1311,10 +1317,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	runSmartSearch: function() {
-		var me=this,
-			pattern=me.messagesPanel.filterTextField.getValue(),
-			acct=me.messagesPanel.currentAccount?me.messagesPanel.currentAccount:me.imapTree.acct,
-			vw=WT.createView(me.ID,'view.SmartSearchDialog',{
+		var me = this,
+			pattern = me.messagesPanel.searchComponent.getValue(),
+			acct = me.messagesPanel.currentAccount ? me.messagesPanel.currentAccount : me.imapTree.acct,
+			vw = WT.createView(me.ID, 'view.SmartSearchDialog', {
 				viewCfg: {
 					mys: me,
 					acct: acct,
