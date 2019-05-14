@@ -130,7 +130,7 @@ public class JsContactData {
 		otherCity = contact.getOtherCity();
 		otherState = contact.getOtherState();
 		otherCountry = contact.getOtherCountry();
-		company = contact.getCompany();
+		company = contact.hasCompany() ? contact.getCompany().getIdOrValue() : null;
 		function = contact.getFunction();
 		department = contact.getDepartment();
 		manager = contact.getManager();
