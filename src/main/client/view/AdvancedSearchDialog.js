@@ -119,12 +119,12 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 				' ',
 				me.searchProgress=Ext.create('Ext.form.Label',{ width: 200, hidden: true, text: '0%' }),
 				'->',
-				Ext.create('Ext.Button',{ 
+				/*Ext.create('Ext.Button',{ 
 					width: 100, 
 					text: me.res('advsearch-savesearchfolder'), 
 					disabled: true
 				}),
-				' ',
+				' ',*/
 				Ext.create('Ext.Button',{
 					width: 100, 
 					text: WT.res('act-close.lbl'), 
@@ -259,6 +259,9 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 			})
 		);
 		me.messageGrid=Ext.create('Sonicle.webtop.mail.MessageGrid',{
+			currentAccount: me.acct,
+			compactView: me.compactView,
+			showToolbar: false,
 			useNormalStore: true,
 			region:'center',
 			multifolder: true,
@@ -268,7 +271,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 			pageSize: 50,
 			mys: me.mys
 		});
-		me.messageGrid.setCurrentAccount(me.acct);
+		//me.messageGrid.setCurrentAccount(me.acct);
 		me.add(me.messageGrid);
 		
 		if (me.gridMenu) {

@@ -1004,7 +1004,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			tree=me.acctTrees[pl.accountid],
 			node=tree.getStore().getById(pl.foldername);
 
-		console.log("unread changed : "+pl.accountid+" - "+pl.foldername);
+		//console.log("unread changed : "+pl.accountid+" - "+pl.foldername);
 		if (node) {
 			var folder=node.get("folder");
 			var oldunread=node.get("unread");
@@ -1294,6 +1294,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			viewCfg: {
 				mys: me,
 				acct: acct,
+				compactView: me.getVar("viewMode")==="compact",
 				gridMenu: me.getRef('cxmGrid'),
 				folder: fn.get("id"),
 				folderText: fn.get("text"),

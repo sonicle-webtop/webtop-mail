@@ -375,6 +375,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	readonly: false,
     bMultiSearch: null,
 	openThreads: {},
+	showToolbar: true,
 	
     /**
      * @event keydelete
@@ -426,6 +427,17 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					]
 				});		
 		}
+	},
+	
+	constructor: function(cfg) {
+		var me = this;
+		
+		Ext.apply(cfg,{
+			hideHeaders: cfg.compactView
+		});
+
+		me.callParent([cfg]);
+		
 	},
 	
     initComponent: function() {
@@ -672,7 +684,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				iconCls: 'wt-icon-sort',
 				tooltip: me.res('sortgroup.tip'),
 				menu: {
-					
+
 					items: [
 						{
 							xtype: 'somenuheader',
@@ -734,7 +746,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							inputValue: 'priority',
 							handler: function() { me.store.sort('priority','ASC'); }
 						},
-						
+
 						'-',
 						{ 
 							xtype: 'menucheckitem',
@@ -762,9 +774,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								s.sort(sf,'DESC'); 
 							}
 						},
-						
+
 						'-',
-						
+
 						{
 							xtype: 'somenuheader',
 							text: 'Raggruppamento'
@@ -813,17 +825,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				}
 			}
 		);
-		
-		me.addDocked({
-			xtype: 'toolbar',
-			dock: 'top',
-			border: false,
-			referenceHolder: true,
-			bodyStyle: {
-				borderTopColor: 'transparent'
-			},
-			items: tbitems
-		});
+
+		if (me.showToolbar) {
+			me.addDocked({
+				xtype: 'toolbar',
+				dock: 'top',
+				border: false,
+				referenceHolder: true,
+				bodyStyle: {
+					borderTopColor: 'transparent'
+				},
+				items: tbitems
+			});			
+		}
     },
 	
     depressMultiSearchButton: function() {
@@ -1081,7 +1095,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			var tba=me.getDockedItems('toolbar[dock="top"]');
 			var tb=tba.length>0? tba[0]:null;
 			if (tb) {
-				var gf=json.metaData.groupField;
+				var gf=json.metaData?json.metaData.groupField:null;
 				if (!gf || gf==='') gf='none';
 				var itm=tb.lookupReference('itmgmg'+gf);
 				if (itm) itm.setChecked(true);
@@ -2402,6 +2416,28 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				filter: { }
 			});
 			
+			if (me.multifolder) {
+				dcols[n++]=Ext.create({//Folder
+					xtype: 'gridcolumn',
+					header: '',
+					width: 100,
+					sortable: true,
+					dataIndex: 'folder',
+					stateId: 'stid-folder',
+					hidden: true,
+					filter: { xtype: 'textfield'}
+				});
+				dcols[n++]=Ext.create({//Folder Descripion
+					xtype: 'gridcolumn',
+					header: me.res("column-folder"),
+					width: 150,
+					sortable: true,
+					dataIndex: 'folderdesc',
+					stateId: 'stid-folderdesc',
+					hidden: false,
+					filter: { xtype: 'textfield'}
+				});
+			}
 			dcols[n++]={
 				xtype: 'soavatarcolumn',
 				sortable: false,
@@ -2447,9 +2483,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				},
 				flex: 1
 			};
-			me.setHideHeaders(true);
+			//me.setHideHeaders(true);
 		} else {
-			me.setHideHeaders(false);
+			//me.setHideHeaders(false);
 			Ext.each(state.columns,function(scol) {
 
 				switch(scol.id) {
