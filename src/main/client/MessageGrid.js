@@ -320,7 +320,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		'Sonicle.data.BufferedStore',
 		'Sonicle.selection.RowModel',
 		'Sonicle.webtop.mail.plugin.MessageGridViewDragDrop',
-		'Sonicle.plugin.FilterBar',
 		'Sonicle.form.field.IconComboBox',
 		'Sonicle.grid.column.Bytes',
 		'Sonicle.webtop.mail.ux.grid.column.Message'
@@ -331,13 +330,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
 	compactView: true,
 	enableColumnMove: true,
-	plugins: [
-		{
-			ptype: 'sofilterbar',
-			pluginId: 'gridfilterbar',
-			hidden: true
-		}
-	],
 		
 	features: [
 		{
@@ -373,7 +365,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	createPagingToolbar: false,
 	threaded: false,
 	readonly: false,
-    bMultiSearch: null,
 	openThreads: {},
 	showToolbar: true,
 	
@@ -663,20 +654,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			},
 			'-'
 		];
-		if (!me.compactView) {
-			tbitems.push(me.bMultiSearch=me.mys._TB("multisearch",null,'small'));
-			me.on('showfilterbar',function() {
-				if (!me.bMultiSearch.pressed) {
-					me.bMultiSearch.toggle();
-				}
-			});
-
-			me.on('hidefilterbar',function() {
-				if (me.bMultiSearch.pressed) {
-					me.bMultiSearch.toggle();
-				}
-			});
-		}
 		
 		tbitems.push(			
 			{
@@ -840,23 +817,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
     },
 	
-    depressMultiSearchButton: function() {
-		var me=this;
-        if (me.bMultiSearch && me.bMultiSearch.pressed) {
-            me.bMultiSearch.toggle();
-            me.hideFilterBar();
-        }
-    },
-    
-    actionMultiSearch: function() {
-		var me=this;
-        if (me.bMultiSearch.pressed) me.showFilterBar();
-        else {
-			me.clearFilterBar();
-			me.hideFilterBar();
-		}
-    },
-
 	setCurrentAccount: function(acct) {
 		var me=this,
 			plugin=me.getView().getPlugin("messagegridviewdragdrop");
@@ -958,7 +918,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.setCurrentAccount(acct);
 		me.currentFolder = folder_id;
 		me.initFolderState(!WT.plTags.desktop);
-		//me.hideFilterBar();
 		me.getStore().clearFilter(true);
 		if (uid) {
 			me.autoselectUid=uid;
@@ -2332,23 +2291,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				}
 			}
 		});					
-	},
-	
-	showFilterBar: function() {
-		var me=this;
-		me.getPlugin('gridfilterbar').setHidden(false);
-		me.fireEvent('showfilterbar', me);
-	},
-	
-	hideFilterBar: function() {
-		var me=this;
-		me.getPlugin('gridfilterbar').setHidden(true);
-		me.fireEvent('hidefilterbar', me);
-	},
-	
-	clearFilterBar: function() {
-		this.getPlugin('gridfilterbar').clearFilterFields();
-		this.getStore().clearFilter();
 	},
 	
 	indexOfMessage: function(id) {

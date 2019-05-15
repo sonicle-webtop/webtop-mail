@@ -161,10 +161,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		});
 		
 		me.keepFilterButton = Ext.create({
-			 xtype: 'checkbox',
-//			 enableToggle: true,
+			 xtype: 'button',
+			 enableToggle: true,
 			 tooltip: me.res('fld-keepFilter.tip'),
-			 default: false
+			 iconCls: 'wt-tree-toggle-on',
+			 pressed: false
 		});
         /*me.groupCombo=Ext.create(WTF.localCombo('id', 'desc', {
             width: 120,
@@ -512,7 +513,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	    
 	reloadFiltered: function(quickfilter, query) {
 		var me=this;
-        me.depressMultiSearchButton();
 		
 //        me.folderList.store.baseParams={service: 'mail', action: 'ListMessages', folder: this.currentFolder, quickfilter: quickfilter, searchfield: field, pattern: pattern, refresh:1};
 //        me.folderList.store.reload({
@@ -528,10 +528,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		});
 	},
      
-    depressMultiSearchButton: function() {
-		this.folderList.depressMultiSearchButton();
-    },
-    
 	setPageSize: function(size) {
 		this.folderList.setPageSize(size);
 	},
@@ -540,10 +536,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		return this.folderList.getPageSize();
 	},
      
-    actionMultiSearch: function() {
-		this.folderList.actionMultiSearch();
-    },
-
 /*	actionThreaded: function() {
         var me=this;
 		me.reloadFolder(me.currentFolder,{

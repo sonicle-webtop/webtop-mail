@@ -987,7 +987,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.currentFolder=folderid;
 		
 		var params,
-		 keepFilters = mp.keepFilterButton.getValue();
+		 keepFilters = mp.keepFilterButton.pressed;
 		
 		if(keepFilters)
 			params={start:0,limit:mp.getPageSize(),refresh:refresh,pattern:'',quickfilter:'any',threaded:2};
