@@ -39,6 +39,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		'Sonicle.webtop.mail.MessageView',
 		'Sonicle.webtop.mail.MessageGrid'
 	],
+	uses: [
+		'Sonicle.button.PlainToggle'
+	],
     layout:'border',
     border: false,
 	
@@ -161,11 +164,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		});
 		
 		me.keepFilterButton = Ext.create({
-			 xtype: 'button',
-			 enableToggle: true,
-			 tooltip: me.res('fld-keepFilter.tip'),
-			 iconCls: 'wt-tree-toggle-on',
-			 pressed: false
+			xtype: 'soplaintogglebutton',
+			onIconCls: 'wt-toggle-on',
+			offIconCls: 'wt-toggle-off',
+			onTooltip: {title: me.res('fld-keepFilter.on.tip.tit'), text: me.res('fld-keepFilter.on.tip.txt')},
+			offTooltip: {title: me.res('fld-keepFilter.off.tip.tit'), text: me.res('fld-keepFilter.off.tip.txt')},
+			pressed: false
 		});
         /*me.groupCombo=Ext.create(WTF.localCombo('id', 'desc', {
             width: 120,
