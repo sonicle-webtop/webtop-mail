@@ -2965,11 +2965,13 @@ public class Service extends BaseService {
 				for( int i = 0; i < favorites.size(); ++i) {
 					MailUserSettings.FavoriteFolder ff=favorites.get(i);
 					MailAccount account=getAccount(ff.accountId);
-					Folder folder=account.getFolder(ff.folderId);
-					if (folder.exists()) {
-						FolderCache fc = new FolderCache(account, folder, this, environment);
-						newFavorites.add(ff);
-						ffds.add(new FavoriteFolderData(fc,ff.description));
+					if (account!=null) {
+						Folder folder=account.getFolder(ff.folderId);
+						if (folder.exists()) {
+							FolderCache fc = new FolderCache(account, folder, this, environment);
+							newFavorites.add(ff);
+							ffds.add(new FavoriteFolderData(fc,ff.description));
+						}
 					}
 				}
 				us.setFavoriteFolders(newFavorites);

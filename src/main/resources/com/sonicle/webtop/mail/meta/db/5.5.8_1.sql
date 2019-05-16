@@ -1,11 +1,13 @@
 @DataSource[default@com.sonicle.webtop.mail]
 
+
+CREATE SEQUENCE "mail"."seq_external_accounts";
+
 -- ----------------------------
 -- Table structure for external_accounts
 -- ----------------------------
-DROP TABLE IF EXISTS "mail"."external_accounts";
 CREATE TABLE "mail"."external_accounts" (
-"external_account_id" SERIAL PRIMARY KEY,
+"external_account_id" int4 PRIMARY KEY,
 "domain_id" varchar(20) NOT NULL,
 "user_id" varchar(100) NOT NULL,
 "display_name" varchar(255),

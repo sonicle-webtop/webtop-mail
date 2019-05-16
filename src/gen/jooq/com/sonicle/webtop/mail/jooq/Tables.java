@@ -17,6 +17,16 @@ package com.sonicle.webtop.mail.jooq;
 public class Tables {
 
 	/**
+	 * The table mail._rules.old
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables._Rules_2eold _RULES_2eOLD = com.sonicle.webtop.mail.jooq.tables._Rules_2eold._RULES_2eOLD;
+
+	/**
+	 * The table mail._vacation.old
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables._Vacation_2eold _VACATION_2eOLD = com.sonicle.webtop.mail.jooq.tables._Vacation_2eold._VACATION_2eOLD;
+
+	/**
 	 * The table mail.autoresponders
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.Autoresponders AUTORESPONDERS = com.sonicle.webtop.mail.jooq.tables.Autoresponders.AUTORESPONDERS;
@@ -32,6 +42,11 @@ public class Tables {
 	public static final com.sonicle.webtop.mail.jooq.tables.Identities IDENTITIES = com.sonicle.webtop.mail.jooq.tables.Identities.IDENTITIES;
 
 	/**
+	 * The table mail.identities_old
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables.IdentitiesOld IDENTITIES_OLD = com.sonicle.webtop.mail.jooq.tables.IdentitiesOld.IDENTITIES_OLD;
+
+	/**
 	 * The table mail.in_filters
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.InFilters IN_FILTERS = com.sonicle.webtop.mail.jooq.tables.InFilters.IN_FILTERS;
@@ -40,6 +55,11 @@ public class Tables {
 	 * The table mail.notes
 	 */
 	public static final com.sonicle.webtop.mail.jooq.tables.Notes NOTES = com.sonicle.webtop.mail.jooq.tables.Notes.NOTES;
+
+	/**
+	 * The table mail.rules_copy
+	 */
+	public static final com.sonicle.webtop.mail.jooq.tables.RulesCopy RULES_COPY = com.sonicle.webtop.mail.jooq.tables.RulesCopy.RULES_COPY;
 
 	/**
 	 * The table mail.scan
