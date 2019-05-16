@@ -312,7 +312,7 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getViewMode() {
-		String s=getString(VIEW_MODE,"columns");
+		String s=getString(VIEW_MODE,"compact");
 		return s;
 	}
 	
