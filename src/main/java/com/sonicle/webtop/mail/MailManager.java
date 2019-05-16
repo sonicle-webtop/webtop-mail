@@ -711,12 +711,12 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	public void updateFoldersTag(String oldTagId , String newTagId, Collection<FolderCache> folders, SearchTerm searchTerm){
+	public void updateFoldersTag(String oldTagId , String newTagId, Collection<FolderCache> folders, SearchTerm searchTerm, boolean hasAttachment){
 		
 		for(FolderCache fc: folders){
 			Message msgs[] = null;
 			try {
-				msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, true, false, searchTerm);
+				msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, true, false, searchTerm, hasAttachment);
 				long[] uid = new long[msgs.length];
 				for (int i=0;i<msgs.length;i++) {
 					uid[i]=fc.getUID(msgs[i]);

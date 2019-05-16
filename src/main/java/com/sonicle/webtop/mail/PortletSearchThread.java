@@ -61,15 +61,17 @@ public class PortletSearchThread extends Thread {
     private FolderCache curfolder;
 	private JsPortletSearchResult psr=new JsPortletSearchResult();
 	private SearchTerm searchTerm;
+	private boolean hasAttachment;
 
     private final Service ms;
 	private MailAccount account;
 	
-    public PortletSearchThread(Service ms, MailAccount account, ArrayList<String> folderIds, SearchTerm searchTerm) throws MessagingException {
+    public PortletSearchThread(Service ms, MailAccount account, ArrayList<String> folderIds, SearchTerm searchTerm, boolean hasAttachment) throws MessagingException {
         this.ms = ms;
 		this.account = account;
 		this.folderIds = folderIds;
 		this.searchTerm = searchTerm;
+		this.hasAttachment = hasAttachment;
     }
 
     public void cancel() {
@@ -110,7 +112,7 @@ public class PortletSearchThread extends Thread {
 				Message msgs[]=null;
 				//some folders (e.g. NS7 Public) may not allow search
 				try {
-					msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, true, false, searchTerm);
+					msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, true, false, searchTerm, hasAttachment);
 				} catch(MessagingException mexc) {
 				}
                 
