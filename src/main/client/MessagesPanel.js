@@ -108,12 +108,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						name: 'message',
 						type: 'string',
 						label: me.res('fld-search.field.message.lbl')
-					}, {
+					}, /*{
 						name: 'everywhere',
 						type: 'string',
 						textSink: true,
 						label: me.res('fld-search.field.everywhere.lbl')
-					}, {
+					}, */{
 						name: 'after',
 						type: 'date',
 						labelAlign: 'left',
