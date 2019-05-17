@@ -1,3 +1,19 @@
+$	5.5.9
+	%	Version 5.5.9
+	*	<h1>Compact view</h1>
+		<p>Modern and compact message grid, all the informations organized into a single column</p>
+		<img src="5.5.9_compactview.png"/>
+	*	<h1>Unified search</h1>
+		<p>New unified search component, with integrated multiple search panel, featuring a toggle button to
+		keep search criteria while changing folder</p>
+		<img src="5.5.9_unifiedsearch.png"/>
+	*	<h1>Multiple external email accounts</h1>
+		<p>It is possible to add and control external email accounts directly integrated in the WebTop email tree</p>
+		<img src="5.5.9_externalaccount.png"/>
+	*	<h1>Add unknown contacts during reply</h1>
+		<p>A new option allows to suggest to automatic creation of unknown contacts
+		while answering a message</p>
+		<img src="5.5.9_autoaddcontact.png"/>
 $	5.5.5
 	%	Version 5.5.5
 	*	<h1>Italian PEC View</h1>
