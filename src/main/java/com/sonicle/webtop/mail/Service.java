@@ -5439,7 +5439,9 @@ public class Service extends BaseService {
 				String folderId = account.getInboxFolderFullName();
 				FolderCache fc=account.getFolderCache(folderId);
 				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, null, false);
-				fc.fetch(msgs, getMessageFetchProfile(),0,50);
+				if (msgs!=null) fc.fetch(msgs, getMessageFetchProfile(),0,50);
+				else msgs=new Message[0];
+				
 				for (Message msg: msgs) {
 					SonicleIMAPMessage simsg=(SonicleIMAPMessage)msg;
 					
