@@ -165,8 +165,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		
 		me.keepFilterButton = Ext.create({
 			xtype: 'soplaintogglebutton',
-			onIconCls: 'wt-toggle-on',
-			offIconCls: 'wt-toggle-off',
+			onIconCls: 'wtmail-icon-search-locked',
+			offIconCls: 'wtmail-icon-search-unlocked',
 			onTooltip: {title: me.res('fld-keepFilter.on.tip.tit'), text: me.res('fld-keepFilter.on.tip.txt')},
 			offTooltip: {title: me.res('fld-keepFilter.off.tip.tit'), text: me.res('fld-keepFilter.off.tip.txt')},
 			pressed: false
