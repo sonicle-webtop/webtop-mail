@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ExternalAccounts extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord> {
 
-	private static final long serialVersionUID = 462605831;
+	private static final long serialVersionUID = -255049740;
 
 	/**
 	 * The reference instance of <code>mail.external_accounts</code>
@@ -34,7 +34,7 @@ public class ExternalAccounts extends org.jooq.impl.TableImpl<com.sonicle.webtop
 	/**
 	 * The column <code>mail.external_accounts.external_account_id</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord, java.lang.Integer> EXTERNAL_ACCOUNT_ID = createField("external_account_id", org.jooq.impl.SQLDataType.INTEGER.nullable(false).defaulted(true), this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord, java.lang.Integer> EXTERNAL_ACCOUNT_ID = createField("external_account_id", org.jooq.impl.SQLDataType.INTEGER.nullable(false), this, "");
 
 	/**
 	 * The column <code>mail.external_accounts.domain_id</code>.
@@ -119,7 +119,7 @@ public class ExternalAccounts extends org.jooq.impl.TableImpl<com.sonicle.webtop
 	/**
 	 * The column <code>mail.external_accounts.read_only</code>.
 	 */
-	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord, java.lang.Boolean> READ_ONLY = createField("read_only", org.jooq.impl.SQLDataType.BOOLEAN, this, "");
+	public final org.jooq.TableField<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord, java.lang.Boolean> READ_ONLY = createField("read_only", org.jooq.impl.SQLDataType.BOOLEAN.defaulted(true), this, "");
 
 	/**
 	 * The column <code>mail.external_accounts.provider_id</code>.
@@ -146,14 +146,6 @@ public class ExternalAccounts extends org.jooq.impl.TableImpl<com.sonicle.webtop
 
 	private ExternalAccounts(java.lang.String alias, org.jooq.Table<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord> aliased, org.jooq.Field<?>[] parameters) {
 		super(alias, com.sonicle.webtop.mail.jooq.Mail.MAIL, aliased, parameters, "");
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public org.jooq.Identity<com.sonicle.webtop.mail.jooq.tables.records.ExternalAccountsRecord, java.lang.Integer> getIdentity() {
-		return com.sonicle.webtop.mail.jooq.Keys.IDENTITY_EXTERNAL_ACCOUNTS;
 	}
 
 	/**

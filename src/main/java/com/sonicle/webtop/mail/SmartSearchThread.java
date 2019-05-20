@@ -38,7 +38,6 @@ import com.sonicle.commons.MailUtils;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
 import com.sun.mail.imap.IMAPFolder;
-import java.text.DateFormatSymbols;
 import java.util.ArrayList;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -64,6 +63,7 @@ public class SmartSearchThread extends Thread {
 	private final int month;
 	private final int day;
 	private SearchTerm searchTerm;
+	private boolean hasAttachment;
 	
 	private boolean cancel=false;
     private boolean finished=false;
@@ -80,10 +80,11 @@ public class SmartSearchThread extends Thread {
 			boolean fromme, boolean tome, boolean attachments,
 			ArrayList<String> ispersonfilters, ArrayList<String> isnotpersonfilters,
 			ArrayList<String> isfolderfilters, ArrayList<String> isnotfolderfilters,
-			int year, int month, int day, SearchTerm searchTerm) throws MessagingException {
+			int year, int month, int day, SearchTerm searchTerm, boolean hasAttachment) throws MessagingException {
         this.ms=ms;
 		this.account=account;
 		this.searchTerm = searchTerm;
+		this.hasAttachment = hasAttachment;
 		this.folderIds=folderIds;
 		this.fromme=fromme;
 		this.tome=tome;
@@ -139,7 +140,7 @@ public class SmartSearchThread extends Thread {
 				Message msgs[]=null;
 				//some folders (e.g. NS7 Public) may not allow search
 				try {
-					msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, false, false, searchTerm);
+					msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, false, false, searchTerm, hasAttachment);
 				} catch(MessagingException mexc) {
 				}
                 

@@ -16,7 +16,7 @@ package com.sonicle.webtop.mail.jooq.tables;
 @java.lang.SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class Identities extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord> {
 
-	private static final long serialVersionUID = -999952152;
+	private static final long serialVersionUID = 1660336578;
 
 	/**
 	 * The reference instance of <code>mail.identities</code>
@@ -106,7 +106,7 @@ public class Identities extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.
 	 */
 	@Override
 	public org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord> getPrimaryKey() {
-		return com.sonicle.webtop.mail.jooq.Keys.IDENTITIES_PKEY;
+		return com.sonicle.webtop.mail.jooq.Keys.IDENTITIES_PKEY1;
 	}
 
 	/**
@@ -114,7 +114,7 @@ public class Identities extends org.jooq.impl.TableImpl<com.sonicle.webtop.mail.
 	 */
 	@Override
 	public java.util.List<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord>> getKeys() {
-		return java.util.Arrays.<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord>>asList(com.sonicle.webtop.mail.jooq.Keys.IDENTITIES_PKEY);
+		return java.util.Arrays.<org.jooq.UniqueKey<com.sonicle.webtop.mail.jooq.tables.records.IdentitiesRecord>>asList(com.sonicle.webtop.mail.jooq.Keys.IDENTITIES_PKEY1);
 	}
 
 	/**

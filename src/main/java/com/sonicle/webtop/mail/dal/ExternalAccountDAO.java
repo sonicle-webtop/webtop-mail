@@ -57,7 +57,7 @@ public class ExternalAccountDAO extends BaseDAO {
 	
 	public Long getSequence(Connection con) throws DAOException {
 		DSLContext dsl = getDSL(con);
-		Long nextID = dsl.nextval(Sequences.EXTERNAL_ACCOUNTS_EXTERNAL_ACCOUNT_ID_SEQ);
+		Long nextID = dsl.nextval(Sequences.SEQ_EXTERNAL_ACCOUNTS);
 		return nextID;
 	}
 	

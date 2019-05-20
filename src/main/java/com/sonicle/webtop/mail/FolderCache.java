@@ -751,12 +751,12 @@ public class FolderCache {
         this.forceRefresh=true;
     }
     
-    public void refresh(SearchTerm searchTerm) throws MessagingException, IOException {
+    public void refresh(SearchTerm searchTerm, boolean hasAttachment) throws MessagingException, IOException {
         cleanup(false);
 		if (!threaded)
-			msgs=_getMessages("", "", "",sort_by,ascending,sort_group,groupascending, searchTerm);
+			msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending, searchTerm, hasAttachment);
 		else
-			msgs=_getThreadedMessages("", "", "", searchTerm);
+			msgs=_getThreadedMessages("", "", searchTerm, hasAttachment);
         open();
         //add(msgs);
         modified=false;
@@ -859,7 +859,7 @@ public class FolderCache {
 		return msgs;
 	}
     
-	public Message[] getMessages(int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm) throws MessagingException, IOException {
+	public Message[] getMessages(int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm, boolean hasAttachment) throws MessagingException, IOException {
         boolean rebuilt=false;
         boolean sortchanged=false;
         //ArrayList<MimeMessage> xlist=null;
@@ -876,7 +876,7 @@ public class FolderCache {
                 sortchanged=true;
             }
             if (refresh || forceRefresh || sortchanged) {
-                refresh(searchTerm);
+                refresh(searchTerm, hasAttachment);
                 rebuilt=true;
             }
 //            if (msgs==null || modified) {
@@ -1140,7 +1140,7 @@ public class FolderCache {
         MimeMessage newmmsgs[]=getDmsArchivedCopy(mmsgs);
         moveMessages(uids,to,fullthreads);
         folder.appendMessages(newmmsgs);
-        refresh(null);
+        refresh(null, false);
     }
 
     public void markDmsArchivedMessages(long uids[], boolean fullthreads) throws MessagingException, IOException {
@@ -1155,7 +1155,7 @@ public class FolderCache {
 				m.setFlags(Service.flagDmsArchived,true);
 		}
         
-        refresh(null);
+        refresh(null, false);
     }
 
     public MimeMessage[] getDmsArchivedCopy(long uids[],boolean fullthreads) throws MessagingException {
@@ -1430,7 +1430,7 @@ public class FolderCache {
 		return sort;
 	}
 	
-	private Message[] _getMessages(String quickfilter, String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending, SearchTerm term) throws MessagingException, IOException {
+	private Message[] _getMessages(String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending, SearchTerm term, boolean hasAttachment) throws MessagingException, IOException {
 
 		Message[] xmsgs=null;
 		open();
@@ -1450,7 +1450,7 @@ public class FolderCache {
 				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
 			}
 		}
-		if (quickfilter!=null && quickfilter.equals("attachment")) {
+		if (hasAttachment) {
 			ArrayList<Message> amsgs=new ArrayList<Message>();
 			for(Message m: xmsgs) {
 				if (hasAttachements(m)) amsgs.add(m);
@@ -1462,7 +1462,7 @@ public class FolderCache {
 		return xmsgs;
 	}
 	
-	private SonicleIMAPMessage[] _getThreadedMessages(String quickfilter, String patterns, String searchfields, SearchTerm term) throws MessagingException, IOException {
+	private SonicleIMAPMessage[] _getThreadedMessages(String patterns, String searchfields, SearchTerm term, boolean hasAttachment) throws MessagingException, IOException {
 		SonicleIMAPMessage[] tmsgs=null;
 		open();
 
@@ -1498,7 +1498,7 @@ public class FolderCache {
 				openThreads=newOpenThreads;
 			}
 		}
-		if (quickfilter!=null && quickfilter.equals("attachment")) {
+		if (hasAttachment) {
 			ArrayList<Message> amsgs=new ArrayList<Message>();
 			for(Message m: tmsgs) {
 				if (hasAttachements(m)) amsgs.add(m);
@@ -2323,7 +2323,6 @@ public class FolderCache {
 	}
 
   class MessageSearchResult {
-	  String quickfilter;
       String pattern;
       String searchfield;
 //      ArrayList<MimeMessage> mylist=new ArrayList<MimeMessage>();
@@ -2336,23 +2335,24 @@ public class FolderCache {
 	  boolean threaded=false;
       MessageComparator comparator=new MessageComparator(FolderCache.this.ms);
 	  SearchTerm searchTerm;
+	  boolean hasAttachment;
       
-	  MessageSearchResult(String quickfilter, int sort_by, boolean ascending, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm) {
-		  this.quickfilter=quickfilter;
+	  MessageSearchResult(int sort_by, boolean ascending, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm, boolean hasAttachment) {
           this.sort_by=sort_by;
           this.ascending=ascending;
           this.sort_group=sort_group;
           this.groupascending=groupascending;
 		  this.threaded=threaded;
 		  this.searchTerm = searchTerm;
+		  this.hasAttachment = hasAttachment;
       }
       
       void refresh() throws MessagingException, IOException {
           this.cleanup();
 		  if (!threaded)
-			this.msgs=_getMessages(quickfilter, pattern, searchfield, sort_by, ascending,sort_group,groupascending, searchTerm);
+			this.msgs=_getMessages(pattern, searchfield, sort_by, ascending,sort_group,groupascending, searchTerm, hasAttachment);
 		  else
-			this.msgs=_getThreadedMessages(quickfilter, pattern, searchfield, searchTerm);
+			this.msgs=_getThreadedMessages(pattern, searchfield, searchTerm, hasAttachment);
 //          for(Message m: msgs) {
 //              String mid=m.getHeader("Message-ID")[0];
 //              if (hash.containsKey(mid)) mylist.add(hash.get(mid));

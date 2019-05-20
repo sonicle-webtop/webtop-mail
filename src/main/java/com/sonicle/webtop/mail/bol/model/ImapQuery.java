@@ -89,59 +89,59 @@ public class ImapQuery {
 			String allText = query.allText;
 			
 			if(allText !=null && allText.trim().length() > 0) {
-				SearchTerm anyterms[] = toAnySearchTerm(allText);
-					terms.add(new OrTerm(anyterms));
+				SearchTerm defaultterms[] = toDefaultSearchTerm(allText);
+					terms.add(new OrTerm(defaultterms));
 			}
 		
-		conditionsList.forEach(condition -> {
-			String key = condition.keyword;
-			String value = condition.value;
-			
-			if(key.equals(FROM)) {
-				terms.add(new FromStringTerm(value));
-			} else if(key.equals(TO)) {
-				terms.add(new RecipientStringTerm(Message.RecipientType.TO, value));
-			} else if(key.equals(SUBJECT)) {
-				terms.add(new SubjectTerm(value));
-			} else if(key.equals(MESSAGE)) {
-				terms.add(new BodyTerm(value));
-			} else if(key.equals(EVERYWHERE)) {
-				SearchTerm anyterms[] = toAnySearchTerm(value);
-				terms.add(new OrTerm(anyterms));
-			} else if(key.equals(AFTER)) {
-				Date afterDate = ImapQuery.parseDate(value, timezone);
-				terms.add(new ReceivedDateTerm(DateTerm.GE, afterDate));
-				terms.add(new SentDateTerm(DateTerm.GE, afterDate));
-			} else if(key.equals(BEFORE)) {
-				Date beforeDate = ImapQuery.parseDate(value, timezone);
-				terms.add(new ReceivedDateTerm(DateTerm.LE, beforeDate));
-				terms.add(new SentDateTerm(DateTerm.LE, beforeDate));
-				
-			} else if(value.equals(ATTACHMENT)) {
-				
-			} else if(value.equals(UNREAD)) {
-				 terms.add(new FlagTerm(new Flags(Flag.SEEN), false));
-			} else if(value.equals(FLAGGED)) {
-				FlagTerm fts[] = new FlagTerm[allFlagStrings.length + 1];
-				fts[0] = new FlagTerm(new Flags(Flag.FLAGGED), true);
-				for(int i = 0;i < allFlagStrings.length; ++i)
-					fts[i+1] = new FlagTerm(new Flags(allFlagStrings[i]), true);
-				terms.add(new OrTerm(fts));
-			} else if(value.equals(TAGGED)) {
-				FlagTerm fts[] = new FlagTerm[atags.size()];
-				int i = 0;
-				for(Tag tag: atags) 
-					fts[i++] = new FlagTerm(new Flags(tag.getTagId()), true);
-				terms.add(new OrTerm(fts));
-			} else if(value.equals(UNANSWERED)) {
-				 terms.add(new FlagTerm(new Flags(Flag.ANSWERED), false));
-			} else if(value.equals(PRIORITY)) {
-				 HeaderTerm p1 = new HeaderTerm("X-Priority", "1");
-					HeaderTerm p2 = new HeaderTerm("X-Priority", "2");
-					terms.add(new OrTerm(p1,p2));
-			}
-			
-		});
+			conditionsList.forEach(condition -> {
+				String key = condition.keyword;
+				String value = condition.value;
+
+				if(key.equals(FROM)) {
+					terms.add(new FromStringTerm(value));
+				} else if(key.equals(TO)) {
+					terms.add(new RecipientStringTerm(Message.RecipientType.TO, value));
+				} else if(key.equals(SUBJECT)) {
+					terms.add(new SubjectTerm(value));
+				} else if(key.equals(MESSAGE)) {
+					terms.add(new BodyTerm(value));
+				} else if(key.equals(EVERYWHERE)) {
+					SearchTerm anyterms[] = toAnySearchTerm(value);
+					terms.add(new OrTerm(anyterms));
+				} else if(key.equals(AFTER)) {
+					Date afterDate = ImapQuery.parseDate(value, timezone);
+					terms.add(new ReceivedDateTerm(DateTerm.GE, afterDate));
+					terms.add(new SentDateTerm(DateTerm.GE, afterDate));
+				} else if(key.equals(BEFORE)) {
+					Date beforeDate = ImapQuery.parseDate(value, timezone);
+					terms.add(new ReceivedDateTerm(DateTerm.LE, beforeDate));
+					terms.add(new SentDateTerm(DateTerm.LE, beforeDate));
+
+				} else if(value.equals(ATTACHMENT)) {
+
+				} else if(value.equals(UNREAD)) {
+					 terms.add(new FlagTerm(new Flags(Flag.SEEN), false));
+				} else if(value.equals(FLAGGED)) {
+					FlagTerm fts[] = new FlagTerm[allFlagStrings.length + 1];
+					fts[0] = new FlagTerm(new Flags(Flag.FLAGGED), true);
+					for(int i = 0;i < allFlagStrings.length; ++i)
+						fts[i+1] = new FlagTerm(new Flags(allFlagStrings[i]), true);
+					terms.add(new OrTerm(fts));
+				} else if(value.equals(TAGGED)) {
+					FlagTerm fts[] = new FlagTerm[atags.size()];
+					int i = 0;
+					for(Tag tag: atags) 
+						fts[i++] = new FlagTerm(new Flags(tag.getTagId()), true);
+					terms.add(new OrTerm(fts));
+				} else if(value.equals(UNANSWERED)) {
+					 terms.add(new FlagTerm(new Flags(Flag.ANSWERED), false));
+				} else if(value.equals(PRIORITY)) {
+					 HeaderTerm p1 = new HeaderTerm("X-Priority", "1");
+						HeaderTerm p2 = new HeaderTerm("X-Priority", "2");
+						terms.add(new OrTerm(p1,p2));
+				}
+
+			});
 		}
 		
 		int n = terms.size();
@@ -164,10 +164,19 @@ public class ImapQuery {
 	
 	public static SearchTerm[] toAnySearchTerm(String value) {
 		SearchTerm anyterms[] = new SearchTerm[4];
-			anyterms[0] = new SubjectTerm(value);
-			anyterms[1] = new RecipientStringTerm(Message.RecipientType.TO, value);
-			anyterms[2] = new FromStringTerm(value);
-			anyterms[3] = new BodyTerm(value);
-			return anyterms;
+		anyterms[0] = new SubjectTerm(value);
+		anyterms[1] = new RecipientStringTerm(Message.RecipientType.TO, value);
+		anyterms[2] = new FromStringTerm(value);
+		anyterms[3] = new BodyTerm(value);
+		return anyterms;
 	}
+	
+	public static SearchTerm[] toDefaultSearchTerm(String value) {
+		SearchTerm anyterms[] = new SearchTerm[3];
+		anyterms[0] = new SubjectTerm(value);
+		anyterms[1] = new RecipientStringTerm(Message.RecipientType.TO, value);
+		anyterms[2] = new FromStringTerm(value);
+		return anyterms;
+	}
+	
 }

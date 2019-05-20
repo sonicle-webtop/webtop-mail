@@ -17,14 +17,9 @@ package com.sonicle.webtop.mail.jooq;
 public class Sequences {
 
 	/**
-	 * The sequence <code>mail.external_accounts_external_account_id_seq</code>
+	 * The sequence <code>mail.seq_external_accounts</code>
 	 */
-	public static final org.jooq.Sequence<java.lang.Long> EXTERNAL_ACCOUNTS_EXTERNAL_ACCOUNT_ID_SEQ = new org.jooq.impl.SequenceImpl<java.lang.Long>("external_accounts_external_account_id_seq", com.sonicle.webtop.mail.jooq.Mail.MAIL, org.jooq.impl.SQLDataType.BIGINT.nullable(false));
-
-	/**
-	 * The sequence <code>mail.seq_advanced_searches</code>
-	 */
-	public static final org.jooq.Sequence<java.lang.Long> SEQ_ADVANCED_SEARCHES = new org.jooq.impl.SequenceImpl<java.lang.Long>("seq_advanced_searches", com.sonicle.webtop.mail.jooq.Mail.MAIL, org.jooq.impl.SQLDataType.BIGINT.nullable(false));
+	public static final org.jooq.Sequence<java.lang.Long> SEQ_EXTERNAL_ACCOUNTS = new org.jooq.impl.SequenceImpl<java.lang.Long>("seq_external_accounts", com.sonicle.webtop.mail.jooq.Mail.MAIL, org.jooq.impl.SQLDataType.BIGINT.nullable(false));
 
 	/**
 	 * The sequence <code>mail.seq_identities</code>
@@ -35,9 +30,4 @@ public class Sequences {
 	 * The sequence <code>mail.seq_in_filters</code>
 	 */
 	public static final org.jooq.Sequence<java.lang.Long> SEQ_IN_FILTERS = new org.jooq.impl.SequenceImpl<java.lang.Long>("seq_in_filters", com.sonicle.webtop.mail.jooq.Mail.MAIL, org.jooq.impl.SQLDataType.BIGINT.nullable(false));
-
-	/**
-	 * The sequence <code>mail.seq_search_entries</code>
-	 */
-	public static final org.jooq.Sequence<java.lang.Long> SEQ_SEARCH_ENTRIES = new org.jooq.impl.SequenceImpl<java.lang.Long>("seq_search_entries", com.sonicle.webtop.mail.jooq.Mail.MAIL, org.jooq.impl.SQLDataType.BIGINT.nullable(false));
 }

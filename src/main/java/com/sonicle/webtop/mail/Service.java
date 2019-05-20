@@ -2965,11 +2965,13 @@ public class Service extends BaseService {
 				for( int i = 0; i < favorites.size(); ++i) {
 					MailUserSettings.FavoriteFolder ff=favorites.get(i);
 					MailAccount account=getAccount(ff.accountId);
-					Folder folder=account.getFolder(ff.folderId);
-					if (folder.exists()) {
-						FolderCache fc = new FolderCache(account, folder, this, environment);
-						newFavorites.add(ff);
-						ffds.add(new FavoriteFolderData(fc,ff.description));
+					if (account!=null) {
+						Folder folder=account.getFolder(ff.folderId);
+						if (folder.exists()) {
+							FolderCache fc = new FolderCache(account, folder, this, environment);
+							newFavorites.add(ff);
+							ffds.add(new FavoriteFolderData(fc,ff.description));
+						}
 					}
 				}
 				us.setFavoriteFolders(newFavorites);
@@ -3266,7 +3268,7 @@ public class Service extends BaseService {
 			sort_group = MessageComparator.SORT_BY_FLAG;
 		}
 		
-		Message msgs[] = mcache.getMessages(sortby, ascending, false, sort_group, groupascending, threaded, null);
+		Message msgs[] = mcache.getMessages(sortby, ascending, false, sort_group, groupascending, threaded, null, false);
 		ArrayList<String> aids = new ArrayList<String>();
 		for (Message m : msgs) {
 			aids.add(""+mcache.getUID(m));
@@ -5436,7 +5438,7 @@ public class Service extends BaseService {
 			if (query == null) {
 				String folderId = account.getInboxFolderFullName();
 				FolderCache fc=account.getFolderCache(folderId);
-				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, null);
+				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, null, false);
 				fc.fetch(msgs, getMessageFetchProfile(),0,50);
 				for (Message msg: msgs) {
 					SonicleIMAPMessage simsg=(SonicleIMAPMessage)msg;
@@ -5561,7 +5563,7 @@ public class Service extends BaseService {
 				String oldTagId=tag.getTagId();
 			    newTagId=mailManager.sanitazeTagId(newTagId);				
 				mailManager.updateTag(tag,newTagId);
-				mailManager.updateFoldersTag(oldTagId, newTagId, account.getFolderCacheValues(), null);
+				mailManager.updateFoldersTag(oldTagId, newTagId, account.getFolderCacheValues(), null, false);
 				loadTags();
 				
 				items=new ArrayList<>();
@@ -5781,7 +5783,7 @@ public class Service extends BaseService {
 		}*/
 	}
 	
-	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, SortGroupInfo sgi, long timestamp, SearchTerm searchTerm) throws MessagingException {
+	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, SortGroupInfo sgi, long timestamp, SearchTerm searchTerm, boolean hasAttachment) throws MessagingException {
 		MessageListThread mlt = null;
 		synchronized(mlThreads) {
 			mlt = mlThreads.get(key);
@@ -5790,7 +5792,7 @@ public class Service extends BaseService {
 				//	System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
 				//else
 				//	System.out.println(page+": mlt not found");
-				mlt = new MessageListThread(mcache, sgi.sortby, sgi.sortascending, refresh, sgi.sortgroup, sgi.groupascending, sgi.threaded, searchTerm);
+				mlt = new MessageListThread(mcache, sgi.sortby, sgi.sortascending, refresh, sgi.sortgroup, sgi.groupascending, sgi.threaded, searchTerm, hasAttachment);
 				mlt.lastRequest = timestamp;
 				mlThreads.put(key, mlt);
 			}
@@ -6061,8 +6063,11 @@ public class Service extends BaseService {
 			}
 			
 			searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, this.atags, queryObj, profile.getTimeZone());
-			MessagesInfo messagesInfo=listMessages(mcache, key, refresh, sgi, timestamp, searchTerm);
-            Message xmsgs[]=messagesInfo.messages;
+			
+			boolean hasAttachment = queryObj.conditions.stream().anyMatch(condition -> condition.value.equals("attachment"));
+			if(queryObj != null) refresh = true; 
+			MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, timestamp, searchTerm, hasAttachment);
+            Message xmsgs[] = messagesInfo.messages;
 			
 			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
 				long actuid=Long.parseLong(pthreadactionuid);
@@ -6624,7 +6629,7 @@ public class Service extends BaseService {
 //				key +="|" + pquickfilter;
 //			}
 			
-			MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, 0, null);
+			MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, 0, null, false);
             Message xmsgs[]=messagesInfo.messages;
 			if (xmsgs!=null) {
 				boolean found=false;
@@ -6722,6 +6727,7 @@ public class Service extends BaseService {
 		boolean refresh;
 		long millis;
 		SearchTerm searchTerm;
+		boolean hasAttachment;
 		
 		boolean isPec=false;
 		HashMap<String,Message> hpecsent=null;
@@ -6734,7 +6740,7 @@ public class Service extends BaseService {
 		final Object lock = new Object();
 		long lastRequest = 0;
 		
-		MessageListThread(FolderCache fc, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm) {
+		MessageListThread(FolderCache fc, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm, boolean hasAttachment) {
 			this.fc = fc;
 			this.sortby = sortby;
 			this.ascending = ascending;
@@ -6743,6 +6749,7 @@ public class Service extends BaseService {
 			this.groupascending = groupascending;
 			this.threaded=threaded;
 			this.searchTerm = searchTerm;
+			this.hasAttachment = hasAttachment;
 		}
 		
 		public void run() {
@@ -6751,7 +6758,7 @@ public class Service extends BaseService {
 			synchronized (lock) {
 				try {
 					this.millis = System.currentTimeMillis();
-					msgs = fc.getMessages(sortby, ascending, refresh, sort_group, groupascending, threaded, searchTerm);
+					msgs = fc.getMessages(sortby, ascending, refresh, sort_group, groupascending, threaded, searchTerm, hasAttachment);
 					
 					/*
 					UserProfileId profileId=getEnv().getProfileId();
@@ -8099,7 +8106,7 @@ public class Service extends BaseService {
 			
 			sst = new SmartSearchThread(this ,account, folderIds, fromme, tome, attachments,
 				ispersonfilters, isnotpersonfilters, isfolderfilters, isnotfolderfilters,
-				year, month, day, searchTerm);
+				year, month, day, searchTerm, false);
 			sst.start();
 			new JsonResult().printTo(out);
 		} catch (Exception exc) {
@@ -8166,7 +8173,7 @@ public class Service extends BaseService {
 					terms.toArray(vterms);
 					searchTerm = new AndTerm(vterms);
 			}
-			pst = new PortletSearchThread(this, account, folderIds, searchTerm);
+			pst = new PortletSearchThread(this, account, folderIds, searchTerm, false);
 			pst.start();
 			new JsonResult().printTo(out);
 		} catch (Exception exc) {
