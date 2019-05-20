@@ -1,19 +1,19 @@
-$	5.5.9
-	%	Versione 5.5.9
+$	5.6.0
+	%	Versione 5.6.0
 	*	<h1>Visualizzazione compatta</h1>
 		<p>Griglia messaggi moderna e compatta, tutte le informazioni organizzate in una sola colonna</p>
-		<img src="5.5.9_compactview.png"/>
+		<img src="5.6.0_compactview.png"/>
 	*	<h1>Ricerca unificata</h1>
 		<p>Nuovo sistema di ricerca unificato, con pannello di ricerca multipla integrato, oltre alla possibilità
 		di mantenere il criterio di ricerca anche al cambio cartella</p>
-		<img src="5.5.9_unifiedsearch.png"/>
+		<img src="5.6.0_unifiedsearch.png"/>
 	*	<h1>Account multipli di email esterne</h1>
 		<p>E' possibile aggiungere e tenere sotto controllo account email esterne direttamente integrati nell'albero di posta WebTop</p>
-		<img src="5.5.9_externalaccount.png"/>
+		<img src="5.6.0_externalaccount.png"/>
 	*	<h1>Aggiunta contatti sconosciuti durante la risposta</h1>
 		<p>Una nuova opzione consente di suggerire automaticamente l'aggiunta di un contatto non presente in rubrica
 		quanto si risponde ad un messaggio</p>
-		<img src="5.5.9_autoaddcontact.png"/>
+		<img src="5.6.0_autoaddcontact.png"/>
 $	5.5.5
 	%	Versione 5.5.5
 	*	<h1>Visualizzazione Posta Certificata</h1>
