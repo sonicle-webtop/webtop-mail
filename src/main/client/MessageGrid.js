@@ -575,15 +575,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
 		var tbitems=[
 			me.breadcrumb,
-			'->',
-			me.mys._TB("reply",null,'small'),
-			me.mys._TB("replyall",null,'small'),
-			me.mys._TB("forward",null,'small'),
-			'-',
-			me.mys._TB("print",null,'small'),
-			me.mys._TB("delete",null,'small'),
-			me.mys._TB("spam",null,'small'),
-			'-',
+			'->'
+		];
+		
+		if (!me.mys.getVar("toolbarCompact")) {
+			tbitems=tbitems.concat([
+				me.mys._TB("reply",null,'small'),
+				me.mys._TB("replyall",null,'small'),
+				me.mys._TB("forward",null,'small'),
+				'-',
+				me.mys._TB("print",null,'small'),
+				me.mys._TB("delete",null,'small'),
+				me.mys._TB("spam",null,'small'),
+				'-'
+			]);
+		}
+		tbitems=tbitems.concat([
 			me.mys._TB("special",null,'small'),
 			{
 				text: null,
@@ -653,7 +660,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				}
 			},
 			'-'
-		];
+		]);
 		
 		tbitems.push(			
 			{

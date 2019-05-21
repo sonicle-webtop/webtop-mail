@@ -8588,6 +8588,8 @@ public class Service extends BaseService {
 			}
 			co.put("externalAccounts",extids);
 			
+			if (ss.isToolbarCompact()) co.put("toolbarCompact",true);
+			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	
 		} finally {

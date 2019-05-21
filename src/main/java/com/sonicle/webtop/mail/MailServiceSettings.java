@@ -295,6 +295,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(DEFAULT_PREFIX + MailSettings.GRID_TODAY_ROW_COLOR, "#F8F8C8");
 	}
 	
+	public boolean isToolbarCompact() {
+		return getBoolean(TOOLBAR_COMPACT,false);
+	}
+	
 	public List<ExternalProvider> getExternalProviders() {
 		String json=getString(EXTERNAL_ACCOUNT_PROVIDERS, EXTERNAL_ACCOUNT_DEFAULT_PROVIDERS);
 		ExternalProvider.List externalProviders = ExternalProvider.List.fromJson(json);
