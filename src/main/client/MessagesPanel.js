@@ -633,7 +633,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		if (acct && folder && id) {
 			var me=this;
 			if (WT.plTags.desktop) me.messageViewContainer.getTopBar().show();
-			me.messageView._showMessage(acct,folder,id,!me.mys.getVar("manualSeen"),rec);
+			me.messageView._showMessage(acct, folder, id, !me.mys.getVar("manualSeen"), rec);
 		}
 	},
 

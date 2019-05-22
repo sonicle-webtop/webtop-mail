@@ -6845,6 +6845,7 @@ public class Service extends BaseService {
 		int idattach = 0;
 		boolean isEditor = request.getParameter("editor") != null;
 		boolean setSeen = ServletUtils.getBooleanParameter(request, "setseen", true);
+		
 		if (df == null) {
 			df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.MEDIUM, environment.getProfile().getLocale());
 		}
@@ -6998,8 +6999,13 @@ public class Service extends BaseService {
 					if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
 				}
 			}*/
-			if (!us.isManualSeen())
+			if (!us.isManualSeen()) {
 				if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
+			}
+			else {
+				if(setSeen) 
+					m.setFlag(Flags.Flag.SEEN, true);
+			}
 			
 			
 			int acount = mailData.getAttachmentPartCount();
