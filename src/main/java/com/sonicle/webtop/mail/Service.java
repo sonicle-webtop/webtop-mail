@@ -6786,8 +6786,13 @@ public class Service extends BaseService {
 					if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
 				}
 			}*/
-			if (!us.isManualSeen())
+			if (!us.isManualSeen()) {
 				if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
+			}
+			else {
+				if(setSeen) 
+					m.setFlag(Flags.Flag.SEEN, true);
+			}
 			
 			
 			int acount = mailData.getAttachmentPartCount();
