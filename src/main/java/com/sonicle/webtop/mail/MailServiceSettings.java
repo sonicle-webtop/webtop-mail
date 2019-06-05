@@ -295,6 +295,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(DEFAULT_PREFIX + MailSettings.GRID_TODAY_ROW_COLOR, "#F8F8C8");
 	}
 	
+	public String getDefaultViewMode() {
+		return getString(DEFAULT_PREFIX + VIEW_MODE, "compact");
+	}
+	
 	public boolean isToolbarCompact() {
 		return getBoolean(TOOLBAR_COMPACT,false);
 	}

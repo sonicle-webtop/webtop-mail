@@ -312,8 +312,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getViewMode() {
-		String s=getString(VIEW_MODE,"compact");
-		return s;
+		String value = getString(VIEW_MODE, null);
+		if (value != null) return value;
+		return mss.getDefaultViewMode();
 	}
 	
 	public boolean setViewMode(String mode) {

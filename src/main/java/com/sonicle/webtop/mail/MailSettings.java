@@ -170,6 +170,12 @@ public class MailSettings {
 	 */
 	public static final String PUBLIC_RESOURCE_LINKS_AS_INLINE_ATTACHMENTS = "public.resource.links.as.inline.attachments";
 	
+	/**
+	 * [user][default]
+	 * [enum {columns:COLUMNS, compact:COMPACT}](compact)
+	 */
+	public static final String VIEW_MODE = "viewmode";
+	
     public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
 	public static final String DMS_ARCHIVE = "archive";
 	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";
@@ -239,7 +245,6 @@ public class MailSettings {
 	public static final String AUTO_ADD_CONTACT = "autoAddContact";
 	public static final String PRIORITY = "priority";
 	public static final String NO_MAILCARD_ON_REPLY_FORWARD = "no.mailcard.on.reply.forward";
-	public static final String VIEW_MODE = "viewmode";
 	public static final String TOOLBAR_COMPACT = "toolbar.compact";
 	public static final String READ_RECEIPT_CONFIRMATION = "readreceiptconfirmation";
 	
