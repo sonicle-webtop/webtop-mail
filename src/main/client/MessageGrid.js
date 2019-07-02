@@ -1771,9 +1771,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			params.sort=oparams.sort.property;
 			params.dir=oparams.sort.dir;
 		}
-        if (oparams.quickfilter) params.quickfilter=oparams.quickfilter;
-        if (oparams.searchfield) params.searchfield=oparams.searchfield;
-        if (oparams.pattern) params.pattern=oparams.pattern;
+        if (oparams.query) params.query=oparams.query;
 		
 		WT.ajaxReq(me.mys.ID, action, {
 			params: params,

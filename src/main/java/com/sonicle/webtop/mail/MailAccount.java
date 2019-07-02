@@ -994,6 +994,7 @@ public class MailAccount {
 			fc.cleanup(true);
 		}
 		foldersCache.clear();
+		foldersCache=null;
 		try {
 			Service.logger.trace("-disconnecting imap");
 			disconnect();
@@ -1001,6 +1002,7 @@ public class MailAccount {
 		} catch (Exception e) {
 			Service.logger.error("Exception",e);
 		}
+		this.ms=null;
 		validated = false;
 	}
 	

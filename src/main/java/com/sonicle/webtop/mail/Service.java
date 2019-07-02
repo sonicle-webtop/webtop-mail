@@ -171,6 +171,7 @@ import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import javax.mail.search.AndTerm;
+import javax.mail.search.FlagTerm;
 import javax.mail.search.OrTerm;
 import javax.mail.search.SearchTerm;
 import org.slf4j.Logger;
@@ -606,15 +607,6 @@ public class Service extends BaseService {
 		return this.cus;
 	}
 	
-	/**
-	 * Logout
-	 *
-	 */
-	public boolean logout() {
-		// Disconnect from email server
-		cleanup();
-		return true;
-	}
 	
 	public FetchProfile getMessageFetchProfile() {
 		return FP;
@@ -2193,21 +2185,20 @@ public class Service extends BaseService {
 		return isHtml;
 	}
 	
-	protected void finalize() {
-		cleanup();
-	}
-	
 	public void cleanup() {
 		if (mft != null) {
 			mft.abort();
+			mft=null;
 		}
 		if (ast != null && ast.isRunning()) {
 			ast.cancel();
+			ast=null;
 		}
 		
 		for(MailAccount account: accounts.values()) {
 			account.cleanup();
 		}
+		fcProvided=null;
 		logger.trace("exiting cleanup");
 	}
 	
@@ -3268,7 +3259,19 @@ public class Service extends BaseService {
 			sort_group = MessageComparator.SORT_BY_FLAG;
 		}
 		
-		Message msgs[] = mcache.getMessages(sortby, ascending, false, sort_group, groupascending, threaded, null, false);
+		QueryObj queryObj = null;
+		SearchTerm searchTerm = null;	
+		try {
+			queryObj = ServletUtils.getObjectParameter(request, "query", new QueryObj(), QueryObj.class);
+		}
+		catch(ParameterException parameterException) {
+				logger.error("Exception getting query obejct parameter", parameterException);
+		}
+		searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, this.atags, queryObj, environment.getProfile().getTimeZone());
+
+		boolean hasAttachment = queryObj.conditions.stream().anyMatch(condition -> condition.value.equals("attachment"));
+		
+		Message msgs[] = mcache.getMessages(sortby, ascending, false, sort_group, groupascending, threaded, searchTerm, hasAttachment);
 		ArrayList<String> aids = new ArrayList<String>();
 		for (Message m : msgs) {
 			aids.add(""+mcache.getUID(m));
@@ -5438,7 +5441,8 @@ public class Service extends BaseService {
 			if (query == null) {
 				String folderId = account.getInboxFolderFullName();
 				FolderCache fc=account.getFolderCache(folderId);
-				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, null, false);
+				SearchTerm searchTerm=new FlagTerm(new Flags(Flags.Flag.SEEN), false);
+				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, searchTerm, false);
 				if (msgs!=null) fc.fetch(msgs, getMessageFetchProfile(),0,50);
 				else msgs=new Message[0];
 				
@@ -5937,10 +5941,9 @@ public class Service extends BaseService {
 		
 		QueryObj queryObj = null;
 		SearchTerm searchTerm = null;	
-	try {
+		try {
 			queryObj = ServletUtils.getObjectParameter(request, "query", new QueryObj(), QueryObj.class);
 		}
-		
 		catch(ParameterException parameterException) {
 				logger.error("Exception getting query obejct parameter", parameterException);
 		}

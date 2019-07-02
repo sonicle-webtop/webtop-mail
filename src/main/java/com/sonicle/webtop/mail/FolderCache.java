@@ -949,8 +949,12 @@ public class FolderCache {
         return xmsgs;
     }*/
 	
-    protected void cleanup(boolean stopIdleThread) {
-		if (stopIdleThread) goidle=false;
+    protected void cleanup(boolean endOfSession) {
+		if (endOfSession) {
+			goidle=false;
+			this.ms=null;
+			this.comparator=null;
+		}
         dhash.clear();
 //        hash.clear();
 //        list.clear();
@@ -981,6 +985,16 @@ public class FolderCache {
 
         }
     }
+	
+	public int getTreeMessageCacheCount() {
+		int n=msgs==null?0:msgs.length;
+		if (hasChildren()) {
+			for(FolderCache fc: children) {
+				n+=fc.getTreeMessageCacheCount();
+			}
+		}
+		return n;
+	}
 
     public void save(Message msg) throws MessagingException {
         Message[] saveMsgs=new MimeMessage[1];
