@@ -174,11 +174,13 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 						listeners: {
 							click: {
 								fn: function(mnu,itm) {
-									if (itm) me.lref("fldhtmleditor").execCommand(
+									if (itm) {
+										me.lref("fldhtmleditor").execCommand(
 											'insertimage', 
 											false, 
-											mnu.store.getById(itm.itemId).get("url")
-									);
+											encodeURI(mnu.store.getById(itm.itemId).get('url'))
+										);	
+									}
 								},
 								scope: this
 							}

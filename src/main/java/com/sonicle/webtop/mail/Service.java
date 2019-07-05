@@ -5109,19 +5109,18 @@ public class Service extends BaseService {
 				
 				//My resources as cids?
 				if (ss.isPublicResourceLinksAsInlineAttachments()) {
+					// ---------------------------------------------
 					ArrayList<JsAttachment> rescids=new ArrayList<>();
 					String match="\""+URIUtils.concat(getEnv().getCoreServiceSettings().getPublicBaseUrl(),ResourceRequest.URL);
-					while(StringUtils.contains(content, match)) {					
-						pattern1=RegexUtils.escapeRegexSpecialChars(match);
-						Pattern pattern=Pattern.compile(pattern1+"\\S*");
+					while(StringUtils.contains(content, match)) {
+						Pattern pattern=Pattern.compile(RegexUtils.escapeRegexSpecialChars(match) + ".*\"");
 						Matcher matcher=pattern.matcher(content);
 						matcher.find();
 						String matched=matcher.group();
 						String url=matched.substring(1,matched.length()-1);
 						URI uri=new URI(url);
 
-						// Retrieve macthed URL 
-						// and save it locally
+						// Retrieve macthed URL and save it locally
 						logger.debug("Downloading resource file as uploaded file from URL [{}]", url);
 						HttpClient httpCli = null;
 						try {
@@ -5133,11 +5132,48 @@ public class Service extends BaseService {
 							rescids.add(new JsAttachment(ufile.getUploadId(),filename,ufile.getUploadId(),true,ufile.getSize()));
 							content=matcher.replaceFirst("\"cid:"+ufile.getUploadId()+"\"");
 						} catch(IOException ex) {
-							throw new WTException(ex, "Unable to retrieve webcal [{0}]", uri);
+							throw new WTException(ex, "Unable to download resource file [{}]", uri);
 						} finally {
 							HttpClientUtils.closeQuietly(httpCli);
 						}
 					}
+					// ---------------------------------------------
+					
+					// TODO: REPLACE THE ABOVE WITH NEW VERSION BELOW THAT MAKE USE ONLY OF REGEX !!!
+					
+					/*
+					// ---------------------------------------------
+					// Replaces every src URL pointing a public image with a cid, tranforming URL to a direct inline attachments
+					String uploadTag = ""+msgId;
+					String resourcesBaseUrl = URIUtils.concat(getEnv().getCoreServiceSettings().getPublicBaseUrl(), ResourceRequest.URL);
+					Pattern pattSrc = Pattern.compile("\"(" + RegexUtils.escapeRegexSpecialChars(resourcesBaseUrl) + ".*)\"");
+					Matcher maSrc = pattSrc.matcher(content);
+					
+					ArrayList<JsAttachment> rescids = new ArrayList<>();
+					StringBuffer sb = new StringBuffer(content.length());
+					while (maSrc.find()) {
+						String imageUrl = maSrc.group(1);
+						URI uri = new URI(imageUrl);
+						
+						logger.debug("Downloading resource as uploaded file from [{}]", imageUrl);
+						HttpClient httpCli = null;
+						try {
+							httpCli = HttpClientUtils.createBasicHttpClient(HttpClientUtils.configureSSLAcceptAll(), uri);
+							String filename = PathUtils.getFileName(uri.getPath());
+							UploadedFile upf = addAsUploadedFile(uploadTag, filename, ServletHelper.guessMediaType(filename), HttpClientUtils.getContent(httpCli, uri));
+							rescids.add(new JsAttachment(upf.getUploadId(), filename, upf.getUploadId(), true, upf.getSize()));
+							maSrc.appendReplacement(sb, "\"cid:" + upf.getUploadId() + "\"");
+							
+						} catch(IOException ex) {
+							throw new WTException(ex, "Unable to download resource file [{}]", uri);
+						} finally {
+							HttpClientUtils.closeQuietly(httpCli);
+						}
+					}
+					maSrc.appendTail(sb);
+					content = sb.toString();
+					// ---------------------------------------------
+					*/
 
 					//add new resource cids as attachments
 					if (rescids.size()>0) {

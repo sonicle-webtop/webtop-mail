@@ -169,6 +169,7 @@ public class MailSettings {
 	 * Transform WebTop Public Resource links (e.g. Public images for mailcards) into attached inline images (cids).
 	 */
 	public static final String PUBLIC_RESOURCE_LINKS_AS_INLINE_ATTACHMENTS = "public.resource.links.as.inline.attachments";
+	//TODO: maybe call it message.convertPublicImagesToCids or message.convertPublicImageToAttachment
 	
 	/**
 	 * [user][default]
