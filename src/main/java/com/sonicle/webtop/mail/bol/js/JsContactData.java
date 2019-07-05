@@ -42,6 +42,7 @@ import org.joda.time.format.DateTimeFormatter;
  * @author malbinola
  */
 public class JsContactData {
+	public String displayName;
 	public String title;
 	public String firstName;
 	public String lastName;
@@ -95,6 +96,7 @@ public class JsContactData {
 	public JsContactData(Contact contact) {
 		DateTimeFormatter ymdFmt = DateTimeUtils.createYmdFormatter();
 		
+		displayName = contact.getDisplayName();
 		title = contact.getTitle();
 		firstName = contact.getFirstName();
 		lastName = contact.getLastName();
