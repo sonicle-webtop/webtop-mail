@@ -263,7 +263,10 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 					ismailto = true;
 				}
 			}
-			pwriter.print(" " + aqname + "=\"" + StringUtils.replace(avalue, "\"", "&quot;") + "\"");
+			// Skip contenteditable attribute in order to avoid live editing
+			if (!laqname.equals("contenteditable")) {
+				pwriter.print(" " + aqname + "=\"" + StringUtils.replace(avalue, "\"", "&quot;") + "\"");
+			}
 		}
 		if (ismailto) {
 			String email=mailtoParams;
