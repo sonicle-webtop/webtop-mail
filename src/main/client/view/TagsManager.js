@@ -35,98 +35,49 @@
 Ext.define('Sonicle.webtop.mail.view.TagsManager', {
 	extend: 'WTA.sdk.DockableView',
 	requires: [
-		'Sonicle.webtop.mail.model.Tag',
+		'Sonicle.webtop.mail.model.Tag'
+	],
+	uses: [
 		'Sonicle.webtop.mail.view.TagEditor'
 	],
 	
 	dockableConfig: {
 		title: '{tagsmgr.tit}',
-		//iconCls: 'wtmail-icon-format-quickpart-xs',
 		width: 400,
-		height: 300
+		height: 300,
+		modal: true
 	},
 	promptConfirm: false,
-	full: true,
-	modal: true,
-	
-	mys: null,
-	fn: null,
-	scope: null,
 
 	initComponent: function() {
 		var me = this;
 		Ext.apply(me, {
 			tbar: [
+				'->',
 				Ext.create('Ext.button.Button', {
 					tooltip: WT.res('act-add.lbl'),
 					iconCls: 'wt-icon-add-xs',
 					handler: function() {
-						WT.createView(me.mys.ID,'view.TagEditor',{
-							viewCfg: {
-								mys: me.mys,
-								listeners: {
-									viewok: function(s,description,color) {
-										if (me.gpTags.getStore().findRecord("tagId",description) || me.gpTags.getStore().findRecord("description",description)) {
-											WT.error(me.mys.res("tagsmgr.error.tageidalreadypresent"));
-										} else {
-											me.gpTags.getStore().add({ tagId: description, description: description, color: color });
-											me.mys.reloadTags();
-										}
-									}
-								}
-							}
-						}).show();
-					}
-				}),
-				Ext.create('Ext.button.Button', {
-					tooltip: WT.res('act-edit.lbl'),
-					iconCls: 'wt-icon-edit-xs',
-					handler: function() {
-						if (me.gpTags.getSelectionModel().hasSelection()) {
-							var sel = me.gpTags.getSelectionModel().getSelection(),
-								rec=sel[0];
-							WT.createView(me.mys.ID,'view.TagEditor',{
-								viewCfg: {
-									mys: me.mys,
-									description: rec.get("description"),
-									color: rec.get("color"),
-									listeners: {
-										viewok: function(s,description,color) {
-											me.wait();
-											rec.set({ description: description, color: color });
-											me.mys.reloadTags();
-										}
-									}
-								}
-							}).show();
-						}
-					}
-				}),
-				Ext.create('Ext.button.Button', {
-					tooltip: WT.res('act-remove.lbl'),
-					iconCls: 'wt-icon-remove-xs',
-					handler: function() {
-						if (me.gpTags.getSelectionModel().hasSelection()) {
-							WT.confirm(WT.res('confirm.delete'), function(bid) {
-								if(bid == 'yes') {
-									var sel = me.gpTags.getSelectionModel().getSelection();
-									if (sel.length>0) {
-										me.gpTags.getStore().remove(sel[0]);
-										me.mys.reloadTags();
-									}
-								}
-							});
-						}
+						me.addTagUI();
 					}
 				})
 			]
 		});
 		
+		Ext.apply(me, {
+			buttons: [{
+				text: WT.res('act-ok.lbl'),
+				handler: me.onOkClick,
+				scope: me
+			}]
+		});
 		me.callParent(arguments);
 		
-		me.gpTags = Ext.create({
-			xtype: 'gridpanel',
+		me.add({
 			region: 'center',
+			xtype: 'gridpanel',
+			reference: 'gp',
+			border: false,
 			loadMask: {msg: WT.res('loading')},
 			selType: 'sorowmodel',
 			store: {
@@ -140,24 +91,88 @@ Ext.define('Sonicle.webtop.mail.view.TagsManager', {
 					}
 				}
 			},
-			columns: [
-				{
-					dataIndex: 'description',
-					header: '',
-					flex: 1,
-					renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-						return "<span style='color: "+record.get("color")+"'>"+record.get("description")+"</span>";
-						
+			columns: [{
+				dataIndex: 'description',
+				header: '',
+				flex: 1,
+				renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+					return "<span style='color: "+record.get("color")+"'>"+record.get("description")+"</span>";
+
+				}
+			}, {
+				xtype: 'soactioncolumn',
+				items: [{
+					iconCls: 'fa fa-edit',
+					tooltip: WT.res('act-edit.lbl'),
+					handler: function(g, ridx) {
+						var rec = g.getStore().getAt(ridx);
+						me.editTagUI(rec);
 					}
-}
-			]
+				}, {
+					iconCls: 'fa fa-trash',
+					tooltip: WT.res('act-remove.lbl'),
+					handler: function(g, ridx) {
+						var rec = g.getStore().getAt(ridx);
+						me.removeTagUI(rec);
+					}
+				}]
+			}]
 		});
-		
-		me.add(me.gpTags);
 	},
 	
-	addTag: function(description,color) {
-		
-	}
+	onOkClick: function() {
+		this.closeView(false);
+	},
 	
+	addTagUI: function() {
+		var me = this,
+				gp = me.lref('gp'),
+				sto = gp.getStore();
+		WT.createView(me.mys.ID, 'view.TagEditor', {
+			swapReturn: true,
+			viewCfg: {
+				mys: me.mys,
+				listeners: {
+					viewok: function(s,description,color) {
+						if (sto.findRecord('tagId', description) || sto.findRecord('description', description)) {
+							WT.error(me.mys.res('tagsmgr.error.tageidalreadypresent'));
+						} else {
+							sto.add({tagId: description, description: description, color: color});
+							me.mys.reloadTags();
+						}
+					}
+				}
+			}
+		}).showView();
+	},
+	
+	editTagUI: function(rec) {
+		var me = this;
+		WT.createView(me.mys.ID,'view.TagEditor', {
+			swapReturn: true,
+			viewCfg: {
+				mys: me.mys,
+				description: rec.get('description'),
+				color: rec.get('color'),
+				listeners: {
+					viewok: function(s,description,color) {
+						me.wait();
+						rec.set({description: description, color: color});
+						me.mys.reloadTags();
+					}
+				}
+			}
+		}).showView();
+	},
+	
+	removeTagUI: function(rec) {
+		var me = this,
+				gp = me.lref('gp');
+		WT.confirm(WT.res('confirm.delete'), function(bid) {
+			if (bid === 'yes') {
+				gp.getStore().remove(rec);
+				me.mys.reloadTags();
+			}
+		});
+	}
 });

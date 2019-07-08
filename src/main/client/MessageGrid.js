@@ -1887,20 +1887,20 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	actionManageTags: function() {
-		var me=this;	
-		
-		WT.createView(me.mys.ID,'view.TagsManager',{
+		var me = this;
+		WT.createView(me.mys.ID,'view.TagsManager', {
+			swapReturn: true,
 			viewCfg: {
 				mys: me.mys,
 				listeners: {
 					viewclose: function() {
 						me.mys.reloadTags();
-						var node=me.mys.getFolderNodeById(me.currentFolder);					
-						me.mys.refreshFolder(node);
+						var node=me.mys.getFolderNodeById(me.currentAccount, me.currentFolder);
+						if (node) me.mys.refreshFolder(node);
 					}
 				}
 			}
-		}).show();
+		}).showView();
 	},
 	
 	actionTag: function(tagId) {
