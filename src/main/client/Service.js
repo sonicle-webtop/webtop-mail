@@ -1293,20 +1293,22 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	actionAdvancedSearch: function(s,e) {
 		var me=this,
-			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0],
-			acct=me.getAccount(fn);
-	
-		WT.createView(me.ID,'view.AdvancedSearchDialog',{
-			viewCfg: {
-				mys: me,
-				acct: acct,
-				compactView: me.getVar("viewMode")==="compact",
-				gridMenu: me.getRef('cxmGrid'),
-				folder: fn.get("id"),
-				folderText: fn.get("text"),
-				folderHasChildren: true //fn.hasChildNodes()
-			}
-		}).show();
+			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0]||me.favoritesTree.getSelection()[0],
+			acct= fn ? me.getAccount(fn) : null;
+		
+		if (acct) {
+			WT.createView(me.ID,'view.AdvancedSearchDialog',{
+				viewCfg: {
+					mys: me,
+					acct: acct,
+					compactView: me.getVar("viewMode")==="compact",
+					gridMenu: me.getRef('cxmGrid'),
+					folder: fn.get("id"),
+					folderText: fn.get("text"),
+					folderHasChildren: true //fn.hasChildNodes()
+				}
+			}).show();
+		}
 	},
 	
 	actionSharing: function(s,e) {
