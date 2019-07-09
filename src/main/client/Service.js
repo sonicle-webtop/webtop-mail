@@ -647,11 +647,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("viewheaders",{ handler: me.gridAction(me,'ViewHeaders'), iconCls: '' });
         me.addAct("viewsource",{ handler: me.gridAction(me,'ViewSource'), iconCls: '' });
 		
-        me.addAct("showarchive",{ handler: null, iconCls: '' });
+        me.addAct("showarchive",{ handler: null, iconCls: '', tooltip: null });
         //me.addAct("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
         me.addAct("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv' });
         me.addAct("sharing",{ handler: me.actionSharing, scope: me, iconCls: 'wt-icon-sharing-xs' });
-        me.addAct("showsharings",{ handler: null, iconCls: '' });
+        me.addAct("showsharings",{ handler: null, iconCls: '', tooltip: null });
         me.addAct("threaded",{ handler: function() { me.messagesPanel.actionThreaded(); }, iconCls: 'wtmail-icon-threaded-xs', enableToggle: true });
         me.addAct("emptyfolder",{ handler: me.actionEmptyFolder, scope: me });
         me.addAct("deletefolder",{ handler: me.actionDeleteFolder, scope: me, iconCls: 'wt-icon-delete' });
@@ -664,7 +664,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("favorite",{ handler: me.actionFavorite, scope: me, iconCls: 'wtmail-icon-favoriteadd-xs' });
         me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wtmail-icon-favoriteremove-xs' });
 
-        me.addAct("scanfolder",{ handler: null, iconCls: '' });
+        me.addAct("scanfolder",{ handler: null, iconCls: '', tooltip: null });
 		
         me.addAct("hidefolder",{ handler: me.actionFolderHide, scope: me, iconCls: '' });
         me.addAct("managehiddenfolders",{ handler: me.actionManageHiddenFolders, scope: me, iconCls: '' });
@@ -825,7 +825,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 me.getAct('downloadmails'),
 				Ext.create({
 					xtype:'souploadmenuitem',
-					tooltip: me.res('act-uploademail.lbl'),
+					tooltip: null,
 					text: me.res('act-uploademail.lbl'),
 					uploaderConfig: WTF.uploader(me.ID,'UploadToFolder',{
 						mimeTypes: [
