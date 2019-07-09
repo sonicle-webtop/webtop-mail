@@ -2817,7 +2817,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				return cls;
 			},
 			getTip: function(value) {
-				return me.mys.res('messageGrid.readstatus.' + (value ? 'read' : 'unread'));
+				return me.mys.res('messageGrid.readstatus.' + (value ? 'unread' : 'read'));
 			},
 			handler: function(grid, rix, cix, e, rec) {
 				var newunread=!rec.get('unread');
