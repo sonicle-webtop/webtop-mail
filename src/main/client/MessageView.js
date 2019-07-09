@@ -1152,9 +1152,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     setIframeSize: function(xif,newwidth,newheight) {
         var tcd=xif.wtTcd;
         xif.height=newheight+30;
-        if (newwidth<tcd.scrollWidth) newwidth=tcd.scrollWidth-10;
-        else if (newwidth>tcd.scrollWidth) {
+        if (newwidth<tcd.scrollWidth) {
+			newwidth = tcd.scrollWidth -10;
+		} else if (newwidth>=tcd.scrollWidth) {
             //this.divBody.dom.style.width=this.divBody.dom.scrollWidth;
+			newwidth = this.divBody.getSize().width -12;
         }
         xif.width=newwidth;
     },
