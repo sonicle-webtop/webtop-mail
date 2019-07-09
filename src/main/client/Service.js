@@ -1847,7 +1847,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 								n=(json.parent?s.getNodeById(json.parent):s.getRoot());
 								if (n.get("leaf")) n.set("leaf",false);
 								n.expand(false,function(nodes) {
-									me.selectChildNode(acct,n,json.newid);
+									Ext.defer(function() {
+										me.selectChildNode(acct,n,json.newid);
+									},200);
 								});
 							}
 							me.reloadFavorites();
