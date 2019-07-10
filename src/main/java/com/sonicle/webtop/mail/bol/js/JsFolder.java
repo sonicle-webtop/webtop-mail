@@ -47,6 +47,7 @@ public class JsFolder {
 	public int unread;
 	public Boolean hasUnread;
 	public String group;
+	public Boolean isReadOnly;
 	public Boolean isSharedToSomeone;
 	public Boolean isSharedRoot;
 	public Boolean isUnderShared;

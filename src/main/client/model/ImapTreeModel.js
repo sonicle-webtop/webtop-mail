@@ -43,6 +43,7 @@ Ext.define('Sonicle.webtop.mail.model.ImapTreeModel', {
 		{ name: "iconCls" },
 		{ name: "unread" },
 		{ name: "hasUnread" },
+		{ name: "isReadOnly" },
 		{ name: "isSharedToSomeone" },
 		{ name: "isSharedRoot" },
 		{ name: "isInbox" },

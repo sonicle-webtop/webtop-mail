@@ -62,6 +62,9 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 						flex: 3,
 						sortable: false,
 						renderer: function(v,p,r) {
+							if(r.get('isReadOnly')) {
+								return "<span style='" + 'color:grey;' + "'>" + v + "</span>";
+							}
 							var unr=r.get('unread'),
 								hunr=r.get('hasUnread'),
 								id=r.get('id');

@@ -2755,6 +2755,19 @@ public class Service extends BaseService {
 		} catch(Exception exc) {
 
 		}
+		
+		IMAPFolder imapf=(IMAPFolder)fc.getFolder();
+		try {
+			ACL[] acls = imapf.getACL();
+			List<ACL> aclList = Arrays.asList(acls);
+
+			boolean canWrite = aclList.stream().map(acl -> acl.getRights()).anyMatch(right -> right.contains(Rights.Right.WRITE));
+			jsFolder.isReadOnly=!canWrite;
+		} catch(MessagingException messagingException) {
+			//System.err.println("Error getting ACLs: "+imapf.getFullName());
+			//messagingException.printStackTrace();
+			jsFolder.isReadOnly=true;
+		}
 		if (isSharedToSomeone) jsFolder.isSharedToSomeone=true;
 		if (fc.isSharedFolder()) jsFolder.isSharedRoot=true;
 		if (account.isUnderSharedFolder(foldername)) jsFolder.isUnderShared=true;
