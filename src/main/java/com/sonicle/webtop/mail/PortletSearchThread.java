@@ -89,6 +89,7 @@ public class PortletSearchThread extends Thread {
 		int maxVisibleRows=20;
         Service.logger.info("START OF PORTLET SEARCH THREAD");
         try {
+			int n=0;
 			for(String folderId: folderIds) {
                 progress++;
 				psr.progress=(int)((100.0/folderIds.size()*progress));
@@ -179,11 +180,15 @@ public class PortletSearchThread extends Thread {
 
 						++totmsgs;
 
+						++n;
+						if (n>=50) break;
 					}
 
 					psr.totalRows+=totmsgs;
 					psr.visibleRows=visibleRows;
+					
                 }
+				if (n>=50) break;
             }
 			
             Service.logger.info("FINISHED PORTLET SEARCH");
