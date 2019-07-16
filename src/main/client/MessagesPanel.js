@@ -602,8 +602,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	},
 
 	 reloadCurrentFolder: function(config) {
-		var me=this;
-		me.folderList.reloadFolder(acct, node.id, config, uid, rid, page, tid, node.get('isReadOnly'));
+		var me=this,
+			node=me.mys.getFolderNodeById(me.currentAccount,me.currentFolder);
+		me.folderList.reloadFolder(
+				me.currentAccount,me.currentFolder,config,
+				null, null, null, null, 
+				node.get('isReadOnly')
+		);
     },
 	
 	//TODO no more ctrlshift?
