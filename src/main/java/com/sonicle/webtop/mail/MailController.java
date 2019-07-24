@@ -89,7 +89,7 @@ public class MailController extends BaseController implements IControllerService
 				String adminUser = mss.getAdminUser();
 				String adminPassword = mss.getAdminPassword();
 
-				CyrusManager cyrMgr = new CyrusManager(host, port, protocol, adminUser, adminPassword);
+				CyrusManager cyrMgr = new CyrusManager(host, port, protocol, adminUser, adminPassword, WT.getProperties());
 				cyrMgr.addMailbox(mailboxUser);
 
 			} catch(MessagingException ex) {
