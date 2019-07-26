@@ -2976,13 +2976,10 @@ public class Service extends BaseService {
 						if (folder.exists()) {
 							FolderCache fc=account.getFolderCache(ff.folderId);
 							if (fc==null) {
-								account.waitCacheLoad();
-								fc=account.getFolderCache(ff.folderId);
+								fc=account.createFolderCache(folder);
 							}
-							if (fc!=null) {
-								newFavorites.add(ff);
-								ffds.add(new FavoriteFolderData(fc,ff.description));
-							}
+							newFavorites.add(ff);
+							ffds.add(new FavoriteFolderData(fc,ff.description));
 						}
 					}
 				}

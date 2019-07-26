@@ -1001,7 +1001,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	}, 
 	
 	getAccount: function(node) {
-		return node.getTreeStore().acct;
+		var account = node.data.account;
+		if(!account)
+			account = node.getTreeStore().acct;
+		return account;
 	},
 	
 	unreadChanged: function(msg,unreadOnly) {

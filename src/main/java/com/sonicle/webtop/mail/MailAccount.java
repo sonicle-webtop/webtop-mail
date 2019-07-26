@@ -437,10 +437,16 @@ public class MailAccount {
 	}
 
 	
-	private FolderCache createFolderCache(Folder f) throws MessagingException {
-		FolderCache fc = new FolderCache(this, f, ms, environment);
-		String fname = fc.getFolderName();
-		foldersCache.put(fname, fc);
+	protected FolderCache createFolderCache(Folder f) throws MessagingException {
+		FolderCache fc;
+		synchronized(this) {
+			fc=foldersCache.get(f.getFullName());
+			if (fc==null) {
+				fc = new FolderCache(this, f, ms, environment);
+				String fname = fc.getFolderName();
+				foldersCache.put(fname, fc);
+			}
+		}
 		return fc;
 	}
 	
@@ -531,15 +537,6 @@ public class MailAccount {
 		cacheLoadThread.start();
 		try {
 			if (waitLoad) cacheLoadThread.join();
-		} catch(InterruptedException exc) {
-			Service.logger.error("Error waiting folder cache load",exc);
-		}
-	}
-	
-	public void waitCacheLoad() {
-		try {
-			if (cacheLoadThread.isAlive())
-				cacheLoadThread.join();
 		} catch(InterruptedException exc) {
 			Service.logger.error("Error waiting folder cache load",exc);
 		}
