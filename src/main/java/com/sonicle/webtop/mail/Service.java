@@ -2974,9 +2974,15 @@ public class Service extends BaseService {
 					if (account!=null) {
 						Folder folder=account.getFolder(ff.folderId);
 						if (folder.exists()) {
-							FolderCache fc = new FolderCache(account, folder, this, environment);
-							newFavorites.add(ff);
-							ffds.add(new FavoriteFolderData(fc,ff.description));
+							FolderCache fc=account.getFolderCache(ff.folderId);
+							if (fc==null) {
+								account.waitCacheLoad();
+								fc=account.getFolderCache(ff.folderId);
+							}
+							if (fc!=null) {
+								newFavorites.add(ff);
+								ffds.add(new FavoriteFolderData(fc,ff.description));
+							}
 						}
 					}
 				}
