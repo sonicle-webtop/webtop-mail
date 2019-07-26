@@ -101,6 +101,7 @@ public class MailAccount {
 	private String skipReplyFolders[] = new String[]{};
 	private String skipForwardFolders[] = new String[]{};
 	private MailFoldersThread mft=null;
+	private Thread cacheLoadThread;
 
 	public MailAccount(String id, Service mailService, PrivateEnvironment environment) {
 		this.id=id;
@@ -512,7 +513,7 @@ public class MailAccount {
 			}
 		}
 		
-		Thread engine = new Thread(
+		cacheLoadThread = new Thread(
 				new Runnable() {
 					public void run() {
 						synchronized (lock) {
@@ -527,9 +528,18 @@ public class MailAccount {
 					}
 				}
 		);
-		engine.start();
+		cacheLoadThread.start();
 		try {
-			if (waitLoad) engine.join();
+			if (waitLoad) cacheLoadThread.join();
+		} catch(InterruptedException exc) {
+			Service.logger.error("Error waiting folder cache load",exc);
+		}
+	}
+	
+	public void waitCacheLoad() {
+		try {
+			if (cacheLoadThread.isAlive())
+				cacheLoadThread.join();
 		} catch(InterruptedException exc) {
 			Service.logger.error("Error waiting folder cache load",exc);
 		}
