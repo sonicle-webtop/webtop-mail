@@ -2428,9 +2428,11 @@ public class Service extends BaseService {
 	
 	private ArrayList<FolderCache> opened = new ArrayList<FolderCache>();
 
+	private static final int FOLDER_CACHE_POOL_SIZE=5; //default 5
+	
 	protected void poolOpened(FolderCache fc) {
 		
-		if (opened.size() >= 5) {
+		if (opened.size() >= FOLDER_CACHE_POOL_SIZE) {
 			FolderCache rfc = opened.remove(0);
 			rfc.cleanup(false);
 			rfc.close();
@@ -2754,6 +2756,19 @@ public class Service extends BaseService {
 			isSharedToSomeone=fc.isSharedToSomeone();
 		} catch(Exception exc) {
 
+		}
+		
+		IMAPFolder imapf=(IMAPFolder)fc.getFolder();
+		try {
+			ACL[] acls = imapf.getACL();
+			List<ACL> aclList = Arrays.asList(acls);
+
+			boolean canWrite = aclList.stream().map(acl -> acl.getRights()).anyMatch(right -> right.contains(Rights.Right.WRITE));
+			jsFolder.isReadOnly=!canWrite;
+		} catch(MessagingException messagingException) {
+			//System.err.println("Error getting ACLs: "+imapf.getFullName());
+			//messagingException.printStackTrace();
+			jsFolder.isReadOnly=true;
 		}
 		if (isSharedToSomeone) jsFolder.isSharedToSomeone=true;
 		if (fc.isSharedFolder()) jsFolder.isSharedRoot=true;
@@ -5482,6 +5497,7 @@ public class Service extends BaseService {
 				if (msgs!=null) fc.fetch(msgs, getMessageFetchProfile(),0,50);
 				else msgs=new Message[0];
 				
+				int n=0;
 				for (Message msg: msgs) {
 					SonicleIMAPMessage simsg=(SonicleIMAPMessage)msg;
 					
@@ -5537,6 +5553,9 @@ public class Service extends BaseService {
 						msgtext
 					);
 					items.add(jsmsg);
+					
+					++n;
+					if (n>=50) break;
 				}
 			} else {
 			}

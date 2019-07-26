@@ -597,13 +597,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				}
 			});
 		}
-		me.folderList.reloadFolder(acct,node.id,config,uid,rid,page,tid);
+		me.folderList.reloadFolder(acct,node.id,config,uid,rid,page,tid,node.get('isReadOnly'));
 		me.reloadingFolder=false;
 	},
 
 	 reloadCurrentFolder: function(config) {
 		var me=this;
-        me.folderList.reloadFolder(me.currentAccount,me.currentFolder,config);
+		me.folderList.reloadFolder(acct, node.id, config, uid, rid, page, tid, node.get('isReadOnly'));
     },
 	
 	//TODO no more ctrlshift?

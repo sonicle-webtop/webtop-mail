@@ -880,7 +880,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		return this.pageSize;
 	},
 	
-	reloadFolder: function(acct,folder_id, config, uid, rid, page, tid){
+	reloadFolder: function(acct,folder_id, config, uid, rid, page, tid, isReadOnly){
 		var me = this,
 			proxy = me.store.getProxy();
 	
@@ -937,6 +937,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.autoselectTid=null;
 		}
 		s.load();
+		me.readonly = isReadOnly;
 	},
 	
 	getState: function() {
@@ -1918,7 +1919,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
         if (data.folders) params.folders=data.folders;
 		
-		WT.ajaxReq(me.mys.ID, 'TagMessages', {
+		if(!me.readonly) {
+		  WT.ajaxReq(me.mys.ID, 'TagMessages', {
 			params: params,
 			callback: function(success,json) {
               if (success) {
@@ -1952,7 +1954,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   WT.error(json.message);
               }
 			}
-		});					
+		  });
+		}
+		else {
+			WT.error(me.mys.res('mail.permission.denied'));
+		}
 	},
 	
 	actionRemoveAllTags: function() {
@@ -1969,7 +1975,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
         if (data.folders) params.folders=data.folders;
 		
-		WT.ajaxReq(me.mys.ID, 'ClearMessagesTags', {
+		if(!me.readonly) {
+		  WT.ajaxReq(me.mys.ID, 'ClearMessagesTags', {
 			params: params,
 			callback: function(success,json) {
               if (success) {
@@ -1994,7 +2001,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   WT.error(json.text);
               }
 			}
-		});					
+		  });
+		}
+		else {
+			WT.error(me.mys.res('mail.permission.denied'));
+		}
 	},
 	
 	actionUntag: function(tagId) {
@@ -2011,8 +2022,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			};
 			
         if (data.folders) params.folders=data.folders;
-		
-		WT.ajaxReq(me.mys.ID, 'UntagMessages', {
+		if(!me.readonly) {
+		  WT.ajaxReq(me.mys.ID, 'UntagMessages', {
 			params: params,
 			callback: function(success,json) {
               if (success) {
@@ -2042,7 +2053,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   WT.error(json.text);
               }
 			}
-		});					
+		  });
+		}
+		else {
+			WT.error(me.mys.res('mail.permission.denied'));
+		}
 	},
 	
 	_checkUpdateMessageView: function(r) {
@@ -2076,7 +2091,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
         if (data.folders) params.folders=data.folders;
 		
-		WT.ajaxReq(me.mys.ID, 'FlagMessages', {
+		if(!me.readonly) {
+		  WT.ajaxReq(me.mys.ID, 'FlagMessages', {
 			params: params,
 			callback: function(success,json) {
               if (success) {
@@ -2116,8 +2132,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   WT.error(json.message);
               }
 			}
-		});					
-		
+		  });
+		}
+		else {
+			WT.error(me.mys.res('mail.permission.denied'));
+		}		
     },
 	
 	actionAddNote: function() {
@@ -2817,7 +2836,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				return cls;
 			},
 			getTip: function(value) {
-				return me.mys.res('messageGrid.readstatus.' + (value ? 'read' : 'unread'));
+				return me.mys.res('messageGrid.readstatus.' + (value ? 'unread' : 'read'));
 			},
 			handler: function(grid, rix, cix, e, rec) {
 				var newunread=!rec.get('unread');
