@@ -406,7 +406,7 @@ public class MailAccount {
 	public boolean disconnect() {
 		
 		try {
-			if (store!=null && store.isConnected()) {
+			if (store!=null) {
 				disconnecting = true;
 				store.close();
 			}
