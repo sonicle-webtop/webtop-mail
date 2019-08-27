@@ -135,7 +135,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		special: 'Special'
 	},
 	
-	threadCollapseSelector: '.x-grid-group-title',
+	threadCollapseSelector: '.wtmail-messagecolumn-collapse',
 	
 	tpl: [
 		'<div class="wtmail-grid-cell-messagecolumn">',
@@ -148,8 +148,8 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			'<div class="wtmail-messagecolumn-head">',
 				'<tpl if="threaded">',
 					'<tpl if="threadIndent == 0 && threadHasChildren">',
-						'<div class="wtmail-messagecolumn-thread x-grid-group-hd-collapsible <tpl if="!threadOpen">x-grid-group-hd-collapsed</tpl>" style="{threadIndentStyle}" data-qtip="{collapseTooltip}">',
-							'<span class="x-grid-group-title">&nbsp;</span>',
+						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}" data-qtip="{collapseTooltip}">',
+							'<i class="wtmail-messagecolumn-collapse fa <tpl if="!threadOpen">fa-plus-square-o<tpl else>fa-minus-square-o</tpl>">&nbsp;</i>',
 						'</div>',
 					'<tpl else>',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
