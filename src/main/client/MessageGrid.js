@@ -706,6 +706,12 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					xtype: 'somenuheader',
 					text: me.res('messagesPanel.viewOptions.sortField.lbl')
 				}, {
+					itemId: 'sortField-readStatus',
+					text: me.mys.res('messagesPanel.sortField.readStatus.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, {
 					itemId: 'sortField-from',
 					text: me.mys.res('messagesPanel.sortField.from.lbl'),
 					checked: false,
@@ -736,8 +742,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					group: sortFieldGroup,
 					checkHandler: me.onSortFieldCheckChange
 				}, {
-					itemId: 'sortField-atts',
-					text: me.mys.res('messagesPanel.sortField.atts.lbl'),
+					itemId: 'sortField-hasAtts',
+					text: me.mys.res('messagesPanel.sortField.hasAtts.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, {
+					itemId: 'sortField-flag',
+					text: me.mys.res('messagesPanel.sortField.flag.lbl'),
 					checked: false,
 					group: sortFieldGroup,
 					checkHandler: me.onSortFieldCheckChange
@@ -748,13 +760,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					group: sortFieldGroup,
 					checkHandler: me.onSortFieldCheckChange
 				}, '-', {
-					itemId: 'sortDirection-ASC',
+					itemId: 'sortDirection-asc',
 					text: me.mys.res('messagesPanel.sortDirection.asc.lbl'),
 					checked: false,
 					group: sortDirGroup,
 					checkHandler: me.onSortDirCheckChange
 				}, {
-					itemId: 'sortDirection-DESC',
+					itemId: 'sortDirection-desc',
 					text: me.mys.res('messagesPanel.sortDirection.desc.lbl'),
 					checked: false,
 					group: sortDirGroup,
@@ -769,7 +781,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					group: groupByGroup,
 					checkHandler: me.onGroupByCheckChange
 				}, {
-					itemId: 'groupBy-gdate',
+					itemId: 'groupBy-date',
 					text: me.mys.res('messagesPanel.groupBy.date.lbl'),
 					checked: false,
 					group: groupByGroup,
@@ -787,7 +799,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					group: groupByGroup,
 					checkHandler: me.onGroupByCheckChange
 				}, {
-					itemId: 'groupBy-threadId',
+					itemId: 'groupBy-thread',
 					text: me.mys.res('messagesPanel.groupBy.thread.lbl'),
 					checked: false,
 					group: groupByGroup,
@@ -803,16 +815,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								itm;
 						
 						sortField = sortField || 'date';
-						sortDir = sortDir || me.getDefaultSortFieldDir(sortField);
-						groupField = groupField || 'none';
+						sortDir = sortDir || me.defaultFieldDirection(sortField);
 						
 						me.skipViewOptionsCheckChange++;
 						if (!sto.isLoading()) {
-							itm = s.getComponent('sortField-' + sortField);
+							itm = s.getComponent('sortField-' + me.sortField_field2key(sortField));
 							if (itm) itm.setChecked(true);
-							itm = s.getComponent('sortDirection-' + sortDir);
+							itm = s.getComponent('sortDirection-' + me.sortDirection_dir2key(sortDir));
 							if (itm) itm.setChecked(true);
-							itm = s.getComponent('groupBy-' + groupField);
+							itm = s.getComponent('groupBy-' + me.groupField_field2key(groupField));
 							if (itm) itm.setChecked(true);
 						}
 						me.skipViewOptionsCheckChange--;
@@ -835,8 +846,60 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
     },
 	
-	getDefaultSortFieldDir: function(sortField) {
-		return ['date', 'size', 'atts'].indexOf(sortField) !== -1 ? 'DESC' : 'ASC';
+	sortField_key2field: function(key) {
+		if (key === 'readStatus') {
+			return 'unread';
+		} else if (key === 'hasAtts') {
+			return 'atts';
+		} else {
+			return key;
+		}
+	},
+	
+	sortField_field2key: function(field) {
+		if (field === 'unread') {
+			return 'readStatus';
+		} else if (field === 'atts') {
+			return 'hasAtts';
+		} else {
+			return field;
+		}
+	},
+	
+	sortDirection_key2dir: function(key) {
+		return key.toUpperCase();
+	},
+	
+	sortDirection_dir2key: function(dir) {
+		return dir.toLowerCase();
+	},
+	
+	defaultFieldDirection: function(field) {
+		return ['date', 'size', 'atts', 'flag'].indexOf(field) !== -1 ? 'DESC' : 'ASC';
+	},
+	
+	groupField_key2field: function(key) {
+		if (key === 'none') {
+			return null;
+		} else if (key === 'date') {
+			return 'gdate';
+		} else if (key === 'thread') {
+			return 'threadId';
+		} else {
+			return key;
+		}
+	},
+	
+	groupField_field2key: function(field) {
+		if (!field) {
+			return 'none';
+		} else if (field === 'gdate') {
+			return 'date';
+		} else if (field === 'threadId') {
+			return 'thread';
+		} else {
+			return field;
+		}
 	},
 	
 	onPreviewModeCheckChange: function(s, checked) {
@@ -848,12 +911,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	onSortFieldCheckChange: function(s, checked) {
-		var me = this, key;
+		var me = this, key, field;
 		if (!me.skipViewOptionsCheckChange && checked) {
 			key = Sonicle.String.removeStart(s.getItemId(), 'sortField-');
 			// Sort direction will follow the best option for the choosen field;
 			// beforeshow will keep sortDirection value updated accordingly.
-			me.store.sort(key, me.getDefaultSortFieldDir(key));
+			field = me.sortField_key2field(key);
+			me.store.sort(field, me.defaultFieldDirection(field));
 		}
 	},
 	
@@ -863,9 +927,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			key = Sonicle.String.removeStart(s.getItemId(), 'sortDirection-');
 			var sto = me.store,
 					meta = sto.getProxy().getReader().metaData,
-					sortField = (meta && meta.sortInfo) ? meta.sortInfo.field : null;
-			sortField = sortField || 'date';
-			sto.sort(sortField, key); 
+					field = (meta && meta.sortInfo) ? meta.sortInfo.field : null;
+			field = field || 'date';
+			sto.sort(field, me.sortDirection_key2dir(key)); 
 		}
 	},
 	
@@ -873,7 +937,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var me = this, key;
 		if (!me.skipViewOptionsCheckChange && checked) {
 			key = Sonicle.String.removeStart(s.getItemId(), 'groupBy-');
-			me.changeGrouping(key);
+			me.changeGrouping(me.groupField_key2field(key));
 		}
 	},
 	
