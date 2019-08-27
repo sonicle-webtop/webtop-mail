@@ -129,12 +129,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.viewmaxccs=me.getVar('messageViewMaxCcs');
 
 		//create early but set imap store later to avoid early events on Firefox
-		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel',{
+		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel', {
+			stateful: WT.plTags.desktop ? true : false,
+			stateId: me.buildStateId('messagespanel'),
+			viewMode: me.getVar('viewMode'),
+			previewLocation: WT.plTags.desktop ? 'right' : 'off',
 			pageSize: me.getVar('pageRows'),
-			viewRegion: me.getVar('messageViewRegion','east'),
-			viewWidth: me.getVar('messageViewWidth',600),
-			viewHeight: me.getVar('messageViewHeight',400),
-			viewCollapsed: me.getVar('messageViewCollapsed',false),
+			//viewRegion: me.getVar('messageViewRegion','east'),
+			//viewWidth: me.getVar('messageViewWidth',600),
+			//viewHeight: me.getVar('messageViewHeight',400),
+			//viewCollapsed: me.getVar('messageViewCollapsed',false),
 			saveColumnSizes: true,
 			saveColumnVisibility: true,
 			saveColumnOrder: true,
@@ -173,8 +177,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					if(t.getSelection()[0].isRoot()) {
 						var messagePanel = me.messagesPanel;
 						messagePanel.clearGridSelections();
-						messagePanel.messageView.createEmptyItem();
-					}				}
+					}
+				}
 			}
 			
 		});
@@ -209,7 +213,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						if(t.getSelection()[0].isRoot()) {
 							var messagePanel = me.messagesPanel;
 							messagePanel.clearGridSelections();
-							messagePanel.messageView.createEmptyItem();
 						}
 						
 					}
@@ -252,7 +255,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					if(t.getSelection()[0].isRoot()) {
 						var messagePanel = me.messagesPanel;
 						messagePanel.clearGridSelections();
-						messagePanel.messageView.createEmptyItem();
 					}
 				},
 				load: function(t,records,s,o,n) {
@@ -347,7 +349,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 							if(t.getSelection()[0].isRoot()) {
 								var messagePanel = me.messagesPanel;
 								messagePanel.clearGridSelections();
-								messagePanel.messageView.createEmptyItem();
 							}
 						},
 						load: function(t,records,s,o,n) {
@@ -997,7 +998,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 		
         mp.reloadFolder(acct,folderid,params,uid,rid,page,tid);
-		mp.messageView.createEmptyItem();
 	}, 
 	
 	getAccount: function(node) {

@@ -33,9 +33,11 @@
 */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import static com.sonicle.webtop.mail.MailSettings.*;
+import com.sonicle.webtop.mail.model.ViewMode;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import java.text.MessageFormat;
@@ -311,14 +313,18 @@ public class MailUserSettings extends BaseUserSettings {
 		return setString(SHARED_SORT,sharedSort);
 	}
 	
-	public String getViewMode() {
-		String value = getString(VIEW_MODE, null);
+	public ViewMode getViewMode() {
+		ViewMode value = getEnum(VIEW_MODE, null, ViewMode.class);
 		if (value != null) return value;
 		return mss.getDefaultViewMode();
 	}
 	
-	public boolean setViewMode(String mode) {
-		return setString(VIEW_MODE, mode);
+	public boolean setViewMode(ViewMode value) {
+		return setEnum(VIEW_MODE, value);
+	}
+	
+	public boolean setViewMode(String value) {
+		return setViewMode(EnumUtils.forSerializedName(value, ViewMode.class));
 	}
 	
 	public String getReadReceiptConfirmation() {

@@ -173,7 +173,7 @@ public class MailSettings {
 	
 	/**
 	 * [user][default]
-	 * [enum {columns:COLUMNS, compact:COMPACT}](compact)
+	 * [enum {list:LIST, vertical:VERTICAL, horizontal:HORIZONTAL}](right)
 	 */
 	public static final String VIEW_MODE = "viewmode";
 	

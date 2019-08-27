@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.ServletUtils;
@@ -104,7 +105,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.mainEmail = WT.getUserData(getTargetProfileId()).getEmailAddress();
 				jso.replyTo = mus.getReplyTo();
 				jso.sharedSort = mus.getSharedSort();
-				jso.viewMode = mus.getViewMode();
+				jso.viewMode = EnumUtils.toSerializedName(mus.getViewMode());
 				jso.readReceiptConfirmation = mus.getReadReceiptConfirmation();
 				jso.includeMessageInReply = mus.isIncludeMessageInReply();
 				jso.host = mus.getHost();

@@ -144,6 +144,7 @@
 
 .wtmail-icon-search-locked { background-image: url('search-locked_16.svg') !important; background-size: contain; }
 .wtmail-icon-search-unlocked { background-image: url('search-unlocked_16.svg') !important; background-size: contain; }
+.wtmail-icon-viewOptions { background-image: url('viewOptions_16.svg') !important; background-size: contain; }
 
 /* message view classes */
 .wtmail-mv-container { padding: 0px 0px 0px 0px; background-color: #ffffff; }
@@ -365,4 +366,23 @@ blockquote {
     padding-left: 10px;
     padding-right: 10px;
     font-weight: bold;
+}
+
+.wtmail-dockoff-menu-item-checked .x-menu-item-icon-default.x-menu-item-checkbox {
+	background-image: url('dock-hide-on_16.svg') !important; background-size: contain;
+}
+.wtmail-dockoff-menu-item-unchecked .x-menu-item-icon-default.x-menu-item-checkbox {
+	background-image: url('dock-hide-off_16.svg') !important; background-size: contain;
+}
+.wtmail-dockright-menu-item-checked .x-menu-item-icon-default.x-menu-item-checkbox {
+	background-image: url('dock-right-on_16.svg') !important; background-size: contain;
+}
+.wtmail-dockright-menu-item-unchecked .x-menu-item-icon-default.x-menu-item-checkbox {
+	background-image: url('dock-right-off_16.svg') !important; background-size: contain;
+}
+.wtmail-dockbottom-menu-item-checked .x-menu-item-icon-default.x-menu-item-checkbox {
+	background-image: url('dock-bottom-on_16.svg') !important; background-size: contain;
+}
+.wtmail-dockbottom-menu-item-unchecked .x-menu-item-icon-default.x-menu-item-checkbox {
+	background-image: url('dock-bottom-off_16.svg') !important; background-size: contain;
 }

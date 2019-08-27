@@ -49,7 +49,7 @@ Ext.define('Sonicle.webtop.mail.MessageListView', {
 		//TODO : manage threading state
 		var unread=record.get('unread'),
 			pecstatus=record.get('pecstatus');
-		var cls=unread && !this.grid.compactView ?'wtmail-row-unread':'';
+		var cls=unread && !this.grid.getCompactView() ?'wtmail-row-unread':'';
 		
 		if (pecstatus) {
 			if (pecstatus=='accettazione') cls+=' wtmail-row-pec-accepted';
@@ -325,12 +325,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		'Sonicle.webtop.mail.ux.grid.column.Message'
 	],
 	
+	config: {
+		compactView: true
+	},
 	pageSize: 50,	
     frame: false,
-	
-	compactView: true,
 	enableColumnMove: true,
-		
+	skipViewOptionsCheckChange: 0,
+	
 	features: [
 		{
 			ftype:'mailgrouping'
@@ -420,17 +422,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
 	},
 	
-	constructor: function(cfg) {
-		var me = this;
-		
-		Ext.apply(cfg,{
-			hideHeaders: cfg.compactView
-		});
-
-		me.callParent([cfg]);
-		
-	},
-	
     initComponent: function() {
         var me=this;
 		
@@ -445,7 +436,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				var unread=record.get('unread');
 				    pecstatus=record.get('pecstatus'),
 				    tdy=record.get('istoday'),
-					cls1=(unread && !this.grid.compactView) ?'wtmail-row-unread':'',
+					cls1=(unread && !this.grid.getCompactView()) ?'wtmail-row-unread':'',
 					cls2=tdy?'wtmail-row-today':'';
 					/*cls3=(pecstatus=='accettazione')?'wtmail-row-pec-accepted':
 							(pecstatus=='avvenuta-consegna')?'wtmail-row-pec-delivered':
@@ -662,153 +653,173 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			'-'
 		]);
 		
-		tbitems.push(			
-			{
-				text: null,
-				iconCls: 'wt-icon-sort',
-				tooltip: me.res('sortgroup.tip'),
-				menu: {
-
-					items: [
-						{
-							xtype: 'somenuheader',
-							text: 'Ordinamento'
+		var previewModeGroup = Ext.id(null, 'mail-previewmode-'),
+				sortFieldGroup = Ext.id(null, 'mail-sortfield-'),
+				sortDirGroup = Ext.id(null, 'mail-sortdir-'),
+				groupByGroup = Ext.id(null, 'mail-groupby-');
+		
+		tbitems.push({
+			xtype: 'button',
+			tooltip: me.res('messagesPanel.viewOptions.tip'),
+			//glyph: 0xf108,
+			iconCls: 'wtmail-icon-viewOptions',
+			menu: {
+				defaults: {
+					scope: me
+				},
+				items: [{
+					text: me.res('messagesPanel.viewOptions.previewMode.lbl'),
+					disabled: !WT.plTags.desktop,
+					menu: {
+						defaults: {
+							group: previewModeGroup,
+							checked: false,
+							checkHandler: me.onPreviewModeCheckChange,
+							scope: me
 						},
-						{
-							xtype: 'menucheckitem',
-							reference: 'itmsmgfrom',
-							text: me.mys.res('sortmenu.from'), 
-							group: 'sortmailgrid', 
-							inputValue: 'from',
-							handler: function() { me.store.sort('from','ASC'); }
-						},
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmsgmto',
-							text: me.mys.res('sortmenu.to'), 
-							group: 'sortmailgrid', 
-							inputValue: 'to',
-							handler: function() { me.store.sort('to','ASC'); }
-						},
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmsmgsubject',
-							text: me.mys.res('sortmenu.subject'), 
-							group: 'sortmailgrid', 
-							inputValue: 'subject',
-							handler: function() { me.store.sort('subject','ASC'); }
-						},
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmsmgdate',
-							text: me.mys.res('sortmenu.date'), 
-							group: 'sortmailgrid', 
-							inputValue: 'date',
-							handler: function() { me.store.sort('date','DESC'); }
-						},
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmsmgsize',
-							text: me.mys.res('sortmenu.size'), 
-							group: 'sortmailgrid', 
-							inputValue: 'size',
-							handler: function() { me.store.sort('size','DESC'); }
-						},
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmsmgatts',
-							text: me.mys.res('sortmenu.atts'), 
-							group: 'sortmailgrid', 
-							inputValue: 'atts',
-							handler: function() { me.store.sort('atts','DESC'); }
-						},
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmsmgpriority',
-							text: me.mys.res('sortmenu.priority'), 
-							group: 'sortmailgrid', 
-							inputValue: 'priority',
-							handler: function() { me.store.sort('priority','ASC'); }
-						},
-
-						'-',
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmdsmgasc',
-							text: me.mys.res('sortmenu.ascending'), 
-							group: 'dsortmailgrid', 
-							inputValue: 'ASC',
-							handler: function() { 
-								var s=me.store;
-									meta=s.getProxy().getReader().metaData,
-									sf=meta?meta.sortInfo.field:'date';
-								s.sort(sf,'ASC'); 
+						items: [{
+							itemId: 'previewMode-right',
+							text: me.mys.res('messagesPanel.previewMode.right.lbl'),
+							checkedCls: 'wtmail-dockright-menu-item-checked',
+							uncheckedCls: 'wtmail-dockright-menu-item-unchecked'
+						}, {
+							itemId: 'previewMode-bottom',
+							text: me.mys.res('messagesPanel.previewMode.bottom.lbl'),
+							checkedCls: 'wtmail-dockbottom-menu-item-checked',
+							uncheckedCls: 'wtmail-dockbottom-menu-item-unchecked'
+						}, {
+							itemId: 'previewMode-off',
+							text: me.mys.res('messagesPanel.previewMode.off.lbl'),
+							checkedCls: 'wtmail-dockoff-menu-item-checked',
+							uncheckedCls: 'wtmail-dockoff-menu-item-unchecked'
+						}],
+						listeners: {
+							beforeshow: function(s) {
+								me.skipViewOptionsCheckChange++;
+								var itm = s.getComponent('previewMode-' + me.mys.messagesPanel.getPreviewLocation());
+								if (itm) itm.setChecked(true);
+								me.skipViewOptionsCheckChange--;
 							}
-						},
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmdsmgdesc',
-							text: me.mys.res('sortmenu.descending'), 
-							group: 'dsortmailgrid', 
-							inputValue: 'ASC',
-							handler: function() { 
-								var s=me.store;
-									meta=s.getProxy().getReader().metaData,
-									sf=meta?meta.sortInfo.field:'date';
-								s.sort(sf,'DESC'); 
-							}
-						},
-
-						'-',
-
-						{
-							xtype: 'somenuheader',
-							text: 'Raggruppamento'
-						},
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmgmgnone',
-							text: me.mys.res('groupmenu.none'), 
-							group: 'groupmailgrid', 
-							inputValue: 'none',
-							handler: function() { me.changeGrouping('none'); }
-						},					
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmgmggdate',
-							text: me.mys.res('groupmenu.gdate'), 
-							group: 'groupmailgrid', 
-							inputValue: 'gdate',
-							handler: function() { me.changeGrouping('gdate'); }
-						},					
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmgmgfrom',
-							text: me.mys.res('groupmenu.from'), 
-							group: 'groupmailgrid', 
-							inputValue: 'from',
-							handler: function() { me.changeGrouping('from'); }
-						},					
-						{ 
-							xtype: 'menucheckitem',
-							reference: 'itmgmgto',
-							text: me.mys.res('groupmenu.to'), 
-							group: 'groupmailgrid', 
-							inputValue: 'to',
-							handler: function() { me.changeGrouping('to'); }
-						},					
-						{ 
-							reference: 'itmgmgthreadId',
-							xtype: 'menucheckitem',
-							text: me.mys.res('groupmenu.threadId'), 
-							group: 'groupmailgrid', 
-							inputValue: 'threadId',
-							handler: function() { me.changeGrouping('threadId'); }
 						}
-					]
+					}
+				}, '-', {
+					xtype: 'somenuheader',
+					text: me.res('messagesPanel.viewOptions.sortField.lbl')
+				}, {
+					itemId: 'sortField-from',
+					text: me.mys.res('messagesPanel.sortField.from.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, {
+					itemId: 'sortField-to',
+					text: me.mys.res('messagesPanel.sortField.to.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, {
+					itemId: 'sortField-subject',
+					text: me.mys.res('messagesPanel.sortField.subject.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, {
+					itemId: 'sortField-date',
+					text: me.mys.res('messagesPanel.sortField.date.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, {
+					itemId: 'sortField-size',
+					text: me.mys.res('messagesPanel.sortField.size.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, {
+					itemId: 'sortField-atts',
+					text: me.mys.res('messagesPanel.sortField.atts.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, {
+					itemId: 'sortField-priority',
+					text: me.mys.res('messagesPanel.sortField.priority.lbl'),
+					checked: false,
+					group: sortFieldGroup,
+					checkHandler: me.onSortFieldCheckChange
+				}, '-', {
+					itemId: 'sortDirection-ASC',
+					text: me.mys.res('messagesPanel.sortDirection.asc.lbl'),
+					checked: false,
+					group: sortDirGroup,
+					checkHandler: me.onSortDirCheckChange
+				}, {
+					itemId: 'sortDirection-DESC',
+					text: me.mys.res('messagesPanel.sortDirection.desc.lbl'),
+					checked: false,
+					group: sortDirGroup,
+					checkHandler: me.onSortDirCheckChange
+				}, '-', {
+					xtype: 'somenuheader',
+					text: me.res('messagesPanel.viewOptions.groupBy.lbl')
+				}, {
+					itemId: 'groupBy-none',
+					text: me.mys.res('messagesPanel.groupBy.none.lbl'),
+					checked: false,
+					group: groupByGroup,
+					checkHandler: me.onGroupByCheckChange
+				}, {
+					itemId: 'groupBy-gdate',
+					text: me.mys.res('messagesPanel.groupBy.date.lbl'),
+					checked: false,
+					group: groupByGroup,
+					checkHandler: me.onGroupByCheckChange
+				}, {
+					itemId: 'groupBy-from',
+					text: me.mys.res('messagesPanel.groupBy.from.lbl'),
+					checked: false,
+					group: groupByGroup,
+					checkHandler: me.onGroupByCheckChange
+				}, {
+					itemId: 'groupBy-to',
+					text: me.mys.res('messagesPanel.groupBy.to.lbl'),
+					checked: false,
+					group: groupByGroup,
+					checkHandler: me.onGroupByCheckChange
+				}, {
+					itemId: 'groupBy-threadId',
+					text: me.mys.res('messagesPanel.groupBy.thread.lbl'),
+					checked: false,
+					group: groupByGroup,
+					checkHandler: me.onGroupByCheckChange
+				}],
+				listeners: {
+					beforeshow: function(s) {
+						var sto = me.store,
+								meta = sto.getProxy().getReader().metaData,
+								sortField = (meta && meta.sortInfo) ? meta.sortInfo.field : null,
+								sortDir = (meta && meta.sortInfo) ? meta.sortInfo.direction : null,
+								groupField = meta ? meta.groupField : null,
+								itm;
+						
+						sortField = sortField || 'date';
+						sortDir = sortDir || me.getDefaultSortFieldDir(sortField);
+						groupField = groupField || 'none';
+						
+						me.skipViewOptionsCheckChange++;
+						if (!sto.isLoading()) {
+							itm = s.getComponent('sortField-' + sortField);
+							if (itm) itm.setChecked(true);
+							itm = s.getComponent('sortDirection-' + sortDir);
+							if (itm) itm.setChecked(true);
+							itm = s.getComponent('groupBy-' + groupField);
+							if (itm) itm.setChecked(true);
+						}
+						me.skipViewOptionsCheckChange--;
+					}
 				}
 			}
-		);
+		}, ' ');
 
 		if (me.showToolbar) {
 			me.addDocked({
@@ -823,6 +834,48 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			});			
 		}
     },
+	
+	getDefaultSortFieldDir: function(sortField) {
+		return ['date', 'size', 'atts'].indexOf(sortField) !== -1 ? 'DESC' : 'ASC';
+	},
+	
+	onPreviewModeCheckChange: function(s, checked) {
+		var me = this, key;
+		if (!me.skipViewOptionsCheckChange && checked) {
+			key = Sonicle.String.removeStart(s.getItemId(), 'previewMode-');
+			me.mys.messagesPanel.setPreviewLocation(key);
+		}
+	},
+	
+	onSortFieldCheckChange: function(s, checked) {
+		var me = this, key;
+		if (!me.skipViewOptionsCheckChange && checked) {
+			key = Sonicle.String.removeStart(s.getItemId(), 'sortField-');
+			// Sort direction will follow the best option for the choosen field;
+			// beforeshow will keep sortDirection value updated accordingly.
+			me.store.sort(key, me.getDefaultSortFieldDir(key));
+		}
+	},
+	
+	onSortDirCheckChange: function(s, checked) {
+		var me = this, key;
+		if (!me.skipViewOptionsCheckChange && checked) {
+			key = Sonicle.String.removeStart(s.getItemId(), 'sortDirection-');
+			var sto = me.store,
+					meta = sto.getProxy().getReader().metaData,
+					sortField = (meta && meta.sortInfo) ? meta.sortInfo.field : null;
+			sortField = sortField || 'date';
+			sto.sort(sortField, key); 
+		}
+	},
+	
+	onGroupByCheckChange: function(s, checked) {
+		var me = this, key;
+		if (!me.skipViewOptionsCheckChange && checked) {
+			key = Sonicle.String.removeStart(s.getItemId(), 'groupBy-');
+			me.changeGrouping(key);
+		}
+	},
 	
 	setCurrentAccount: function(acct) {
 		var me=this,
@@ -940,16 +993,33 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.readonly = isReadOnly;
 	},
 	
+	updateCompactView: function(nv, ov) {
+		var me = this;
+		me.setHideHeaders(nv);
+		if (me.rendered) me.initFolderState(true);
+	},
+	
 	getState: function() {
-		var me=this,gcols=me.getColumns(),cols=new Array(gcols.length);
-		Ext.each(gcols,function(gcol,ix,gcols) {
-			cols[ix]={
-				id: gcol.stateId,
-				width: gcol.width,
-				hidden: gcol.hidden
-			}
+		var me = this,
+				//state = me.callParent(),
+				state = {},
+				cols = me.getColumns(),
+				scols = new Array(cols.length);
+		
+		delete state.storeState;
+		delete state.columns;
+		
+		Ext.each(cols, function(itm, idx) {
+			scols[idx] = {
+				id: itm.stateId,
+				width: itm.width,
+				hidden: itm.hidden
+			};
 		});
-		return { columns: cols };
+		
+		return Ext.apply(state, {
+			columns: scols
+		});
 	},
 	
     /**
@@ -1026,7 +1096,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			
 			me.reconfigure(newcols);
 			
-			if (!me.compactView) {
+			if (!me.getCompactView()) {
 				me.applyState(state);
 				if (hasListeners.staterestore) {
 					me.fireEvent('staterestore', me, state);
@@ -1059,6 +1129,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 
 		if (json) { 
 			
+			/*
 			var tba=me.getDockedItems('toolbar[dock="top"]');
 			var tb=tba.length>0? tba[0]:null;
 			if (tb) {
@@ -1075,6 +1146,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				itm=tb.lookupReference('itmdsmg'+((dir==='DESC')?'desc':'asc'));
 				if (itm) itm.setChecked(true);
 			}
+			*/
 			
 			me.updateTotals(json.total,json.realTotal,json.quotaLimit,json.quotaUsage);
 			me.fireEvent('load',me,me.currentFolder,json);
@@ -2347,16 +2419,20 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     getStateId: function() {
         var me = this,
 			prefix = (me.baseStateId || (me.baseStateId=me.mys.buildStateId('messagegrid')));
-		if (me.compactView) prefix+="-compact";
+		if (me.getCompactView()) prefix+="-compact";
         return prefix+"@"+me.currentFolder;
     },
 	
 	createColumnsFromState: function(state) {
 		var me=this,n=0,dcols=new Array();
 		
-		if (me.compactView) {
-			var node=me.mys.getFolderNodeById(me.currentAccount,me.currentFolder),
-				issentfolder=node?(node.data.isSent||node.data.isUnderSent):false;
+		if (me.getCompactView()) {
+			var issentfolder = false,
+					node;
+			if (me.currentAccount && me.currentFolder) {
+				node=me.mys.getFolderNodeById(me.currentAccount,me.currentFolder);
+				if (node) issentfolder=node?(node.data.isSent||node.data.isUnderSent):false;
+			}
 			
 			//hidden columns holding header titles for groupings
 			dcols[n++]=Ext.create({//Date

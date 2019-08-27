@@ -240,8 +240,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         td=tr.insertCell(-1);
         td.className="wtmail-mv-bodycell";
         me.tdBody=Ext.get(td);
-
-		me.createEmptyItem();
+		me.addEmptyEl();
 		me.callParent(arguments);
 	},
 	
@@ -251,7 +250,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		el.destroy();
     },
     
-    _clear: function() {
+    _clear: function(noEmptyMsg) {
 		var me=this;
 		
         if (!me.cleared) {
@@ -287,42 +286,53 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.icalwebtopid=0;
             me.iframes=new Array();
 			if(me.tdBody !== null) {
-				me.clearBody();
+				me.clearBody(noEmptyMsg);
 			}	
-        }
+        } else {
+			if (noEmptyMsg === true) me.clearEmptyEl();
+		}
     },
 	
-	createEmptyItem: function() {
-		var me = this,
-		    divContainer = document.createElement("div"),
-			title = document.createElement("label"),
-			text = document.createElement("label"),
-			newRow = document.createElement("br");
-		
-		divContainer.className = 'wtmail-mv-no-msg-centered';
-		title.innerText = me.mys.res('messagePreview.no.tit');
-		title.className = 'wt-theme-text-tit wtmail-no-message-tit-font';
-		text.innerText = me.mys.res('messagePreview.no.txt');
-		text.className = 'wt-theme-text-sub wtmail-no-message-subtit-font';
-		
-		divContainer.appendChild(title);
-		divContainer.appendChild(newRow);
-		divContainer.appendChild(text);
-		
-		if(me.tdBody !== null) {
-			me.clearBody();
-			me.tdBody.dom.appendChild(divContainer);
-		}	
+	addEmptyEl: function() {
+		var me = this, html;
+		if (me.tdBody && !me.emptyEl) {
+			html = '<div class="wt-centered">'
+				+ '<div class="wt-theme-text-tit" style="font-size:1.2em">'
+				+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.tit'))
+				+ '</div>'
+				+ '<div class="wt-theme-text-sub" style="font-size:0.9em">'
+				+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.txt'))
+				+ '</div>'
+				+ '</div>';
+			me.emptyEl = Ext.core.DomHelper.insertHtml('beforeEnd', me.tdBody.dom, html);
+		}
 	},
 	
-	clearBody: function() {
-		var me = this,
-			 dom = me.tdBody.dom;
-            if ( dom.hasChildNodes() ) {
-                while ( dom.childNodes.length > 0 ) {
-                    dom.removeChild( dom.firstChild );
-                }
+	clearEmptyEl: function() {
+		var el = this.emptyEl;
+		if (el) Ext.removeNode(el);
+		this.emptyEl = null;
+	},
+	
+	clearBody: function(noEmptyMsg) {
+		var me = this, dom;
+		me.clearEmptyEl();
+		if (me.tdBody !== null) {
+			dom = me.tdBody.dom;
+			if (dom && dom.hasChildNodes() ) {
+				while (dom.childNodes.length > 0) {
+					dom.removeChild(dom.firstChild);
+				}
+			}
 		}
+		if (noEmptyMsg !== true) me.addEmptyEl();
+	},
+	
+	showMessage: function(data) {
+		// At the moment, the purpose of this method is providing a way to
+		// show the empty element, this is always called with NULL data!
+		// I hope this component will be fully reviewed in future!
+		this.addEmptyEl();
 	},
 	
     _showMessage: function(acct, folder, id, setseen, rec, nopec) {
@@ -331,7 +341,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			params={service: me.mys.ID, action: 'GetMessage', folder: folder, idmessage: idmessage };*/
 	
         //if (this.folder==folder && this.idmessage==idmessage) return;
-        me._clear();
+        me._clear(true);
         me.idmessage=id;
 		me.acct=acct;
         me.folder=folder;
@@ -471,32 +481,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			);*/
 
 			var tdPEC=(me.pec?"<td style='width:24px; padding-right:8px; background-repeat: no-repeat' class='wtmail-pec'><a data-qtip='Visualizza busta completa' data-qtitle='Posta Certificata' href='javascript:Ext.emptyFn()' certificata=1 style='text-decoration:none'>&nbsp;&nbsp;&nbsp;</a></td>":"");
-			if (me.mp && WT.plTags.desktop) {
-				var wticon=(me.mp.getViewRegion()==='east'?'wt-icon-panel-bottom-xs':'wt-icon-panel-right-xs');
-				me.divSubject.update(
-					"<table class='wtmail-mv-subject-table'><tr>"+
-					tdPEC+
-					"<td>"+me.subject+"</td>"+
-					"<td class='"+wticon+"' style='width:24px; padding-right:8px; background-repeat: no-repeat'><a data-qtip='Click me!' data-qtitle='Panel mover' href='javascript:Ext.emptyFn()' panelmover=1>&nbsp;&nbsp;&nbsp;</a></td>"+
-					"</tr></table>"
-				);
-				Ext.each(me.divSubject.query("a[panelmover]"),function(o) { 
-					Ext.get(o).on("click",
-						function(e,t,o) { 
-							me.mp.switchViewPanel(); 
-							e.stopEvent(); 
-							return false;
-						}
-					);
-				});
-			} else {
-				me.divSubject.update(
-					"<table class='wtmail-mv-subject-table'><tr>"+
-					tdPEC+
-					"<td>"+me.subject+"</td>"+
-					"</tr></table>"
-				);
-			}
+			me.divSubject.update(
+				"<table class='wtmail-mv-subject-table'><tr>"+
+				tdPEC+
+				"<td>"+me.subject+"</td>"+
+				"</tr></table>"
+			);
+			
 			Ext.each(me.divSubject.query("a[certificata]"),function(o) { 
 				Ext.get(o).on("click",
 					function(e,t,o) { 

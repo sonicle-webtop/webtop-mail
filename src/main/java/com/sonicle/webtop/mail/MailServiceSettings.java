@@ -40,6 +40,7 @@ import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
 import static com.sonicle.webtop.mail.MailSettings.*;
+import com.sonicle.webtop.mail.model.ViewMode;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -295,8 +296,8 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(DEFAULT_PREFIX + MailSettings.GRID_TODAY_ROW_COLOR, "#F8F8C8");
 	}
 	
-	public String getDefaultViewMode() {
-		return getString(DEFAULT_PREFIX + VIEW_MODE, "compact");
+	public ViewMode getDefaultViewMode() {
+		return getEnum(DEFAULT_PREFIX + VIEW_MODE, ViewMode.AUTO, ViewMode.class);
 	}
 	
 	public boolean isToolbarCompact() {

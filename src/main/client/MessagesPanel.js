@@ -35,6 +35,7 @@
 Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	extend: 'Ext.panel.Panel',
 	requires: [
+		'Sonicle.resizer.BorderSplitter',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.webtop.mail.MessageView',
 		'Sonicle.webtop.mail.MessageGrid'
@@ -42,13 +43,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	uses: [
 		'Sonicle.button.PlainToggle'
 	],
-    layout:'border',
+    layout: 'border',
     border: false,
 	
-	viewRegion: 'east',
-	viewWidth: "40%",
-	viewHeight: "40%",
-	viewCollapsed: false,
+	config: {
+		viewMode: 'auto',
+		previewLocation: 'right'
+	},
     
 	keepFilterButton: null,
 	searchComponent: null,
@@ -61,12 +62,17 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     gridMenu: null,
     saveColumnSizes: false,
 	saveColumnVisibility: false,
-    savePaneSize: false,
 	
     initComponent: function() {
-		var me=this;
-		
+		var me = this, state;
 		me.callParent(arguments);
+		
+		// State is usually restored after this initComponent code.
+		// Here we want previewLocation is being available soon... so do it manually!!!
+		if (me.stateful && me.getStateId()) {
+			state = Ext.state.Manager.get(me.getStateId());
+			if (state && state.previewLocation) me.previewLocation = state.previewLocation;
+		}
 		
 		//The breadcrumb store will be set later through setImapStore, to avoid too early events
 		me.bcFolders=Ext.create({
@@ -188,28 +194,18 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}
         }));*/
 		
-		var compactView=me.mys.getVar("viewMode")==="compact";
-		
         me.folderList=Ext.create('Sonicle.webtop.mail.MessageGrid',{
             region:'center',
 			pageSize: 50,//me.pageSize,
 			mys: me.mys,
 			mp: me,
 			currentAccount: me.currentAccount,
-			compactView: compactView,
+			previewLocation: me.getPreviewLocation(),
+			compactView: me.computeShowCompactView(me.getViewMode(), me.getPreviewLocation()),
 			breadcrumb: me.bcFolders,
 			createPagingToolbar: true,
-			stateful: WT.plTags.desktop?true:false,
-			baseStateId: me.mys.buildStateId('messagegrid'),			
-/*			dockedItems: [
-				Ext.create('Ext.toolbar.Toolbar',{
-					border: false,
-					bodyStyle: {
-						borderTopColor: 'transparent'
-					},
-					items: tbitems
-				})
-			]*/
+			stateful: WT.plTags.desktop ? true : false,
+			baseStateId: me.mys.buildStateId('messagegrid')
         });
 		if (me.gridMenu) {
 			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
@@ -259,7 +255,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				}
 			});
 		});
-
+		me.folderList.store.on("metachange",function(s,meta) {
+            var gg=meta.groupField;
+			if (gg==='') gg='none';
+            //me.groupCombo.setValue(gg);
+            //me.bThreaded.toggle(meta.threaded);
+        });
 
         //if (me.saveColumnSizes) me.folderList.on('columnresize',me.columnResized,me);
 		//if (me.saveColumnVisibility) {
@@ -267,19 +268,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		//	me.folderList.on('columnshow', function(ct,col) { me.columnHiddenChange(ct,col,false); });
 		//}
 		//if (me.saveColumnOrder) me.folderList.on('columnmove', me.columnMoved, me);
-
-        me.messageView=Ext.create('Sonicle.webtop.mail.MessageView',{
-			mys: me.mys,
-			mp: me
-        });
-        me.messageView.on('messageviewed',me.messageViewed,me);
-
-        me.folderList.store.on("metachange",function(s,meta) {
-            var gg=meta.groupField;
-			if (gg==='') gg='none';
-            //me.groupCombo.setValue(gg);
-            //me.bThreaded.toggle(meta.threaded);
-        });
         
         me.toolbar=Ext.create('Ext.toolbar.Toolbar',{ 
 			defaults: {
@@ -298,21 +286,55 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				me.labelMessages
 			]
 		});
-
+		
+		var previewCfg = me.computePreviewSettings(me.viewMode, me.previewLocation),
+				viewctStateful = WT.plTags.desktop,
+				viewctStateId = me.mys.buildStateId('ctmessageview'),
+				viewctState, saveState;
+		
+		// Reset some state properties in order to avoid conflicts when 
+		// transitioning view: right <-> bottom <-> off
+		if (viewctStateful) {
+			viewctState = Ext.state.Manager.get(viewctStateId);
+			if (viewctState) {
+				saveState = false;
+				if (viewctState.collapsed && (me.previewLocation !== 'off')) {
+					delete viewctState.collapsed;
+					saveState = true;
+				}
+				if (me.previewLocation === 'off' || (viewctState.region && (viewctState.region !== previewCfg.region))) {
+					delete viewctState.region;
+					delete viewctState.width;
+					delete viewctState.height;
+					saveState = true;	
+				}
+				if (saveState) Ext.state.Manager.set(viewctStateId, viewctState);
+			}	
+		}
+		
+		me.messageView=Ext.create('Sonicle.webtop.mail.MessageView',{
+			mys: me.mys,
+			mp: me,
+			lockSplitter: previewCfg.lockSplitter
+        });
+        me.messageView.on('messageviewed',me.messageViewed,me);
+		
         me.messageViewContainer=Ext.create({
 			xtype: 'wtpanel',
-			stateful: WT.plTags.desktop,
-			stateId: me.mys.buildStateId('ctmessageview'),
-            region: WT.plTags.desktop?"east":"south", //me.viewRegion,
-            cls: 'wtmail-mv-container',
-            layout: 'fit',
-            split: true,
-            collapseMode: 'mini',
+			layout: 'fit',
+			region: previewCfg.region,
+			stateful: viewctStateful,
+			stateId: viewctStateId,
+			cls: 'wtmail-mv-container',
 			header: false,
-            collapsible : WT.plTags.desktop,
-			collapsed: false, //me.viewCollapsed,
-            height: WT.plTags.desktop?'40%':'60%', //me.viewHeight,
-			width: '40%', //me.viewWidth,
+			split: {
+				xtype: 'sobordersplitter'
+			},
+            collapseMode: 'mini',
+			collapsible: false,
+			collapsed: previewCfg.collapsed,
+			width: previewCfg.width,
+			height: previewCfg.height,
             bodyBorder: false,
             border: false,
 			tbar: Ext.create('Ext.toolbar.Toolbar',{
@@ -333,13 +355,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         });
         me.add(me.folderList);
         me.add(me.messageViewContainer);
-		me.messageViewContainer.on('resize', function(c,w,h) {
-			if (!me.movingPanel) {
-				//if (me.viewRegion==='east') me.viewWidth=w;
-				//else me.viewHeight=h;
-				//me.saveMessageView(me.viewRegion==='east'?w:h);
-			}
-		});
 		me.messageViewContainer.on("expand",function() {
 			var sel=me.folderList.getSelection();
 			if (sel.length==1) {
@@ -353,41 +368,21 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				me.clearMessageView();
 			}
 		});
-		
-		//TODO: save pane size
-		/*
-        if (this.savePaneSize) {
-            this.on("afterlayout",function() {
-                var r = this.getLayout()["south"];
-                r.split.un("beforeapply", r.onSplitMove, r);            
-                r.onSplitMove = r.onSplitMove.createSequence(this.messageViewResized, this);
-                r.split.on("beforeapply", r.onSplitMove, r);            
-            },this);
-        }
-		*/
-
-
     },
 	
 	//setImapStore: function(store) {
 	//	this.bcFolders.setStore(store);
 	//},
 	
+	getState: function() {
+		var me = this,
+				state = me.callParent();
+		state = me.addPropertyToState(state, 'previewLocation');
+		return state;
+	},
+	
 	getAct: function(name) {
 		return this.mys.getAct(name);
-	},
-	
-	getViewRegion: function() {
-		return this.viewRegion;
-	},
-	
-	switchViewPanel: function() {
-		var me=this,
-			r=(me.viewRegion==='east'?'south':'east'),
-			w=me.viewWidth,
-			h=me.viewHeight;
-	
-		me.moveViewPanel(r,w,h,true);
 	},
 	
 	refreshGridWhenIdle: function(foldername) {
@@ -411,70 +406,33 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.reloadGrid();
 	},
 	
-	moveViewPanel: function(r,w,h,save,collapsed) {
-		var me=this,
-			mv=me.messageView,
-			mvc=me.messageViewContainer,
-			idm=mv.idmessage,
-			idf=mv.folder,
-			acct=mv.account;
-	
-		//TODO: necessary???
-		////trick for switched user forced as south standard, no save
-		//if (WT.loginusername!=WT.username) {
-		//	r=null;
-		//	save=false;
-		//}
+	updatePreviewLocation: function(nv, ov) {
+		var me = this,
+				previewCfg = me.computePreviewSettings(me.getViewMode(), nv),
+				previewCt = me.messageViewContainer,
+				mview = me.messageView,
+				accId = mview ? mview.acct : null, // dump data here before clear!
+				folId = mview ? mview.folder : null, // dump data here before clear!
+				msgId = mview ? mview.idmessage : null, // dump data here before clear!
+				msgMo = mview ? mview.model : null; // dump data here before clear!
 		
-		me.movingPanel=true;
-		me.clearMessageView();
-		if (!r) {
-			r="south";
-			w="40%";
-			h="40%";
-		}
-		me.viewRegion=r;
-		me.viewWidth=w;
-		me.viewHeight=h;
-		me.viewCollapsed=collapsed;
-		mvc.setRegion(me.viewRegion);
-		mvc.setWidth(me.viewWidth);
-		mvc.setHeight(me.viewHeight);
-		me.updateLayout();
-		if (me.viewCollapsed) mvc.collapse();
-		//if (save) me.saveMessageView();
-		me.showMessage(acct,idf,idm,mv.model);
-		me.movingPanel=false;
-	},
-	
-	saveMessageView: function(newsize) {
-		var me=this;
-		//collapsed has value string right/... or false
-		me.viewCollapsed=me.messageViewContainer.collapsed!==false;
-		if (!me.viewCollapsed && newsize) {
-			if (me.viewRegion==="south") me.viewHeight=newsize;
-			else me.viewWidth=newsize;
-		}
-		WT.ajaxReq(me.mys.ID, 'SetMessageView', {
-			params: {
-				region: me.viewRegion,
-				width: me.viewWidth,
-				height: me.viewHeight,
-				collapsed: me.viewCollapsed
-			}
-		});
+		// Skip persisting state on config initialization and when value is not changed
+		if (ov !== undefined && nv !== ov) me.saveState();
 		
+		if (me.folderList) me.folderList.setCompactView(me.computeShowCompactView(me.getViewMode(), nv));
+		if (me.rendered && nv !== ov) {
+			Ext.suspendLayouts();
+			me.clearMessageView();
+			previewCt.lockSplitter = previewCfg.lockSplitter;
+			previewCt.setRegion(previewCfg.region);
+			previewCt.setWidth(previewCfg.width);
+			previewCt.setHeight(previewCfg.height);
+			previewCt.setCollapsed(previewCfg.collapsed);
+			Ext.resumeLayouts(true);
+			previewCt.splitter.refresh();
+			if (mview && nv !== 'off') me.showMessage(accId, folId, msgId, msgMo);
+		}
 	},
-	
-/*    
-    setViewSize: function(hperc) {
-        if (this.ownerCt) {
-            var h=parseInt(this.ownerCt.getSize().height*hperc/100);
-            this.messageViewContainer.setHeight(h);
-            this.updateLayout();
-        }
-    },
-*/
     
     printMessageView: function() {
         this.messageView.print();
@@ -630,20 +588,22 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}
 		}
         me.fireEvent('gridselectionchanged',sm/*,ctrlshift*/);
-		if(r.length === 0)
-			me.messageView.createEmptyItem();
     },
     
 	showMessage: function(acct,folder,id,rec) {
+		var me=this;
+		if (!me.messageView) return;
 		if (acct && folder && id) {
-			var me=this;
 			if (WT.plTags.desktop) me.messageViewContainer.getTopBar().show();
 			me.messageView._showMessage(acct, folder, id, !me.mys.getVar("manualSeen"), rec);
+		} else {
+			me.messageView._clear();
 		}
 	},
 
     clearMessageView: function() {
 		var me=this;
+		if (!me.messageView) return;
 		if (WT.plTags.desktop) me.messageViewContainer.getTopBar().hide();
         me.messageView._clear();
     },
@@ -697,30 +657,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}
 		});
 	},
-	
-	/*
-    messageViewResized: function() {
-        var ah=this.messageViewContainer.getHeight();
-        if (ah==this.lastHView) return;
-        this.lastHView=ah;
-        var hperc=(ah*100/this.getHeight());
-        WT.JsonAjaxRequest({
-            url: "ServiceRequest",
-            params: {
-                service: 'mail',
-                action: 'SavePaneSize',
-                hperc: hperc
-            },
-            method: "POST",
-            callback: function(o,options) {
-
-            },
-            scope: this
-        });
-        
-    },
-    
-	*/
    
     /*rowDblClicked: function(grid, r, tr, rowIndex, e, eopts) {
 		var me=this;
@@ -739,6 +675,49 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	
     res: function(name) {
 		return this.mys.res(name);
+	},
+	
+	computeShowCompactView: function(viewMode, previewLocation) {
+		if (viewMode === 'compact') {
+			return true;
+		} else if (viewMode === 'columns') {
+			return WT.plTags.desktop ? false : true;
+		} else { // viewMode=auto	
+			if (previewLocation === 'off' || previewLocation === 'bottom') {
+				// Multi columns are preferred (except for mobile)
+				return WT.plTags.desktop ? false : true;
+			} else {
+				// Single column is preferred
+				return true;
+			}
+		}
+	},
+	
+	computePreviewSettings: function(viewMode, previewLocation) {
+		if (previewLocation === 'off') {
+			return {
+				region: 'east',
+				collapsed: true,
+				lockSplitter: true,
+				width: undefined,
+				height: undefined
+			};
+		} else if (previewLocation === 'bottom') {
+			return {
+				region: 'south',
+				collapsed: WT.plTags.desktop ? false : true,
+				lockSplitter: false,
+				width: undefined,
+				height: '60%'
+			};
+		} else {
+			return {
+				region: 'east',
+				collapsed: WT.plTags.desktop ? false : true,
+				lockSplitter: false,
+				width: '60%',
+				height: undefined
+			};
+		}
 	}
-   
 });

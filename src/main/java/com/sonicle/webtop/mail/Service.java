@@ -8610,7 +8610,7 @@ public class Service extends BaseService {
 			co.put("receipt", us.isReceipt());
 			co.put("autoAddContact", us.isAutoAddContact());
 			co.put("priority", us.isPriority());
-			co.put("viewMode", us.getViewMode());
+			co.put("viewMode", EnumUtils.toSerializedName(us.getViewMode()));
 			co.put("noMailcardOnReplyForward", us.isNoMailcardOnReplyForward());
 			co.put("pageRows", us.getPageRows());
 			co.put("schedDisabled",ss.isScheduledEmailsDisabled());

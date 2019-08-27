@@ -39,8 +39,8 @@ Ext.define('Sonicle.webtop.mail.store.ViewMode', {
 	
 	model: 'WTA.model.Simple',
 	data: [
-		['columns'],
-		['compact']
+		['auto'],
+		['compact'],
+		['columns']
 	]
-	
 });
