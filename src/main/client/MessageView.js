@@ -12,7 +12,7 @@
  * This program is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
- * details.
+ * details.cl
  *
  * You should have received a copy of the GNU Affero General Public License
  * along with this program; if not, see http://www.gnu.org/licenses or write to
@@ -318,7 +318,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	clearBody: function() {
 		var me = this,
 			 dom = me.tdBody.dom;
-            if ( dom.hasChildNodes() ) {
+            if ( dom && dom.hasChildNodes() ) {
                 while ( dom.childNodes.length > 0 ) {
                     dom.removeChild( dom.firstChild );
                 }
