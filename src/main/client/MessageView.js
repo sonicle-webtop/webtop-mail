@@ -309,7 +309,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		divContainer.appendChild(newRow);
 		divContainer.appendChild(text);
 		
-		if(me.tdBody !== null) {
+		if(me.tdBody !== null && me.tdBody.dom) {
 			me.clearBody();
 			me.tdBody.dom.appendChild(divContainer);
 		}	
