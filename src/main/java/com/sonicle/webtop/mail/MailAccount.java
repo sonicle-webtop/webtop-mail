@@ -481,6 +481,7 @@ public class MailAccount {
 		if (fcp != null) {
 			fcp.removeChild(fc);
 		}
+		foldersCache.remove(fc.getFolderName());
 		fc.cleanup(true);
 		try {
 			fc.close();
@@ -962,14 +963,19 @@ public class MailAccount {
 	
 	public String renameFolder(String orig, String newname) throws MessagingException {
 		FolderCache fc = getFolderCache(orig);
+		if (fc.getFolder().getName().equals(newname)) return orig;
+		
 		FolderCache fcparent = fc.getParent();
 		Folder oldfolder = fc.getFolder();
-		destroyFolderCache(fc);
+		//we need to close the source folder or exception will not be thrown in case of error
+		fc.close();
 		Folder newfolder = fcparent.getFolder().getFolder(newname);
 		boolean done = oldfolder.renameTo(newfolder);
 		if (!done) {
 			throw new MessagingException("Rename failed");
 		}
+		//destroy folder cache only if rename was done
+		destroyFolderCache(fc);
 		
 		//trick for Dovecot on NethServer: under shared folders, create and destroy a fake folder
 		//or rename will not work correctly
