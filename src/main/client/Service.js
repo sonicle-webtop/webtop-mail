@@ -627,8 +627,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("clear",{ handler: me.gridAction(me,'Flag','clear'), iconCls: '' });
 		
         //me.addAct("newtag",{ handler: me.gridAction(me,'NewTag') });
-        me.addAct("managetags",{ handler: me.gridAction(me,'ManageTags') });
-        me.addAct("removetags",{ handler: me.gridAction(me,'RemoveAllTags') });
+        me.addAct("managetags",{ handler: me.gridAction(me,'ManageTags'), iconCls: null });
+        me.addAct("removetags",{ handler: me.gridAction(me,'RemoveAllTags'), iconCls: null });
 		
 		
         me.addAct("addnote",{ handler: me.gridAction(me,'AddNote') });
