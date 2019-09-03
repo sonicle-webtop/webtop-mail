@@ -35,6 +35,7 @@
 Ext.define('Sonicle.webtop.mail.view.TagsManager', {
 	extend: 'WTA.sdk.DockableView',
 	requires: [
+		'Sonicle.grid.column.Action',
 		'Sonicle.webtop.mail.model.Tag'
 	],
 	uses: [
