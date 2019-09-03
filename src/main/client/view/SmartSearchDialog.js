@@ -393,7 +393,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 											},
 											callback: function(success,json) {
 												if (success) {
-													me.mys.selectAndShowFolder(folderid,uid,json.page,json.threadid);
+													me.mys.selectAndShowFolder(me.acct,folderid,uid,json.row,json.page,json.threadid);
 												} else {
 													WT.error(json.message);
 												}
