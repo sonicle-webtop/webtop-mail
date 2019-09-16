@@ -681,17 +681,17 @@ public class Service extends BaseService {
 		while(retry>0) {
 			try {
 				account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
-				if (retry<3) logger.error("Retry deleting automatic draft succeded");
+				if (retry<3) logger.debug("Retry deleting automatic draft succeded");
 				break;
 			} catch(Throwable t) {
-				logger.error("Error deleting automatic draft",t);
+				logger.debug("Error deleting automatic draft",t);
 			}
 			if (--retry >0) {
-				logger.error("Retrying delete of automatic draft after exception");
+				logger.debug("Retrying delete of automatic draft after exception");
 				try { Thread.sleep(1000); } catch(InterruptedException exc) {}
 			}
 		}
-		if (retry==0) logger.error("Delete of automatic draft failed");
+		if (retry==0) logger.debug("Delete of automatic draft failed");
 	}
 	
 	private MailAccount getAccount(Identity ident) {
@@ -742,7 +742,7 @@ public class Service extends BaseService {
 			jsmsg.replyfolder=jsmas.replyfolder;
 			jsmsg.subject=jsmas.subject;
 
-			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false);
+			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false,true);
 			account.checkStoreConnected();
 			FolderCache fc = account.getFolderCache(account.getFolderDrafts());
 			
@@ -752,7 +752,7 @@ public class Service extends BaseService {
 			msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
 			Exception exc = saveMessage(msg, null, fc);
 		} catch(Exception exc) {
-			logger.error("Error on autosave in drafts!",exc);
+			logger.debug("Error on autosave in drafts!",exc);
 		}
 	}	
 	
@@ -4902,6 +4902,10 @@ public class Service extends BaseService {
 	}
 
 	private SimpleMessage prepareMessage(JsMessage jsmsg, long msgId, boolean save, boolean isFax) throws Exception {
+		return prepareMessage(jsmsg,msgId,save,isFax,false);
+	}
+	
+	private SimpleMessage prepareMessage(JsMessage jsmsg, long msgId, boolean save, boolean isFax, boolean skipInvalidEmails) throws Exception {
 		PrivateEnvironment env = environment;
 		UserProfile profile = env.getProfile();
 		//expand multiple addresses
@@ -5020,7 +5024,8 @@ public class Service extends BaseService {
 					//InternetAddress.parse(email.replace(',', ' '), false);
 					getInternetAddress(email);
 				} catch (AddressException exc) {
-					Service.logger.error("Exception",exc);
+					if (skipInvalidEmails) continue;
+					Service.logger.debug("Exception",exc);
 					throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR) + " : " + email);
 				}
 			}

@@ -1184,11 +1184,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	startNewMessage: function(idfolder, opts) {
 		opts=opts||{};
 		
-		var me=this,
-		//			identIndex=0,
-		//			identities=me.varsData.identities,
-		//          ident=identities[0],
-		ident=me.getFolderIdentity(idfolder);
+		var me=this,ident;
+		
+		if(opts.identityId) {
+			ident = me.getIdentityFromId(opts.identityId)
+		} else {
+			ident = me.getFolderIdentity(idfolder);
+		}
 		rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 	
 		/*        for(var i=1;i<identities.length;++i) {
@@ -1293,6 +1295,19 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	getIdentity: function(index) {
 		return this.getVar("identities")[index];
 	},
+	
+	getIdentityFromId: function(identityId) {
+		var me = this, identity,
+				identities = me.getVar("identities");
+		
+		identities.forEach(function(element) {
+			if(element.identityId === identityId) {
+				identity = element;
+				return;
+			}
+		});
+		return identity;
+	},	
 	
 	actionAdvancedSearch: function(s,e) {
 		var me=this,

@@ -1486,6 +1486,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						recipients: json.recipients,
 						content: json.content,
                         contentReady: true,
+						identityId: json.identityId,
                         proprity: json.priority,
 						replyfolder: json.replyfolder,
                         format: json.format,
