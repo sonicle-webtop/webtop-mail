@@ -2355,7 +2355,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	createColumnsFromState: function(state) {
 		var me=this,n=0,dcols=new Array();
 		
-		if (me.compactView) {
+		if (me.compactView && me.currentAccount) {
 			var node=me.mys.getFolderNodeById(me.currentAccount,me.currentFolder),
 				issentfolder=node?(node.data.isSent||node.data.isUnderSent):false;
 			
