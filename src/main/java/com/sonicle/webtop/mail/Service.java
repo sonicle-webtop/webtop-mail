@@ -742,7 +742,7 @@ public class Service extends BaseService {
 			jsmsg.replyfolder=jsmas.replyfolder;
 			jsmsg.subject=jsmas.subject;
 
-			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false,true);
+			SimpleMessage msg = prepareMessage(jsmsg,msgId,true,false,true);
 			account.checkStoreConnected();
 			FolderCache fc = account.getFolderCache(account.getFolderDrafts());
 			
@@ -4788,7 +4788,7 @@ public class Service extends BaseService {
 			//if (attachments == null) {
 			//	attachments = new String[0];
 			//}
-			SimpleMessage msg = prepareMessage(jsmsg,msgId,false,false);
+			SimpleMessage msg = prepareMessage(jsmsg,msgId,true,false);
 			account.checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
@@ -5132,41 +5132,7 @@ public class Service extends BaseService {
                 content=StringUtils.replacePattern(content, pattern1+".{39}"+pattern2, "");
 				
 				//My resources as cids?
-				if (ss.isPublicResourceLinksAsInlineAttachments()) {
-					// ---------------------------------------------
-					ArrayList<JsAttachment> rescids=new ArrayList<>();
-					String match="\""+URIUtils.concat(getEnv().getCoreServiceSettings().getPublicBaseUrl(),ResourceRequest.URL);
-					while(StringUtils.contains(content, match)) {
-						Pattern pattern=Pattern.compile(RegexUtils.escapeRegexSpecialChars(match) + ".*\"");
-						Matcher matcher=pattern.matcher(content);
-						matcher.find();
-						String matched=matcher.group();
-						String url=matched.substring(1,matched.length()-1);
-						URI uri=new URI(url);
-
-						// Retrieve macthed URL and save it locally
-						logger.debug("Downloading resource file as uploaded file from URL [{}]", url);
-						HttpClient httpCli = null;
-						try {
-							httpCli = HttpClientUtils.createBasicHttpClient(HttpClientUtils.configureSSLAcceptAll(), uri);
-							InputStream is=HttpClientUtils.getContent(httpCli, uri);
-							String tag=""+msgId;
-							String filename=PathUtils.getFileName(uri.getPath());
-							UploadedFile ufile=addAsUploadedFile(tag,filename,ServletHelper.guessMediaType(filename),is);
-							rescids.add(new JsAttachment(ufile.getUploadId(),filename,ufile.getUploadId(),true,ufile.getSize()));
-							content=matcher.replaceFirst("\"cid:"+ufile.getUploadId()+"\"");
-						} catch(IOException ex) {
-							throw new WTException(ex, "Unable to download resource file [{}]", uri);
-						} finally {
-							HttpClientUtils.closeQuietly(httpCli);
-						}
-					}
-					// ---------------------------------------------
-					
-					// TODO: REPLACE THE ABOVE WITH NEW VERSION BELOW THAT MAKE USE ONLY OF REGEX !!!
-					
-					/*
-					// ---------------------------------------------
+				if (!save && ss.isPublicResourceLinksAsInlineAttachments()) {
 					// Replaces every src URL pointing a public image with a cid, tranforming URL to a direct inline attachments
 					String uploadTag = ""+msgId;
 					String resourcesBaseUrl = URIUtils.concat(getEnv().getCoreServiceSettings().getPublicBaseUrl(), ResourceRequest.URL);
@@ -5196,8 +5162,6 @@ public class Service extends BaseService {
 					}
 					maSrc.appendTail(sb);
 					content = sb.toString();
-					// ---------------------------------------------
-					*/
 
 					//add new resource cids as attachments
 					if (rescids.size()>0) {
