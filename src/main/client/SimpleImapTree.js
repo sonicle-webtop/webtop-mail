@@ -68,7 +68,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 							var unr=r.get('unread'),
 								hunr=r.get('hasUnread'),
 								id=r.get('id');
-							return (unr!==0||hunr?'<b><span data-qtip="'+id+'">'+v+'</span></b>':v);
+							return (unr!==0||hunr?'<span style="font-weight:bold" data-qtip="'+id+'">'+v+'</span>':v);
 						},
 						editor: 'textfield'
 					},
@@ -79,7 +79,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 						flex: 1,
 						sortable: false,
 						renderer: function(v,p,r) {
-							return (v===0?'':'<b>'+v+'</b>');
+							return (v===0?'':'<span style="font-weight:bold">'+v+'</span>');
 						}
 					},
 					{
