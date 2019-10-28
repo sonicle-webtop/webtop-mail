@@ -721,8 +721,7 @@ public class MailManager extends BaseManager implements IMailManager {
 				for (int i=0;i<msgs.length;i++) {
 					uid[i]=fc.getUID(msgs[i]);
 				}
-				fc.untagMessages(uid, oldTagId);
-				fc.tagMessages(uid, newTagId);
+				fc.updateMessageTag(uid, oldTagId, newTagId);
 			} catch (MessagingException ex) {
 				logger.error("Error updating folder tags on "+fc.getFolderName(),ex);
 			} catch (IOException ex) {

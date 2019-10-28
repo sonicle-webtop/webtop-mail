@@ -1258,7 +1258,19 @@ public class FolderCache {
         }
     }
   
-    public void clearMessagesTags(long uids[]) throws MessagingException {
+	public void updateMessageTag(long uids[], String oldTagId, String newTagId) throws MessagingException {
+		Message mmsgs[]=getMessages(uids, false);
+		for(Message fmsg: mmsgs) {
+			Flags attachedFlags = fmsg.getFlags();
+			Flags oldFlag = new Flags(oldTagId);
+			if(attachedFlags.contains(oldFlag)) {
+				fmsg.setFlags(oldFlag, false);
+				fmsg.setFlags(new Flags(newTagId), true);
+			}
+        }
+	}
+	
+	public void clearMessagesTags(long uids[]) throws MessagingException {
         Message mmsgs[]=getMessages(uids,false);
 		Flags flags=new Flags();
 		for(Tag tag: ms.atags) {
