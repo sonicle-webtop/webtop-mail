@@ -1537,9 +1537,25 @@ public class FolderCache {
 	}
 	
 	protected boolean isAttachment(Part part) throws MessagingException {
-		return Part.ATTACHMENT.equalsIgnoreCase(part.getDisposition()) 
-				/*|| Part.INLINE.equalsIgnoreCase(part.getDisposition())*/
-				|| (part.getDisposition() == null && part.getFileName() != null);
+		String disp = part.getDisposition();
+		if (Part.ATTACHMENT.equalsIgnoreCase(disp)) {
+			// Disposition is explicitly set to attachment
+			return true;
+			
+		} else if (Part.INLINE.equalsIgnoreCase(disp)) {
+			String ctype = part.getContentType();
+			int index = ctype.indexOf(';');
+			if (index > 0) {
+				ctype = ctype.substring(0, index);
+			}
+			boolean isInline = ms.isInlineableMime(ctype);
+			return !isInline;
+		
+		} else if (disp == null && !StringUtils.isBlank(part.getFileName())) {
+			// Disposition is missing but we have a valid attachment filename
+			return true;
+		}
+		return false;
 	}
     
     protected boolean hasAttachements(Part p) throws MessagingException, IOException {
