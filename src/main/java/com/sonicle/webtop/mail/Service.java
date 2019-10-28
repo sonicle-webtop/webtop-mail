@@ -3119,11 +3119,11 @@ public class Service extends BaseService {
                 uids=getMessageUIDs(mcache,request);
                 if (archiving) archiveMessages(mcache, folderarchive, toLongs(uids),fullthreads);
 				else moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
-				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
 				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + ", tofolder: '"+StringEscapeUtils.escapeEcmaScript(tofolder)+"', archiving: "+archiving+"\n}";
 			}
+			tomcache.refreshUnreads();
 		} catch(Exception exc) {
 			Service.logger.error("Exception",exc);
 			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
