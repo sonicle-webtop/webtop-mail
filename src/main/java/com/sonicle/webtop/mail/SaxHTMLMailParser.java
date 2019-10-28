@@ -420,11 +420,13 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 	private Map<String, String> getQueryMap(String query) {
 		String[] params = query.split("&");
 		Map<String, String> map = new HashMap<>();
-		for (String param : params)
-		{
-			String name = param.split("=")[0];
-			String value = param.split("=")[1];
-			map.put(name, value);
+		for (String param : params) {
+			String[] keys = param.split("=");
+			if(keys.length >= 2){
+				String name = keys[0];
+				String value = keys[1];
+				map.put(name, value);
+			}
 		}
 		return map;
 	}  
