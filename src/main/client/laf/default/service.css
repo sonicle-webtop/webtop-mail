@@ -295,7 +295,7 @@ blockquote {
 	display: inline-block;
 	width: 20px;
 }
-.wtmail-messagecolumn-collapse {
+.wtmail-messagecolumn-collapsetool {
 	cursor: pointer;
 }
 .wtmail-messagecolumn-notetool {

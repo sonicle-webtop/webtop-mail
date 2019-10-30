@@ -147,14 +147,15 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		special: 'Special'
 	},
 	
-	threadCollapseSelector: '.wtmail-messagecolumn-collapse',
+	threadCollapseSelector: '.wtmail-messagecolumn-collapsetool',
+	//headFloatIconSelector: '.wtmail-messagecolumn-head-float-icon',
 	noteIconSelector: '.wtmail-messagecolumn-notetool',
 	
 	tpl: [
 		'<div class="wtmail-grid-cell-messagecolumn">',
 			'<div class="wtmail-messagecolumn-head-float">',
 				'<tpl if="headFloatIcon">',
-					'<div class="wtmail-messagecolumn-icon {headFloatIcon.iconCls}" style="height:16px;" data-qtip="{headFloatIcon.tooltip}"></div>',
+					'<div class="wtmail-messagecolumn-icon wtmail-messagecolumn-head-float-icon {headFloatIcon.iconCls}" style="height:16px;" data-qtip="{headFloatIcon.tooltip}"></div>',
 				'</tpl>',
 				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{date.tooltip}">{date.text}</span>',
 			'</div>',
@@ -162,7 +163,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				'<tpl if="threaded">',
 					'<tpl if="threadIndent == 0 && threadHasChildren">',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}" data-qtip="{collapseTooltip}">',
-							'<i class="wtmail-messagecolumn-collapse fa <tpl if="!threadOpen">fa-plus-square-o<tpl else>fa-minus-square-o</tpl>">&nbsp;</i>',
+							'<i class="wtmail-messagecolumn-collapsetool fa <tpl if="!threadOpen">fa-plus-square-o<tpl else>fa-minus-square-o</tpl>">&nbsp;</i>',
 						'</div>',
 					'<tpl else>',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
@@ -252,7 +253,16 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				}
 				Ext.callback(me.collapseHandler, me.origScope, [view, recordIndex, cellIndex, e, record, row], undefined, me);
 			
-			} else if (e.getTarget(me.noteIconSelector)) {
+			}/* else if (e.getTarget(me.headFloatIconSelector)) {
+				// Flag event to tell SelectionModel not to process it.
+				e.stopSelection = me.stopSelection;
+				// Do not allow focus to follow from this mousedown unless the grid is already in actionable mode 
+				if (isClick && !view.actionableMode) {
+					e.preventDefault();
+				}
+				Ext.callback(me.typeHandler, me.origScope, [view, recordIndex, cellIndex, e, record, row], undefined, me);
+				
+			}*/ else if (e.getTarget(me.noteIconSelector)) {
 				// Flag event to tell SelectionModel not to process it.
 				e.stopSelection = me.stopSelection;
 				// Do not allow focus to follow from this mousedown unless the grid is already in actionable mode 
