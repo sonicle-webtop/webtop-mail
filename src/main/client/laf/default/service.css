@@ -294,6 +294,10 @@ blockquote {
 	display: inline-block;
 	width: 20px;
 }
+.wtmail-messagecolumn-notetool {
+	cursor: pointer;
+	color: #e7b465;
+}
 .wtmail-messagecolumn-glyph {
 	display: inline-block;
 	margin: 0 0 0 2px;

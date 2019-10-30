@@ -76,6 +76,17 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	 */
 	
 	/**
+	 * @cfg {Function/String} noteHandler
+	 * A function called when the notes icon is clicked.
+	 * @cfg {Ext.view.Table} handler.view The owning TableView.
+	 * @cfg {Number} handler.rowIndex The row index clicked on.
+	 * @cfg {Number} handler.colIndex The column index clicked on.
+	 * @cfg {Event} handler.e The click event.
+	 * @cfg {Ext.data.Model} handler.record The Record underlying the clicked row.
+	 * @cfg {HTMLElement} handler.row The table row clicked upon.
+	 */
+	
+	/**
 	 * @cfg {Object} scope
 	 * The scope (`this` reference) in which the `{@link #collapseHandler}`
 	 * functions are executed.
@@ -117,6 +128,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	timeLongFormat: 'H:i:s',
 	
 	collapseTooltip: 'Click to expand/collapse discussion threads',
+	noteTooltip: 'Click to view annotation',
 	noSubjectText: '[no subject]',
 	flagsTexts: {
 		red: 'Red marker',
@@ -136,6 +148,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	},
 	
 	threadCollapseSelector: '.x-grid-group-title',
+	noteIconSelector: '.wtmail-messagecolumn-notetool',
 	
 	tpl: [
 		'<div class="wtmail-grid-cell-messagecolumn">',
@@ -185,6 +198,10 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 						'<i class="{star.glyphCls}"></i>',
 					'</div>',
 				'</tpl>',
+				'<tpl if="note">',
+					'<div class="wtmail-messagecolumn-glyph" data-qtip="{note.tooltip}">',
+					'<i class="wtmail-messagecolumn-notetool fa fa-sticky-note"></i>',
+				'</div>',
 				'<span data-qtip="{size.tooltip}">{size.text}</span>',
 			'</div>',
 			'<div class="wtmail-messagecolumn-body">',
@@ -234,7 +251,17 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 					e.preventDefault();
 				}
 				Ext.callback(me.collapseHandler, me.origScope, [view, recordIndex, cellIndex, e, record, row], undefined, me);
+			
+			} else if (e.getTarget(me.noteIconSelector)) {
+				// Flag event to tell SelectionModel not to process it.
+				e.stopSelection = me.stopSelection;
+				// Do not allow focus to follow from this mousedown unless the grid is already in actionable mode 
+				if (isClick && !view.actionableMode) {
+					e.preventDefault();
+				}
+				Ext.callback(me.noteHandler, me.origScope, [view, recordIndex, cellIndex, e, record, row], undefined, me);
 			}
+			
 		} else {
 			ret = me.callParent(arguments);
 		}
@@ -261,6 +288,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			subject: me.buildSubject(rec.get('subject')),
 			highPriority: rec.get('priority') < 3 ? true : false,
 			hasAttachment: rec.get('atts'),
+			note: rec.get('note') === true ? {tooltip: me.noteTooltip} : null,
 			flag: me.buildFlag(rec.get('flag')),
 			star: rec.get('starred') ? me.buildFlag('special') : null,
 			tags: me.buildTags(rec.get('tags')),
