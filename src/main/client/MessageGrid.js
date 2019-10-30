@@ -2568,6 +2568,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				timeShortFormat: WT.getShortTimeFmt(),
 				timeLongFormat: WT.getLongTimeFmt(),
 				collapseTooltip: me.mys.res('wtmailmailmessagecolumn.collapseTooltip'),
+				noteTooltip: me.mys.res('wtmailmailmessagecolumn.noteTooltip'),
 				noSubjectText: me.mys.res('wtmailmailmessagecolumn.nosubject'),
 				flagsTexts: {
 					red: me.mys.res('message.flag.red'),
@@ -2587,6 +2588,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				},
 				collapseHandler: function(view, ridx) {
 					me.mys.messagesPanel.folderList.collapseClicked(ridx);
+				},
+				noteHandler: function(view, ridx, cidx, e, rec) {
+					var folder = me.multifolder ? rec.get("folder") : me.currentFolder;
+					me.editNote(me.currentAccount, rec.get("idmessage"), folder);
 				},
 				flex: 1
 			};

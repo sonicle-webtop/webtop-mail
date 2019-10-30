@@ -298,6 +298,10 @@ blockquote {
 .wtmail-messagecolumn-collapse {
 	cursor: pointer;
 }
+.wtmail-messagecolumn-notetool {
+	cursor: pointer;
+	color: #e7b465;
+}
 .wtmail-messagecolumn-glyph {
 	display: inline-block;
 	margin: 0 0 0 2px;
