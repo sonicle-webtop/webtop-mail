@@ -4678,8 +4678,8 @@ public class Service extends BaseService {
 							
 							Condition<ContactQuery> predicate = new ContactQuery().email().eq(contactEmail);
 							
-							List<Integer> myCategories = contactsManager.listCategoryIds();
-							List<Integer> sharedCategories = contactsManager.listIncomingCategoryIds();
+							Set<Integer> myCategories = contactsManager.listCategoryIds();
+							Set<Integer> sharedCategories = contactsManager.listIncomingCategoryIds();
 							myCategories.addAll(sharedCategories);
 							
 							boolean existsContact = contactsManager.existContact(myCategories, predicate);
