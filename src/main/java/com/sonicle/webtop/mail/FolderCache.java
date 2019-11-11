@@ -1538,11 +1538,14 @@ public class FolderCache {
 	
 	protected boolean isAttachment(Part part) throws MessagingException {
 		String disp = part.getDisposition();
+		String hdrs[]=part.getHeader("Content-ID");
+		String cid=hdrs!=null?hdrs[0]:null;
 		if (Part.ATTACHMENT.equalsIgnoreCase(disp)) {
 			// Disposition is explicitly set to attachment
 			return true;
 			
-		} else if (Part.INLINE.equalsIgnoreCase(disp)) {
+		} else if (cid!=null || Part.INLINE.equalsIgnoreCase(disp)) {
+			// Disposition is excplicitly inline, or has a Content-ID
 			String ctype = part.getContentType();
 			int index = ctype.indexOf(';');
 			if (index > 0) {
