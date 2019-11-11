@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.IdentifierUtils;
 import com.sonicle.webtop.core.util.ICalendarUtils;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,6 +46,7 @@ import net.fortuna.ical4j.data.*;
 import net.fortuna.ical4j.model.*;
 import net.fortuna.ical4j.model.component.*;
 import net.fortuna.ical4j.model.property.*;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import sun.awt.windows.ThemeReader;
@@ -96,7 +98,10 @@ public class ICalendarRequest {
 		else method=icalMethod.getValue();
 		vevent = (VEvent) ical.getComponent(Component.VEVENT);
 		
-		uid=vevent.getUid().getValue();
+		if (vevent.getUid()!=null) uid=vevent.getUid().getValue();
+		else uid=ICalendarUtils.buildUid(DigestUtils.md5Hex(
+			IdentifierUtils.getUUIDTimeBased(true)
+		), "nodomain.tld");
 		
 		UtcProperty d=vevent.getLastModified();
 		if (d==null) d=vevent.getDateStamp();
