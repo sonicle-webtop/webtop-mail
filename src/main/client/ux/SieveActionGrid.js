@@ -252,7 +252,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 				edp = me.findPlugin('cellediting'),
 				sto = me.getStore();
 		
-		edp.cancelEdit();
+		edp.completeEdit();
 		sto.add(sto.createModel({
 			method: 'discard'
 		}));

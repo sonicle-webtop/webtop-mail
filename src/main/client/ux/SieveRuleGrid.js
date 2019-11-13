@@ -291,7 +291,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 				edp = me.findPlugin('cellediting'),
 				sto = me.getStore();
 		
-		edp.cancelEdit();
+		edp.completeEdit();
 		sto.add(sto.createModel({
 			field: 'subject',
 			operator: 'contains'
