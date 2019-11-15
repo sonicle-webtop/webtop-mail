@@ -34,6 +34,9 @@
 
 Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 	extend: 'WTA.sdk.DockableView',
+	uses: [
+		'Sonicle.webtop.mail.ux.SmartSearchFilterConfirmBox'
+	],
 	
 	dockableConfig: {
 		iconCls: 'wtmail-icon-smartsearch-xs',
@@ -219,14 +222,12 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					],					
 					listeners: {
 						rowclick: function(grid, r, tr, rowIndex, e, eopts) {
-							me.confirmType("", r.get("type"), r.get("name"), "smartsearch.confirm.filterperson",function(bid) {
+							me.confirmOnFilterType('', function(bid, value) {
 								if (bid === 'ok') {
-									var target = WTA.Util.getCheckedRadioUsingDOM(['ftypenone', 'ftypeinclude', 'ftypeexclude']),
-										rtype=target==="ftypenone"?0:target==="ftypeinclude"?1:-1;
-									r.set("type",rtype);
+									r.set('type', me.value2TypeField(value));
 									me.runSearch(false);
 								}
-							});
+							}, me, me.typeField2Value(r.get('type')), 'smartsearch.confirm.filterperson', r.get('name'));
 						}
 					}
 				},
@@ -260,14 +261,12 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					],
 					listeners: {
 						rowclick: function(grid, r, tr, rowIndex, e, eopts) {
-							me.confirmType("", r.get("type"), r.get("name"), "smartsearch.confirm.filterfolder", function(bid) {
+							me.confirmOnFilterType('', function(bid, value) {
 								if (bid === 'ok') {
-									var target = WTA.Util.getCheckedRadioUsingDOM(['ftypenone', 'ftypeinclude', 'ftypeexclude']),
-										rtype=target==="ftypenone"?0:target==="ftypeinclude"?1:-1;
-									r.set("type",rtype);
+									r.set('type', me.value2TypeField(value));
 									me.runSearch(false);
 								}
-							});
+							}, me, me.typeField2Value(r.get('type')), 'smartsearch.confirm.filterfolder', r.get('name'));
 						}
 					}
 				}
@@ -628,21 +627,43 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 			
     },
 	
-	confirmType: function(msg, id, value, resprefix, cb, scope, opts) {
-		var me = this, html;
-		html = "</br></br>"
-				+ "<table width='70%' style='font-size: 12px'>"
-				+ "<tr><td><input type='radio' name='filtertype' id='ftypenone' "+(id===0?"checked='true'":"")+"/></td><td width='95%'>"+me.mys.res(resprefix+".none",value)+"</td></tr>"
-				+ "<tr><td><input type='radio' name='filtertype' id='ftypeinclude' "+(id===1?"checked='true'":"")+"/></td><td width='95%'>"+me.mys.res(resprefix+".include",value)+"</td></tr>"
-				+ "<tr><td><input type='radio' name='filtertype' id='ftypeexclude' "+(id===-1?"checked='true'":"")+"/></td><td width='95%'>"+me.mys.res(resprefix+".exclude",value)+"</td></tr>"
-				+ "</table>";
-		WT.confirm(msg + html, cb, scope, Ext.apply({
-			buttons: Ext.Msg.OKCANCEL
-		}, opts));
-	},
-	
-	
-	
-	
+	privates: {
+		confirmOnFilterType: function(msg, cb, scope, defValue, resPrefix, resValue) {
+			var me = this;
+			WT.confirm(msg, cb, scope, {
+				buttons: Ext.Msg.OKCANCEL,
+				instClass: 'Sonicle.webtop.mail.ux.SmartSearchFilterConfirmBox',
+				instConfig: {
+					noneText: me.mys.res(resPrefix+'.none', "'"+resValue+"'"),
+					includeText: me.mys.res(resPrefix+'.include', "'"+resValue+"'"),
+					excludeText: me.mys.res(resPrefix+'.exclude', "'"+resValue+"'")
+				},
+				config: {
+					value: defValue
+				}
+			});
+		},
 		
+		value2TypeField: function(value) {
+			switch(value) {
+				case 'include':
+					return 1;
+				case 'exclude':
+					return -1;
+				default:
+					return 0;
+			}
+		},
+
+		typeField2Value: function(fvalue) {
+			switch(fvalue) {
+				case 1:
+					return 'include';
+				case -1:
+					return 'exclude';
+				default:
+					return 'none';
+			}
+		}
+	}
 });
