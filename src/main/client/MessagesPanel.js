@@ -97,76 +97,76 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		
 		me.searchComponent = Ext.create({
 			xtype: 'wtsearchfield',
-					reference: 'fldsearch',
-					fields: [{
-						name: 'from',
-						type: 'string',
-						label: me.res('fld-search.field.from.lbl')
-					}, {
-						name: 'to',
-						type: 'string',
-						label: me.res('fld-search.field.to.lbl')
-					}, {
-						name: 'subject',
-						type: 'string',
-						label: me.res('fld-search.field.subject.lbl')
-					}, {
-						name: 'message',
-						type: 'string',
-						label: me.res('fld-search.field.message.lbl')
-					}, /*{
-						name: 'everywhere',
-						type: 'string',
-						textSink: true,
-						label: me.res('fld-search.field.everywhere.lbl')
-					}, */{
-						name: 'after',
-						type: 'date',
-						labelAlign: 'left',
-						label: me.res('fld-search.field.after.lbl')
-					}, {
-						name: 'before',
-						type: 'date',
-						labelAlign: 'left',
-						label: me.res('fld-search.field.before.lbl')
-					}, {
-						name: 'attachment',
-						type: 'boolean',
-						label: me.res('fld-search.field.attachment.lbl')
-					}, {
-						name: 'unread',
-						type: 'boolean',
-						label: me.res('fld-search.field.unread.lbl')
-					}, {
-						name: 'flagged',
-						type: 'boolean',
-						label: me.res('fld-search.field.flagged.lbl')
-					}, {
-						name: 'tagged',
-						type: 'boolean',
-						label: me.res('fld-search.field.tagged.lbl')
-					}, {
-						name: 'unanswered',
-						type: 'boolean',
-						label: me.res('fld-search.field.unanswered.lbl')
-					}, {
-						name: 'priority',
-						type: 'boolean',
-						label: me.res('fld-search.field.priority.lbl')
-					}],
-					tooltip:  me.res('fld-search.tip'),
-					emptyText:  me.res('fld-search.emp'),
-					listeners: {
-						query: function(s, value, qObj) {
-							me.queryMails(qObj);
-						},
-						enterkeypress: function(s, e) {
-							if(e.ctrlKey) {
-								me.runSmartSearch();
-								return false;
-							}
-						}
+			reference: 'fldsearch',
+			fields: [{
+				name: 'from',
+				type: 'string',
+				label: me.res('fld-search.field.from.lbl')
+			}, {
+				name: 'to',
+				type: 'string',
+				label: me.res('fld-search.field.to.lbl')
+			}, {
+				name: 'subject',
+				type: 'string',
+				label: me.res('fld-search.field.subject.lbl')
+			}, {
+				name: 'message',
+				type: 'string',
+				label: me.res('fld-search.field.message.lbl')
+			}, /*{
+				name: 'everywhere',
+				type: 'string',
+				textSink: true,
+				label: me.res('fld-search.field.everywhere.lbl')
+			}, */{
+				name: 'after',
+				type: 'date',
+				labelAlign: 'left',
+				label: me.res('fld-search.field.after.lbl')
+			}, {
+				name: 'before',
+				type: 'date',
+				labelAlign: 'left',
+				label: me.res('fld-search.field.before.lbl')
+			}, {
+				name: 'attachment',
+				type: 'boolean',
+				label: me.res('fld-search.field.attachment.lbl')
+			}, {
+				name: 'unread',
+				type: 'boolean',
+				label: me.res('fld-search.field.unread.lbl')
+			}, {
+				name: 'flagged',
+				type: 'boolean',
+				label: me.res('fld-search.field.flagged.lbl')
+			}, {
+				name: 'tagged',
+				type: 'boolean',
+				label: me.res('fld-search.field.tagged.lbl')
+			}, {
+				name: 'unanswered',
+				type: 'boolean',
+				label: me.res('fld-search.field.unanswered.lbl')
+			}, {
+				name: 'priority',
+				type: 'boolean',
+				label: me.res('fld-search.field.priority.lbl')
+			}],
+			tooltip:  me.res('fld-search.tip'),
+			emptyText:  me.res('fld-search.emp'),
+			listeners: {
+				query: function(s, value, qObj) {
+					me.queryMails(qObj);
+				},
+				enterkeypress: function(s, e) {
+					if(e.ctrlKey) {
+						me.runSmartSearch();
+						return false;
 					}
+				}
+			}
 		});
 		
 		me.keepFilterButton = Ext.create({
@@ -227,7 +227,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 					foldername: foldername,
 					unread: 0
 				},true);
-			} 
+			}
+			
+			me.searchComponent.markKeywords(me.folderList.getEl().dom,'.x-grid-item-container');
 		});
 		
 		me.folderList.on('totals',function(g,total,realTotal,quotaLimit,quotaUsage) {
