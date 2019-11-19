@@ -301,7 +301,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}
 	
 	public boolean getDefaultFavoriteNotifications() {
-		return getBoolean(FAVORITE_NOTIFICATIONS, false);
+		return getBoolean(FAVORITE_NOTIFICATIONS, true);
 	}
 	
 	public boolean isToolbarCompact() {
