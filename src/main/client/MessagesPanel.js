@@ -229,7 +229,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				},true);
 			}
 			
-			me.searchComponent.markKeywords(me.folderList.getEl().dom,'.x-grid-item-container');
+			me.searchComponent.markKeywords(me.folderList.getEl(),'.x-grid-item-container');
 		});
 		
 		me.folderList.on('totals',function(g,total,realTotal,quotaLimit,quotaUsage) {
