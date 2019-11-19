@@ -786,18 +786,93 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     actionSend: function() {
         var me=this,
 			_sbj=me.subject.getValue(),
-			sbj=Ext.isEmpty(_sbj)?'':_sbj.trim();
+			sbj=Ext.isEmpty(_sbj)?'':_sbj.trim(),
+			attachmentSize = me.attlist.all.elements.length,
+			bodyValue = me.htmlEditor.getValue(),
+			attachmentsWarning = attachmentSize > 0 ? false : me.checkForAttachment(sbj.toLowerCase(), bodyValue.toLowerCase());
 	
         me.recgrid.completeEdit();
-		if (sbj.length>0) me._actionSend();
+		if (sbj.length > 0){
+			if(attachmentsWarning) {
+				WT.confirm(me.res('editor.warn.noattachment'), function(bid) {
+							if (bid==='yes') {
+								me._actionSend();
+							}
+						});
+			}
+			else {
+				me._actionSend();
+			}
+		}
 		else {
 			WT.confirm(me.res('warn-empty-subject'),function(bid) {
 				if (bid==='yes') {
-					me._actionSend();
+					if(attachmentsWarning) {
+						WT.confirm(me.res('editor.warn.noattachment'), function(bid) {
+							if (bid==='yes') {
+								me._actionSend();
+							}
+						});
+					}
+					else {
+						me._actionSend();
+					}
 				}
 			});
 		}
     },
+	
+//	checkForAttachment: function(subject, body) {
+//		var me = this,
+//				attachPatterns = me.res('editor.detect.attach.patterns'),
+//				attachList = attachPatterns.split(','),
+//				containsAttachKeyword = false;
+//		
+//		attachList.forEach(function(element) {
+//			if(subject.includes(element) || body.includes(element)) {
+//				containsAttachKeyword = true;
+//				return containsAttachKeyword;
+//			}
+//		});
+//		return containsAttachKeyword;
+//	},
+	
+	checkForAttachment: function(subject, body) {
+		var me = this,
+				patternsKey = 'editorAttachPatterns',
+				containsAttachKeyword = false,
+				detectedLanguage,
+				keyWords, keyWordsList;
+		
+		guessLanguage.detect(body + " " + subject, function(language) {
+				detectedLanguage = language;
+		});
+		
+		keyWords = WT.getVar(patternsKey + "-" + detectedLanguage); 
+		if(keyWords) {
+			keyWordsList = keyWords.split(',');
+		} 
+		else {
+			var myLanguage = WT.getVar('language');
+			keyWords = WT.getVar(patternsKey + "-" + myLanguage.substr(0, myLanguage.indexOf('_')));
+			if(keyWords)
+			{
+				keyWordsList = keyWords.split(',');
+			}
+		}
+		if(!keyWordsList) {
+			keyWordsList =  WT.getVar(patternsKey + '-en').split(',');
+		}
+		
+		
+		keyWordsList.forEach(function(element) {
+			if(subject.includes(element) || body.includes(element)) {
+				containsAttachKeyword = true;
+				return containsAttachKeyword;
+			}
+		});
+		return containsAttachKeyword;
+	},
 	
 	_actionSend: function() {
         var me=this;
