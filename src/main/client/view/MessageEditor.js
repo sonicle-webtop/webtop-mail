@@ -83,6 +83,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     autosaveTask: null,
     autosaveDelay: 10000,
 	
+	showMailcard: true,
+	
 	fax: false,
 	faxident: null,
 	
@@ -356,9 +358,17 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 			});
 		}
+		
+			tbitems[tbx++] = me.addRef('showMailcard', {
+				xtype: 'button',
+				enableToggle: true,
+				pressed: true,
+				iconCls: 'wtmail-icon-mailcardedit-xs',
+				tooltip: me.res('editor.btn-showMailcard.tip'),
+				handler: me.showMailcardAction,
+				scope: me
+			});
 			
-		
-		
 		if (me.showIdentities) {
             var idents=new Array(),
 				selident=null;
@@ -411,7 +421,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								me.selectedIdentity=me.identHash[nv];
                                 var format=me.mys.getVar("format");
 								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
-								else me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
+								else {
+									if(me.showMailcard)
+									me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
+								}
 							},
 							scope: this
 						}
@@ -781,6 +794,22 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     
 	actionReminder: function(b) {
 		this.getModel().set("reminder",b.pressed);
+	},
+	
+	showMailcardAction: function(b) {
+		var me = this,
+				 format=me.mys.getVar("format"),
+				 dumbMailcard = {
+					mailcard: {
+						html: "<p id='wt-mailcard-dumb' style='padding: 0; margin: 0;'>&#160;</p>"
+					}
+				};
+				me.showMailcard = b.pressed;
+			if(me.showMailcard) {
+				me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), dumbMailcard.mailcard.html, me.selectedIdentity.mailcard.html), format);
+			} else {
+				me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.selectedIdentity.mailcard.html, dumbMailcard.mailcard.html), format);
+			}
 	},
     
     actionSend: function() {
