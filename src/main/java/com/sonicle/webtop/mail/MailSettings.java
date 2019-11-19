@@ -79,6 +79,13 @@ public class MailSettings {
 	public static final String GRID_TODAY_ROW_COLOR = "grid.today.color";
 	
 	/**
+	 * [user][default] (false)
+	 * [boolean]
+	 * Define whether you want to receive notifications from favorite folders
+	 */
+	public static final String FAVORITE_NOTIFICATIONS = "favorite.folders.notifications";
+	
+	/**
 	 * [user][default]
 	 * [boolean]
 	 * Activate a view showing all upcoming events.

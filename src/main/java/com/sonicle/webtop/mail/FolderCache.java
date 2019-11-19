@@ -599,7 +599,7 @@ public class FolderCache {
 	}
 
 	private void sendRecentMessage(String from, String subject) {
-		this.environment.notify(new RecentMessage(account.getId(),foldername, from, subject)
+		this.environment.notify(new RecentMessage(account.getId(),foldername, from, subject, account.isFavoriteFolder(foldername))
 		);
 	}
 	

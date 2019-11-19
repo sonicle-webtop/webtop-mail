@@ -125,6 +125,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.showUpcomingEvents = mus.getShowUpcomingEvents();
 				jso.showUpcomingTasks = mus.getShowUpcomingTasks();
 				jso.todayRowColor = mus.getTodayRowColor();
+				jso.favoriteNotifications = mus.isFavoriteNotifications();
 
 				new JsonResult(jso).printTo(out);
 
@@ -147,7 +148,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("showUpcomingEvents")) mus.setShowUpcomingEvents(pl.data.showUpcomingEvents);
 				if (pl.map.has("showUpcomingTasks")) mus.setShowUpcomingTasks(pl.data.showUpcomingTasks);
 				if (pl.map.has("todayRowColor")) mus.setTodayRowColor(pl.data.todayRowColor);
-				
+				if (pl.map.has("favoriteNotifications")) mus.setFavoriteNotifications(pl.data.favoriteNotifications);
 				// Editing
 				if (pl.map.has("format")) mus.setFormat(pl.data.format);
 				if (pl.map.has("font")) mus.setFontName(pl.data.font);

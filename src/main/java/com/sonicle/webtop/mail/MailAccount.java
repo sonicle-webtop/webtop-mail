@@ -610,6 +610,31 @@ public class MailAccount {
 		return fcShared;
 	}
 	
+	public ArrayList<FolderCache> getFavoritesFoldersCache() throws MessagingException {
+		 ArrayList<FolderCache> caches = new ArrayList<>();
+		MailUserSettings mailUserSettings = ms.getMailUserSettings();
+		MailUserSettings.FavoriteFolders favorites = mailUserSettings.getFavoriteFolders();
+		
+		for(int i =0; i < favorites.size(); i++) {
+			MailUserSettings.FavoriteFolder favoriteFolder = favorites.get(i);
+			Folder folder = getFolder(favoriteFolder.folderId);
+			
+			if (folder.exists()) {
+				FolderCache folderCache = getFolderCache(folder.getFullName());
+					caches.add(folderCache);
+				}
+		}
+	
+		return  caches;
+	}
+	
+	public boolean isFavoriteFolder(String folderName) {
+			MailUserSettings mailUserSettings = ms.getMailUserSettings();
+			MailUserSettings.FavoriteFolders favorites = mailUserSettings.getFavoriteFolders();
+			boolean contains = favorites.contains(this.id, folderName);
+			return contains;
+	}
+	
 	public FolderCache getRootFolderCache() {
 		return fcRoot;
 	}

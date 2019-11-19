@@ -2731,7 +2731,7 @@ public class Service extends BaseService {
 			iconCls = "wtmail-icon-dms-folder-xs";
 		} else if (fc.isSharedInbox()) {
 			iconCls = "wtmail-icon-inbox-folder-xs";
-		}
+		} 
 		if (!nounread) {
 			unread = fc.getUnreadMessagesCount();
 			hasUnread = fc.hasUnreadChildren();
@@ -2785,6 +2785,10 @@ public class Service extends BaseService {
 		if (fc.isScanForcedOff()) jsFolder.scanOff=true;
 		else if (fc.isScanForcedOn()) jsFolder.scanOn=true;
 		else if (fc.isScanEnabled()) jsFolder.scanEnabled=true;
+		else if(account.isFavoriteFolder(foldername)) {
+			jsFolder.scanEnabled = false;
+			jsFolder.scanOn = true;
+		}
 
 		boolean canRename=true;
 		if (fc.isInbox() || fc.isSpecial() || fc.isSharedFolder() || (fc.getParent()!=null && fc.getParent().isSharedFolder())) canRename=false;
@@ -8600,6 +8604,7 @@ public class Service extends BaseService {
 			co.put("showUpcomingTasks", us.getShowUpcomingTasks());
 			co.put("isArchivingExternal", ss.isArchivingExternal());
 			co.put("todayRowColor", us.getTodayRowColor());
+			co.put("favoriteNotifications", us.isFavoriteNotifications());
 			
 			if (RunContext.isPermitted(true, SERVICE_ID, "FAX", "ACCESS")) {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());

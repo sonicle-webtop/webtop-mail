@@ -84,6 +84,7 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('noMailcardOnReplyForward',false),
 		WTF.field('showUpcomingEvents', 'boolean', false),
 		WTF.field('showUpcomingTasks', 'boolean', false),
-		WTF.field('todayRowColor', 'string', true)	
+		WTF.field('todayRowColor', 'string', true),	
+		WTF.field('favoriteNotifications', 'boolean', false)	
 	]
 });

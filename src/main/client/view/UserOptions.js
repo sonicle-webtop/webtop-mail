@@ -60,6 +60,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
 			seenOnOpen: WTF.checkboxBind('record', 'seenOnOpen'),
+			favoriteNotifications: WTF.checkboxBind('record', 'favoriteNotifications'),
 			ingridPreview: WTF.checkboxBind('record', 'ingridPreview'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
 			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks'),
@@ -930,6 +931,12 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				width: 400,
 				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'checkbox',
+				bind:  '{favoriteNotifications}',
+				fieldLabel: me.res('opts.adv.fld-favoriteFolderNotifications.lbl'),
+				width: 100,
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}]
 		});
 	},

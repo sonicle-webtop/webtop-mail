@@ -46,8 +46,8 @@ public class RecentMessage extends ServiceMessage {
 	
 	public static final String ACTION_RECENT="recent";
 	
-	public RecentMessage(String accountid, String foldername, String from, String subject) {
-		super(WT.findServiceId(Service.class),ACTION_RECENT,new JsRecentMessage(accountid,foldername,from,subject));
+	public RecentMessage(String accountid, String foldername, String from, String subject, boolean isFavoriteFolder) {
+		super(WT.findServiceId(Service.class), ACTION_RECENT, new JsRecentMessage(accountid, foldername, from, subject, isFavoriteFolder));
 	}
 	
 }

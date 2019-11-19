@@ -599,6 +599,15 @@ public class MailUserSettings extends BaseUserSettings {
 		return (value != null) ? value : mss.getDefaultTodayRowColor();
 	}
 	
+	public boolean isFavoriteNotifications() {
+		Boolean value = getBoolean(FAVORITE_NOTIFICATIONS, null);
+		return (value != null) ? value : mss.getDefaultFavoriteNotifications();
+	}
+	
+	public boolean setFavoriteNotifications(boolean value) {
+		return setBoolean(FAVORITE_NOTIFICATIONS, value);
+	}
+	
 	public static class FavoriteFolder {
 		String accountId;
 		String folderId;

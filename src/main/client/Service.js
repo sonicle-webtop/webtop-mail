@@ -1070,8 +1070,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	recentMessage: function(msg) {
 		var me=this,
-		pl=msg.payload;
-		if (pl.foldername==='INBOX') {
+		pl = msg.payload,
+		favoriteNotifications = me.getVar('favoriteNotifications'),
+		showNotificationsForFavs = favoriteNotifications && pl.isFavoriteFolder;
+		if (pl.foldername==='INBOX' || showNotificationsForFavs) {
 			//var msg=me.res('ntf.newmsg.inbox-has')+" "+cfg.unread+" ";
 			//if (cfg.unread===1) msg+=me.res('ntf.newmsg.new-message');
 			//else msg+=me.res('ntf.newmsg.new-messages');

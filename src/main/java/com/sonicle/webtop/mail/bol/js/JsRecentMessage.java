@@ -43,12 +43,14 @@ public class JsRecentMessage {
 	String foldername;
 	String from;
 	String subject;
+	boolean isFavoriteFolder;
 	
-	public JsRecentMessage(String accountid, String foldername, String from, String subject) {
+	public JsRecentMessage(String accountid, String foldername, String from, String subject, boolean isFavoriteFolder) {
 		this.accountid=accountid;
 		this.foldername=foldername;
 		this.from=from;
 		this.subject=subject;
+		this.isFavoriteFolder = isFavoriteFolder;
 	}
 	
 }

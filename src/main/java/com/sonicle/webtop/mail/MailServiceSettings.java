@@ -300,6 +300,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getEnum(DEFAULT_PREFIX + VIEW_MODE, ViewMode.AUTO, ViewMode.class);
 	}
 	
+	public boolean getDefaultFavoriteNotifications() {
+		return getBoolean(FAVORITE_NOTIFICATIONS, false);
+	}
+	
 	public boolean isToolbarCompact() {
 		return getBoolean(TOOLBAR_COMPACT,false);
 	}

@@ -123,6 +123,11 @@ public class MailFoldersThread extends Thread {
                                     }
                                 }
                             }
+							
+							//Check favorite folders for unread messages
+							ArrayList<FolderCache> favoriteCaches = account.getFavoritesFoldersCache();
+							 for(FolderCache favorite: favoriteCaches) favorite.checkFolder();
+									
                         }
                         else {
                             //Service.logger.debug("MailFolderThread: Checking all messages");
