@@ -4206,39 +4206,37 @@ public class Service extends BaseService {
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
 						Part part = maildata.getAttachmentPart(i);
-						String filename = getPartName(part);
-						if (!part.isMimeType("message/*")) {
-							String cids[] = part.getHeader("Content-ID");
-							String cid = null;
-							//String cid=filename;
-							if (cids != null && cids[0] != null) {
-								cid = cids[0];
-								if (cid.startsWith("<")) cid=cid.substring(1);
-								if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
-							}
-							
-							if (filename == null) filename = cid;
-							String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
-							UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
-							boolean inline = false;
-							if (part.getDisposition() != null) {
-								inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
-							}
-							if (!first) {
-								sout += ",\n";
-							}
-							sout += "{ "+
-									" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
-									" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
-									" cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
-									" inline: "+inline+", "+
-									" fileSize: "+upfile.getSize()+", "+
-									" editable: "+isFileEditableInDocEditor(filename)+" "+
-									" }";
-							first = false;
-							//TODO: change this weird matching of cids2urls!
-							html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+						String filename = MailUtils.getPartFilename(part, true);
+						String cids[] = part.getHeader("Content-ID");
+						String cid = null;
+						//String cid=filename;
+						if (cids != null && cids[0] != null) {
+							cid = cids[0];
+							if (cid.startsWith("<")) cid=cid.substring(1);
+							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
 						}
+
+						if (filename == null) filename = cid;
+						String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
+						UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
+						boolean inline = false;
+						if (part.getDisposition() != null) {
+							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
+						}
+						if (!first) {
+							sout += ",\n";
+						}
+						sout += "{ "+
+								" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
+								" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
+								" cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
+								" inline: "+inline+", "+
+								" fileSize: "+upfile.getSize()+", "+
+								" editable: "+isFileEditableInDocEditor(filename)+" "+
+								" }";
+						first = false;
+						//TODO: change this weird matching of cids2urls!
+						html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 					} catch (Exception exc) {
 						Service.logger.error("Exception",exc);
 					}
