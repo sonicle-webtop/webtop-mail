@@ -779,6 +779,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if (data.receipt) me.getRef("chkReceipt").toggle(true);
 		if (data.priority) me.getRef("chkPriority").toggle(true);
 		
+		this.originalContent=data.content;
+		this.originalSubject=data.subject;
+		
 		me.beginNew({
 			data: data
 		});
@@ -815,13 +818,18 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     actionSend: function() {
         var me=this,
 			_sbj=me.subject.getValue(),
-			sbj=Ext.isEmpty(_sbj)?'':_sbj.trim(),
+			newSubject=Ext.isEmpty(_sbj)?'':_sbj.trim(),
+			oldSubject=Ext.isEmpty(me.originalSubject)?'':me.originalSubject.trim(),
 			attachmentSize = me.attlist.all.elements.length,
-			bodyValue = me.htmlEditor.getValue(),
-			attachmentsWarning = attachmentSize > 0 ? false : me.checkForAttachment(sbj.toLowerCase(), bodyValue.toLowerCase());
+			newText = Sonicle.String.htmlToText(me.htmlEditor.getValue()),
+			oldText = Sonicle.String.htmlToText(me.originalContent),
+			newTextDiffs = me.diffsAsString(oldText,newText),
+			newSubjectDiffs = ( newSubject === oldSubject ) ? '' : newSubject;
+	
+		var attachmentsWarning = attachmentSize > 0 ? false : me.checkForAttachment(newSubjectDiffs.toLowerCase(), newTextDiffs.toLowerCase());
 	
         me.recgrid.completeEdit();
-		if (sbj.length > 0){
+		if (newSubject.length > 0){
 			if(attachmentsWarning) {
 				WT.confirm(me.res('editor.warn.noattachment'), function(bid) {
 							if (bid==='yes') {
@@ -850,6 +858,26 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			});
 		}
     },
+	
+	diffsAsString: function(oldText,newText) {
+		var oldRows=difflib.stringAsLines(oldText),
+			newRows=difflib.stringAsLines(newText),
+			sm = new difflib.SequenceMatcher(oldRows, newRows),
+			opcodes = sm.get_opcodes(),
+			text="";
+	
+		for(var o=0;o<opcodes.length;++o) {
+			var opcode=opcodes[o][0];
+			if (opcode==="insert"||opcode==="replace") {
+				var		start=opcodes[o][3],
+					end=opcodes[o][4];
+				for(var i=start;i<end;++i) {
+					text+=newRows[i]+"\n";
+				}
+			}
+		}
+		return text;
+	},
 	
 //	checkForAttachment: function(subject, body) {
 //		var me = this,
@@ -1071,6 +1099,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         //me.htmlEditor.initHtmlValue(html);
 		me.getModel().set("content",content);
         me.getModel().set("format",format);
+		
 /*        var w=this.htmlEditor.getWin();
         var d=w.document;
         var n=d.body.firstChild;
