@@ -156,6 +156,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}],
 			tooltip:  me.res('fld-search.tip'),
 			emptyText:  me.res('fld-search.emp'),
+			highlightKeywords: ['from', 'to', 'subject', 'message'],
 			listeners: {
 				query: function(s, value, qObj) {
 					me.queryMails(qObj);
@@ -229,7 +230,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				},true);
 			}
 			
-			me.searchComponent.markKeywords(me.folderList.getEl(),'.x-grid-item-container');
+			me.searchComponent.highlight(me.folderList.getEl(), '.x-grid-item-container');
 		});
 		
 		me.folderList.on('totals',function(g,total,realTotal,quotaLimit,quotaUsage) {
