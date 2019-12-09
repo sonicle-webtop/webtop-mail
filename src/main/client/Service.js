@@ -240,8 +240,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
-					me.updateCxmTree(rec);
-					WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
+					if(rec.isRoot()) {
+						WT.showContextMenu(e, me.getRef('cxmTreeRootNode'), { rec: rec });
+					}
+					else {
+						me.updateCxmTree(rec);
+						WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
+					}
 				},
 				containercontextmenu: function(v, e, eopts) {
 					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
@@ -334,8 +339,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 					listeners: {
 						itemcontextmenu: function(v, rec, itm, i, e, eopts) {
+							
+							if(rec.isRoot()){
+							WT.showContextMenu(e, me.getRef('cxmTreeRootNode'), { rec: rec });
+							}
+							else {
 							me.updateCxmTree(rec);
-							WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
+							WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });	
+							}
 						},
 						containercontextmenu: function(v, e, eopts) {
 							WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
@@ -799,6 +810,18 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		//imap tree menu
 		var mscan,mshowsharings,mshowarchive;
+		
+		me.addRef('cxmTreeRootNode', Ext.create({
+			xtype: 'menu',
+			items: [
+                me.getAct('sharing')
+			],
+			listeners: {
+				beforeshow: function(s) {
+					me.lastMenuData = s.menuData;
+				}
+			}
+		}));
 		me.addRef('cxmTree', Ext.create({
 			xtype: 'menu',
 			items: [
