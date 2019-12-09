@@ -40,7 +40,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.webtop.core.ux.field.HTMLEditor',
 		'Sonicle.webtop.mail.model.MessageModel',
 		'Sonicle.webtop.mail.view.AddressBookView',
-		'Sonicle.upload.Button'
+		'Sonicle.upload.Button',
+		'Sonicle.webtop.mail.ux.ContactsListExpandDialog'
 	],
 	
 	statics: {
@@ -347,16 +348,27 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		
 		if (me.showImportEmail) {
-			tbitems[tbx++]= me.addAct('pasteList', {
-				text: null,
-				tooltip: me.mys.res('act-pasteList.tip'),
+			tbitems[tbx++]={
+				xtype: 'splitbutton',
+				tooltip: me.res('act-pasteList.lbl'),
 				iconCls: 'wt-icon-clipboard-paste',
-				handler: function() {
-					//Ext.defer(function() {
-						me.pasteList();
-					//},100);
-				}
-			});
+				handler: me.pasteList,
+				scope: me,
+				menu: [
+					{
+						text: me.res('act-pasteList.tip'),
+						iconCls: 'wt-icon-clipboard-paste',
+						handler: me.pasteList,
+						scope: me				
+					},
+					{
+						text: me.res('act-pasteContactsList.tip'),
+						iconCls: 'wt-icon-clipboard-paste',
+						handler: me.pasteContactsList,
+						scope: me				
+					}
+				]
+			};
 		}
 		
 			tbitems[tbx++] = me.addRef('showMailcard', {
@@ -1368,6 +1380,35 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			width: 400,
 			multiline: 200,
 			value: ''
+		});
+	},
+	
+	pasteContactsList: function() {
+		var me = this;
+		WT.confirm(me.mys.res('act-pasteContactsList.confirm'), function(bid, value) {
+			if(bid == 'ok') {
+				var contactService = WT.getServiceApi('com.sonicle.webtop.contacts');
+					contactService.expandRecipientsList({
+						address: value
+					}, {
+						scope: me,
+						callback: function(sucess, json) {
+							if(sucess) {
+								var data = json.data,
+										emails = "";
+									for(i = 0; i < data.length; i++) {
+										emails += data[i] + "\n";
+									}
+								this.recgrid.loadValues(emails);
+							}
+						}
+					});
+				
+			}
+		}, me, {
+			buttons: Ext.Msg.OKCANCEL,
+			title: me.mys.res('act-pasteContactsList.tit'),
+			instClass: 'Sonicle.webtop.mail.ux.ContactsListExpandDialog'
 		});
 	},
 	
