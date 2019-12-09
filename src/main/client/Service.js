@@ -1823,7 +1823,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return newnode;
 	},
 	
-	renameFolder: function(n,oldName,newName) {
+	renameFolder: function(n, oldName, newName) {
 		var me=this,
 			acct=me.getAccount(n);
 		WT.ajaxReq(me.ID, 'RenameFolder', {

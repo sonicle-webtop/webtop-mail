@@ -2744,8 +2744,6 @@ public class Service extends BaseService {
 		
 		JsFolder jsFolder=new JsFolder();
 		jsFolder.id=foldername;
-		jsFolder.text=text;
-		jsFolder.folder=text;
 		jsFolder.leaf=leaf;
 		jsFolder.iconCls=iconCls;
 		jsFolder.unread=unread;
@@ -2773,7 +2771,15 @@ public class Service extends BaseService {
 		}
 		if (isSharedToSomeone) jsFolder.isSharedToSomeone=true;
 		if (fc.isSharedFolder()) jsFolder.isSharedRoot=true;
-		if (account.isUnderSharedFolder(foldername)) jsFolder.isUnderShared=true;
+		if (account.isUnderSharedFolder(foldername)) {
+			jsFolder.isUnderShared=true;
+			if(fc.getParent() != null && fc.getParent().isSharedFolder())
+				jsFolder.canRename = true;
+		}
+		
+		jsFolder.text=text;
+		jsFolder.folder=text;
+		
 		if (fc.isInbox()) jsFolder.isInbox=true;
 		if (fc.isSent()) jsFolder.isSent=true;
 		if (account.isUnderSentFolder(fc.getFolderName())) jsFolder.isUnderSent=true;
@@ -2791,11 +2797,11 @@ public class Service extends BaseService {
 		}
 
 		boolean canRename=true;
-		if (fc.isInbox() || fc.isSpecial() || fc.isSharedFolder() || (fc.getParent()!=null && fc.getParent().isSharedFolder())) canRename=false;
+		if (fc.isInbox() || fc.isSpecial() || fc.isSharedFolder()) canRename=false;
 		jsFolder.canRename=canRename;
 
 		jsFolder.account=account.getId();
-
+		 
 		return jsFolder;
 	}
 	
@@ -3760,17 +3766,26 @@ public class Service extends BaseService {
 		MailUserSettings.FavoriteFolders favorites = us.getFavoriteFolders();
 		
 		try {
-			account.checkStoreConnected();
-			boolean result = true;
 			sout = "{\n";
+			String newid = folder;
+			boolean result = true;
 			mcache = account.getFolderCache(folder);
+			account.checkStoreConnected();
+			
+			if(mcache.getParent().isSharedFolder()) { 
+				us.setSharedFolderName(folder, name);
+				mcache.setDescription(us.getSharedFolderName(folder));
+			}
+			else {
+			
 			name = account.normalizeName(name);
-			String newid = account.renameFolder(folder, name);
+			newid = account.renameFolder(folder, name);
 			
 			if (favorites.contains(account.getId(),folder)) {
 				favorites.remove(account.getId(),folder);
 				favorites.add(account.getId(),newid,name);
 				us.setFavoriteFolders(favorites);
+				}
 			}
 			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
 			sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newid) + "',\n";

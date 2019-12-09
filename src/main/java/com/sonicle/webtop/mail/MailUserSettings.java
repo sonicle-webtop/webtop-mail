@@ -85,6 +85,14 @@ public class MailUserSettings extends BaseUserSettings {
 		return setString(ARCHIVING_MODE, value);
 	}
 	
+	public String getSharedFolderName(String folderId) {
+		return getString(FOLDER_SHARED_CUSTOM_NAME + folderId, null);
+	}
+	
+	public boolean setSharedFolderName(String folderId, String value) {
+		return setString(FOLDER_SHARED_CUSTOM_NAME + folderId, value);
+	}
+	
 	public String getArchiveExternalUserFolder() {
 		return getString(ARCHIVING_EXTERNAL_USERFOLDER, null);
 	}

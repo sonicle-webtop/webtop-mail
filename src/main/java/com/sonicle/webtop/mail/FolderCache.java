@@ -203,6 +203,7 @@ public class FolderCache {
         this(ms,env);
 		this.account=account;
         foldername=folder.getFullName();
+		MailUserSettings mailUserSettings = ms.getMailUserSettings();
         this.folder=folder;
         String shortfoldername=account.getShortFolderName(foldername);
         isInbox=account.isInboxFolder(foldername);
@@ -246,7 +247,12 @@ public class FolderCache {
         }
         if (sharedInboxPrincipal==null) description=ms.getInternationalFolderName(this);
         else {
-            description=sharedInboxPrincipal.getDisplayName();
+			String changedName = mailUserSettings.getSharedFolderName(foldername);
+			if(changedName == null)
+				 description = sharedInboxPrincipal.getDisplayName();
+			else
+				description = changedName;
+           
             wtuser=sharedInboxPrincipal.getUserId();
         }
         updateScanFlags();
