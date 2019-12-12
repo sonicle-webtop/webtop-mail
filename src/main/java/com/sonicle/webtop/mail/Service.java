@@ -4697,32 +4697,26 @@ public class Service extends BaseService {
 				}
 				else if((jsmsg.inreplyto != null && jsmsg.inreplyto.trim().length()>0)||(jsmsg.replyfolder!=null&&jsmsg.replyfolder.trim().length()>0&&jsmsg.origuid>0)) {
 					try {
-						
 						String[] toRecipients = SimpleMessage.breakAddr(msg.getTo());
+						ArrayList<Integer> cats = new ArrayList<>();
+						cats.addAll(contactsManager.listCategoryIds());
+						cats.addAll(contactsManager.listIncomingCategoryIds());
 						
-						for(String toRecipient : toRecipients) {
-							InternetAddress internetAddress = getInternetAddress(toRecipient);
-							String contactEmail = internetAddress.getAddress();
-							String contactPersonal = internetAddress.getPersonal();
-							
-							
-							Condition<ContactQuery> predicate = new ContactQuery().email().eq(contactEmail);
-							
-							Set<Integer> myCategories = contactsManager.listCategoryIds();
-							Set<Integer> sharedCategories = contactsManager.listIncomingCategoryIds();
-							myCategories.addAll(sharedCategories);
-							
-							boolean existsContact = contactsManager.existContact(myCategories, predicate);
-							
-							if(!existsContact) {
-								sendAddContactMessage(contactEmail, contactPersonal);
-								break;
+						for (String toRecipient : toRecipients) {
+							InternetAddress ia = getInternetAddress(toRecipient);
+							if (!StringUtils.isBlank(ia.getAddress())) {
+								Condition<ContactQuery> predicate = new ContactQuery().email().eq(ia.getAddress());
+								if (!contactsManager.existContact(cats, predicate)) {
+									sendAddContactMessage(ia.getAddress(), ia.getPersonal());
+									break;
+								}
 							}
 						}
 						
-						foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
+					} finally {
+						foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
 					}
 				}
 				
