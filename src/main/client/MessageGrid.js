@@ -1372,22 +1372,29 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			recs=(rowIndex>=0)?
 				me.getStore().getAt(rowIndex):
 				me.getSelection();
-        me.forwardMessage(recs[0],eml);
+        me.forwardMessage(recs, eml);
     },
 	
-	forwardMessage: function(r,eml) {
-		var me=this;
-        me.forwardMessageById(me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),eml);
+	forwardMessage: function(recs, eml) {
+		var me=this,
+				messagesIds = [];
+		
+		recs.forEach(function(element) {
+			messagesIds.push(element.get('idmessage'));
+		});
+				
+		
+        me.forwardMessageById(me.currentAccount, recs[0].get('folder')||me.currentFolder, messagesIds, eml);
 	},
 	
-	forwardMessageById: function(acct,idfolder,idmessage,eml) {
-		var me=this,msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
+	forwardMessageById: function(acct, idfolder, messageIds, eml) {
+		var me = this, msgId = Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
 		
 		WT.ajaxReq(me.mys.ID, 'GetForwardMessage', {
 			params: {
 				account: acct,
 				folder: idfolder,
-				idmessage: idmessage,
+				messageIds: messageIds,
 				attached: eml?1:0,
 				newmsgid: msgId
 			},

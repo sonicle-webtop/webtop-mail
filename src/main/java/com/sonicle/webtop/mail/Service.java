@@ -170,6 +170,7 @@ import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
+import java.util.stream.Collectors;
 import javax.mail.search.AndTerm;
 import javax.mail.search.FlagTerm;
 import javax.mail.search.OrTerm;
@@ -4176,10 +4177,12 @@ public class Service extends BaseService {
 		MailAccount account=getAccount(request);
 		UserProfile profile = environment.getProfile();
 		String pfoldername = request.getParameter("folder");
-		String puidmessage = request.getParameter("idmessage");
+		String[] messagesIds = request.getParameterValues("messageIds");
 		String pnewmsgid = request.getParameter("newmsgid");
 		String pattached = request.getParameter("attached");
 		boolean attached = (pattached != null && pattached.equals("1"));
+		if (messagesIds.length > 1) attached = true; // With multiple msgIds we only support "forward" as attachment
+		
 		long newmsgid = Long.parseLong(pnewmsgid);
 		String sout = null;
 		try {
@@ -4187,12 +4190,16 @@ public class Service extends BaseService {
 			boolean isHtml=format.equals("html");
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
-			Message m=mcache.getMessage(Long.parseLong(puidmessage));
-			if (m.isExpunged()) {
-				throw new MessagingException("Message " + puidmessage + " expunged");
+			
+			List<Message> messages = new ArrayList<>();
+			for(String messageId : messagesIds) {
+				Message message = mcache.getMessage(Long.parseLong(messageId)); 
+				if (message.isExpunged()) throw new MessagingException("Message expunged");
+				messages.add(message);
 			}
+			
 			SimpleMessage smsg = getForwardMsg(
-					newmsgid, m, isHtml,
+					newmsgid, messages.get(0), isHtml,
 					lookupResource(MailLocaleKey.MSG_FROMTITLE),
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
 					lookupResource(MailLocaleKey.MSG_CCTITLE),
@@ -4214,7 +4221,7 @@ public class Service extends BaseService {
 			String html=smsg.getContent();
 			String text=smsg.getTextContent();
 			if (!attached) {
-				HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
+				HTMLMailData maildata = mcache.getMailData((MimeMessage) messages.get(0));
 				boolean first = true;
 				sout += " attachments: [\n";
 				
@@ -4261,10 +4268,14 @@ public class Service extends BaseService {
 				//String surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
 				//html = replaceCidUrls(html, maildata, surl);
 			} else {
-				String filename = m.getSubject() + ".eml";
-				UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, "message/rfc822", ((IMAPMessage)m).getMimeStream());
+				boolean first = true;
 				sout += " attachments: [\n";
-				sout += "{ "+
+				for(Message message : messages) {
+					String filename = message.getSubject() + ".eml";
+					UploadedFile upfile = addAsUploadedFile(pnewmsgid, filename, "message/rfc822", ((IMAPMessage)message).getMimeStream());
+					
+					if (!first) sout += ",\n";
+					sout += "{ "+
 						" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
 						" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
 						" cid: null, "+
@@ -4272,10 +4283,12 @@ public class Service extends BaseService {
 						" fileSize: "+upfile.getSize()+", "+
 						" editable: "+isFileEditableInDocEditor(filename)+" "+
 						" }";
+					first = false;
+				}		
 				sout += "\n ],\n";
 			}
 			sout += " identityId: "+ident.getIdentityId()+",\n";
-			sout += " origuid:"+puidmessage+",\n";
+			sout += " origuid:" + messagesIds[0] + ",\n";
 			if (isHtml) {
 				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
 			} else {
