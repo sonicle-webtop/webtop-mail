@@ -4716,7 +4716,11 @@ public class Service extends BaseService {
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					} finally {
-						foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
+						try {
+							foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
+						} catch (Exception xexc) {
+							Service.logger.error("Exception",xexc);
+						}
 					}
 				}
 				
