@@ -2797,7 +2797,9 @@ public class Service extends BaseService {
 		}
 
 		boolean canRename=true;
-		if (fc.isInbox() || fc.isSpecial() || fc.isSharedFolder()) canRename=false;
+		//check both isShared and not underShared because of the different structure on NethServer,
+		//so rename is accessible to shared root, to customize name
+		if (fc.isInbox() || fc.isSpecial() || (!fc.isUnderSharedFolder() && fc.isSharedFolder())) canRename=false;
 		jsFolder.canRename=canRename;
 
 		jsFolder.account=account.getId();
