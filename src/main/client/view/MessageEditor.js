@@ -53,7 +53,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	dockableConfig: {
 		title: '{message.tit}',
 		iconCls: 'wtmail-icon-newmsg',
-		width: 830,
+		width: 890,
 		height: 500
 	},
 	modelName: 'Sonicle.webtop.mail.model.MessageModel',
@@ -412,7 +412,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					queryMode: 'local',
 					displayField: 'description',
 					valueField: 'identityId',
-					width:me.customToolbarButtons?300:400,
+					width:me.customToolbarButtons?270:370,
 					matchFieldWidth: false,
 					listConfig: {
 						width: 400
