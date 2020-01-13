@@ -31,7 +31,7 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-Ext.define('Sonicle.webtop.mail.ux.ContactsListExpandDialog', {
+Ext.define('Sonicle.webtop.mail.ux.ChooseListConfirmBox', {
 	extend: 'WTA.ux.window.CustomPromptMsgBox',
 	requires: [
 		'Sonicle.webtop.core.ux.field.RecipientSuggestCombo'
@@ -39,17 +39,14 @@ Ext.define('Sonicle.webtop.mail.ux.ContactsListExpandDialog', {
 	
 	createCustomPrompt: function() {
 		var me = this;
-		return Ext.create({
+		return {
 			xtype: 'wtrcptsuggestcombo',
 			id: me.id + '-wtrecipientsgrid',
-			region: 'center',
-			fields: { recipientType: 'rtype', email: 'email' },
-			width: 500,
 			rftype: 'list',
-			defaults: {
-				labelStyle: 'white-space:nowrap;'
-			}
-		});
+			fields: {recipientType: 'rtype', email: 'email'},
+			valueField: 'address',
+			width: 500
+		};
 	},
 	
 	setCustomPromptValue: function(value) {
@@ -57,8 +54,6 @@ Ext.define('Sonicle.webtop.mail.ux.ContactsListExpandDialog', {
 	},
 	
 	getCustomPromptValue: function() {
-		var selection = this.customPrompt.valueCollection.items[0];
-		if(selection)
-		return selection.data.address;
+		return this.customPrompt.getValue();
 	}
 });
