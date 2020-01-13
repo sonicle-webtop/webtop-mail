@@ -1,3 +1,31 @@
+$	5.7.0
+	%	Versione 5.7.0
+	*	<h1>Evidenziazione testo ricercato</h1>
+		<p>Durante la ricerca, la griglia evidenzia il testo ricercato.</p>
+		<img src="5.7.0_highlightsearch.png"/>
+	*	<h1>Notifiche preferiti</h1>
+		<p>E' possibile attivare le notifiche dei nuovi messaggi per le cartelle aggiunte ai preferiti.</p>
+		<img src="5.7.0_favoritenotifications.png"/>
+	*	<h1>Riconoscimento allegato mancante</h1>
+		<p>Il sistema riconosce la lingua utilizzata e la presenza di parole relative ad allegati in tale lingua nel testo digitato,
+		chiedendo conferma durante l'invio se non sono presenti allegati.</p>
+	*	<h1>Importazione destinatari da lista</h1>
+		<p>Un nuovo menu consente di importare l'elenco destinatari di una mail da una lista contatti.</p>
+		<img src="5.7.0_importlist.png"/>
+	*	<h1>Personalizza nome condivisione in entrata</h1>
+		<p>I nomi delle cartelle condivise possono essere personalizzati tramite l'azione "rinomina".</p>
+	*	<h1>Posizionamento anteprima semplificato</h1>
+		<p>Il posizionamento dell'anteprima si ottiene con un click nell'apposito menu.</p>
+		<img src="5.7.0_previewmenu.png"/>
+	*	<h1>Condivisione di tutto l'account email</h1>
+		<p>Un nuovo menu contestuale sulla radice dell'account, consente di accedere velocemente alla condivisione completa.</p>
+		<img src="5.7.0_shareallaccount.png"/>
+	*	<h1>Nuovi campi di ordinamento</h1>
+		<p>Il menu ordinamento include anche i campi di stato e completamento.</p>
+		<img src="5.7.0_sortbystatusandflags.png"/>
+	*	<h1>Disattiva firma</h1>
+		<p>Un pulsante nella finestra di composizione email consente velocemente di disattivare o riattivare la firma per la mail in corso.</p>
+		<img src="5.7.0_usemailcard.png"/>
 $	5.6.0
 	%	Versione 5.6.0
 	*	<h1>Visualizzazione compatta</h1>

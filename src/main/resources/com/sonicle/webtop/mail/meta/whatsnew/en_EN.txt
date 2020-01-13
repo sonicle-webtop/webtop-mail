@@ -1,3 +1,31 @@
+$	5.7.0
+	%	Version 5.7.0
+	*	<h1>Hilight searched text</h1>
+		<p>When searching, the grid highlight the searched text.</p>
+		<img src="5.7.0_highlightsearch.png"/>
+	*	<h1>Favorites notifications</h1>
+		<p>It's possible to activate new mail notifcations on favorite folders.</p>
+		<img src="5.7.0_favoritenotifications.png"/>
+	*	<h1>Detect of missing attachment</h1>
+		<p>The system can now detect the language and the presence of words about attachments in that language inside the typed text of an email,
+		asking confirmation during send if attachments are not present.</p>
+	*	<h1>Import mail recipients from contacts list</h1>
+		<p>A new menu allows to import the mail recipients from a contacts list.</p>
+		<img src="5.7.0_importlist.png"/>
+	*	<h1>Customize names of shared incoming folders</h1>
+		<p>The names of shared folders can be customized through the "rename" action.</p>
+	*	<h1>Simplified preview positioning</h1>
+		<p>Preview positioning can be changed in one click through a new specific menu.</p>
+		<img src="5.7.0_previewmenu.png"/>
+	*	<h1>Share all account</h1>
+		<p>A new context menu available on the root of the account, allows to quickly share all account folders.</p>
+		<img src="5.7.0_shareallaccount.png"/>
+	*	<h1>New sort fields</h1>
+		<p>The sort menu now includes state and flags fields.</p>
+		<img src="5.7.0_sortbystatusandflags.png"/>
+	*	<h1>Disable signature</h1>
+		<p>A new button on mail editor allows to quickly disable or enable the signature on current email.</p>
+		<img src="5.7.0_usemailcard.png"/>
 $	5.6.0
 	%	Version 5.6.0
 	*	<h1>Compact view</h1>
