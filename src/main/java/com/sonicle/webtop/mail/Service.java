@@ -7060,12 +7060,19 @@ public class Service extends BaseService {
 					if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
 				}
 			}*/
-			if (!us.isManualSeen()) {
-				if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
-			}
-			else {
-				if(setSeen) 
-					m.setFlag(Flags.Flag.SEEN, true);
+			
+			//Catch exception during setFlag, which may fail when viewing
+			// internal parts (eg. italian PEC)
+			try {
+				if (!us.isManualSeen()) {
+					if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
+				}
+				else {
+					if(setSeen) 
+						m.setFlag(Flags.Flag.SEEN, true);
+				}
+			} catch(MethodNotSupportedException exc) {
+				logger.error("Cannot set Flags as SEEN",exc);
 			}
 			
 			
