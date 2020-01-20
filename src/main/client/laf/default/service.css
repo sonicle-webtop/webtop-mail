@@ -6,6 +6,7 @@
 
 /* actions */
 .wtmail-icon-newmsg { background-image: url('statusnew_16.svg') !important; background-size: contain; }
+.wtmail-icon-message { background-image: url('message_16.svg') !important; background-size: contain; }
 .wtmail-icon-newfax-xs { background-image: url('newfax_16.png') !important; }
 .wtmail-icon-sendfax-xs { background-image: url('fax_16.png') !important; }
 .wtmail-icon-reply { background-image: url('statusreplied_16.svg') !important; background-size: contain; }
