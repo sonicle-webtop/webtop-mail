@@ -169,6 +169,7 @@ import org.joda.time.DateTimeZone;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
+import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.util.stream.Collectors;
 import javax.mail.search.AndTerm;
@@ -4691,6 +4692,12 @@ public class Service extends BaseService {
 				//try { origuid=Long.parseLong(soriguid); } catch(RuntimeException rexc) {}
 				String foundfolder = null;
 				if (jsmsg.forwardedfrom != null && jsmsg.forwardedfrom.trim().length() > 0) {
+					WT.writeLog(
+							"MAIL",
+							"FORWARD", 
+							jsmsg.forwardedfrom, 
+							JsonResult.GSON.toJson(pl.data.recipients)
+					);
 					try {
 						foundfolder = foundfolder=flagForwardedMessage(account,jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
 					} catch (Exception xexc) {
@@ -4718,6 +4725,13 @@ public class Service extends BaseService {
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					} finally {
+						WT.writeLog(
+								"MAIL",
+								"REPLY", 
+								jsmsg.forwardedfrom, 
+								JsonResult.GSON.toJson(pl.data.recipients)
+						);
+						
 						try {
 							foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
 						} catch (Exception xexc) {
