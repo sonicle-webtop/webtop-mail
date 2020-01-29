@@ -63,6 +63,8 @@ import net.fortuna.ical4j.data.*;
 import org.joda.time.LocalDate;
 import org.jooq.tools.StringUtils;
 import com.sonicle.commons.collection.FifoMap;
+import java.nio.charset.Charset;
+import org.apache.commons.io.Charsets;
 
 
 /**
@@ -1950,7 +1952,13 @@ public class FolderCache {
             } else {
 				xhtml.append("<html><head><meta content='text/html; charset="+charset+"' http-equiv='Content-Type'></head><body><tt>");
                 String line=null;
-                java.io.BufferedReader br=new java.io.BufferedReader(new java.io.InputStreamReader(istream,charset));
+                java.io.BufferedReader br;
+				try {
+					br=new java.io.BufferedReader(new java.io.InputStreamReader(istream,charset));
+				} catch(UnsupportedEncodingException exc) {
+					//in case of unknown charset, try without charset.
+					br=new java.io.BufferedReader(new java.io.InputStreamReader(istream,Charsets.ISO_8859_1));
+				}
                 while((line=br.readLine())!=null) {
                     while(true) {
                       String token=null;
