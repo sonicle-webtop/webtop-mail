@@ -53,6 +53,7 @@ import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.CompositeId;
 import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.commons.web.json.JsonUtils;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.MapItemList;
 import com.sonicle.commons.web.json.Payload;
@@ -167,6 +168,8 @@ import org.apache.http.client.HttpClient;
 import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTimeZone;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.core.app.WebTopApp;
@@ -3745,6 +3748,13 @@ public class Service extends BaseService {
 			if (newfolder == null) {
 				result = false;
 			} else {
+				writeAuditLog(
+						"FOLDER",
+						"CREATE", 
+						mcache.getFolderName(),
+						JsonUtils.toJson("name",name)
+				);
+				
 				if (!account.isRoot(mcache)) {
 					sout += "parent: '" + StringEscapeUtils.escapeEcmaScript(mcache.getFolderName()) + "',\n";
 				} else {
@@ -4692,11 +4702,12 @@ public class Service extends BaseService {
 				//try { origuid=Long.parseLong(soriguid); } catch(RuntimeException rexc) {}
 				String foundfolder = null;
 				if (jsmsg.forwardedfrom != null && jsmsg.forwardedfrom.trim().length() > 0) {
-					WT.writeLog(
+					HashMap<String,ArrayList<String>> rcpts=jsrecipientsToHashMap(pl.data.recipients);
+					writeAuditLog(
 							"MAIL",
 							"FORWARD", 
 							jsmsg.forwardedfrom, 
-							JsonResult.GSON.toJson(pl.data.recipients)
+							JsonResult.GSON.toJson(rcpts)
 					);
 					try {
 						foundfolder = foundfolder=flagForwardedMessage(account,jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
@@ -4725,11 +4736,12 @@ public class Service extends BaseService {
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					} finally {
-						WT.writeLog(
+						HashMap<String,ArrayList<String>> rcpts=jsrecipientsToHashMap(pl.data.recipients);
+						writeAuditLog(
 								"MAIL",
 								"REPLY", 
-								jsmsg.forwardedfrom, 
-								JsonResult.GSON.toJson(pl.data.recipients)
+								jsmsg.inreplyto, 
+								JsonResult.GSON.toJson(rcpts)
 						);
 						
 						try {
@@ -4755,6 +4767,26 @@ public class Service extends BaseService {
             json=new JsonResult(false, msg);
 		}
         json.printTo(out);
+	}
+	
+	private HashMap<String,ArrayList<String>> jsrecipientsToHashMap(List<JsRecipient> recipients) {
+		ArrayList<String> tos=new ArrayList<>();
+		ArrayList<String> ccs=new ArrayList<>();
+		ArrayList<String> bccs=new ArrayList<>();
+		LinkedHashMap<String,ArrayList<String>> rcpts=new LinkedHashMap<>();
+		rcpts.put("to", tos);
+		rcpts.put("cc", ccs);
+		rcpts.put("bcc", bccs);
+		for(JsRecipient jsrec: recipients) {
+			if (jsrec.email!=null && jsrec.email.trim().length()>0) {
+				ArrayList<String> list=rcpts.get(jsrec.rtype);
+				if (list!=null) list.add(jsrec.email);
+			}
+		}
+		if (tos.isEmpty()) rcpts.remove(tos);
+		if (ccs.isEmpty()) rcpts.remove(ccs);
+		if (bccs.isEmpty()) rcpts.remove(bccs);
+		return rcpts;
 	}
 	
 	private void sendAddContactMessage(String email, String personal) {
