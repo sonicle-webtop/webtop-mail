@@ -76,12 +76,16 @@ import org.slf4j.Logger;
 public class JobService extends BaseJobService {
 	private static final Logger logger = WT.getLogger(com.sonicle.webtop.mail.JobService.class);
 	
+	boolean doCleanup=false;
+	
 	@Override
 	public void initialize() throws Exception {
+		doCleanup=false;
 	}
 
 	@Override
 	public void cleanup() throws Exception {
+		doCleanup=true;
 	}
 	
 	@Override
@@ -127,6 +131,7 @@ public class JobService extends BaseJobService {
 				con=jobService.getConnection();
 				List<ODomain> domains=globalCm.listDomains(true);
 				for(ODomain domain: domains) {
+					if (jobService.doCleanup) break;
 					String domainId=domain.getDomainId();
 					UserProfileId adminPid=new UserProfileId(domainId,"admin");
 					CoreManager domainCm=WT.getCoreManager(adminPid);
@@ -142,6 +147,7 @@ public class JobService extends BaseJobService {
 					List<OUser> ousers=domainCm.listUsers(true);
 					//List<OUserMap> musers=UserMapDAO.getInstance().selectByDomainId(con, domainId);
 					for(OUser ouser: ousers) {
+						if (jobService.doCleanup) break;
 						Store store=null;
 						try {
 							String userId=ouser.getUserId();
