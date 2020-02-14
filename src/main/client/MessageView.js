@@ -1296,8 +1296,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
     print: function() {
         var me=this,
-			//html='<html><head><link rel="stylesheet" type="text/css" href="webtop/themes/'+WT.theme+'/mail/mail.css" /></head><body>'+
-			html="<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+me.mys.getIdentity(0).displayName+"</b></font></div><br>"
+			//pre style to force wrapping of preofrmatted text
+			html="<style> pre { white-space: pre-wrap !important; } </style>"+
+				 "<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+me.mys.getIdentity(0).displayName+"</b></font></div><br>"
         html+=me.tdHeader.dom.innerHTML;
         if (me.iframes) {
             var len=me.iframes.length;
