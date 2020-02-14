@@ -63,6 +63,7 @@ import net.fortuna.ical4j.data.*;
 import org.joda.time.LocalDate;
 import org.jooq.tools.StringUtils;
 import com.sonicle.commons.collection.FifoMap;
+import com.sonicle.commons.web.json.JsonUtils;
 import java.nio.charset.Charset;
 import org.apache.commons.io.Charsets;
 
@@ -1255,6 +1256,12 @@ public class FolderCache {
 			//flags.add(tagId);
 			//fmsg.setFlags(flags, true);
 			fmsg.setFlags(new Flags(tagId), true);
+			ms.writeAuditLog(
+					"MAIL",
+					"TAG", 
+					ms.getMessageID(fmsg),
+					JsonUtils.toJson("tag",tagId)
+			);
         }
     }
   
@@ -1263,6 +1270,12 @@ public class FolderCache {
         Message mmsgs[]=getMessages(uids,false);
         for(Message fmsg: mmsgs) {
 			fmsg.setFlags(new Flags(tagId), false);
+			ms.writeAuditLog(
+					"MAIL",
+					"TAG", 
+					ms.getMessageID(fmsg),
+					JsonUtils.toJson("untag",tagId)
+			);
         }
     }
   
@@ -1274,6 +1287,12 @@ public class FolderCache {
 			if(attachedFlags.contains(oldFlag)) {
 				fmsg.setFlags(oldFlag, false);
 				fmsg.setFlags(new Flags(newTagId), true);
+				ms.writeAuditLog(
+						"MAIL",
+						"TAG", 
+						ms.getMessageID(fmsg),
+						JsonUtils.toJson("untag",oldTagId,"tag",newTagId)
+				);
 			}
         }
 	}

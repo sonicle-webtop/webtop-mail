@@ -2428,6 +2428,135 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
     },
 	
+	_actionAudit: function(r, serviceId, context, action, label, dataToStringFunction) {
+		var me=this;
+		
+		WT.ajaxReq(me.mys.ID, 'GetMessageId', {
+			params: {
+				account: me.currentAccount,
+                folder: r.get('folder')||me.currentFolder,
+                idmessage: r.get('idmessage')
+			},
+			callback: function(success,json) {
+				if (success) {
+					var messageId=json.message;
+					
+					WT.ajaxReq(WT.ID, 'LookupAudit', {
+						params: {
+							auditServiceId: serviceId,
+							auditContext: context,
+							auditAction: action,
+							auditReferenceId: messageId,
+						},
+						callback: function(success,json) {
+							if (success) {
+								var value=Ext.callback(dataToStringFunction,me,[json.data]);
+								WT.confirm(label, null, me, {
+									buttons: Ext.Msg.OK,
+									title: WT.res('audit-info.lbl'),
+									instClass: 'Sonicle.webtop.core.ux.AuditWindow',
+									config: {
+										value: value
+									}
+								});
+							} else {
+								WT.error(json.text);
+							}
+						}
+					});							
+				
+				} else {
+					WT.error(json.text);
+				}
+			}
+		});					
+	},
+	
+	actionAuditRead: function() {
+		var me=this,
+			r=me.getSelectionModel().getSelection()[0];
+	
+		me._actionAudit(r,me.mys.ID, "MAIL", "VIEW", me.mys.res('act-auditRead.lbl'), function(data) {
+			var str="";
+			Ext.each(data,function(el) {
+				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
+			});
+			return str;
+		});
+	},
+	
+	actionAuditReplied: function() {
+		var me=this,
+			r=me.getSelectionModel().getSelection()[0];
+	
+		me._actionAudit(r,me.mys.ID, "MAIL", "REPLY", me.mys.res('act-auditReplied.lbl'), function(data) {
+			var str="";
+			Ext.each(data,function(el) {
+				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
+				var eldata=Ext.JSON.decode(el.data);
+				Ext.each(eldata.to,function(to) { str+="\t"+me.mys.res('to')+": "+to+"\n"; });
+				Ext.each(eldata.cc,function(cc) { str+="\t"+me.mys.res('cc')+": "+cc+"\n"; });
+				Ext.each(eldata.bcc,function(bcc) { str+="\t"+me.mys.res('bcc')+": "+bcc+"\n"; });
+			});
+			return str;
+		});		
+	},
+	
+	actionAuditForwarded: function() {
+		var me=this,
+			r=me.getSelectionModel().getSelection()[0];
+	
+		me._actionAudit(r,me.mys.ID, "MAIL", "FORWARD", me.mys.res('act-auditForwarded.lbl'), function(data) {
+			var str="";
+			Ext.each(data,function(el) {
+				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
+				var eldata=Ext.JSON.decode(el.data);
+				Ext.each(eldata.to,function(to) { str+="\t"+me.mys.res('to')+": "+to+"\n"; });
+				Ext.each(eldata.cc,function(cc) { str+="\t"+me.mys.res('cc')+": "+cc+"\n"; });
+				Ext.each(eldata.bcc,function(bcc) { str+="\t"+me.mys.res('bcc')+": "+bcc+"\n"; });
+			});
+			return str;
+		});		
+	},
+	
+	actionAuditPrinted: function() {
+		var me=this,
+			r=me.getSelectionModel().getSelection()[0];
+	
+		me._actionAudit(r,me.mys.ID, "MAIL", "PRINT", me.mys.res('act-auditPrinted.lbl'), function(data) {
+			var str="";
+			Ext.each(data,function(el) {
+				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
+			});
+			return str;
+		});
+	},
+	
+	actionAuditTagged: function() {
+		var me=this,
+			r=me.getSelectionModel().getSelection()[0];
+	
+		me._actionAudit(r,me.mys.ID, "MAIL", "TAG", me.mys.res('act-auditTagged.lbl'), function(data) {
+			var str="";
+			Ext.each(data,function(el) {
+				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
+				var eldata=Ext.JSON.decode(el.data);
+				
+				if (eldata.tag) {
+					var r=me.mys.tagsStore.findRecord('tagId',eldata.tag);
+					var desc=r?r.get("description"):eldata.tag;
+					str+="\t+ "+desc+"\n";
+				}
+				if (eldata.untag) {
+					var r=me.mys.tagsStore.findRecord('tagId',eldata.untag);
+					var desc=r?r.get("description"):eldata.untag;
+					str+="\t- "+desc+"\n";
+				}
+			});
+			return str;
+		});		
+	},
+
 	reload: function() {
 		this.store.reload({ 
 			params: {

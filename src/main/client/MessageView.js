@@ -1310,6 +1310,15 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             }
             //html+='</body></html>';
             Sonicle.PrintMgr.print(html);
+			
+			//inform service of print action
+			WT.ajaxReq(me.mys.ID, 'MessagePrinted', {
+				params: {
+					account: me.acct,
+					folder: me.folder,
+					idmessage: me.idmessage
+				}
+			});
         }
     },
 	

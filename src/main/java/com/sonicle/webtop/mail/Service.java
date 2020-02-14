@@ -2212,7 +2212,7 @@ public class Service extends BaseService {
 		msgcloudattach.clear();
 	}
 
-	private String getMessageID(Message m) throws MessagingException {
+	protected String getMessageID(Message m) throws MessagingException {
 		String ids[] = m.getHeader("Message-ID");
 		if (ids == null) {
 			return null;
@@ -7121,6 +7121,15 @@ public class Service extends BaseService {
 				logger.error("Cannot set Flags as SEEN",exc);
 			}
 			
+			//audit log only when changing state
+			if (!wasseen) {
+				writeAuditLog(
+						"MAIL",
+						"VIEW", 
+						messageid, 
+						null
+				);
+			}
 			
 			int acount = mailData.getAttachmentPartCount();
 			for (int i = 0; i < acount; ++i) {
@@ -7327,6 +7336,46 @@ public class Service extends BaseService {
 			Service.logger.error("Exception",ex);
 			new JsonResult(ex).printTo(out);
 		}
+	}
+	
+	public void processGetMessageId(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
+		String pfoldername = request.getParameter("folder");
+		String puidmessage = request.getParameter("idmessage");
+		boolean result = false;
+		String value = "";
+		try {
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
+            long msguid=Long.parseLong(puidmessage);
+            value=getMessageID(mcache.getMessage(msguid));
+			result = true;
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			value = exc.getMessage();
+		}
+		new JsonResult(result, value).printTo(out);
+	}
+
+	public void processMessagePrinted(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
+		String pfoldername = request.getParameter("folder");
+		String puidmessage = request.getParameter("idmessage");
+		try {
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
+            long msguid=Long.parseLong(puidmessage);
+			writeAuditLog(
+					"MAIL",
+					"PRINT", 
+					getMessageID(mcache.getMessage(msguid)), 
+					null
+			);
+
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+		}
+		new JsonResult().printTo(out);
 	}
 	
 	public void processGetMessageNote(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {

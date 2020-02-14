@@ -321,7 +321,22 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			lockSplitter: previewCfg.lockSplitter
         });
         me.messageView.on('messageviewed',me.messageViewed,me);
-		
+
+		var fbar=me.mys.hasAudit?
+			Ext.create('Ext.toolbar.Toolbar',{
+				hidden: true,
+//				border: "1 0 0 0",
+//				style: "border-top-width: 1 !important",
+				items: [
+					me.getAct("auditRead"),
+					me.getAct("auditReplied"),
+					me.getAct("auditForwarded"),
+					me.getAct("auditPrinted"),
+					me.getAct("auditTagged")
+				]
+			})
+			:null;
+			
         me.messageViewContainer=Ext.create({
 			xtype: 'wtpanel',
 			layout: 'fit',
@@ -354,6 +369,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 					me.getAct("markunseen")*/
 				]
 			}),
+			fbar: fbar,
             items: [ me.messageView ]
         });
         me.add(me.folderList);
@@ -597,7 +613,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		var me=this;
 		if (!me.messageView) return;
 		if (acct && folder && id) {
-			if (WT.plTags.desktop) me.messageViewContainer.getTopBar().show();
+			if (WT.plTags.desktop) {
+				me.messageViewContainer.getTopBar().show();
+				if (me.mys.hasAudit) me.messageViewContainer.getBottomBar().show();
+			}
 			me.messageView._showMessage(acct, folder, id, !me.mys.getVar("manualSeen"), rec);
 		} else {
 			me.messageView._clear();
@@ -607,7 +626,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
     clearMessageView: function() {
 		var me=this;
 		if (!me.messageView) return;
-		if (WT.plTags.desktop) me.messageViewContainer.getTopBar().hide();
+		if (WT.plTags.desktop) {
+			me.messageViewContainer.getTopBar().hide();
+			if (me.mys.hasAudit) me.messageViewContainer.getBottomBar().hide();
+		}
         me.messageView._clear();
     },
 	
