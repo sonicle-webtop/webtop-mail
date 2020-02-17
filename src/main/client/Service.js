@@ -106,8 +106,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				todayColor = me.getVar('todayRowColor'),
 				todaySelColor;
 		
-		me.hasAudit = WT.getVar("hasAudit");
-				
 		if (Sonicle.ColorUtils.bestForeColor(todayColor) === '#FFFFFF') {
 			todaySelColor = Ext.util.Color.create(todayColor).createLighter().toHex();
 		} else {
@@ -689,7 +687,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         if (WT.docmgtwt) this.aDocMgtwt=this.addDependencyAction("docmgtwt","webtop/js/mail/DocMgt.js","actionDocMgtWt",this,'iconDocMgt');
 		 */
 		
-		if (me.hasAudit) {
+		if (WT.getVar("hasAudit")) {
 			me.addAct("auditRead",{ text:null, tooltip: me.res("act-auditRead.lbl"), glyph: 'xf06e@FontAwesome', handler: me.gridAction(me,'AuditRead'), scope: me });
 			me.addAct("auditReplied",{ text:null, tooltip: me.res("act-auditReplied.lbl"), glyph: 'xf112@FontAwesome', handler: me.gridAction(me,'AuditReplied'), scope: me });
 			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), glyph: 'xf064@FontAwesome',  handler: me.gridAction(me,'AuditForwarded'), scope: me });

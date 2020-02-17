@@ -322,7 +322,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         });
         me.messageView.on('messageviewed',me.messageViewed,me);
 
-		var fbar=me.mys.hasAudit?
+		var fbar=WT.getVar("hasAudit")?
 			Ext.create('Ext.toolbar.Toolbar',{
 				hidden: true,
 //				border: "1 0 0 0",
@@ -615,7 +615,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		if (acct && folder && id) {
 			if (WT.plTags.desktop) {
 				me.messageViewContainer.getTopBar().show();
-				if (me.mys.hasAudit) me.messageViewContainer.getBottomBar().show();
+				if (WT.getVar("hasAudit")) me.messageViewContainer.getBottomBar().show();
 			}
 			me.messageView._showMessage(acct, folder, id, !me.mys.getVar("manualSeen"), rec);
 		} else {
@@ -628,7 +628,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		if (!me.messageView) return;
 		if (WT.plTags.desktop) {
 			me.messageViewContainer.getTopBar().hide();
-			if (me.mys.hasAudit) me.messageViewContainer.getBottomBar().hide();
+			if (WT.getVar("hasAudit")) me.messageViewContainer.getBottomBar().hide();
 		}
         me.messageView._clear();
     },
