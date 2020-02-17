@@ -172,6 +172,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
+import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.util.stream.Collectors;
@@ -8769,7 +8770,8 @@ public class Service extends BaseService {
 			
 			if (ss.isToolbarCompact()) co.put("toolbarCompact",true);
 			
-			co.put("hasAudit",isAuditEnabled());
+			
+			co.put("hasAudit",isAuditEnabled()&&(RunContext.isImpersonated()||RunContext.isPermitted(true, CoreManifest.ID, "AUDIT")));
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	
