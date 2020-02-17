@@ -8769,6 +8769,8 @@ public class Service extends BaseService {
 			
 			if (ss.isToolbarCompact()) co.put("toolbarCompact",true);
 			
+			co.put("hasAudit",isAuditEnabled());
+			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	
 		} finally {

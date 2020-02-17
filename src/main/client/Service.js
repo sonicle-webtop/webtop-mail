@@ -687,13 +687,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
         if (WT.docmgtwt) this.aDocMgtwt=this.addDependencyAction("docmgtwt","webtop/js/mail/DocMgt.js","actionDocMgtWt",this,'iconDocMgt');
 		 */
 		
-		if (WT.getVar("hasAudit")) {
+		if (me.hasAudit()) {
 			me.addAct("auditRead",{ text:null, tooltip: me.res("act-auditRead.lbl"), glyph: 'xf06e@FontAwesome', handler: me.gridAction(me,'AuditRead'), scope: me });
 			me.addAct("auditReplied",{ text:null, tooltip: me.res("act-auditReplied.lbl"), glyph: 'xf112@FontAwesome', handler: me.gridAction(me,'AuditReplied'), scope: me });
 			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), glyph: 'xf064@FontAwesome',  handler: me.gridAction(me,'AuditForwarded'), scope: me });
 			me.addAct("auditPrinted",{ text:null, tooltip: me.res("act-auditPrinted.lbl"), glyph: 'xf02f@FontAwesome',  handler: me.gridAction(me,'AuditPrinted'), scope: me });
 			me.addAct("auditTagged",{ text:null, tooltip: me.res("act-auditTagged.lbl"), glyph: 'xf02c@FontAwesome',  handler: me.gridAction(me,'AuditTagged'), scope: me });
 		}		
+	},
+	
+	hasAudit: function() {
+		return this.getVar("hasAudit");
 	},
 	
 	initCxm: function() {
