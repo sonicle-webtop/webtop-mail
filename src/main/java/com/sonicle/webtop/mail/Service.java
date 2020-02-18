@@ -3749,12 +3749,13 @@ public class Service extends BaseService {
 			if (newfolder == null) {
 				result = false;
 			} else {
-				writeAuditLog(
-						"FOLDER",
-						"CREATE", 
-						mcache.getFolderName(),
-						JsonUtils.toJson("name",name)
-				);
+				if (mailManager.isAuditEnabled())
+					mailManager.writeAuditLog(
+							MailManager.AuditContext.FOLDER,
+							MailManager.AuditAction.CREATE, 
+							mcache.getFolderName(),
+							JsonUtils.toJson("name",name)
+					);
 				
 				if (!account.isRoot(mcache)) {
 					sout += "parent: '" + StringEscapeUtils.escapeEcmaScript(mcache.getFolderName()) + "',\n";
@@ -4704,12 +4705,13 @@ public class Service extends BaseService {
 				String foundfolder = null;
 				if (jsmsg.forwardedfrom != null && jsmsg.forwardedfrom.trim().length() > 0) {
 					HashMap<String,ArrayList<String>> rcpts=jsrecipientsToHashMap(pl.data.recipients);
-					writeAuditLog(
-							"MAIL",
-							"FORWARD", 
+					if (mailManager.isAuditEnabled())
+						mailManager.writeAuditLog(
+							MailManager.AuditContext.MAIL,
+							MailManager.AuditAction.FORWARD, 
 							jsmsg.forwardedfrom, 
 							JsonResult.GSON.toJson(rcpts)
-					);
+						);
 					try {
 						foundfolder = foundfolder=flagForwardedMessage(account,jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
 					} catch (Exception xexc) {
@@ -4738,12 +4740,13 @@ public class Service extends BaseService {
 						Service.logger.error("Exception",xexc);
 					} finally {
 						HashMap<String,ArrayList<String>> rcpts=jsrecipientsToHashMap(pl.data.recipients);
-						writeAuditLog(
-								"MAIL",
-								"REPLY", 
+						if (mailManager.isAuditEnabled())
+							mailManager.writeAuditLog(
+								MailManager.AuditContext.MAIL,
+								MailManager.AuditAction.REPLY, 
 								jsmsg.inreplyto, 
 								JsonResult.GSON.toJson(rcpts)
-						);
+							);
 						
 						try {
 							foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
@@ -7123,12 +7126,12 @@ public class Service extends BaseService {
 			}
 			
 			//audit log only when changing state
-			if (!wasseen) {
-				writeAuditLog(
-						"MAIL",
-						"VIEW", 
-						messageid, 
-						null
+			if (!wasseen && mailManager.isAuditEnabled()) {
+				mailManager.writeAuditLog(
+					MailManager.AuditContext.MAIL,
+					MailManager.AuditAction.VIEW, 
+					messageid, 
+					null
 				);
 			}
 			
@@ -7366,12 +7369,13 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
             long msguid=Long.parseLong(puidmessage);
-			writeAuditLog(
-					"MAIL",
-					"PRINT", 
+			if (mailManager.isAuditEnabled())
+				mailManager.writeAuditLog(
+					MailManager.AuditContext.MAIL,
+					MailManager.AuditAction.PRINT, 
 					getMessageID(mcache.getMessage(msguid)), 
 					null
-			);
+				);
 
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -8771,7 +8775,7 @@ public class Service extends BaseService {
 			if (ss.isToolbarCompact()) co.put("toolbarCompact",true);
 			
 			
-			co.put("hasAudit",isAuditEnabled()&&(RunContext.isImpersonated()||RunContext.isPermitted(true, CoreManifest.ID, "AUDIT")));
+			co.put("hasAudit",mailManager.isAuditEnabled()&&(RunContext.isImpersonated()||RunContext.isPermitted(true, CoreManifest.ID, "AUDIT")));
 			
 		} catch(Exception ex) {
 			logger.error("Error getting client options", ex);	
@@ -9024,6 +9028,10 @@ public class Service extends BaseService {
 			throw new IOException("Write not supported");
 		}
 		
+	}
+	
+	protected MailManager getManager() {
+		return mailManager;
 	}
 	
 	private WebTopSession getWts() {

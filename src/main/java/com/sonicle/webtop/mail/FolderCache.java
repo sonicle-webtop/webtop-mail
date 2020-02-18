@@ -64,6 +64,7 @@ import org.joda.time.LocalDate;
 import org.jooq.tools.StringUtils;
 import com.sonicle.commons.collection.FifoMap;
 import com.sonicle.commons.web.json.JsonUtils;
+import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import java.nio.charset.Charset;
 import org.apache.commons.io.Charsets;
 
@@ -87,6 +88,7 @@ public class FolderCache {
     private PrivateEnvironment environment=null;
     //private WebTopDomain wtd=null;
     private Service ms=null;
+	private MailManager mailManager=null;
     private boolean externalProvider=false;
     
     private String foldername=null;
@@ -200,6 +202,7 @@ public class FolderCache {
 //        wtd=environment.getWebTopDomain();
         profile=env.getProfile();
 		account=null;
+		mailManager=ms.getManager();
     }
     
     public FolderCache(MailAccount account, Folder folder, Service ms, PrivateEnvironment env) throws MessagingException {
@@ -1249,65 +1252,189 @@ public class FolderCache {
     }
   
     public void tagMessages(long uids[], String tagId) throws MessagingException {
-//        open();
+		ArrayList<AuditReferenceDataEntry> tagged = null;
+		if (mailManager.isAuditEnabled()) tagged=new ArrayList<>();		
         Message mmsgs[]=getMessages(uids,false);
-        for(Message fmsg: mmsgs) {
-			//Flags flags=fmsg.getFlags();
-			//flags.add(tagId);
-			//fmsg.setFlags(flags, true);
-			fmsg.setFlags(new Flags(tagId), true);
-			ms.writeAuditLog(
-					"MAIL",
-					"TAG", 
-					ms.getMessageID(fmsg),
-					JsonUtils.toJson("tag",tagId)
+		MessagingException mexc=null;
+		try {
+			for(Message fmsg: mmsgs) {
+				fmsg.setFlags(new Flags(tagId), true);
+				if (mailManager.isAuditEnabled()) tagged.add(new AuditMailTagObj(ms.getMessageID(fmsg), tagId));
+			}
+		} catch(MessagingException exc) {
+			mexc=exc;
+		}
+		if (mailManager.isAuditEnabled())
+			mailManager.writeAuditLog(
+				MailManager.AuditContext.MAIL,
+				MailManager.AuditAction.TAG, 
+				tagged
 			);
-        }
+		
+		if (mexc!=null) throw mexc;
+		
     }
   
     public void untagMessages(long uids[], String tagId) throws MessagingException {
-//        open();
+		ArrayList<AuditReferenceDataEntry> untagged = null;
+		if (mailManager.isAuditEnabled()) untagged=new ArrayList<>();		
         Message mmsgs[]=getMessages(uids,false);
-        for(Message fmsg: mmsgs) {
-			fmsg.setFlags(new Flags(tagId), false);
-			ms.writeAuditLog(
-					"MAIL",
-					"TAG", 
-					ms.getMessageID(fmsg),
-					JsonUtils.toJson("untag",tagId)
+		MessagingException mexc=null;
+		try {
+			for(Message fmsg: mmsgs) {
+				fmsg.setFlags(new Flags(tagId), false);
+				if (mailManager.isAuditEnabled()) untagged.add(new AuditMailUntagObj(ms.getMessageID(fmsg), tagId));
+			}
+		} catch(MessagingException exc) {
+			mexc=exc;
+		}
+		if (mailManager.isAuditEnabled())
+			mailManager.writeAuditLog(
+				MailManager.AuditContext.MAIL,
+				MailManager.AuditAction.TAG, 
+				untagged
 			);
-        }
+		
+		if (mexc!=null) throw mexc;
     }
   
 	public void updateMessageTag(long uids[], String oldTagId, String newTagId) throws MessagingException {
+		ArrayList<AuditReferenceDataEntry> updated = null;
+		if (mailManager.isAuditEnabled()) updated=new ArrayList<>();		
 		Message mmsgs[]=getMessages(uids, false);
-		for(Message fmsg: mmsgs) {
-			Flags attachedFlags = fmsg.getFlags();
-			Flags oldFlag = new Flags(oldTagId);
-			if(attachedFlags.contains(oldFlag)) {
-				fmsg.setFlags(oldFlag, false);
-				fmsg.setFlags(new Flags(newTagId), true);
-				ms.writeAuditLog(
-						"MAIL",
-						"TAG", 
-						ms.getMessageID(fmsg),
-						JsonUtils.toJson("untag",oldTagId,"tag",newTagId)
-				);
+		MessagingException mexc=null;
+		try {
+			for(Message fmsg: mmsgs) {
+				Flags attachedFlags = fmsg.getFlags();
+				Flags oldFlag = new Flags(oldTagId);
+				if(attachedFlags.contains(oldFlag)) {
+					fmsg.setFlags(oldFlag, false);
+					fmsg.setFlags(new Flags(newTagId), true);
+					if (mailManager.isAuditEnabled()) updated.add(new AuditMailUpdateTagObj(ms.getMessageID(fmsg), oldTagId, newTagId));
+				}
 			}
-        }
+		} catch(MessagingException exc) {
+			mexc=exc;
+		}
+		
+		if (mailManager.isAuditEnabled())
+			mailManager.writeAuditLog(
+				MailManager.AuditContext.MAIL,
+				MailManager.AuditAction.TAG, 
+				updated
+			);
+		
+		if (mexc!=null) throw mexc;
 	}
 	
 	public void clearMessagesTags(long uids[]) throws MessagingException {
+		ArrayList<AuditReferenceDataEntry> cleared = null;
+		if (mailManager.isAuditEnabled()) cleared=new ArrayList<>();		
         Message mmsgs[]=getMessages(uids,false);
+		MessagingException mexc=null;
 		Flags flags=new Flags();
 		for(Tag tag: ms.atags) {
 			flags.add(tag.getTagId());
 		}
-        for(Message fmsg: mmsgs) {
-			fmsg.setFlags(flags, false);
-        }
+		try {
+			for(Message fmsg: mmsgs) {
+				fmsg.setFlags(flags, false);
+				if (mailManager.isAuditEnabled()) cleared.add(new AuditMailClearTagObj(ms.getMessageID(fmsg)));
+			}
+		} catch(MessagingException exc) {
+			mexc=exc;
+		}
+		
+		if (mailManager.isAuditEnabled())
+			mailManager.writeAuditLog(
+				MailManager.AuditContext.MAIL,
+				MailManager.AuditAction.TAG, 
+				cleared
+			);
+		
+		if (mexc!=null) throw mexc;
     }
   
+	protected class AuditMailTagObj implements AuditReferenceDataEntry {
+		public final String messageId;
+		public final String tagId;
+		
+		public AuditMailTagObj(String messageId, String tagId) {
+			this.messageId = messageId;
+			this.tagId = tagId;
+		}
+
+		@Override
+		public String getReference() {
+			return messageId;
+		}
+
+		@Override
+		public String getData() {
+			return JsonUtils.toJson("tag",tagId);
+		}
+	}
+	
+	protected class AuditMailUntagObj implements AuditReferenceDataEntry {
+		public final String messageId;
+		public final String tagId;
+		
+		public AuditMailUntagObj(String messageId, String tagId) {
+			this.messageId = messageId;
+			this.tagId = tagId;
+		}
+
+		@Override
+		public String getReference() {
+			return messageId;
+		}
+
+		@Override
+		public String getData() {
+			return JsonUtils.toJson("untag",tagId);
+		}
+	}
+	
+	protected class AuditMailClearTagObj implements AuditReferenceDataEntry {
+		public final String messageId;
+		
+		public AuditMailClearTagObj(String messageId) {
+			this.messageId = messageId;
+		}
+
+		@Override
+		public String getReference() {
+			return messageId;
+		}
+
+		@Override
+		public String getData() {
+			return JsonUtils.toJson("untag","*");
+		}
+	}
+	
+	protected class AuditMailUpdateTagObj implements AuditReferenceDataEntry {
+		public final String messageId;
+		public final String oldTagId;
+		public final String newTagId;
+		
+		public AuditMailUpdateTagObj(String messageId, String oldTagId, String newTagId) {
+			this.messageId = messageId;
+			this.oldTagId = oldTagId;
+			this.newTagId = newTagId;
+		}
+
+		@Override
+		public String getReference() {
+			return messageId;
+		}
+
+		@Override
+		public String getData() {
+			return JsonUtils.toJson("untag",oldTagId,"tag",newTagId);
+		}
+	}
+	
     public void clearMessagesFlag(long uids[]) throws MessagingException {
 //        open();
         Message mmsgs[]=getMessages(uids,false);
