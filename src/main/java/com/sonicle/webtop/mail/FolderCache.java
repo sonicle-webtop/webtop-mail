@@ -697,9 +697,10 @@ public class FolderCache {
         }
     }
 
-    protected boolean checkSubfolders(boolean all) throws MessagingException {
+    protected boolean checkSubfolders(boolean all, MailFoldersThread mft) throws MessagingException {
         boolean pHasUnread=false;
         for(FolderCache fcchild: getChildren()) {
+			if (mft.isAborted()) break;
             if (fcchild.isScanForcedOff()) continue;
             boolean hasUnread=false;
             if (all || fcchild.scanNeverDone || fcchild.isScanForcedOn() || fcchild.isScanEnabled()) {
@@ -709,7 +710,7 @@ public class FolderCache {
 				hasUnread=fcchild.getUnreadMessagesCount()>0||fcchild.hasUnreadChildren;
 			}
             if (fcchild.children!=null) {
-                hasUnread|=fcchild.checkSubfolders(all);
+                hasUnread|=fcchild.checkSubfolders(all,mft);
             }
             fcchild.setHasUnreadChildren(hasUnread);
             pHasUnread|=hasUnread;

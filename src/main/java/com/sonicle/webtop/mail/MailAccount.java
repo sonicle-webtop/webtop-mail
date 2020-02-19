@@ -34,6 +34,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
+import com.sonicle.mail.imap.SonicleIMAPStore;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sun.mail.imap.ACL;
@@ -408,7 +409,7 @@ public class MailAccount {
 		try {
 			if (store!=null) {
 				disconnecting = true;
-				store.close();
+				((SonicleIMAPStore)store).forceDisconnect();
 			}
 			
 		} catch (MessagingException ex) {

@@ -84,6 +84,10 @@ public class MailFoldersThread extends Thread {
         this.abort=true;
         this.interrupt();
     }
+	
+	public boolean isAborted() {
+		return this.abort;
+	}
     
     @Override
     public void run() {
@@ -117,7 +121,7 @@ public class MailFoldersThread extends Thread {
                                 for(FolderCache fc: sfc) {
                                     if (fc!=null) {
                                         ArrayList<FolderCache> children=fc.getChildren();
-                                        if (children!=null) {
+                                        if (children!=null && !abort) {
                                             for(FolderCache inbox: children) inbox.checkFolder();
                                         }
                                     }
@@ -126,13 +130,14 @@ public class MailFoldersThread extends Thread {
 							
 							//Check favorite folders for unread messages
 							ArrayList<FolderCache> favoriteCaches = account.getFavoritesFoldersCache();
-							 for(FolderCache favorite: favoriteCaches) favorite.checkFolder();
+							 for(FolderCache favorite: favoriteCaches) 
+								 if (!abort) favorite.checkFolder();
 									
                         }
                         else {
                             //Service.logger.debug("MailFolderThread: Checking all messages");
                             try {
-                                fcroot.checkSubfolders(checkAll);
+                                fcroot.checkSubfolders(checkAll,this);
                             } catch(Exception exc) {
                                 Service.logger.error("Exception",exc);
                             }
