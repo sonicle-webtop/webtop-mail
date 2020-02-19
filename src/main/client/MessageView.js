@@ -1126,7 +1126,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         var newwidth=thebody.offsetWidth;
         if (newheight<thebody.scrollHeight) newheight=thebody.scrollHeight;
         if (newwidth<thebody.scrollWidth) newwidth=thebody.scrollWidth;
-        me.setIframeSize(xif,newwidth,newheight);
+        me.setIframeSize(xif,data,newwidth,newheight);
         if (Ext.isIE) {
             if (!thebody.lastScrollHeight || thebody.lastScrollHeight!=newheight) {
                 if (!thebody.wtAdjustCount) thebody.wtAdjustCount=1;
@@ -1140,16 +1140,21 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
 
-    setIframeSize: function(xif,newwidth,newheight) {
+    setIframeSize: function(xif,data,newwidth,newheight) {
         var tcd=xif.wtTcd;
         xif.height=newheight+30;
         if (newwidth<tcd.scrollWidth) {
 			newwidth = tcd.scrollWidth -10;
 		} else if (newwidth>=tcd.scrollWidth) {
-            //this.divBody.dom.style.width=this.divBody.dom.scrollWidth;
+            //try to force constrained width to window width
 			newwidth = this.divBody.getSize().width -12;
         }
+		//here iframe will force a layout to new constrained width
         xif.width=newwidth;
+		//if new layout does not fit, something is keeping horizontal space
+		//e.g. a large width image, so set iframe width to scroll width to
+		//allow scrollbar to appear
+		if (data.doc.body.scrollWidth>newwidth) xif.width=data.doc.body.scrollWidth;
     },
     
     evalRecord: function(item,index,allItems) {
@@ -1268,7 +1273,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 var thebody=data.doc.body;
                 var newheight=thebody.scrollHeight;
                 var newwidth=thebody.scrollWidth;
-                this.setIframeSize(xif,newwidth,newheight);
+                this.setIframeSize(xif,data,newwidth,newheight);
             }
         }
     },
