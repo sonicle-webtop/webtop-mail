@@ -6047,6 +6047,8 @@ public class Service extends BaseService {
 		String pthreadaction=request.getParameter("threadaction");
 		String pthreadactionuid=request.getParameter("threadactionuid");
 		
+		boolean showMessagePreviewOnRow=us.getShowMessagePreviewOnRow();
+		
 		QueryObj queryObj = null;
 		SearchTerm searchTerm = null;	
 		try {
@@ -6506,7 +6508,7 @@ public class Service extends BaseService {
 						}
 						
 						String msgtext=null;
-						if (us.getShowMessagePreviewOnRow()&& isToday && unread) {
+						if (showMessagePreviewOnRow && isToday && unread) {
 							try {
 								msgtext=MailUtils.peekText(xm);
 								if (msgtext!=null) {
