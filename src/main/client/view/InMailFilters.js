@@ -186,7 +186,8 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					deferEmptyText: false,
 					plugins: [{
 						ptype: 'sogridviewddordering',
-						orderField: 'order'
+						orderField: 'order',
+						zeroBased: false
 					}]
 				},
 				columns: [{
