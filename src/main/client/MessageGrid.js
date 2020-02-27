@@ -875,7 +875,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	defaultFieldDirection: function(field) {
-		return ['date', 'size', 'atts', 'flag'].indexOf(field) !== -1 ? 'DESC' : 'ASC';
+		return ['date', 'size', 'atts'].indexOf(field) !== -1 ? 'DESC' : 'ASC';
 	},
 	
 	groupField_key2field: function(key) {
