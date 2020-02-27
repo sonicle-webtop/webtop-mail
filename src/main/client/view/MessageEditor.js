@@ -94,6 +94,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     
     sendMask: null,
 
+	dumbMailcard: "<p id='wt-mailcard-dumb' style='padding: 0; margin: 0;'>&#160;</p>",
+	
 	initComponent: function() {
 		var me=this;
 		
@@ -372,15 +374,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			};
 		}
 		
-			tbitems[tbx++] = me.addRef('showMailcard', {
-				xtype: 'button',
-				enableToggle: true,
-				pressed: true,
-				iconCls: 'wtmail-icon-mailcardedit-xs',
-				tooltip: me.res('editor.btn-showMailcard.tip'),
-				handler: me.showMailcardAction,
-				scope: me
-			});
+		tbitems[tbx++] = me.addRef('showMailcard', Ext.create({
+			xtype: 'button',
+			enableToggle: true,
+			pressed: true,
+			iconCls: 'wtmail-icon-mailcardedit-xs',
+			tooltip: me.res('editor.btn-showMailcard.tip'),
+			handler: me.showMailcardAction,
+			scope: me
+		}));
 			
 		if (me.showIdentities) {
             var idents=new Array(),
@@ -772,9 +774,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if ((data.forwardedfrom||data.inreplyto)&&me.mys.getVar("noMailcardOnReplyForward")) {
 			mc={
 				source: '',
-				html: '',
+				html: me.dumbMailcard,
 				text: ''
 			};
+			me.getRef("showMailcard").toggle(false,true);
 		}
 		
 		
@@ -817,7 +820,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				 format=me.mys.getVar("format"),
 				 dumbMailcard = {
 					mailcard: {
-						html: "<p id='wt-mailcard-dumb' style='padding: 0; margin: 0;'>&#160;</p>"
+						html: me.dumbMailcard
 					}
 				};
 				me.showMailcard = b.pressed;
