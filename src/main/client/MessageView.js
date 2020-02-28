@@ -1284,11 +1284,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	
 		WT.ajaxReq(me.mys.ID, 'SendReceipt', {
 			params: {
-				//from: ident.displayName+" <"+ident.email+">",
 				identityId: ident.identityId,
                 subject: me.subject,
                 to: me.receiptTo,
-                folder: me.folder
+                folder: me.folder,
+				idmessage: me.idmessage
 			},
 			callback: function(success,json) {
 				if (success) {
