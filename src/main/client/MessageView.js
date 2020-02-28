@@ -1288,7 +1288,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 subject: me.subject,
                 to: me.receiptTo,
                 folder: me.folder,
-				idmessage: me.idmessage
+				messageid: me.messageid
 			},
 			callback: function(success,json) {
 				if (success) {
