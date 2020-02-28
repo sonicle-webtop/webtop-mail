@@ -742,12 +742,6 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					group: sortFieldGroup,
 					checkHandler: me.onSortFieldCheckChange
 				}, {
-					itemId: 'sortField-hasAtts',
-					text: me.mys.res('messagesPanel.sortField.hasAtts.lbl'),
-					checked: false,
-					group: sortFieldGroup,
-					checkHandler: me.onSortFieldCheckChange
-				}, {
 					itemId: 'sortField-flag',
 					text: me.mys.res('messagesPanel.sortField.flag.lbl'),
 					checked: false,
