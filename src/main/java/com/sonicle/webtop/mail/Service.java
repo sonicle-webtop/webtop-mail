@@ -5457,6 +5457,7 @@ public class Service extends BaseService {
 	public void processSendReceipt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		UserProfile profile = environment.getProfile();
+		String messageid = request.getParameter("messageid");
 		String subject = request.getParameter("subject");
 		//String from = request.getParameter("from");
 		int identityId = Integer.parseInt(request.getParameter("identityId"));
@@ -5472,6 +5473,8 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			Exception exc = sendReceipt(ident, from, to, subject, body);
 			if (exc == null) {
+				CoreManager coreMgr=WT.getCoreManager();
+				coreMgr.addServiceStoreEntry(SERVICE_ID, "receipt", messageid, "sent");
 				new JsonResult().printTo(out);
 			} else {
 				Service.logger.error("Exception",exc);
@@ -7129,7 +7132,8 @@ public class Service extends BaseService {
 			}
 			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash() && !mcache.isArchive()) {
 				if (vheader != null && vheader[0] != null && !wasseen) {
-					sout += "{iddata:'receipt',value1:'"+us.getReadReceiptConfirmation()+"',value2:'"+StringEscapeUtils.escapeEcmaScript(vheader[0])+"',value3:0},\n";
+					if (WT.getCoreManager().getServiceStoreEntry(SERVICE_ID, "receipt", messageid)==null)
+						sout += "{iddata:'receipt',value1:'"+us.getReadReceiptConfirmation()+"',value2:'"+StringEscapeUtils.escapeEcmaScript(vheader[0])+"',value3:0},\n";
 				}
 			}
 			
