@@ -122,25 +122,6 @@ import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.webtop.mail.model.Tag;
 import com.sonicle.webtop.mail.ws.AddContactMessage;
 import com.sonicle.webtop.vfs.IVfsManager;
-// TODO: Fix imported classes
-//import com.sonicle.webtop.Mailcard;
-//import com.sonicle.webtop.EditingSession;
-//import com.sonicle.webtop.bol.OServiceSetting;
-//import com.sonicle.webtop.bol.OUser;
-//import com.sonicle.webtop.bol.OWorkgroup;
-//import com.sonicle.webtop.bol.WebTopSettings;
-//import com.sonicle.webtop.bol.js.JsSharingRight;
-//import com.sonicle.webtop.contacts.*;
-//import com.sonicle.webtop.dal.WebTopDb;
-//import com.sonicle.webtop.mail.bol.JsMailcard;
-//import com.sonicle.webtop.mail.bol.JsQuickPart;
-//import com.sonicle.webtop.mail.dal.InboxMailFiltersDb;
-//import com.sonicle.webtop.mail.dal.SentMailFiltersDb;
-//import com.sonicle.webtop.profiledata.ProfileDataProviderBase;
-//import com.sonicle.webtop.profiledata.ProfilePersonalInfo;
-//import com.sonicle.webtop.setting.SettingsManager;
-//import com.sonicle.webtop.util.*;
-//import com.sonicle.webtop.vfs.VFSService;
 import com.sun.mail.imap.*;
 import com.sun.mail.util.PropUtil;
 import java.io.*;
@@ -168,14 +149,10 @@ import org.apache.http.client.HttpClient;
 import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTimeZone;
 import com.github.rutledgepaulv.qbuilders.conditions.Condition;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.core.app.CoreManifest;
-import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
-import java.util.stream.Collectors;
 import javax.mail.search.AndTerm;
 import javax.mail.search.FlagTerm;
 import javax.mail.search.OrTerm;
@@ -188,58 +165,35 @@ public class Service extends BaseService {
 	
 	class WebtopFlag {
 		String label;
-		//String tbLabel;
 		
-		WebtopFlag(String label/*, String tbLabel*/) {
+		WebtopFlag(String label) {
 			this.label=label;
-			//this.tbLabel=tbLabel;
 		}
 		
 	}
 	
     public WebtopFlag[] webtopFlags={
-        new WebtopFlag("red"/*,"$label1"*/),
-        new WebtopFlag("blue"/*,"$label4"*/),
-        new WebtopFlag("yellow"/*,null*/),
-        new WebtopFlag("green"/*,"$label3"*/),
-        new WebtopFlag("orange"/*,"$label2"*/),
-        new WebtopFlag("purple"/*,"$label5"*/),
-        new WebtopFlag("black"/*,null*/),
-        new WebtopFlag("gray"/*,null*/),
-        new WebtopFlag("white"/*,null*/),
-        new WebtopFlag("brown"/*,null*/),
-        new WebtopFlag("azure"/*,null*/),
-        new WebtopFlag("pink"/*,null*/),
-        new WebtopFlag("complete"/*,null*/)
+        new WebtopFlag("red"),
+        new WebtopFlag("blue"),
+        new WebtopFlag("yellow"),
+        new WebtopFlag("green"),
+        new WebtopFlag("orange"),
+        new WebtopFlag("purple"),
+        new WebtopFlag("black"),
+        new WebtopFlag("gray"),
+        new WebtopFlag("white"),
+        new WebtopFlag("brown"),
+        new WebtopFlag("azure"),
+        new WebtopFlag("pink"),
+        new WebtopFlag("complete")
 	};
 	
 	public String allFlagStrings[];
 	
-	/*class ThunderbirdFlag {
-		String label;
-		int colorindex;
-		
-		ThunderbirdFlag(String label, int colorindex) {
-			this.label=label;
-			this.colorindex=colorindex;
-		}
-	}*/
-	
-/*    public ThunderbirdFlag tbFlagStrings[]={
-        new ThunderbirdFlag("$label1",0),	//red
-        new ThunderbirdFlag("$label2",4),	//orange
-        new ThunderbirdFlag("$label3",3),	//green
-        new ThunderbirdFlag("$label4",1),	//blue
-        new ThunderbirdFlag("$label5",5)	//purple
-		
-    };*/
-	
 	public static Flags flagsAll = new Flags();
 	public static Flags oldFlagsAll = new Flags();
-	//public static Flags tbFlagsAll=new Flags();
 	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
 	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
-	//public static HashMap<String,Flags> tbFlagsHash=new HashMap<String,Flags>();
 	private static String sflagNote="mailnote";
 	private static String sflagDmsArchived="$Archived";
 	public static Flags flagNote=new Flags(sflagNote);
@@ -267,18 +221,12 @@ public class Service extends BaseService {
 	
 	private boolean sortfolders=false;
 	
-	//private boolean hasDifferentDefaultFolder=false;
-	
 	public static final String HEADER_SONICLE_FROM_DRAFTER="Sonicle-from-drafter";	
 	
 	public static final String HEADER_X_WEBTOP_MSGID="X-WEBTOP-MSGID";
 	
 	static String startpre = "<PRE>";
 	static String endpre = "</PRE>";
-//	private static String webtopTextMessage
-//			= "This email has been sent through Sonicle WebMail system [ http://www.sonicle.com ]";
-//	private static String webtopHTMLMessage = "This email has been sent through Sonicle WebMail system [ <A HREF='http://www.sonicle.com'>http://www.sonicle.com</A> ]";
-//	private static String unwantedTags[] = {"style"};
 
 	protected static final String MAIN_ACCOUNT_ID="main";
 	protected static final String ARCHIVE_ACCOUNT_ID="archive";
@@ -289,31 +237,16 @@ public class Service extends BaseService {
 	private ArrayList<MailAccount> externalAccounts=new ArrayList<MailAccount>();
 	private HashMap<String,MailAccount> accounts=new HashMap<>();
 	private HashMap<String,ExternalAccount> externalAccountsMap=new HashMap<>();
-	//private Session session;
-	//private Store store;
-	//private String storeProtocol;
-	//private boolean disconnecting = false;
-	//private String sharedPrefixes[] = null;
-	//private char folderSeparator = 0;
-	//private String folderPrefix = null;
 	
 	private PrivateEnvironment environment = null;
 	private MailUserProfile mprofile;
 	private MailServiceSettings ss = null;
 	private MailUserSettings us = null;
 	private CoreUserSettings cus = null;
-	//private boolean validated = false;
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
-	//private boolean hasAnnotations=false;
 	
-	//private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
-	//private FolderCache fcRoot = null;
-	//private FolderCache[] fcShared = null;
 	private FolderCache fcProvided = null;
-	
-	//private String skipReplyFolders[] = null;
-	//private String skipForwardFolders[] = null;
 	
 	private static ArrayList<String> inlineableMimes = new ArrayList<String>();
 	
@@ -332,9 +265,6 @@ public class Service extends BaseService {
 		inlineableMimes.add("image/gif");
 		inlineableMimes.add("image/jpeg");
 		inlineableMimes.add("image/png");
-//      inlineableMimes.add("image/tiff");
-//      inlineableMimes.add("text/plain");
-//      inlineableMimes.add("message/rfc822");
 	}
 	
 	@Override
@@ -345,7 +275,6 @@ public class Service extends BaseService {
 			allFlagsArray.add(fs.label);
 			String oldfs="flag"+fs.label;
 			flagsAll.add(fs.label);
-			//if (fs.tbLabel!=null) tbFlagsAll.add(fs.tbLabel);
 			oldFlagsAll.add(oldfs);
 			Flags flags=new Flags();
 			flags.add(fs.label);
@@ -353,15 +282,7 @@ public class Service extends BaseService {
 			flags=new Flags();
 			flags.add(oldfs);
 			oldFlagsHash.put(fs.label, flags);
-			/*if (fs.tbLabel!=null) {
-				Flags tbFlags=new Flags();
-				tbFlags.add(fs.tbLabel);
-				tbFlagsHash.put(fs.label, tbFlags);
-			}*/
 		}
-		/*for(WebtopFlag fs: webtopFlags) {
-			if (fs.tbLabel!=null) allFlagsArray.add(fs.tbLabel);
-		}*/	  
 		for(WebtopFlag fs: webtopFlags) {
 			allFlagsArray.add("flag"+fs.label);
 		}	  
@@ -376,7 +297,6 @@ public class Service extends BaseService {
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
 		us = new MailUserSettings(profile.getId(),ss);
-		//mprofile = new MailUserProfile(environment,this);
 		mprofile = new MailUserProfile(mailManager,ss,us,profile);
 		String mailUsername = mprofile.getMailUsername();
 		String mailPassword = mprofile.getMailPassword();
@@ -502,16 +422,6 @@ public class Service extends BaseService {
 			//if external archive, initialize account
 			if (ss.isArchivingExternal()) {
 				archiveAccount=createAccount(ARCHIVE_ACCOUNT_ID);
-				
-				//MailStore support dropped for poor imap implementation
-				//
-				//if (ss.getArchivingExternalType().equals("mailstore")) {
-				//	String defaultFolder=us.getArchiveExternalUserFolder();
-				//	if (defaultFolder==null || defaultFolder.trim().length()==0)
-				//		defaultFolder=profile.getEmailAddress();
-				//	//MailStore produces a strange tree with two times the same account name
-				//	archiveAccount.setDifferentDefaultFolder(defaultFolder+"/"+defaultFolder);
-				//}
 				
 				//defaults to WebTop External Archive
 				archiveAccount.setHasInboxFolder(true); //archive copy creates INBOX folder under user archive
