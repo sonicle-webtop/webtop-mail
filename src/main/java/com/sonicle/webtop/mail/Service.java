@@ -5166,7 +5166,7 @@ public class Service extends BaseService {
 					// Replaces every src URL pointing a public image with a cid, tranforming URL to a direct inline attachments
 					String uploadTag = ""+msgId;
 					String resourcesBaseUrl = URIUtils.concat(getEnv().getCoreServiceSettings().getPublicBaseUrl(), ResourceRequest.URL);
-					Pattern pattSrc = Pattern.compile("\"(" + RegexUtils.escapeRegexSpecialChars(resourcesBaseUrl) + ".*)\"");
+					Pattern pattSrc = Pattern.compile("(?:\"|\')(" + RegexUtils.escapeRegexSpecialChars(resourcesBaseUrl) + "(.+?))(?:\"|\')");
 					Matcher maSrc = pattSrc.matcher(content);
 					
 					ArrayList<JsAttachment> rescids = new ArrayList<>();
