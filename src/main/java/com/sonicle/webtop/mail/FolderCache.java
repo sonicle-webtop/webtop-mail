@@ -2421,7 +2421,9 @@ public class FolderCache {
           //mailData.addUnknownPart(ap);
 		  //break;
 		}
-      }
+      } else {
+		mailData.addAttachmentPart(ap);
+	  }
     }
     return dispPart;
   }
