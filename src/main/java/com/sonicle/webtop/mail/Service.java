@@ -8377,65 +8377,65 @@ public class Service extends BaseService {
 			String description = null;
 			String method = "this";
 			ArrayList<JsSharing.SharingRights> rights = new ArrayList<>();
-			
-			if(!id.equals("/")) {
-				fc = account.getFolderCache(id);
-				SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
-				Sharing wtsharing=core.getSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, MailManager.IDENTITY_SHARING_ID);
-				description = folder.getName();
-				for(ACL acl : folder.getACL()) {
-					String aclUserId=acl.getName();
-					UserProfileId pid=aclUserIdToUserId(aclUserId);
-					if (pid==null) continue;
-					String roleUid=core.getUserUid(pid);
-					String roleDescription=null;
-					boolean shareIdentity=false;
-					boolean forceMailcard=false;
-					if (roleUid==null) { 
-						if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
-						roleUid=aclUserId; 
-						roleDescription=roleUid; 
-					} else {
-						Sharing.RoleRights wtrr=wtsharing.getRoleRights(roleUid);
-						if (wtrr!=null) {
-							shareIdentity=wtrr.folderRead;
-							forceMailcard=wtrr.folderUpdate;
-						}
-						String dn;
-						try {
-							OUser ouser=core.getUser(pid);
-							dn=ouser.getDisplayName();
-						} catch(WTException exc) {
-							dn="no description available";
-						}
-						roleDescription=pid.getUserId()+" ["+dn+"]";
-					}
 
-					Rights ar = acl.getRights();
-					rights.add(new JsSharing.SharingRights(
-							id, 
-							roleUid,
-							roleDescription,
-							aclUserId,
-							shareIdentity,
-							forceMailcard,
-							ar.contains(Rights.Right.getInstance('l')),
-							ar.contains(Rights.Right.getInstance('r')),
-							ar.contains(Rights.Right.getInstance('s')),
-							ar.contains(Rights.Right.getInstance('w')),
-							ar.contains(Rights.Right.getInstance('i')),
-							ar.contains(Rights.Right.getInstance('p')),
-							ar.contains(Rights.Right.getInstance('k')),
-							ar.contains(Rights.Right.getInstance('a')),
-							ar.contains(Rights.Right.getInstance('x')),
-							ar.contains(Rights.Right.getInstance('t')),
-							ar.contains(Rights.Right.getInstance('n')),
-							ar.contains(Rights.Right.getInstance('e'))
-					));
-				}
-			}
-			else {
+			if(id.equals("/")) {
+				id="INBOX";
 				method = "all";
+			}
+			
+			fc = account.getFolderCache(id);
+			SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
+			Sharing wtsharing=core.getSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, MailManager.IDENTITY_SHARING_ID);
+			description = folder.getName();
+			for(ACL acl : folder.getACL()) {
+				String aclUserId=acl.getName();
+				UserProfileId pid=aclUserIdToUserId(aclUserId);
+				if (pid==null) continue;
+				String roleUid=core.getUserUid(pid);
+				String roleDescription=null;
+				boolean shareIdentity=false;
+				boolean forceMailcard=false;
+				if (roleUid==null) { 
+					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+					roleUid=aclUserId; 
+					roleDescription=roleUid; 
+				} else {
+					Sharing.RoleRights wtrr=wtsharing.getRoleRights(roleUid);
+					if (wtrr!=null) {
+						shareIdentity=wtrr.folderRead;
+						forceMailcard=wtrr.folderUpdate;
+					}
+					String dn;
+					try {
+						OUser ouser=core.getUser(pid);
+						dn=ouser.getDisplayName();
+					} catch(WTException exc) {
+						dn="no description available";
+					}
+					roleDescription=pid.getUserId()+" ["+dn+"]";
+				}
+
+				Rights ar = acl.getRights();
+				rights.add(new JsSharing.SharingRights(
+						id, 
+						roleUid,
+						roleDescription,
+						aclUserId,
+						shareIdentity,
+						forceMailcard,
+						ar.contains(Rights.Right.getInstance('l')),
+						ar.contains(Rights.Right.getInstance('r')),
+						ar.contains(Rights.Right.getInstance('s')),
+						ar.contains(Rights.Right.getInstance('w')),
+						ar.contains(Rights.Right.getInstance('i')),
+						ar.contains(Rights.Right.getInstance('p')),
+						ar.contains(Rights.Right.getInstance('k')),
+						ar.contains(Rights.Right.getInstance('a')),
+						ar.contains(Rights.Right.getInstance('x')),
+						ar.contains(Rights.Right.getInstance('t')),
+						ar.contains(Rights.Right.getInstance('n')),
+						ar.contains(Rights.Right.getInstance('e'))
+				));
 			}
 			JsSharing sharing=new JsSharing(id, description, method, rights);
 			
