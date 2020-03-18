@@ -5946,8 +5946,10 @@ public class Service extends BaseService {
 			sortby = MessageComparator.SORT_BY_SIZE;
 		} else if (psortfield.equals("subject")) {
 			sortby = MessageComparator.SORT_BY_SUBJECT;
-		} else if (psortfield.equals("status")||psortfield.equals("unread")) {
+		} else if (psortfield.equals("status")) {
 			sortby = MessageComparator.SORT_BY_STATUS;
+		} else if (psortfield.equals("unread")) {
+			sortby = MessageComparator.SORT_BY_SEEN;
 		} else if (psortfield.equals("flag")) {
 			sortby = MessageComparator.SORT_BY_FLAG;
 		}

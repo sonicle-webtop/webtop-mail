@@ -53,6 +53,7 @@ public class MessageComparator implements Comparator<Message> {
   public static final int SORT_BY_PRIORITY=6;
   public static final int SORT_BY_STATUS=7;
   public static final int SORT_BY_FLAG=8;
+  public static final int SORT_BY_SEEN=9;
 
   private int sort_by=SORT_BY_MSGIDX;
   boolean ascending=true;
