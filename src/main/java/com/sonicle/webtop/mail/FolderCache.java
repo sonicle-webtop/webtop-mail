@@ -84,6 +84,7 @@ public class FolderCache {
     public static final int SORT_BY_PRIORITY=6;
     public static final int SORT_BY_STATUS=7;
     public static final int SORT_BY_FLAG=8;
+    public static final int SORT_BY_SEEN=9;
 
     private PrivateEnvironment environment=null;
     //private WebTopDomain wtd=null;
@@ -131,7 +132,7 @@ public class FolderCache {
     private int sort_group=0;
     private boolean groupascending=true;
 	private boolean threaded=false;
-    private MessageComparator comparator;
+    //private MessageComparator comparator;
     private UserProfile profile;
     
     private FolderCache parent=null;
@@ -157,24 +158,24 @@ public class FolderCache {
 	
 	private MailAccount account=null;
     
-    private static final HashMap<String,HashMap<String,Integer>> months=new HashMap<>();
+    //private static final HashMap<String,HashMap<String,Integer>> months=new HashMap<>();
 
     private HashMap<String,MessageEntry> providedMessages=new HashMap<>();
     
 
 
-    static {
-		addHashMonths("en",new String[]{"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"});
-		addHashMonths("it",new String[]{"gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"});
-    }
+    //static {
+	//	addHashMonths("en",new String[]{"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"});
+	//	addHashMonths("it",new String[]{"gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"});
+    //}
 
-	private static void addHashMonths(String language, String vmonths[]) {
-		HashMap<String,Integer> hmonths=new HashMap<>();
-		for (int m=0; m<12;++m) {
-			hmonths.put(vmonths[m],m+1);
-		}
-		months.put(language,hmonths);
-	}
+	//private static void addHashMonths(String language, String vmonths[]) {
+	//	HashMap<String,Integer> hmonths=new HashMap<>();
+	//	for (int m=0; m<12;++m) {
+	//		hmonths.put(vmonths[m],m+1);
+	//	}
+	//	months.put(language,hmonths);
+	//}
 
     //for externally provided messages
     class MessageEntry {
@@ -196,7 +197,7 @@ public class FolderCache {
     //Special constructor for externally provided messages
     public FolderCache(Service ms, PrivateEnvironment env) {
         this.ms=ms;
-		comparator=new MessageComparator(ms);
+		//comparator=new MessageComparator(ms);
         externalProvider=true;
         environment=env;
 //        wtd=environment.getWebTopDomain();
@@ -966,7 +967,7 @@ public class FolderCache {
 		if (endOfSession) {
 			goidle=false;
 			this.ms=null;
-			this.comparator=null;
+			//this.comparator=null;
 		}
         dhash.clear();
 //        hash.clear();
@@ -1571,6 +1572,7 @@ public class FolderCache {
 			case SORT_BY_FLAG:
 				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
 				sort=new FlagSortTerm(ms.allFlagStrings, !ascending);
+				sort.append(new DateSortTerm(true));
 				break;
 			case SORT_BY_MSGIDX:
 				sort=new MessageIDSortTerm(!ascending);
@@ -1590,6 +1592,10 @@ public class FolderCache {
 				break;
 			case SORT_BY_STATUS:
 				sort=new StatusSortTerm(!ascending);
+				sort.append(new DateSortTerm(true));
+				break;
+			case SORT_BY_SEEN:
+				sort=new SeenSortTerm(!ascending);
 				sort.append(new DateSortTerm(true));
 				break;
 			case SORT_BY_SUBJECT:
@@ -1885,7 +1891,7 @@ public class FolderCache {
 
 
 
-  private int getMonth(String smonth) {
+  /*private int getMonth(String smonth) {
     if(smonth.length()<3) {
       return-1;
     }
@@ -1899,7 +1905,7 @@ public class FolderCache {
       return-1;
     }
     return imonth;
-  }
+  }*/
 
   private java.util.Date parseDate(String pattern) {
     pattern=pattern.replace('-', '/');
@@ -2545,7 +2551,7 @@ public class FolderCache {
       int sort_group=0;
       boolean groupascending=true;
 	  boolean threaded=false;
-      MessageComparator comparator=new MessageComparator(FolderCache.this.ms);
+      //MessageComparator comparator=new MessageComparator(FolderCache.this.ms);
 	  SearchTerm searchTerm;
 	  boolean hasAttachment;
       
