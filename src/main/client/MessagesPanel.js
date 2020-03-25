@@ -132,26 +132,32 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}, {
 				name: 'attachment',
 				type: 'boolean',
+				boolKeyword: 'has',
 				label: me.res('fld-search.field.attachment.lbl')
 			}, {
 				name: 'unread',
 				type: 'boolean',
+				boolKeyword: 'has',
 				label: me.res('fld-search.field.unread.lbl')
 			}, {
 				name: 'flagged',
 				type: 'boolean',
+				boolKeyword: 'has',
 				label: me.res('fld-search.field.flagged.lbl')
 			}, {
 				name: 'tagged',
 				type: 'boolean',
+				boolKeyword: 'has',
 				label: me.res('fld-search.field.tagged.lbl')
 			}, {
 				name: 'unanswered',
 				type: 'boolean',
+				boolKeyword: 'has',
 				label: me.res('fld-search.field.unanswered.lbl')
 			}, {
 				name: 'priority',
 				type: 'boolean',
+				boolKeyword: 'has',
 				label: me.res('fld-search.field.priority.lbl')
 			}],
 			tooltip:  me.res('fld-search.tip'),
