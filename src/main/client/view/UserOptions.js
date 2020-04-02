@@ -34,6 +34,8 @@
 Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	extend: 'WTA.sdk.UserOptionsView',
 	requires: [
+		'Sonicle.form.Separator',
+		'Sonicle.form.field.Palette',
 		'WTA.store.MailboxProtocols',
 		'Sonicle.webtop.mail.model.ServiceVars',
 		'Sonicle.webtop.mail.model.Identity',
@@ -63,17 +65,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			favoriteNotifications: WTF.checkboxBind('record', 'favoriteNotifications'),
 			ingridPreview: WTF.checkboxBind('record', 'ingridPreview'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
-			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks'),
-			todayRowColor: {
-				bind: {bindTo: '{record.todayRowColor}'},
-				get: function(val) {
-					return !Ext.isEmpty(val) ? val.replace('#','') : val;
-				},
-				set: function(val) {
-					var rec = this.get('record');
-					rec.set('todayRowColor', !Ext.isEmpty(val) ? '#'+val : val);
-				}
-			}
+			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks')
 		}
 	},
 		
@@ -169,10 +161,13 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				xtype: 'soformseparator',
 				title: me.res('opts.main.grid.tit')
 			}, {
-				xtype: 'colorfield',
-				bind: '{todayRowColor}',
+				xtype: 'sopalettefield',
+				bind: '{record.todayRowColor}',
+				hideTrigger: true,
+				colors: WT.getColorPalette('light'),
+				tilesPerRow: 11,
 				fieldLabel: me.res('opts.main.fld-todayRowColor.lbl'),
-				width: 140+100,
+				width: 170,
 				needReload: true,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, {
@@ -261,9 +256,11 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				}, {
 					xtype: 'sopalettefield',
 					bind: '{record.fontColor}',
-					//colors: WT.getColorPalette(),
+					hideTrigger: true,
+					colors: WT.getColorPalette('html'),
+					tilesPerRow: 8,
 					fieldLabel: WT.res('word.color'),
-					width: 240,
+					width: 170,
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				}, {
 					xtype: 'checkbox',
