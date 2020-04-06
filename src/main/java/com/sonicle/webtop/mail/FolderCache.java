@@ -625,7 +625,7 @@ public class FolderCache {
 			long millis=System.currentTimeMillis();
 			long d=millis-lastRefreshUnreads;
 			if (d>=100) {
-				Service.logger.debug("Refreshing unreads");
+				if(Service.logger.isTraceEnabled()) Service.logger.trace("Refreshing unreads");
 				lastRefreshUnreads=millis;
 				refreshUnreadMessagesCount();
 				updateUnreads();
