@@ -148,7 +148,7 @@ import org.apache.commons.vfs2.FileObject;
 import org.apache.http.client.HttpClient;
 import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTimeZone;
-import com.github.rutledgepaulv.qbuilders.conditions.Condition;
+import com.sonicle.commons.qbuilders.conditions.Condition;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.core.app.CoreManifest;
