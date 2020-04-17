@@ -332,7 +332,7 @@ public class ICalendarRequest {
 				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.organizer")),
 				htmlorganizer,
 				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.description")),
-				hyperlinkText(StringEscapeUtils.escapeHtml4(description),"_new"),
+				hyperlinkText(description,"_new"),
 				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.attendees")),
 				htmlattendees
 		);
