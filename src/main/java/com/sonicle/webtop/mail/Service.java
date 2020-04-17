@@ -7703,14 +7703,18 @@ public class Service extends BaseService {
 
 			ICalendarRequest ir = new ICalendarRequest(part.getInputStream());
 			ICalendarManager cm = (ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
+			
+			Integer calendarId = cm.getDefaultCalendarId();
+			if (calendarId == null) calendarId = cm.getBuiltInCalendar().getCalendarId();
+			
 			if (pcalaction.equals("accept")) {
-				Event ev = cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
+				Event ev = cm.addEventFromICal(calendarId, ir.getCalendar());
 				String ekey = cm.getEventInstanceKey(ev.getEventId());
 				sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED);
 				new JsonResult(ekey).printTo(out);
 				
 			} else if (pcalaction.equals("import")) {
-				Event ev = cm.addEventFromICal(cm.getBuiltInCalendar().getCalendarId(), ir.getCalendar());
+				Event ev = cm.addEventFromICal(calendarId, ir.getCalendar());
 				String ekey = cm.getEventInstanceKey(ev.getEventId());
 				new JsonResult(ekey).printTo(out);
 				
