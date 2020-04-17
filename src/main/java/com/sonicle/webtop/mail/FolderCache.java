@@ -243,9 +243,11 @@ public class FolderCache {
 				}
             } else { //look for a possible INBOX under a shared folder
 				FolderCache fcparent=account.getFolderCache(folder.getParent().getFullName());
-				String fname=folder.getName();
-				if (fcparent.isSharedFolder && fname.equals("INBOX"))
-					isSharedInbox=true;
+				if (fcparent!=null) {
+					String fname=folder.getName();
+					if (fcparent.isSharedFolder && fname.equals("INBOX"))
+						isSharedInbox=true;
+				}
 			}
         }
         if (sharedInboxPrincipal==null) description=ms.getInternationalFolderName(this);

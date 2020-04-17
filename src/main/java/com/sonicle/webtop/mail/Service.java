@@ -2990,7 +2990,7 @@ public class Service extends BaseService {
 						if (folder.exists()) {
 							FolderCache fc=account.getFolderCache(ff.folderId);
 							if (fc==null) {
-								fc=account.createFolderCache(folder);
+								fc=account.createFolderCache(folder,true);
 							}
 							newFavorites.add(ff);
 							ffds.add(new FavoriteFolderData(fc,ff.description));

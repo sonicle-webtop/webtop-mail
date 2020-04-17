@@ -438,13 +438,17 @@ public class MailAccount {
 
 	
 	protected FolderCache createFolderCache(Folder f) throws MessagingException {
+		return createFolderCache(f,false);
+	}
+	
+	protected FolderCache createFolderCache(Folder f, boolean volatileInstance) throws MessagingException {
 		FolderCache fc;
 		synchronized(this) {
 			fc=foldersCache.get(f.getFullName());
 			if (fc==null) {
 				fc = new FolderCache(this, f, ms, environment);
 				String fname = fc.getFolderName();
-				foldersCache.put(fname, fc);
+				if (!volatileInstance) foldersCache.put(fname, fc);
 			}
 		}
 		return fc;
