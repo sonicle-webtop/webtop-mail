@@ -975,11 +975,11 @@ public class MailAccount {
 			}
 		}
 		FolderCache fcsrc = getFolderCache(source);
-		if (fcsrc != null) {
-			destroyFolderCache(fcsrc);
-		}
 		boolean done = oldfolder.renameTo(newfolder);
-		if (done) {
+		if (!done) {
+			throw new MessagingException("Permission denied");
+		} else {
+			if (fcsrc != null) destroyFolderCache(fcsrc);
 			if (dest != null) {
 				FolderCache tfc = getFolderCache(newfolder.getParent().getFullName());
 				return addFoldersCache(tfc, newfolder);
@@ -987,7 +987,6 @@ public class MailAccount {
 				return addFoldersCache(fcRoot, newfolder);
 			}
 		}
-		return null;
 	}
 	
 	public String renameFolder(String orig, String newname) throws MessagingException {
