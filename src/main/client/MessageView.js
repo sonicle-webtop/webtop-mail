@@ -1289,7 +1289,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
     sendReceipt: function() {
 		var me=this,
-			ident=me.mys.getFolderIdentity(me.folder);
+			ident=me.mys.getFolderIdentity(me.folder),
+			from=ident.displayName + " <" + ident.email + ">";
 	
 		WT.ajaxReq(me.mys.ID, 'SendReceipt', {
 			params: {
@@ -1297,7 +1298,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 subject: me.subject,
                 to: me.receiptTo,
                 folder: me.folder,
-				messageid: me.messageid
+				messageid: me.messageid,
+				bodyuserlang: me.mys.res("receipt.message", from, me.subject)
 			},
 			callback: function(success,json) {
 				if (success) {
