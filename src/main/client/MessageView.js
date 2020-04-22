@@ -85,9 +85,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     fromName: '',
     fromEmail: '',
     toNames: null,
+	toNamesFull: null,
     toEmails: null,
     ccNames: null,
+	ccNamesFull: null,
     bccNames: null,
+	bccNamesFull: null,
     ccEmails: null,
     ntos: 0,
     nccs: 0,
@@ -371,9 +374,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             }
             me.htmlparts=new Array();
             me.toNames=null;
+			me.toNamesFull=null;
             me.toEmails=null;
             me.ccNames=null;
+			me.ccNamesFull=null;
             me.bccNames=null;
+			me.bccNamesFull=null;
             me.ccEmails=null;
             me.attachments=null;
 			me.tags=null;
@@ -1171,6 +1177,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         else if (iddata=='scheddate') { me.scheddate=item.get('value1'); }
         else if (iddata=='from') { me.fromName=item.get('value1'); me.fromEmail=item.get('value2') }
         else if (iddata=='to') {
+			me.toNamesFull = me.appendEmail(me.toNamesFull,item.get('value1'),item.get('value2'));
             if (me.ntos<maxtos) {
                 me.toNames=me.appendEmail(me.toNames,item.get('value1'),item.get('value2'));
             } else if (me.ntos==maxtos) {
@@ -1179,6 +1186,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             ++me.ntos;
         }
         else if (iddata=='cc') {
+			me.ccNamesFull = me.appendEmail(me.ccNamesFull,item.get('value1'),item.get('value2'));
             if (me.nccs<maxccs) {
                 me.ccNames=me.appendEmail(me.ccNames,item.get('value1'),item.get('value2'));
             } else if (me.nccs==maxccs) {
@@ -1187,6 +1195,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             ++me.nccs;
         }
         else if (iddata=='bcc') {
+			me.bccNamesFull = me.appendEmail(me.bccNamesFull,item.get('value1'),item.get('value2'));
             if (me.nbccs<maxbccs) {
                 me.bccNames=me.appendEmail(me.bccNames,item.get('value1'),item.get('value2'));
             } else if (me.nbccs==maxbccs) {
@@ -1304,8 +1313,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			//pre style to force wrapping of preofrmatted text
 			html="<style> pre { white-space: pre-wrap !important; } </style>"+
 				 "<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+me.mys.getIdentity(0).displayName+"</b></font></div><br>"
-        html+=me.tdHeader.dom.innerHTML;
-        if (me.iframes) {
+        
+		me.expandRecipientsList('to');
+		me.expandRecipientsList('cc');
+		me.expandRecipientsList('bcc');
+		html+=me.tdHeader.dom.innerHTML;
+        
+		if (me.iframes) {
             var len=me.iframes.length;
             for(var i=0;i<len;++i) {
                 if (i>0) html+="<hr><br>";
@@ -1410,10 +1424,32 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             e.mys=me;
             me.setElementContextMenu(e,me.emailMenu);
             e.on('click', function() {
-				me._startNewMessage(e.recDesc,e.recEmail);
+				e.recEmail !== "..." ? me._startNewMessage(e.recDesc,e.recEmail) : me.expandRecipientsList(e.recType);
 			});
         }
     },
+	
+	expandRecipientsList: function(type) {
+		var me = this;
+		
+		switch(type) {
+			case "to":
+			default:
+				me.divTos.update("<span class='wtmail-mv-hlabelto'>"+me.mys.res('to')+":&nbsp;</span>"+me.toNamesFull);
+				//TODO setEmailElements
+                me._setEmailElements(me.divTos.first().next(),'to');
+				break;
+			case "cc":
+				me.divCcs.update("<span class='wtmail-mv-hlabelcc'>"+me.mys.res('cc')+":&nbsp;</span>"+me.ccNamesFull);
+				//TODO setEmailElements
+                me._setEmailElements(me.divCcs.first().next(),'cc');
+				break;
+			case "bcc":
+				me.divBccs.update("<span class='wtmail-mv-hlabelbcc'>"+me.mys.res('bcc')+":&nbsp;</span>"+me.bccNamesFull);
+                me._setEmailElements(me.divBccs.first().next(),'bcc');
+				break;
+		}
+	},
 	
 	_startNewMessage: function(desc, email) {
 		var me=this,
