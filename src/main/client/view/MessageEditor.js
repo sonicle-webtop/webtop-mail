@@ -801,6 +801,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.beginNew({
 			data: data
 		});
+		
+		if (data.format === "plain") {
+			var textarea = Ext.getDom(me.htmlEditor.tmce.inputEl.id);
+			var setPosition = new Ext.util.DelayedTask(function(){
+				textarea.setSelectionRange(0,0);
+				textarea.scrollTo(0,0);
+			});
+			setPosition.delay(350);
+		}
 	},
 	
 	actionReceipt: function(b) {
