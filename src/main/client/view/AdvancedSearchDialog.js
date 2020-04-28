@@ -157,7 +157,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 					[ 'status', me.res('status')],
 					[ 'flags', me.res('flags')],
 					[ 'tags', me.res('tags')],
-					[ 'any', me.res('store.filter.any')]
+					[ 'any', me.res('anyfield')]
 				],
 				searchdata: {
 					'subject': null,

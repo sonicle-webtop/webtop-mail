@@ -2905,7 +2905,7 @@ public class Service extends BaseService {
 						if (folder.exists()) {
 							FolderCache fc=account.getFolderCache(ff.folderId);
 							if (fc==null) {
-								fc=account.createFolderCache(folder);
+								fc=account.createFolderCache(folder,true);
 							}
 							newFavorites.add(ff);
 							ffds.add(new FavoriteFolderData(fc,ff.description));
@@ -5427,8 +5427,17 @@ public class Service extends BaseService {
 		Identity ident = mprofile.getIdentity(identityId);
 		String from = ident.getDisplayName()+" <"+ident.getEmail()+">";
 		
-		String body = "Il messaggio inviato a " + from + " con soggetto [" + subject + "] è stato letto.\n\n"
-				+ "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
+		String bodyUserLang = request.getParameter("bodyuserlang");
+		String body = "";
+		
+		if (!bodyUserLang.equals("${receipt.message}")) {
+			body = bodyUserLang + ".\n\n";
+		}
+		
+		if (!cus.getLanguageTag().equals("en_EN")) {
+			body += "Your message sent to " + from + " with subject [" + subject + "] has been read.\n\n";
+		}
+		
 		try {
 			account.checkStoreConnected();
 			Exception exc = sendReceipt(ident, from, to, subject, body);

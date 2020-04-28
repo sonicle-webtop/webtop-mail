@@ -171,6 +171,13 @@ public class MailSettings {
 	public static final String ARCHIVING_EXTERNAL_MINAGE = "archiving.external.minage";
 
 	/**
+	 * [system+domain]
+	 * [boolean]
+	 * Mail auth user must strip domain.
+	 */
+	public static final String AUTH_USER_STRIP_DOMAIN = "auth.user.strip.domain";
+
+	/**
 	 * [system+domain][default]
 	 * [string]
 	 * Transform WebTop Public Resource links (e.g. Public images for mailcards) into attached inline images (cids).

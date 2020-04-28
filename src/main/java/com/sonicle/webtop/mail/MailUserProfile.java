@@ -241,7 +241,7 @@ public class MailUserProfile {
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
 				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
-				if (mailUsername.indexOf('@')<0 && schemeWantsUserWithDomain(ad)) mailUsername+="@"+ad.getInternetName();
+				if (!mss.isAuthUserStripDomain() && mailUsername.indexOf('@')<0 && schemeWantsUserWithDomain(ad)) mailUsername+="@"+ad.getInternetName();
 				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
 			}
 			

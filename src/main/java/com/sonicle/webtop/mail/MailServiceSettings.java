@@ -318,4 +318,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		}
 		return externalProviders;
 	}
+	
+	public boolean isAuthUserStripDomain() {
+		return getBoolean(AUTH_USER_STRIP_DOMAIN,false);
+	}
+	
+	
 }

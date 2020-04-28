@@ -439,13 +439,17 @@ public class MailAccount {
 
 	
 	protected FolderCache createFolderCache(Folder f) throws MessagingException {
+		return createFolderCache(f,false);
+	}
+	
+	protected FolderCache createFolderCache(Folder f, boolean volatileInstance) throws MessagingException {
 		FolderCache fc;
 		synchronized(this) {
 			fc=foldersCache.get(f.getFullName());
 			if (fc==null) {
 				fc = new FolderCache(this, f, ms, environment);
 				String fname = fc.getFolderName();
-				foldersCache.put(fname, fc);
+				if (!volatileInstance) foldersCache.put(fname, fc);
 			}
 		}
 		return fc;
@@ -972,11 +976,11 @@ public class MailAccount {
 			}
 		}
 		FolderCache fcsrc = getFolderCache(source);
-		if (fcsrc != null) {
-			destroyFolderCache(fcsrc);
-		}
 		boolean done = oldfolder.renameTo(newfolder);
-		if (done) {
+		if (!done) {
+			throw new MessagingException("Permission denied");
+		} else {
+			if (fcsrc != null) destroyFolderCache(fcsrc);
 			if (dest != null) {
 				FolderCache tfc = getFolderCache(newfolder.getParent().getFullName());
 				return addFoldersCache(tfc, newfolder);
@@ -984,7 +988,6 @@ public class MailAccount {
 				return addFoldersCache(fcRoot, newfolder);
 			}
 		}
-		return null;
 	}
 	
 	public String renameFolder(String orig, String newname) throws MessagingException {
