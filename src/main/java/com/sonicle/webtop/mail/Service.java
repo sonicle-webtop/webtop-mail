@@ -170,6 +170,7 @@ import com.github.rutledgepaulv.qbuilders.conditions.Condition;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
+import java.text.Normalizer;
 import java.util.stream.Collectors;
 import javax.mail.search.AndTerm;
 import javax.mail.search.FlagTerm;
@@ -1287,6 +1288,12 @@ public class Service extends BaseService {
 						mbps[e].setDisposition(Part.INLINE);
 					}
 					String contentFileName = attach.fileName.trim();
+
+					if (!Normalizer.isNormalized(contentFileName, Normalizer.Form.NFC)) {
+						contentFileName=Normalizer.normalize(contentFileName, Normalizer.Form.NFC);
+					}
+
+					
 					mbps[e].setFileName(contentFileName);
 					String contentType = upfile.getMediaType() + "; name=\"" + contentFileName + "\"";
 					mbps[e].setHeader("Content-type", contentType);
