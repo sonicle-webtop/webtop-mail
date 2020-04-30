@@ -1063,19 +1063,14 @@ public class Service extends BaseService {
 		int priority = smsg.getPriority();
 		if (priority != 3) {
 			msg.setHeader("X-Priority", "" + priority);
-
-			//set receipt
 		}
-		String receiptTo = from;
-		try {
-			receiptTo = MimeUtility.encodeText(from, "ISO-8859-1", null);
-		} catch (Exception exc) {
-		}
+		//set receipt
 		if (smsg.getReceipt()) {
-			msg.setHeader("Disposition-Notification-To", from);
-
-			//see if there are any new attachments for the message
+			InternetAddress iaFrom = InternetAddressUtils.toInternetAddress(from);
+			if (iaFrom != null) msg.setHeader("Disposition-Notification-To", iaFrom.toString());
 		}
+		
+		//see if there are any new attachments for the message
 		int noAttach;
 		int newAttach;
 		
