@@ -1197,7 +1197,7 @@ public class Service extends BaseService {
                     UploadedFile upfile=getUploadedFile(attach.uploadId);
 					FileDataSource fds = new FileDataSource(upfile.getFile());
 					mbps[e].setDataHandler(new DataHandler(fds));
-          // filename starts has format:
+					// filename starts has format:
 					// "_" + userid + sessionId + "_" + filename
 					//
 					if (attach.inline) {
@@ -1205,6 +1205,9 @@ public class Service extends BaseService {
 					}
 					String contentFileName = attach.fileName.trim();
 
+					// Normalize file name in case it contains combining diacritical marks
+					// as done by MacOS browsers when accented letters are present in the file name.
+					// This helps imap servers not supporting these UTF codes.
 					if (!Normalizer.isNormalized(contentFileName, Normalizer.Form.NFC)) {
 						contentFileName=Normalizer.normalize(contentFileName, Normalizer.Form.NFC);
 					}
