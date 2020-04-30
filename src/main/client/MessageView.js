@@ -1119,7 +1119,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		xstyle.appendChild(doc.createTextNode(
 				'pre { white-space: pre-wrap !important; } '+
 				'body { font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif; } '+
-				'blockquote { display: block; margin-left: 5px; border-left: solid 2px blue; padding-left: 10px; } '
+				'blockquote { display: block; margin-left: 5px; border-left: solid 2px blue; padding-left: 10px; } '+
+				'img { max-width: 100% !important; height: auto; } '
 		));
 		doc.head.appendChild(xstyle);
 		
@@ -1153,7 +1154,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			newwidth = tcd.scrollWidth -10;
 		} else if (newwidth>=tcd.scrollWidth) {
             //try to force constrained width to window width
-			newwidth = this.divBody.getSize().width -12;
+			newwidth = this.divBody.getSize().width -22;
         }
 		//here iframe will force a layout to new constrained width
         xif.width=newwidth;
