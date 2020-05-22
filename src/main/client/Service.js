@@ -116,12 +116,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		me.initActions();
 
-		//tags ctx menu needs this store to be prepared
-		me.tagsStore=Ext.create('Ext.data.JsonStore',{
-			autoLoad: true,
-			model: 'Sonicle.webtop.mail.model.Tag',
-			proxy: WTF.apiProxy(me.ID, 'ManageTags','data')
-		});
+		me.tagsStore = WT.getTagsStore();
 		
 		me.initCxm();
 		
@@ -638,8 +633,46 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("clear",{ handler: me.gridAction(me,'Flag','clear'), iconCls: '' });
 		
         //me.addAct("newtag",{ handler: me.gridAction(me,'NewTag') });
-        me.addAct("managetags",{ handler: me.gridAction(me,'ManageTags'), iconCls: null });
-        me.addAct("removetags",{ handler: me.gridAction(me,'RemoveAllTags'), iconCls: null });
+        me.addAct('toolbox','manageTags',{
+			text: WT.res('act-manageTags.lbl'),
+			tooltip: WT.res('act-manageTags.tip'),
+			iconCls: 'wt-icon-tag',
+			handler: function() {
+				me.showManageTagsUI();
+			}
+		});
+        //me.addAct("removetags",{ handler: me.gridAction(me,'RemoveAllTags'), iconCls: null });
+		me.addAct('tags', {
+			text: me.res('mni-tags.lbl'),
+			tooltip: null,
+			menu: {
+				xtype: 'wttagmenu',
+				bottomStaticItems: [
+					'-',
+					me.addAct('manageTags', {
+						tooltip: null,
+						handler: function(s, e) {
+							var grid=me.getCtxGrid(e);
+							var sel = grid.getSelection();
+							if (sel.length > 0) me.manageMailItemTagsUI(grid,sel);
+						}
+					})
+				],
+				restoreSelectedTags: function(md) {
+					var grid=me.getMenuDataGrid(md);
+					return me.toMutualTags(grid.getSelection());
+				},
+				listeners: {
+					tagclick: function(s, tagId, checked, itm, e) {
+						var grid=me.getCtxGrid(e);
+						if (checked)
+							grid.actionTag(tagId);
+						else
+							grid.actionUntag(tagId);						
+					}
+				}
+			}
+		});
 		
 		
         me.addAct("addnote",{ handler: me.gridAction(me,'AddNote') });
@@ -739,7 +772,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						]
 					}
 				},
-				{
+				me.getAct("tags"),
+				/*{
 					text: me.res("menu-tag"),
 					menu: me.addRef('mnutag',Ext.create({
 						xtype: 'sostoremenu',
@@ -767,7 +801,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 							}
 						}
 					}))
-				},
+				},*/
 				me.getAct('addnote'),
 				me.getAct('markseen'),
 				me.getAct('markunseen'),
@@ -1676,6 +1710,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	getCtxGrid: function(e) {
 		var md=e.menuData;
+		return this.getMenuDataGrid(md);
+	},
+	
+	getMenuDataGrid: function(md) {
 		return (md && md.grid) ? md.grid : this.messagesPanel.folderList;
 	},
 	
@@ -2091,20 +2129,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	updateCxmGrid: function(r) {
 		var me=this,
-			menu=me.getRef('mnutag'),
-			tags=r.get("tags");
 			ro=me.messagesPanel.folderList.readonly;
 
-		me.tagsStore.each(function(xr) {
-			var comp=menu.getComponent(xr.get("hashId"));
-			comp.setChecked(false,true);
-		});
-		if (tags) {
-			Ext.iterate(tags,function(tag) {
-				var xr=me.tagsStore.findRecord('tagId',tag);
-				if (xr) menu.getComponent(xr.get("hashId")).setChecked(true,true);
-			});
-		}
 		me.getAct('spam').setDisabled(ro);
 		me.getAct('delete').setDisabled(ro);
 		me.getAct('archive').setDisabled(ro);
@@ -2182,5 +2208,55 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				addMailFilter: opts.addMailFilter
 			});
 		});
+	},
+	
+	showManageTagsUI: function() {
+		var me = this,
+				vw = WT.createView(WT.ID, 'view.Tags', {
+					swapReturn: true,
+					viewCfg: {
+						enableSelection: false
+					}
+				});
+		vw.on('viewclose', function(s) {
+			//if (s.syncCount > 0) me.reloadContacts();
+		});
+		vw.showView();
+	},
+	
+	toMutualTags: function(recs) {
+		var arr, ids;
+		Ext.iterate(recs, function(rec) {
+			ids = rec.get('tags');
+			if (!arr) {
+				arr = ids;
+			} else {
+				arr = Ext.Array.intersect(arr, ids);
+			}
+			if (arr.length === 0) return false;
+		});
+		return arr;
+	},
+		
+	manageMailItemTagsUI: function(grid,recs) {
+		var me = this,
+				ids = Sonicle.Data.collectValues(recs),
+				tags = me.toMutualTags(recs),
+				vw = WT.createView(WT.ID, 'view.Tags', {
+					swapReturn: true,
+					viewCfg: {
+						data: {
+							selection: tags
+						}
+					}
+				});
+		vw.on('viewok', function(s, data) {
+			if (Sonicle.String.difference(tags, data.selection).length > 0) {
+				grid.actionApplyTags(data.selection);
+			}	
+		});
+		vw.showView();
 	}
+	
+	
 });

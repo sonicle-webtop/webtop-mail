@@ -35,11 +35,15 @@ package com.sonicle.webtop.mail.bol.model;
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.commons.web.json.bean.QueryObj.Condition;
-import com.sonicle.webtop.mail.model.Tag;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.model.Tag;
+import com.sonicle.webtop.mail.TagsHelper;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import javax.mail.Flags;
 import javax.mail.Flags.Flag;
 import javax.mail.Message;
@@ -79,7 +83,7 @@ public class ImapQuery {
 	private static final String PRIORITY = "priority";
 	
 	
-	public static SearchTerm toSearchTerm(String allFlagStrings[], List<Tag> atags, QueryObj query, DateTimeZone timezone) {
+	public static SearchTerm toSearchTerm(String allFlagStrings[], QueryObj query, DateTimeZone timezone) {
 		SearchTerm searchTerm = null;
 		ArrayList<SearchTerm> terms = new ArrayList<SearchTerm>();
 		
@@ -128,11 +132,16 @@ public class ImapQuery {
 						fts[i+1] = new FlagTerm(new Flags(allFlagStrings[i]), true);
 					terms.add(new OrTerm(fts));
 				} else if(value.equals(TAGGED)) {
-					FlagTerm fts[] = new FlagTerm[atags.size()];
-					int i = 0;
-					for(Tag tag: atags) 
-						fts[i++] = new FlagTerm(new Flags(tag.getTagId()), true);
-					terms.add(new OrTerm(fts));
+					try {
+						Collection<Tag> tags=WT.getCoreManager().listTags().values();
+						FlagTerm fts[] = new FlagTerm[tags.size()];
+						int i = 0;
+						for(Tag tag: tags) {
+							fts[i++] = new FlagTerm(new Flags(TagsHelper.tagIdToFlagString(tag)), true);
+						}
+						terms.add(new OrTerm(fts));
+					} catch(Exception exc) {
+					}
 				} else if(value.equals(UNANSWERED)) {
 					 terms.add(new FlagTerm(new Flags(Flag.ANSWERED), false));
 				} else if(value.equals(PRIORITY)) {

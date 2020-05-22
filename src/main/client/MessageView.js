@@ -529,9 +529,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			if (me.tags) {
 				var tagsHtml="";
 				Ext.iterate(me.tags, function(tag) {
-					var r=me.mys.tagsStore.findRecord('tagId',tag);
+					var r=me.mys.tagsStore.findRecord('id',tag);
 					if (r) {
-						tagsHtml+="<span style='background-color: "+r.get("color")+"'>&nbsp;"+r.get("description")+"&nbsp;</span>&nbsp;"
+						tagsHtml+="<span style='background-color: "+r.get("color")+"'>&nbsp;"+r.get("name")+"&nbsp;</span>&nbsp;"
 					}
 				});
 				me.divTags.update(tagsHtml);

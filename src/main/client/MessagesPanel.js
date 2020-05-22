@@ -522,6 +522,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	getPageSize: function() {
 		return this.folderList.getPageSize();
 	},
+	
+	getSelectedMails: function() {
+		return this.folderList.getSelection();
+	},
      
 /*	actionThreaded: function() {
         var me=this;

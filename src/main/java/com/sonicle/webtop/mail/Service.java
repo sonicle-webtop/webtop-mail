@@ -119,7 +119,7 @@ import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.MailEditFormat;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
-import com.sonicle.webtop.mail.model.Tag;
+//import com.sonicle.webtop.mail.model.Tag;
 import com.sonicle.webtop.mail.ws.AddContactMessage;
 import com.sonicle.webtop.vfs.IVfsManager;
 import com.sun.mail.imap.*;
@@ -152,6 +152,7 @@ import com.sonicle.commons.qbuilders.conditions.Condition;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.core.app.CoreManifest;
+import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.text.Normalizer;
 import java.util.stream.Collectors;
@@ -202,8 +203,8 @@ public class Service extends BaseService {
 	public static Flags flagDmsArchived=new Flags(sflagDmsArchived);
 	public static Flags flagFlagged=new Flags(Flags.Flag.FLAGGED);
 	
-	protected List<Tag> atags=new ArrayList<>();
-	protected HashMap<String,Tag> htags=new HashMap<>();
+//	protected List<Tag> atags=new ArrayList<>();
+//	protected HashMap<String,Tag> htags=new HashMap<>();
 	
 	private FetchProfile FP = new FetchProfile();
 	private FetchProfile draftsFP=new FetchProfile();
@@ -387,7 +388,7 @@ public class Service extends BaseService {
 		mft.setSleepInbox(mprofile.getScanSeconds());
 		mft.setSleepCycles(mprofile.getScanCycles());
 		try {
-			loadTags();
+			//loadTags();
 		
 			mft.abort();
 			mainAccount.checkStoreConnected();
@@ -504,14 +505,14 @@ public class Service extends BaseService {
 		return archiveAccount;
 	}
 	
-	private synchronized void loadTags() throws WTException {		
+/*	private synchronized void loadTags() throws WTException {		
 		atags.clear();
 		htags.clear();
 		atags=mailManager.getTags();
 		for(Tag tag: atags) {
 			htags.put(tag.getTagId(), tag);
 		}
-	}
+	}*/
 	
 	public MailServiceSettings getMailServiceSettings() {
 		return this.ss;
@@ -702,8 +703,8 @@ public class Service extends BaseService {
 		from.untagMessages(uids, tagId);
 	}
 	
-	public void clearMessagesTags(FolderCache from, long uids[]) throws MessagingException {
-		from.clearMessagesTags(uids);
+	public void applyMessagesTags(FolderCache from, long uids[], String tagIds[]) throws MessagingException {
+		from.applyMessagesTags(uids,tagIds);
 	}
 	
 	public void clearMessagesFlag(FolderCache from, long uids[]) throws MessagingException {
@@ -3220,7 +3221,7 @@ public class Service extends BaseService {
 		catch(ParameterException parameterException) {
 				logger.error("Exception getting query obejct parameter", parameterException);
 		}
-		searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, this.atags, queryObj, environment.getProfile().getTimeZone());
+		searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, queryObj, environment.getProfile().getTimeZone());
 
 		boolean hasAttachment = queryObj.conditions.stream().anyMatch(condition -> condition.value.equals("attachment"));
 		
@@ -5578,7 +5579,7 @@ public class Service extends BaseService {
 		}
 	}
 	
-	public void processManageTags(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+	/*public void processManageTags(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String crud = null;
 			List<JsTag> items;
 		try {
@@ -5622,7 +5623,7 @@ public class Service extends BaseService {
 		   logger.error("Error managing tags", ex);
 		   new JsonResult(false, "Error managing tags").printTo(out);
 		}
-	}
+	}*/
 	
 	public void processTagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
@@ -5684,17 +5685,18 @@ public class Service extends BaseService {
 		}
 	}	
 	
-	public void processClearMessagesTags(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+	public void processApplyMessagesTags(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
 		String uids[] = request.getParameterValues("ids");
+		String tagIds[] = request.getParameterValues("tagIds");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
 		try {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(fromfolder);
 			if (!mf) {
-				clearMessagesTags(mcache, toLongs(uids));
+				applyMessagesTags(mcache, toLongs(uids), tagIds);
 			} else {
                 long iuids[]=new long[1];
                 for(String uid: uids) {
@@ -5703,7 +5705,7 @@ public class Service extends BaseService {
                     uid=uid.substring(ix+1);
 					mcache = account.getFolderCache(fromfolder);
                     iuids[0]=Long.parseLong(uid);
-                    clearMessagesTags(mcache, iuids);
+                    applyMessagesTags(mcache, iuids, tagIds);
 				}
 			}
 			new JsonResult().printTo(out);
@@ -5711,7 +5713,7 @@ public class Service extends BaseService {
 		   logger.error("Error managing tags", exc);
 		   new JsonResult(false, "Error managing tags").printTo(out);
 		}
-	}	
+	}
 	
 /*	public void processListPublicImages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		SettingsManager sm = wta.getSettingsManager();
@@ -6107,7 +6109,7 @@ public class Service extends BaseService {
 				key += "|" + psortdir + "|" + psortfield;
 			}
 			
-			searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, this.atags, queryObj, profile.getTimeZone());
+			searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, queryObj, profile.getTimeZone());
 			
 			boolean hasAttachment = queryObj.conditions.stream().anyMatch(condition -> condition.value.equals("attachment"));
 			if(queryObj != null) refresh = true; 
@@ -6391,7 +6393,8 @@ public class Service extends BaseService {
 
 						boolean hasNote=flags.contains(sflagNote);
 						
-						String svtags=getJSTagsArray(flags);
+						
+						String svtags=JsonResult.gson.toJson(flagsToTagsIds(flags));
 
 						boolean autoedit=false;
 
@@ -6853,7 +6856,24 @@ public class Service extends BaseService {
 		
 	}
 	
-	private String getJSTagsArray(Flags flags) {
+	private ArrayList<String> flagsToTagsIds(Flags flags) {
+		ArrayList<String> tags=null;
+		if (flags!=null) {
+			try {
+				for(Tag tag: WT.getCoreManager().listTags().values()) {
+					if (flags.contains(TagsHelper.tagIdToFlagString(tag))) {
+						if (tags==null) tags=new ArrayList<>();
+						tags.add(tag.getTagId());
+					}
+				}
+			} catch(WTException exc) {
+				logger.error("Error converting flags to tags",exc);
+			}
+		}
+		return tags;
+	}
+	
+	/*private String getJSTagsArray(Flags flags) {
 		ArrayList<Tag> tags=null;
 		String svtags=null;
 		if (flags!=null) {
@@ -6873,7 +6893,7 @@ public class Service extends BaseService {
 			}
 		}
 		return svtags;
-	}
+	}*/
 	
 	DateFormat df = null;
 	
@@ -7210,7 +7230,7 @@ public class Service extends BaseService {
 			long millis = System.currentTimeMillis();
 			sout += "\n],\n";
 			
-			String svtags=getJSTagsArray(m.getFlags());
+			String svtags=JsonResult.gson.toJson(flagsToTagsIds(m.getFlags()));
 			if (svtags!=null)
 				sout += "tags: " + svtags + ",\n";
 			

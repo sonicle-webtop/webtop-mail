@@ -357,8 +357,8 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		if (sto) {
 			Ext.iterate(tags, function(itm) {
 				if (arr.length >= limit) return false;
-				var rec = sto.findRecord('tagId', itm);
-				if (rec) arr.push({color: rec.get('color'), tooltip: rec.get('description')});
+				var rec = sto.findRecord('id', itm);
+				if (rec) arr.push({color: rec.get('color'), tooltip: rec.get('name')});
 			});
 		}
 		return arr;

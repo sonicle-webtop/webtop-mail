@@ -586,45 +586,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			{
 				text: null,
 				iconCls: 'wtmail-icon-tag',
-				menu: Ext.create({
-					xtype: 'sostoremenu',
-					itemClass: 'Ext.menu.CheckItem',
-					textField: 'html',
-					tagField: 'tagId',
-					textAsHtml: true,
-					staticItems: [
-						me.mys.getAct('managetags'),
-						'-',
-					],
-					store: me.mys.tagsStore,
+				menu: {
+					xtype: 'wttagmenu',
+					restoreSelectedTags: function(md) {
+						var grid=me.mys.getMenuDataGrid(md);
+						return me.mys.toMutualTags(grid.getSelection());
+					},
 					listeners: {
-						click: function(menu,item,e) {
-							if (item.tag) {
-								if (item.checked)
-									me.actionTag(item.tag);
-								else
-									me.actionUntag(item.tag);
-							}
-						},
-						show: function(menu) {
-							var sel=me.getSelection(),
-								tagsStore=me.mys.tagsStore;
-							tagsStore.each(function(xr) {
-								menu.getComponent(xr.get("hashId")).setChecked(false,true);
-							});
-							if (sel && sel.length===1) {
-								var r=sel[0];
-									tags=r.get("tags");
-								if (tags) {
-									Ext.iterate(tags,function(tag) {
-										var xr=tagsStore.findRecord('tagId',tag);
-										if (xr) menu.getComponent(xr.get("hashId")).setChecked(true,true);
-									});
-								}
-							}
+						tagclick: function(s, tagId, checked, itm, e) {
+							var grid=me.mys.getCtxGrid(e);
+							if (checked)
+								grid.actionTag(tagId);
+							else
+								grid.actionUntag(tagId);						
 						}
 					}
-				})
+				}
 			},
 			{
 				text: null,
@@ -2099,7 +2076,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
 	},
 	
-	actionRemoveAllTags: function() {
+	actionApplyTags: function(tagIds) {
         var me=this,
 			selection=me.getSelection(),
 			folder=me.currentFolder,
@@ -2108,13 +2085,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			params={
                 fromfolder: folder,
                 ids: ids,
-                multifolder: data.multifolder
+                multifolder: data.multifolder,
+				tagIds: tagIds
 			};
 			
         if (data.folders) params.folders=data.folders;
 		
 		if(!me.readonly) {
-		  WT.ajaxReq(me.mys.ID, 'ClearMessagesTags', {
+		  WT.ajaxReq(me.mys.ID, 'ApplyMessagesTags', {
 			params: params,
 			callback: function(success,json) {
               if (success) {
@@ -2126,14 +2104,14 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                     function(r,index,allItems) {
                       if (me!==fl) {
                         var ff=(me.multifolder?r.get("folder"):me.currentFolder);
-                        if (ff===fl.currentFolder) dorel=true;
+                        if (me.multifolder && ff===fl.currentFolder) dorel=true;
                       }
 					  
-					  r.set("tags",null);
+					  r.set("tags",tagIds);
 					  me._checkUpdateMessageView(r);
                     }
                   );
-                  if (dorel) this.mys.reloadFolderList();
+                  if (dorel) me.mys.reloadFolderList();
 
               } else {
                   WT.error(json.text);
@@ -2831,7 +2809,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 									imgtag+=WTF.imageTag(me.mys.ID,imgname,16,16,"valign=top")+"&nbsp;";
 								}
 								if (tags) {
-									var r=me.mys.tagsStore.findRecord('tagId',tags[0]);
+									var r=me.mys.tagsStore.findRecord('id',tags[0]);
 									if (r) {
 										ctag=true;
 										imgtag+="<span style='color: "+r.get("color")+"'>"

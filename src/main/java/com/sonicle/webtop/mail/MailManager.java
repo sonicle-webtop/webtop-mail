@@ -712,7 +712,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	public void updateFoldersTag(String oldTagId , String newTagId, Collection<FolderCache> folders, SearchTerm searchTerm, boolean hasAttachment){
+/*	public void updateFoldersTag(String oldTagId , String newTagId, Collection<FolderCache> folders, SearchTerm searchTerm, boolean hasAttachment){
 		
 		for(FolderCache fc: folders){
 			Message msgs[] = null;
@@ -729,7 +729,7 @@ public class MailManager extends BaseManager implements IMailManager {
 				logger.error("Error updating folder tags on "+fc.getFolderName(),ex);
 			}
 		}
-	}
+	}*/
 	
 	public String sanitazeTagId(String tagId){
 		 tagId=tagId.replace(" ","_");
