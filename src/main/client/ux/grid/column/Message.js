@@ -57,7 +57,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	 * @cfg {Number} [maxTags=3]
 	 * The maximum number of visible tags.
 	 */
-	maxTags: 3,
+	maxTags: 100,
 	
 	/**
 	 * @cfg {Ext.data.Store} tagsStore

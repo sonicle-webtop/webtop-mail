@@ -144,12 +144,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				type: 'boolean',
 				boolKeyword: 'has',
 				label: me.res('fld-search.field.flagged.lbl')
-			}, {
+			}, /*{
 				name: 'tagged',
 				type: 'boolean',
 				boolKeyword: 'has',
 				label: me.res('fld-search.field.tagged.lbl')
-			}, {
+			},*/ {
 				name: 'unanswered',
 				type: 'boolean',
 				boolKeyword: 'has',
@@ -159,6 +159,18 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				type: 'boolean',
 				boolKeyword: 'has',
 				label: me.res('fld-search.field.priority.lbl')
+			}, {
+				name: 'tag',
+				type: 'tag',
+				label: me.res('fld-search.field.tags.lbl'),
+				customConfig: {
+					store: WT.getTagsStore(), // This is filterable, let's do a separate copy!
+					valueField: 'id',
+					displayField: 'name',
+					colorField: 'color',
+					sourceField: 'source',
+					sourceCls: 'wt-source'
+				}
 			}],
 			tooltip:  me.res('fld-search.tip'),
 			emptyText:  me.res('fld-search.emp'),

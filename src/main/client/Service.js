@@ -2233,7 +2233,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			} else {
 				arr = Ext.Array.intersect(arr, ids);
 			}
-			if (arr.length === 0) return false;
+			if (!arr || arr.length === 0) return false;
 		});
 		return arr;
 	},

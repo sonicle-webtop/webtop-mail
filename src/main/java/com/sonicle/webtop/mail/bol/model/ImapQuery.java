@@ -78,9 +78,10 @@ public class ImapQuery {
 	private static final String ATTACHMENT = "attachment";
 	private static final String UNREAD = "unread";
 	private static final String FLAGGED = "flagged";
-	private static final String TAGGED = "tagged";
+//	private static final String TAGGED = "tagged";
 	private static final String UNANSWERED = "unanswered";
 	private static final String PRIORITY = "priority";
+	private static final String TAG = "tag";
 	
 	
 	public static SearchTerm toSearchTerm(String allFlagStrings[], QueryObj query, DateTimeZone timezone) {
@@ -121,6 +122,20 @@ public class ImapQuery {
 					terms.add(new ReceivedDateTerm(DateTerm.LE, beforeDate));
 					terms.add(new SentDateTerm(DateTerm.LE, beforeDate));
 
+				} else if(key.equals(TAG)) {
+					try {
+						terms.add(
+								new FlagTerm(
+										new Flags(
+												TagsHelper.tagIdToFlagString(
+														WT.getCoreManager().getTag(value)
+												)
+										),true
+								)
+						);
+					} catch(Exception exc) {
+						
+					}
 				} else if(value.equals(ATTACHMENT)) {
 
 				} else if(value.equals(UNREAD)) {
@@ -131,7 +146,7 @@ public class ImapQuery {
 					for(int i = 0;i < allFlagStrings.length; ++i)
 						fts[i+1] = new FlagTerm(new Flags(allFlagStrings[i]), true);
 					terms.add(new OrTerm(fts));
-				} else if(value.equals(TAGGED)) {
+/*				} else if(value.equals(TAGGED)) {
 					try {
 						Collection<Tag> tags=WT.getCoreManager().listTags().values();
 						FlagTerm fts[] = new FlagTerm[tags.size()];
@@ -141,7 +156,7 @@ public class ImapQuery {
 						}
 						terms.add(new OrTerm(fts));
 					} catch(Exception exc) {
-					}
+					}*/
 				} else if(value.equals(UNANSWERED)) {
 					 terms.add(new FlagTerm(new Flags(Flag.ANSWERED), false));
 				} else if(value.equals(PRIORITY)) {

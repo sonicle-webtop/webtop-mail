@@ -240,19 +240,14 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						valueField: 'id'
 					},
 					'tags':{
-						xtype: 'socolorcombo',
+						xtype: 'sotagfield',
 						forceSelection: true,
-						triggerAction: 'all',
-						displayField: 'description',
-						valueField: 'tagId',
-						editable: false,
-						colorize: 'text',
+						multiSelect: false,
+						displayField: 'name',
+						valueField: 'id',
 						colorField: 'color',
-						store: {
-							autoLoad: true,
-							model: 'Sonicle.webtop.mail.model.Tag',
-							proxy: WTF.apiProxy(me.mys.ID, 'ManageTags','data')
-						}
+						editable: false,
+						store: me.mys.tagsStore
 					},
 					'any': null
 				}

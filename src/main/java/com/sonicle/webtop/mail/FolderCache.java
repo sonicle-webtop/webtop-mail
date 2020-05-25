@@ -1780,8 +1780,15 @@ public class FolderCache {
               term=new FlagTerm(new Flags(pattern),!negate);
               negate=false;
             } else if (searchfield.equals("tags")) {
-              term=new FlagTerm(new Flags(pattern),!negate);
-              negate=false;
+			  try {
+				term=new FlagTerm(new Flags(
+					  TagsHelper.tagIdToFlagString(
+						  WT.getCoreManager().getTag(pattern)
+					  )
+				),!negate);
+				negate=false;
+			  } catch(Exception exc) {  
+			  }
             }else if (searchfield.equals("status")) {
                 if (pattern.equals("unread")) {
                     term=unseenSearchTerm;

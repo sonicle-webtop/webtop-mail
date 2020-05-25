@@ -6076,7 +6076,7 @@ public class Service extends BaseService {
 			connected=account.checkStoreConnected();
 			if (!connected) throw new Exception("Mail account authentication error");
 
-				
+			Map<String, Tag> tagsMap=WT.getCoreManager().listTags();
 			int funread = 0;
 			if (pfoldername == null) {
 				folder = account.getDefaultFolder();
@@ -6394,7 +6394,7 @@ public class Service extends BaseService {
 						boolean hasNote=flags.contains(sflagNote);
 						
 						
-						String svtags=JsonResult.gson.toJson(flagsToTagsIds(flags));
+						String svtags=JsonResult.gson.toJson(flagsToTagsIds(flags,tagsMap));
 
 						boolean autoedit=false;
 
@@ -6856,19 +6856,25 @@ public class Service extends BaseService {
 		
 	}
 	
-	private ArrayList<String> flagsToTagsIds(Flags flags) {
+	private ArrayList<String> flagsToTagsIds(Flags flags, Map<String, Tag> map) {
 		ArrayList<String> tags=null;
 		if (flags!=null) {
-			try {
-				for(Tag tag: WT.getCoreManager().listTags().values()) {
-					if (flags.contains(TagsHelper.tagIdToFlagString(tag))) {
-						if (tags==null) tags=new ArrayList<>();
-						tags.add(tag.getTagId());
-					}
+			for(Tag tag: map.values()) {
+				if (flags.contains(TagsHelper.tagIdToFlagString(tag))) {
+					if (tags==null) tags=new ArrayList<>();
+					tags.add(tag.getTagId());
 				}
-			} catch(WTException exc) {
-				logger.error("Error converting flags to tags",exc);
 			}
+		}
+		return tags;
+	}
+	
+	private ArrayList<String> flagsToTagsIds(Flags flags) {
+		ArrayList<String> tags=null;
+		try {
+			tags=flagsToTagsIds(flags,WT.getCoreManager().listTags());
+		} catch(WTException exc) {
+			logger.error("Error converting flags to tags",exc);
 		}
 		return tags;
 	}
