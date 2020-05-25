@@ -52,18 +52,24 @@ import javax.mail.MessagingException;
  */
 public class MailController extends BaseController implements IControllerServiceHooks, IControllerUserEvents {
 	private static ServiceVersion V_5_0_14 = new ServiceVersion("5.0.14");
+	private static ServiceVersion V_5_7_9 = new ServiceVersion("5.7.9");
 	
 	@Override
 	public void initProfile(ServiceVersion current, UserProfileId profileId) throws WTException {
 		MailManager manager = new MailManager(true, profileId);
-		manager.addBuiltinTags();
+		//manager.addOldBuiltinTags();
 	}
 	
 	@Override
 	public void upgradeProfile(ServiceVersion current, UserProfileId profileId, ServiceVersion profileLastSeen) throws WTException {
 		if (current.compareTo(V_5_0_14)>=0 && profileLastSeen.compareTo(V_5_0_14)<0) {
 			MailManager manager = new MailManager(true, profileId);
-			manager.addBuiltinTags();
+			manager.addOldBuiltinTags();
+		}
+		
+		if (current.compareTo(V_5_7_9)>=0 && profileLastSeen.compareTo(V_5_7_9)<0) {
+			MailManager manager = new MailManager(true, profileId);
+			manager.convertToCoreTags(profileId);
 		}
 	}
 	

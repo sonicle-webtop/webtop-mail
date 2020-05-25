@@ -647,7 +647,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	
 	
-	public List<Tag> getTags() throws WTException {
+	public List<Tag> getOldTags() throws WTException {
 		TagDAO tagdao = TagDAO.getInstance();
 		List<Tag> tags = new ArrayList<>();
 		Connection con = null;
@@ -657,7 +657,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			
 				List<OTag> items = tagdao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
 				for (OTag item : items) {
-					tags.add(createTag(item));
+					tags.add(createOldTag(item));
 				}
 				return tags;
 		} catch(SQLException | DAOException ex) {
@@ -667,13 +667,13 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	public void addTag(Tag tag) throws WTException {
+	public void addOldTag(Tag tag) throws WTException {
 		TagDAO tagdao = TagDAO.getInstance();
 		Connection con = null;
 		
 		try {
 			con = WT.getConnection(SERVICE_ID);
-			tagdao.insert(con, createTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
+			tagdao.insert(con, createOldTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
@@ -681,7 +681,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	public void removeTag(String tagId) throws WTException {
+	public void removeOldTag(String tagId) throws WTException {
 		TagDAO tagdao = TagDAO.getInstance();
 		Connection con = null;
 		
@@ -695,7 +695,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	public void updateTag(Tag tag,String newTagId) throws WTException {
+	public void updateOldTag(Tag tag,String newTagId) throws WTException {
 		TagDAO tagdao = TagDAO.getInstance();
 		Connection con = null;
 		String oldTagId="";
@@ -704,7 +704,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			con = WT.getConnection(SERVICE_ID);
 			oldTagId=tag.getTagId();
 			tag.setTagId(newTagId);
-			tagdao.update(con,oldTagId, createTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
+			tagdao.update(con,oldTagId, createOldTag(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(),tag));
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
@@ -750,7 +750,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		new Tag("$label5","$Label5","#993399")
 	};
 	
-	protected void addBuiltinTags() throws WTException {
+	protected void addOldBuiltinTags() throws WTException {
 		TagDAO tagdao = TagDAO.getInstance();
 		Connection con = null;
 		
@@ -776,13 +776,13 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	private Tag createTag(OTag otag) {
+	private Tag createOldTag(OTag otag) {
 		if (otag == null) return null;
 		Tag tag = new Tag(otag.getTagId(),otag.getDescription(),otag.getColor());
 		return tag;
 	}	
 	
-	private OTag createTag(String domainId, String userId, Tag tag) {
+	private OTag createOldTag(String domainId, String userId, Tag tag) {
 		if (tag == null) return null;
 		OTag otag = new OTag();
 		otag.setDomainId(domainId);
@@ -793,6 +793,29 @@ public class MailManager extends BaseManager implements IMailManager {
 		return otag;
 	}	
 	
+	protected void convertToCoreTags(UserProfileId profileId) throws WTException {
+		Connection con = null;
+		
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			List<Tag> oldTags=this.getOldTags();
+			for(Tag oldTag: oldTags) {
+				com.sonicle.webtop.core.model.Tag tag=new com.sonicle.webtop.core.model.Tag();
+				tag.setBuiltIn(false);
+				tag.setColor(oldTag.getColor());
+				tag.setDomainId(profileId.getDomainId());
+				tag.setExternalId(oldTag.getTagId());
+				tag.setName(oldTag.getDescription());
+				tag.setPersonal(true);
+				WT.getCoreManager().addTag(tag);
+			}
+			
+		} catch(SQLException ex) {
+			throw new WTException(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+	}
 	
 	public boolean isAutoResponderActive() throws WTException {
 		AutoResponderDAO autdao = AutoResponderDAO.getInstance();
