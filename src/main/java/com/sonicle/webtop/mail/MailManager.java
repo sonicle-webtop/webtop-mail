@@ -67,6 +67,7 @@ import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.SessionContext;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
+import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
@@ -806,12 +807,12 @@ public class MailManager extends BaseManager implements IMailManager {
 				tag.setDomainId(profileId.getDomainId());
 				tag.setExternalId(oldTag.getTagId());
 				tag.setName(oldTag.getDescription());
-				tag.setPersonal(true);
+				tag.setVisibility(com.sonicle.webtop.core.model.Tag.Visibility.PRIVATE);
 				WT.getCoreManager().addTag(tag);
 			}
 			
-		} catch(SQLException ex) {
-			throw new WTException(ex);
+		} catch (Throwable t) {
+			throw ExceptionUtils.wrapThrowable(t);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
@@ -827,8 +828,8 @@ public class MailManager extends BaseManager implements IMailManager {
 			OAutoResponder oaut = autdao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
 			return (oaut != null) ? oaut.getEnabled() : false;
 			
-		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
+		} catch (Throwable t) {
+			throw ExceptionUtils.wrapThrowable(t);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
