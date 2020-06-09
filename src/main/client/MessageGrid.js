@@ -638,8 +638,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		tbitems.push({
 			xtype: 'button',
 			tooltip: me.res('messagesPanel.viewOptions.tip'),
-			//glyph: 0xf108,
-			iconCls: 'wtmail-icon-viewOptions',
+			iconCls: 'wt-icon-viewOptions',
 			menu: {
 				defaults: {
 					scope: me

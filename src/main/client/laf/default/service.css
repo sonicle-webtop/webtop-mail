@@ -145,7 +145,6 @@
 
 .wtmail-icon-search-locked { background-image: url('search-locked_16.svg') !important; background-size: contain; }
 .wtmail-icon-search-unlocked { background-image: url('search-unlocked_16.svg') !important; background-size: contain; }
-.wtmail-icon-viewOptions { background-image: url('viewOptions_16.svg') !important; background-size: contain; }
 
 /* message view classes */
 .wtmail-mv-container { padding: 0px 0px 0px 0px; background-color: #ffffff; }
