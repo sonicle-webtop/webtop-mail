@@ -633,7 +633,7 @@ public class FolderCache {
 				updateUnreads();
 			} else {
 				lastRefreshUnreads=millis;
-				Service.logger.debug("Skipping call to refreshUnreads arrived in {} ms",d);
+				if(Service.logger.isTraceEnabled()) Service.logger.trace("Skipping call to refreshUnreads arrived in {} ms",d);
 			}
 		}
     }
