@@ -94,6 +94,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getInteger(ARCHIVING_EXTERNAL_MINAGE, 365*5);
 	}
 	
+	public boolean isExternalAccountEnabled() {
+		return getBoolean(EXTERNAL_ACCOUNT_ENABLED, false);
+	}
+	
     public boolean isAutocreateSpecialFolders() {
         return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);
     }

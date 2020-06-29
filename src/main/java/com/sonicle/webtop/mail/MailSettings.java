@@ -290,6 +290,7 @@ public class MailSettings {
 	 */
 	public static final String ARCHIVING_SIMPLE_DMS_MAIL_FOLDER = "archiving.dms-simple.mailfolder";
 	
+	public static final String EXTERNAL_ACCOUNT_ENABLED = "external-account.enabled";
 	public static final String EXTERNAL_ACCOUNT_PROVIDERS = "external-account.providers";
 	
 	public static final String EXTERNAL_ACCOUNT_DEFAULT_PROVIDERS = "[\n" +

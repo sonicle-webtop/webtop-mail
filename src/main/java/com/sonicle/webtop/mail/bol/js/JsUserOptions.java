@@ -87,6 +87,7 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean showUpcomingTasks;
 	public String todayRowColor;
 	public boolean favoriteNotifications;
+	public boolean externalAccountEnabled;
 	
 	public JsUserOptions() {}
 	

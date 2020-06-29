@@ -126,6 +126,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.showUpcomingTasks = mus.getShowUpcomingTasks();
 				jso.todayRowColor = mus.getTodayRowColor();
 				jso.favoriteNotifications = mus.isFavoriteNotifications();
+				
+				// External accounts
+				jso.externalAccountEnabled = mss.isExternalAccountEnabled();
 
 				new JsonResult(jso).printTo(out);
 
@@ -250,61 +253,66 @@ public class UserOptionsService extends BaseUserOptionsService {
 	
 	public void processManageExternalAccountsGrid(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
+			MailManager mailMgr = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
+			
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			MailManager mailManager = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
-			
-			if(crud.equals(Crud.READ)) {
-				List<JsGridExternalAccount> jsList = new ArrayList<>();
-			
-				List<ExternalAccount> externalAccounts = mailManager.listExternalAccounts();
+			if (crud.equals(Crud.READ)) {
+				List<JsGridExternalAccount> items = new ArrayList<>();
+				List<ExternalAccount> externalAccounts = mailMgr.listExternalAccounts();
 				externalAccounts.forEach(account -> {
-					
-				String iconUrl = getIconUrlFromExternalProvider(account.getProviderId());
-				jsList.add(new JsGridExternalAccount(account, iconUrl));
-			});
-			
-			new JsonResult("externalAccount", jsList).printTo(out);
-			} 
-		} catch (ParameterException | WTException ex) {
-			logger.error("Error in managing external accounts grid");
-			new JsonResult(false, "Error in managing external accounts grid").printTo(out);
+					String iconUrl = getIconUrlFromExternalProvider(account.getProviderId());
+					items.add(new JsGridExternalAccount(account, iconUrl));
+				});
+				
+				new JsonResult("externalAccount", items).printTo(out);
+			}
+		} catch (Throwable t) {
+			logger.error("Error in ManageExternalAccountsGrid", t);
+			new JsonResult(t).printTo(out);
 		} 
 	}
 	
 	public void processManageExternalAccounts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
-			String crud = ServletUtils.getStringParameter(request, "crud", true);
-			MailManager mailManager = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
+			MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetDomainId());
+			MailManager mailMgr = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 			
-			if(crud.equals(Crud.READ)) {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if (crud.equals(Crud.READ)) {
 				String id = ServletUtils.getStringParameter(request, "id", true);
 				int accountId = Integer.parseInt(id);
 				
-				ExternalAccount externalAccount = mailManager.getExternalAccount(accountId);
+				ExternalAccount externalAccount = mailMgr.getExternalAccount(accountId);
 				JsExternalAccount item = new JsExternalAccount(externalAccount);
 				item.iconUrl = getIconUrlFromExternalProvider(item.providerId);
 				item.readOnlyProvider = getReadOnlyPropertyFromExternalProvider(item.providerId);
 				new JsonResult(item).printTo(out);
-			} else if(crud.equals(Crud.CREATE)) {
+				
+			} else if (crud.equals(Crud.CREATE)) {
+				if (!mss.isExternalAccountEnabled()) throw new WTException("External accounts not enabled for this domain");
 				Payload<MapItem, JsExternalAccount> pl = ServletUtils.getPayload(request, JsExternalAccount.class);
 				ExternalAccount account = JsExternalAccount.createExternalAccount(pl.data);
-				mailManager.addExternalAccount(account);
+				mailMgr.addExternalAccount(account);
 				new JsonResult().printTo(out);
 				
-			} else if(crud.equals(Crud.DELETE)) {
+			} else if (crud.equals(Crud.DELETE)) {
 				String id = ServletUtils.getStringParameter(request, "externalAccountId", true);
 				int accountId = Integer.parseInt(id);
 				
-				mailManager.removeExternalAccount(accountId);
+				mailMgr.removeExternalAccount(accountId);
 				new JsonResult().printTo(out);
+				
 			} else if(crud.equals(Crud.UPDATE)) {
+				if (!mss.isExternalAccountEnabled()) throw new WTException("External accounts not enabled for this domain");
 				Payload<MapItem, JsExternalAccount> pl = ServletUtils.getPayload(request, JsExternalAccount.class);
 				ExternalAccount account = JsExternalAccount.createExternalAccount(pl.data);
-				mailManager.updateExternalAccount(account);
+				mailMgr.updateExternalAccount(account);
 				new JsonResult().printTo(out);
 			}
-		} catch (Exception ex) {
-			logger.error("Error in managing external accounts");
+			
+		} catch (Throwable t) {
+			logger.error("Error in ManageExternalAccounts", t);
+			new JsonResult(t).printTo(out);
 		}
 	}
 	
