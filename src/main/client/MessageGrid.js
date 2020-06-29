@@ -2424,7 +2424,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								var value=Ext.callback(dataToStringFunction,me,[json.data]);
 								WT.confirm(label, null, me, {
 									buttons: Ext.Msg.OK,
-									title: WT.res('audit-info.lbl'),
+									title: WT.res('audit.info.tit'),
 									instClass: 'Sonicle.webtop.core.ux.AuditWindow',
 									config: {
 										value: value
