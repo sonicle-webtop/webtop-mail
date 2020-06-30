@@ -114,6 +114,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	public static final String IDENTITY_SHARING_ID = "0";
 	public static final String SIEVE_OLD_WEBTOP_SCRIPT = "webtop";
 	public static final String SIEVE_WEBTOP_SCRIPT = "webtop5";
+	public static final int MAX_EXT_ACCOUNTS = 3; // Update fixed limit 
 	
 	private SieveConfig sieveConfig = null;
 	List<Identity> identities=null;
@@ -308,7 +309,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			
 			connection = WT.getConnection(SERVICE_ID);
 			UserProfileId userProfileId = getTargetProfileId();
-			List<OExternalAccount> externalAccounts = dao.selectByDomainUser(connection, userProfileId.getDomainId(), userProfileId.getUserId());
+			List<OExternalAccount> externalAccounts = dao.selectByDomainUser(connection, userProfileId.getDomainId(), userProfileId.getUserId(), MAX_EXT_ACCOUNTS);
 			for(OExternalAccount externalAccount: externalAccounts) {
 				ExternalAccount account = new ExternalAccount();
 				account.setExternalAccountId(externalAccount.getExternalAccountId());

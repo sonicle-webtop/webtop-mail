@@ -757,14 +757,19 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 										iconField: 'iconUrl',
 										listeners: {
 											click: function(s,item) {
-												me.addExternalAccount(s, item.getItemId(), {
-													callback: function(success) {
-														if(success) {
-															me.needLogin=true;
-															me.reloadExternalAccounts();
+												var count = me.lref('gpExternalAccounts').getStore().getCount();
+												if (count >= 3) {
+													WT.warn(me.res('opts.external.accounts.warn.limit'));
+												} else {
+													me.addExternalAccount(s, item.getItemId(), {
+														callback: function(success) {
+															if(success) {
+																me.needLogin=true;
+																me.reloadExternalAccounts();
+															}
 														}
-													}
-												});
+													});
+												}	
 											}
 										}
 									}

@@ -61,7 +61,7 @@ public class ExternalAccountDAO extends BaseDAO {
 		return nextID;
 	}
 	
-	public List<OExternalAccount> selectByDomainUser(Connection conn, String domainId, String userId) throws DAOException {
+	public List<OExternalAccount> selectByDomainUser(Connection conn, String domainId, String userId, int limit) throws DAOException {
 		DSLContext dsl = getDSL(conn);
 		return dsl
 			.select()
@@ -70,6 +70,7 @@ public class ExternalAccountDAO extends BaseDAO {
 				EXTERNAL_ACCOUNTS.DOMAIN_ID.equal(domainId)
 				.and(EXTERNAL_ACCOUNTS.USER_ID.equal(userId))
 			)
+			.limit(limit)
 			.fetchInto(OExternalAccount.class);
 	}
 	
