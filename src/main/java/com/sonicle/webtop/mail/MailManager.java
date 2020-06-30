@@ -114,7 +114,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	public static final String IDENTITY_SHARING_ID = "0";
 	public static final String SIEVE_OLD_WEBTOP_SCRIPT = "webtop";
 	public static final String SIEVE_WEBTOP_SCRIPT = "webtop5";
-	public static final int MAX_EXT_ACCOUNTS = 3; // Update fixed limit 
+	public static final int MAX_EXT_ACCOUNTS = 3; // Update this fixed limit also in UserOptions.js
 	
 	private SieveConfig sieveConfig = null;
 	List<Identity> identities=null;
