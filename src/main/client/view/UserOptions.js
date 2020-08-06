@@ -895,17 +895,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				fieldLabel: me.res('opts.adv.fld-scanAll.lbl'),
 				width: 100,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-			}, {
-				xtype: 'numberfield',
-				bind: '{record.scanSeconds}',
-				fieldLabel: me.res('opts.adv.fld-scanSeconds.lbl'),
-				minValue: 3,
-				hideTrigger: true,
-				keyNavEnabled: false,
-				mouseWheelEnabled: false,
-				width: 200,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}, {
+			}, /*{ Deprecated
 				xtype: 'fieldcontainer',
 				fieldLabel: me.res('opts.adv.fld-scanCycles.lbl'),
 				layout: 'hbox',
@@ -930,7 +920,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						mouseWheelEnabled: false,
 						disabled: true
 				}]
-			}, {
+			},*/ {
 				xtype: 'textfield',
 				bind: '{record.defaultFolder}',
 				fieldLabel: me.res('opts.adv.fld-defaultFolder.lbl'),

@@ -48,6 +48,7 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 		WTF.field('manualSeen', 'boolean', false),
 		WTF.field('ingridPreview', 'boolean', true),
 		WTF.field('scanAll', 'boolean', false),
+		/* Deprecated
 		WTF.field('scanSeconds', 'int', false),
 		WTF.field('scanCycles', 'int', false),
 		WTF.calcField('scanSecondsOthers', 'int', ['scanSeconds','scanCycles'], function(v, rec) {
@@ -55,6 +56,7 @@ Ext.define('Sonicle.webtop.mail.model.UserOptions', {
 			    sc = rec.get('scanCycles')||0;
 			return ss*sc;
 		}),
+		*/
 		WTF.field('folderPrefix', 'string', true),
 		WTF.field('folderSent', 'string', true),
 		WTF.field('folderDrafts', 'string', true),

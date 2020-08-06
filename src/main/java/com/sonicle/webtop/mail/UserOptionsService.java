@@ -94,8 +94,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.manualSeen = mus.isManualSeen();
 				jso.seenOnOpen = mus.isSeenOnOpen();
 				jso.scanAll = mus.isScanAll();
-				jso.scanSeconds = mus.getScanSeconds();
-				jso.scanCycles = mus.getScanCycles();
+				//jso.scanSeconds = mus.getScanSeconds(); Deprecated
+				//jso.scanCycles = mus.getScanCycles(); Deprecated
 				jso.folderPrefix = mus.getFolderPrefix();
 				jso.folderSent = mus.getFolderSent();
 				jso.folderDrafts = mus.getFolderDrafts();
@@ -185,8 +185,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				
 				// Advanced
 				if (pl.map.has("scanAll")) mus.setScanAll(pl.data.scanAll);
-				if (pl.map.has("scanSeconds")) mus.setScanSeconds(pl.data.scanSeconds);
-				if (pl.map.has("scanCycles")) mus.setScanCycles(pl.data.scanCycles);
+				//if (pl.map.has("scanSeconds")) mus.setScanSeconds(pl.data.scanSeconds); Deprecated
+				//if (pl.map.has("scanCycles")) mus.setScanCycles(pl.data.scanCycles); Deprecated
 				if (pl.map.has("defaultFolder")) mus.setDefaultFolder(pl.data.defaultFolder);
 
 				new JsonResult().printTo(out);

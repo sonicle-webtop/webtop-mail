@@ -54,8 +54,8 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean seenOnOpen;
 	public boolean ingridPreview;
 	public boolean scanAll;
-	public int scanSeconds;
-	public int scanCycles;
+	//public int scanSeconds; Deprecated
+	//public int scanCycles; Deprecated
 	public String folderPrefix;
 	public String folderSent;
 	public String folderDrafts;
