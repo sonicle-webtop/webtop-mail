@@ -503,6 +503,8 @@ public class FolderCache {
 
     public void setScanEnabled(boolean b) {
         scanEnabled=b;
+		if (b) updateUnreads();
+		else sendClearUnreadChangedMessage();
     }
 
     public boolean isScanEnabled() {
@@ -608,11 +610,19 @@ public class FolderCache {
     }    
 	
 	private void sendUnreadChangedMessage() {
-		this.environment.notify(
+		//send ws message only if it's not special or has "scan forced on" active
+		if (!isSpecial() || isScanForcedOrEnabled())
+			this.environment.notify(
 				new UnreadChangedMessage(account.getId(),foldername, unread, hasUnreadChildren)
-		);
+			);
 	}
 
+	private void sendClearUnreadChangedMessage() {
+		this.environment.notify(
+			new UnreadChangedMessage(account.getId(),foldername, 0, false)
+		);
+	}
+	
 	private void sendRecentMessage(String from, String subject) {
 		this.environment.notify(new RecentMessage(account.getId(),foldername, from, subject, account.isFavoriteFolder(foldername))
 		);

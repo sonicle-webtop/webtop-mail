@@ -7230,7 +7230,7 @@ public class Service extends BaseService {
 			sout += "{iddata:'subject',value1:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject)) + "',value2:'',value3:0},\n";
 			sout += "{iddata:'messageid',value1:'"+StringEscapeUtils.escapeEcmaScript(messageid)+"',value2:'',value3:0}\n";
 			
-			if (providername == null && !mcache.isSpecial()) {
+			if (providername == null) {
 				mcache.refreshUnreads();
 			}
 			long millis = System.currentTimeMillis();
