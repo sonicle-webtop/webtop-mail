@@ -2514,13 +2514,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				var eldata=Ext.JSON.decode(el.data);
 				
 				if (eldata.tag) {
-					var r=me.mys.tagsStore.findRecord('tagId',eldata.tag);
-					var desc=r?r.get("description"):eldata.tag;
+					var r=me.mys.tagsStore.findRecord('id',eldata.tag);
+					var desc=r?r.get("name"):eldata.tag;
 					str+="\t+ "+desc+"\n";
 				}
 				if (eldata.untag) {
-					var r=me.mys.tagsStore.findRecord('tagId',eldata.untag);
-					var desc=r?r.get("description"):eldata.untag;
+					var r=me.mys.tagsStore.findRecord('id',eldata.untag);
+					var desc=r?r.get("name"):eldata.untag;
 					str+="\t- "+desc+"\n";
 				}
 			});
