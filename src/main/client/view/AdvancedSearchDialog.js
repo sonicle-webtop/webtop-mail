@@ -221,19 +221,19 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						store: new Ext.data.SimpleStore({
 							fields: ['id','desc','icon'],
 							data: [
-								['red',me.res('act-flagred.lbl'),'wtmail-icon-flagred-xs'],
-								['blue',me.res('act-flagblue.lbl'),'wtmail-icon-flagblue-xs'],
-								['yellow',me.res('act-flagyellow.lbl'),'wtmail-icon-flagyellow-xs'],
-								['green',me.res('act-flaggreen.lbl'),'wtmail-icon-flaggreen-xs'],
-								['orange',me.res('act-flagorange.lbl'),'wtmail-icon-flagorange-xs'],
-								['purple',me.res('act-flagpurple.lbl'),'wtmail-icon-flagpurple-xs'],
-								['black',me.res('act-flagblack.lbl'),'wtmail-icon-flagblack-xs'],
-								['gray',me.res('act-flaggray.lbl'),'wtmail-icon-flaggray-xs'],
-								['white',me.res('act-flagwhite.lbl'),'wtmail-icon-flagwhite-xs'],
-								['brown',me.res('act-flagbrown.lbl'),'wtmail-icon-flagbrown-xs'],
-								['azure',me.res('act-flagazure.lbl'),'wtmail-icon-flagazure-xs'],
-								['pink',me.res('act-flagpink.lbl'),'wtmail-icon-flagpink-xs'],
-								['complete',me.res('act-flagcomplete.lbl'),'wtmail-icon-flagcomplete-xs']
+								['red',me.res('message.flag.red'),'wtmail-icon-flagred-xs'],
+								['blue',me.res('message.flag.blue'),'wtmail-icon-flagblue-xs'],
+								['yellow',me.res('message.flag.yellow'),'wtmail-icon-flagyellow-xs'],
+								['green',me.res('message.flag.green'),'wtmail-icon-flaggreen-xs'],
+								['orange',me.res('message.flag.orange'),'wtmail-icon-flagorange-xs'],
+								['purple',me.res('message.flag.purple'),'wtmail-icon-flagpurple-xs'],
+								['black',me.res('message.flag.black'),'wtmail-icon-flagblack-xs'],
+								['gray',me.res('message.flag.gray'),'wtmail-icon-flaggray-xs'],
+								['white',me.res('message.flag.white'),'wtmail-icon-flagwhite-xs'],
+								['brown',me.res('message.flag.brown'),'wtmail-icon-flagbrown-xs'],
+								['azure',me.res('message.flag.azure'),'wtmail-icon-flagazure-xs'],
+								['pink',me.res('message.flag.pink'),'wtmail-icon-flagpink-xs'],
+								['complete',me.res('message.flag.complete'),'wtmail-icon-flagcomplete-xs']
 							]
 						}),
 						//value: this.method,
