@@ -156,6 +156,8 @@ import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.text.Normalizer;
 import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 import javax.mail.search.AndTerm;
 import javax.mail.search.FlagTerm;
 import javax.mail.search.OrTerm;
@@ -3925,36 +3927,35 @@ public class Service extends BaseService {
 			response.setHeader("Content-Disposition", "inline; filename=\"" + zipname + ".zip\"");
 			OutputStream out = response.getOutputStream();
 			
-			JarOutputStream jos = new java.util.jar.JarOutputStream(out);
-			outputJarMailFolder(null, msgs, jos);
-			
-			int cut=foldername.length()+1;
-			cycleMailFolder(account, mcache.getFolder(), cut, jos);
-			
-			jos.close();
+			try (ZipOutputStream zos = new ZipOutputStream(out)) {
+				outputZipMailFolder(null, msgs, zos);
+				
+				int cut=foldername.length()+1;
+				cycleMailFolder(account, mcache.getFolder(), cut, zos);
+			}
 			
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
 	}
 	
-	private void cycleMailFolder(MailAccount account, Folder folder, int cut, JarOutputStream jos) throws Exception {
+	private void cycleMailFolder(MailAccount account, Folder folder, int cut, ZipOutputStream zos) throws Exception {
 		for(Folder child: folder.list()) {
 			String fullname=child.getFullName();
 			String relname=fullname.substring(cut).replace(folder.getSeparator(), '/');
 			
-			jos.putNextEntry(new JarEntry(relname+"/"));
-			jos.closeEntry();
+			zos.putNextEntry(new ZipEntry(relname+"/"));
+			zos.closeEntry();
 			
-			cycleMailFolder(account,child,cut,jos);
+			cycleMailFolder(account,child,cut,zos);
 			
 			FolderCache mcache=account.getFolderCache(fullname);
 			Message msgs[]=mcache.getAllMessages();
-			if (msgs.length>0) outputJarMailFolder(relname, msgs, jos);
+			if (msgs.length>0) outputZipMailFolder(relname, msgs, zos);
 		}
 	}
 	
-	private void outputJarMailFolder(String foldername, Message msgs[], JarOutputStream jos) throws Exception {
+	private void outputZipMailFolder(String foldername, Message msgs[], ZipOutputStream zos) throws Exception {
 		int digits=(msgs.length>0?(int)Math.log10(msgs.length)+1:1);
 		for(int i=0; i<msgs.length;++i) {
 			Message msg=msgs[i];
@@ -3968,13 +3969,13 @@ public class Service extends BaseService {
 			String fullname=null;
 			if (foldername!=null && !foldername.isEmpty()) fullname=foldername+"/"+fname;
 			else fullname=fname;
-			JarEntry je=new JarEntry(fullname);
-			je.setTime(date.getTime());
-			jos.putNextEntry(je);
-			msg.writeTo(jos);
-			jos.closeEntry();
+			ZipEntry ze=new ZipEntry(fullname);
+			ze.setTime(date.getTime());
+			zos.putNextEntry(ze);
+			msg.writeTo(zos);
+			zos.closeEntry();
 		}
-		jos.flush();
+		zos.flush();
 	}
 
 	public void processGetReplyMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -7551,7 +7552,7 @@ public class Service extends BaseService {
 			//prepare hashmap to hold already used pnames
 			HashMap<String,String> pnames=new HashMap<String,String>();
 			ServletUtils.setFileStreamHeaders(response, "application/x-zip-compressed", DispositionType.INLINE, name);
-			JarOutputStream jos = new java.util.jar.JarOutputStream(response.getOutputStream());
+			ZipOutputStream zos = new ZipOutputStream(response.getOutputStream());
 			byte[] b = new byte[64 * 1024];
 			for (String pid : pids) {
 				Part part = mailData.getAttachmentPart(Integer.parseInt(pid));
@@ -7581,8 +7582,8 @@ public class Service extends BaseService {
 					if (extpname!=null) rpname+="."+extpname;
 				}
 								
-				JarEntry je = new JarEntry(rpname);
-				jos.putNextEntry(je);
+				ZipEntry ze = new ZipEntry(rpname);
+				zos.putNextEntry(ze);
 				if (providername == null) {
 					Folder folder = mailData.getFolder();
 					if (!folder.isOpen()) {
@@ -7592,16 +7593,16 @@ public class Service extends BaseService {
 				InputStream is = part.getInputStream();
 				int len = 0;
 				while ((len = is.read(b)) != -1) {
-					jos.write(b, 0, len);
+					zos.write(b, 0, len);
 				}
 				is.close();
 				
 				//remember used pname
 				pnames.put(rpname, rpname);
 			}
-			jos.closeEntry();
-			jos.flush();
-			jos.close();
+			zos.closeEntry();
+			zos.flush();
+			zos.close();
 			
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
