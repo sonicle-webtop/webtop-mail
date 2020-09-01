@@ -1449,16 +1449,16 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			default:
 				me.divTos.update("<span class='wtmail-mv-hlabelto'>"+me.mys.res('to')+":&nbsp;</span>"+me.toNamesFull);
 				//TODO setEmailElements
-                me._setEmailElements(me.divTos.first().next(),'to');
+                if (me.divTos.first()) me._setEmailElements(me.divTos.first().next(),'to');
 				break;
 			case "cc":
 				me.divCcs.update("<span class='wtmail-mv-hlabelcc'>"+me.mys.res('cc')+":&nbsp;</span>"+me.ccNamesFull);
 				//TODO setEmailElements
-                me._setEmailElements(me.divCcs.first().next(),'cc');
+                if (me.divCcs.first()) me._setEmailElements(me.divCcs.first().next(),'cc');
 				break;
 			case "bcc":
 				me.divBccs.update("<span class='wtmail-mv-hlabelbcc'>"+me.mys.res('bcc')+":&nbsp;</span>"+me.bccNamesFull);
-                me._setEmailElements(me.divBccs.first().next(),'bcc');
+                if (me.divBccs.first()) me._setEmailElements(me.divBccs.first().next(),'bcc');
 				break;
 		}
 	},
