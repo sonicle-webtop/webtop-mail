@@ -67,7 +67,7 @@ public class AdvancedSearchEntry {
             s2.equals("upto")?METHOD_UPTO:
             s2.equals("since")?METHOD_SINCE:
             s2.equals("isnot")?METHOD_ISNOT:
-            s2.equals("!contains")?METHOD_DOESNOTCONTAIN:
+            s2.equals("notcontains")?METHOD_DOESNOTCONTAIN:
             METHOD_CONTAINS;
         value=s3;
     }

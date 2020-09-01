@@ -38,7 +38,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 	dockableConfig: {
 		iconCls: 'wt-icon-search-adv',
 		title: '{act-advsearch.lbl}',
-		width: 700,
+		width: 750,
 		height: 600
 	},
 	promptConfirm: false,
