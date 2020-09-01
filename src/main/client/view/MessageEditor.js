@@ -841,15 +841,22 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
     
     actionSend: function() {
-        var me=this,
+        var me = this,
+			attachmentSize = me.attlist.all.elements.length,
 			_sbj=me.subject.getValue(),
 			newSubject=Ext.isEmpty(_sbj)?'':_sbj.trim(),
 			oldSubject=Ext.isEmpty(me.originalSubject)?'':me.originalSubject.trim(),
-			attachmentSize = me.attlist.all.elements.length,
-			newText = Sonicle.String.htmlToText(me.htmlEditor.getValue()),
-			oldText = Sonicle.String.htmlToText(me.originalContent),
-			newTextDiffs = me.diffsAsString(oldText,newText),
-			newSubjectDiffs = ( newSubject === oldSubject ) ? '' : newSubject;
+			newSubjectDiffs = ( newSubject === oldSubject ) ? '' : newSubject,
+			newText, oldText, newTextDiffs;
+	
+		if (me.mys.getVar('format') === 'html') {
+			newText = Sonicle.String.htmlToText(me.htmlEditor.getValue());
+			oldText = Sonicle.String.htmlToText(me.originalContent);
+		} else {
+			newText = me.htmlEditor.getValue();
+			oldText = me.originalContent;
+		}
+		newTextDiffs = me.diffsAsString(oldText,newText);
 	
 		var attachmentsWarning = attachmentSize > 0 ? false : me.checkForAttachment(newSubjectDiffs.toLowerCase(), newTextDiffs.toLowerCase());
 	
