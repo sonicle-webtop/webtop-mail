@@ -81,24 +81,21 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 				acct: cfg.acct
 			})
 		});
-
+		
 		me.callParent([cfg]);
-		
 		if (false !== me.statefulFolders) me.setupStateful();
-		
 	},
 	
 	startEdit: function(record,c) {
-		var me=this;
+		var me = this;
 		me.getPlugin('cellediting').startEdit(record, me.getView().ownerCt.getColumnManager().getHeaderAtIndex(c));
 	},
 	
 	//Stateful implementations
 	setupStateful: function() {
-		var me=this;
-		
+		var me = this;
 		me.expandedNodes = {};
-		me.stateEvents = [ 'expandnode', 'collapsenode' ];
+		me.stateEvents = ['expandnode', 'collapsenode'];
 		me.getState = function() {
 			return { expandedNodes: me.expandedNodes };
 		};
@@ -111,62 +108,70 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 		me.setStateful(true);
 	},
 	
-	onStatefulRender: function(){
-		var me=this;
-		Ext.defer(function() { me.restoreFoldersState(); },1000);
-	},
-	
-	restoreFoldersState: function() {											 
-		var me=this,
-			state=Ext.state.Manager.get(me.stateId);
-		if (state && state.expandedNodes) {
-			me.expandedNodes=state.expandedNodes;
-			me._doExpandPath(
-				Ext.Array.sort(Ext.Object.getAllKeys(state.expandedNodes)),
-				0
-			);
-			//me.setHeight(me.height); //For make work: http://extjs.com/forum/showthread.php?p=212359
+	onStatefulRender: function() {
+		var me = this,
+				sto = me.store;
+		if (sto) {
+			if (sto.isLoaded()) {
+				me.restoreFoldersState();
+			} else {
+				sto.on('load', function() {
+					me.restoreFoldersState();
+				}, me, {single: true});
+			}
 		}
-		else me.fireEvent("foldersstaterestored",me,null);
 	},
 	
-	_doExpandPath: function(expandedNodesArray,ix) {
-		var me=this;
-		
-		if (ix<expandedNodesArray.length) {
-			me.restoringState=true;
-			var node=me.store.getById(expandedNodesArray[ix]);
+	restoreFoldersState: function() {
+		var me = this,
+				state = Ext.state.Manager.get(me.stateId);
+		if (state && state.expandedNodes) {
+			me.expandedNodes = state.expandedNodes;
+			me.expandNodes(Ext.Array.sort(Ext.Object.getAllKeys(state.expandedNodes)), function() {
+				me.fireEvent('foldersstaterestored', me, me.expandedNodes);
+			});
+		} else {
+			me.fireEvent('foldersstaterestored', me, null);
+		}
+	},
+	
+	expandNodes: function(nodeIds, callback, idx) {
+		if (idx === undefined) idx = 0;
+		var me = this, node;
+		if (idx < nodeIds.length) {
+			me.restoringState = true;
+			node = me.store.getById(nodeIds[idx]);
 			if (node) {
 				me.expandNode(node, false, function() {
-					me._doExpandPath(expandedNodesArray,ix+1);
+					me.expandNodes(nodeIds, callback, idx+1);
 				});
+			} else {
+				me.expandNodes(nodeIds, callback, idx+1);
 			}
 		} else {
-			me.restoringState=false;
-			me.fireEvent("foldersstaterestored",me,me.expandedNodes);
+			me.restoringState = false;
+			Ext.callback(callback, me);
 		}
 	},
 	
 	beforeStatefulItemExpand:function(n) {
-		var me=this;
-		if(!me.restoringState && n.id) {
+		var me = this;
+		if (!me.restoringState && n.id) {
 			me.expandedNodes[n.id] = n.getPath();
 			me.saveState();
 		}
 	},
 	
 	beforeStatefulItemCollapse:function(n) {
-		var me=this;
-		if(n.id) {
+		var me = this;
+		if (n.id) {
 			delete(me.expandedNodes[n.id]);
 			n.cascade(function(child) {
-				if(child.id) {
+				if (child.id) {
 					delete(me.expandedNodes[child.id]);
 				}
 			}, this);
 			me.saveState();
 		}
 	}
-	
 });
-
