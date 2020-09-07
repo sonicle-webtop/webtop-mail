@@ -151,6 +151,7 @@ import org.joda.time.DateTimeZone;
 import com.sonicle.commons.qbuilders.conditions.Condition;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.bean.QueryObj;
+import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
@@ -4590,9 +4591,10 @@ public class Service extends BaseService {
 				
 				//Save used recipients
 				for(JsRecipient rcpt: pl.data.recipients) {
-					String email=rcpt.email;
-					if (email!=null && email.trim().length()>0) 
-						coreMgr.autoLearnInternetRecipient(email);
+					InternetAddress ia = InternetAddressUtils.toInternetAddress(rcpt.email);
+					if (ia != null && !ContactsUtils.isListVirtualRecipient(ia)) {
+						coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+					}
 				}
 				
 				//Save subject for suggestions
@@ -4974,6 +4976,10 @@ public class Service extends BaseService {
 					CoreManager core=WT.getCoreManager();
 					if (environment.getSession().isServiceAllowed(dom)) {
 						List<Recipient> rcpts=core.expandVirtualProviderRecipient(iamail);
+						if (rcpts.isEmpty() && ContactsUtils.isListVirtualRecipient(ia)) {
+							throw new MessagingException("List '" + ia.getPersonal() + "' doesn't exist or is empty");
+						}
+						
 						for (Recipient rcpt: rcpts) {
 							String xemail=rcpt.getAddress();
 							String xpersonal=rcpt.getPersonal();
