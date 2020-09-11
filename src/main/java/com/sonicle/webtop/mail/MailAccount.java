@@ -409,7 +409,15 @@ public class MailAccount {
 		try {
 			if (store!=null) {
 				disconnecting = true;
-				((SonicleIMAPStore)store).forceDisconnect();
+				//TODO: determine why for Dovecot the forceDisconnect implementation
+				// does not produce the desired effects: speeding up disconnection time
+				// like happen with Cyrus. It seems that with Dovecot execution remains
+				// stucked at a synchronized method in internal JavaMail code.
+				if (isDovecot()) {
+					store.close();
+				} else {
+					((SonicleIMAPStore)store).forceDisconnect();
+				}
 			}
 			
 		} catch (MessagingException ex) {
