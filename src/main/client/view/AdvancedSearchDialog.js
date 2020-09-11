@@ -321,7 +321,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 		var me=this;
 		
         if (!me.validateEntries()) {
-            WT.warn(WT.res("advsearch-emptyvalue"), { title: me.res("advsearch-invalidsearch") });
+            WT.warn(me.res("advsearch-emptyvalue"), { title: me.res("advsearch-invalidsearch") });
             return;
         }
         
