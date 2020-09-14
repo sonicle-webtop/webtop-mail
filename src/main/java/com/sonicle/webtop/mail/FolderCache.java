@@ -221,10 +221,10 @@ public class FolderCache {
         isArchive=account.isArchiveFolder(shortfoldername);
         isDms=ms.isDmsFolder(account,shortfoldername);
         isSharedFolder=account.isSharedFolder(foldername);
-        if (isDrafts||isSent||isTrash||isSpam||isArchive) {
+        /*if (isDrafts||isSent||isTrash||isSpam||isArchive) {
             setCheckUnreads(false);
             setCheckRecents(false);
-        }
+        }*/
 
         isSharedInbox=false;
 		if (account.hasDifferentDefaultFolder() && account.isDefaultFolder(foldername)) {
@@ -610,8 +610,8 @@ public class FolderCache {
     }    
 	
 	private void sendUnreadChangedMessage() {
-		//send ws message only if it's not special or has "scan forced on" active
-		if (!isSpecial() || isScanForcedOrEnabled())
+		//NO MORE send ws message only if it's not special or has "scan forced on" active
+		//if (/*!isSpecial() || */ isScanForcedOrEnabled())
 			this.environment.notify(
 				new UnreadChangedMessage(account.getId(),foldername, unread, hasUnreadChildren)
 			);
