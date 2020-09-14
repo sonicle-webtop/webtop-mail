@@ -4944,113 +4944,68 @@ public class Service extends BaseService {
 		
 		//boolean isFax = request.getParameter("fax") != null;
 		
-		String to = null;
-		String cc = null;
-		String bcc = null;
+		ArrayList<String> to = new ArrayList<>();
+		ArrayList<String> cc = new ArrayList<>();
+		ArrayList<String> bcc = new ArrayList<>();
+		CoreManager core=WT.getCoreManager();
 		for (int i = 0; i < emails.length; ++i) {
-			//String email=decoder.decode(ByteBuffer.wrap(emails[i].getBytes())).toString();
-			String email = emails[i];
-			if (email == null || email.trim().length() == 0) {
-				continue;
+			InternetAddress iaEmail = InternetAddressUtils.toInternetAddress(emails[i]);
+			if (iaEmail == null) {
+				if (skipInvalidEmails) continue;
+				throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR) + " : " + emails[i]);
 			}
-			//Check for list
-			boolean checkemail = true;
-			boolean listdone = false;
-			if (email.indexOf('@') < 0) {
-				if (isFax && StringUtils.isNumeric(email)) {
+			
+			boolean skipEmail = false;
+			if (!StringUtils.contains(iaEmail.getAddress(), "@")) {
+				if (isFax && StringUtils.isNumeric(iaEmail.getAddress())) {
 					String faxpattern = getEnv().getCoreServiceSettings().getFaxPattern();
-					String faxemail = faxpattern.replace("{number}", email).replace("{username}", profile.getUserId());
-					email = faxemail;
-				}
-			} else {
-				//check for list if one email with domain equals one allowed service id
-				InternetAddress ia=null;
-				try {
-					ia=new InternetAddress(email);
-				} catch(AddressException exc) {
+					String newAddress = faxpattern.replace("{number}", iaEmail.getAddress()).replace("{username}", profile.getUserId());
+					iaEmail = InternetAddressUtils.toInternetAddress(newAddress, null);
 					
+				} else {
+					throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR) + " : " + InternetAddressUtils.toFullAddress(iaEmail));
 				}
-				if (ia!=null) {
-					String iamail=ia.getAddress();
-					String dom=iamail.substring(iamail.indexOf("@")+1);
-					CoreManager core=WT.getCoreManager();
-					if (environment.getSession().isServiceAllowed(dom)) {
-						List<Recipient> rcpts=core.expandVirtualProviderRecipient(iamail);
-						if (rcpts.isEmpty() && ContactsUtils.isListVirtualRecipient(ia)) {
-							throw new MessagingException("List '" + ia.getPersonal() + "' doesn't exist or is empty");
+				
+			} else {
+				String dom = StringUtils.substringAfterLast(iaEmail.getAddress(), "@");
+				if (environment.getSession().isServiceAllowed(dom)) {
+					List<Recipient> rcpts = core.expandVirtualProviderRecipient(iaEmail.getAddress());
+					if (rcpts.isEmpty() && ContactsUtils.isListVirtualRecipient(iaEmail)) {
+						throw new MessagingException("List '" + iaEmail.getPersonal() + "' doesn't exist or is empty");
+					}
+					
+					for (Recipient rcpt: rcpts) {
+						InternetAddress iaRcpt = InternetAddressUtils.toInternetAddress(rcpt.getAddress(), rcpt.getPersonal());
+						if (iaRcpt == null) {
+							if (skipInvalidEmails) continue;
+							throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR) + " : " + rcpt.getAddress());
 						}
 						
-						for (Recipient rcpt: rcpts) {
-							String xemail=rcpt.getAddress();
-							String xpersonal=rcpt.getPersonal();
-							String xrtype=EnumUtils.toSerializedName(rcpt.getType());
-
-							if (xpersonal!=null) xemail=xpersonal+" <"+xemail+">";
-
-							try {
-							  checkEmail(xemail);
-							  InternetAddress.parse(xemail.replace(',', ' '),true);
-							} catch(AddressException exc) {
-								throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR)+" : "+xemail);
+						if ("to".equals(rtypes[i])) {
+							if (Recipient.Type.TO.equals(rcpt.getType())) {
+								to.add(toSimpleMessageRecipient(iaRcpt));
+							} else if (Recipient.Type.CC.equals(rcpt.getType())) {
+								cc.add(toSimpleMessageRecipient(iaRcpt));
+							} else if (Recipient.Type.BCC.equals(rcpt.getType())) {
+								bcc.add(toSimpleMessageRecipient(iaRcpt));
 							}
-							if (rtypes[i].equals("to")) {
-								if (xrtype.equals("to")) {
-								  if (to==null) to=xemail;
-								  else to+="; "+xemail;
-								} else if (xrtype.equals("cc")) {
-								  if (cc==null) cc=xemail;
-								  else cc+="; "+xemail;
-								} else if (xrtype.equals("bcc")) {
-								  if (bcc==null) bcc=xemail;
-								  else bcc+="; "+xemail;
-								}
-							} else if (rtypes[i].equals("cc")) {
-							  if (cc==null) cc=xemail;
-							  else cc+="; "+xemail;
-							} else if (rtypes[i].equals("bcc")) {
-							  if (bcc==null) bcc=xemail;
-							  else bcc+="; "+xemail;
-							}
-
-							listdone=true;
-							checkemail=false;
+						} else if ("cc".equals(rtypes[i])) {
+							cc.add(toSimpleMessageRecipient(iaRcpt));
+						} else if ("bcc".equals(rtypes[i])) {
+							bcc.add(toSimpleMessageRecipient(iaRcpt));
 						}
+						skipEmail = true;
 					}
 				}
 			}
-			if (listdone) {
-				continue;
-			}
 			
-			if (checkemail) {
-				try {
-					checkEmail(email);
-					//InternetAddress.parse(email.replace(',', ' '), false);
-					getInternetAddress(email);
-				} catch (AddressException exc) {
-					if (skipInvalidEmails) continue;
-					Service.logger.debug("Exception",exc);
-					throw new AddressException(lookupResource(MailLocaleKey.ADDRESS_ERROR) + " : " + email);
-				}
-			}
-			
-			if (rtypes[i].equals("to")) {
-				if (to == null) {
-					to = email;
-				} else {
-					to += "; " + email;
-				}
-			} else if (rtypes[i].equals("cc")) {
-				if (cc == null) {
-					cc = email;
-				} else {
-					cc += "; " + email;
-				}
-			} else if (rtypes[i].equals("bcc")) {
-				if (bcc == null) {
-					bcc = email;
-				} else {
-					bcc += "; " + email;
+			if (!skipEmail) {
+				if ("to".equals(rtypes[i])) {
+					to.add(toSimpleMessageRecipient(iaEmail));
+				} else if ("cc".equals(rtypes[i])) {
+					cc.add(toSimpleMessageRecipient(iaEmail));
+				} else if ("bcc".equals(rtypes[i])) {
+					bcc.add(toSimpleMessageRecipient(iaEmail));
 				}
 			}
 		}
@@ -5064,9 +5019,9 @@ public class Service extends BaseService {
 		}*/
         Identity from=mprofile.getIdentity(jsmsg.identityId);
 		msg.setFrom(from);
-		msg.setTo(to);
-		msg.setCc(cc);
-		msg.setBcc(bcc);
+		msg.setTo(StringUtils.join(to, "; "));
+		msg.setCc(StringUtils.join(cc, "; "));
+		msg.setBcc(StringUtils.join(bcc, "; "));
 		msg.setSubject(jsmsg.subject);
 		
         //TODO: fax coverpage - dismissed
@@ -5189,22 +5144,8 @@ public class Service extends BaseService {
 		return msg;
 	}
 	
-	private void checkEmail(String email) throws AddressException {
-		int ix = email.indexOf('@');
-		if (ix < 1) {
-			throw new AddressException(email);
-		}
-		int ix2 = email.indexOf('@', ix + 1);
-		if (ix2 >= 0) {
-			int ixx = email.indexOf('<');
-			if (ixx >= 0) {
-				if (!(ix < ixx && ix2 > ixx)) {
-					throw new AddressException(email);
-				}
-			} else {
-				throw new AddressException(email);
-			}
-		}
+	private String toSimpleMessageRecipient(InternetAddress ia) {
+		return StringUtils.replace(InternetAddressUtils.toFullAddress(ia), ";", "");
 	}
 	
 	public void processAttachFromMail(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
