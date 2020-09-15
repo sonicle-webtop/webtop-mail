@@ -2640,19 +2640,19 @@ public class Service extends BaseService {
 			iconCls = "wtmail-icon-inbox-folder-xs";
 		} else if (fc.isSent()) {
 			iconCls = "wtmail-icon-sent-folder-xs";
-			nounread = true;
+			//nounread = true;
 		} else if (fc.isDrafts()) {
 			iconCls = "wtmail-icon-drafts-folder-xs";
-			nounread = true;
+			//nounread = true;
 		} else if (fc.isTrash()) {
 			iconCls = "wtmail-icon-trash-folder-xs";
-			nounread = true;
+			//nounread = true;
 		} else if (fc.isArchive()) {
 			iconCls = "wtmail-icon-archive-folder-xs";
-			nounread = true;
+			//nounread = true;
 		} else if (fc.isSpam()) {
 			iconCls = "wtmail-icon-spam-folder-xs";
-			nounread = true;
+			//nounread = true;
 		} else if (fc.isDms()) {
 			iconCls = "wtmail-icon-dms-folder-xs";
 		} else if (fc.isSharedInbox()) {
