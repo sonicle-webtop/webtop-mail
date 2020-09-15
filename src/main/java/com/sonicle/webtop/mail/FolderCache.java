@@ -383,8 +383,7 @@ public class FolderCache {
             setScanForcedOff(false);
         }
         else if (account.isSpecialFolder(sfname)) {
-            setScanForcedOn(false);
-            //setScanForcedOff(true);
+            setScanForcedOn(true);
 			setScanForcedOff(false);
         }
         else {
