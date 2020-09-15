@@ -1801,7 +1801,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					*/
 				   
 				    //if archiving, reload archive branch
-					if (json.archiving) me._refreshArchiveNode(acct,json.tofolder);
+					if (json.archiving) me._refreshArchiveNode(acctto,json.tofolder);
 				} else {
 					WT.error(json.text);
 				}
