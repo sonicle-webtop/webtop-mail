@@ -57,6 +57,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		
 		var tree=Ext.create("Sonicle.webtop.mail.SimpleImapTree",{
 			mys: me.mys,
+			rootVisible: true,
 			store: me.mys.imapTree.getStore()
 		});			
 
@@ -160,8 +161,13 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		me.callParent(arguments);
 		
 		tree.on("select",function(t,n,i,eopts) {
-			btncopy.enable();
-			btnmove.enable();
+			if (n.id==="/") {
+				btncopy.disable();
+				btnmove.disable();
+			} else {
+				btncopy.enable();
+				btnmove.enable();
+			}
 			me.curnode=n;
 		});
 
