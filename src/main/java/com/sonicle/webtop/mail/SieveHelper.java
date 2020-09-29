@@ -36,9 +36,9 @@ package com.sonicle.webtop.mail;
 import com.fluffypeople.managesieve.ManageSieveClient;
 import com.fluffypeople.managesieve.ManageSieveResponse;
 import com.fluffypeople.managesieve.SieveScript;
+import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.sdk.WTException;
 import java.io.IOException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -49,20 +49,33 @@ import java.util.List;
 public class SieveHelper {
 	
 	public static ManageSieveClient createSieveClient(String host, int port, String username, String password) throws WTException {
+		return createSieveClient(host, port, username, password, null);
+	}
+	
+	public static ManageSieveClient createSieveClient(String host, int port, String username, String password, String authId) throws WTException {
+		return createSieveClient(host, port, username, password, authId, 5*1000);
+	}
+	
+	public static ManageSieveClient createSieveClient(String host, int port, String username, String password, String authId, int timeout) throws WTException {
 		ManageSieveClient client = null;
 		ManageSieveResponse resp = null;
 		
 		try {
 			client = new ManageSieveClient();
+			client.setSocketTimeout(timeout);
 			resp = client.connect(host, port);
-			if (!resp.isOk()) throw new IOException(MessageFormat.format("Can't connect to server. Reason: {0}", resp.getMessage()));
-			resp = client.authenticate(username, password);
-			if (!resp.isOk()) throw new IOException(MessageFormat.format("Could not authenticate. Reason: {0}", resp.getMessage()));
+			if (!resp.isOk()) throw new IOException(LangUtils.formatMessage("Can't connect to server. Reason: {}", resp.getMessage()));
+			if (authId != null) {
+				resp = client.authenticate(username, password, authId);
+			} else {
+				resp = client.authenticate(username, password);
+			}
+			if (!resp.isOk()) throw new IOException(LangUtils.formatMessage("Could not authenticate. Reason: {}", resp.getMessage()));
 			return client;
 			
-		} catch(Exception ex) {
+		} catch(Throwable t) {
 			logoutSieveClientQuietly(client);
-			throw new WTException(ex, "Error initializing Sieve client [{0}, {1}, {2}]", host, port, username);
+			throw new WTException(t, "Error initializing Sieve client [{}, {}, {}]", host, port, username);
 		}
 	}
 	
@@ -76,7 +89,7 @@ public class SieveHelper {
 		try {
 			List<SieveScript> scripts = new ArrayList<>();
 			resp = client.listscripts(scripts);
-			if (!resp.isOk()) throw new IOException(MessageFormat.format("Could not get list of scripts. Reason: {0}", resp.getMessage()));
+			if (!resp.isOk()) throw new IOException(LangUtils.formatMessage("Could not get list of scripts. Reason: {}", resp.getMessage()));
 			return scripts;
 			
 		} catch(Exception ex) {
@@ -99,11 +112,11 @@ public class SieveHelper {
 			SieveScript ss = new SieveScript();
 			ss.setName(name);
 			resp = client.getScript(ss);
-			if (!resp.isOk()) throw new IOException(MessageFormat.format("Could not get script. Reason: {0}", resp.getMessage()));
+			if (!resp.isOk()) throw new IOException(LangUtils.formatMessage("Could not get script. Reason: {}", resp.getMessage()));
 			return ss;
 			
 		} catch(Exception ex) {
-			throw new WTException(ex, "Error getting Sieve script [{0}]", name);
+			throw new WTException(ex, "Error getting Sieve script [{}]", name);
 		}
 	}
 	
@@ -112,10 +125,10 @@ public class SieveHelper {
 		
 		try {
 			resp = client.putscript(name, body);
-			if (!resp.isOk()) throw new IOException(MessageFormat.format("Could not put script. Reason: {0}", resp.getMessage()));
+			if (!resp.isOk()) throw new IOException(LangUtils.formatMessage("Could not put script. Reason: {}", resp.getMessage()));
 			
 		} catch(Exception ex) {
-			throw new WTException(ex, "Error writing Sieve script [{0}]", name);
+			throw new WTException(ex, "Error writing Sieve script [{}]", name);
 		}
 	}
 	
@@ -124,10 +137,10 @@ public class SieveHelper {
 		
 		try {
 			resp = client.renamescript(oldName, newName);
-			if (!resp.isOk()) throw new IOException(MessageFormat.format("Could not rename script. Reason: {0}", resp.getMessage()));
+			if (!resp.isOk()) throw new IOException(LangUtils.formatMessage("Could not rename script. Reason: {}", resp.getMessage()));
 			
 		} catch(Exception ex) {
-			throw new WTException(ex, "Error renaming Sieve script [{0} -> {1}]", oldName, newName);
+			throw new WTException(ex, "Error renaming Sieve script [{} -> {}]", oldName, newName);
 		}
 	}
 	
@@ -136,10 +149,10 @@ public class SieveHelper {
 		
 		try {
 			resp = client.setactive(name);
-			if (!resp.isOk()) throw new IOException(MessageFormat.format("Unable to activate script. Reason: {0}", resp.getMessage()));
+			if (!resp.isOk()) throw new IOException(LangUtils.formatMessage("Unable to activate script. Reason: {}", resp.getMessage()));
 			
 		} catch(Exception ex) {
-			throw new WTException(ex, "Error activating Sieve script [{0}]", name);
+			throw new WTException(ex, "Error activating Sieve script [{}]", name);
 		}
 	}
 }

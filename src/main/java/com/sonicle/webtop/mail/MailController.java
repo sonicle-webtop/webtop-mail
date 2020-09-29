@@ -78,6 +78,8 @@ public class MailController extends BaseController implements IControllerService
 		CoreManager coreMgr = WT.getCoreManager(profileId);
 		String dirScheme = coreMgr.getAuthDirectoryScheme();
 		if (WebTopDirectory.SCHEME.equals(dirScheme) || LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
+			MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, profileId.getDomainId());
+			
 			// Defines the mailbox's username
 			String mailboxUser = null;
 			if (LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
@@ -88,7 +90,6 @@ public class MailController extends BaseController implements IControllerService
 			
 			// Creates the Cyrus mailbox
 			try {
-				MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, profileId.getDomainId());
 				String host = mss.getDefaultHost();
 				int port = mss.getDefaultPort();
 				String protocol = mss.getDefaultProtocol();
@@ -98,8 +99,18 @@ public class MailController extends BaseController implements IControllerService
 				CyrusManager cyrMgr = new CyrusManager(host, port, protocol, adminUser, adminPassword, WT.getProperties());
 				cyrMgr.addMailbox(mailboxUser);
 
-			} catch(MessagingException ex) {
-				throw new WTException("Unable to create user's mailbox [{}]", mailboxUser, ex);
+			} catch(Throwable t) {
+				throw new WTException(t, "Unable to create user's mailbox [{}]", mailboxUser);
+			}
+			
+			// Initialize (create & activate) default Sieve script (eg. for SPAM rule)
+			MailManager mailMgr = (MailManager)WT.getServiceManager(SERVICE_ID, true, profileId);
+			try {
+				mailMgr.setSieveConfiguration(mss.getDefaultHost(), mss.getSievePort(), mss.getAdminUser(), mss.getAdminPassword(), mailboxUser);
+				mailMgr.initDefaultSieveScript();
+				
+			} catch(Throwable t) {
+				throw new WTException(t, "Unable to initialize Sieve script [{}]");
 			}
 		}
 		//TODO: maybe add here the default directory structure

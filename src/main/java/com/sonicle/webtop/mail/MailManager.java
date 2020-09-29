@@ -123,9 +123,9 @@ public class MailManager extends BaseManager implements IMailManager {
 		super(fastInit, targetProfileId);
 	}
 	
-	public void setSieveConfiguration(String host, int port, String username, String password) {
+	public void setSieveConfiguration(String host, int port, String username, String password, String authId) {
 		//TODO: portare i parametri (host,port,user,pass) nel manager
-		this.sieveConfig = new SieveConfig(host, port, username, password);
+		this.sieveConfig = new SieveConfig(host, port, username, password, authId);
 	}
 	
 	@Override
@@ -960,6 +960,14 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
+	public void initDefaultSieveScript() throws WTException {
+		List<com.fluffypeople.managesieve.SieveScript> scripts = listSieveScripts();
+		String activeScript = ManagerUtils.findActiveScriptName(scripts);
+		if (StringUtils.isBlank(activeScript)) {
+			applySieveScript(true);
+		}
+	}
+	
 	public List<SieveScript> listSieveScripts() throws WTException {
 		ManageSieveClient client = null;
 		
@@ -1044,7 +1052,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	private ManageSieveClient createSieveClient() throws WTException {
 		if (sieveConfig == null) throw new WTException("SieveConfiguration not defined. Please call setSieveConfiguration(...) before using Sieve!");
-		return SieveHelper.createSieveClient(sieveConfig.getHost(), sieveConfig.getPort(), sieveConfig.getUsername(), sieveConfig.getPassword());
+		return SieveHelper.createSieveClient(sieveConfig.getHost(), sieveConfig.getPort(), sieveConfig.getUsername(), sieveConfig.getPassword(), sieveConfig.getAuthId());
 	}
 	
 	private String buildSieveScriptHeader() {
@@ -1121,12 +1129,14 @@ public class MailManager extends BaseManager implements IMailManager {
 		private int port;
 		private String username;
 		private char[] password;
+		private String authId;
 		
-		public SieveConfig(String host, int port, String username, String password) {
+		public SieveConfig(String host, int port, String username, String password, String authId) {
 			this.host = host;
 			this.port = port;
 			this.username = username;
 			this.password = password.toCharArray();
+			this.authId = authId;
 		}
 
 		public String getHost() {
@@ -1143,6 +1153,10 @@ public class MailManager extends BaseManager implements IMailManager {
 
 		public String getPassword() {
 			return new String(password);
+		}
+		
+		public String getAuthId() {
+			return authId;
 		}
 	}
 	

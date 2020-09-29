@@ -316,12 +316,18 @@ public class Service extends BaseService {
 				//session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
 				//mailUsername=ss.getAdminUser();
 				//mailPassword=ss.getAdminPassword();
+				mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), ss.getAdminUser(), ss.getAdminPassword(), mailUsername);
+				
 			} else {
 				mailUsername+="*vmail";
 				mailPassword=vmailSecret;
+				mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword, null);
 			}
+			
+		} else {
+			mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword, null);
 		}
-		mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword);
+		
 		fcProvided = new FolderCache(this, environment);
 		
 		previewBalanceTags=ss.isPreviewBalanceTags();
@@ -8798,7 +8804,7 @@ public class Service extends BaseService {
 				try {
 					List<com.fluffypeople.managesieve.SieveScript> scripts = mailManager.listSieveScripts();
 					scriptCount = scripts.size();
-					activeScript = findActiveScriptName(scripts);
+					activeScript = ManagerUtils.findActiveScriptName(scripts);
 				} catch(WTException ex1) {
 					logger.warn("Error reading active script", ex1);
 				}
@@ -8863,13 +8869,6 @@ public class Service extends BaseService {
 			logger.error("Error in EditEmailSubject", ex);
 			new JsonResult(ex).printTo(out);
 		}
-	}
-	
-	private String findActiveScriptName(List<com.fluffypeople.managesieve.SieveScript> scripts) {
-		for (com.fluffypeople.managesieve.SieveScript script : scripts) {
-			if (script.isActive()) return script.getName();
-		}
-		return null;
 	}
 	
 	private class OnUploadCloudFile implements IServiceUploadStreamListener {
