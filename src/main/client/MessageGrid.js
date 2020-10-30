@@ -811,6 +811,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				bodyStyle: {
 					borderTopColor: 'transparent'
 				},
+				overflowHandler: 'scroller',
 				items: tbitems
 			});			
 		}

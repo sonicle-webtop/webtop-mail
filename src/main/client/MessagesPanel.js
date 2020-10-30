@@ -375,6 +375,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             border: false,
 			tbar: Ext.create('Ext.toolbar.Toolbar',{
 				hidden: true,
+				enableOverflow: true,
 				items: [
 					me.getAct("reply"),
 					me.getAct("replyall"),
