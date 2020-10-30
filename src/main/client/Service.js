@@ -1258,7 +1258,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this,ident;
 		
 		if(opts.identityId) {
-			ident = me.getIdentityFromId(opts.identityId)
+			ident = me.getIdentityFromId(opts.identityId);
 		} else {
 			ident = me.getFolderIdentity(idfolder);
 		}
@@ -1288,6 +1288,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				fontFace: me.getVar('fontName'),
 				fontSize: me.getVar('fontSize'),
 				fontColor: me.getVar('fontColor'),
+				//format: opts.format, //TODO: is necessary take format from opts???
+				format: me.getVar('format'),
 				autosave: true,
 				showSave: !opts.fax,
 				showReceipt: !opts.fax,

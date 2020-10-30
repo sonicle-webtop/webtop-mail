@@ -36,36 +36,39 @@ package com.sonicle.webtop.mail.bol.js;
 import com.sonicle.commons.web.json.JsonResult;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  *
- * @author malbinola
+ * @author gabriele.bulfon
  */
-public class JsQuickPart {
-	public String name;
-	public String html;
+public class JsQuickPartModel {
+
+	public String id = null;
+	public String html = null;
 	
-	public JsQuickPart(String name, String html) {
-		this.name = name;
-		this.html = html;
+	public JsQuickPartModel(String id, String html) {
+		this.id=id;
+		this.html=html;
 	}
 	
-	public static List toList(HashMap<String, String> map) {
+	public static List asList(HashMap<String,String> map) {
 		List values = new List();
-		for (Map.Entry<String, String> entry : map.entrySet()) {
-			values.add(new JsQuickPart(entry.getKey(), entry.getValue()));
+		for(Entry<String,String> entry: map.entrySet()) {
+			values.add(new JsQuickPartModel(entry.getKey(), entry.getValue()));
 		}
 		return values;
 	}
 	
-	public static class List extends ArrayList<JsQuickPart> {
-		public static JsQuickPart.List fromJson(String value) {
-			return JsonResult.gson.fromJson(value, JsQuickPart.List.class);
+	public static class List extends ArrayList<JsQuickPartModel> {
+		public List() {
+			super();
 		}
-
-		public static String toJson(JsQuickPart.List value) {
-			return JsonResult.gson.toJson(value, JsQuickPart.List.class);
+		
+		public static List fromJson(String value) {
+			if(value == null) return null;
+			return JsonResult.gson.fromJson(value, List.class);
 		}
 	}
+	
 }

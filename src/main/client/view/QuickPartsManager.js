@@ -32,6 +32,10 @@
  * the words "Powered by Sonicle WebTop".
  */
 
+/**
+ * 
+ * Remove this Class (and related) when useNewHTMLEditor is no more necessary!
+ */
 Ext.define('Sonicle.webtop.mail.view.QuickPartsManager', {
 	extend: 'WTA.sdk.DockableView',
 	requires: [

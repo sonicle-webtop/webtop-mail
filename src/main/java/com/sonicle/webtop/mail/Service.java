@@ -104,7 +104,7 @@ import com.sonicle.webtop.mail.bol.js.JsMailAutosave;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsPortletSearchResult;
 import com.sonicle.webtop.mail.bol.js.JsPreviewMessage;
-import com.sonicle.webtop.mail.bol.js.JsQuickPart;
+import com.sonicle.webtop.mail.bol.js.JsQuickPartModel;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSharing;
 import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
@@ -150,10 +150,13 @@ import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTimeZone;
 import com.sonicle.commons.qbuilders.conditions.Condition;
 import com.sonicle.commons.web.ParameterException;
+import com.sonicle.commons.web.json.PayloadAsList;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
+import com.sonicle.webtop.core.app.servlet.js.BlobInfoPayload;
 import com.sonicle.webtop.core.model.Tag;
+import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.text.Normalizer;
 import java.util.stream.Collectors;
@@ -5504,80 +5507,85 @@ public class Service extends BaseService {
 		}
 	}
 	
-	public void processManageQuickParts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String crud = null;
-			HashMap<String,String> items;
+	public void processUploadBlobInfo(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		
 		try {
-			crud = ServletUtils.getStringParameter(request, "crud", true);
-			if (crud.equals(Crud.READ)) {
-				items = us.getMessageQuickParts();
-				new JsonResult(JsQuickPart.asList(items)).printTo(out);
-
-			} else if (crud.equals(Crud.CREATE)) {
-				String id = ServletUtils.getStringParameter(request, "id", true);
-				String html = ServletUtils.getStringParameter(request, "html", true);
-				us.setMessageQuickPart(id, html);
-
-				items = us.getMessageQuickParts();
-				new JsonResult(JsQuickPart.asList(items)).printTo(out);
-
-			} else if (crud.equals(Crud.DELETE)) {
-				Payload<MapItem, JsQuickPart> pl = ServletUtils.getPayload(request, JsQuickPart.class);
-				us.deleteMessageQuickPart(pl.data.id);
-
-				new JsonResult().printTo(out);
-			}
-		} catch (Exception ex) {
-		   logger.error("Error managing quickparts", ex);
-		   new JsonResult(false, "Error managing quickparts").printTo(out);
+			String tag = ServletUtils.getStringParameter(request, "tag", true);
+			Payload<MapItem, BlobInfoPayload> payload = ServletUtils.getPayload(request, BlobInfoPayload.class);
+			
+			UploadedFile upfile = addAsUploadedFile(tag, payload.data);
+			new JsonResult(upfile.getUploadId()).printTo(out);
+			
+		} catch(Throwable t) {
+			logger.error("Error in UploadBlobInfo", t);
+			new JsonResult(t).printTo(out);
 		}
 	}
 	
-	/*public void processManageTags(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		String crud = null;
-			List<JsTag> items;
-		try {
-			MailAccount account=getAccount(request);
-			crud = ServletUtils.getStringParameter(request, "crud", true);
-			if (crud.equals(Crud.READ)) {
-				items=new ArrayList<>();
-				for(Tag t: atags) items.add(new JsTag(t.getTagId(),t.getDescription(),t.getColor()));	
-                new JsonResult(items).printTo(out);
-			} else if (crud.equals(Crud.CREATE)) {
-				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
-				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
-			    tag.setTagId(mailManager.sanitazeTagId(tag.getTagId()));
-				mailManager.addTag(tag);
-				loadTags();
-				
-				items=new ArrayList<>();
-				items.add(new JsTag(tag.getTagId(),tag.getDescription(),tag.getColor()));
-				new JsonResult(items).printTo(out);
-			} else if (crud.equals(Crud.UPDATE)) {
-				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
-				Tag tag=new Tag(pl.data.tagId,pl.data.description,pl.data.color);
-				String newTagId=tag.getDescription();
-				String oldTagId=tag.getTagId();
-			    newTagId=mailManager.sanitazeTagId(newTagId);				
-				mailManager.updateTag(tag,newTagId);
-				mailManager.updateFoldersTag(oldTagId, newTagId, account.getFolderCacheValues(), null, false);
-				loadTags();
-				
-				items=new ArrayList<>();
-				items.add(new JsTag(tag.getTagId(),tag.getDescription(),tag.getColor()));
-				new JsonResult(items).printTo(out);
-			} else if (crud.equals(Crud.DELETE)) {
-				Payload<MapItem, JsTag> pl = ServletUtils.getPayload(request, JsTag.class);
-				mailManager.removeTag(pl.data.tagId);
-				loadTags();
+	public void processManageQuickParts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		if (cus.getUseNewHTMLEditor()) {
+			try {
+				String crud = ServletUtils.getStringParameter(request, "crud", true);
+				if (crud.equals(Crud.READ)) {
+					List<JsQuickPart> items = JsQuickPart.toList(us.getMessageQuickParts());
+					new JsonResult(items, items.size()).printTo(out);
 
-				new JsonResult().printTo(out);
+				} else if (crud.equals(Crud.CREATE)) {
+					PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
+					List<JsQuickPart> items = new ArrayList<>();
+					for (JsQuickPart jsqp : pl.data) {
+						us.setMessageQuickPart(jsqp.name, jsqp.html);
+						items.add(jsqp);
+					}
+					new JsonResult(items, items.size()).printTo(out);
+
+				} else if (crud.equals(Crud.UPDATE)) {
+					PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
+					for (JsQuickPart jsqp : pl.data) {
+						us.setMessageQuickPart(jsqp.name, jsqp.html);
+					}
+					new JsonResult().printTo(out);
+
+				} else if (crud.equals(Crud.DELETE)) {
+					PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
+					for (JsQuickPart jsqp : pl.data) {
+						us.deleteMessageQuickPart(jsqp.name);
+					}
+					new JsonResult().printTo(out);
+				}
+
+			} catch(Throwable t) {
+				logger.error("Error in ManageQuickParts", t);
+				new JsonResult(t).printTo(out);
 			}
-		} catch (Exception ex) {
-		   logger.error("Error managing tags", ex);
-		   new JsonResult(false, "Error managing tags").printTo(out);
+			
+		} else {
+			try {
+				String crud = ServletUtils.getStringParameter(request, "crud", true);
+				if (crud.equals(Crud.READ)) {
+					HashMap<String,String> items = us.getMessageQuickParts();
+					new JsonResult(JsQuickPartModel.asList(items)).printTo(out);
+
+				} else if (crud.equals(Crud.CREATE)) {
+					String id = ServletUtils.getStringParameter(request, "id", true);
+					String html = ServletUtils.getStringParameter(request, "html", true);
+					us.setMessageQuickPart(id, html);
+
+					HashMap<String,String> items = us.getMessageQuickParts();
+					new JsonResult(JsQuickPartModel.asList(items)).printTo(out);
+
+				} else if (crud.equals(Crud.DELETE)) {
+					Payload<MapItem, JsQuickPartModel> pl = ServletUtils.getPayload(request, JsQuickPartModel.class);
+					us.deleteMessageQuickPart(pl.data.id);
+
+					new JsonResult().printTo(out);
+				}
+			} catch (Exception ex) {
+			   logger.error("Error managing quickparts", ex);
+			   new JsonResult(false, "Error managing quickparts").printTo(out);
+			}
 		}
-	}*/
+	}
 	
 	public void processTagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);

@@ -43,6 +43,7 @@ import com.sonicle.webtop.core.sdk.UserProfileId;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -467,9 +468,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public String getFontName() {
-		String s=getString(FONT_NAME,null);
-		if (s==null) s=mss.getDefaultFontName();
-		return s;
+		String s = getString(FONT_NAME, null);
+		if (s == null) s = mss.getDefaultFontName();
+		return StringUtils.trim(s);
 	}
 	
 	public boolean setFontName(String fontname) {
@@ -477,8 +478,8 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public int getFontSize() {
-		Integer i=getInteger(FONT_SIZE,null);
-		if (i==null) i=mss.getDefaultFontSize();
+		Integer i = getInteger(FONT_SIZE, null);
+		if (i == null) i = mss.getDefaultFontSize();
 		return i;
 	}
 	

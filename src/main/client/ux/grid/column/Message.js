@@ -376,7 +376,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		if (completed) {
 			glyphCls = glyphClsMap['complete'];
 			colorCls = colorClsMap[key];
-			tip = Ext.String.format('{0} ({1})', textMap[key], Sonicle.String.toLowerCase(textMap['complete']));
+			tip = Ext.String.format('{0} ({1})', textMap[key], Sonicle.String.lower(textMap['complete']));
 		} else {
 			glyphCls = (['special', 'complete'].indexOf(key) !== -1) ? glyphClsMap[key] : glyphClsMap['flag'];
 			colorCls = colorClsMap[key];

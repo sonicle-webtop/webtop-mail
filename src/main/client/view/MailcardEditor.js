@@ -36,7 +36,10 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 	extend: 'WTA.sdk.DockableView',
 	requires: [
 		'Sonicle.webtop.mail.model.Mailcard',
-		'Sonicle.webtop.core.ux.field.HTMLEditor'
+		'Sonicle.webtop.core.ux.field.HTMLEditor', // Remove this line when useNewHTMLEditor is no more necessary!
+		'Sonicle.webtop.core.ux.field.htmleditor.Field',
+		'Sonicle.webtop.core.ux.field.htmleditor.PublicImageTool',
+		'Sonicle.webtop.core.ux.field.htmleditor.VariableTool'
 	],
 	
 	dockableConfig: {
@@ -75,120 +78,182 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 		
 		me.callParent(arguments);
 		
-		me.add({
-			xtype: 'wthtmleditor',
-			reference: 'fldhtmleditor',
-			region: 'center',
-			enableFont: true,
-			enableFontSize: true,
-			enableFormat: true,
-			enableColors: true,
-			enableAlignments: false,
-			enableLinks: false,
-			enableLists: false,
-			enableSourceEdit: true,
-			enableClean: false,
-			enableUrlImages: true,
-			initialContent: me.html,
-			customButtons: [
-				'-',
-				Ext.create("Ext.button.Button",{
-					tabIndex: -1,
-					iconCls: 'wtmail-icon-htmleditor-template-xs',
-					tooltip: {
-						title: me.res('opts.mailcard-editor.b-tpl.tit'),
-						text: me.res('opts.mailcard-editor.b-tpl.tip')
-					},
-					menu: Ext.create("Ext.menu.Menu",{
-						listeners: {
-							click: function(mnu,itm) {
-								if (itm) me.lref("fldhtmleditor").execCommand('inserthtml', false, '{'+itm.text+'}');
-							}
-						},
-						items: [
-							{
-								text: 'TITLE',
-								tooltip: me.res('opts.mailcard-editor.tpl.title')
-							},
-							{
-								text: 'FIRST_NAME',
-								tooltip: me.res('opts.mailcard-editor.tpl.firstname')
-							},
-							{
-								text: 'LAST_NAME',
-								tooltip: me.res('opts.mailcard-editor.tpl.lastname')
-							},
-							{
-								text: 'COMPANY',
-								tooltip: me.res('opts.mailcard-editor.tpl.company')
-							},
-							{
-								text: 'FUNCTION',
-								tooltip: me.res('opts.mailcard-editor.tpl.function')
-							},
-							{
-								text: 'EMAIL',
-								tooltip: me.res('opts.mailcard-editor.tpl.workemail')
-							},
-							{
-								text: 'MOBILE',
-								tooltip: me.res('opts.mailcard-editor.tpl.workmobile')
-							},
-							{
-								text: 'TELEPHONE',
-								tooltip: me.res('opts.mailcard-editor.tpl.worktelephone')
-							},
-							{
-								text: 'FAX',
-								tooltip: me.res('opts.mailcard-editor.tpl.workfax')
-							},
-							{
-								text: 'CUSTOM_1',
-								tooltip: me.res('opts.mailcard-editor.tpl.custom1')
-							},
-							{
-								text: 'CUSTOM_2',
-								tooltip: me.res('opts.mailcard-editor.tpl.custom2')
-							},
-							{
-								text: 'CUSTOM_3',
-								tooltip: me.res('opts.mailcard-editor.tpl.custom3')
-							}
-						]
-					})
-				}),
-				Ext.create("Ext.button.Button",{
-					tabIndex: -1,
-					iconCls: 'wt-icon-format-insertimageurl-xs',
-					tooltip: {
-						title: me.res('editor.pubimg.tit'),
-						text: me.res('editor.pubimg.tip')
-					},
-					menu: {
-						xtype: 'sostoremenu',
+		if (WT.getVar('useNewHTMLEditor')) {
+			me.add({
+				region: 'center',
+				xtype: 'wthtmleditor',
+				reference: 'fldhtmleditor',
+				pasteAllowBlobImages: true,
+				uploadBlobImages: false,
+				enableFont: true,
+				enableFontSize: true,
+				enableColors: true,
+				enableFormats: true,
+				enableAlignments: true,
+				enableLists: true,
+				enableEmoticons: true,
+				enableSymbols: true,
+				enableLink: true,
+				enableImage: true,
+				imageConfig: {
+					insertImageFile: false
+				},
+				enableTable: true,
+				enableDevTools: true,
+				devToolsConfig: {
+					codeSample: false
+				},
+				customTools: {
+					publicimage: {
+						xtype: 'wt-htmleditortoolpublicimage',
 						store: Ext.create('WTA.store.PublicImages', {
 							autoLoad: true,
 							domainId: me.domainId
 						}),
-						textField: 'desc',
-						listeners: {
-							click: {
-								fn: function(mnu,itm) {
-									if (itm) {
-										me.lref("fldhtmleditor").execCommand(
-											'insertimage', 
-											false, 
-											encodeURI(mnu.store.getById(itm.itemId).get('url'))
-										);	
-									}
+						nameField: 'desc'
+					},
+					variable: {
+						xtype: 'wt-htmleditortoolvariable',
+						store: {
+							autoLoad: true,
+							fields: ['name', 'info'],
+							data: [
+								['TITLE', me.res('opts.mailcard-editor.tpl.title')],
+								['FIRST_NAME', me.res('opts.mailcard-editor.tpl.firstname')],
+								['LAST_NAME', me.res('opts.mailcard-editor.tpl.lastname')],
+								['COMPANY', me.res('opts.mailcard-editor.tpl.company')],
+								['FUNCTION', me.res('opts.mailcard-editor.tpl.function')],
+								['EMAIL', me.res('opts.mailcard-editor.tpl.workemail')],
+								['MOBILE', me.res('opts.mailcard-editor.tpl.workmobile')],
+								['TELEPHONE', me.res('opts.mailcard-editor.tpl.worktelephone')],
+								['FAX', me.res('opts.mailcard-editor.tpl.workfax')],
+								['CUSTOM_1', me.res('opts.mailcard-editor.tpl.custom1')],
+								['CUSTOM_2', me.res('opts.mailcard-editor.tpl.custom2')],
+								['CUSTOM_3', me.res('opts.mailcard-editor.tpl.custom3')],
+								['TITLE', me.res('opts.mailcard-editor.tpl.title')]
+							]
+						},
+						tooltipField: 'info'
+					}
+				},
+				value: me.html
+			});
+			
+		} else {
+			me.add({
+				xtype: 'wthtmleditor_old',
+				reference: 'fldhtmleditor',
+				region: 'center',
+				enableFont: true,
+				enableFontSize: true,
+				enableFormat: true,
+				enableColors: true,
+				enableAlignments: false,
+				enableLinks: false,
+				enableLists: false,
+				enableSourceEdit: true,
+				enableClean: false,
+				enableUrlImages: true,
+				initialContent: me.html,
+				customButtons: [
+					'-',
+					Ext.create("Ext.button.Button",{
+						tabIndex: -1,
+						iconCls: 'wtmail-icon-htmleditor-template-xs',
+						tooltip: {
+							title: me.res('opts.mailcard-editor.b-tpl.tit'),
+							text: me.res('opts.mailcard-editor.b-tpl.tip')
+						},
+						menu: Ext.create("Ext.menu.Menu",{
+							listeners: {
+								click: function(mnu,itm) {
+									if (itm) me.lref("fldhtmleditor").execCommand('inserthtml', false, '{'+itm.text+'}');
+								}
+							},
+							items: [
+								{
+									text: 'TITLE',
+									tooltip: me.res('opts.mailcard-editor.tpl.title')
 								},
-								scope: this
+								{
+									text: 'FIRST_NAME',
+									tooltip: me.res('opts.mailcard-editor.tpl.firstname')
+								},
+								{
+									text: 'LAST_NAME',
+									tooltip: me.res('opts.mailcard-editor.tpl.lastname')
+								},
+								{
+									text: 'COMPANY',
+									tooltip: me.res('opts.mailcard-editor.tpl.company')
+								},
+								{
+									text: 'FUNCTION',
+									tooltip: me.res('opts.mailcard-editor.tpl.function')
+								},
+								{
+									text: 'EMAIL',
+									tooltip: me.res('opts.mailcard-editor.tpl.workemail')
+								},
+								{
+									text: 'MOBILE',
+									tooltip: me.res('opts.mailcard-editor.tpl.workmobile')
+								},
+								{
+									text: 'TELEPHONE',
+									tooltip: me.res('opts.mailcard-editor.tpl.worktelephone')
+								},
+								{
+									text: 'FAX',
+									tooltip: me.res('opts.mailcard-editor.tpl.workfax')
+								},
+								{
+									text: 'CUSTOM_1',
+									tooltip: me.res('opts.mailcard-editor.tpl.custom1')
+								},
+								{
+									text: 'CUSTOM_2',
+									tooltip: me.res('opts.mailcard-editor.tpl.custom2')
+								},
+								{
+									text: 'CUSTOM_3',
+									tooltip: me.res('opts.mailcard-editor.tpl.custom3')
+								}
+							]
+						})
+					}),
+					Ext.create("Ext.button.Button",{
+						tabIndex: -1,
+						iconCls: 'wt-icon-format-insertimageurl-xs',
+						tooltip: {
+							title: me.res('editor.pubimg.tit'),
+							text: me.res('editor.pubimg.tip')
+						},
+						menu: {
+							xtype: 'sostoremenu',
+							store: Ext.create('WTA.store.PublicImages', {
+								autoLoad: true,
+								domainId: me.domainId
+							}),
+							textField: 'desc',
+							listeners: {
+								click: {
+									fn: function(mnu,itm) {
+										if (itm) {
+											me.lref("fldhtmleditor").execCommand(
+												'insertimage', 
+												false, 
+												encodeURI(mnu.store.getById(itm.itemId).get('url'))
+											);	
+										}
+									},
+									scope: this
+								}
 							}
 						}
-					}
-				})
-			]			
-		});
+					})
+				]			
+			});
+		}
 	}
-	
 });

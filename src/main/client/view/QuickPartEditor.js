@@ -32,6 +32,10 @@
  * the words "Powered by Sonicle WebTop".
  */
 
+/**
+ * 
+ * Remove this Class (and related) when useNewHTMLEditor is no more necessary!
+ */
 Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 	extend: 'WTA.sdk.DockableView',
 	requires: [
@@ -69,7 +73,7 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 		me.callParent(arguments);
 		
 		me.add({
-			xtype: 'wthtmleditor',
+			xtype: 'wthtmleditor_old',
 			reference: 'fldhtmleditor',
 			region: 'center',
 			enableFont: true,

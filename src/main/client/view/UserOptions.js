@@ -36,6 +36,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	requires: [
 		'Sonicle.form.Separator',
 		'Sonicle.form.field.Palette',
+		'WTA.store.Fonts',
 		'WTA.store.MailboxProtocols',
 		'Sonicle.webtop.mail.model.ServiceVars',
 		'Sonicle.webtop.mail.model.Identity',
@@ -48,6 +49,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		'Sonicle.webtop.mail.model.ExternalAccountProvider'
 	],
 	uses: [
+		'Sonicle.form.field.tinymce.tool.FontSelect',
 		'Sonicle.webtop.mail.view.MailcardEditor'
 	],
 	
@@ -239,11 +241,15 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					width: 350,
 					needReload: true,
 					listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-				}), WTF.lookupCombo('id', 'desc', {
+				}), WTF.lookupCombo('id', 'id', {
 					bind: '{record.font}',
-					store: Ext.create('WTA.store.TxtFont', {
+					store: {
+						type: 'wtfonts',
 						autoLoad: true
-					}),
+					},
+					listConfig: {
+						getInnerTpl: Sonicle.form.field.tinymce.tool.FontSelect.buildInnerTpl('id', 'desc')
+					},
 					needReload: true,
 					fieldLabel: WT.res('word.font'),
 					width: 400,
@@ -252,6 +258,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					xtype: 'numberfield',
 					bind: '{record.fontSize}',
 					fieldLabel: WT.res('word.size'),
+					minValue: 0,
+					maxValue: 100,
 					width: 230,
 					hideTrigger: true,
 					keyNavEnabled: false,
