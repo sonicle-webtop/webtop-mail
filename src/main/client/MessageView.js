@@ -779,6 +779,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     doc.write(me.htmlparts[xi]);
                     doc.close();
                     if (doc.body) {
+						me._fixTables(doc.body);
                         me.adjustIframe(xif.name);
                         donedoc=true;
                     }
@@ -804,6 +805,15 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             if (!provider) me.fireEvent('messageviewed',params.idmessage,me.proxy.getReader().rawData.millis,me.workflow);
         }
     },
+	
+	_fixTables: function(rootEl) {
+		Ext.each(Ext.dom.Query.select("table",rootEl),function(el) {
+			if (el.getAttribute('height') === '100%' || (el.style || {}).height === '100%') {
+				el.setAttribute('height', '');
+				Ext.get(el).setStyle('height', 'initial');
+			}
+		});
+	},
 	
     createRule: function(email,type) {
 		var me=this,context="INBOX";
@@ -1114,6 +1124,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             return;
         }
 
+		me._fixTables(doc.body);
+		
 		var xstyle=doc.createElement('style');
 		xstyle.type='text/css';
 		xstyle.appendChild(doc.createTextNode(
