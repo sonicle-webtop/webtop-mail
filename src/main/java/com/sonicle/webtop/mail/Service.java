@@ -640,50 +640,69 @@ public class Service extends BaseService {
 		return mailData.getAttachmentPart(idattach).getInputStream();
 	}
 	
+	@Override
 	public void processManageAutosave(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		super.processManageAutosave(request, response, out);
-		long msgId=Long.parseLong(request.getParameter("key"));
-		String value=request.getParameter("value");
-		JsMailAutosave jsmas=JsonResult.GSON_PLAIN_WONULLS.fromJson(value, JsMailAutosave.class);
-
-		//save also in drafts
+		
 		try {
-			Identity id=mailManager.findIdentity(jsmas.identityId);
-			MailAccount account=getAccount(id);
-			JsMessage jsmsg=new JsMessage();
-			jsmsg.content=jsmas.content;
-			jsmsg.folder=jsmas.folder;
-			jsmsg.format=jsmas.format;
-			jsmsg.forwardedfolder=jsmas.forwardedfolder;
-			jsmsg.forwardedfrom=jsmas.forwardedfrom;
-			jsmsg.from=id.getDisplayName()+" <"+id.getEmail()+">";
-			jsmsg.identityId=jsmas.identityId;
-			jsmsg.inreplyto=jsmas.inreplyto;
-			jsmsg.origuid=jsmas.origuid;
-			jsmsg.priority=jsmas.priority;
-			jsmsg.receipt=jsmas.receipt;			
-			jsmsg.recipients=new ArrayList<JsRecipient>();
-			for(int r=0;r<jsmas.recipients.size();++r) {
-				JsRecipient jsr=new JsRecipient();
-				jsr.email=jsmas.recipients.get(r);
-				jsr.rtype=jsmas.rtypes.get(r);
-				jsmsg.recipients.add(jsr);
-			}
-			jsmsg.references=jsmas.references;
-			jsmsg.replyfolder=jsmas.replyfolder;
-			jsmsg.subject=jsmas.subject;
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			String cntx = ServletUtils.getStringParameter(request, "context", true);
+			if ("newmail".equals(cntx) && crud.equals(Crud.UPDATE)) {
+				String key = ServletUtils.getStringParameter(request, "key", true);
+				Payload<MapItem, JsMailAutosave> pl = ServletUtils.getPayload(request, JsMailAutosave.class, true);
+				
+				CoreManager core = WT.getCoreManager();
+				String cid = getEnv().getClientTrackingID();
+				long msgId = Long.parseLong(key);
+				core.updateMyAutosaveData(cid, SERVICE_ID, cntx, key, pl.raw);
+				
+				try {
+					Identity id=mailManager.findIdentity(pl.data.identityId);
+					MailAccount account=getAccount(id);
+					JsMessage jsmsg=new JsMessage();
+					jsmsg.content=pl.data.content;
+					jsmsg.folder=pl.data.folder;
+					jsmsg.format=pl.data.format;
+					jsmsg.forwardedfolder=pl.data.forwardedfolder;
+					jsmsg.forwardedfrom=pl.data.forwardedfrom;
+					jsmsg.from=id.getDisplayName()+" <"+id.getEmail()+">";
+					jsmsg.identityId=pl.data.identityId;
+					jsmsg.inreplyto=pl.data.inreplyto;
+					jsmsg.origuid=pl.data.origuid;
+					jsmsg.priority=pl.data.priority;
+					jsmsg.receipt=pl.data.receipt;			
+					jsmsg.recipients=new ArrayList<>();
+					for(int r=0;r<pl.data.recipients.size();++r) {
+						JsRecipient jsr=new JsRecipient();
+						jsr.email=pl.data.recipients.get(r);
+						jsr.rtype=pl.data.rtypes.get(r);
+						jsmsg.recipients.add(jsr);
+					}
+					jsmsg.references=pl.data.references;
+					jsmsg.replyfolder=pl.data.replyfolder;
+					jsmsg.subject=pl.data.subject;
 
-			SimpleMessage msg = prepareMessage(jsmsg,msgId,true,false,true);
-			account.checkStoreConnected();
-			FolderCache fc = account.getFolderCache(account.getFolderDrafts());
+					SimpleMessage msg = prepareMessage(jsmsg,msgId,true,false,true);
+					account.checkStoreConnected();
+					FolderCache fc = account.getFolderCache(account.getFolderDrafts());
+					
+					//find and delete old draft for this msgid
+					account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
+
+					msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
+					Exception exc = saveMessage(msg, null, fc);
+					
+				} catch(Exception exc) {
+					logger.debug("Error on autosave in drafts!",exc);
+				}
+				new JsonResult().printTo(out);
+				
+			} else {
+				super.processManageAutosave(request, response, out);
+			}
 			
-			//find and delete old draft for this msgid
-			account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
-			
-			msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
-			Exception exc = saveMessage(msg, null, fc);
-		} catch(Exception exc) {
-			logger.debug("Error on autosave in drafts!",exc);
+		} catch (Throwable t) {
+			logger.error("Error in ManageAutosave", t);
+			new JsonResult(t).printTo(out);
 		}
 	}	
 	
