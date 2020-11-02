@@ -1218,9 +1218,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				params: {
 					crud: "update",
 					context: "newmail",
-					key: me.msgId,
-					value: Ext.encode(mailparams)
+					key: me.msgId
 				},
+				jsonData: mailparams,
 				callback: function(success,json) {
 					if (success) {
 						// me.mys can be null in case of callback after view closing
