@@ -98,6 +98,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(EXTERNAL_ACCOUNT_ENABLED, false);
 	}
 	
+	public String getInlineableMimeTypes() {
+		return getString(INLINEABLE_MIME_TYPES,null);
+	}
+	
     public boolean isAutocreateSpecialFolders() {
         return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);
     }

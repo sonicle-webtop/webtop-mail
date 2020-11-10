@@ -178,6 +178,13 @@ public class MailSettings {
 	public static final String AUTH_USER_STRIP_DOMAIN = "auth.user.strip.domain";
 
 	/**
+	 * [system+domain]
+	 * [string]
+	 * comma separated list of mime types for parts not to be considered as attachments when stated as inline.
+	 */
+	public static final String INLINEABLE_MIME_TYPES = "inlineable.mime.types";
+	
+	/**
 	 * [system+domain][default]
 	 * [string]
 	 * Transform WebTop Public Resource links (e.g. Public images for mailcards) into attached inline images (cids).
