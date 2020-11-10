@@ -254,7 +254,7 @@ public class Service extends BaseService {
 	
 	private FolderCache fcProvided = null;
 	
-	private static ArrayList<String> inlineableMimes = new ArrayList<String>();
+	private ArrayList<String> inlineableMimes = new ArrayList<String>();
 	
 	private HashMap<Long, ArrayList<CloudAttachment>> msgcloudattach = new HashMap<Long, ArrayList<CloudAttachment>>();
 	private ArrayList<CloudAttachment> emptyAttachments = new ArrayList<CloudAttachment>();
@@ -266,12 +266,6 @@ public class Service extends BaseService {
 	private PortletSearchThread pst;
 	
 	private boolean previewBalanceTags=true;
-	
-	static {
-		inlineableMimes.add("image/gif");
-		inlineableMimes.add("image/jpeg");
-		inlineableMimes.add("image/png");
-	}
 	
 	@Override
 	public void initialize() {
@@ -302,6 +296,20 @@ public class Service extends BaseService {
 
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
+		String mtypes=ss.getInlineableMimeTypes();
+		if (StringUtils.isBlank(mtypes)) {
+			inlineableMimes.add("image/gif");
+			inlineableMimes.add("image/jpeg");
+			inlineableMimes.add("image/png");
+			inlineableMimes.add("text/plain");
+			inlineableMimes.add("text/html");
+		} else {
+			String vmtypes[]=StringUtils.split(mtypes, ",");
+			for(String mtype:vmtypes)
+				inlineableMimes.add(mtype.trim());
+		}
+		
+		
 		us = new MailUserSettings(profile.getId(),ss);
 		mprofile = new MailUserProfile(mailManager,ss,us,profile);
 		String mailUsername = mprofile.getMailUsername();

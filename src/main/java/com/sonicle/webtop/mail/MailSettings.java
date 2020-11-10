@@ -178,6 +178,13 @@ public class MailSettings {
 	public static final String AUTH_USER_STRIP_DOMAIN = "auth.user.strip.domain";
 
 	/**
+	 * [system+domain]
+	 * [boolean]
+	 * Is external archiving active. Defaults to false.
+	 */
+	public static final String INLINEABLE_MIME_TYPES = "inlineable.mime.types";
+	
+	/**
 	 * [system+domain][default]
 	 * [string]
 	 * Transform WebTop Public Resource links (e.g. Public images for mailcards) into attached inline images (cids).
