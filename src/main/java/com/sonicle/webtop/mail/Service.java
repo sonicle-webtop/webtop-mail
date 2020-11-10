@@ -4817,7 +4817,7 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
-				fc = determineSentFolder(account,msg);
+				fc = determineDraftFolder(account,msg);
 			} else {
 				fc = account.getFolderCache(savefolder);
 			}
@@ -4844,7 +4844,7 @@ public class Service extends BaseService {
         json.printTo(out);
 	}
 	
-	private FolderCache determineSentFolder(MailAccount account, SimpleMessage msg) throws MessagingException {
+	private FolderCache determineDraftFolder(MailAccount account, SimpleMessage msg) throws MessagingException {
 		String draftsfolder=account.getFolderDrafts();
 		Identity ident = msg.getFrom();
 		if (ident != null ) {
@@ -4886,7 +4886,7 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			FolderCache fc = null;
 			if (savefolder == null) {
-				fc = account.getFolderCache(account.getFolderDrafts());
+				fc = determineDraftFolder(account,msg);
 			} else {
 				fc = account.getFolderCache(savefolder);
 			}
