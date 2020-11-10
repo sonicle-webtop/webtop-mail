@@ -179,8 +179,8 @@ public class MailSettings {
 
 	/**
 	 * [system+domain]
-	 * [boolean]
-	 * Is external archiving active. Defaults to false.
+	 * [string]
+	 * comma separated list of mime types for parts not to be considered as attachments when stated as inline.
 	 */
 	public static final String INLINEABLE_MIME_TYPES = "inlineable.mime.types";
 	
