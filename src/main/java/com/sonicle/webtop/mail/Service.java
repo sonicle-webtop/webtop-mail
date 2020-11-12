@@ -1251,7 +1251,14 @@ public class Service extends BaseService {
 					mbps[e].setFileName(contentFileName);
 					String contentType = upfile.getMediaType() + "; name=\"" + contentFileName + "\"";
 					mbps[e].setHeader("Content-type", contentType);
-					mbps[e].setHeader("Content-Transfer-Encoding", "base64");
+					
+					// No encoding other than "7bit", "8bit", or "binary" is permitted
+					// for the body of a "message/rfc822" entity.
+					// Others should be base64 to allow binary attach ot txt files
+					// without newline conversions
+					if (!mbps[e].isMimeType("message/rfc822"))
+						mbps[e].setHeader("Content-Transfer-Encoding", "base64");
+					
 					if (attach.cid != null && attach.cid.trim().length()>0) {
 						mbps[e].setHeader("Content-ID", "<" + attach.cid + ">");
 						mbps[e].setHeader("X-Attachment-Id", attach.cid);
