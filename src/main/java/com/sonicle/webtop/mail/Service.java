@@ -1436,6 +1436,14 @@ public class Service extends BaseService {
 			if (msgid != null) {
 				forward.setHeader("Forwarded-From", msgid);
 			}
+		
+		
+			/*
+			 * Implements both in-reply-to and references as for reply message
+			 */
+			setInReplyToAndReferences(msgid,(MimeMessage)msg,(MimeMessage)forward);		
+		
+		
 		} catch (MessagingException exc) {
 			Service.logger.error("Exception",exc);
 		}
@@ -1710,8 +1718,18 @@ public class Service extends BaseService {
 		}
 		
 		String msgId = orig.getHeader("Message-Id", null);
+		setInReplyToAndReferences(msgId,orig,reply);
+	//try {
+		//    setFlags(answeredFlag, true);
+		//} catch (MessagingException mex) {
+		//    // ignore it
+		//}
+		return reply;
+	}
+	
+	private void setInReplyToAndReferences(String msgId, MimeMessage orig, MimeMessage dest) throws MessagingException {
 		if (msgId != null) {
-			reply.setHeader("In-Reply-To", msgId);
+			dest.setHeader("In-Reply-To", msgId);
 		}
 
 		/*
@@ -1741,15 +1759,9 @@ public class Service extends BaseService {
 			}
 		}
 		if (refs != null) {
-			reply.setHeader("References", MimeUtility.fold(12, refs));
+			dest.setHeader("References", MimeUtility.fold(12, refs));
 		}
 
-	//try {
-		//    setFlags(answeredFlag, true);
-		//} catch (MessagingException mex) {
-		//    // ignore it
-		//}
-		return reply;
 	}
 
 	// used above in reply()
@@ -4188,6 +4200,19 @@ public class Service extends BaseService {
 			sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
 			if (forwardedfrom != null) {
 				sout += " forwardedfrom: '" + StringEscapeUtils.escapeEcmaScript(forwardedfrom) + "',";
+			}
+			//add inreplyto and references as with reply
+			String inreplyto = smsg.getInReplyTo();
+			String references[] = smsg.getReferences();
+			if (inreplyto != null) {
+				sout += " inreplyto: '" + StringEscapeUtils.escapeEcmaScript(inreplyto) + "',";
+			}
+			if (references != null) {
+				String refs = "";
+				for (String s : references) {
+					refs += StringEscapeUtils.escapeEcmaScript(s) + " ";
+				}
+				sout += " references: '" + refs.trim() + "',";
 			}
 			String subject = smsg.getSubject();
 			sout += " subject: '" + StringEscapeUtils.escapeEcmaScript(subject) + "',\n";
