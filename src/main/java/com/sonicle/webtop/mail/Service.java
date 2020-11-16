@@ -5198,7 +5198,7 @@ public class Service extends BaseService {
 				}
 				
 				
-				String textcontent = MailUtils.HtmlToText_convert(MailUtils.htmlunescapesource(content));
+				String textcontent = StringEscapeUtils.unescapeHtml4(MailUtils.HtmlToText_convert(content));
 				String htmlcontent = MailUtils.htmlescapefixsource(content).trim();
 				if (htmlcontent.length()<6 || !htmlcontent.substring(0,6).toLowerCase().equals("<html>")) {
 					htmlcontent="<html><header></header><body>"+htmlcontent+"</body></html>";
