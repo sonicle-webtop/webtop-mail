@@ -1379,6 +1379,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						attachments: json.attachments,
 						forwardedfolder: json.forwardedfolder,
 						forwardedfrom: json.forwardedfrom,
+						inreplyto: json.inreplyto,
+						references: json.references,
 						origuid: json.origuid
 					});
 				} else {
