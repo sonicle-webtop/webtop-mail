@@ -1171,8 +1171,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	
 	sendMessage: function() {
-        var me=this;
-        me.getModel().setExtraParams({
+        var me=this,
+			mo=me.getModel();
+	
+		mo.getProxy().setTimeout(WT.getVar("ajaxSpecialTimeout"));
+        mo.setExtraParams({
 			msgId: me.msgId,
             action: 'SendMessage',
 			sendAction: 'send',
