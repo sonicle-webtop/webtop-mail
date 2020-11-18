@@ -1925,6 +1925,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		WT.confirm(message, function(bid) {
 			if (bid==='yes') {
 				WT.ajaxReq(me.ID, 'MoveFolder', {
+					timeout: WT.getVar("ajaxLongTimeout"),
 					params: {
 						account: acct,
 						folder: src,
@@ -1961,6 +1962,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	deleteFolder: function(acct,folder) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'DeleteFolder', {
+			timeout: WT.getVar("ajaxLongTimeout"),
 			params: {
 				account: acct,
 				folder: folder
@@ -1980,6 +1982,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	trashFolder: function(acct,folder) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'TrashFolder', {
+			timeout: WT.getVar("ajaxLongTimeout"),
 			params: {
 				account: acct,
 				folder: folder
@@ -2005,6 +2008,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	emptyFolder: function(acct,folder) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'EmptyFolder', {
+			timeout: WT.getVar("ajaxLongTimeout"),
 			params: {
 				account: acct,
 				folder: folder
