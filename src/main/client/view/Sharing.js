@@ -379,6 +379,7 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 		if(!success) return;
 		var me = this;
 		me.lref('fldrole').focus(true);
+		me.getModel().getProxy().setTimeout(WT.getVar("ajaxLongTimeout"));
 	},
 	
 	addRights: function(roleUid,roleDescription) {

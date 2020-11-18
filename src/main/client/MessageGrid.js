@@ -1891,6 +1891,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         if (oparams.query) params.query=oparams.query;
 		
 		WT.ajaxReq(me.mys.ID, action, {
+			timeout: WT.getVar("ajaxLongTimeout"),
 			params: params,
 			callback: function(success,json) {
 				if (handler) Ext.callback(handler,scope||me,[json.result]);
