@@ -46,10 +46,10 @@ Ext.define('Sonicle.webtop.mail.FavoritesTree', {
 						cfg.mys.moveFolder(src,dst);
 					},*/
 					moveMessages: function(data,dst) {
-						data.view.grid.moveSelection(data.srcAccount,data.srcFolder,me.acct,dst,data.records);
+						data.view.grid.moveSelection(data.srcAccount,data.srcFolder,me.acct,dst,data.records,true);
 					},
 					copyMessages: function(data,dst) {
-						data.view.grid.copySelection(data.srcAccount,data.srcFolder,me.acct,dst,data.records);
+						data.view.grid.copySelection(data.srcAccount,data.srcFolder,me.acct,dst,data.records,true);
 					},
 					copyAttachment: function(data,dst) {
 						cfg.mys.copyAttachment(data.srcAccount,data.params.folder,me.acct,dst,data.params.idmessage,data.params.idattach);

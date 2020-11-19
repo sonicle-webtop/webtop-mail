@@ -79,7 +79,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
                 if (chkfiltered.getValue()) {
                     me.grid.operateAllFiltered("MoveMessages",me.account,me.fromFolder,me.curnode.id,me.ajaxResultCallback,me);
                 } else {
-                    me.grid.moveSelection(me.account, me.fromFolder, me.account, me.curnode.id,me.grid.getSelection());
+                    me.grid.moveSelection(me.account, me.fromFolder, me.account, me.curnode.id,me.grid.getSelection(),true);
 					me.loadMask.hide();
 					me.closeView(false);
                 }
