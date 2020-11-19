@@ -3027,6 +3027,8 @@ public class Service extends BaseService {
 		boolean multifolder = smultifolder != null && smultifolder.equals("true");
 		String sfullthreads = request.getParameter("fullthreads");
 		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
+		String sisdd = request.getParameter("isdd");
+		boolean isdd = sisdd != null && sisdd.equals("true");
 		String uids[] = null;
 		String sout = null;
 		boolean archiving = false;
@@ -3038,47 +3040,51 @@ public class Service extends BaseService {
 			String foldertrash=toaccount.getFolderTrash();
 			String folderspam=toaccount.getFolderSpam();
 			String folderarchive=toaccount.getFolderArchive();
-			
-			//check if tofolder is my Spam, and there is spamadm, move there
-			if (toaccount.isSpamFolder(tofolder)) {
-				String spamadmSpam=ss.getSpamadmSpam();
-				if (spamadmSpam!=null) {
-					folderspam=spamadmSpam;
-					FolderCache fc=toaccount.getFolderCache(spamadmSpam);
-					if (fc!=null) tomcache=fc;
-				}
-				else if (toaccount.isUnderSharedFolder(fromfolder)) {
-					String mainfolder=toaccount.getMainSharedFolder(fromfolder);
-					if (mainfolder!=null) {
-						folderspam = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(folderspam);
-						FolderCache fc=toaccount.getFolderCache(folderspam);
+
+			//Try to make decisions on destination folders
+			// only if it's not a direct drag&drop move
+			if (!isdd) {
+				//check if tofolder is my Spam, and there is spamadm, move there
+				if (toaccount.isSpamFolder(tofolder)) {
+					String spamadmSpam=ss.getSpamadmSpam();
+					if (spamadmSpam!=null) {
+						folderspam=spamadmSpam;
+						FolderCache fc=toaccount.getFolderCache(spamadmSpam);
 						if (fc!=null) tomcache=fc;
 					}
-				}
-				tofolder=folderspam;
-			}
-			//if trashing, check for shared profile trash
-			else if (toaccount.isTrashFolder(tofolder)) {
-				if (toaccount.isUnderSharedFolder(fromfolder)) {
-					String mainfolder=toaccount.getMainSharedFolder(fromfolder);
-					if (mainfolder!=null) {
-						foldertrash = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(foldertrash);
-						FolderCache fc=toaccount.getFolderCache(foldertrash);
-						if (fc!=null) tomcache=fc;
+					else if (toaccount.isUnderSharedFolder(fromfolder)) {
+						String mainfolder=toaccount.getMainSharedFolder(fromfolder);
+						if (mainfolder!=null) {
+							folderspam = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(folderspam);
+							FolderCache fc=toaccount.getFolderCache(folderspam);
+							if (fc!=null) tomcache=fc;
+						}
 					}
+					tofolder=folderspam;
 				}
-				tofolder=foldertrash;
-			}
-			//if archiving, determine destination folder based on settings and shared profile
-			else if (toaccount.isArchiveFolder(tofolder)) {
+				//if trashing, check for shared profile trash
+				else if (toaccount.isTrashFolder(tofolder)) {
 					if (toaccount.isUnderSharedFolder(fromfolder)) {
 						String mainfolder=toaccount.getMainSharedFolder(fromfolder);
-					if (mainfolder!=null) {
-						folderarchive = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(folderarchive);
+						if (mainfolder!=null) {
+							foldertrash = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(foldertrash);
+							FolderCache fc=toaccount.getFolderCache(foldertrash);
+							if (fc!=null) tomcache=fc;
+						}
 					}
+					tofolder=foldertrash;
 				}
-				tofolder=folderarchive;
-				archiving=true;
+				//if archiving, determine destination folder based on settings and shared profile
+				else if (toaccount.isArchiveFolder(tofolder)) {
+						if (toaccount.isUnderSharedFolder(fromfolder)) {
+							String mainfolder=toaccount.getMainSharedFolder(fromfolder);
+						if (mainfolder!=null) {
+							folderarchive = mainfolder + toaccount.getFolderSeparator() + toaccount.getLastFolderName(folderarchive);
+						}
+					}
+					tofolder=folderarchive;
+					archiving=true;
+				}
 			}
 			
 			if (allfiltered == null) {
@@ -3131,6 +3137,8 @@ public class Service extends BaseService {
 		boolean multifolder = smultifolder != null && smultifolder.equals("true");
 		String sfullthreads = request.getParameter("fullthreads");
 		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
+		String sisdd = request.getParameter("isdd");
+		boolean isdd = sisdd != null && sisdd.equals("true");
 		String sout = null;
 		String uids[]=null;
 		try {
