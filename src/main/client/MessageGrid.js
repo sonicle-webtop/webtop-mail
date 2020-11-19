@@ -412,7 +412,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						},
 						{
 							key: Ext.event.Event.DELETE,
-							shift: false,
+							//shift: false,
 							fn: function(key,ev) {
 								me.fireEvent('keydelete', me, ev, me.getSelection());
 							}
@@ -1490,6 +1490,23 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 		});					
     },
+	
+    actionDeletePermanently: function() {
+		if (this.storeLoading || this.readonly) {
+			return;
+		}
+		
+		var me=this,
+			acct=me.currentAccount,
+			curfolder=me.currentFolder,
+			sm=me.getSelectionModel(),
+			selection=sm.getSelection();
+	
+		if (!selection || selection.length==0) return;
+		
+		me.deleteSelection(acct,curfolder,selection);
+		me.focus();
+    },	
 	
     actionDelete: function() {
 		if (this.storeLoading || this.readonly) {
