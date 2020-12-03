@@ -412,7 +412,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						},
 						{
 							key: Ext.event.Event.DELETE,
-							shift: false,
+							//shift: false,
 							fn: function(key,ev) {
 								me.fireEvent('keydelete', me, ev, me.getSelection());
 							}
@@ -1492,6 +1492,23 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
     },
 	
+    actionDeletePermanently: function() {
+		if (this.storeLoading || this.readonly) {
+			return;
+		}
+		
+		var me=this,
+			acct=me.currentAccount,
+			curfolder=me.currentFolder,
+			sm=me.getSelectionModel(),
+			selection=sm.getSelection();
+	
+		if (!selection || selection.length==0) return;
+		
+		me.deleteSelection(acct,curfolder,selection);
+		me.focus();
+    },	
+	
     actionDelete: function() {
 		if (this.storeLoading || this.readonly) {
 			return;
@@ -1703,7 +1720,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
     },	
 	
-    moveSelection: function(acctfrom,from,acctto,to,selection) {
+    moveSelection: function(acctfrom,from,acctto,to,selection,isdd) {
         var me=this, 
             data=me.sel2ids(selection);
 		data.cb=function(result) {
@@ -1711,38 +1728,38 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.removeRecords(data.ids);
 			}
 		}
-        me.moveMessages(acctfrom,from,acctto,to,data,selection);
+        me.moveMessages(acctfrom,from,acctto,to,data,selection,isdd);
     },
 	
-    copySelection: function(acctfrom,from,acctto,to,selection) {
+    copySelection: function(acctfrom,from,acctto,to,selection,isdd) {
         var me=this, 
             data=me.sel2ids(selection);
-        me.copyMessages(acctfrom,from,acctto,to,data,selection);
+        me.copyMessages(acctfrom,from,acctto,to,data,selection,isdd);
     },
 	
-    moveMessages: function(acctfrom,from,acctto,to,data,selection) {
+    moveMessages: function(acctfrom,from,acctto,to,data,selection,isdd) {
 		var me=this;
 		
         me.fireEvent('moving',me);
 		
-        me.operateMessages("MoveMessages",acctfrom,from,acctto,to,data,selection);
+        me.operateMessages("MoveMessages",acctfrom,from,acctto,to,data,selection,isdd);
     },	
 	
-    copyMessages: function(acctfrom,from,acctto,to,data,selection) {
-        this.operateMessages("CopyMessages",acctfrom,from,acctto,to,data,selection);
+    copyMessages: function(acctfrom,from,acctto,to,data,selection,isdd) {
+        this.operateMessages("CopyMessages",acctfrom,from,acctto,to,data,selection,isdd);
     },
 
 	//TODO: customer,causal
 	//operateMessages: function(action,from,to,data,customer_id,causal_id) {
-    operateMessages: function(action,acctfrom,from,acctto,to,data,selection) {
+    operateMessages: function(action,acctfrom,from,acctto,to,data,selection,isdd) {
 		var me=this;
 		
 		me.checkBrokenThreads(selection,function(fullThreads) {
-			me._operateMessages(action,acctfrom,from,acctto,to,data,fullThreads);
+			me._operateMessages(action,acctfrom,from,acctto,to,data,fullThreads,isdd);
 		});
     },
 	
-	_operateMessages: function(action,acctfrom,from,acctto,to,data,fullThreads) {
+	_operateMessages: function(action,acctfrom,from,acctto,to,data,fullThreads,isdd) {
 		var me=this;
 		WT.ajaxReq(me.mys.ID, action, {
 			params: {
@@ -1754,7 +1771,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				ids: data.ids,
 				tofolder: to,
 				multifolder: data.multifolder,
-				fullthreads: fullThreads
+				fullthreads: fullThreads,
+				isdd: isdd
 			},
 			callback: function(success,json) {
 				Ext.callback(data.cb,data.scope||me,[json.result]);
@@ -1883,7 +1901,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				account: acct,
 				fromfolder: from,
 				tofolder: to,
-				allfiltered: true
+				allfiltered: true,
+				isdd: true
 			};
 		if (oparams.sort) {
 			params.sort=oparams.sort.property;
