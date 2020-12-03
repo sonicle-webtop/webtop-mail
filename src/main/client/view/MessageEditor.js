@@ -72,14 +72,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	fontColor: '#000000',
 	
 	/**
-	 * @cfg {html|plain} [bodyFormat]
+	 * @cfg {html|plain} [contentFormat]
 	 */
-	bodyFormat: 'html',
-	
-	/**
-	 * @cfg {top|bottom} [appendMode]
-	 */
-	appendMode: 'top',
+	contentFormat: 'html',
 	
     showSave: true,
     showAddressBook: true,
@@ -468,8 +463,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								//var nv = r.get('id');
 								if (!Ext.isDefined(nv) || !Ext.isDefined(ov) || nv === null || ov === null || ov === nv) return;
 								me.selectedIdentity=me.identHash[nv];
-                                var format=me.bodyFormat;
-								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,'top',me.identHash[nv].mailcard),format);
+                                var format=me.contentFormat;
+								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
 								else {
 									if(me.showMailcard)
 									me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
@@ -629,7 +624,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'wthtmleditor',
 				bind: '{record.content}',
 				disabled: me.faxsubject ? true : false,
-				wysiwyg: me.bodyFormat === 'plain' ? false : true,
+				wysiwyg: me.contentFormat === 'plain' ? false : true,
 				enableFont: true,
 				defaultFont: me.fontFace,
 				enableFontSize: true,
@@ -963,9 +958,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	
 	startNew: function(data) {
-		var me=this,mc=null;
+		var me=this,mc=null,
+				contentAfter = Ext.isBoolean(data.contentAfter) ? data.contentAfter : true;
+		delete data.contentAfter;
 		// Make sure that the format used for UI initialization is the same in data!
-		data.format = me.bodyFormat;
+		data.format = me.contentFormat;
 		if ((data.forwardedfrom||data.inreplyto)&&me.mys.getVar("noMailcardOnReplyForward")) {
 			mc={
 				source: '',
@@ -975,11 +972,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			me.getRef("showMailcard").toggle(false,true);
 		}
 		
-		if (!data.fax && !data.contentReady) data.content=me.prepareContent(data.content,me.bodyFormat,me.appendMode,mc);
+		if (!data.fax && !data.contentReady) data.content=me.prepareContent(data.content,me.contentFormat,contentAfter,mc);
 		//default of html editor is html, so no need to enable html mode
 		//also calling it seems to break binding
-		/*if (me.bodyFormat==="html") me.htmlEditor.enableHtmlMode();
-		else */if (me.bodyFormat==="plain") {
+		/*if (me.contentFormat==="html") me.htmlEditor.enableHtmlMode();
+		else */if (me.contentFormat==="plain") {
 			if (WT.getVar('useNewHTMLEditor')) {
 				// Not needed, MessageEditor view needs to be created with the right format.
 			} else {
@@ -1005,7 +1002,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if (WT.getVar('useNewHTMLEditor')) {
 			// Not needed, focusing already handled internally by new HTMLEditor
 		} else {
-			if (me.bodyFormat === "plain") {
+			if (me.contentFormat === "plain") {
 				var textarea = Ext.getDom(me.htmlEditor.tmce.inputEl.id);
 				var setPosition = new Ext.util.DelayedTask(function(){
 					textarea.setSelectionRange(0,0);
@@ -1030,7 +1027,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	showMailcardAction: function(b) {
 		var me = this,
-				 format=me.bodyFormat,
+				 format=me.contentFormat,
 				 dumbMailcard = {
 					mailcard: {
 						html: me.dumbMailcard
@@ -1053,7 +1050,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			newSubjectDiffs = ( newSubject === oldSubject ) ? '' : newSubject,
 			newText, oldText, newTextDiffs;
 	
-		if (me.bodyFormat === 'html') {
+		if (me.contentFormat === 'html') {
 			newText = Sonicle.String.htmlToText(me.htmlEditor.getValue());
 			oldText = Sonicle.String.htmlToText(me.originalContent);
 		} else {
@@ -1307,8 +1304,54 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         });
         me.saveView(true);
 	},
+	
+	prepareContent: function(content, format, contentAfter, mailcard) {
+		var me = this,
+				mcContent = '',
+				ret = null;
+		
+		if (!mailcard) {
+			var ident = me.identities[me.identityIndex];
+			if (ident.mailcard) mailcard = ident.mailcard;
+		}
+		
+		if ('html' === format) {
+			if (mailcard) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
+			if (WT.getVar('useNewHTMLEditor')) {
+				var HE = Sonicle.form.field.tinymce.HTMLEditor,
+					ff = HE.getContentFontFamily(me.htmlEditor.fonts, me.fontFace),
+					fs = me.fontSize+'px', // Do NOT be strict, allow any font sizes!
+					//fs = HE.getContentFontSize(me.htmlEditor.fontSizes, me.fontSize+'px'), // BE strict, allow only a set of font sizes!
+					fc = HE.getContentColor(me.htmlEditor.fontColors, Sonicle.String.removeStart(me.fontColor, '#'));
+				
+				if (contentAfter) {
+					ret = HE.generateInitialParagraph('', ff, fs, fc, '#000000') + mcContent + content;
+				} else {
+					ret = HE.generateInitialParagraph(content, ff, fs, fc, '#000000') + mcContent;
+				}
+				
+			} else {
+				if (contentAfter) {
+					ret = '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';"></div>'
+						+ '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';"></div>'
+						+ mcContent + content;
+				} else {
+					ret = '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';">'
+						+ content
+						+ '</div>'
+						+ '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';"></div>'
+						+ mcContent;
+				}
+			}
+		} else if ('plain' === format) {
+			if (mailcard) mcContent = '\n\n' + mailcard.text + '\n';
+			ret = contentAfter ? (mcContent + content) : (content + mcContent);
+		}
+		return ret;
+	},
     
-    prepareContent: function(content,format,appendMode,mc) {
+	/*
+    prepareContent2: function(content,format,appendMode,mc) {
 		var me=this,
 				bottomAppend = 'bottom' === appendMode;
 		if (!mc) {
@@ -1352,6 +1395,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
         return content;
     },
+	*/
 	
     setContent: function(content,format) {
 		var me=this;
