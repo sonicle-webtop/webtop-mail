@@ -1254,8 +1254,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	 */
 	startNewMessage: function(idfolder, opts) {
 		opts=opts||{};
-		
-		var me=this,ident;
+		var me=this,ident,
+				//TODO: expose newly bodyFormat and appendMode in opts
+				bodyFormat = opts.format || me.getVar('format'),
+				appendMode = false === opts.contentAfter ? 'bottom' : 'top';
 		
 		if(opts.identityId) {
 			ident = me.getIdentityFromId(opts.identityId);
@@ -1288,8 +1290,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				fontFace: me.getVar('fontName'),
 				fontSize: me.getVar('fontSize'),
 				fontColor: me.getVar('fontColor'),
-				//format: opts.format, //TODO: is necessary take format from opts???
-				format: me.getVar('format'),
+				bodyFormat: bodyFormat,
+				appendMode: appendMode,
 				autosave: true,
 				showSave: !opts.fax,
 				showReceipt: !opts.fax,
@@ -1333,8 +1335,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				attachments: opts.attachments,
 				content: opts.content||'',
                 contentReady: opts.contentReady,
-                contentAfter: opts.contentAfter,
-                format: opts.format,
+                //format: bodyFormat, // This can be skipped, it will be forced for coherence inside startNew!
                 replyfolder: opts.replyfolder,
                 inreplyto: opts.inreplyto,
                 references: opts.references,

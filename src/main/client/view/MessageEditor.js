@@ -57,7 +57,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	dockableConfig: {
 		title: '{message.tit}',
 		iconCls: 'wtmail-icon-newmsg',
-		width: 890,
+		width: 900,
 		height: 500
 	},
 	modelName: 'Sonicle.webtop.mail.model.MessageModel',
@@ -70,7 +70,16 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	fontFace: 'Arial',
 	fontSize: 12,
 	fontColor: '#000000',
-	format: 'html',
+	
+	/**
+	 * @cfg {html|plain} [bodyFormat]
+	 */
+	bodyFormat: 'html',
+	
+	/**
+	 * @cfg {top|bottom} [appendMode]
+	 */
+	appendMode: 'top',
 	
     showSave: true,
     showAddressBook: true,
@@ -408,7 +417,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			handler: me.showMailcardAction,
 			scope: me
 		}));
-			
+		
 		if (me.showIdentities) {
             var idents=new Array(),
 				selident=null;
@@ -459,8 +468,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								//var nv = r.get('id');
 								if (!Ext.isDefined(nv) || !Ext.isDefined(ov) || nv === null || ov === null || ov === nv) return;
 								me.selectedIdentity=me.identHash[nv];
-                                var format=me.mys.getVar("format");
-								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
+                                var format=me.bodyFormat;
+								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,'top',me.identHash[nv].mailcard),format);
 								else {
 									if(me.showMailcard)
 									me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
@@ -620,7 +629,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'wthtmleditor',
 				bind: '{record.content}',
 				disabled: me.faxsubject ? true : false,
-				wysiwyg: me.format === 'plain' ? false : true,
+				wysiwyg: me.bodyFormat === 'plain' ? false : true,
 				enableFont: true,
 				defaultFont: me.fontFace,
 				enableFontSize: true,
@@ -683,6 +692,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableDevTools: true,
 				customTools: {
 					template: {
+						pos: 18,
 						xtype: 'wt-htmleditortooltemplate',
 						store: {
 							autoLoad: true,
@@ -954,6 +964,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	startNew: function(data) {
 		var me=this,mc=null;
+		// Make sure that the format used for UI initialization is the same in data!
+		data.format = me.bodyFormat;
 		if ((data.forwardedfrom||data.inreplyto)&&me.mys.getVar("noMailcardOnReplyForward")) {
 			mc={
 				source: '',
@@ -963,18 +975,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			me.getRef("showMailcard").toggle(false,true);
 		}
 		
-		// MessageEditor view needs to be created with the right format.
-		if (WT.getVar('useNewHTMLEditor')) {
-			data.format = me.mys.getVar("format");
-		}
-		
-		if (!data.fax && !data.contentReady) data.content=me.prepareContent(data.content,data.format,(data.contentAfter===undefined?true:data.contentAfter),mc);
+		if (!data.fax && !data.contentReady) data.content=me.prepareContent(data.content,me.bodyFormat,me.appendMode,mc);
 		//default of html editor is html, so no need to enable html mode
 		//also calling it seems to break binding
-		/*if (data.format==="html") me.htmlEditor.enableHtmlMode();
-		else */if (data.format==="plain") {
+		/*if (me.bodyFormat==="html") me.htmlEditor.enableHtmlMode();
+		else */if (me.bodyFormat==="plain") {
 			if (WT.getVar('useNewHTMLEditor')) {
-				// Not needed anymore, MessageEditor view needs to be created with the right format. See above!
+				// Not needed, MessageEditor view needs to be created with the right format.
 			} else {
 				me.htmlEditor.enableTextMode();
 			}
@@ -998,7 +1005,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if (WT.getVar('useNewHTMLEditor')) {
 			// Not needed, focusing already handled internally by new HTMLEditor
 		} else {
-			if (data.format === "plain") {
+			if (me.bodyFormat === "plain") {
 				var textarea = Ext.getDom(me.htmlEditor.tmce.inputEl.id);
 				var setPosition = new Ext.util.DelayedTask(function(){
 					textarea.setSelectionRange(0,0);
@@ -1023,7 +1030,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	showMailcardAction: function(b) {
 		var me = this,
-				 format=me.mys.getVar("format"),
+				 format=me.bodyFormat,
 				 dumbMailcard = {
 					mailcard: {
 						html: me.dumbMailcard
@@ -1046,7 +1053,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			newSubjectDiffs = ( newSubject === oldSubject ) ? '' : newSubject,
 			newText, oldText, newTextDiffs;
 	
-		if (me.format === 'html') {
+		if (me.bodyFormat === 'html') {
 			newText = Sonicle.String.htmlToText(me.htmlEditor.getValue());
 			oldText = Sonicle.String.htmlToText(me.originalContent);
 		} else {
@@ -1301,8 +1308,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.saveView(true);
 	},
     
-    prepareContent: function(content,format,contentAfter,mc) {
-		var me=this;
+    prepareContent: function(content,format,appendMode,mc) {
+		var me=this,
+				bottomAppend = 'bottom' === appendMode;
 		if (!mc) {
 			var ident=me.identities[me.identityIndex];
 			if (ident.mailcard) mc=ident.mailcard;
@@ -1311,8 +1319,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if (format==="html") {
 			if (mc) {
 				var mchtml='<div id="wt-mailcard">'+mc.html+'</div>';
-				if (contentAfter) content=mchtml+content;
-				else content+=mchtml;
+				if (bottomAppend) {
+					content+=mchtml;
+				} else {
+					content=mchtml+content;
+				}
 			}
 			
 			if (WT.getVar('useNewHTMLEditor')) {
@@ -1332,8 +1343,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		else if (format==="plain") {
 			if (mc) {
 				var mctext='\n\n'+mc.text+'\n';
-				if (contentAfter) content=mctext+content;
-				else content+=mctext;
+				if (bottomAppend) {
+					content+=mctext;
+				} else {
+					content=mctext+content;
+				}
 			}
 		}
         return content;
