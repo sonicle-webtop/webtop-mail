@@ -35,6 +35,14 @@ Ext.define('Sonicle.webtop.mail.ServiceApi', {
 	extend: 'WTA.sdk.ServiceApi',
 	
 	/**
+	 * Gets the choosen format for new messages.
+	 * @return {html|plain} Compose message content format.
+	 */
+	getComposeFormat: function() {
+		return this.service.getVar('format');
+	},
+	
+	/**
 	 * Create a new message.
 	 * @param {Object} data An object containing event data.
 	 * @param {plain|html} [data.format] The email format.

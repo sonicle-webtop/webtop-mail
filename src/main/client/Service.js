@@ -1278,9 +1278,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			viewCfg: {
 				dockableConfig: {
 					title: opts.fax?'{fax.tit}':'{message.tit}',
-					iconCls: opts.fax?'wtmail-icon-newfax-xs':'wtmail-icon-newmsg',
-					width: 830,
-					height: 500
+					iconCls: opts.fax?'wtmail-icon-newfax-xs':'wtmail-icon-newmsg'
 				},
 				msgId: opts.msgId||0,
 				mys: me,

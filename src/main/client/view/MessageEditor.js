@@ -57,7 +57,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	dockableConfig: {
 		title: '{message.tit}',
 		iconCls: 'wtmail-icon-newmsg',
-		width: 900,
+		width: 860,
 		height: 500
 	},
 	modelName: 'Sonicle.webtop.mail.model.MessageModel',
@@ -531,9 +531,17 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								},{
 									callback: function(success,result) {
 										if (success) {
+											var format = me.contentFormat,
+													newContent;
 											if (WT.getVar('useNewHTMLEditor')) {
-												me.htmlEditor.editorInsertContent("<br>"+result.embed+"<br>");
+												if ('html' === format) {
+													newContent = result.embed;
+												} else if ('plain' === format) {
+													newContent = Sonicle.String.htmlToText(result.embed, {preserveHyperlinksHref: true});
+												}
+												me.htmlEditor.insertContent(newContent);
 											} else {
+												//FIXME: like other, but i think this will NOT work with plain format!!
 												me.htmlEditor.execCommand('inserthtml', false, "<br>"+result.embed+"<br>");
 											}
 										}
@@ -567,9 +575,17 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 									},{
 										callback: function(success,result) {
 											if (success) {
+												var format = me.contentFormat,
+													newContent;
 												if (WT.getVar('useNewHTMLEditor')) {
-													me.htmlEditor.editorInsertContent("<br>"+result.embed+"<br>");
+													if ('html' === format) {
+														newContent = result.embed;
+													} else if ('plain' === format) {
+														newContent = Sonicle.String.htmlToText(result.embed, {preserveHyperlinksHref: true});
+													}
+													me.htmlEditor.insertContent(newContent);
 												} else {
+													//FIXME: like other, but i think this will NOT work with plain format!!
 													me.htmlEditor.execCommand('inserthtml', false, "<br>"+result.embed+"<br>");
 												}
 											}	
@@ -687,7 +703,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				enableDevTools: true,
 				customTools: {
 					template: {
-						pos: 18,
+						pos: 19,
 						xtype: 'wt-htmleditortooltemplate',
 						store: {
 							autoLoad: true,
