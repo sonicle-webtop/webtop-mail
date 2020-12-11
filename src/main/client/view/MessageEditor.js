@@ -1365,53 +1365,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		return ret;
 	},
-    
-	/*
-    prepareContent2: function(content,format,appendMode,mc) {
-		var me=this,
-				bottomAppend = 'bottom' === appendMode;
-		if (!mc) {
-			var ident=me.identities[me.identityIndex];
-			if (ident.mailcard) mc=ident.mailcard;
-		}
-		
-		if (format==="html") {
-			if (mc) {
-				var mchtml='<div id="wt-mailcard">'+mc.html+'</div>';
-				if (bottomAppend) {
-					content+=mchtml;
-				} else {
-					content=mchtml+content;
-				}
-			}
-			
-			if (WT.getVar('useNewHTMLEditor')) {
-				var HE = Sonicle.form.field.tinymce.HTMLEditor,
-					ff = HE.getContentFontFamily(me.htmlEditor.fonts, me.fontFace),
-					fs = me.fontSize+'px', // Do NOT be strict, allow any font sizes!
-					//fs = HE.getContentFontSize(me.htmlEditor.fontSizes, me.fontSize+'px'), // BE strict, allow only a set of font sizes!
-					fc = HE.getContentColor(me.htmlEditor.fontColors, Sonicle.String.removeStart(me.fontColor, '#'));
-				content = HE.generateInitialContent(ff, fs, fc, '#000000') + content;
-				
-			} else {
-				content = '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';"></div>'
-					+ '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';"></div>'
-					+ content;
-			}
-		}
-		else if (format==="plain") {
-			if (mc) {
-				var mctext='\n\n'+mc.text+'\n';
-				if (bottomAppend) {
-					content+=mctext;
-				} else {
-					content=mctext+content;
-				}
-			}
-		}
-        return content;
-    },
-	*/
 	
     setContent: function(content,format) {
 		var me=this;
