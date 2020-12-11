@@ -1332,7 +1332,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		
 		if ('html' === format) {
-			if (mailcard) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
+			if (mailcard && mailcard.text.trim()) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
 			if (WT.getVar('useNewHTMLEditor')) {
 				var HE = Sonicle.form.field.tinymce.HTMLEditor,
 					ff = HE.getContentFontFamily(me.htmlEditor.fonts, me.fontFace),
@@ -1360,7 +1360,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 			}
 		} else if ('plain' === format) {
-			if (mailcard) mcContent = '\n\n' + mailcard.text + '\n';
+			if (mailcard && mailcard.text.trim()) mcContent = '\n\n' + mailcard.text + '\n';
 			ret = contentAfter ? (mcContent + content) : (content + mcContent);
 		}
 		return ret;
