@@ -269,6 +269,7 @@ public class Service extends BaseService {
 	private PortletSearchThread pst;
 	
 	private boolean previewBalanceTags=true;
+	private boolean useNewHTMLEditor=true;
 	
 	@Override
 	public void initialize() {
@@ -509,6 +510,9 @@ public class Service extends BaseService {
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
+		// Retrieve editor flag to avoid continuous lookups
+		// (temporary until full transition)
+		useNewHTMLEditor = cus.getUseNewHTMLEditor();
 	}
 	
 	private MailAccount createAccount(String id) {
@@ -5590,7 +5594,8 @@ public class Service extends BaseService {
 	}
 	
 	public void processManageQuickParts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		if (cus.getUseNewHTMLEditor()) {
+		//TODO: delete useNewHTMLEditor boolean when transition done!
+		if (useNewHTMLEditor) {
 			try {
 				String crud = ServletUtils.getStringParameter(request, "crud", true);
 				if (crud.equals(Crud.READ)) {
