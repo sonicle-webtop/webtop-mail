@@ -55,6 +55,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	
 	viewModel: {
 		formulas: {
+			//NB: use field's name as formula's name otherwise checks after changes will not work!
 			receipt: WTF.checkboxBind('record', 'receipt'),
 			autoAddContact: WTF.checkboxBind('record', 'autoAddContact'),
 			priority: WTF.checkboxBind('record', 'priority'),
@@ -65,8 +66,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
 			seenOnOpen: WTF.checkboxBind('record', 'seenOnOpen'),
 			favoriteNotifications: WTF.checkboxBind('record', 'favoriteNotifications'),
-			foGridShowPreview: WTF.checkboxBind('record', 'gridShowPreview'),
-			foGridAlwaysShowTime: WTF.checkboxBind('record', 'gridAlwaysShowTime'),
+			gridShowPreview: WTF.checkboxBind('record', 'gridShowPreview'),
+			gridAlwaysShowTime: WTF.checkboxBind('record', 'gridAlwaysShowTime'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
 			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks')
 		}
@@ -154,14 +155,14 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}), {
 				xtype: 'checkbox',
-				bind: '{foGridShowPreview}',
+				bind: '{gridShowPreview}',
 				hideEmptyLabel: false,
 				boxLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
 				needReload: true,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, {
 				xtype: 'checkbox',
-				bind: '{foGridAlwaysShowTime}',
+				bind: '{gridAlwaysShowTime}',
 				hideEmptyLabel: false,
 				boxLabel: me.res('opts.fld-gridAlwaysShowTime.lbl'),
 				needReload: true,
