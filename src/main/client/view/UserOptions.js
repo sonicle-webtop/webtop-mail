@@ -65,7 +65,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
 			seenOnOpen: WTF.checkboxBind('record', 'seenOnOpen'),
 			favoriteNotifications: WTF.checkboxBind('record', 'favoriteNotifications'),
-			ingridPreview: WTF.checkboxBind('record', 'ingridPreview'),
+			foGridShowPreview: WTF.checkboxBind('record', 'gridShowPreview'),
+			foGridAlwaysShowTime: WTF.checkboxBind('record', 'gridAlwaysShowTime'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
 			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks')
 		}
@@ -109,32 +110,71 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 					emptyText: '{record.mainEmail}'
 				},
 				fieldLabel: me.res('opts.account.fld-replyTo.lbl'),
-				width: 440,
+				width: 430,
 				submitEmptyText: false,
 				needLogin: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, WTF.lookupCombo('id', 'desc', {
-				bind: '{record.viewMode}',
-				store: Ext.create('Sonicle.webtop.mail.store.ViewMode', {
-					autoLoad: true
-				}),
-				fieldLabel: me.res('opts.account.fld-viewmode.lbl'),
-				width: 440,
-				needReload: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}), WTF.lookupCombo('id', 'desc', {
 				bind: '{record.readReceiptConfirmation}',
 				store: Ext.create('Sonicle.webtop.mail.store.ReadReceiptConfirmation', {
 					autoLoad: true
 				}),
 				fieldLabel: me.res('opts.account.fld-readreceiptconfirmation.lbl'),
-				width: 440,
+				width: 430,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}), {
 				xtype: 'checkbox',
 				bind: '{sharedSeen}',
 				hideEmptyLabel: false,
 				boxLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			},
+			WTF.lookupCombo('id', 'desc', {
+				bind: '{record.sharedSort}',
+				store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
+					autoLoad: true
+				}),
+				fieldLabel: me.res('opts.account.fld-sharedSort.lbl'),
+				width: 340,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}),
+			{
+				xtype: 'soformseparator',
+				title: me.res('opts.main.grid.tit')
+			},
+			WTF.lookupCombo('id', 'desc', {
+				bind: '{record.viewMode}',
+				store: Ext.create('Sonicle.webtop.mail.store.ViewMode', {
+					autoLoad: true
+				}),
+				fieldLabel: me.res('opts.account.fld-viewmode.lbl'),
+				width: 430,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}), {
+				xtype: 'checkbox',
+				bind: '{foGridShowPreview}',
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
+				needReload: true,
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
+				xtype: 'checkbox',
+				bind: '{foGridAlwaysShowTime}',
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.fld-gridAlwaysShowTime.lbl'),
+				needReload: true,
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
+				xtype: 'sopalettefield',
+				bind: '{record.todayRowColor}',
+				hideTrigger: true,
+				colors: WT.getColorPalette('light'),
+				tilesPerRow: 11,
+				fieldLabel: me.res('opts.main.fld-todayRowColor.lbl'),
+				width: 170,
+				needReload: true,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, {
 				xtype: 'checkbox',
@@ -153,38 +193,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				hideEmptyLabel: false,
 				boxLabel: me.res('opts.adv.fld-seenonopen.lbl'),
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-			},WTF.lookupCombo('id', 'desc', {
-				bind: '{record.sharedSort}',
-				store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
-					autoLoad: true
-				}),
-				fieldLabel: me.res('opts.account.fld-sharedSort.lbl'),
-				width: 340,
-				needReload: true,
-				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}),
-			{
-				xtype: 'soformseparator',
-				title: me.res('opts.main.grid.tit')
 			}, {
-				xtype: 'sopalettefield',
-				bind: '{record.todayRowColor}',
-				hideTrigger: true,
-				colors: WT.getColorPalette('light'),
-				tilesPerRow: 11,
-				fieldLabel: me.res('opts.main.fld-todayRowColor.lbl'),
-				width: 170,
-				needReload: true,
-				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-			}, {
-				xtype: 'checkbox',
-				bind: '{ingridPreview}',
-				hideEmptyLabel: false,
-				boxLabel: me.res('opts.adv.fld-ingridPreview.lbl'),
-				needReload: true,
-				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-			},
-			{
 				xtype: 'soformseparator',
 				title: me.res('opts.main.panels.tit')
 			}, {

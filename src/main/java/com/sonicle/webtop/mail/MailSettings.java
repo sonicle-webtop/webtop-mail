@@ -69,7 +69,14 @@ public class MailSettings {
 	 * [boolean]
 	 * Activate or not message body preview in messages grid
 	 */
-	public static final String SHOW_MESSAGE_PREVIEW_ON_ROW = "ingrid.preview";
+	public static final String GRID_SHOW_MESSAGE_PREVIEW = "ingrid.preview";
+	
+	/**
+	 * [user][default]
+	 * [boolean]
+	 * Activate or not 
+	 */
+	public static final String GRID_MESSAGE_TIME_SHOWALWAYS = "grid.message.time.showalways";
 	
 	/**
 	 * [user][default] (#F8F8C8)

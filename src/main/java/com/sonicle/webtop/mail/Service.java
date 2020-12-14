@@ -6013,7 +6013,7 @@ public class Service extends BaseService {
 		String pthreadaction=request.getParameter("threadaction");
 		String pthreadactionuid=request.getParameter("threadactionuid");
 		
-		boolean showMessagePreviewOnRow=us.getShowMessagePreviewOnRow();
+		boolean showMessagePreviewOnRow=us.getGridShowMessagePreview();
 		
 		QueryObj queryObj = null;
 		SearchTerm searchTerm = null;	
@@ -8728,6 +8728,7 @@ public class Service extends BaseService {
 			co.put("pageRows", us.getPageRows());
 			co.put("schedDisabled",ss.isScheduledEmailsDisabled());
 			co.put("identities", jsidents);
+			co.put("gridAlwaysShowTime", us.getGridAlwaysShowTime());
 			co.put("manualSeen",us.isManualSeen());
 			co.put("seenOnOpen",us.isSeenOnOpen());
 			co.put("messageViewRegion",us.getMessageViewRegion());

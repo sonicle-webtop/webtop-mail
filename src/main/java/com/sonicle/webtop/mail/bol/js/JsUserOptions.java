@@ -52,7 +52,8 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean sharedSeen;
 	public boolean manualSeen;
 	public boolean seenOnOpen;
-	public boolean ingridPreview;
+	public boolean gridShowPreview;
+	public boolean gridAlwaysShowTime;
 	public boolean scanAll;
 	//public int scanSeconds; Deprecated
 	//public int scanCycles; Deprecated

@@ -537,13 +537,22 @@ public class MailUserSettings extends BaseUserSettings {
 		return setBoolean(NO_MAILCARD_ON_REPLY_FORWARD,b);
 	}
 	
-	public boolean getShowMessagePreviewOnRow() {
-		Boolean value = getBoolean(SHOW_MESSAGE_PREVIEW_ON_ROW, null);
-		return (value != null) ? value : mss.getDefaultShowMessagePreviewOnRow();
+	public boolean getGridShowMessagePreview() {
+		Boolean value = getBoolean(GRID_SHOW_MESSAGE_PREVIEW, null);
+		return (value != null) ? value : mss.getDefaultGridShowMessagePreview();
 	}
 	
-	public boolean setShowMessagePreviewOnRow(boolean value) {
-		return setBoolean(SHOW_MESSAGE_PREVIEW_ON_ROW, value);
+	public boolean setGridShowMessagePreview(boolean value) {
+		return setBoolean(GRID_SHOW_MESSAGE_PREVIEW, value);
+	}
+	
+	public boolean getGridAlwaysShowTime() {
+		Boolean value = getBoolean(GRID_MESSAGE_TIME_SHOWALWAYS, null);
+		return (value != null) ? value : mss.getDefaultGridAlwaysShowTime();
+	}
+	
+	public boolean setGridAlwaysShowTime(boolean value) {
+		return setBoolean(GRID_MESSAGE_TIME_SHOWALWAYS, value);
 	}
 	
 	public boolean getShowUpcomingEvents() {

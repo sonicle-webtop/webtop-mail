@@ -2693,8 +2693,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				tagsStore: me.mys.tagsStore,
 				threaded: me.threaded,
 				sentMode: issentfolder,
+				alwaysShowTime: me.mys.getVar('gridAlwaysShowTime'),
 				dateShortFormat: WT.getShortDateFmt(),
-				dateLongFormat: WT.getLongDateFmt(),
+				dateLongFormat:  WT.getLongDateFmt(),
 				timeShortFormat: WT.getShortTimeFmt(),
 				timeLongFormat: WT.getLongTimeFmt(),
 				collapseTooltip: me.mys.res('wtmailmailmessagecolumn.collapseTooltip'),
@@ -2854,14 +2855,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						dcols[n++]=Ext.create({//Date
 							xtype: 'gridcolumn',
 							header: me.res("column-date"),
-							width: 80,
+							width: 80 + (me.mys.getVar('gridAlwaysShowTime') ? 60 : 0),
 							sortable: true,
-							renderer: function(value,metadata,record,rowIndex,colIndex,store) {
-								var tdy=record.get("istoday"),
-									fmtd=record.get("fmtd"),
-									tag;
-								if (!fmtd && (tdy || (store.getGroupField && store.getGroupField()==='gdate'))) tag="<span data-qtip='"+Ext.util.Format.date(value,'d-M-Y')+"'>"+Ext.util.Format.date(value,'H:i:s')+"</span>";
-								else tag="<span data-qtip='"+Ext.util.Format.date(value,'H:i:s')+"'>"+Ext.util.Format.date(value,'d-M-Y')+"</span>";
+							renderer: function(value, metadata, record, rowIndex, colIndex, store) {
+								var fmt = Ext.Date.format,
+										tdy = record.get("istoday"),
+										fmtd = record.get("fmtd"),
+										showTime = me.mys.getVar('gridAlwaysShowTime'),
+										sdateFmt = WT.getShortDateFmt(),
+										ltimeFmt = WT.getLongTimeFmt(),
+										tag;
+								
+								if (!fmtd && (tdy || (store.getGroupField && store.getGroupField()==='gdate'))) {
+									tag="<span data-qtip='"+fmt(value,sdateFmt)+"'>"+fmt(value,ltimeFmt)+"</span>";
+								} else {
+									tag="<span data-qtip='"+fmt(value,ltimeFmt)+"'>"+fmt(value,sdateFmt+(showTime ? ' ' + WT.getShortTimeFmt() : ''))+"</span>";
+								}
 								return tag;
 							},
 							dataIndex: 'date',
@@ -3236,7 +3245,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         stcols[n++]={ id: 'stid-from', width: 198, hidden: issentfolder?true:false };
         stcols[n++]={ id: 'stid-to', width: 198, hidden: issentfolder?false:true };
         stcols[n++]={ id: 'stid-subject', width: WT.plTags.desktop?400:200 };
-        stcols[n++]={ id: 'stid-date', width: 96 };
+        stcols[n++]={ id: 'stid-date', width: 96 + (me.mys.getVar('gridAlwaysShowTime') ? 40 : 0) };
         stcols[n++]={ id: 'stid-gdate', width: 96 };
         stcols[n++]={ id: 'stid-sdate', width: 96 };
         stcols[n++]={ id: 'stid-xdate', width: 96 };

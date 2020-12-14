@@ -89,7 +89,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.archiveMode = mus.getArchiveMode();
 				jso.archiveKeepFoldersStructure = mus.isArchiveKeepFoldersStructure();
 				jso.archiveExternalUserFolder = mus.getArchiveExternalUserFolder();
-				jso.ingridPreview = mus.getShowMessagePreviewOnRow();
+				jso.gridShowPreview = mus.getGridShowMessagePreview();
+				jso.gridAlwaysShowTime = mus.getGridAlwaysShowTime();
 				jso.sharedSeen = mus.isSharedSeen();
 				jso.manualSeen = mus.isManualSeen();
 				jso.seenOnOpen = mus.isSeenOnOpen();
@@ -143,7 +144,9 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("replyTo")) mus.setReplyTo(pl.data.replyTo);
 				if (pl.map.has("viewMode")) mus.setViewMode(pl.data.viewMode);
 				if (pl.map.has("readReceiptConfirmation")) mus.setReadReceiptConfirmation(pl.data.readReceiptConfirmation);
-				if (pl.map.has("ingridPreview")) mus.setShowMessagePreviewOnRow(pl.data.ingridPreview);
+				if (pl.map.has("gridShowPreview")) mus.setGridShowMessagePreview(pl.data.gridShowPreview);
+				if (pl.map.has("gridAlwaysShowTime")) mus.setGridAlwaysShowTime(pl.data.gridAlwaysShowTime);
+				
 				if (pl.map.has("manualSeen")) mus.setManualSeen(pl.data.manualSeen);
 				if (pl.map.has("sharedSeen")) mus.setSharedSeen(pl.data.sharedSeen);
 				if (pl.map.has("seenOnOpen")) mus.setSeenOnOpen(pl.data.seenOnOpen);

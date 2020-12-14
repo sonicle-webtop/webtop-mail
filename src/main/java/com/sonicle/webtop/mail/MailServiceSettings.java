@@ -284,8 +284,12 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getInteger(DEFAULT_PREFIX + SIEVE_PORT, 2000);
 	}
 	
-	public boolean getDefaultShowMessagePreviewOnRow() {
-		return getBoolean(DEFAULT_PREFIX + SHOW_MESSAGE_PREVIEW_ON_ROW, true);
+	public boolean getDefaultGridShowMessagePreview() {
+		return getBoolean(DEFAULT_PREFIX + GRID_SHOW_MESSAGE_PREVIEW, true);
+	}
+	
+	public boolean getDefaultGridAlwaysShowTime() {
+		return getBoolean(DEFAULT_PREFIX + GRID_MESSAGE_TIME_SHOWALWAYS, false);
 	}
 	
 	public boolean getDefaultShowUpcomingEvents() {

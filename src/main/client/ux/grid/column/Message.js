@@ -122,6 +122,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		complete: 'fa fa-check'
 	},
 	
+	alwaysShowTime: false,
 	dateShortFormat: 'm/d/Y',
 	dateLongFormat: 'M d Y',
 	timeShortFormat: 'g:i A',
@@ -326,7 +327,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			textFmt = me.timeShortFormat;
 			tipFmt = me.dateShortFormat + ' ' + me.timeLongFormat;
 		} else {
-			textFmt = me.dateLongFormat;
+			textFmt = me.dateLongFormat + (me.alwaysShowTime ? ' ' + me.timeShortFormat : '');
 			tipFmt = me.dateShortFormat + ' ' + me.timeLongFormat;
 		}
 		return {
