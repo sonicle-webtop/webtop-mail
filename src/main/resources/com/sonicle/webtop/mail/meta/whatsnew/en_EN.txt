@@ -1,3 +1,8 @@
+$	5.9.0
+	%	Version 5.9.0
+	*	<h1>New HTML Editor</h1>
+		<p>New editor component completely reviewed and revamped based on the advanced TinyMCE.</p>
+		<img src="5.9.0_neweditor.png"/>
 $	5.7.0
 	%	Version 5.7.0
 	*	<h1>Hilight searched text</h1>

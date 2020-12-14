@@ -1,3 +1,8 @@
+$	5.9.0
+	%	Versione 5.9.0
+	*	<h1>Nuovo Editor HTML</h1>
+		<p>Componente editor HTML completamente rinnovato basato sull'avanzato TinyMCE.</p>
+		<img src="5.9.0_neweditor.png"/>
 $	5.7.0
 	%	Versione 5.7.0
 	*	<h1>Evidenziazione testo ricercato</h1>
