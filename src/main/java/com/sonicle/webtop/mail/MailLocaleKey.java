@@ -87,6 +87,8 @@ public class MailLocaleKey {
 	public static final String ICAL_REPLY_DECLINED="ical.reply.declined";
     public static final String ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED="error.attachment.type.not.supported";
 	public static final String PERMISSION_DENIED="permission.denied";
+        public static final String SENT_MESSAGE_NOT_SAVED_MESSAGE="sentMessage.notSaved.message";
+        public static final String SHARED_SENT_MESSAGE_SAVED_ON_MAIN_MESSAGE="sharedSentMessage.savedOnMain.message";
 
 	public static String TAGS_LABEL(String label) {
 		return "tags."+label;

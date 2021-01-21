@@ -154,6 +154,7 @@ import com.sonicle.commons.web.json.PayloadAsList;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
+import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
 import com.sonicle.webtop.core.app.servlet.js.BlobInfoPayload;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
@@ -929,7 +930,17 @@ public class Service extends BaseService {
 		return sentfolder;
 	}
 	
-	public Exception sendMsg(String from, SimpleMessage smsg, List<JsAttachment> attachments) {
+        class SendException extends Exception {
+            boolean messageSent=false;
+            boolean messageSaved=false;
+            Exception exception=null;
+            
+            void setMessageSent(boolean b) { messageSent=b; }
+            void setMessageSaved(boolean b) { messageSaved=b; }
+            void setException(Exception exc) { exception=exc; }
+        }
+        
+	public SendException sendMsg(String from, SimpleMessage smsg, List<JsAttachment> attachments) {
 		//UserProfile profile = environment.getProfile();
 		//String sentfolder = mprofile.getFolderSent();
 		Identity ident = smsg.getFrom();
@@ -949,26 +960,43 @@ public class Service extends BaseService {
 		}*/
 		String sentfolder=getSentFolder(ident);
 		MailAccount account=getAccount(ident);
-		Exception retexc = null;
+		SendException retexc = null;
 		Message msg = null;
 		try {
 			msg = createMessage(from, smsg, attachments, false);
 			Transport.send(msg);
 		} catch (Exception ex) {
 			Service.logger.error("Exception",ex);
-			retexc = ex;
+			retexc = new SendException();
+                        retexc.setException(ex);
 		}
 
 		//if sent succesful, save outgoing message
 		if (retexc == null && msg != null) {
-			retexc = saveSent(account, msg, sentfolder);
-			
+			Exception ex = saveSent(account, msg, sentfolder);
+			if (ex!=null) {
+                            retexc = new SendException();
+                            retexc.setMessageSent(true);
+                            
+                            //If shared account retry on main account
+                            if (!ident.isMainIdentity()) {
+                                sentfolder=mainAccount.getFolderSent();
+                                Exception sex = saveSent(mainAccount, msg, sentfolder);
+                                if (sex==null) {
+                                    retexc.setMessageSaved(true);
+                                }
+                            }
+                            
+                            
+                            Service.logger.error("Exception",ex);
+                            retexc.setException(ex);
+                        }
 		}
 		return retexc;
 		
 	} //end sendMsg, SimpleMessage version
 
-	public Exception sendMessage(SimpleMessage msg, List<JsAttachment> attachments) {
+	public SendException sendMessage(SimpleMessage msg, List<JsAttachment> attachments) {
 		UserProfile profile = environment.getProfile();
 		String sender = profile.getEmailAddress();
 		String name = profile.getDisplayName();
@@ -989,7 +1017,7 @@ public class Service extends BaseService {
 		}
 		if (!isOtherIdentity && ( replyto!=null && replyto.trim().length()>0)) msg.setReplyTo(replyto);
 		
-		Exception retexc = null;
+		SendException retexc = null;
 		
 		if (attachments.size() == 0 && msg.getAttachments() == null) {
 			retexc = sendMsg(sender, msg, null);
@@ -997,7 +1025,7 @@ public class Service extends BaseService {
 			
 			retexc = sendMsg(sender, msg, attachments);
 			
-			if (retexc==null) clearCloudAttachments(msg.getId());
+			if (retexc==null || retexc.messageSent) clearCloudAttachments(msg.getId());
 		}
 
 		return retexc;
@@ -1323,6 +1351,7 @@ public class Service extends BaseService {
 			outgoing.appendMessages(saveMsgs);
 		} catch (MessagingException exc) {
 			Service.logger.error("Exception",exc);
+                        retexc=exc;
 		}
 		
 		return retexc;
@@ -4661,8 +4690,9 @@ public class Service extends BaseService {
 				from = ifrom.getEmail();
 			}
 			account.checkStoreConnected();
-			Exception exc = sendMessage(msg, jsmsg.attachments);
-			if (exc == null) {
+			SendException exc = sendMessage(msg, jsmsg.attachments);
+                        String foundfolder = null;
+			if (exc == null || exc.messageSent) {
 				//if is draft, check for deletion
 				if (jsmsg.draftuid>0 && jsmsg.draftfolder!=null && ss.isDefaultFolderDraftsDeleteMsgOnSend()) {
 					FolderCache fc=account.getFolderCache(jsmsg.draftfolder);
@@ -4702,7 +4732,7 @@ public class Service extends BaseService {
                 //String soriguid=request.getParameter("origuid");
 				//long origuid=0;
 				//try { origuid=Long.parseLong(soriguid); } catch(RuntimeException rexc) {}
-				String foundfolder = null;
+				
 				if (jsmsg.forwardedfrom != null && jsmsg.forwardedfrom.trim().length() > 0) {
 					HashMap<String,ArrayList<String>> rcpts=jsrecipientsToHashMap(pl.data.recipients);
 					if (mailManager.isAuditEnabled())
@@ -4755,22 +4785,37 @@ public class Service extends BaseService {
 						}
 					}
 				}
-				
-                json=new JsonResult()
-                        .set("foundfolder",foundfolder)
-                        .set("saved", Boolean.FALSE);
-			} else {
-				Throwable cause = exc.getCause();
-				String msgstr = cause != null ? cause.getMessage() : exc.getMessage();
-                json=new JsonResult(false, msgstr);
-			}
+                        }
+
+                        if (exc!=null) {
+                            if (!exc.messageSent) {
+                                json=new JsonResult(false,exc.exception.getMessage());
+                            }
+                            else {
+                                if (!exc.messageSaved)
+                                    environment.notify(
+                                        new SentMessageNotSavedSM(exc.exception)
+                                    );
+                                else 
+                                    environment.notify(
+                                        new SharedSentMessageSavedOnMainSM(exc.exception)
+                                    );
+                            }
+                        }
+                        
+                        if (json==null)
+                            json=new JsonResult()
+                                .set("foundfolder",foundfolder)
+                                .set("saved", Boolean.FALSE);
+                        
+                        
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			Throwable cause = exc.getCause();
 			String msg = cause != null ? cause.getMessage() : exc.getMessage();
-            json=new JsonResult(false, msg);
+                        json=new JsonResult(false, msg);
 		}
-        json.printTo(out);
+                json.printTo(out);
 	}
 	
 	private HashMap<String,ArrayList<String>> jsrecipientsToHashMap(List<JsRecipient> recipients) {
@@ -9029,4 +9074,23 @@ public class Service extends BaseService {
 		return getEnv().getWebTopSession();
 	}	
 
+        
+        
+    class SentMessageNotSavedSM extends MessageBoxSM {
+
+            public SentMessageNotSavedSM(Exception exc) {
+                    super(MessageBoxSM.MsgType.WARN,
+                            lookupResource(MailLocaleKey.SENT_MESSAGE_NOT_SAVED_MESSAGE)+":\n\n"+exc.getMessage()
+                    );
+            }
+    }
+        
+    class SharedSentMessageSavedOnMainSM extends MessageBoxSM {
+
+            public SharedSentMessageSavedOnMainSM(Exception exc) {
+                    super(MessageBoxSM.MsgType.WARN,
+                            lookupResource(MailLocaleKey.SHARED_SENT_MESSAGE_SAVED_ON_MAIN_MESSAGE)+":\n\n"+exc.getMessage()
+                    );
+            }
+    }
 }
