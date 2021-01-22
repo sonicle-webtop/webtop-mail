@@ -368,7 +368,8 @@ public class SimpleMessage {
       // Delimiters are comma, semi-colon
       //
 //      StringTokenizer st = new StringTokenizer(addr, "\",;",true);
-      StringTokenizer st=new StringTokenizer(addr, "\";", true);
+      //StringTokenizer st=new StringTokenizer(addr, "\";", true);
+      StringTokenizer st=new StringTokenizer(addr, ";", true);
       String address="";
       while(st.hasMoreTokens()) {
         String token=st.nextToken();
