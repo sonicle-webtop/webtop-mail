@@ -1332,7 +1332,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		
 		if ('html' === format) {
-			if (mailcard && mailcard.text.trim()) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
+			if (mailcard) {
+                            if (mailcard.text.trim()) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
+                            else mcContent = '<div id="wt-mailcard" style="border: none !important">' + mailcard.html + '</div>';
+                        }
 			if (WT.getVar('useNewHTMLEditor')) {
 				var HE = Sonicle.form.field.tinymce.HTMLEditor,
 					ff = HE.getContentFontFamily(me.htmlEditor.fonts, me.fontFace),
