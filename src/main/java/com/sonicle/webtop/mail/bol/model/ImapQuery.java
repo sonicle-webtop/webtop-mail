@@ -193,19 +193,23 @@ public class ImapQuery {
 	}
 	
 	public static SearchTerm[] toAnySearchTerm(String value) {
-		SearchTerm anyterms[] = new SearchTerm[4];
+		SearchTerm anyterms[] = new SearchTerm[6];
 		anyterms[0] = new SubjectTerm(value);
 		anyterms[1] = new RecipientStringTerm(Message.RecipientType.TO, value);
-		anyterms[2] = new FromStringTerm(value);
-		anyterms[3] = new BodyTerm(value);
+		anyterms[2] = new RecipientStringTerm(Message.RecipientType.CC, value);
+		anyterms[3] = new RecipientStringTerm(Message.RecipientType.BCC, value);
+		anyterms[4] = new FromStringTerm(value);
+		anyterms[5] = new BodyTerm(value);
 		return anyterms;
 	}
 	
 	public static SearchTerm[] toDefaultSearchTerm(String value) {
-		SearchTerm anyterms[] = new SearchTerm[3];
+		SearchTerm anyterms[] = new SearchTerm[5];
 		anyterms[0] = new SubjectTerm(value);
 		anyterms[1] = new RecipientStringTerm(Message.RecipientType.TO, value);
-		anyterms[2] = new FromStringTerm(value);
+		anyterms[2] = new RecipientStringTerm(Message.RecipientType.CC, value);
+		anyterms[3] = new RecipientStringTerm(Message.RecipientType.BCC, value);
+		anyterms[4] = new FromStringTerm(value);
 		return anyterms;
 	}
 	
