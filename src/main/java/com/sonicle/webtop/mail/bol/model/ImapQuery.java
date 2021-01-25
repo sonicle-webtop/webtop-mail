@@ -70,6 +70,8 @@ public class ImapQuery {
 	
 	private static final String FROM = "from";
 	private static final String TO = "to";
+	private static final String CC = "cc";
+	private static final String BCC = "bcc";
 	private static final String SUBJECT = "subject";
 	private static final String MESSAGE = "message";
 	private static final String EVERYWHERE = "everywhere";
@@ -106,6 +108,10 @@ public class ImapQuery {
 					terms.add(new FromStringTerm(value));
 				} else if(key.equals(TO)) {
 					terms.add(new RecipientStringTerm(Message.RecipientType.TO, value));
+				} else if(key.equals(CC)) {
+					terms.add(new RecipientStringTerm(Message.RecipientType.CC, value));
+				} else if(key.equals(BCC)) {
+					terms.add(new RecipientStringTerm(Message.RecipientType.BCC, value));
 				} else if(key.equals(SUBJECT)) {
 					terms.add(new SubjectTerm(value));
 				} else if(key.equals(MESSAGE)) {

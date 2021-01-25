@@ -105,7 +105,18 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			}, {
 				name: 'to',
 				type: 'string',
+				labelAlign: 'left',
 				label: me.res('fld-search.field.to.lbl')
+			}, {
+				name: 'cc',
+				type: 'string',
+				labelAlign: 'left',
+				label: me.res('fld-search.field.cc.lbl')
+			}, {
+				name: 'bcc',
+				type: 'string',
+				labelAlign: 'left',
+				label: me.res('fld-search.field.bcc.lbl')
 			}, {
 				name: 'subject',
 				type: 'string',
