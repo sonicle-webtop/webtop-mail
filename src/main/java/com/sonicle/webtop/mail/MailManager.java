@@ -246,7 +246,10 @@ public class MailManager extends BaseManager implements IMailManager {
 		return uident;
 	}
 	
-	public Identity findIdentity(int id) {
+	public Identity findIdentity(int id) throws WTException {
+                if (identities==null)
+                    identities=buildIdentities();
+                
 		for(Identity ident: identities) {
 			if (ident.getIdentityId()==id) 
 				return ident;
