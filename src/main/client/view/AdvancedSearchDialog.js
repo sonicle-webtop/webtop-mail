@@ -75,8 +75,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 					mode: 'local',
 					displayField: 'desc',
 					triggerAction: 'all',
-					//selectOnFocus: true,
 					editable: false,
+					selectOnFocus: false,
 					store: new Ext.data.SimpleStore({
 						fields: ['id', 'desc'],
 						data: [
@@ -176,8 +176,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						mode: 'local',
 						displayField: 'desc',
 						triggerAction: 'all',
-						//selectOnFocus: true,
 						editable: false,
+						selectOnFocus: false,
 						store: new Ext.data.SimpleStore({
 							fields: ['id','desc'],
 							data: [
@@ -195,8 +195,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						displayField: 'desc',
 						iconClsField: 'icon',
 						triggerAction: 'all',
-						//selectOnFocus: true,
 						editable: false,
+						selectOnFocus: false,
 						store: new Ext.data.SimpleStore({
 							fields: ['id','desc','icon'],
 							data: [
@@ -216,8 +216,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						displayField: 'desc',
 						iconClsField: 'icon',
 						triggerAction: 'all',
-						//selectOnFocus: true,
 						editable: false,
+						selectOnFocus: false,
 						store: new Ext.data.SimpleStore({
 							fields: ['id','desc','icon'],
 							data: [
@@ -246,7 +246,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						displayField: 'name',
 						valueField: 'id',
 						colorField: 'color',
-						editable: false,
+						//editable: false,
 						store: me.mys.tagsStore
 					},
 					'any': null
@@ -355,7 +355,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
                 entries: entries
 			},
 			callback: function(success,json) {
-				if (json.result) {
+				if (json.success) {
 					me.searchRunning=true;
 					me.searchLabel.show();
 					me.searchProgress.setText("0%");
@@ -368,7 +368,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 					});
 				} else {
 					me.stopSearch();
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -382,9 +382,9 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 			WT.ajaxReq(me.mys.ID, 'CancelAdvancedSearch', {
 				params: { },
 				callback: function(success,json) {
-					if (json.result) {
+					if (json.success) {
 					} else {
-						WT.error(json.text);
+						WT.error(json.message);
 					}
 				}
 			});

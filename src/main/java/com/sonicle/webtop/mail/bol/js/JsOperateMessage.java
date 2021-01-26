@@ -35,36 +35,33 @@ package com.sonicle.webtop.mail.bol.js;
 
 /**
  *
- * @author gbulfon
+ * @author Federico Ballarini
  */
-public class JsAttachment {
-    
-    public String uploadId;
-    public String fileName;
-    public String cid;
-    public Boolean inline;
-    public Long fileSize;
-	public Boolean editable;
+public class JsOperateMessage {
+	public Integer unread;
+	public Long millis;
+	public String tofolder;
+	public Boolean archiving;
 	
-	public JsAttachment() {
-		
+	public JsOperateMessage(Long millis) {
+		this.millis = millis;
 	}
 	
-	public JsAttachment(String uploadId, String fileName, String cid, boolean inline, long fileSize) {
-		this.uploadId=uploadId;
-		this.fileName=fileName;
-		this.cid=cid;
-		this.inline=inline;
-		this.fileSize=fileSize;
-	}
-
-	public JsAttachment(String uploadId, String fileName, String cid, Boolean inline, Long fileSize, Boolean editable) {
-		this.uploadId = uploadId;
-		this.fileName = fileName;
-		this.cid = cid;
-		this.inline = inline;
-		this.fileSize = fileSize;
-		this.editable = editable;
+	public JsOperateMessage(Integer unread, Long millis) {
+		this.unread = unread;
+		this.millis = millis;
 	}
 	
+	public JsOperateMessage(Long millis, String tofolder, Boolean archiving) {
+		this.millis = millis;
+		this.tofolder = tofolder;
+		this.archiving = archiving;
+	}
+	
+	public JsOperateMessage(Integer unread, Long millis, String tofolder, Boolean archiving) {
+		this.unread = unread;
+		this.millis = millis;
+		this.tofolder = tofolder;
+		this.archiving = archiving;
+	}
 }

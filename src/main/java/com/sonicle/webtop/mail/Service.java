@@ -109,7 +109,6 @@ import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSharing;
 import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
 import com.sonicle.webtop.mail.bol.js.JsSort;
-import com.sonicle.webtop.mail.bol.js.JsTag;
 import com.sonicle.webtop.mail.bol.model.Identity;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.ScanDAO;
@@ -130,7 +129,6 @@ import java.sql.*;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.jar.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.activation.*;
@@ -152,15 +150,22 @@ import com.sonicle.commons.qbuilders.conditions.Condition;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.PayloadAsList;
 import com.sonicle.commons.web.json.bean.QueryObj;
+import com.sonicle.commons.web.json.extjs.FieldMeta;
+import com.sonicle.commons.web.json.extjs.GridMetadata;
+import com.sonicle.commons.web.json.extjs.SortMeta;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
 import com.sonicle.webtop.core.app.servlet.js.BlobInfoPayload;
 import com.sonicle.webtop.core.model.Tag;
+import com.sonicle.webtop.mail.bol.js.JsAdvSearchMessage;
+import com.sonicle.webtop.mail.bol.js.JsListedMessage;
+import com.sonicle.webtop.mail.bol.js.JsMessageDetails;
+import com.sonicle.webtop.mail.bol.js.JsOperateFolder;
+import com.sonicle.webtop.mail.bol.js.JsOperateMessage;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.text.Normalizer;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 import javax.mail.search.AndTerm;
@@ -319,7 +324,6 @@ public class Service extends BaseService {
 		mprofile = new MailUserProfile(mailManager,ss,us,profile);
 		String mailUsername = mprofile.getMailUsername();
 		String mailPassword = mprofile.getMailPassword();
-		String authorizationId=mailUsername;
 		boolean isImpersonated=profile.getPrincipal().isImpersonated();
 		String vmailSecret=ss.getNethTopVmailSecret();
 		if (isImpersonated) {
@@ -3066,7 +3070,7 @@ public class Service extends BaseService {
 		String sisdd = request.getParameter("isdd");
 		boolean isdd = sisdd != null && sisdd.equals("true");
 		String uids[] = null;
-		String sout = null;
+		
 		boolean archiving = false;
 		try {
 			fromaccount.checkStoreConnected();
@@ -3076,7 +3080,8 @@ public class Service extends BaseService {
 			String foldertrash=toaccount.getFolderTrash();
 			String folderspam=toaccount.getFolderSpam();
 			String folderarchive=toaccount.getFolderArchive();
-
+			JsOperateMessage message;
+			
 			//Try to make decisions on destination folders
 			// only if it's not a direct drag&drop move
 			if (!isdd) {
@@ -3146,21 +3151,21 @@ public class Service extends BaseService {
 					}
 				}
 				long millis = System.currentTimeMillis();
-				sout = "{\nresult: true, millis: " + millis + ", tofolder: '"+StringEscapeUtils.escapeEcmaScript(tofolder)+"', archiving: "+archiving+"\n}";
+				message = new JsOperateMessage(millis, tofolder, archiving);
 			} else {
                 uids=getMessageUIDs(mcache,request);
                 if (archiving) archiveMessages(mcache, folderarchive, toLongs(uids),fullthreads);
 				else moveMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
-				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + ", tofolder: '"+StringEscapeUtils.escapeEcmaScript(tofolder)+"', archiving: "+archiving+"\n}";
+				message = new JsOperateMessage(tomcache.getUnreadMessagesCount(), millis, tofolder, archiving);
 			}
+			new JsonResult(message).printTo(out, false);
 			tomcache.refreshUnreads();
-		} catch(Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+		} catch(Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processCopyMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3173,15 +3178,15 @@ public class Service extends BaseService {
 		boolean multifolder = smultifolder != null && smultifolder.equals("true");
 		String sfullthreads = request.getParameter("fullthreads");
 		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
-		String sisdd = request.getParameter("isdd");
-		boolean isdd = sisdd != null && sisdd.equals("true");
-		String sout = null;
-		String uids[]=null;
+		String uids[] = null;
+		
 		try {
 			fromaccount.checkStoreConnected();
 			toaccount.checkStoreConnected();
 			FolderCache mcache = fromaccount.getFolderCache(fromfolder);
 			FolderCache tomcache = toaccount.getFolderCache(tofolder);
+			JsOperateMessage message;
+			
 			if (allfiltered == null) {
 				uids = request.getParameterValues("ids");
 				if (!multifolder) copyMessages(mcache, tomcache, toLongs(uids),fullthreads);
@@ -3197,20 +3202,20 @@ public class Service extends BaseService {
 					}
 				}
 				long millis = System.currentTimeMillis();
-				sout = "{\nresult: true, millis: " + millis + "\n}";
+				message = new JsOperateMessage(millis);
 			} else {
                 uids=getMessageUIDs(mcache,request);
                 copyMessages(mcache, tomcache, toLongs(uids),fullthreads);
 				tomcache.refreshUnreads();
 				mcache.setForceRefresh();
 				long millis = System.currentTimeMillis();
-				sout = "{\nresult: true, unread: " + tomcache.getUnreadMessagesCount() + ", millis: " + millis + "\n}";
+				message = new JsOperateMessage(tomcache.getUnreadMessagesCount(), millis);
 			}
-        } catch(Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			new JsonResult(message).printTo(out);
+        } catch(Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processDmsArchiveMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3224,8 +3229,8 @@ public class Service extends BaseService {
 		boolean multifolder = smultifolder != null && smultifolder.equals("true");
 		String sfullthreads = request.getParameter("fullthreads");
 		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
-		String uids[]=null;
-		String sout = null;
+		String uids[];
+		
 		try {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(fromfolder);
@@ -3243,12 +3248,12 @@ public class Service extends BaseService {
 				}
 			}
 			long millis = System.currentTimeMillis();
-			sout = "{\nresult: true, millis: " + millis + "\n}";
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			JsOperateMessage message = new JsOperateMessage(millis);
+			new JsonResult(message).printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	String[] getMessageUIDs(FolderCache mcache,HttpServletRequest request) throws MessagingException, IOException {
@@ -3349,8 +3354,8 @@ public class Service extends BaseService {
 		boolean multifolder = smultifolder != null && smultifolder.equals("true");
 		String sfullthreads = request.getParameter("fullthreads");
 		boolean fullthreads = sfullthreads != null && sfullthreads.equals("true");
-		String sout = null;
 		String uids[];
+		
 		try {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(fromfolder);
@@ -3370,17 +3375,15 @@ public class Service extends BaseService {
 						deleteMessages(mcache, iuids, fullthreads);
 					}
 				}
-				sout = "{\nresult: true\n}";
 			} else {
                 uids=getMessageUIDs(mcache,request);
 				deleteMessages(mcache, toLongs(uids),true);
-				sout = "{\nresult: true\n}";
 			}
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			new JsonResult().printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processFlagMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3425,7 +3428,7 @@ public class Service extends BaseService {
 		String uids[] = request.getParameterValues("ids");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
-		String sout = null;
+
 		try {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(fromfolder);
@@ -3443,12 +3446,14 @@ public class Service extends BaseService {
 				}
 			}
 			long millis = System.currentTimeMillis();
-			sout = "{\nresult: true, millis: " + millis + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			
+			new JsonResult()
+					.set("millis", millis)
+					.printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processUnseenMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3457,7 +3462,7 @@ public class Service extends BaseService {
 		String uids[] = request.getParameterValues("ids");
 		String multifolder = request.getParameter("multifolder");
 		boolean mf = multifolder != null && multifolder.equals("true");
-		String sout = null;
+		
 		try {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(fromfolder);
@@ -3475,12 +3480,14 @@ public class Service extends BaseService {
 				}
 			}
 			long millis = System.currentTimeMillis();
-			sout = "{\nresult: true, millis: " + millis + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			
+			new JsonResult()
+					.set("millis", millis)
+					.printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processManageHiddenFolders(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3520,16 +3527,16 @@ public class Service extends BaseService {
 		if (srecursive != null) {
 			recursive = srecursive.equals("1");
 		}
-		String sout = null;
 		Connection con = null;
+		
 		try {
 			con = getConnection();
 			FolderCache fc = account.getFolderCache(folder);
 			setScanFolder(con, fc, value, recursive);
-			sout = "{\nresult: true\n}";
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			new JsonResult().printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		} finally {
 			if (con != null) {
 				try {
@@ -3538,7 +3545,6 @@ public class Service extends BaseService {
 				}
 			}
 		}
-		out.println(sout);
 	}
 	
 	private void setScanFolder(Connection con, FolderCache fc, boolean value, boolean recursive) throws SQLException {
@@ -3572,21 +3578,22 @@ public class Service extends BaseService {
 		if (srecursive != null) {
 			recursive = srecursive.equals("1");
 		}
-		String sout = null;
 		FolderCache mcache = null;
+		
 		try {
 			account.checkStoreConnected();
-			boolean result = true;
-			sout = "{\n";
 			mcache = account.getFolderCache(folder);
 			setMessagesSeen(mcache, true, recursive);
 			long millis = System.currentTimeMillis();
-			sout += "result: " + result + ", millis: " + millis + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, oldid: '" + folder + "', oldname: '" + (mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			JsOperateMessage message = new JsOperateMessage(millis);
+			new JsonResult(message).printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t)
+					.set("oldid", folder)
+					.set("oldname", mcache != null ? mcache.getFolder().getName() : "unknown")
+					.printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processUnseenFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3597,20 +3604,20 @@ public class Service extends BaseService {
 		if (srecursive != null) {
 			recursive = srecursive.equals("1");
 		}
-		String sout = null;
 		FolderCache mcache = null;
+		
 		try {
 			account.checkStoreConnected();
-			boolean result = true;
-			sout = "{\n";
 			mcache = account.getFolderCache(folder);
 			setMessagesSeen(mcache, false, recursive);
-			sout += "result: " + result + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, oldid: '" + folder + "', oldname: '" + (mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			new JsonResult().printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t)
+					.set("oldid", folder)
+					.set("oldname", mcache != null ? mcache.getFolder().getName() : "unknown")
+					.printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	private void setMessagesSeen(FolderCache mcache, boolean seen, boolean recursive) throws MessagingException {
@@ -3693,7 +3700,7 @@ public class Service extends BaseService {
 		String name=request.getParameter("name");
 		String size=request.getParameter("size");
 		us.setColumnSize(name,Integer.parseInt(size));
-		out.println("{ result: true }");
+		new JsonResult().printTo(out);
 	}
 	
 	public void processSaveColumnsOrder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3745,13 +3752,11 @@ public class Service extends BaseService {
 		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String name = request.getParameter("name");
-		String sout = null;
 		FolderCache mcache = null;
+		
 		try {
 			account.checkStoreConnected();
-			Folder newfolder = null;
-			boolean result = true;
-			sout = "{\n";
+			Folder newfolder;
 			name = account.normalizeName(name);
             if (
 					folder==null ||
@@ -3763,7 +3768,7 @@ public class Service extends BaseService {
 			
 			newfolder = mcache.createFolder(name);
 			if (newfolder == null) {
-				result = false;
+				new JsonResult(false).printTo(out);
 			} else {
 				if (mailManager.isAuditEnabled())
 					mailManager.writeAuditLog(
@@ -3773,34 +3778,31 @@ public class Service extends BaseService {
 							JsonUtils.toJson("name",name)
 					);
 				
-				if (!account.isRoot(mcache)) {
-					sout += "parent: '" + StringEscapeUtils.escapeEcmaScript(mcache.getFolderName()) + "',\n";
-				} else {
-					sout += "parent: null,\n";
-				}
-				sout += "name: '" + StringEscapeUtils.escapeEcmaScript(newfolder.getName()) + "',\n";
-				sout += "fullname: '" + StringEscapeUtils.escapeEcmaScript(newfolder.getFullName()) + "',\n";	
+				String parent = !account.isRoot(mcache) ? mcache.getFolderName() : null;
+				JsOperateFolder createdFolder = new JsOperateFolder()
+						.setParent(parent)
+						.setName(newfolder.getName())
+						.setFullname(newfolder.getFullName());
+				new JsonResult(createdFolder).printTo(out, false);
 			}
-			sout += "result: " + result + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+		} catch (Throwable t) {
+			new JsonResult(t)
+					.set("oldid", folder)
+					.set("oldname", mcache != null ? mcache.getFolder().getName() : "unknown")
+					.printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processRenameFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String name = request.getParameter("name");
-		String sout = null;
 		FolderCache mcache = null;
 		MailUserSettings.FavoriteFolders favorites = us.getFavoriteFolders();
 		
 		try {
-			sout = "{\n";
 			String newid = folder;
-			boolean result = true;
 			mcache = account.getFolderCache(folder);
 			account.checkStoreConnected();
 			
@@ -3819,141 +3821,139 @@ public class Service extends BaseService {
 				us.setFavoriteFolders(favorites);
 				}
 			}
-			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
-			sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newid) + "',\n";
-			sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(name) + "',\n";
-			sout += "result: " + result + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			
+			JsOperateFolder renamedFolder = new JsOperateFolder()
+					.setOldid(folder)
+					.setNewid(newid)
+					.setNewname(name);
+			new JsonResult(renamedFolder).printTo(out, false);
+		} catch (Throwable t) {
+			new JsonResult(t)
+					.set("oldid", folder)
+					.set("oldname", mcache != null ? mcache.getFolder().getName() : "unknown")
+					.printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processHideFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
-		String sout = null;
+
 		try {
 			account.checkStoreConnected();
-			boolean result = true;
-			sout = "{\n";
 			if (account.isSpecialFolder(folder)) {
-				result = false;
+				new JsonResult(false).printTo(out);
 			} else {
 				hideFolder(account,folder);
+				new JsonResult().printTo(out);
 			}
-			sout += "result: " + result + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processDeleteFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
-		String sout = null;
 		FolderCache mcache = null;
+		
 		try {
 			account.checkStoreConnected();
-			boolean result = true;
-			sout = "{\n";
 			mcache = account.getFolderCache(folder);
 			if (!account.isUnderFolder(account.getFolderArchive(),folder) && account.isSpecialFolder(folder)) {
-				result = false;
+				new JsonResult(false).printTo(out);
 			} else {
-				result = account.deleteFolder(folder);
-				if (result) {
-					sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
+				if (account.deleteFolder(folder)) {
+					JsOperateFolder deletedFolder = new JsOperateFolder()
+							.setOldid(folder);
+					new JsonResult(deletedFolder).printTo(out, false);
+				} else {
+					new JsonResult(false).printTo(out);
 				}
 			}
-			sout += "result: " + result + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+		} catch (Throwable t) {
+			new JsonResult(t)
+					.set("oldid", folder)
+					.set("oldname", mcache != null ? mcache.getFolder().getName() : "unknown")
+					.printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processTrashFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
-		String sout = null;
-		FolderCache mcache = null;
+
 		try {
 			account.checkStoreConnected();
-			boolean result = true;
-			sout = "{\n";
-			mcache = account.getFolderCache(folder);
+			
 			if (!account.isUnderFolder(account.getFolderArchive(),folder) && account.isSpecialFolder(folder)) {
-				result = false;
+				new JsonResult(false).printTo(out);
 			} else {
 				FolderCache newfc = account.trashFolder(folder);
-				if (newfc!=null) { 
-					sout+="newid: '"+StringEscapeUtils.escapeEcmaScript(newfc.getFolder().getFullName())+"',\n";
-					sout+="trashid: '"+StringEscapeUtils.escapeEcmaScript(newfc.getParent().getFolder().getFullName())+"',\n";
+				if (newfc!=null) {
+					JsOperateFolder trashedFolder = new JsOperateFolder()
+							.setNewid(newfc.getFolder().getFullName())
+							.setTrashid(newfc.getParent().getFolder().getFullName());
+					new JsonResult(trashedFolder).printTo(out, false);
 				}
-				result = true;
 			}
-			sout += "result: " + result + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processMoveFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
 		String to = request.getParameter("to");
-		String sout = null;
 		FolderCache mcache = null;
+		
 		try {
 			account.checkStoreConnected();
-			boolean result = true;
-			sout = "{\n";
 			mcache = account.getFolderCache(folder);
 			if (account.isSpecialFolder(folder)) {
-				result = false;
+				new JsonResult(false).printTo(out);
 			} else {
 				FolderCache newfc = account.moveFolder(folder, to);
 				Folder newf = newfc.getFolder();
-				sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
-				sout += "newid: '" + StringEscapeUtils.escapeEcmaScript(newf.getFullName()) + "',\n";
-				sout += "newname: '" + StringEscapeUtils.escapeEcmaScript(newf.getName()) + "',\n";
-				if (to != null) {
-					sout += "parent: '" + StringEscapeUtils.escapeEcmaScript(newf.getParent().getFullName()) + "',\n";
-				}
-				result = true;
+				JsOperateFolder movedFolder = new JsOperateFolder()
+						.setOldid(folder)
+						.setNewid(newf.getFullName())
+						.setNewname(newf.getName());
+				if (to != null) movedFolder.setParent(newf.getParent().getFullName());
+				new JsonResult(movedFolder).printTo(out, false);
 			}
-			sout += "result: " + result + "\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+		} catch (Throwable t) {
+			new JsonResult(t)
+					.set("oldid", folder)
+					.set("oldname", mcache != null ? mcache.getFolder().getName() : "unknown")
+					.printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processEmptyFolder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String folder = request.getParameter("folder");
-		String sout = null;
 		FolderCache mcache = null;
+		
 		try {
 			account.checkStoreConnected();
-			sout = "{\n";
 			mcache = account.getFolderCache(folder);
 			account.emptyFolder(folder);
-			sout += "oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "',\n";
-			sout += "result: true\n}";
-		} catch (MessagingException exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, oldid: '" + StringEscapeUtils.escapeEcmaScript(folder) + "', oldname: '" + StringEscapeUtils.escapeEcmaScript(mcache != null ? mcache.getFolder().getName() : "unknown") + "', text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			JsOperateFolder emptyFolder = new JsOperateFolder().setOldid(folder);
+			new JsonResult(emptyFolder).printTo(out, false);
+		} catch (Throwable t) {
+			new JsonResult(t)
+					.set("oldid", folder)
+					.set("oldname", mcache != null ? mcache.getFolder().getName() : "unknown")
+					.printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processGetSource(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -3962,7 +3962,7 @@ public class Service extends BaseService {
 		String uid = request.getParameter("id");
 		String sheaders = request.getParameter("headers");
 		boolean headers = sheaders.equals("true");
-		String sout = null;
+
 		try {
 			account.checkStoreConnected();
 			//StringBuffer sb = new StringBuffer("<pre>");
@@ -3984,12 +3984,13 @@ public class Service extends BaseService {
 				}
 			}
 			//sb.append("</pre>");
-			sout = "{\nresult: true, source: '" + StringEscapeUtils.escapeEcmaScript(sb.toString()) + "'\n}";
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			new JsonResult()
+					.set("source", sb.toString())
+					.printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
-		out.println(sout);
 	}
 	
 	public void processSaveMail(HttpServletRequest request, HttpServletResponse response) {
@@ -4013,7 +4014,7 @@ public class Service extends BaseService {
 	public void processDownloadMails(HttpServletRequest request, HttpServletResponse response) {
 		MailAccount account=getAccount(request);
 		String foldername = request.getParameter("folder");
-		String sout = null;
+
 		try {
 			account.checkStoreConnected();
 			StringBuffer sb = new StringBuffer();
@@ -4086,7 +4087,9 @@ public class Service extends BaseService {
 		if (preplyall != null && preplyall.equals("1")) {
 			replyAll = true;
 		}
-		String sout = null;
+		ArrayList<JsRecipient> recipients = new ArrayList<>();
+		ArrayList<JsAttachment> attachments = new ArrayList<>();
+		
 		try {
 			String format=us.getFormat();
 			boolean isHtml=format.equals("html");
@@ -4106,52 +4109,36 @@ public class Service extends BaseService {
 					lookupResource(MailLocaleKey.MSG_DATETITLE),
 					lookupResource(MailLocaleKey.MSG_SUBJECTTITLE)
 			);
-			sout = "{\n result: true,";
+			
+			String content;
+			String refs = "";
             Identity ident=mprofile.getIdentity(pfoldername);
 			String inreplyto = smsg.getInReplyTo();
 			String references[] = smsg.getReferences();
-			sout += " replyfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
-			if (inreplyto != null) {
-				sout += " inreplyto: '" + StringEscapeUtils.escapeEcmaScript(inreplyto) + "',";
-			}
+			
 			if (references != null) {
-				String refs = "";
 				for (String s : references) {
-					refs += StringEscapeUtils.escapeEcmaScript(s) + " ";
+					refs += s + " ";
 				}
-				sout += " references: '" + refs.trim() + "',";
 			}
+			
 			String subject = smsg.getSubject();
-			sout += " subject: '" + StringEscapeUtils.escapeEcmaScript(subject) + "',\n";
-			sout += " recipients: [\n";
+			
 			String tos[] = smsg.getTo().split(";");
-			boolean first = true;
 			for (String to : tos) {
-				if (!first) {
-					sout += ",\n";
-				}
-				sout += "   {rtype:'to',email:'" + StringEscapeUtils.escapeEcmaScript(to) + "'}";
-				first = false;
+				if (!StringUtils.isBlank(to)) recipients.add(new JsRecipient("to", to));
 			}
 			String ccs[] = smsg.getCc().split(";");
 			for (String cc : ccs) {
-				if (!first) {
-					sout += ",\n";
-				}
-				sout += "   {rtype:'cc',email:'" + StringEscapeUtils.escapeEcmaScript(cc) + "'}";
-				first = false;
+				if (!StringUtils.isBlank(cc)) recipients.add(new JsRecipient("cc", cc));
 			}
-			sout += "\n ],\n";
-            sout += " identityId: "+ident.getIdentityId()+",\n";
-			sout += " origuid:"+puidmessage+",\n";
+			
 			if (isHtml) {
 				String html = smsg.getContent();
 				
 				//cid inline attachments and relative html href substitution
 				HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
-				first = true;
-				sout += " attachments: [\n";
-
+				
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
 						Part part = maildata.getAttachmentPart(i);
@@ -4163,18 +4150,9 @@ public class Service extends BaseService {
 							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
 							String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
 							UploadedFile upfile=addAsUploadedFile(""+newmsgid, filename, mime, part.getInputStream());
-							if (!first) {
-								sout += ",\n";
-							}
-							sout += "{ "+
-									" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
-									" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
-									" cid: '" + StringEscapeUtils.escapeEcmaScript(cid) + "', "+
-									" inline: true, "+									
-									" fileSize: "+upfile.getSize()+", "+
-									" editable: "+isFileEditableInDocEditor(filename)+" "+
-									" }";
-							first = false;
+							
+							attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, true, upfile.getSize(), isFileEditableInDocEditor(filename)));
+							
 							//TODO: change this weird matching of cids2urls!
 							html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 						}
@@ -4182,30 +4160,22 @@ public class Service extends BaseService {
 						Service.logger.error("Exception",exc);
 					}
 				}
-
-				sout += "\n ],\n";
-
-				
-				
-				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
+				content = html;
 			} else {
-				String text = smsg.getTextContent();
-				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(text) + "',\n";
+				content = smsg.getTextContent();
 			}
-            sout += " format:'"+format+"'\n";
-			sout += "\n}";
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
-		}
-		if (sout != null) {
-			out.println(sout);
+			
+			JsMessage message = new JsMessage(subject, content, format, ident.getIdentityId(), attachments, recipients, pfoldername, inreplyto, refs.trim(), Long.parseLong(puidmessage));
+			new JsonResult(message).printTo(out, false);
+			
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
 	}
 
 	public void processGetForwardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
-		UserProfile profile = environment.getProfile();
 		String pfoldername = request.getParameter("folder");
 		String[] messagesIds = request.getParameterValues("messageIds");
 		String pnewmsgid = request.getParameter("newmsgid");
@@ -4214,7 +4184,7 @@ public class Service extends BaseService {
 		if (messagesIds.length > 1) attached = true; // With multiple msgIds we only support "forward" as attachment
 		
 		long newmsgid = Long.parseLong(pnewmsgid);
-		String sout = null;
+		
 		try {
 			String format=us.getFormat();
 			boolean isHtml=format.equals("html");
@@ -4238,35 +4208,25 @@ public class Service extends BaseService {
 					attached
 			);
 			
-			sout = "{\n result: true,";
 			Identity ident=mprofile.getIdentity(pfoldername);
 			String forwardedfrom = smsg.getForwardedFrom();
-			sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(pfoldername) + "',";
-			if (forwardedfrom != null) {
-				sout += " forwardedfrom: '" + StringEscapeUtils.escapeEcmaScript(forwardedfrom) + "',";
-			}
+			ArrayList<JsAttachment> attachments = new ArrayList<>();
+			
 			//add inreplyto and references as with reply
 			String inreplyto = smsg.getInReplyTo();
 			String references[] = smsg.getReferences();
-			if (inreplyto != null) {
-				sout += " inreplyto: '" + StringEscapeUtils.escapeEcmaScript(inreplyto) + "',";
-			}
+			String refs = "";
 			if (references != null) {
-				String refs = "";
 				for (String s : references) {
 					refs += StringEscapeUtils.escapeEcmaScript(s) + " ";
 				}
-				sout += " references: '" + refs.trim() + "',";
 			}
 			String subject = smsg.getSubject();
-			sout += " subject: '" + StringEscapeUtils.escapeEcmaScript(subject) + "',\n";
-			
 			String html=smsg.getContent();
 			String text=smsg.getTextContent();
+			
 			if (!attached) {
 				HTMLMailData maildata = mcache.getMailData((MimeMessage) messages.get(0));
-				boolean first = true;
-				sout += " attachments: [\n";
 				
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
@@ -4288,62 +4248,31 @@ public class Service extends BaseService {
 						if (part.getDisposition() != null) {
 							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
 						}
-						if (!first) {
-							sout += ",\n";
-						}
-						sout += "{ "+
-								" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
-								" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
-								" cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
-								" inline: "+inline+", "+
-								" fileSize: "+upfile.getSize()+", "+
-								" editable: "+isFileEditableInDocEditor(filename)+" "+
-								" }";
-						first = false;
+						
+						attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
+						
 						//TODO: change this weird matching of cids2urls!
 						html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 					} catch (Exception exc) {
 						Service.logger.error("Exception",exc);
 					}
 				}
-				
-				sout += "\n ],\n";
 				//String surl = "service-request?service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&newmsgid=" + newmsgid + "&cid=";
 				//html = replaceCidUrls(html, maildata, surl);
 			} else {
-				boolean first = true;
-				sout += " attachments: [\n";
 				for(Message message : messages) {
 					String filename = message.getSubject() + ".eml";
 					UploadedFile upfile = addAsUploadedFile(pnewmsgid, filename, "message/rfc822", ((IMAPMessage)message).getMimeStream());
-					
-					if (!first) sout += ",\n";
-					sout += "{ "+
-						" uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
-						" fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
-						" cid: null, "+
-						" inline: false, "+
-						" fileSize: "+upfile.getSize()+", "+
-						" editable: "+isFileEditableInDocEditor(filename)+" "+
-						" }";
-					first = false;
-				}		
-				sout += "\n ],\n";
+					attachments.add(new JsAttachment(upfile.getUploadId(), filename, null, false, upfile.getSize(), isFileEditableInDocEditor(filename)));
+				}
 			}
-			sout += " identityId: "+ident.getIdentityId()+",\n";
-			sout += " origuid:" + messagesIds[0] + ",\n";
-			if (isHtml) {
-				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(html) + "',\n";
-			} else {
-				sout += " content:'" + StringEscapeUtils.escapeEcmaScript(text) + "',\n";
-			}
-			sout += " format:'"+format+"'\n";
-			sout += "\n}";
-			out.println(sout);
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
-			out.println(sout);
+			String content = isHtml ? html : text;
+			
+			JsMessage message = new JsMessage(subject, content, format, ident.getIdentityId(), attachments, pfoldername, forwardedfrom, inreplyto, refs.trim(), Long.parseLong(messagesIds[0]));
+			new JsonResult(message).printTo(out, false);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
 	}
 	
@@ -4357,7 +4286,7 @@ public class Service extends BaseService {
 		String puidmessage = request.getParameter("idmessage");
 		String pnewmsgid = request.getParameter("newmsgid");
 		long newmsgid = Long.parseLong(pnewmsgid);
-		String sout = null;
+		
 		try {
 			MailEditFormat editFormat = ServletUtils.getEnumParameter(request, "format", null, MailEditFormat.class);
 			if (editFormat == null) editFormat = EnumUtils.forSerializedName(us.getFormat(), MailEditFormat.HTML, MailEditFormat.class);
@@ -4373,6 +4302,9 @@ public class Service extends BaseService {
 			int priority = 3;
 			boolean recipients = false;
 			boolean toDelete=false;
+			ArrayList<JsRecipient> recipientsList = new ArrayList<>();
+			ArrayList<JsAttachment> attachmentsList = new ArrayList<>();
+			
 			if (account.isDraftsFolder(pfoldername)) {
 				if (vheader != null && vheader[0] != null) {
 					receipt = true;
@@ -4394,37 +4326,29 @@ public class Service extends BaseService {
 				}
 			}
 			
-			sout = "{\n result: true,";
 			String subject = m.getSubject();
-			if (subject == null) {
-				subject = "";
-			}
-			sout += " subject: '" + StringEscapeUtils.escapeEcmaScript(subject) + "',\n";
-			
 			String inreplyto = null;
-			String references[] = null;
+			String references[];
+			String refs = "";
+			String replyfolder = null;
+			String forwardedfolder = null;
+			
 			String vs[] = m.getHeader("In-Reply-To");
 			if (vs != null && vs[0] != null) {
 				inreplyto = vs[0];
 			}
+			
 			references = m.getHeader("References");
 			if (inreplyto != null) {
 				vs = m.getHeader("Sonicle-reply-folder");
-				String replyfolder = null;
 				if (vs != null && vs[0] != null) {
 					replyfolder = vs[0];
 				}
-				if (replyfolder != null) {
-					sout += " replyfolder: '" + StringEscapeUtils.escapeEcmaScript(replyfolder) + "',";
-				}
-				sout += " inreplyto: '" + StringEscapeUtils.escapeEcmaScript(inreplyto) + "',";
 			}
 			if (references != null) {
-				String refs = "";
 				for (String s : references) {
 					refs += StringEscapeUtils.escapeEcmaScript(s) + " ";
 				}
-				sout += " references: '" + refs.trim() + "',";
 			}
 			
 			String forwardedfrom = null;
@@ -4434,18 +4358,12 @@ public class Service extends BaseService {
 			}
 			if (forwardedfrom != null) {
 				vs = m.getHeader("Sonicle-forwarded-folder");
-				String forwardedfolder = null;
 				if (vs != null && vs[0] != null) {
 					forwardedfolder = vs[0];
 				}
-				if (forwardedfolder != null) {
-					sout += " forwardedfolder: '" + StringEscapeUtils.escapeEcmaScript(forwardedfolder) + "',";
-				}
-				sout += " forwardedfrom: '" + StringEscapeUtils.escapeEcmaScript(forwardedfrom) + "',";
 			}
 			
-			sout += " receipt: " + receipt + ",\n";
-			sout += " priority: " + (priority >= 3 ? false : true) + ",\n";
+			Boolean isPriority = priority >= 3 ? false : true;
 			
             Identity ident=null;
 			Address from[]=m.getFrom();
@@ -4459,55 +4377,26 @@ public class Service extends BaseService {
                 ident=mprofile.getIdentity(displayname, email);
 			}
 			
-			sout += " recipients: [\n";
 			if (recipients) {
 				Address tos[] = m.getRecipients(RecipientType.TO);
-				String srec = "";
 				if (tos != null) {
 					for (Address to : tos) {
-						if (srec.length() > 0) {
-							srec += ",\n";
-						}
-						srec += "   { "
-								+ "rtype: 'to', "
-								+ "email: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(to)) + "'"
-								+ " }";
+						recipientsList.add(new JsRecipient("to", getDecodedAddress(to)));
 					}
 				}
 				Address ccs[] = m.getRecipients(RecipientType.CC);
 				if (ccs != null) {
 					for (Address cc : ccs) {
-						if (srec.length() > 0) {
-							srec += ",\n";
-						}
-						srec += "   { "
-								+ "rtype: 'cc', "
-								+ "email: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(cc)) + "'"
-								+ " }";
+						recipientsList.add(new JsRecipient("cc", getDecodedAddress(cc)));
 					}
 				}
 				Address bccs[] = m.getRecipients(RecipientType.BCC);
 				if (bccs != null) {
 					for (Address bcc : bccs) {
-						if (srec.length() > 0) {
-							srec += ",\n";
-						}
-						srec += "   { "
-								+ "rtype: 'bcc', "
-								+ "email: '" + StringEscapeUtils.escapeEcmaScript(getDecodedAddress(bcc)) + "'"
-								+ " }";
+						recipientsList.add(new JsRecipient("bcc", getDecodedAddress(bcc)));
 					}
 				}
-				
-				sout += srec;
-			} else {
-                sout += "   { "
-                        + "rtype: 'to', "
-                        + "email: ''"
-                        + " }";
-                
-            }
-			sout += " ],\n";
+			}
 			
 			String html = "";
 			boolean balanceTags=isPreviewBalanceTags(iafrom);
@@ -4522,8 +4411,6 @@ public class Service extends BaseService {
 			//	}
 			//}
 			
-            boolean first = true;
-            sout += " attachments: [\n";
             for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
                 Part part = maildata.getAttachmentPart(i);
                 String filename = getPartName(part);
@@ -4546,31 +4433,15 @@ public class Service extends BaseService {
                     if (part.getDisposition() != null) {
                         inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
                     }
-                    if (!first) {
-                        sout += ",\n";
-                    }
-                    sout += "{ "+
-                            " uploadId: '" + StringEscapeUtils.escapeEcmaScript(upfile.getUploadId()) + "', "+
-                            " fileName: '" + StringEscapeUtils.escapeEcmaScript(filename) + "', "+
-                            " cid: "+(cid==null?null:"'" + StringEscapeUtils.escapeEcmaScript(cid) + "'")+", "+
-                            " inline: "+inline+", "+
-                            " fileSize: "+upfile.getSize()+" "+
-                            " }";
-                    first = false;
+                    
+					attachmentsList.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize()));
+                    
 					//TODO: change this weird matching of cids2urls!
                     html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
              
             }
-            sout += "\n ],\n";
-            
-            if (ident!=null) sout += " identityId: "+ident.getIdentityId()+",\n";
-			sout += " origuid:"+puidmessage+",\n";
-			sout += " deleted:"+toDelete+",\n";
-			sout += " folder:'"+pfoldername+"',\n";
-			sout += " content:'" + (isPlainEdit ? StringEscapeUtils.escapeEcmaScript(MailUtils.htmlToText(MailUtils.htmlunescapesource(html))) : StringEscapeUtils.escapeEcmaScript(html)) + "',\n";
-            sout += " format:'"+EnumUtils.toSerializedName(editFormat)+"'\n";
-			sout += "\n}";
-
+			
+			String content = isPlainEdit ? MailUtils.htmlToText(MailUtils.htmlunescapesource(html)) : html;
 			m.setPeek(false);
 			
 			if (toDelete) {
@@ -4578,11 +4449,11 @@ public class Service extends BaseService {
 				m.getFolder().expunge();
 			}
 			
-
-			out.println(sout);
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-			sout = "{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}";
+			JsMessage message = new JsMessage(pfoldername, receipt, isPriority, subject, content, EnumUtils.toSerializedName(editFormat), ident.getIdentityId(), attachmentsList, recipientsList, replyfolder, inreplyto, refs.trim(), forwardedfolder, forwardedfrom, Long.parseLong(puidmessage), toDelete); 
+			new JsonResult(message).printTo(out, false);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
 	}
 
@@ -5010,7 +4881,7 @@ public class Service extends BaseService {
 	}
 	
 	public void processDiscardMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		JsonResult json = null;
+		JsonResult json;
 		CoreManager coreMgr=WT.getCoreManager();
 		try {
 			MailAccount account=getAccount(request);
@@ -5416,7 +5287,6 @@ public class Service extends BaseService {
 		try {
 			MailAccount account=getAccount(request);
 			String path = ServletUtils.getStringParameter(request, "path", true);
-			String fileId = ServletUtils.getStringParameter(request, "fileId", true);
 			int storeId = ServletUtils.getIntParameter(request, "storeId", true);
 			String folder = ServletUtils.getStringParameter(request, "folder", true);
 			int idAttach = ServletUtils.getIntParameter(request, "idAttach", true);
@@ -5496,7 +5366,6 @@ public class Service extends BaseService {
 	
 	public void processSendReceipt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
-		UserProfile profile = environment.getProfile();
 		String messageid = request.getParameter("messageid");
 		String subject = request.getParameter("subject");
 		//String from = request.getParameter("from");
@@ -6041,7 +5910,6 @@ public class Service extends BaseService {
 	}
 	
 	public void processListMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreManager core = WT.getCoreManager();
 		UserProfile profile = environment.getProfile();
 		Locale locale = profile.getLocale();
 		java.util.Calendar cal = java.util.Calendar.getInstance(locale);
@@ -6054,7 +5922,6 @@ public class Service extends BaseService {
 		String ppage = request.getParameter("page");
 		String prefresh = request.getParameter("refresh");
 		String ptimestamp = request.getParameter("timestamp");
-        String pthreaded=request.getParameter("threaded");
 		String pthreadaction=request.getParameter("threadaction");
 		String pthreadactionuid=request.getParameter("threadactionuid");
 		
@@ -6148,7 +6015,6 @@ public class Service extends BaseService {
 			limit=nxpage;
 		}*/
 		
-		String sout = "{\n";
 		Folder folder = null;
 		boolean connected=false;
 		try {
@@ -6163,7 +6029,6 @@ public class Service extends BaseService {
 				folder = account.getFolder(pfoldername);
 			}
 			boolean issent = account.isSentFolder(folder.getFullName());
-			boolean isundersent=account.isUnderSentFolder(folder.getFullName());
 			boolean isdrafts = account.isDraftsFolder(folder.getFullName());
 			boolean isundershared=account.isUnderSharedFolder(pfoldername);
 			if (!issent) {
@@ -6176,474 +6041,479 @@ public class Service extends BaseService {
 				}
 			}
 			
-			String ctn = Thread.currentThread().getName();
 			String key = folder.getFullName();
+			JsonResult jsRes;
+			ArrayList<JsListedMessage> items = new ArrayList<>();
 			
 			if(!pfoldername.equals("/")) {
 				
-			FolderCache mcache = account.getFolderCache(key);
-			if (mcache.toBeRefreshed()) refresh=true;
-			//Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,refresh);
-			if (psortfield !=null && psortdir != null) {
-				key += "|" + psortdir + "|" + psortfield;
-			}
-			
-			searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, queryObj, profile.getTimeZone());
-			
-			boolean hasAttachment = queryObj.conditions.stream().anyMatch(condition -> condition.value.equals("attachment"));
-			if(queryObj != null) refresh = true; 
-			MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, timestamp, searchTerm, hasAttachment);
-            Message xmsgs[] = messagesInfo.messages;
-			
-			if (pthreadaction!=null && pthreadaction.trim().length()>0) {
-				long actuid=Long.parseLong(pthreadactionuid);
-				mcache.setThreadOpen(actuid, pthreadaction.equals("open"));
-			}
-			
-			//if threaded, look for the start considering roots and opened children
-			if (xmsgs!=null && sgi.threaded && page>1) {
-				int i=0,ni=0,np=1;
-				long tId=0;
-				while(np < page && ni < xmsgs.length ) {
-					SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[ni];
-					++ni;
-					if (xm.isExpunged())
-						continue;
-					
-					long nuid=mcache.getUID(xm);
-
-					int tIndent=xm.getThreadIndent();
-					if (tIndent==0) tId=nuid;
-					else {
-						if (!mcache.isThreadOpen(tId))
-							continue;
-					}
-					
-					++i;
-					if ((i%limit)==0) ++np;
+				FolderCache mcache = account.getFolderCache(key);
+				if (mcache.toBeRefreshed()) refresh=true;
+				//Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,refresh);
+				if (psortfield !=null && psortdir != null) {
+					key += "|" + psortdir + "|" + psortfield;
 				}
-				if (np==page) {
-					start=ni;
-					//System.out.println("page "+np+" start is "+start);
+
+				searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, queryObj, profile.getTimeZone());
+
+				boolean hasAttachment = queryObj.conditions.stream().anyMatch(condition -> condition.value.equals("attachment"));
+				if(queryObj != null) refresh = true; 
+				MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, timestamp, searchTerm, hasAttachment);
+				Message xmsgs[] = messagesInfo.messages;
+
+				if (pthreadaction!=null && pthreadaction.trim().length()>0) {
+					long actuid=Long.parseLong(pthreadactionuid);
+					mcache.setThreadOpen(actuid, pthreadaction.equals("open"));
 				}
-			}
 
-			int max = start + limit;
-			if (xmsgs!=null && max>xmsgs.length) max=xmsgs.length;
-			ArrayList<Long> autoeditList=new ArrayList<Long>();
-            if (xmsgs!=null) {
-                int total=0;
-				int expunged=0;
-				
-				//calculate expunged
-				//for(Message xmsg: xmsgs) {
-				//	if (xmsg.isExpunged()) ++expunged;
-				//}
-				
-				sout+="messages: [\n";
-
-				/*               if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
-				 //mcache.fetch(msgs,FolderCache.flagsFP,0,start);
-				 for(int i=0;i<start;++i) {
-				 try {
-				 if (!msgs[i].isSet(Flags.Flag.SEEN)) funread++;
-				 } catch(Exception exc) {
-
-				 }
-				 }
-				 }*/
-				total=sgi.threaded?mcache.getThreadedCount():xmsgs.length;
-				if (start<max) {
-					
-					Folder fsent=account.getFolder(account.getFolderSent());
-					boolean openedsent=false;
-					//Fetch others for these messages
-					mcache.fetch(xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max);
+				//if threaded, look for the start considering roots and opened children
+				if (xmsgs!=null && sgi.threaded && page>1) {
+					int i=0,ni=0,np=1;
 					long tId=0;
-					for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
-						int ix = start + i;
-						int nx = start + ni;
-						if (nx>=xmsgs.length) break;
-						if (ix >= max) break;
-
-						SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];
-						if (xm.isExpunged()) {
-							--i;
+					while(np < page && ni < xmsgs.length ) {
+						SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[ni];
+						++ni;
+						if (xm.isExpunged())
 							continue;
-						}
-						
-						/*if (messagesInfo.checkSkipPEC(xm)) {
-							--i; --total;
-							continue;
-						}*/
-
-						
-						/*String ids[]=null;
-						 try {
-						 ids=xm.getHeader("Message-ID");
-						 } catch(MessagingException exc) {
-						 --i;
-						 continue;
-						 }
-						 if (ids==null || ids.length==0) { --i; continue; }
-						 String idmessage=ids[0];*/
 
 						long nuid=mcache.getUID(xm);
 
 						int tIndent=xm.getThreadIndent();
 						if (tIndent==0) tId=nuid;
-						else if (sgi.threaded) {
-							if (!mcache.isThreadOpen(tId)) {
+						else {
+							if (!mcache.isThreadOpen(tId))
+								continue;
+						}
+
+						++i;
+						if ((i%limit)==0) ++np;
+					}
+					if (np==page) {
+						start=ni;
+						//System.out.println("page "+np+" start is "+start);
+					}
+				}
+
+				int max = start + limit;
+				if (xmsgs!=null && max>xmsgs.length) max=xmsgs.length;
+				ArrayList<Long> autoeditList=new ArrayList<Long>();
+
+				if (xmsgs!=null) {
+					int total=0;
+					int expunged=0;
+
+					//calculate expunged
+					//for(Message xmsg: xmsgs) {
+					//	if (xmsg.isExpunged()) ++expunged;
+					//}
+
+					/*               if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
+					 //mcache.fetch(msgs,FolderCache.flagsFP,0,start);
+					 for(int i=0;i<start;++i) {
+					 try {
+					 if (!msgs[i].isSet(Flags.Flag.SEEN)) funread++;
+					 } catch(Exception exc) {
+
+					 }
+					 }
+					 }*/
+					total=sgi.threaded?mcache.getThreadedCount():xmsgs.length;
+					if (start<max) {
+
+						Folder fsent=account.getFolder(account.getFolderSent());
+						boolean openedsent=false;
+						//Fetch others for these messages
+						mcache.fetch(xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max);
+						long tId=0;
+						for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
+							int ix = start + i;
+							int nx = start + ni;
+							if (nx>=xmsgs.length) break;
+							if (ix >= max) break;
+
+							SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];
+							if (xm.isExpunged()) {
 								--i;
 								continue;
 							}
-						}
-						boolean tChildren=false;
-						int tUnseenChildren=0;
-						if (sgi.threaded) {
-							int cnx=nx+1;
-							while(cnx<xmsgs.length) {
-								SonicleIMAPMessage cxm=(SonicleIMAPMessage)xmsgs[cnx];
-								if (cxm.isExpunged()) {
-									cnx++;
+
+							/*if (messagesInfo.checkSkipPEC(xm)) {
+								--i; --total;
+								continue;
+							}*/
+
+
+							/*String ids[]=null;
+							 try {
+							 ids=xm.getHeader("Message-ID");
+							 } catch(MessagingException exc) {
+							 --i;
+							 continue;
+							 }
+							 if (ids==null || ids.length==0) { --i; continue; }
+							 String idmessage=ids[0];*/
+
+							long nuid=mcache.getUID(xm);
+
+							int tIndent=xm.getThreadIndent();
+							if (tIndent==0) tId=nuid;
+							else if (sgi.threaded) {
+								if (!mcache.isThreadOpen(tId)) {
+									--i;
 									continue;
 								}
-								while(cxm.getThreadIndent()>0) {
-									tChildren=true;
-									if (!cxm.isExpunged() && !cxm.isSet(Flags.Flag.SEEN)) ++tUnseenChildren;
-									++cnx;
-									if (cnx>=xmsgs.length) break;
-									cxm=(SonicleIMAPMessage)xmsgs[cnx];
-								}
-								break;
 							}
-						}
+							boolean tChildren=false;
+							int tUnseenChildren=0;
+							if (sgi.threaded) {
+								int cnx=nx+1;
+								while(cnx<xmsgs.length) {
+									SonicleIMAPMessage cxm=(SonicleIMAPMessage)xmsgs[cnx];
+									if (cxm.isExpunged()) {
+										cnx++;
+										continue;
+									}
+									while(cxm.getThreadIndent()>0) {
+										tChildren=true;
+										if (!cxm.isExpunged() && !cxm.isSet(Flags.Flag.SEEN)) ++tUnseenChildren;
+										++cnx;
+										if (cnx>=xmsgs.length) break;
+										cxm=(SonicleIMAPMessage)xmsgs[cnx];
+									}
+									break;
+								}
+							}
 
 
 
-						Flags flags=xm.getFlags();
+							Flags flags=xm.getFlags();
 
-						//Date
-						java.util.Date d=xm.getSentDate();
-						if (d==null) d=xm.getReceivedDate();
-						if (d==null) d=new java.util.Date(0);
-						cal.setTime(d);
-						int yyyy=cal.get(java.util.Calendar.YEAR);
-						int mm=cal.get(java.util.Calendar.MONTH);
-						int dd=cal.get(java.util.Calendar.DAY_OF_MONTH);
-						int hhh=cal.get(java.util.Calendar.HOUR_OF_DAY);
-						int mmm=cal.get(java.util.Calendar.MINUTE);
-						int sss=cal.get(java.util.Calendar.SECOND);
-						//From
-						String from="";
-						String fromemail="";
-						Address ia[]=xm.getFrom();
-						if (ia!=null) {
-							InternetAddress iafrom=(InternetAddress)ia[0];
-							from=iafrom.getPersonal();
-							if (from==null) from=iafrom.getAddress();
-							fromemail=iafrom.getAddress();
-						}
-						from=(from==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from)));
-						fromemail=(fromemail==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(fromemail)));
+							//Date
+							java.util.Date d=xm.getSentDate();
+							if (d==null) d=xm.getReceivedDate();
+							if (d==null) d=new java.util.Date(0);
+							cal.setTime(d);
+							int yyyy=cal.get(java.util.Calendar.YEAR);
+							int mm=cal.get(java.util.Calendar.MONTH);
+							int dd=cal.get(java.util.Calendar.DAY_OF_MONTH);
+							int hhh=cal.get(java.util.Calendar.HOUR_OF_DAY);
+							int mmm=cal.get(java.util.Calendar.MINUTE);
+							int sss=cal.get(java.util.Calendar.SECOND);
+							//From
+							String from="";
+							String fromemail="";
+							Address ia[]=xm.getFrom();
+							if (ia!=null) {
+								InternetAddress iafrom=(InternetAddress)ia[0];
+								from=iafrom.getPersonal();
+								if (from==null) from=iafrom.getAddress();
+								fromemail=iafrom.getAddress();
+							}
 
-						//To
-						String to="";
-						String toemail="";
-						ia=xm.getRecipients(Message.RecipientType.TO);
-						//if not sent and not shared, show me first if in TO
-						if (ia!=null) {
-							InternetAddress iato=(InternetAddress)ia[0];
-							if (!issent && !isundershared) {
-								for(Address ax: ia) {
-									InternetAddress iax=(InternetAddress)ax;
-									if (iax.getAddress().equals(profile.getEmailAddress())) {
-										iato=iax;
-										break;
+							//To
+							String to="";
+							String toemail="";
+							ia=xm.getRecipients(Message.RecipientType.TO);
+							//if not sent and not shared, show me first if in TO
+							if (ia!=null) {
+								InternetAddress iato=(InternetAddress)ia[0];
+								if (!issent && !isundershared) {
+									for(Address ax: ia) {
+										InternetAddress iax=(InternetAddress)ax;
+										if (iax.getAddress().equals(profile.getEmailAddress())) {
+											iato=iax;
+											break;
+										}
+									}
+								}
+								to=iato.getPersonal();
+								if (to==null) to=iato.getAddress();
+								toemail=iato.getAddress();
+							}
+
+							//Subject
+							String subject=xm.getSubject();
+							if (subject!=null) {
+								try {
+									subject=MailUtils.decodeQString(subject);
+								} catch(Exception exc) {
+									
+								}
+							}
+							else subject="";
+
+		/*						if (threaded) {
+								if (tIndent>0) {
+									StringBuffer sb=new StringBuffer();
+									for(int w=0;w<tIndent;++w) sb.append("&nbsp;");
+									subject=sb+subject;
+								}
+							}*/
+
+							boolean hasAttachments=mcache.hasAttachements(xm);
+
+							//Unread
+							boolean unread=!xm.isSet(Flags.Flag.SEEN);
+							if (queryObj != null && unread) ++funread;
+							//Priority
+							int priority=getPriority(xm);
+							//Status
+							java.util.Date today=new java.util.Date();
+							java.util.Calendar cal1=java.util.Calendar.getInstance(locale);
+							java.util.Calendar cal2=java.util.Calendar.getInstance(locale);
+							boolean isToday=false;
+							String gdate="";
+							String sdate = "";
+							String xdate = "";
+							if (d!=null) {
+								java.util.Date gd=sgi.threaded?xm.getMostRecentThreadDate():d;
+
+								cal1.setTime(today);
+								cal2.setTime(gd);
+
+								gdate=DateFormat.getDateInstance(DateFormat.MEDIUM,locale).format(gd);
+								sdate=cal2.get(java.util.Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(java.util.Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(java.util.Calendar.DATE));
+								//boolean isGdate=group.equals("gdate");
+								if (cal1.get(java.util.Calendar.MONTH)==cal2.get(java.util.Calendar.MONTH) && cal1.get(java.util.Calendar.YEAR)==cal2.get(java.util.Calendar.YEAR)) {
+									int dx=cal1.get(java.util.Calendar.DAY_OF_MONTH)-cal2.get(java.util.Calendar.DAY_OF_MONTH);
+									if (dx==0) {
+										isToday=true;
+										//if (isGdate) {
+										//	gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY)+"  "+gdate;
+										//}
+										xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY);
+									} else if (dx == 1 /*&& isGdate*/) {
+										xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY);
+									}							}
+							}
+
+							String status="read";
+							if (flags!=null) {
+								if (flags.contains(Flags.Flag.ANSWERED)) {
+									if (flags.contains("$Forwarded")) status = "repfwd";
+									else status = "replied";
+								} else if (flags.contains("$Forwarded")) {
+									status="forwarded";
+								} else if (flags.contains(Flags.Flag.SEEN)) {
+									status="read";
+								} else if (isToday) {
+									status="new";
+								} else {
+									status="unread";
+								}
+			//                    if (flags.contains(Flags.Flag.USER)) flagImage=webtopapp.getUri()+"/images/themes/"+profile.getTheme()+"/mail/flag.gif";
+							}
+							//Size
+							int msgsize=0;
+							msgsize=(xm.getSize()*3)/4;// /1024 + 1;
+							//User flags
+							String cflag="";
+							for (WebtopFlag webtopFlag: webtopFlags) {
+								String flagstring=webtopFlag.label;
+								//String tbflagstring=webtopFlag.tbLabel;
+								if (!flagstring.equals("complete")) {
+									String oldflagstring="flag"+flagstring;
+									if (flags.contains(flagstring)
+											||flags.contains(oldflagstring)
+											/*|| (tbflagstring!=null && flags.contains(tbflagstring))*/
+									) {
+										cflag=flagstring;
 									}
 								}
 							}
-							to=iato.getPersonal();
-							if (to==null) to=iato.getAddress();
-							toemail=iato.getAddress();
-						}
-						to=(to==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
-						toemail=(toemail==null?"":StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(toemail)));
-						
-						//Subject
-						String subject=xm.getSubject();
-						if (subject!=null) {
-							try {
-								subject=MailUtils.decodeQString(subject);
-							} catch(Exception exc) {
-
+							boolean flagComplete=flags.contains("complete");
+							if (flagComplete) {
+								if (cflag.length()>0) cflag+="-complete";
+								else cflag="complete";
 							}
-						}
-						else subject="";
 
-	/*						if (threaded) {
-							if (tIndent>0) {
-								StringBuffer sb=new StringBuffer();
-								for(int w=0;w<tIndent;++w) sb.append("&nbsp;");
-								subject=sb+subject;
-							}
-						}*/
+							if (cflag.length()==0 && flags.contains(Flags.Flag.FLAGGED)) cflag="special";
 
-						boolean hasAttachments=mcache.hasAttachements(xm);
+							boolean hasNote=flags.contains(sflagNote);
+							ArrayList<String> svtags = flagsToTagsIds(flags,tagsMap);
+							boolean autoedit=false;
+							boolean issched=false;
+							int syyyy=0;
+							int smm=0;
+							int sdd=0;
+							int shhh=0;
+							int smmm=0;
+							int ssss=0;
+							
+							if (isdrafts) {
+								String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
+								if (h!=null && h.equals("true")) {
+									java.util.Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
+									if (scal!=null) {
+										syyyy=scal.get(java.util.Calendar.YEAR);
+										smm=scal.get(java.util.Calendar.MONTH);
+										sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
+										shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
+										smmm=scal.get(java.util.Calendar.MINUTE);
+										ssss=scal.get(java.util.Calendar.SECOND);
+										issched=true;
+										status="scheduled";
+									}
+								} 
 
-						subject=StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject));
-
-						//Unread
-						boolean unread=!xm.isSet(Flags.Flag.SEEN);
-						if (queryObj != null && unread) ++funread;
-						//Priority
-						int priority=getPriority(xm);
-						//Status
-						java.util.Date today=new java.util.Date();
-						java.util.Calendar cal1=java.util.Calendar.getInstance(locale);
-						java.util.Calendar cal2=java.util.Calendar.getInstance(locale);
-						boolean isToday=false;
-						String gdate="";
-						String sdate = "";
-						String xdate = "";
-						if (d!=null) {
-							java.util.Date gd=sgi.threaded?xm.getMostRecentThreadDate():d;
-
-							cal1.setTime(today);
-							cal2.setTime(gd);
-
-							gdate=DateFormat.getDateInstance(DateFormat.MEDIUM,locale).format(gd);
-							sdate=cal2.get(java.util.Calendar.YEAR)+"/"+String.format("%02d",(cal2.get(java.util.Calendar.MONTH)+1))+"/"+String.format("%02d",cal2.get(java.util.Calendar.DATE));
-							//boolean isGdate=group.equals("gdate");
-							if (cal1.get(java.util.Calendar.MONTH)==cal2.get(java.util.Calendar.MONTH) && cal1.get(java.util.Calendar.YEAR)==cal2.get(java.util.Calendar.YEAR)) {
-								int dx=cal1.get(java.util.Calendar.DAY_OF_MONTH)-cal2.get(java.util.Calendar.DAY_OF_MONTH);
-								if (dx==0) {
-									isToday=true;
-									//if (isGdate) {
-									//	gdate=WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY)+"  "+gdate;
-									//}
-									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_TODAY);
-								} else if (dx == 1 /*&& isGdate*/) {
-									xdate = WT.lookupCoreResource(locale, CoreLocaleKey.WORD_DATE_YESTERDAY);
-								}							}
-						}
-
-						String status="read";
-						if (flags!=null) {
-							if (flags.contains(Flags.Flag.ANSWERED)) {
-								if (flags.contains("$Forwarded")) status = "repfwd";
-								else status = "replied";
-							} else if (flags.contains("$Forwarded")) {
-								status="forwarded";
-							} else if (flags.contains(Flags.Flag.SEEN)) {
-								status="read";
-							} else if (isToday) {
-								status="new";
-							} else {
-								status="unread";
-							}
-		//                    if (flags.contains(Flags.Flag.USER)) flagImage=webtopapp.getUri()+"/images/themes/"+profile.getTheme()+"/mail/flag.gif";
-						}
-						//Size
-						int msgsize=0;
-						msgsize=(xm.getSize()*3)/4;// /1024 + 1;
-						//User flags
-						String cflag="";
-						for (WebtopFlag webtopFlag: webtopFlags) {
-							String flagstring=webtopFlag.label;
-							//String tbflagstring=webtopFlag.tbLabel;
-							if (!flagstring.equals("complete")) {
-								String oldflagstring="flag"+flagstring;
-								if (flags.contains(flagstring)
-										||flags.contains(oldflagstring)
-										/*|| (tbflagstring!=null && flags.contains(tbflagstring))*/
-								) {
-									cflag=flagstring;
+								h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
+								if (h!=null && h.equals("true")) {
+									autoedit=true;
 								}
 							}
-						}
-						boolean flagComplete=flags.contains("complete");
-						if (flagComplete) {
-							if (cflag.length()>0) cflag+="-complete";
-							else cflag="complete";
-						}
 
-						if (cflag.length()==0 && flags.contains(Flags.Flag.FLAGGED)) cflag="special";
+							String xmfoldername=xm.getFolder().getFullName();
 
-						boolean hasNote=flags.contains(sflagNote);
-						
-						
-						String svtags=JsonResult.gson.toJson(flagsToTagsIds(flags,tagsMap));
-
-						boolean autoedit=false;
-
-						boolean issched=false;
-						int syyyy=0;
-						int smm=0;
-						int sdd=0;
-						int shhh=0;
-						int smmm=0;
-						int ssss=0;
-						if (isdrafts) {
-							String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
-							if (h!=null && h.equals("true")) {
-								java.util.Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
-								if (scal!=null) {
-									syyyy=scal.get(java.util.Calendar.YEAR);
-									smm=scal.get(java.util.Calendar.MONTH);
-									sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
-									shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
-									smmm=scal.get(java.util.Calendar.MINUTE);
-									ssss=scal.get(java.util.Calendar.SECOND);
-									issched=true;
-									status="scheduled";
+							//idmessage=idmessage.replaceAll("\\\\", "\\\\");
+							//idmessage=Utils.jsEscape(idmessage);
+							boolean archived=false;
+							if (hasDmsDocumentArchiving()) {
+								archived=xm.getHeader("X-WT-Archived")!=null;
+								if (!archived) {
+									archived=flags.contains(sflagDmsArchived);
 								}
-							} 
-
-							h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
-							if (h!=null && h.equals("true")) {
-								autoedit=true;
 							}
-						}
 
-						String xmfoldername=xm.getFolder().getFullName();
-
-						//idmessage=idmessage.replaceAll("\\\\", "\\\\");
-						//idmessage=Utils.jsEscape(idmessage);
-						if (i>0) sout+=",\n";
-						boolean archived=false;
-						if (hasDmsDocumentArchiving()) {
-							archived=xm.getHeader("X-WT-Archived")!=null;
-							if (!archived) {
-								archived=flags.contains(sflagDmsArchived);
-							}
-						}
-						
-						String msgtext=null;
-						if (showMessagePreviewOnRow && isToday && unread) {
-							try {
-								msgtext=MailUtils.peekText(xm);
-								if (msgtext!=null) {
-									msgtext=msgtext.trim();
-									if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
+							String msgtext=null;
+							if (showMessagePreviewOnRow && isToday && unread) {
+								try {
+									msgtext=MailUtils.peekText(xm);
+									if (msgtext!=null) {
+										msgtext=msgtext.trim();
+										if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
+									}
+								} catch(MessagingException | IOException ex1) {
+									msgtext = ex1.getMessage();
 								}
-							} catch(MessagingException | IOException ex1) {
-								msgtext = ex1.getMessage();
 							}
-						}
-						
-						String pecstatus=null;
-						if (messagesInfo.isPEC()) {
-							String hdrs[]=xm.getHeader(HDR_PEC_TRASPORTO);
-							if (hdrs!=null && hdrs.length>0 && (hdrs[0].equals("errore")||hdrs[0].equals("posta-certificata")))
-								pecstatus=hdrs[0];
-							else {
-								hdrs=xm.getHeader(HDR_PEC_RICEVUTA);
-								if (hdrs!=null && hdrs.length>0)
+
+							String pecstatus=null;
+							if (messagesInfo.isPEC()) {
+								String hdrs[]=xm.getHeader(HDR_PEC_TRASPORTO);
+								if (hdrs!=null && hdrs.length>0 && (hdrs[0].equals("errore")||hdrs[0].equals("posta-certificata")))
 									pecstatus=hdrs[0];
+								else {
+									hdrs=xm.getHeader(HDR_PEC_RICEVUTA);
+									if (hdrs!=null && hdrs.length>0)
+										pecstatus=hdrs[0];
+								}
 							}
-						}
-						
-						sout += "{idmessage:'" + nuid + "',"
-							+ "priority:" + priority + ","
-							+ "status:'" + status + "',"
-							+ "to:'" + to + "',"
-							+ "toemail:'" + toemail + "',"
-							+ "from:'" + from + "',"
-							+ "fromemail:'" + fromemail + "',"
-							+ "subject:'" + subject + "',"
-							+ (msgtext!=null ? "msgtext: '"+StringEscapeUtils.escapeEcmaScript(msgtext)+"',":"")
-							+ (sgi.threaded?"threadId: "+tId+",":"")
-							+ (sgi.threaded?"threadIndent:"+tIndent+",":"")
-							+ "date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),"
-							+ "gdate: '" + gdate + "',"
-							+ "sdate: '" + sdate + "',"
-							+ "xdate: '" + xdate + "',"
-							+ "unread: " + unread + ","
-							+ "size:" + msgsize + ","
-							+ (svtags!=null ? "tags: "+svtags+",":"")
-							+ (pecstatus!=null ? "pecstatus: '"+pecstatus+"',":"")
-							+ "flag:'" + cflag + "'"
-							+ (hasNote ? ",note:true" : "")
-							+ (archived ? ",arch:true" : "")
-							+ (isToday ? ",istoday:true" : "")
-							+ (hasAttachments ? ",atts:true" : "")
-							+ (issched ? ",scheddate: new Date(" + syyyy + "," + smm + "," + sdd + "," + shhh + "," + smmm + "," + ssss + ")" : "")
-							+ (sgi.threaded&&tIndent==0 ? ",threadOpen: "+mcache.isThreadOpen(nuid) : "")
-							+ (sgi.threaded&&tIndent==0 ? ",threadHasChildren: "+tChildren : "")
-							+ (sgi.threaded&&tIndent==0 ? ",threadUnseenChildren: "+tUnseenChildren : "")
-							+ (sgi.threaded&&xm.hasThreads()&&!xm.isMostRecentInThread()?",fmtd: true":"")
-							+ (sgi.threaded&&!xmfoldername.equals(folder.getFullName())?",fromfolder: '"+StringEscapeUtils.escapeEcmaScript(xmfoldername)+"'":"")
-							+ "}";
+							
+							String schedDate = issched ? formatCalendarDate(syyyy, smm, sdd, shhh, smmm, ssss) : null;
+							Boolean threadOpen = false;
+							Boolean threadHasChildren = false;
+							Integer threadUnseenChildren = null;
+							Boolean fmtd = false;
+							String fromFolder = null;
 
-						if (autoedit) {
-							autoeditList.add(nuid);
+							if (sgi.threaded) {
+								if (tIndent == 0) {
+									threadOpen = mcache.isThreadOpen(nuid);
+									threadHasChildren = tChildren;
+									threadUnseenChildren = tUnseenChildren;
+								}
+								if (xm.hasThreads() && !xm.isMostRecentInThread()) fmtd = true;
+								if (!xmfoldername.equals(folder.getFullName())) fromFolder = xmfoldername;
+							}
+
+							items.add(new JsListedMessage(nuid, priority, status, to, toemail, from, fromemail, StringEscapeUtils.escapeHtml4(subject), msgtext, tId, tIndent, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), gdate, sdate, xdate, unread, msgsize, svtags, pecstatus, cflag, hasNote, archived, isToday, hasAttachments, schedDate, threadOpen, threadHasChildren, threadUnseenChildren, fmtd, fromFolder));
+
+							if (autoedit) {
+								autoeditList.add(nuid);
+							}
+
+							//                sout+="{messageid:'"+m.getMessageID()+"',from:'"+from+"',subject:'"+subject+"',date: new Date("+yyyy+","+mm+","+dd+"),unread: "+unread+"},\n";
 						}
 
-						//                sout+="{messageid:'"+m.getMessageID()+"',from:'"+from+"',subject:'"+subject+"',date: new Date("+yyyy+","+mm+","+dd+"),unread: "+unread+"},\n";
+						if (openedsent) fsent.close(false);
 					}
-					
-					if (openedsent) fsent.close(false);
-				}
-				/*                if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
-				 //if (max<msgs.length) mcache.fetch(msgs,FolderCache.flagsFP,max,msgs.length);
-				 for(int i=max;i<msgs.length;++i) {
-				 try {
-				 if (!msgs[i].isSet(Flags.Flag.SEEN)) funread++;
-				 } catch(Exception exc) {
+					/*                if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
+					 //if (max<msgs.length) mcache.fetch(msgs,FolderCache.flagsFP,max,msgs.length);
+					 for(int i=max;i<msgs.length;++i) {
+					 try {
+					 if (!msgs[i].isSet(Flags.Flag.SEEN)) funread++;
+					 } catch(Exception exc) {
 
-				 }
-				 }
-				 } else {
-				 funread=mcache.getUnreadMessagesCount();
-				 }*/
-				if (mcache.isScanForcedOrEnabled()) {
-					//Send message only if first page
-					if (start==0) mcache.refreshUnreads();
-					funread=mcache.getUnreadMessagesCount();
-				}
-				else funread=0;
-				
-				long qlimit=-1;
-				long qusage=-1;
-				try {
-					Quota quotas[]=account.getQuota("INBOX");
-					if (quotas!=null)
-						for(Quota q: quotas) {
-							if ((q.quotaRoot.equals("INBOX") || q.quotaRoot.equals("Quota")) && q.resources!=null) {
-								for(Quota.Resource r: q.resources) {
-									if (r.name.equals("STORAGE")) {
-										qlimit=r.limit;
-										qusage=r.usage;
+					 }
+					 }
+					 } else {
+					 funread=mcache.getUnreadMessagesCount();
+					 }*/
+					if (mcache.isScanForcedOrEnabled()) {
+						//Send message only if first page
+						if (start==0) mcache.refreshUnreads();
+						funread=mcache.getUnreadMessagesCount();
+					}
+					else funread=0;
+
+					long qlimit=-1;
+					long qusage=-1;
+					try {
+						Quota quotas[]=account.getQuota("INBOX");
+						if (quotas!=null)
+							for(Quota q: quotas) {
+								if ((q.quotaRoot.equals("INBOX") || q.quotaRoot.equals("Quota")) && q.resources!=null) {
+									for(Quota.Resource r: q.resources) {
+										if (r.name.equals("STORAGE")) {
+											qlimit=r.limit;
+											qusage=r.usage;
+										}
 									}
 								}
 							}
-						}
-				} catch(MessagingException exc) {
-					logger.debug("Error on QUOTA",exc);
+					} catch(MessagingException exc) {
+						logger.debug("Error on QUOTA",exc);
+					}
+
+					jsRes = new JsonResult("messages", items)
+							.setTotal(total - expunged)
+							.set("realTotal", xmsgs.length - expunged)
+							.set("expunged", expunged)
+							.set("isPEC", messagesInfo.isPEC());
+
+					if (qlimit >= 0 && qusage >= 0) {
+						jsRes.set("quotaLimit", qlimit)
+								.set("quotaUsage", qusage);
+					}
+				} else {
+					jsRes = new JsonResult("messages", items)
+							.setTotal(0)
+							.set("realTotal", 0)
+							.set("expunged", 0);
 				}
 				
-				sout += "\n],\n";
-				sout += "total: "+(total-expunged)+",\n";
-				if (qlimit>=0 && qusage>=0) sout+="quotaLimit: "+qlimit+", quotaUsage: "+qusage+",\n";
-				if (messagesInfo.isPEC()) sout += "isPEC: true,\n";
-				sout += "realTotal: "+(xmsgs.length-expunged)+",\n";
-				sout += "expunged: "+(expunged)+",\n";
-			}
-			else {
-				sout += "messages: [],\n" 
-						+"total: 0,\n"
-						+"realTotal: 0,\n"
-						+"expunged:0,\n";
-			}
-				sout += "metaData: {\n"
-						+ "  root: 'messages', total: 'total', idProperty: 'idmessage',\n"
-						+ "  fields: ['idmessage','priority','status','to','from','subject','date','gdate','unread','size','flag','note','arch','istoday','atts','scheddate','fmtd','fromfolder'],\n"
-						+ "  sortInfo: { field: '" + psortfield + "', direction: '" + psortdir + "' },\n"
-                        + "  threaded: "+sgi.threaded+",\n"
-						+ "  groupField: '" + (sgi.threaded?"threadId":group) + "',\n";
+				GridMetadata gridMeta = new GridMetadata();
+				SortMeta sortMeta = new SortMeta(psortfield, psortdir);
+				String groupField = sgi.threaded ? "threadId" : group;
+				List<FieldMeta> fields = Arrays.asList(
+						new FieldMeta("idmessage"),
+						new FieldMeta("priority").setType("int"),
+						new FieldMeta("status"),
+						new FieldMeta("from"),
+						new FieldMeta("to"),
+						new FieldMeta("subject"),
+						new FieldMeta("date").setType("date"),
+						new FieldMeta("gdate"),
+						new FieldMeta("unread").setType("boolean"),
+						new FieldMeta("flag"),
+						new FieldMeta("note"),
+						new FieldMeta("istoday").setType("boolean"),
+						new FieldMeta("arch").setType("boolean"),
+						new FieldMeta("atts").setType("boolean"),
+						new FieldMeta("scheddate").setType("date"),
+						new FieldMeta("fmtd").setType("boolean"),
+						new FieldMeta("fromfolder")
+				);
 				
-/*				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
+				gridMeta.setRoot("messages")
+						.setSortInfo(sortMeta)
+						.setFields(fields)
+						.set("total", "total")
+						.set("idProperty", "idmessage")
+						.set("threaded", sgi.threaded)
+						.set("groupField", groupField);
+
+	/*				ColumnVisibilitySetting cvs = us.getColumnVisibilitySetting(pfoldername);
 				ColumnsOrderSetting cos = us.getColumnsOrderSetting();
 				// Apply grid defaults
 				//ColumnVisibilitySetting.applyDefaults(mcache.isSent(), cvs);
@@ -6657,7 +6527,7 @@ public class Service extends BaseService {
 					if(StringUtils.right(sout, 1).equals(",")) sout = StringUtils.left(sout, sout.length()-1);
 					sout+="],\n";
 				}
-				
+
 				// Fills columnsInfo object for client rendering
 				sout += "colsInfo2: [";
 				for (String dataIndex : cvs.keySet()) {
@@ -6667,19 +6537,24 @@ public class Service extends BaseService {
 					sout = StringUtils.left(sout, sout.length() - 1);
 				}
 				sout += "]\n";*/
-				
-				sout += "},\n";
-				sout += "threaded: "+(sgi.threaded?"1":"0")+",\n";
-				sout += "unread: " + funread + ", issent: " + issent + ", millis: " + messagesInfo.millis + " }\n";
-				
+
+				jsRes.set("threaded", sgi.threaded)
+						.set("unread", funread)
+						.set("issent", issent)
+						.set("millis", messagesInfo.millis)
+						.setMetaData(gridMeta);
 			} else {
-				sout += "total:0,\nstart:0,\nlimit:0,\nmessages: [\n";
-				sout += "\n], unread: 0, issent: false }\n";
+				jsRes = new JsonResult("messages", items)
+						.setTotal(0)
+						.setStart(0)
+						.setLimit(0)
+						.set("unread", 0)
+						.set("issent", false);
 			}
-			out.println(sout);
-		} catch (Exception exc) {
-			new JsonResult(exc).printTo(out);
-			Service.logger.error("Exception",exc);
+			jsRes.printTo(out, false);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
 	}
 	
@@ -6991,7 +6866,6 @@ public class Service extends BaseService {
 		String providerid = request.getParameter("providerid");
 		String nopec = request.getParameter("nopec");
 		int idattach = 0;
-		boolean isEditor = request.getParameter("editor") != null;
 		boolean setSeen = ServletUtils.getBooleanParameter(request, "setseen", true);
 		
 		if (df == null) {
@@ -7006,7 +6880,8 @@ public class Service extends BaseService {
 			String vheader[] = null;
 			boolean wasseen = false;
 			boolean isPECView=false;
-			String sout = "{\nmessage: [\n";
+			ArrayList<JsMessageDetails> items = new ArrayList<>();
+			
 			if (providername == null) {
 				account.checkStoreConnected();
 				mcache = account.getFolderCache(pfoldername);
@@ -7079,8 +6954,10 @@ public class Service extends BaseService {
 					fromName = fromEmail;
 				}
 			}
-			sout += "{iddata:'from',value1:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(fromName)) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(fromEmail) + "',value3:0},\n";
+			
+			items.add(new JsMessageDetails("from", fromName, fromEmail));
 			recs += 2;
+			
 			Address tos[] = m.getRecipients(RecipientType.TO);
 			if (tos != null) {
 				for (Address to : tos) {
@@ -7090,7 +6967,8 @@ public class Service extends BaseService {
 					if (toName == null) {
 						toName = toEmail;
 					}
-					sout += "{iddata:'to',value1:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(toName)) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(toEmail) + "',value3:0},\n";
+					
+					items.add(new JsMessageDetails("to", toName, toEmail));
 					++recs;
 				}
 			}
@@ -7103,7 +6981,8 @@ public class Service extends BaseService {
 					if (ccName == null) {
 						ccName = ccEmail;
 					}
-					sout += "{iddata:'cc',value1:'" + StringEscapeUtils.escapeEcmaScript(ccName) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(ccEmail) + "',value3:0},\n";
+					
+					items.add(new JsMessageDetails("cc", ccName, ccEmail));
 					++recs;
 				}
 			}
@@ -7116,8 +6995,9 @@ public class Service extends BaseService {
                     if (bccName==null) {
 						bccName=bccEmail;
 					}
-                    sout+="{iddata:'bcc',value1:'"+StringEscapeUtils.escapeEcmaScript(bccName)+"',value2:'"+StringEscapeUtils.escapeEcmaScript(bccEmail)+"',value3:0},\n";
-                    ++recs;
+					
+                    items.add(new JsMessageDetails("bcc", bccName, bccEmail));
+					++recs;
                 }
 			ArrayList<String> htmlparts = null;
 			boolean balanceTags=isPreviewBalanceTags(iafrom);
@@ -7129,12 +7009,14 @@ public class Service extends BaseService {
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			ICalendarRequest ir=mailData.getICalRequest();
 			if (ir!=null) {
-			    if(htmlparts.size() > 0) sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(htmlparts.get(0)) + "',value2:'',value3:0},\n";
+			    if (htmlparts.size() > 0) {
+					items.add(new JsMessageDetails("html", htmlparts.get(0)));
+				}
 			} else {
 				for (String html : htmlparts) {
-				//sout += "{iddata:'html',value1:'" + OldUtils.jsEscape(html) + "',value2:'',value3:0},\n";
-				 sout += "{iddata:'html',value1:'" + StringEscapeUtils.escapeEcmaScript(html) + "',value2:'',value3:0},\n";
-				 ++recs;
+					//sout += "{iddata:'html',value1:'" + OldUtils.jsEscape(html) + "',value2:'',value3:0},\n";
+					items.add(new JsMessageDetails("html", html));
+					++recs;
 			    }
 			}
 						
@@ -7221,12 +7103,13 @@ public class Service extends BaseService {
 				String iddata = ctype.equalsIgnoreCase("message/rfc822") ? "eml" : (inline ? "inlineattach" : "attach");
 				boolean editable=isFileEditableInDocEditor(pname);
 				
-				sout += "{iddata:'" + iddata + "',value1:'" + (i + idattach) + "',value2:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(pname)) + "',value3:" + rsize + ",value4:" + (imgname == null ? "null" : "'" + StringEscapeUtils.escapeEcmaScript(imgname) + "'") + ", editable: "+editable+" },\n";
+				items.add(new JsMessageDetails(iddata, Integer.toString(i + idattach), pname, rsize, imgname, editable));
 			}
 			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash() && !mcache.isArchive()) {
 				if (vheader != null && vheader[0] != null && !wasseen) {
-					if (WT.getCoreManager().getServiceStoreEntry(SERVICE_ID, "receipt", messageid)==null)
-						sout += "{iddata:'receipt',value1:'"+us.getReadReceiptConfirmation()+"',value2:'"+StringEscapeUtils.escapeEcmaScript(vheader[0])+"',value3:0},\n";
+					if (WT.getCoreManager().getServiceStoreEntry(SERVICE_ID, "receipt", messageid)==null) {
+						items.add(new JsMessageDetails("receipt", us.getReadReceiptConfirmation(), vheader[0]));
+					}
 				}
 			}
 			
@@ -7236,7 +7119,7 @@ public class Service extends BaseService {
 				if (scal!=null) {
 					java.util.Date sd = scal.getTime();
 					String sdate = df.format(sd).replaceAll("\\.", ":");
-					sout += "{iddata:'scheddate',value1:'" + StringEscapeUtils.escapeEcmaScript(sdate) + "',value2:'',value3:0},\n";
+					items.add(new JsMessageDetails("scheddate", sdate));
 				}
 			}			
 			
@@ -7301,36 +7184,33 @@ public class Service extends BaseService {
 							*/
 						}
 					}
-					sout+="{iddata:'ical',value1:'"+ir.getMethod()+"',value2:'"+ir.getUID()+"',value3:'"+eid+"'},\n";
+					items.add(new JsMessageDetails("ical", ir.getMethod(), ir.getUID(), eid));
 				}
 			}
 			
-			sout += "{iddata:'date',value1:'" + StringEscapeUtils.escapeEcmaScript(date) + "',value2:'',value3:0},\n";
-			sout += "{iddata:'subject',value1:'" + StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject)) + "',value2:'',value3:0},\n";
-			sout += "{iddata:'messageid',value1:'"+StringEscapeUtils.escapeEcmaScript(messageid)+"',value2:'',value3:0}\n";
+			items.add(new JsMessageDetails("date", date));
+			items.add(new JsMessageDetails("subject", subject));
+			items.add(new JsMessageDetails("messageid", messageid));
 			
 			if (providername == null) {
 				mcache.refreshUnreads();
 			}
 			long millis = System.currentTimeMillis();
-			sout += "\n],\n";
+			ArrayList<String> svtags = flagsToTagsIds(m.getFlags());
 			
-			String svtags=JsonResult.gson.toJson(flagsToTagsIds(m.getFlags()));
-			if (svtags!=null)
-				sout += "tags: " + svtags + ",\n";
-			
-			if (isPECView) {
-				sout += "pec: true,\n";
-			}
-
-			sout += "total:" + recs + ",\nmillis:" + millis + "\n}\n";
-			out.println(sout);
+			new JsonResult("message", items)
+					.set("tags", svtags)
+					.set("pec", isPECView)
+					.setTotal(recs)
+					.set("millis", millis)
+					.printTo(out, false);
 			
 			if (im!=null) im.setPeek(false);
 			
 //            if (!wasopen) folder.close(false);
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
 	}
 	
@@ -8068,24 +7948,24 @@ public class Service extends BaseService {
 				ast = new AdvancedSearchThread(this, account, folderType, trashspam, subfolders, and, entries);
 			}
 			ast.start();
-			out.println("{\nresult: true\n}");
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-			out.println("{\nresult: false, text:'" + StringEscapeUtils.escapeEcmaScript(exc.getMessage()) + "'\n}");
+			new JsonResult().printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
 	}
 	
 	public void processPollAdvancedSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		CoreManager core = WT.getCoreManager();
-		
 		try {
 			MailAccount account=getAccount(request);
 			String sstart = request.getParameter("start");
 			int start = 0;
+			ArrayList<JsAdvSearchMessage> items = new ArrayList<>();
+			
 			if (sstart != null) {
 				start = Integer.parseInt(sstart);
 			}
-			String sout = "{\n";
+			
 			if (ast != null) {
 				UserProfile profile = environment.getProfile();
 				Locale locale = profile.getLocale();
@@ -8093,8 +7973,7 @@ public class Service extends BaseService {
 				ArrayList<Message> msgs = ast.getResult();
 				int totalrows = msgs.size();
 				int newrows = totalrows - start;
-				sout += "total:" + totalrows + ",\nstart:" + start + ",\nlimit:" + newrows + ",\nmessages: [\n";
-				boolean first = true;
+				
 				for (int i = start; i < msgs.size(); ++i) {
 					Message xm = msgs.get(i);
 					if (xm.isExpunged()) {
@@ -8123,8 +8002,8 @@ public class Service extends BaseService {
 					int sss = cal.get(java.util.Calendar.SECOND);
 					String xfolder = xm.getFolder().getFullName();
 					FolderCache fc = account.getFolderCache(xfolder);
-					String folder = StringEscapeUtils.escapeEcmaScript(xfolder);
-					String foldername = StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(getInternationalFolderName(fc)));
+					String folder = xfolder;
+					String foldername = StringEscapeUtils.escapeHtml4(getInternationalFolderName(fc));
 					//From
 					String from = "";
 					Address ia[] = m.getFrom();
@@ -8135,7 +8014,7 @@ public class Service extends BaseService {
 							from = iafrom.getAddress();
 						}
 					}
-					from = (from == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(from)));
+					from = (from == null ? "" : StringEscapeUtils.escapeHtml4(from));
 					//To
 					String to = "";
 					ia = m.getRecipients(Message.RecipientType.TO);
@@ -8146,7 +8025,7 @@ public class Service extends BaseService {
 							to = iato.getAddress();
 						}
 					}
-					to = (to == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(to)));
+					to = (to == null ? "" : StringEscapeUtils.escapeHtml4(to));
 					//Subject
 					String subject = m.getSubject();
 					if (subject != null) {
@@ -8156,7 +8035,7 @@ public class Service extends BaseService {
 							
 						}
 					}
-					subject = (subject == null ? "" : StringEscapeUtils.escapeEcmaScript(MailUtils.htmlescape(subject)));
+					subject = (subject == null ? "" : StringEscapeUtils.escapeHtml4(subject));
 					//Unread
 					boolean unread = !m.isSet(Flags.Flag.SEEN);
                     //if (ppattern==null && unread) ++funread;
@@ -8222,9 +8101,6 @@ public class Service extends BaseService {
 
                     //idmessage=idmessage.replaceAll("\\\\", "\\\\");
 					//idmessage=OldUtils.jsEscape(idmessage);
-					if (!first) {
-						sout += ",\n";
-					}
 					boolean archived = false;
 					if (hasDmsDocumentArchiving()) {
 						archived=m.getHeader("X-WT-Archived")!=null;
@@ -8234,19 +8110,27 @@ public class Service extends BaseService {
 					}
 					
 					boolean hasNote=flags.contains(sflagNote);
-
-					sout += "{folder:'" + folder + "', folderdesc:'" + foldername + "',idmandfolder:'" + folder + "|" + nuid + "',idmessage:'" + nuid + "',priority:" + priority + ",status:'" + status + "',to:'" + to + "',from:'" + from + "',subject:'" + subject + "',date: new Date(" + yyyy + "," + mm + "," + dd + "," + hhh + "," + mmm + "," + sss + "),unread: " + unread + ",size:" + msgsize + ",flag:'" + cflag + "'" + (archived ? ",arch:true" : "") + (isToday ? ",istoday:true" : "") + (hasNote ? ",note:true" : "")+"}";
-					first = false;
-				}
-				sout += "\n]\n, progress: " + ast.getProgress() + ", curfoldername: '" + StringEscapeUtils.escapeEcmaScript(getInternationalFolderName(ast.getCurrentFolder())) + "', "
-						+ "max: " + ast.isMoreThanMax() + ", finished: " + (ast.isFinished() || ast.isCanceled() || !ast.isRunning()) + " }\n";
+					items.add(new JsAdvSearchMessage(folder, foldername, folder + "|" + nuid, nuid, priority, status, to, from, subject, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), unread, msgsize, cflag, archived, isToday, hasNote));
+				}								
+				new JsonResult("messages", items)
+						.setTotal(totalrows)
+						.setStart(start)
+						.setLimit(newrows)
+						.set("progress", ast.getProgress())
+						.set("curfoldername", getInternationalFolderName(ast.getCurrentFolder()))
+						.set("max", ast.isMoreThanMax())
+						.set("finished", (ast.isFinished() || ast.isCanceled() || !ast.isRunning()))
+						.printTo(out);
 			} else {
-				sout += "total:0,\nstart:0,\nlimit:0,\nmessages: [\n";
-				sout += "\n] }\n";
+				new JsonResult("messages", items)
+						.setTotal(0)
+						.setStart(0)
+						.setLimit(0)
+						.printTo(out, false);
 			}
-			out.println(sout);
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
+		} catch (Throwable t) {
+			Service.logger.error("Exception", t);
+			new JsonResult(t).printTo(out);
 		}
 	}
 	
@@ -8254,7 +8138,7 @@ public class Service extends BaseService {
 		if (ast != null && ast.isRunning()) {
 			ast.cancel();
 		}
-		out.println("{\nresult: true\n}");
+		new JsonResult().printTo(out);
 	}
 
 	public void processRunSmartSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -9072,7 +8956,11 @@ public class Service extends BaseService {
 	
 	private WebTopSession getWts() {
 		return getEnv().getWebTopSession();
-	}	
+	}
+	
+	private String formatCalendarDate(int year, int month, int day, int hours, int minutes, int seconds) {
+		return year + "-" + String.format("%02d", month + 1) + "-" + String.format("%02d", day) + " " + String.format("%02d", hours) + ":" + String.format("%02d", minutes) + ":" + String.format("%02d", seconds);
+	}
 
         
         

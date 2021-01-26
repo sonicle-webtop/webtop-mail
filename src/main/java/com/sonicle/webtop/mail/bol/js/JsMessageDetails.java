@@ -35,36 +35,40 @@ package com.sonicle.webtop.mail.bol.js;
 
 /**
  *
- * @author gbulfon
+ * @author Federico Ballarini
  */
-public class JsAttachment {
-    
-    public String uploadId;
-    public String fileName;
-    public String cid;
-    public Boolean inline;
-    public Long fileSize;
+public class JsMessageDetails {
+	public String iddata;
+	public String value1;
+	public String value2;
+	public Integer value3;
+	public String value4;
 	public Boolean editable;
-	
-	public JsAttachment() {
-		
-	}
-	
-	public JsAttachment(String uploadId, String fileName, String cid, boolean inline, long fileSize) {
-		this.uploadId=uploadId;
-		this.fileName=fileName;
-		this.cid=cid;
-		this.inline=inline;
-		this.fileSize=fileSize;
+
+	public JsMessageDetails(String iddata, String value1, String value2, Integer value3) {
+		this.iddata = iddata;
+		this.value1 = value1;
+		this.value2 = value2;
+		this.value3 = value3;
 	}
 
-	public JsAttachment(String uploadId, String fileName, String cid, Boolean inline, Long fileSize, Boolean editable) {
-		this.uploadId = uploadId;
-		this.fileName = fileName;
-		this.cid = cid;
-		this.inline = inline;
-		this.fileSize = fileSize;
-		this.editable = editable;
+	public JsMessageDetails(String iddata, String value1) {
+		this.iddata = iddata;
+		this.value1 = value1;
+	}
+
+	public JsMessageDetails(String iddata, String value1, String value2) {
+		this.iddata = iddata;
+		this.value1 = value1;
+		this.value2 = value2;
 	}
 	
+	public JsMessageDetails(String iddata, String value1, String value2, Integer value3, String value4, Boolean editable) {
+		this.iddata = iddata;
+		this.value1 = value1;
+		this.value2 = value2;
+		this.value3 = value3;
+		this.value4 = value4;
+		this.editable = editable;
+	}
 }

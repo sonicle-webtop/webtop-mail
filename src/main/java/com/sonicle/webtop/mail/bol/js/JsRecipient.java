@@ -41,5 +41,13 @@ public class JsRecipient {
     
     public String rtype;
     public String email;
+
+	public JsRecipient() {
+	}
+
+	public JsRecipient(String rtype, String email) {
+		this.rtype = rtype;
+		this.email = email;
+	}
     
 }

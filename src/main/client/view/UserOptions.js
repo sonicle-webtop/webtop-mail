@@ -1074,7 +1074,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 						}
 					}).show();
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});

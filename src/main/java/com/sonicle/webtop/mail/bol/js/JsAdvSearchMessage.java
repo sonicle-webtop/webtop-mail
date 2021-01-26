@@ -35,36 +35,42 @@ package com.sonicle.webtop.mail.bol.js;
 
 /**
  *
- * @author gbulfon
+ * @author Federico Ballarini
  */
-public class JsAttachment {
-    
-    public String uploadId;
-    public String fileName;
-    public String cid;
-    public Boolean inline;
-    public Long fileSize;
-	public Boolean editable;
-	
-	public JsAttachment() {
-		
-	}
-	
-	public JsAttachment(String uploadId, String fileName, String cid, boolean inline, long fileSize) {
-		this.uploadId=uploadId;
-		this.fileName=fileName;
-		this.cid=cid;
-		this.inline=inline;
-		this.fileSize=fileSize;
-	}
+public class JsAdvSearchMessage {
+	public String folder;
+	public String folderdesc;
+	public String idmandfolder;
+	public Long idmessage;
+	public Integer priority;
+	public String status;
+	public String to;
+	public String from;
+	public String subject;
+	public String date;
+	public Boolean unread;
+	public Integer size;
+	public String flag;
+	public Boolean arch;
+	public Boolean istoday;
+	public Boolean note;
 
-	public JsAttachment(String uploadId, String fileName, String cid, Boolean inline, Long fileSize, Boolean editable) {
-		this.uploadId = uploadId;
-		this.fileName = fileName;
-		this.cid = cid;
-		this.inline = inline;
-		this.fileSize = fileSize;
-		this.editable = editable;
+	public JsAdvSearchMessage(String folder, String folderdesc, String idmandfolder, Long idmessage, Integer priority, String status, String to, String from, String subject, String date, Boolean unread, Integer size, String flag, Boolean arch, Boolean istoday, Boolean note) {
+		this.folder = folder;
+		this.folderdesc = folderdesc;
+		this.idmandfolder = idmandfolder;
+		this.idmessage = idmessage;
+		this.priority = priority;
+		this.status = status;
+		this.to = to;
+		this.from = from;
+		this.subject = subject;
+		this.date = date;
+		this.unread = unread;
+		this.size = size;
+		this.flag = flag;
+		this.arch = arch;
+		this.istoday = istoday;
+		this.note = note;
 	}
-	
 }

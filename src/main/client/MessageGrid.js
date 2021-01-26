@@ -1311,20 +1311,21 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				replyall: (all?'1':'0')
 			},
 			callback: function(success,json) {
-				if (json.result) {
+				if (json.success) {
+					var data = json.data;
 					me.mys.startNewMessage(idfolder,{
-						subject: json.subject,
-						recipients: json.recipients,
-						content: json.content,
-						attachments: json.attachments,
-                        format: json.format,
-						replyfolder: json.replyfolder,
-						inreplyto: json.inreplyto,
-						references: json.references,
-						origuid: json.origuid
+						subject: data.subject,
+						recipients: data.recipients,
+						content: data.content,
+						attachments: data.attachments,
+                        format: data.format,
+						replyfolder: data.replyfolder,
+						inreplyto: data.inreplyto,
+						references: data.references,
+						origuid: data.origuid
 					});
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -1370,21 +1371,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				newmsgid: msgId
 			},
 			callback: function(success,json) {
-				if (json.result) {
+				if (json.success) {
+					var data = json.data;
 					me.mys.startNewMessage(idfolder,{
-						subject: json.subject,
-						content: json.content,
-                        format: json.format,
+						subject: data.subject,
+						content: data.content,
+                        format: data.format,
 						msgId: msgId,
-						attachments: json.attachments,
-						forwardedfolder: json.forwardedfolder,
-						forwardedfrom: json.forwardedfrom,
-						inreplyto: json.inreplyto,
-						references: json.references,
-						origuid: json.origuid
+						attachments: data.attachments,
+						forwardedfolder: data.forwardedfolder,
+						forwardedfrom: data.forwardedfrom,
+						inreplyto: data.inreplyto,
+						references: data.references,
+						origuid: data.origuid
 					});
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -1430,7 +1432,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				if (success) {
 					me.mys.reloadFolderList();
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});
@@ -1460,33 +1462,33 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                 newmsgid: msgId
 			},
 			callback: function(success,json) {
-				if (json.result) {
+				if (json.success) {
+					var data = json.data;
 					me.mys.startNewMessage(idfolder,{
-						subject: json.subject,
-						recipients: json.recipients,
-						content: json.content,
+						subject: data.subject,
+						recipients: data.recipients,
+						content: data.content,
                         contentReady: true,
-						identityId: json.identityId,
-                        proprity: json.priority,
-						replyfolder: json.replyfolder,
-                        format: json.format,
+						identityId: data.identityId,
+                        proprity: data.priority,
+						replyfolder: data.replyfolder,
+                        format: data.format,
                         msgId: msgId,
-						attachments: json.attachments,
-						forwardedfolder: json.forwardedfolder,
-						forwardedfrom: json.forwardedfrom,
-						replyfolder: json.replyfolder,
-						inreplyto: json.inreplyto,
-						references: json.references,
-						origuid: json.origuid,
+						attachments: data.attachments,
+						forwardedfolder: data.forwardedfolder,
+						forwardedfrom: data.forwardedfrom,
+						inreplyto: data.inreplyto,
+						references: data.references,
+						origuid: data.origuid,
 						draftuid: isdraft?idmessage:0,
 						draftfolder: isdraft?idfolder:null
 					});
-					if (json.deleted && json.folder==me.mys.currentFolder) {
+					if (data.deleted && data.folder === me.mys.currentFolder) {
 						me.mys.reloadFolderList();
 						me.mys.messagesPanel.clearMessageView();
 					}
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -1683,10 +1685,10 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				fullthreads: fullThreads
 			},
 			callback: function(success,json) {
-				if (json.result) {
-					Ext.callback(data.cb,data.scope||me,[json.result]);
+				if (json.success) {
+					Ext.callback(data.cb,data.scope||me,[json.success]);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -1775,8 +1777,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				isdd: isdd
 			},
 			callback: function(success,json) {
-				Ext.callback(data.cb,data.scope||me,[json.result]);
-				if (json.result) {
+				Ext.callback(data.cb,data.scope||me,[json.success]);
+				if (json.success) {
 					var d=data,
 					//TODO: update imap tree?
 					//tree=me.mys.imapTree,
@@ -1822,9 +1824,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					*/
 				   
 				    //if archiving, reload archive branch
-					if (json.archiving) me._refreshArchiveNode(acctto,json.tofolder);
+					if (json.data.archiving) me._refreshArchiveNode(acctto,json.data.tofolder);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});							
@@ -1914,8 +1916,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			timeout: WT.getVar("ajaxLongTimeout"),
 			params: params,
 			callback: function(success,json) {
-				if (handler) Ext.callback(handler,scope||me,[json.result]);
-				if (json.result) {
+				if (handler) Ext.callback(handler,scope||me,[json.success]);
+				if (json.success) {
 					//if (options.win) {
 					//	options.win.enable();
 					//	options.win.tree.bfiltered.setValue(false);
@@ -1934,9 +1936,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					//	info.millis=o.millis;
 					//	this.ms.updateUnreads(options.tofolder,info,false);
 					//}
-					if (json.archiving) me._refreshArchiveNode(acct,json.tofolder);
+					if (json.data.archiving) me._refreshArchiveNode(acct,json.data.tofolder);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 
@@ -1986,9 +1988,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				multifolder: data.multifolder
 			},
 			callback: function(success,json) {
-				Ext.callback(data.cb,data.scope||me,[json.result]);
-				if (!json.result)
-					WT.error(json.text);
+				Ext.callback(data.cb,data.scope||me,[json.success]);
+				if (!json.success)
+					WT.error(json.message);
 			}
 		});
 	},
@@ -2136,7 +2138,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   if (dorel) me.mys.reloadFolderList();
 
               } else {
-                  WT.error(json.text);
+                  WT.error(json.messages);
               }
 			}
 		  });
@@ -2188,7 +2190,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   if (dorel) this.mys.reloadFolderList();
 
               } else {
-                  WT.error(json.text);
+                  WT.error(json.message);
               }
 			}
 		  });
@@ -2307,7 +2309,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						value: json.message
 					});
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -2327,7 +2329,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					if (folder===me.currentFolder)
 						me.mys.reloadFolderList();
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -2407,7 +2409,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                 headers: !!headers
 			},
 			callback: function(success,json) {
-				if (json.result) {
+				if (json.success) {
 					WT.createView(me.mys.ID,'view.HeadersView',{
 						viewCfg: {
 							source: json.source
@@ -2415,7 +2417,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					}).show();
 
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -2454,13 +2456,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 									}
 								});
 							} else {
-								WT.error(json.text);
+								WT.error(json.message);
 							}
 						}
 					});							
 				
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -2578,7 +2580,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					me.mys.setFolderGroup(me.currentAccount,me.currentFolder,newgroup);
 					me.mys.showFolder(me.currentAccount,me.currentFolder);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					

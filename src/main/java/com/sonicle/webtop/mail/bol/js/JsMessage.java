@@ -62,4 +62,52 @@ public class JsMessage {
     public long origuid;
 	public long draftuid;
 	public String draftfolder;
+	public Boolean deleted;
+
+	public JsMessage() {
+	}
+	
+	public JsMessage(String subject, String content, String format, int identityId, List<JsAttachment> attachments, List<JsRecipient> recipients, String replyfolder, String inreplyto, String references, long origuid) {
+		this.subject = subject;
+		this.content = content;
+		this.format = format;
+		this.identityId = identityId;
+		this.attachments = attachments;
+		this.recipients = recipients;
+		this.replyfolder = replyfolder;
+		this.inreplyto = inreplyto;
+		this.references = references;
+		this.origuid = origuid;
+	}
+
+	public JsMessage(String subject, String content, String format, int identityId, List<JsAttachment> attachments, String forwardedfolder, String forwardedfrom, String inreplyto, String references, long origuid) {
+		this.subject = subject;
+		this.content = content;
+		this.format = format;
+		this.identityId = identityId;
+		this.attachments = attachments;
+		this.forwardedfolder = forwardedfolder;
+		this.forwardedfrom = forwardedfrom;
+		this.inreplyto = inreplyto;
+		this.references = references;
+		this.origuid = origuid;
+	}
+
+	public JsMessage(String folder, Boolean receipt, Boolean priority, String subject, String content, String format, int identityId, List<JsAttachment> attachments, List<JsRecipient> recipients, String replyfolder, String inreplyto, String references, String forwardedfolder, String forwardedfrom, long origuid, Boolean deleted) {
+		this.folder = folder;
+		this.receipt = receipt;
+		this.priority = priority;
+		this.subject = subject;
+		this.content = content;
+		this.format = format;
+		this.identityId = identityId;
+		this.attachments = attachments;
+		this.recipients = recipients;
+		this.replyfolder = replyfolder;
+		this.inreplyto = inreplyto;
+		this.references = references;
+		this.forwardedfolder = forwardedfolder;
+		this.forwardedfrom = forwardedfrom;
+		this.origuid = origuid;
+	}
 }

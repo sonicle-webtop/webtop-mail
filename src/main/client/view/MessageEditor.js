@@ -444,6 +444,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					displayField: 'description',
 					valueField: 'identityId',
 					width:me.customToolbarButtons?270:370,
+					editable: false,
+					selectOnFocus: false,
 					matchFieldWidth: false,
 					listConfig: {
 						width: 400
@@ -592,7 +594,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 										}
 									});
 								} else {
-									WT.error(json.text);
+									WT.error(json.message);
 								}
 							}
 						});					
@@ -1494,7 +1496,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						}
 						
 					} else {
-						WT.error(json.text);
+						WT.error(json.message);
 					}
 				}
 			});					
@@ -1710,7 +1712,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					//	me.mys.messagesPanel.clearMessageView();
 					//}
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					

@@ -35,36 +35,52 @@ package com.sonicle.webtop.mail.bol.js;
 
 /**
  *
- * @author gbulfon
+ * @author Federico Ballarini
  */
-public class JsAttachment {
-    
-    public String uploadId;
-    public String fileName;
-    public String cid;
-    public Boolean inline;
-    public Long fileSize;
-	public Boolean editable;
-	
-	public JsAttachment() {
-		
-	}
-	
-	public JsAttachment(String uploadId, String fileName, String cid, boolean inline, long fileSize) {
-		this.uploadId=uploadId;
-		this.fileName=fileName;
-		this.cid=cid;
-		this.inline=inline;
-		this.fileSize=fileSize;
+public class JsOperateFolder {
+	public String parent;
+	public String name;
+	public String fullname;
+	public String oldid;
+	public String newid;
+	public String newname;
+	public String trashid;
+
+	public JsOperateFolder() {
 	}
 
-	public JsAttachment(String uploadId, String fileName, String cid, Boolean inline, Long fileSize, Boolean editable) {
-		this.uploadId = uploadId;
-		this.fileName = fileName;
-		this.cid = cid;
-		this.inline = inline;
-		this.fileSize = fileSize;
-		this.editable = editable;
+	public JsOperateFolder setParent(String parent) {
+		this.parent = parent;
+		return this;
+	}
+
+	public JsOperateFolder setName(String name) {
+		this.name = name;
+		return this;
+	}
+
+	public JsOperateFolder setFullname(String fullname) {
+		this.fullname = fullname;
+		return this;
+	}
+
+	public JsOperateFolder setOldid(String oldid) {
+		this.oldid = oldid;
+		return this;
+	}
+
+	public JsOperateFolder setNewid(String newid) {
+		this.newid = newid;
+		return this;
+	}
+
+	public JsOperateFolder setNewname(String newname) {
+		this.newname = newname;
+		return this;
 	}
 	
+	public JsOperateFolder setTrashid(String trashid) {
+		this.trashid = trashid;
+		return this;
+	}
 }

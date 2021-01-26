@@ -221,7 +221,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						me.unwait();
 					}, 500);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});
@@ -1317,7 +1317,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			callback: function(success,json) {
 				if (success) {
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -1636,7 +1636,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					WT.getApp().getService('com.sonicle.webtop.calendar').scheduler.editEvent(json.event_id);
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					
@@ -1650,7 +1650,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				if (success) {
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
-					WT.error(json.text);
+					WT.error(json.message);
 				}
 			}
 		});					

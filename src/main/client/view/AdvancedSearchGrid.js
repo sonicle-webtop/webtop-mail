@@ -55,8 +55,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchGrid',{
             mode: 'local',
             displayField: 'desc',
             triggerAction: 'all',
-            //selectOnFocus: true,
             editable: false,
+			selectOnFocus: false,
             store: new Ext.data.SimpleStore({
                 fields: ['id','desc'],
                 data: [
@@ -231,8 +231,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
             mode: 'local',
             displayField: 'desc',
             triggerAction: 'all',
-            //selectOnFocus: true,
             editable: false,
+			selectOnFocus: false,
             store: new Ext.data.SimpleStore({
                 fields: ['id','desc'],
                 data: sf
@@ -248,8 +248,8 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
             mode: 'local',
             displayField: 'desc',
             triggerAction: 'all',
-            //selectOnFocus: true,
             editable: false,
+			selectOnFocus: false,
             store: new Ext.data.SimpleStore({
                 fields: ['id','desc'],
                 data: me.mdatafull
