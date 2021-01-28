@@ -8870,6 +8870,14 @@ public class Service extends BaseService {
 					logger.error("Unable to get auto identity personal info [{}]", id.getEmail(), ex);
 				}
 			}
+                        else if(id.isType(Identity.TYPE_USER)) {
+                            try {
+                                    UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(mailManager.getTargetProfileId());
+                                    mc.substitutePlaceholders(upi);			
+                            } catch(WTException exc) {
+                                    logger.error("cannot load user personal info",exc);
+                            }
+                        }
 		}
 		//mc.html=LangUtils.stripLineBreaks(mc.html);
 		id.setMailcard(mc);
