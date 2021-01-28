@@ -255,6 +255,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public String getFolderSent() {
 		String s=getString(FOLDER_SENT,null);
 		if (s==null) s=mss.getDefaultFolderSent();
+                if (s==null) s="Sent";
 		return s;
 	}
 	
@@ -265,6 +266,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public String getFolderDrafts() {
 		String s=getString(FOLDER_DRAFTS,null);
 		if (s==null) s=mss.getDefaultFolderDrafts();
+                if (s==null) s="Drafts";
 		return s;
 	}
 	
@@ -275,6 +277,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public String getFolderTrash() {
 		String s=getString(FOLDER_TRASH,null);
 		if (s==null) s=mss.getDefaultFolderTrash();
+                if (s==null) s="Trash";
 		return s;
 	}
 	
@@ -285,6 +288,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public String getFolderArchive() {
 		String s=getString(FOLDER_ARCHIVE,null);
 		if (s==null) s=mss.getDefaultFolderArchive();
+                if (s==null) s="Archive";
 		return s;
 	}
 	
@@ -295,6 +299,7 @@ public class MailUserSettings extends BaseUserSettings {
 	public String getFolderSpam() {
 		String s=getString(FOLDER_SPAM,null);
 		if (s==null) s=mss.getDefaultFolderSpam();
+                if (s==null) s="Spam";
 		return s;
 	}
 	
