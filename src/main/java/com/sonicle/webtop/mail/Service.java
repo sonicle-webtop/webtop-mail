@@ -7003,6 +7003,7 @@ public class Service extends BaseService {
 		try {
 			FolderCache mcache = null;
 			Message m = null;
+                        Message morig = null;
 			IMAPMessage im=null;
 			int recs = 0;
 			long msguid=-1;
@@ -7013,11 +7014,12 @@ public class Service extends BaseService {
 			if (providername == null) {
 				account.checkStoreConnected();
 				mcache = account.getFolderCache(pfoldername);
-                msguid=Long.parseLong(puidmessage);
-                m=mcache.getMessage(msguid);
+                                msguid=Long.parseLong(puidmessage);
+                                //keeep morig copy in case pec changes m into its internal part
+                                morig=m=mcache.getMessage(msguid);
 				im=(IMAPMessage)m;
 				im.setPeek(us.isManualSeen());
-                if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
+                                if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
 				vheader = m.getHeader("Disposition-Notification-To");
 				wasseen = m.isSet(Flags.Flag.SEEN);
 				if (pidattach != null) {
@@ -7158,8 +7160,10 @@ public class Service extends BaseService {
 					if (htmlparts.size()==0) m.setFlag(Flags.Flag.SEEN, true);
 				}
 				else {
-					if(setSeen) 
-						m.setFlag(Flags.Flag.SEEN, true);
+					if (setSeen) {
+                                            //uses morig so that it's ok also if it's a pec view
+                                            morig.setFlag(Flags.Flag.SEEN, true);
+                                        }
 				}
 			} catch(MethodNotSupportedException exc) {
 				logger.error("Cannot set Flags as SEEN",exc);
