@@ -1448,10 +1448,13 @@ public class Service extends BaseService {
 				//      Service.logger.debug("richContent="+richContent);
 				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
 				if (!richContent) {
+                                        //use the original unchanged text content
 					forward.setText(getForwardBody(msg, textsb.toString(), SimpleMessage.FORMAT_TEXT, false, fromtitle, totitle, cctitle, datetitle, subjecttitle));
 				} else if (!isHtml) {
-					forward.setText(getForwardBody(msg, textsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, false, fromtitle, totitle, cctitle, datetitle, subjecttitle));
+                                        //use html content, which is text content with possible html encoded characters
+					forward.setText(getForwardBody(msg, htmlsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, false, fromtitle, totitle, cctitle, datetitle, subjecttitle));
 				} else {
+                                        //take care of possible html shit
 					forward.setText(
 							MailUtils.removeMSWordShit(
 								getForwardBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle)
