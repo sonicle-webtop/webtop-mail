@@ -2022,10 +2022,24 @@ public class FolderCache {
       Locale locale=profile.getLocale();
 	  String laf=ms.getCoreUserSettings().getLookAndFeel();
 	  boolean icalhtmlview=false;
+          
+      //first cycle parts to get a possible default charset
+      String defaultCharset=null;
+      for(int i=0;defaultCharset==null && i<mailData.getDisplayPartCount();++i) {
+        Part dispPart=mailData.getDisplayPart(i);
+        defaultCharset=MailUtils.getCharsetOrNull(dispPart.getContentType());
+      }
+      
       for(int i=0;i<mailData.getDisplayPartCount();++i) {
         Part dispPart=mailData.getDisplayPart(i);
         java.io.InputStream istream=null;
-        String charset=MailUtils.getCharsetOrDefault(dispPart.getContentType());
+        String charset=null;
+        if (defaultCharset==null)
+            charset=MailUtils.getCharsetOrDefault(dispPart.getContentType());
+        else {
+            charset=MailUtils.getCharsetOrNull(dispPart.getContentType());
+            if (charset==null) charset=defaultCharset;
+        }
 //        boolean ischarset=false;
 //        try { ischarset=java.nio.charset.Charset.isSupported(charset); } catch(Exception exc) {}
 //        if (!ischarset) charset="UTF-8";
