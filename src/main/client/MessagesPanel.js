@@ -417,6 +417,22 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				me.clearMessageView();
 			}
 		});
+                
+        me.on('resize',function(el, width, height, oldWidth, oldHeight, eOpts) {
+            var min=200,
+                fw=me.folderList.getWidth();
+                
+            //when folder list size too small, set it to half new width
+            //this may happen while shrinking width
+            if (fw<min) {
+                me.messageViewContainer.setWidth(width/2);
+            }
+            //else, when message view size too small, keep it at min
+            //this may happen while growing back width and view was set small
+            else if ((width-fw)<min) {
+                me.messageViewContainer.setWidth(width-min);
+            }
+        });
     },
 	
 	//setImapStore: function(store) {
