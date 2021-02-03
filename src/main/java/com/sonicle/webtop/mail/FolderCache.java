@@ -2027,7 +2027,9 @@ public class FolderCache {
       String defaultCharset=null;
       for(int i=0;defaultCharset==null && i<mailData.getDisplayPartCount();++i) {
         Part dispPart=mailData.getDisplayPart(i);
-        defaultCharset=MailUtils.getCharsetOrNull(dispPart.getContentType());
+        
+        //Use workaround for NethServer installation:
+        defaultCharset=MailUtils.getCharsetOrNull(dispPart);
       }
       
       for(int i=0;i<mailData.getDisplayPartCount();++i) {
@@ -2035,9 +2037,11 @@ public class FolderCache {
         java.io.InputStream istream=null;
         String charset=null;
         if (defaultCharset==null)
-            charset=MailUtils.getCharsetOrDefault(dispPart.getContentType());
+            //Use workaround for NethServer installation:
+            charset=MailUtils.getCharsetOrDefault(dispPart);
         else {
-            charset=MailUtils.getCharsetOrNull(dispPart.getContentType());
+            //Use workaround for NethServer installation:
+            charset=MailUtils.getCharsetOrNull(dispPart);
             if (charset==null) charset=defaultCharset;
         }
 //        boolean ischarset=false;
