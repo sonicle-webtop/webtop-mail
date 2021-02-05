@@ -1255,14 +1255,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	startNewMessage: function(idfolder, opts) {
 		opts=opts||{};
 		var me=this,ident,
-				contentFormat = opts.format || me.getVar('format');
+				contentFormat = opts.format || me.getVar('format'),
+				rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 		
 		if(opts.identityId) {
 			ident = me.getIdentityFromId(opts.identityId);
 		} else {
 			ident = me.getFolderIdentity(idfolder);
 		}
-		rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 	
 		/*        for(var i=1;i<identities.length;++i) {
             var ifolder=identities[i].mainFolder;

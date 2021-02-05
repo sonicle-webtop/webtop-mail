@@ -35,6 +35,7 @@
 Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
+		'Sonicle.button.Toggle',
 		'Sonicle.webtop.core.ux.RecipientsGrid',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.webtop.core.ux.field.HTMLEditor', // Remove this line when useNewHTMLEditor is no more necessary!
@@ -285,10 +286,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         var dash=false;
         if (me.showReceipt) {
 			tbitems[tbx++]=me.addRef('chkReceipt', Ext.create({
-				xtype: 'button',
-				enableToggle: true,
-				tooltip: me.res('editor.btn-receipt.tip'),
-				iconCls: 'wtmail-icon-msgReceipt',
+				xtype: 'sotogglebutton',
+				offTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.off.tip.txt')},
+				onTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.on.tip.txt')},
+				offIconCls: 'wtmail-icon-msgReceipt-grayed',
+				onIconCls: 'wtmail-icon-msgReceipt',
 				handler: me.actionReceipt,
 				scope: me
 			}));
@@ -296,10 +298,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         }
         if (this.showPriority) {
 			tbitems[tbx++]=me.addRef('chkPriority', Ext.create({
-				xtype: 'button',
-				enableToggle: true,
-				tooltip: me.res('editor.btn-priority.tip'),
-				iconCls: 'wtmail-icon-msgPriorityHigh',
+				xtype: 'sotogglebutton',
+				offTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.off.tip.txt')},
+				onTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.on.tip.txt')},
+				offIconCls: 'wtmail-icon-msgPriorityHigh-grayed',
+				onIconCls: 'wtmail-icon-msgPriorityHigh',
 				handler: me.actionPriority,
 				scope: me
 			}));
