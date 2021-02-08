@@ -406,13 +406,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			};
 		}
 		
+		tbitems[tbx++]='-';
 		tbitems[tbx++] = me.addRef('showMailcard', Ext.create({
-			xtype: 'button',
-			enableToggle: true,
-			pressed: true,
-			iconCls: 'wtmail-icon-mailcardedit-xs',
-			tooltip: me.res('editor.btn-showMailcard.tip'),
+			xtype: 'sotogglebutton',
+			offTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.off.tip.txt')},
+			onTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.on.tip.txt')},
+			offIconCls: 'wtmail-icon-msgMailcard-grayed',
+			onIconCls: 'wtmail-icon-msgMailcard',
 			handler: me.showMailcardAction,
+			pressed: me.showMailcard,
 			scope: me
 		}));
 		
@@ -438,7 +440,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				if (!selident) selident=idents[0];
 				me.selectedIdentity=selident;
 				
-				tbitems[tbx++]='-';
 				tbitems[tbx++]={
 					xtype:'combo',
 					bind: '{record.identityId}',
