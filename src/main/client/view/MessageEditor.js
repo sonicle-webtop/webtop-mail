@@ -464,10 +464,16 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								if (!Ext.isDefined(nv) || !Ext.isDefined(ov) || nv === null || ov === null || ov === nv) return;
 								me.selectedIdentity=me.identHash[nv];
                                 var format=me.contentFormat;
-								if (!this.htmlEditor.isReady()) me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
-								else {
-									if(me.showMailcard)
-									me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
+								if (!me.htmlEditor.isReady()) {
+									me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
+								} else {
+									if (me.showMailcard) {
+										if (WT.getVar('useNewHTMLEditor')) {
+											me.replaceMailcardUI(me.identHash[nv].mailcard.html, me.identHash[ov].mailcard.html);
+										} else {
+											me.setContent(me.replaceMailcardOld(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
+										}
+									}
 								}
 							},
 							scope: this
@@ -1050,11 +1056,19 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					}
 				};
 				me.showMailcard = b.pressed;
-			if(me.showMailcard) {
-				me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), dumbMailcard.mailcard.html, me.selectedIdentity.mailcard.html), format);
+		if (WT.getVar('useNewHTMLEditor')) {
+			if (me.showMailcard) {
+				me.replaceMailcardUI(me.selectedIdentity.mailcard.html, dumbMailcard.mailcard.html);
 			} else {
-				me.setContent(me.replaceMailcard(me.htmlEditor.getValue(), me.selectedIdentity.mailcard.html, dumbMailcard.mailcard.html), format);
+				me.replaceMailcardUI(dumbMailcard.mailcard.html, me.selectedIdentity.mailcard.html);
 			}
+		} else {
+			if(me.showMailcard) {
+				me.setContent(me.replaceMailcardOld(me.htmlEditor.getValue(), dumbMailcard.mailcard.html, me.selectedIdentity.mailcard.html), format);
+			} else {
+				me.setContent(me.replaceMailcardOld(me.htmlEditor.getValue(), me.selectedIdentity.mailcard.html, dumbMailcard.mailcard.html), format);
+			}
+		}
 	},
     
     actionSend: function() {
@@ -1333,9 +1347,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		if ('html' === format) {
 			if (mailcard) {
-                            if (mailcard.text.trim()) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
-                            else mcContent = '<div id="wt-mailcard" style="border: none !important">' + mailcard.html + '</div>';
-                        }
+				if (mailcard.text.trim()) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
+				else mcContent = '<div id="wt-mailcard" style="border: none !important">' + mailcard.html + '</div>';
+			}
 			if (WT.getVar('useNewHTMLEditor')) {
 				var HE = Sonicle.form.field.tinymce.HTMLEditor,
 					ff = HE.getContentFontFamily(me.htmlEditor.fonts, me.fontFace),
@@ -1369,11 +1383,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		return ret;
 	},
 	
-    setContent: function(content,format) {
-		var me=this;
+    setContent: function(content, format) {
+		var me = this;
         //me.htmlEditor.initHtmlValue(html);
-		me.getModel().set("content",content);
-        me.getModel().set("format",format);
+		me.getModel().set({
+			content: content,
+			format: format
+		});
+		//me.getModel().set("content",content);
+        //me.getModel().set("format",format);
 		
 /*        var w=this.htmlEditor.getWin();
         var d=w.document;
@@ -1392,45 +1410,49 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             r.select();
         }*/
     },
-
-	replaceMailcard: function(html, omc, nmc) {
-		if(Ext.isEmpty(omc) || Ext.isEmpty(nmc)) return html;
-		
+	
+	replaceMailcardUI: function(nmc, omc) {
+		var me = this;
+		if (!me.replaceMailcard(nmc, omc)) {
+			WT.error(me.res('editor.mailcard.replace.no'));
+		}
+	},
+	
+	replaceMailcard: function(nmc, omc) {
 		var me = this,
 				hed = me.htmlEditor,
-				mcNode,
-				origMc, curMc;
-		if (WT.getVar('useNewHTMLEditor')) {
-			// html arg is no more useful, mailcard is replaced directly here without full setContent need
+				mcNode, origMc, curMc;
+		if (!Ext.isEmpty(nmc) && !Ext.isEmpty(omc)) {
 			mcNode = hed.editorDomQuery('#wt-mailcard', {first: true});
 			if (mcNode) {
 				origMc = hed.editorSerialize(Ext.DomHelper.createDom({html: omc}));
 				curMc = hed.editorSerialize(mcNode);
 				if (origMc === curMc) {
 					hed.editorSetHtml(mcNode, nmc);
-				} else {
-					WT.error(me.res('editor.mailcard.replace.no'));
+					return true;
 				}
 			}
-			return html;
-			
-		} else {
-			var htmlDom = Ext.dom.Helper.createDom({html: html}),
-				mcDom = htmlDom.querySelector('#wt-mailcard');
-			if(mcDom) {
-				var htmlOmc, htmlMcEl;
-				htmlOmc = this.htmlEditor.cleanUpHtml(omc);
-				htmlMcEl = this.htmlEditor.cleanUpHtmlFromDom(mcDom);
+		}
+		return false;
+	},
 
-				if (htmlMcEl == htmlOmc) {
-					mcDom.innerHTML = nmc;
-				} else {
-					WT.error(this.res('editor.mailcard.replace.no'));
-				}
-				html=htmlDom.innerHTML;
+	replaceMailcardOld: function(html, omc, nmc) {
+		if(Ext.isEmpty(omc) || Ext.isEmpty(nmc)) return html;
+		var htmlDom = Ext.dom.Helper.createDom({html: html}),
+			mcDom = htmlDom.querySelector('#wt-mailcard');
+		if(mcDom) {
+			var htmlOmc, htmlMcEl;
+			htmlOmc = this.htmlEditor.cleanUpHtml(omc);
+			htmlMcEl = this.htmlEditor.cleanUpHtmlFromDom(mcDom);
+
+			if (htmlMcEl == htmlOmc) {
+				mcDom.innerHTML = nmc;
+			} else {
+				WT.error(this.res('editor.mailcard.replace.no'));
 			}
-			return html;
-		}	
+			html=htmlDom.innerHTML;
+		}
+		return html;
 	},
 	
     disableControls: function(/*showProgress,*/showSendmask) {
