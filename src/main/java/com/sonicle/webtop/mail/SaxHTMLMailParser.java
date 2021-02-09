@@ -255,7 +255,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 						avalue = evaluateUrl(avalue);
 					}
 				} else if (laqname.equals("target")) {
-					avalue = "_new";
+					avalue = "_blank";
 					changedTarget = true;
 				} else if (laqname.equals("href") && lavalue.startsWith("mailto:")) {
 					mailtoParams = lavalue.substring(7);
@@ -284,7 +284,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 			}
 			pwriter.print(" onclick='parent.WT.handleMailAddress(" + sparams + "); return false;'");
 		} else if (islink && !changedTarget) {
-			pwriter.print(" target=_new");
+			pwriter.print(" target=_blank");
 		}
 		pwriter.print(">");
 		pwriter.flush();
