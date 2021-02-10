@@ -310,10 +310,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         }
         if (this.showReminder) {
 			tbitems[tbx++]={
-				xtype: 'button',
-				enableToggle: true,
-				tooltip: me.res('editor.btn-reminder.tip'),
-				iconCls: 'wtmail-icon-msgAddReminder',
+				xtype: 'sotogglebutton',
+				offTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.off.tip.txt')},
+				onTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.on.tip.txt')},
+				offIconCls: 'wtmail-icon-msgAddReminder-grayed',
+				onIconCls: 'wtmail-icon-msgAddReminder',
 				handler: me.actionReminder,
 				scope: me
 			};

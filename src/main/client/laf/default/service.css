@@ -88,6 +88,7 @@
 .wtmail-icon-sieveFilter-xs { background-image: url('sieveFilter_16.png') !important; }
 
 .wtmail-icon-msgAddReminder { background-image: url('msg-reminder-add_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgAddReminder-grayed { background-image: url('msg-reminder-add-grayed_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgReceipt { background-image: url('msg-receipt_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgReceipt-grayed { background-image: url('msg-receipt-grayed_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgPriorityHigh { background-image: url('msg-priority-high_16.svg') !important; background-size: contain; }
