@@ -4274,6 +4274,9 @@ public class Service extends BaseService {
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
 						Part part = maildata.getAttachmentPart(i);
+                                                int level=maildata.getPartLevel(part);
+                                                if (level>0) continue;
+                                                
 						String filename = MailUtils.getPartFilename(part, true);
 						String cids[] = part.getHeader("Content-ID");
 						String cid = null;

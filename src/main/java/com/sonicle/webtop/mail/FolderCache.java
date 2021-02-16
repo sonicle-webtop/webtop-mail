@@ -2104,13 +2104,13 @@ public class FolderCache {
 							htmlparts.add(0,irhtml);
 							icalhtmlview=true;
 						}
-						if (!mailData.hasICalAttachment()) mailData.addAttachmentPart(dispPart);
+						if (!mailData.hasICalAttachment()) mailData.addAttachmentPart(dispPart,0);
 					} catch(ParserException exc) {
-						mailData.addAttachmentPart(dispPart);
+						mailData.addAttachmentPart(dispPart,0);
 						//MailService.logger.error("Error parsing calendar part",exc);
 					}
 				} else {
-					mailData.addAttachmentPart(dispPart);
+					mailData.addAttachmentPart(dispPart,0);
 				}
             } else {
 				xhtml.append("<html><head><meta content='text/html; charset="+charset+"' http-equiv='Content-Type'></head><body><tt>");
@@ -2248,26 +2248,26 @@ public class FolderCache {
   public synchronized HTMLMailData prepareHTMLMailData(MimeMessage msg) throws MessagingException, IOException {
     HTMLMailData mailData=new HTMLMailData(msg,this);
 
-    prepareHTMLMailData(msg, mailData);
+    prepareHTMLMailData(msg, mailData,0);
 	if (mailData.getDisplayPartCount()==0 && mailData.getAttachmentPartCount()>0) {
 		Part part=mailData.getAttachmentPart(0);
 		if (part.isMimeType("text/plain")||part.isMimeType("text/html")||part.isMimeType("message/delivery-status"))
-			mailData.addDisplayPart(part);
+			mailData.addDisplayPart(part,0);
 	}
     return mailData;
 
   }
   
-  public void prepareHTMLMailData(Part msg, HTMLMailData mailData) throws MessagingException, IOException {
+  public void prepareHTMLMailData(Part msg, HTMLMailData mailData, int level) throws MessagingException, IOException {
     if(msg.isMimeType("text/plain")||msg.isMimeType("text/html")||msg.isMimeType("message/delivery-status")||msg.isMimeType("message/disposition-notification")) {
       if (msg.getDisposition()==null || msg.getDisposition().equalsIgnoreCase(Part.INLINE))
-        mailData.addDisplayPart(msg);
-      else mailData.addAttachmentPart(msg);
+        mailData.addDisplayPart(msg,level);
+      else mailData.addAttachmentPart(msg,level);
     } else if(msg.isMimeType("text/calendar")||msg.isMimeType("application/ics")) {
-		mailData.addDisplayPart(msg);
+		mailData.addDisplayPart(msg,level);
     } else if(msg.isMimeType("message/rfc822")) {
-      mailData.addDisplayPart(msg);
-      prepareHTMLMailData((Message)msg.getContent(), mailData);
+      mailData.addDisplayPart(msg,level);
+      prepareHTMLMailData((Message)msg.getContent(), mailData,level+1);
     } else if (msg.isMimeType("application/ms-tnef")) {
       try {
         TnefMultipartDataSource tnefDS = new TnefMultipartDataSource((MimePart)msg);
@@ -2276,7 +2276,7 @@ public class FolderCache {
         Part tnefp=null;
         for(int j=0; j<tnefparts; ++j) {
           tnefp=tnefmp.getBodyPart(j);
-          prepareHTMLMailData(tnefp,mailData);
+          prepareHTMLMailData(tnefp,mailData,level);
         }
 		
 		
@@ -2292,14 +2292,16 @@ public class FolderCache {
         else prepareHTMLMailData(tnefp,mailData);*/
       } catch(Exception exc) {
         Service.logger.error("Exception",exc);
-        mailData.addUnknownPart(msg);
-        mailData.addAttachmentPart(msg);
+        mailData.addUnknownPart(msg,level);
+        mailData.addAttachmentPart(msg,level);
       }
       
+    } else if (msg.isMimeType("application/pkcs7-signature")) {
+        //skip signature
     } else if(msg.isMimeType("multipart/alternative")) {
-      Part ap=getAlternativePart((Multipart)msg.getContent(),mailData);
+      Part ap=getAlternativePart((Multipart)msg.getContent(),mailData,level);
       if(ap!=null) {
-        mailData.addDisplayPart(ap);
+        mailData.addDisplayPart(ap,level);
       }
     } else if(msg.isMimeType("multipart/*")) {
       // Display the text content of the multipart message
@@ -2309,33 +2311,33 @@ public class FolderCache {
       for(int i=0; i<parts; ++i) {
         p=mp.getBodyPart(i);
         if(p.isMimeType("multipart/alternative")) {
-          Part ap=getAlternativePart((Multipart)p.getContent(),mailData);
+          Part ap=getAlternativePart((Multipart)p.getContent(),mailData,level);
           if(ap!=null) {
 			if (ap.isMimeType("text/calendar") || ap.isMimeType("application/ics")|| ap.getDisposition()==null || ap.getDisposition().equalsIgnoreCase(Part.INLINE))
-                mailData.addDisplayPart(ap);
-            else mailData.addAttachmentPart(ap);
+                mailData.addDisplayPart(ap,level);
+            else mailData.addAttachmentPart(ap,level);
           }
         } else if(p.isMimeType("multipart/*")) {
-          prepareHTMLMailData(p, mailData);
+          prepareHTMLMailData(p, mailData,level);
         } else if(p.isMimeType("text/html")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
-            /*if (!mailData.isPEC())*/ mailData.addDisplayPart(p);
-          else mailData.addAttachmentPart(p);
+            /*if (!mailData.isPEC())*/ mailData.addDisplayPart(p,level);
+          else mailData.addAttachmentPart(p,level);
         } else if(p.isMimeType("text/plain")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
-            mailData.addDisplayPart(p);
-          else mailData.addAttachmentPart(p);
+            mailData.addDisplayPart(p,level);
+          else mailData.addAttachmentPart(p,level);
 		} else if(p.isMimeType("text/calendar")||p.isMimeType("application/ics")) {
-			mailData.addDisplayPart(p);
+			mailData.addDisplayPart(p,level);
         } else if(p.isMimeType("message/delivery-status")||p.isMimeType("message/disposition-notification")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE)) 
-              mailData.addDisplayPart(p);
-          else mailData.addAttachmentPart(p);
+              mailData.addDisplayPart(p,level);
+          else mailData.addAttachmentPart(p,level);
         } else if(p.isMimeType("message/rfc822")) {
           if (!mailData.isPEC() && (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE)))
-              mailData.addDisplayPart(p);
-          else mailData.addAttachmentPart(p);
-          prepareHTMLMailData((Message)p.getContent(), mailData);
+              mailData.addDisplayPart(p,level);
+          else mailData.addAttachmentPart(p,level);
+          prepareHTMLMailData((Message)p.getContent(), mailData,level+1);
         } else if (p.isMimeType("application/ms-tnef")) {
           try {
             TnefMultipartDataSource tnefDS = new TnefMultipartDataSource((MimePart)p);
@@ -2344,7 +2346,7 @@ public class FolderCache {
             Part tnefp=null;
             for(int j=0; j<tnefparts; ++j) {
               tnefp=tnefmp.getBodyPart(j);
-              prepareHTMLMailData(tnefp,mailData);
+              prepareHTMLMailData(tnefp,mailData,level);
             }
 
             /*Part tnefp=net.freeutils.tnef.mime.TNEFMime.convert(this.ms.getMailSession(), (Part) p, false);
@@ -2358,13 +2360,15 @@ public class FolderCache {
             }
             else prepareHTMLMailData(tnefp,mailData);*/
           } catch(Exception exc) {
-            mailData.addUnknownPart(p);
-            mailData.addAttachmentPart(p);
+            mailData.addUnknownPart(p,level);
+            mailData.addAttachmentPart(p,level);
             Service.logger.error("Exception",exc);
           }
+        } else if (p.isMimeType("application/pkcs7-signature")) {
+            //skip signature
         } else {
-          mailData.addUnknownPart(p);
-          mailData.addAttachmentPart(p);
+          mailData.addUnknownPart(p,level);
+          mailData.addAttachmentPart(p,level);
           //Look for a possible Cid
           String filename=p.getFileName();
           String id[]=p.getHeader("Content-ID");
@@ -2373,7 +2377,7 @@ public class FolderCache {
               filename=id[0];
             }
 			filename=normalizeCidFileName(filename);
-            mailData.addCidPart(filename, p);
+            mailData.addCidPart(filename, p,level);
           }
           //Look for a possible Url copy
           String location[]=p.getHeader("Content-Location");
@@ -2384,13 +2388,13 @@ public class FolderCache {
             while((line=br.readLine())!=null) {
               url+=line.trim();
             }
-            mailData.addUrlPart(url, p);
+            mailData.addUrlPart(url, p,level);
           }
         }
       }
     } else {
-      mailData.addUnknownPart(msg);
-      mailData.addAttachmentPart(msg);
+      mailData.addUnknownPart(msg,level);
+      mailData.addAttachmentPart(msg,level);
     }
   }
 
@@ -2414,13 +2418,13 @@ public class FolderCache {
     Part bestPart=null;
   }
 
-  private Part getAlternativePart(Multipart amp, HTMLMailData mailData) throws MessagingException, IOException {
+  private Part getAlternativePart(Multipart amp, HTMLMailData mailData, int level) throws MessagingException, IOException {
     PrepareStatus status=new PrepareStatus();
     Part dispPart=null;
     for(int x=0; x<amp.getCount(); ++x) {
       Part ap=amp.getBodyPart(x);
       if(ap.isMimeType("multipart/*")) {
-        prepareHTMLMailData(ap, mailData);
+        prepareHTMLMailData(ap, mailData, level);
       } else if(ap.isMimeType("text/html")) {
         dispPart=ap;
         status.htmlfound=true;
@@ -2430,15 +2434,15 @@ public class FolderCache {
           status.textfound=true;
         }
       } else if(ap.isMimeType("text/calendar")) {
-		mailData.addAttachmentPart(ap);
-		mailData.addDisplayPart(ap);
+		mailData.addAttachmentPart(ap,level);
+		mailData.addDisplayPart(ap,level);
         if(!status.htmlfound) {
           dispPart=ap;
           //mailData.addUnknownPart(ap);
 		  //break;
 		}
       } else {
-		mailData.addAttachmentPart(ap);
+		mailData.addAttachmentPart(ap,level);
 	  }
     }
     return dispPart;

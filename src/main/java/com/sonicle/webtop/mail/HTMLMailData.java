@@ -48,6 +48,7 @@ public class HTMLMailData {
   private final ArrayList<Part> attachmentParts=new ArrayList<> ();
   private final ArrayList<String> referencedCids=new ArrayList<>();
   //private final HashMap<String,CidProperties> cidProperties=new HashMap<>();
+  private HashMap<Part,Integer> partLevels=new HashMap<>();
 
   private MimeMessage message=null;
   private Folder folder=null;
@@ -108,15 +109,21 @@ public class HTMLMailData {
 	  return hasICalAttachment;
   }
   
-  public void addDisplayPart(Part part) {
-    if (!dispParts.contains(part)) dispParts.add(part);
+  public void addDisplayPart(Part part, int level) {
+    if (!dispParts.contains(part)) {
+        dispParts.add(part);
+        partLevels.put(part,level);
+    }
   }
 
-  public void addUnknownPart(Part part) {
-    if (!unknownParts.contains(part)) unknownParts.add(part);
+  public void addUnknownPart(Part part, int level) {
+    if (!unknownParts.contains(part)) {
+        unknownParts.add(part);
+        partLevels.put(part,level);
+    }
   }
 
-  public void addAttachmentPart(Part part) {
+  public void addAttachmentPart(Part part, int level) {
     if (!attachmentParts.contains(part)) {
 		boolean addPart=true;
 		try {
@@ -126,16 +133,25 @@ public class HTMLMailData {
 			}
 		} catch(MessagingException exc) {
 		}
-		if (addPart) attachmentParts.add(part);
+		if (addPart) {
+                    attachmentParts.add(part);
+                    partLevels.put(part,level);
+                }
 	}
   }
 
-  public void addCidPart(String name, Part part) {
-    if (!cidParts.containsKey(name)) cidParts.put(name, part);
+  public void addCidPart(String name, Part part, int level) {
+    if (!cidParts.containsKey(name)) {
+        cidParts.put(name, part);
+        partLevels.put(part,level);
+    }
   }
 
-  public void addUrlPart(String url, Part part) {
-    if (!urlParts.containsKey(url)) urlParts.put(url, part);
+  public void addUrlPart(String url, Part part, int level) {
+    if (!urlParts.containsKey(url)) {
+        urlParts.put(url, part);
+        partLevels.put(part,level);
+    }
   }
   
   public void addReferencedCid(String name) {
@@ -156,6 +172,11 @@ public class HTMLMailData {
 
   public int getCidPartCount() {
     return cidParts.size();
+  }
+  
+  public int getPartLevel(Part p) {
+      Integer i=partLevels.get(p);
+      return i!=null?i:0;
   }
 
   public Part getDisplayPart(int index) {
