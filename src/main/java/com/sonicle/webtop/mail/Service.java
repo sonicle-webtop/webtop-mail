@@ -1440,6 +1440,22 @@ public class Service extends BaseService {
 		
 		return newmsg;
 	}
+        
+        private String getDefaultCharset(Multipart mp) throws MessagingException, IOException {
+            String defaultCharset=null;
+            //cycle parts to get a possible default charset
+            for(int i=0;defaultCharset==null && i<mp.getCount();++i) {
+                Part bp=mp.getBodyPart(i);
+                if (bp.isMimeType("text/*")) {
+                    //Use workaround for NethServer installation:
+                    defaultCharset=MailUtils.getCharsetOrNull(bp);
+                }
+                else if (bp.isMimeType("multipart/*")) {
+                    defaultCharset=getDefaultCharset((Multipart)bp.getContent());
+                }
+            }
+            return defaultCharset;
+        }
 	
 	private SimpleMessage getForwardMsg(long id, Message msg, boolean richContent, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean attached) {
 		Message forward = new MimeMessage(mainAccount.getMailSession());
@@ -1447,7 +1463,9 @@ public class Service extends BaseService {
 			try {
 				StringBuffer htmlsb = new StringBuffer();
 				StringBuffer textsb = new StringBuffer();
-				boolean isHtml = appendReplyParts(msg, htmlsb, textsb, null);
+                                String defaultCharset=null;
+                                if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
+				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, null);
     //      Service.logger.debug("isHtml="+isHtml);
 				//      Service.logger.debug("richContent="+richContent);
 				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
@@ -1827,7 +1845,9 @@ public class Service extends BaseService {
 			StringBuffer textsb = new StringBuffer();
 			ArrayList<String> attnames = new ArrayList<String>();
 			if (includeOriginal) {
-				boolean isHtml = appendReplyParts(msg, htmlsb, textsb, attnames);
+                                String defaultCharset=null;
+                                if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
+				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, attnames);
 				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
 				String text = null;
 				if (!richContent) {
@@ -2072,9 +2092,18 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private String getTextContentAsString(Part p) throws IOException, MessagingException {
+	private String getTextContentAsString(Part p, String defaultCharset) throws IOException, MessagingException {
+                String charset=null;
+                if (defaultCharset==null)
+                    //Use workaround for NethServer installation:
+                    charset=MailUtils.getCharsetOrDefault(p);
+                else {
+                    //Use workaround for NethServer installation:
+                    charset=MailUtils.getCharsetOrNull(p);
+                    if (charset==null) charset=defaultCharset;
+                }            
+            
 		java.io.InputStream istream = null;
-		String charset = MailUtils.getCharsetOrDefault(p.getContentType());
 		if (!java.nio.charset.Charset.isSupported(charset)) {
 			charset = "ISO-8859-1";
 		}
@@ -2111,8 +2140,9 @@ public class Service extends BaseService {
 		return sb.toString();
 	}
 	
-	private boolean appendReplyParts(Part p, StringBuffer htmlsb, StringBuffer textsb, ArrayList<String> attnames) throws MessagingException,
+	private boolean appendReplyParts(Part p, String defaultCharset, StringBuffer htmlsb, StringBuffer textsb, ArrayList<String> attnames) throws MessagingException,
 			IOException {
+            
 		boolean isHtml = false;
 		String disp = p.getDisposition();
 		if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT) && !p.isMimeType("message/*")) {
@@ -2137,12 +2167,12 @@ public class Service extends BaseService {
 		}
 		if (p.isMimeType("text/html")) {
 			//String htmlcontent=(String)p.getContent();
-			String htmlcontent = getTextContentAsString(p);
+			String htmlcontent = getTextContentAsString(p,defaultCharset);
 			textsb.append(MailUtils.htmlToText(MailUtils.htmlunescapesource(htmlcontent)));
 			htmlsb.append(MailUtils.htmlescapefixsource(/*getBodyInnerHtml(*/htmlcontent/*)*/));
 			isHtml = true;
 		} else if (p.isMimeType("text/plain")) {
-			String content = getTextContentAsString(p);
+			String content = getTextContentAsString(p,defaultCharset);
 			textsb.append(content);
 			htmlsb.append(startpre + MailUtils.htmlescape(content) + endpre);
 			isHtml = false;
@@ -2170,7 +2200,7 @@ public class Service extends BaseService {
 			for (int i = 0; i < mp.getCount(); ++i) {
 				Part part = mp.getBodyPart(i);
 				if (part.isMimeType("multipart/*")) {
-					isHtml = appendReplyParts(part, htmlsb, textsb, attnames);
+					isHtml = appendReplyParts(part, defaultCharset, htmlsb, textsb, attnames);
 					if (isHtml) {
 						bestPart = null;
 						break;
@@ -2185,18 +2215,18 @@ public class Service extends BaseService {
 				}
 			}
 			if (bestPart != null) {
-				isHtml = appendReplyParts(bestPart, htmlsb, textsb, attnames);
+				isHtml = appendReplyParts(bestPart, defaultCharset, htmlsb, textsb, attnames);
 			}
 		} else if (p.isMimeType("multipart/*")) {
 			Multipart mp = (Multipart) p.getContent();
 			for (int i = 0; i < mp.getCount(); ++i) {
-				if (appendReplyParts(mp.getBodyPart(i), htmlsb, textsb, attnames)) {
+				if (appendReplyParts(mp.getBodyPart(i), defaultCharset, htmlsb, textsb, attnames)) {
 					isHtml = true;
 				}
 			}
 		} else if (p.isMimeType("message/*")) {
 			Object content = p.getContent();
-			if (appendReplyParts((MimeMessage) content, htmlsb, textsb, attnames)) {
+			if (appendReplyParts((MimeMessage) content, defaultCharset, htmlsb, textsb, attnames)) {
 				isHtml = true;
 			}
 		} else {
@@ -4234,6 +4264,9 @@ public class Service extends BaseService {
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
 						Part part = maildata.getAttachmentPart(i);
+                                                int level=maildata.getPartLevel(part);
+                                                if (level>0) continue;
+                                                
 						String filename = MailUtils.getPartFilename(part, true);
 						String cids[] = part.getHeader("Content-ID");
 						String cid = null;
