@@ -1233,6 +1233,18 @@ public class FolderCache {
 		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
     }
 	
+    public void deleteMessage(long uid) throws MessagingException {
+		if (canDelete()) {
+			Message msg=getMessage(uid);
+                        if (msg!=null) {
+                            Message mmsgs[]=new Message[] { msg };
+                            _deleteMessages(mmsgs);
+                        }
+			removeDHash(new long[] {uid});
+		}
+		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
+    }
+    
 	private void _deleteMessages(Message mmsgs[]) throws MessagingException {
         for(Message dmsg: mmsgs) {
           dmsg.setFlag(Flags.Flag.DELETED, true);
