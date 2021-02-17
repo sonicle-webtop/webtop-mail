@@ -4835,7 +4835,7 @@ public class Service extends BaseService {
 				deleteAutosavedDraft(account,msgId);
 				
 				if (pl.data.origuid>0 && pl.data.folder!=null && fc.getFolder().getFullName().equals(pl.data.folder)) {
-					fc.deleteMessages(new long[] { pl.data.origuid }, false);
+					fc.deleteMessage(pl.data.origuid);
 				}
 				
 				fc.setForceRefresh();
