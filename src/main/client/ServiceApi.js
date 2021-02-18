@@ -58,6 +58,12 @@ Ext.define('Sonicle.webtop.mail.ServiceApi', {
      *     attachments: [
      *       { uploadId: [server UploadedFile id], fileName: "[the file name]", fileSize: [the file size] }
      *     ]	 
+	 * 
+	 * @param {String} [data.meetingUrl] A meeting link.
+	 * @param {String} [data.meetingSchedule] Meeting scheduled date.
+	 * @param {String} [data.meetingScheduleTz] Meeting scheduled date's timezone.
+	 * 
+	 * meetingDate
 	 * @param {Object} opts An object containing configuration.
 	 * @param {Number} [opts.messageEditorId] the message editor id for reference in the attachements
 	 * @param {Boolean} [opts.contentReady] True if content is ready without any need of processing (e.g. mailcard).
@@ -75,6 +81,9 @@ Ext.define('Sonicle.webtop.mail.ServiceApi', {
 			content: data.content,
 			recipients: data.recipients,
 			attachments: data.attachments,
+			meetingUrl: data.meetingUrl,
+			meetingSchedule: data.meetingSchedule,
+			meetingScheduleTz: data.meetingScheduleTz,
 			msgId: opts.messageEditorId,
 			contentReady: opts.contentReady,
 			contentAfter: opts.appendContent,

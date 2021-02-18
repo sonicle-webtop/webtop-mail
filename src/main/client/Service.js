@@ -1249,6 +1249,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
      * @param {bool} [opts.priority] high priority
 	 * @param {Object[]} [opts.recipients] Array of recipient objects with rtype/email pairs
 	 * @param {Object[]} [opts.attachments] Array of attachment objects with uploadId/fileName/fileSize data
+	 * @param {String} [opts.meetingUrl] A meeting link
 	 * @param {String} [opts.content] Initial content
 	 * @param {String} [opts.format] Content format type
 	 */
@@ -1340,7 +1341,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 forwardedfrom: opts.forwardedfrom,
 				fax: opts.fax,
 				draftuid: opts.draftuid,
-				draftfolder: opts.draftfolder
+				draftfolder: opts.draftfolder,
+				meetingUrl: opts.meetingUrl,
+				meetingSchedule: opts.meetingSchedule,
+				meetingScheduleTz: opts.meetingScheduleTz
 			});
 		});
 	},

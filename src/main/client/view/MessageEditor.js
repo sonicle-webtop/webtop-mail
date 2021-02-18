@@ -35,6 +35,7 @@
 Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
+		'Sonicle.String',
 		'Sonicle.button.Toggle',
 		'Sonicle.webtop.core.ux.RecipientsGrid',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
@@ -82,6 +83,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     showReceipt: true,
     showPriority: true,
 	showReminder: true,
+	showMeeting: true,
     showAttach: true,
 	showImportEmail: true,
     showIdentities: true,
@@ -107,14 +109,24 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	dumbMailcard: "<p id='wt-mailcard-dumb' style='padding: 0; margin: 0;'>&#160;</p>",
 	
 	initComponent: function() {
-		var me=this;
+		var me = this,
+				vm = me.getVM();
 		
 		me.plugins=me.plugins||[];
 		me.plugins.push({
 			ptype: 'sofiledrop',
 			text: WT.res('sofiledrop.text')
 		});
-
+		WTU.applyFormulas(vm, {
+			foHasMeeting: WTF.foIsEmpty('record', 'meetingUrl', true),
+			foMeetingDisabled: {
+				bind: {bindTo: '{record.meetingUrl}'},
+				get: function(val) {
+					if (Ext.isEmpty(WT.getMeetingProvider()) || !WT.isPermitted(WT.ID, 'MEETING', 'CREATE')) return true;
+					return !Ext.isEmpty(val);
+				}
+			}
+		});
 		me.callParent(arguments);
 		
 		if (me.msgId===0) me.msgId=Sonicle.webtop.mail.view.MessageEditor.buildMsgId();
@@ -320,6 +332,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			};
             dash=true;
         }
+		if (me.showMeeting) {
+			tbitems[tbx++] = me.addAct('addMeeting', {
+				text: null,
+				tooltip: WT.res(WT.ID, 'act-addMeeting.lbl', WT.getMeetingConfig().name),
+				iconCls: 'wt-icon-newMeeting',
+				bind: {
+					disabled: '{foMeetingDisabled}'
+				},
+				handler: function(s) {
+					me.addMeetingUI();
+				}
+			});
+			dash = true;
+		}
         if (dash) {
             tbitems[tbx++]='-';
         }
@@ -1212,43 +1238,89 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	
 	sendMessage: function() {
-        var me=this,
-			mo=me.getModel();
-	
-		mo.getProxy().setTimeout(WT.getVar("ajaxSpecialTimeout"));
-        mo.setExtraParams({
+		var me = this,
+				timeout = WT.getVar('ajaxSpecialTimeout'),
+				mo = me.getModel(),
+				hasReminder = mo.get('reminder') === true,
+				hasMeeting = !Ext.isEmpty(mo.get('meetingUrl')),
+				eventDesc = hasReminder || hasMeeting ? me.res('editor.newEventTemplate') : null;
+		
+		if (Ext.isNumber(timeout)) mo.getProxy().setTimeout(timeout);
+		mo.setExtraParams({
 			msgId: me.msgId,
-            action: 'SendMessage',
+			action: 'SendMessage',
 			sendAction: 'send',
 			isFax: me.fax
-        });
-		if (me.getModel().get("reminder")) {
-			today=new Date(),
-			tomorrow=new Date(),
-			from=me.selectedIdentity.displayName+" <"+me.selectedIdentity.email+">",
-			to=me.recgrid.store.getAt(0).get("email"),
-			subject=me.subject.getValue(),
-			description=
-				me.mys.res("column-date")+": "+Ext.util.Format.date(today,'d-M-Y')+"\n"+
-				me.mys.res("column-from")+": "+from+"\n"+
-				me.mys.res("column-to")+": "+to+"\n";
-			me.on("modelsave",function(me, success) {
+		});
+		
+		me.saveView(true, {
+			callback: function(success, model) {
 				if (success) {
-					var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
-					
-					capi.addEvent({
-						startDate: tomorrow,
-						endDate: Sonicle.Date.add(tomorrow, { minutes: 30 }),
-						title: subject,
-						description: description,
-						reminder: 5
-					},{
-						dirty: true
-					});
+					if (hasReminder || hasMeeting) {
+						var SoD = Sonicle.Date,
+								capi = WT.getServiceApi('com.sonicle.webtop.calendar');
+						if (capi) {
+							var now = new Date(),
+									sentOn = Ext.Date.format(now, WT.getShortDateFmt()),
+									subject = mo.get('subject'),
+									desc = Ext.String.format(eventDesc, sentOn, subject, mo.get('from'), Sonicle.String.ellipsisJoin(', ', 5, mo.getRecipients()));
+							
+							if (hasMeeting) {
+								WT.confirm(me.res('editor.confirm.meetingFound'), function(bid) {
+									if (bid === 'yes') {
+										var schedAt = SoD.idate(mo.get('meetingSchedule'), now),
+												link = mo.get('meetingUrl');
+										capi.addEvent({
+											startDate: schedAt,
+											endDate: SoD.add(schedAt, {minutes: 30}),
+											timezone: mo.get('meetingScheduleTz'),
+											title: subject,
+											location: link,
+											description: link + '\n\n' + desc
+										},{dirty: true});
+										
+									} else if (bid === 'no') {
+										Sonicle.URLMgr.open(mo.get('meetingUrl'), true);
+									}
+								}, me, {
+									buttons: Ext.Msg.YESNOCANCEL,
+									config: {
+										buttonText: {
+											yes: me.res('editor.confirm.meetingFound.reminder'),
+											no: me.res('editor.confirm.meetingFound.join'),
+											cancel: me.res('editor.confirm.meetingFound.cancel')
+										}
+									}
+								});
+								
+							} else if (hasReminder) {
+								capi.addEvent({
+									startDate: now,
+									endDate: SoD.add(now, {minutes: 30}),
+									title: subject,
+									description: desc,
+									reminder: 5
+								},{dirty: true});
+							}
+						} else {
+							WT.confirm(me.res('editor.confirm.meetingFound'), function(bid) {
+								if (bid === 'yes') {
+									Sonicle.URLMgr.open(mo.get('meetingUrl'), true);
+								}
+							}, me, {
+								buttons: Ext.Msg.YESNO,
+								config: {
+									buttonText: {
+										yes: me.res('editor.confirm.meetingFound.join'),
+										no: me.res('editor.confirm.meetingFound.cancel')
+									}
+								}
+							});
+						}
+					}
 				}
-			},me,{ single: true });
-		}
-        me.saveView(true);
+			}
+		});
 	},
     
     actionSave: function() {
@@ -1803,8 +1875,91 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 			});	
 				
-	}
+	},
 	
+	addMeetingUI: function() {
+		var me = this,
+				name = WT.getVar('userDisplayName'),
+				fmt = Ext.String.format;
+		Sonicle.webtop.core.view.Meeting.promptForInfo({
+			callback: function(ok, values) {
+				if (ok) {
+					me.wait();
+					me.getMeetingLink({
+						callback: function(success, data) {
+							me.unwait();
+							if (success) {
+								var psubj = values[0], pdate = values[1], ptz = values[2],
+										sdate = Ext.isDate(pdate) ? Ext.Date.format(pdate, WT.getShortDateTimeFmt()) + ' ('+ptz+')' : null,
+										subj = !Ext.isEmpty(psubj) ? psubj : fmt(data.embedTexts.subject, name),
+										desc = sdate ? fmt(data.embedTexts.schedDescription, name, sdate, data.link) : fmt(data.embedTexts.unschedDescription, name, data.link),
+										format = me.contentFormat,
+										mo = me.getModel(),
+										newContent;
+								
+								if (Ext.isEmpty(mo.get('subject'))) {
+									mo.set('subject', subj);
+								}
+								if ('html' === format) {
+									newContent = Sonicle.String.htmlEncodeLineBreaks(desc.linkify());
+								} else if ('plain' === format) {
+									/* Nothing to do: newContent is already in text format! */
+								}
+								
+								mo.set('meetingUrl', data.link);
+								mo.set('meetingSchedule', pdate);
+								mo.set('meetingScheduleTz', ptz);
+								if (WT.getVar('useNewHTMLEditor')) {
+									me.htmlEditor.insertContent(newContent);
+								} else {
+									//FIXME: like other, but i think this will NOT work with plain format!!
+									me.htmlEditor.execCommand('inserthtml', false, newContent);
+								}
+							}
+						}
+					});
+				}
+			}
+		});
+	},
+	
+	getMeetingLink: function(opts) {
+		opts = opts || {};
+		var me = this;	
+		WT.ajaxReq(WT.ID, 'ManageMeeting', {
+			params: {
+				crud: 'create'
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
+			}
+		});
+	},
+	
+	contentNewLines: function(howMany) {
+		if (!Ext.isNumber(howMany)) howMany = 1;
+		var format = this.contentFormat, sep = '';
+		if ('html' === format) {
+			sep = '<br>';
+		} else if ('plain' === format) {
+			sep = '\n';
+		}
+		return Sonicle.String.repeat(sep, howMany);
+	},
+	
+	joinContent: function(content, appendContent, location, newLines) {
+		if (!Ext.isNumber(newLines)) newLines = 0;
+		var me = this,
+				SoS = Sonicle.String,
+				sep = me.contentNewLines(newLines);
+		if ('below' === location) {
+			return SoS.join(sep, content, appendContent);
+		} else if ('above' === location) {
+			return SoS.join(sep, appendContent, content);
+		} else {
+			return content;
+		}
+	}
 });
 
 Ext.define('Sonicle.webtop.mail.EditorAttachments', {

@@ -46,7 +46,6 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
 		{ name: "msgId", type: 'int' },
 		{ name: "receipt", type: 'boolean' },
 		{ name: "priority", type: 'boolean' },
-		{ name: "reminder", type: 'boolean' },
 		{ name: "from", type: 'string' },
 		{ name: "subject", type: 'string' },
 		{ name: "content", type: 'string' },
@@ -62,9 +61,20 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
         //Reply/Forward data
         { name: "origuid", type: 'int' },
         { name: "draftuid", type: 'int' },
-		{ name: "draftfolder", type: 'string' }
-	]
+		{ name: "draftfolder", type: 'string' },
+		WTF.field('reminder', 'boolean', true, {persist: false}),
+		WTF.field('meetingUrl', 'string', true, {persist: false}),
+		WTF.field('meetingSchedule', 'date', true, {persist: false}),
+		WTF.field('meetingScheduleTz', 'string', true, {persist: false})
+	],
 	
+	getRecipients: function() {
+		var arr = [];
+		this.recipients().each(function(rec) {
+			arr.push(rec.get('email'));
+		});
+		return arr;
+	}
 });
 
 Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {
