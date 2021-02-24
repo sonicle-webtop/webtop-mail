@@ -1292,10 +1292,14 @@ public class Service extends BaseService {
 						mbps[e].setHeader("Content-Transfer-Encoding", "base64");
 					
 					if (attach.cid != null && attach.cid.trim().length()>0) {
+                                            //Simply check for the cid reference through string match
+                                            // to avoid parsing html
+                                            if (StringUtils.containsIgnoreCase(smsg.getContent(), "cid:"+attach.cid)) {
 						mbps[e].setHeader("Content-ID", "<" + attach.cid + ">");
 						mbps[e].setHeader("X-Attachment-Id", attach.cid);
 						mbps[e].setDisposition(Part.INLINE);
 						if (unrelated==null) unrelated=new MimeMultipart("mixed");
+                                            }
 					}
 				} //end for e
 
