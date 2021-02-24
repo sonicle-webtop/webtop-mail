@@ -1327,7 +1327,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				priority: opts.priority||me.getVar('priority'),
 				from: ident.email,
                 identityId: ident.identityId,
-				recipients: rcpts,
+				recipients: opts.recipients || [],
 				attachments: opts.attachments,
 				content: opts.content||'',
                 contentReady: opts.contentReady,

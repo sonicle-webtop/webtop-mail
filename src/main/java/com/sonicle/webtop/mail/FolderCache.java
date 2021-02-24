@@ -2308,7 +2308,7 @@ public class FolderCache {
         mailData.addAttachmentPart(msg,level);
       }
       
-    } else if (msg.isMimeType("application/pkcs7-signature")) {
+    } else if (msg.isMimeType("application/pkcs7-signature")||msg.isMimeType("application/x-pkcs7-signature")) {
         //skip signature
     } else if(msg.isMimeType("multipart/alternative")) {
       Part ap=getAlternativePart((Multipart)msg.getContent(),mailData,level);
@@ -2346,10 +2346,14 @@ public class FolderCache {
               mailData.addDisplayPart(p,level);
           else mailData.addAttachmentPart(p,level);
         } else if(p.isMimeType("message/rfc822")) {
+            int newlevel=level;
           if (!mailData.isPEC() && (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE)))
               mailData.addDisplayPart(p,level);
-          else mailData.addAttachmentPart(p,level);
-          prepareHTMLMailData((Message)p.getContent(), mailData,level+1);
+          else {
+              mailData.addAttachmentPart(p,level);
+              ++newlevel;
+          }
+          prepareHTMLMailData((Message)p.getContent(), mailData,newlevel);
         } else if (p.isMimeType("application/ms-tnef")) {
           try {
             TnefMultipartDataSource tnefDS = new TnefMultipartDataSource((MimePart)p);
@@ -2376,7 +2380,7 @@ public class FolderCache {
             mailData.addAttachmentPart(p,level);
             Service.logger.error("Exception",exc);
           }
-        } else if (p.isMimeType("application/pkcs7-signature")) {
+        } else if (p.isMimeType("application/pkcs7-signature")||p.isMimeType("application/x-pkcs7-signature")) {
             //skip signature
         } else {
           mailData.addUnknownPart(p,level);

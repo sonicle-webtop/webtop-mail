@@ -1296,10 +1296,14 @@ public class Service extends BaseService {
 						mbps[e].setHeader("Content-Transfer-Encoding", "base64");
 					
 					if (attach.cid != null && attach.cid.trim().length()>0) {
+                                            //Simply check for the cid reference through string match
+                                            // to avoid parsing html
+                                            if (StringUtils.containsIgnoreCase(smsg.getContent(), "cid:"+attach.cid)) {
 						mbps[e].setHeader("Content-ID", "<" + attach.cid + ">");
 						mbps[e].setHeader("X-Attachment-Id", attach.cid);
 						mbps[e].setDisposition(Part.INLINE);
 						if (unrelated==null) unrelated=new MimeMultipart("mixed");
+                                            }
 					}
 				} //end for e
 
@@ -1457,7 +1461,7 @@ public class Service extends BaseService {
             return defaultCharset;
         }
 	
-	private SimpleMessage getForwardMsg(long id, Message msg, boolean richContent, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean attached) {
+	private SimpleMessage getForwardMsg(long id, Message msg, boolean richContent, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean attached, boolean isPEC) {
 		Message forward = new MimeMessage(mainAccount.getMailSession());
 		if (!attached) {
 			try {
@@ -1465,7 +1469,7 @@ public class Service extends BaseService {
 				StringBuffer textsb = new StringBuffer();
                                 String defaultCharset=null;
                                 if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
-				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, null);
+				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, null,isPEC);
     //      Service.logger.debug("isHtml="+isHtml);
 				//      Service.logger.debug("richContent="+richContent);
 				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
@@ -1828,7 +1832,7 @@ public class Service extends BaseService {
 	// used above in reply()
 	private static final Flags answeredFlag = new Flags(Flags.Flag.ANSWERED);
 	
-	private SimpleMessage getReplyMsg(int id, MailAccount account, Message msg, boolean replyAll, boolean fromSent, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle) {	
+	private SimpleMessage getReplyMsg(int id, MailAccount account, Message msg, boolean replyAll, boolean fromSent, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean isPEC) {	
 		try {
 			Message reply=reply(account,(MimeMessage)msg,replyAll,fromSent);
 			
@@ -1847,7 +1851,7 @@ public class Service extends BaseService {
 			if (includeOriginal) {
                                 String defaultCharset=null;
                                 if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
-				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, attnames);
+				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, attnames,isPEC);
 				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
 				String text = null;
 				if (!richContent) {
@@ -2140,12 +2144,12 @@ public class Service extends BaseService {
 		return sb.toString();
 	}
 	
-	private boolean appendReplyParts(Part p, String defaultCharset, StringBuffer htmlsb, StringBuffer textsb, ArrayList<String> attnames) throws MessagingException,
+	private boolean appendReplyParts(Part p, String defaultCharset, StringBuffer htmlsb, StringBuffer textsb, ArrayList<String> attnames, boolean isPEC) throws MessagingException,
 			IOException {
             
 		boolean isHtml = false;
 		String disp = p.getDisposition();
-		if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT) && !p.isMimeType("message/*")) {
+		if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT) && !p.isMimeType("multipart/*") && !p.isMimeType("message/*")) {
 			if (attnames != null) {
 				String id[] = p.getHeader("Content-ID");
 				if (id==null || id[0]==null) {
@@ -2200,7 +2204,7 @@ public class Service extends BaseService {
 			for (int i = 0; i < mp.getCount(); ++i) {
 				Part part = mp.getBodyPart(i);
 				if (part.isMimeType("multipart/*")) {
-					isHtml = appendReplyParts(part, defaultCharset, htmlsb, textsb, attnames);
+					isHtml = appendReplyParts(part, defaultCharset, htmlsb, textsb, attnames,isPEC);
 					if (isHtml) {
 						bestPart = null;
 						break;
@@ -2215,18 +2219,18 @@ public class Service extends BaseService {
 				}
 			}
 			if (bestPart != null) {
-				isHtml = appendReplyParts(bestPart, defaultCharset, htmlsb, textsb, attnames);
+				isHtml = appendReplyParts(bestPart, defaultCharset, htmlsb, textsb, attnames,isPEC);
 			}
 		} else if (p.isMimeType("multipart/*")) {
 			Multipart mp = (Multipart) p.getContent();
 			for (int i = 0; i < mp.getCount(); ++i) {
-				if (appendReplyParts(mp.getBodyPart(i), defaultCharset, htmlsb, textsb, attnames)) {
+				if (appendReplyParts(mp.getBodyPart(i), defaultCharset, htmlsb, textsb, attnames,isPEC)) {
 					isHtml = true;
 				}
 			}
-		} else if (p.isMimeType("message/*")) {
+		} else if (p.isMimeType("message/*") && !isPEC) {
 			Object content = p.getContent();
-			if (appendReplyParts((MimeMessage) content, defaultCharset, htmlsb, textsb, attnames)) {
+			if (appendReplyParts((MimeMessage) content, defaultCharset, htmlsb, textsb, attnames,isPEC)) {
 				isHtml = true;
 			}
 		} else {
@@ -4133,6 +4137,7 @@ public class Service extends BaseService {
 				throw new MessagingException("Message " + puidmessage + " expunged");
 			}
 			int newmsgid=getNewMessageID();
+                        HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
 			SimpleMessage smsg = getReplyMsg(
 					getNewMessageID(), account, m, replyAll, account.isSentFolder(pfoldername), isHtml,
 					profile.getEmailAddress(), mprofile.isIncludeMessageInReply(),
@@ -4140,7 +4145,8 @@ public class Service extends BaseService {
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
 					lookupResource(MailLocaleKey.MSG_CCTITLE),
 					lookupResource(MailLocaleKey.MSG_DATETITLE),
-					lookupResource(MailLocaleKey.MSG_SUBJECTTITLE)
+					lookupResource(MailLocaleKey.MSG_SUBJECTTITLE),
+                                        maildata.isPEC()
 			);
 			
 			String content;
@@ -4170,8 +4176,6 @@ public class Service extends BaseService {
 				String html = smsg.getContent();
 				
 				//cid inline attachments and relative html href substitution
-				HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
-				
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
 						Part part = maildata.getAttachmentPart(i);
@@ -4230,6 +4234,7 @@ public class Service extends BaseService {
 				if (message.isExpunged()) throw new MessagingException("Message expunged");
 				messages.add(message);
 			}
+            HTMLMailData maildata = mcache.getMailData((MimeMessage) messages.get(0));
 			
 			SimpleMessage smsg = getForwardMsg(
 					newmsgid, messages.get(0), isHtml,
@@ -4238,7 +4243,8 @@ public class Service extends BaseService {
 					lookupResource(MailLocaleKey.MSG_CCTITLE),
 					lookupResource(MailLocaleKey.MSG_DATETITLE),
 					lookupResource(MailLocaleKey.MSG_SUBJECTTITLE),
-					attached
+					attached,
+                                        maildata.isPEC()
 			);
 			
 			Identity ident=mprofile.getIdentity(pfoldername);
@@ -4259,7 +4265,6 @@ public class Service extends BaseService {
 			String text=smsg.getTextContent();
 			
 			if (!attached) {
-				HTMLMailData maildata = mcache.getMailData((MimeMessage) messages.get(0));
 				
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
