@@ -1262,7 +1262,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		} else {
 			ident = me.getFolderIdentity(idfolder);
 		}
-		rcpts=opts.recipients||[{ rtype: 'to', email: ''}];
 	
 		/*        for(var i=1;i<identities.length;++i) {
             var ifolder=identities[i].mainFolder;
@@ -1326,7 +1325,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				priority: opts.priority||me.getVar('priority'),
 				from: ident.email,
                 identityId: ident.identityId,
-				recipients: rcpts,
+				recipients: opts.recipients || [],
 				attachments: opts.attachments,
 				content: opts.content||'',
                 contentReady: opts.contentReady,

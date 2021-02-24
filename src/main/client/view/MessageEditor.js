@@ -950,33 +950,31 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	
 	onViewLoad: function(s, success) {
-		if(!success) return;
+		if (!success) return;
 		
-		var me=this,
-			rg=me.recgrid,
-			c=rg.getRecipientsCount();
-	
-        //me.sendMask=new Ext.LoadMask(me.htmlEditor.wrap, {msg:WT.res("loading")});
-		if (c===1) {
-			var r=c-1,
-				email=rg.getRecipientAt(r);
+		var me = this,
+			mo = me.getModel(),
+			stoRcpts = mo.recipients();
 		
-			if (email==="") rg.startEditAt(r);
+		if (stoRcpts.getCount() === 0) {
+			stoRcpts.add(stoRcpts.createModel({rtype: 'to', email: ''}));
+			// Defers it otherwise grid's internal editor may not be available at the moment of method call!
+			Ext.defer(function() { me.recgrid.startEditAt(0); }, 200);
+		} else if (Ext.isEmpty(mo.get('subject'))) {
+			me.subject.focus();
 		} else {
-			if (me.subject.getValue()==="") me.subject.focus();
-			else {
-				if (WT.getVar('useNewHTMLEditor')) {
-					me.htmlEditor.focus();
-				} else {
-					me.htmlEditor.focusEditor();
-				}
+			if (WT.getVar('useNewHTMLEditor')) {
+				me.htmlEditor.focus();
+			} else {
+				me.htmlEditor.focusEditor();
 			}
 		}
-        if (me.autosave) {
+		
+		if (me.autosave) {
 			me.clearAutosaveDirty();
-            me.autosaveTask=new Ext.util.DelayedTask(me.doAutosave,me);
-            me.autosaveTask.delay(me.autosaveDelay);
-        }
+			me.autosaveTask = new Ext.util.DelayedTask(me.doAutosave, me);
+			me.autosaveTask.delay(me.autosaveDelay);
+		}
 	},
 	
 	startNew: function(data) {
@@ -1007,9 +1005,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		
 		//check for empty recipients, force an empty one in case
-		if (!data.recipients || data.recipients.length==0) {
-			data.recipients=[ { rtype: 'to', email: '' } ];
-		}
+		//if (!data.recipients || data.recipients.length==0) {
+		//	data.recipients=[ { rtype: 'to', email: '' } ];
+		//}
 		
 		if (data.receipt) me.getRef("chkReceipt").toggle(true);
 		if (data.priority) me.getRef("chkPriority").toggle(true);
