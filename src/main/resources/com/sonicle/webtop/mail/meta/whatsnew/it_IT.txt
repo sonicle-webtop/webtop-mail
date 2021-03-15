@@ -1,3 +1,13 @@
+$	5.10.0
+	%	Versione 5.10.0
+	*	<h1>Integrazione ai meeting</h1>
+		<p>Se configurato, un nuovo pulsante consente di invitare ad un meeting direttamente da una nuova mail.</p>
+		<img src="5.10.0_meetings.png"/>
+	*	<h1>Migliormaneto visivo dei pulsanti on/off</h1>
+		<p>I pulsanti che attivano/disattivano le funzioni di conferma lettura, priorità, 
+		promemoria e firma, sono visivamente più comprensibili, visibili in grigio quando
+		disattivati e con una icona colorata quando attivi.</p>
+		<img src="5.10.0_togglebuttons.png"/>
 $	5.9.0
 	%	Versione 5.9.0
 	*	<h1>Nuovo Editor HTML</h1>

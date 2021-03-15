@@ -1,3 +1,15 @@
+$	5.10.0
+	%	Version 5.10.0
+	*	<h1>Meeting integration</h1>
+		<p>Se configurato, un nuovo pulsante consente di invitare ad un meeting direttamente da una nuova mail.</p>
+		<p>When configured, a new button allows to easily invite to a meeting directly from a new email.</p>
+		<img src="5.10.0_meetings.png"/>
+	*	<h1>Migliormaneto visivo dei pulsanti on/off</h1>
+		<h1>Visual enhancement of on/off buttons</h1>
+		<p>The on/off buttons for receipt, priority, reminder and signature,
+		are visually more comprehensible, grayed out when off and using a color
+		icon when on</p>
+		<img src="5.10.0_togglebuttons.png"/>
 $	5.9.0
 	%	Version 5.9.0
 	*	<h1>New HTML Editor</h1>
