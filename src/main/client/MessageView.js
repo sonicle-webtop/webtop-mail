@@ -1132,7 +1132,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				'pre { white-space: pre-wrap !important; } '+
 				'body { font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif; } '+
 				'blockquote { display: block; margin-left: 5px; border-left: solid 2px blue; padding-left: 10px; } '+
-				'img { max-width: 100% !important; height: auto; } '+
+				'img { max-width: 100% !important; height: auto !important; } '+
 				'a { word-break: break-all }'
 		));
 		doc.head.appendChild(xstyle);
