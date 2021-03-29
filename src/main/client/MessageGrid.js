@@ -2948,7 +2948,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							hidden: scol.hidden,
 							xtype: 'soiconcolumn',
 							getIconCls: function(value,rec) {
-								return Ext.isEmpty(value)?WTF.cssIconCls(WT.XID, 'empty', 'xs'):WTF.cssIconCls(me.mys.XID, 'attachment', 'xs');
+								return value ? WTF.cssIconCls(me.mys.XID, 'attachment', 'xs') : Ext.isEmpty(value);;
 							},
 							iconSize: WTU.imgSizeToPx('xs'),
 							scope: me,
