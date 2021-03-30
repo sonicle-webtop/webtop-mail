@@ -8791,7 +8791,10 @@ public class Service extends BaseService {
 					mc = getMailcard();
 				}*/
 				
-				if (!id.isForceMailcard()) mc=mailManager.getMailcard();
+				if (!id.isForceMailcard()) {
+					mc=mailManager.getMailcard();
+					opid=getEnv().getProfileId();
+				}
 
 				try {
 					UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(opid);
