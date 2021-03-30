@@ -1832,7 +1832,7 @@ public class Service extends BaseService {
 	// used above in reply()
 	private static final Flags answeredFlag = new Flags(Flags.Flag.ANSWERED);
 	
-	private SimpleMessage getReplyMsg(int id, MailAccount account, Message msg, boolean replyAll, boolean fromSent, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean isPEC) {	
+	private SimpleMessage getReplyMsg(int id, MailAccount account, Message msg, boolean replyAll, boolean fromSent, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean attachMessageParts) {	
 		try {
 			Message reply=reply(account,(MimeMessage)msg,replyAll,fromSent);
 			
@@ -1851,7 +1851,7 @@ public class Service extends BaseService {
 			if (includeOriginal) {
                                 String defaultCharset=null;
                                 if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
-				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, attnames,isPEC);
+				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, attnames, attachMessageParts);
 				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
 				String text = null;
 				if (!richContent) {
@@ -2144,7 +2144,7 @@ public class Service extends BaseService {
 		return sb.toString();
 	}
 	
-	private boolean appendReplyParts(Part p, String defaultCharset, StringBuffer htmlsb, StringBuffer textsb, ArrayList<String> attnames, boolean isPEC) throws MessagingException,
+	private boolean appendReplyParts(Part p, String defaultCharset, StringBuffer htmlsb, StringBuffer textsb, ArrayList<String> attnames, boolean attachMessageParts) throws MessagingException,
 			IOException {
             
 		boolean isHtml = false;
@@ -2204,7 +2204,7 @@ public class Service extends BaseService {
 			for (int i = 0; i < mp.getCount(); ++i) {
 				Part part = mp.getBodyPart(i);
 				if (part.isMimeType("multipart/*")) {
-					isHtml = appendReplyParts(part, defaultCharset, htmlsb, textsb, attnames,isPEC);
+					isHtml = appendReplyParts(part, defaultCharset, htmlsb, textsb, attnames, attachMessageParts);
 					if (isHtml) {
 						bestPart = null;
 						break;
@@ -2219,18 +2219,18 @@ public class Service extends BaseService {
 				}
 			}
 			if (bestPart != null) {
-				isHtml = appendReplyParts(bestPart, defaultCharset, htmlsb, textsb, attnames,isPEC);
+				isHtml = appendReplyParts(bestPart, defaultCharset, htmlsb, textsb, attnames, attachMessageParts);
 			}
 		} else if (p.isMimeType("multipart/*")) {
 			Multipart mp = (Multipart) p.getContent();
 			for (int i = 0; i < mp.getCount(); ++i) {
-				if (appendReplyParts(mp.getBodyPart(i), defaultCharset, htmlsb, textsb, attnames,isPEC)) {
+				if (appendReplyParts(mp.getBodyPart(i), defaultCharset, htmlsb, textsb, attnames, attachMessageParts)) {
 					isHtml = true;
 				}
 			}
-		} else if (p.isMimeType("message/*") && !isPEC) {
+		} else if (p.isMimeType("message/*") && !attachMessageParts) {
 			Object content = p.getContent();
-			if (appendReplyParts((MimeMessage) content, defaultCharset, htmlsb, textsb, attnames,isPEC)) {
+			if (appendReplyParts((MimeMessage) content, defaultCharset, htmlsb, textsb, attnames, attachMessageParts)) {
 				isHtml = true;
 			}
 		} else {
@@ -4146,7 +4146,7 @@ public class Service extends BaseService {
 					lookupResource(MailLocaleKey.MSG_CCTITLE),
 					lookupResource(MailLocaleKey.MSG_DATETITLE),
 					lookupResource(MailLocaleKey.MSG_SUBJECTTITLE),
-                                        maildata.isPEC()
+                    false
 			);
 			
 			String content;
