@@ -4417,6 +4417,7 @@ public class Service extends BaseService {
 				//sout+=" from: { email: '"+StringEscapeUtils.escapeEcmaScript(email)+"', displayname: '"+StringEscapeUtils.escapeEcmaScript(displayname)+"' },\n";
                 ident=mprofile.getIdentity(displayname, email);
 			}
+			if (ident==null) ident=mprofile.getIdentity(pfoldername);
 			
 			if (recipients) {
 				Address tos[] = m.getRecipients(RecipientType.TO);
