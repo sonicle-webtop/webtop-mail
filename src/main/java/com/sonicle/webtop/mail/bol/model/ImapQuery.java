@@ -37,6 +37,8 @@ import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.commons.web.json.bean.QueryObj.Condition;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.model.Tag;
+import com.sonicle.webtop.mail.MailManager;
+import com.sonicle.webtop.mail.Service;
 import com.sonicle.webtop.mail.TagsHelper;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -84,12 +86,28 @@ public class ImapQuery {
 	private static final String UNANSWERED = "unanswered";
 	private static final String PRIORITY = "priority";
 	private static final String TAG = "tag";
+	private static final String NOTES = "notes";
 	
+	private SearchTerm searchTerm;
+	private String notePattern;
+	private boolean hasAttachment=false;
 	
-	public static SearchTerm toSearchTerm(String allFlagStrings[], QueryObj query, DateTimeZone timezone) {
-		SearchTerm searchTerm = null;
+	public ImapQuery(String allFlagStrings[], QueryObj query, DateTimeZone timezone) {
+		parseQuery(allFlagStrings, query, timezone);
+	}
+	
+	public ImapQuery(boolean hasAttachment) {
+		this.searchTerm=null;
+		this.hasAttachment=hasAttachment;
+	}
+	
+	public ImapQuery(SearchTerm searchTerm, boolean hasAttachment) {
+		this.searchTerm=searchTerm;
+		this.hasAttachment=hasAttachment;
+	}
+	
+	private void parseQuery(String allFlagStrings[], QueryObj query, DateTimeZone timezone) {
 		ArrayList<SearchTerm> terms = new ArrayList<SearchTerm>();
-		
 		
 		if(query != null) {
 			ArrayList<Condition> conditionsList = query.conditions;
@@ -142,10 +160,13 @@ public class ImapQuery {
 					} catch(Exception exc) {
 						
 					}
+				} else if(key.equals(NOTES)) {
+					terms.add(new FlagTerm(MailManager.getFlagNote(), true));
+					if (!"*".equals(value)) notePattern=valueToLikePattern(value);
 				} else if(value.equals(ATTACHMENT)) {
-
+					hasAttachment=true;
 				} else if(value.equals(UNREAD)) {
-					 terms.add(new FlagTerm(new Flags(Flag.SEEN), false));
+					terms.add(new FlagTerm(new Flags(Flag.SEEN), false));
 				} else if(value.equals(FLAGGED)) {
 					FlagTerm fts[] = new FlagTerm[allFlagStrings.length + 1];
 					fts[0] = new FlagTerm(new Flags(Flag.FLAGGED), true);
@@ -183,8 +204,30 @@ public class ImapQuery {
 			terms.toArray(vterms);
 			searchTerm = new AndTerm(vterms);
 		}
+	}
+	
+	public SearchTerm getSearchTerm() {
 		return searchTerm;
 	}
+	
+	public String getNotePattern() {
+		return notePattern;
+	}
+	
+	public boolean hasNotePattern() {
+		return notePattern!=null;
+	}
+	
+	public boolean hasAttachment() {
+		return hasAttachment;
+	}
+	
+	private String valueToLikePattern(String value) {
+		value = StringUtils.replace(value, "*", "%");
+		value = StringUtils.replace(value, "\\*", "*");
+		return value;
+	}
+	
 	
 	private static Date parseDate(String value, DateTimeZone timezone) {
 		String date = StringUtils.replace(value, "/", "-");

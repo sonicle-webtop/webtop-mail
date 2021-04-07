@@ -27,7 +27,8 @@
 .wtmail-icon-flagcomplete-xs { background-image: url('flagcomplete_16.gif') !important; }
 .wtmail-icon-tag { background-image: url('tag_16.svg') !important; background-size: contain; }
 .wtmail-icon-special-xs { background-image: url('flagspecial_16.gif') !important; }
-.wtmail-icon-addnote-xs { background-image: url('mailnote_16.gif') !important; }
+.wtmail-icon-addnote-xs { background-image: url('mailnote_16.gif') !important; } 
+.wtmail-icon-addnote-color { color: #e7b465; }
 .wtmail-icon-markseen-xs { background-image: url('statusread_16.png') !important; }
 .wtmail-icon-markunseen-xs { background-image: url('statusunread_16.png') !important; }
 /*.wtmail-icon-filters-xs { background-image: url('filters_16.png') !important; }

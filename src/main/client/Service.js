@@ -675,7 +675,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		
 		
-        me.addAct("addnote",{ handler: me.gridAction(me,'AddNote') });
+        me.addAct("addnote",{ handler: me.gridAction(me,'AddNote'), iconCls: 'wtmail-icon-addnote-color fa fa-sticky-note' });
 	   
         me.addAct("markseen",{ handler: me.gridAction(me,'MarkSeen') });
         me.addAct("markunseen",{ handler: me.gridAction(me,'MarkUnseen') });

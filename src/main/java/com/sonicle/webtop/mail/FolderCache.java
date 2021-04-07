@@ -65,6 +65,7 @@ import com.sonicle.commons.collection.FifoMap;
 import com.sonicle.commons.web.json.JsonUtils;
 import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
+import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.nio.charset.Charset;
 import org.apache.commons.io.Charsets;
 
@@ -776,12 +777,17 @@ public class FolderCache {
         this.forceRefresh=true;
     }
     
-    public void refresh(SearchTerm searchTerm, boolean hasAttachment) throws MessagingException, IOException {
+    public void refresh(ImapQuery iq) throws MessagingException, IOException {
         cleanup(false);
 		if (!threaded)
-			msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending, searchTerm, hasAttachment);
+			msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending, iq);
 		else
-			msgs=_getThreadedMessages("", "", searchTerm, hasAttachment);
+			msgs=_getThreadedMessages("", "", iq);
+		
+		if (iq.hasNotePattern()) {
+			
+		}
+		
         open();
         //add(msgs);
         modified=false;
@@ -884,7 +890,7 @@ public class FolderCache {
 		return msgs;
 	}
     
-	public Message[] getMessages(int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm, boolean hasAttachment) throws MessagingException, IOException {
+	public Message[] getMessages(int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, ImapQuery iq) throws MessagingException, IOException {
         boolean rebuilt=false;
         boolean sortchanged=false;
         //ArrayList<MimeMessage> xlist=null;
@@ -901,7 +907,7 @@ public class FolderCache {
                 sortchanged=true;
             }
             if (refresh || forceRefresh || sortchanged) {
-                refresh(searchTerm, hasAttachment);
+                refresh(iq);
                 rebuilt=true;
             }
 //            if (msgs==null || modified) {
@@ -1179,7 +1185,7 @@ public class FolderCache {
         MimeMessage newmmsgs[]=getDmsArchivedCopy(mmsgs);
         moveMessages(uids,to,fullthreads);
         folder.appendMessages(newmmsgs);
-        refresh(null, false);
+        refresh(new ImapQuery(false));
     }
 
     public void markDmsArchivedMessages(long uids[], boolean fullthreads) throws MessagingException, IOException {
@@ -1191,10 +1197,10 @@ public class FolderCache {
 			//can't delete, try with flag
 			Message msgs[]=getMessages(uids,fullthreads);
 			for(Message m: msgs) 
-				m.setFlags(Service.flagDmsArchived,true);
+				m.setFlags(MailManager.getFlagDmsArchived(),true);
 		}
         
-        refresh(null, false);
+        refresh(new ImapQuery(false));
     }
 
     public MimeMessage[] getDmsArchivedCopy(long uids[],boolean fullthreads) throws MessagingException {
@@ -1259,8 +1265,8 @@ public class FolderCache {
         Message mmsgs[]=getMessages(uids,false);
         for(Message fmsg: mmsgs) {
 			if (flag.equals("special")) {
-				boolean wasspecial=fmsg.getFlags().contains(Service.flagFlagged);
-				fmsg.setFlags(Service.flagFlagged,!wasspecial);
+				boolean wasspecial=fmsg.getFlags().contains(MailManager.getFlagFlagged());
+				fmsg.setFlags(MailManager.getFlagFlagged(),!wasspecial);
 			}
 			else {
 				if (!flag.equals("complete")) {
@@ -1614,7 +1620,7 @@ public class FolderCache {
 		return sort;
 	}
 	
-	private Message[] _getMessages(String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending, SearchTerm term, boolean hasAttachment) throws MessagingException, IOException {
+	private Message[] _getMessages(String patterns, String searchfields, int sort_by, boolean ascending, int sort_group, boolean groupascending, ImapQuery iq) throws MessagingException, IOException {
 
 		Message[] xmsgs=null;
 		open();
@@ -1626,28 +1632,20 @@ public class FolderCache {
 			//<SonicleMail>xmsgs=((IMAPFolder)folder).sort(sort, term);</SonicleMail>
 			try {
 				//xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
-				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+				xmsgs=((SonicleIMAPFolder)folder).sort(sort, iq.getSearchTerm());
 			} catch(Exception exc) {
 				close();
 				open();
 				//xmsgs=((SonicleIMAPFolder)folder).uid_sort(sort, term);
-				xmsgs=((SonicleIMAPFolder)folder).sort(sort, term);
+				xmsgs=((SonicleIMAPFolder)folder).sort(sort, iq.getSearchTerm());
 			}
 		}
-		if (hasAttachment) {
-			ArrayList<Message> amsgs=new ArrayList<Message>();
-			for(Message m: xmsgs) {
-				if (hasAttachements(m)) amsgs.add(m);
-			}
-			xmsgs=new Message[amsgs.size()];
-			amsgs.toArray(xmsgs);
-		}
-
+		xmsgs=applyImapQuerySecondaryFilters(xmsgs,iq);
 		return xmsgs;
 	}
 	
-	private SonicleIMAPMessage[] _getThreadedMessages(String patterns, String searchfields, SearchTerm term, boolean hasAttachment) throws MessagingException, IOException {
-		SonicleIMAPMessage[] tmsgs=null;
+	private Message[] _getThreadedMessages(String patterns, String searchfields, ImapQuery iq) throws MessagingException, IOException {
+		Message[] tmsgs=null;
 		open();
 
 		if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
@@ -1659,21 +1657,21 @@ public class FolderCache {
 			String method=hasrefs?"REFS":"REFERENCES";
 			FetchProfile fp=ms.getMessageFetchProfile();
 			try {
-				tmsgs=((SonicleIMAPFolder)folder).thread(method,term,fp);
+				tmsgs=((SonicleIMAPFolder)folder).thread(method,iq.getSearchTerm(),fp);
 			} catch(Exception exc) {
 				Service.logger.debug("**************Retrying thread*********************");
 				close();
 				open();
-				tmsgs=((SonicleIMAPFolder)folder).thread(method,term,fp);
+				tmsgs=((SonicleIMAPFolder)folder).thread(method,iq.getSearchTerm(),fp);
 			}
 			
 			//recalculate open threads and total open children
 			if (tmsgs!=null) {
 				totalOpenThreadChildren=0;
 				HashMap<Long,Integer> newOpenThreads=new HashMap<>();
-				for(SonicleIMAPMessage tmsg: tmsgs) {
-					long tuid=tmsg.getUID();
-					int tchildren=tmsg.getThreadChildren();
+				for(Message tmsg: tmsgs) {
+					long tuid=((SonicleIMAPMessage)tmsg).getUID();
+					int tchildren=((SonicleIMAPMessage)tmsg).getThreadChildren();
 					if (openThreads.containsKey(tuid)) {
 						newOpenThreads.put(tuid, tchildren);
 						totalOpenThreadChildren+=tchildren;
@@ -1682,16 +1680,40 @@ public class FolderCache {
 				openThreads=newOpenThreads;
 			}
 		}
-		if (hasAttachment) {
+		tmsgs=applyImapQuerySecondaryFilters(tmsgs,iq);
+		return tmsgs;
+	}
+	
+	private Message[] applyImapQuerySecondaryFilters(Message msgs[], ImapQuery iq) throws MessagingException, IOException {
+		Message rmsgs[]=msgs;
+		
+		if (iq.hasAttachment()) {
 			ArrayList<Message> amsgs=new ArrayList<Message>();
-			for(Message m: tmsgs) {
+			for(Message m: msgs) {
 				if (hasAttachements(m)) amsgs.add(m);
 			}
-			tmsgs=new SonicleIMAPMessage[amsgs.size()];
-			amsgs.toArray(tmsgs);
+			rmsgs=new SonicleIMAPMessage[amsgs.size()];
+			amsgs.toArray(rmsgs);
 		}
 		
-		return tmsgs;
+		if (iq.hasNotePattern()) {
+			try {
+				ArrayList<String> msgIds=mailManager.searchNotes(iq.getNotePattern());
+				ArrayList<Message> amsgs=new ArrayList<Message>();
+				for(Message m: msgs) {
+					String hdrs[]=m.getHeader("Message-ID");
+					if (hdrs!=null) {
+						if (msgIds.contains(hdrs[0])) amsgs.add(m);
+					}
+				}
+				rmsgs=new SonicleIMAPMessage[amsgs.size()];
+				amsgs.toArray(rmsgs);
+			} catch(WTException exc) {
+				Service.logger.error("Error during note search",exc);
+			}
+		}
+		
+		return rmsgs;
 	}
 	
 	protected boolean isAttachment(Part part) throws MessagingException {
@@ -2582,25 +2604,23 @@ public class FolderCache {
       boolean groupascending=true;
 	  boolean threaded=false;
       //MessageComparator comparator=new MessageComparator(FolderCache.this.ms);
-	  SearchTerm searchTerm;
-	  boolean hasAttachment;
+	  ImapQuery imapQuery;
       
-	  MessageSearchResult(int sort_by, boolean ascending, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm, boolean hasAttachment) {
+	  MessageSearchResult(int sort_by, boolean ascending, int sort_group, boolean groupascending, boolean threaded, ImapQuery imapQuery) {
           this.sort_by=sort_by;
           this.ascending=ascending;
           this.sort_group=sort_group;
           this.groupascending=groupascending;
 		  this.threaded=threaded;
-		  this.searchTerm = searchTerm;
-		  this.hasAttachment = hasAttachment;
+		  this.imapQuery = imapQuery;
       }
       
       void refresh() throws MessagingException, IOException {
           this.cleanup();
 		  if (!threaded)
-			this.msgs=_getMessages(pattern, searchfield, sort_by, ascending,sort_group,groupascending, searchTerm, hasAttachment);
+			this.msgs=_getMessages(pattern, searchfield, sort_by, ascending,sort_group,groupascending, imapQuery);
 		  else
-			this.msgs=_getThreadedMessages(pattern, searchfield, searchTerm, hasAttachment);
+			this.msgs=_getThreadedMessages(pattern, searchfield, imapQuery);
 //          for(Message m: msgs) {
 //              String mid=m.getHeader("Message-ID")[0];
 //              if (hash.containsKey(mid)) mylist.add(hash.get(mid));

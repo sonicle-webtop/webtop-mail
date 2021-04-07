@@ -72,8 +72,10 @@ import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
 import com.sonicle.webtop.mail.bol.OExternalAccount;
+import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OTag;
 import com.sonicle.webtop.mail.dal.ExternalAccountDAO;
+import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.TagDAO;
 import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.SieveActionList;
@@ -92,6 +94,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
+import javax.mail.Flags;
 import javax.mail.Message;
 import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
@@ -115,6 +118,18 @@ public class MailManager extends BaseManager implements IMailManager {
 	public static final String SIEVE_OLD_WEBTOP_SCRIPT = "webtop";
 	public static final String SIEVE_WEBTOP_SCRIPT = "webtop5";
 	public static final int MAX_EXT_ACCOUNTS = 3; // Update this fixed limit also in UserOptions.js
+
+	private static final String S_FLAG_NOTE="mailnote";
+	private static final String S_FLAG_DMS_ARCHIVED="$Archived";
+	private static final Flags flagNote=new Flags(S_FLAG_NOTE);
+	private static final Flags flagDmsArchived=new Flags(S_FLAG_DMS_ARCHIVED);
+	private static final Flags flagFlagged=new Flags(Flags.Flag.FLAGGED);
+	
+	public static String getFlagNoteString() { return S_FLAG_NOTE; }
+	public static String getFlagDmsArchivedString() { return S_FLAG_DMS_ARCHIVED; }
+	public static Flags getFlagNote() { return flagNote; }
+	public static Flags getFlagDmsArchived() { return flagDmsArchived; }
+	public static Flags getFlagFlagged() { return flagFlagged; }
 	
 	private SieveConfig sieveConfig = null;
 	List<Identity> identities=null;
@@ -149,6 +164,17 @@ public class MailManager extends BaseManager implements IMailManager {
 		} catch(Exception exc) {
 			throw new WTException(exc);
 		}
+	}
+	
+	public ArrayList<String> searchNotes(String pattern) throws WTException {
+		ArrayList<String> msgIds=new ArrayList<>();
+		try {
+			List<ONote> notes=NoteDAO.getInstance().selectByLike(WT.getConnection(SERVICE_ID), getTargetProfileId().getDomainId(), "%"+pattern+"%");
+			for(ONote note: notes) msgIds.add(note.getMessageId());		
+		} catch(SQLException exc) {
+			logger.error("error during query on notes",exc);
+		}
+		return msgIds;
 	}
 	
 	public List<Identity> listIdentities() throws WTException {

@@ -37,6 +37,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.webtop.mail.bol.js.JsPortletSearchResult;
+import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sun.mail.imap.IMAPFolder;
 import java.util.ArrayList;
 import javax.mail.*;
@@ -60,18 +61,16 @@ public class PortletSearchThread extends Thread {
     private int progress=0;
     private FolderCache curfolder;
 	private JsPortletSearchResult psr=new JsPortletSearchResult();
-	private SearchTerm searchTerm;
-	private boolean hasAttachment;
+	private ImapQuery imapQuery;
 
     private final Service ms;
 	private MailAccount account;
 	
-    public PortletSearchThread(Service ms, MailAccount account, ArrayList<String> folderIds, SearchTerm searchTerm, boolean hasAttachment) throws MessagingException {
+    public PortletSearchThread(Service ms, MailAccount account, ArrayList<String> folderIds, ImapQuery imapQuery) throws MessagingException {
         this.ms = ms;
 		this.account = account;
 		this.folderIds = folderIds;
-		this.searchTerm = searchTerm;
-		this.hasAttachment = hasAttachment;
+		this.imapQuery = imapQuery;
     }
 
     public void cancel() {
@@ -113,7 +112,7 @@ public class PortletSearchThread extends Thread {
 				Message msgs[]=null;
 				//some folders (e.g. NS7 Public) may not allow search
 				try {
-					msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, true, false, searchTerm, hasAttachment);
+					msgs = fc.getMessages(FolderCache.SORT_BY_DATE, false, true, -1, true, false, imapQuery);
 				} catch(MessagingException mexc) {
 				}
                 

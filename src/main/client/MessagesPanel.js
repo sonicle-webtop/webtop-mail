@@ -171,6 +171,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				boolKeyword: 'has',
 				label: me.res('fld-search.field.priority.lbl')
 			}, {
+				name: 'notes',
+				type: 'string',
+				labelAlign: 'left',
+				label: me.res('fld-search.field.notes.lbl'),
+				customConfig: {
+					emptyText: me.res('fld-search.field.notes.empty')
+				}
+			}, {
 				name: 'tag',
 				type: 'tag',
 				label: me.res('fld-search.field.tags.lbl'),

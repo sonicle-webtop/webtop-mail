@@ -40,6 +40,7 @@ import java.sql.Connection;
 import org.jooq.DSLContext;
 import static com.sonicle.webtop.mail.jooq.Tables.*;
 import com.sonicle.webtop.mail.jooq.tables.records.NotesRecord;
+import java.util.List;
 
 /**
  *
@@ -82,4 +83,17 @@ public class NoteDAO extends BaseDAO {
 			)
 			.execute();
 	}
+	
+	public List<ONote> selectByLike(Connection con, String domainId, String pattern) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(NOTES)
+			.where(
+				NOTES.TEXT.likeIgnoreCase(pattern)
+			)
+			.fetchInto(ONote.class);
+	}
+	
+	
 }

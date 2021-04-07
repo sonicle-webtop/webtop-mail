@@ -209,11 +209,6 @@ public class Service extends BaseService {
 	public static Flags oldFlagsAll = new Flags();
 	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
 	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
-	private static String sflagNote="mailnote";
-	private static String sflagDmsArchived="$Archived";
-	public static Flags flagNote=new Flags(sflagNote);
-	public static Flags flagDmsArchived=new Flags(sflagDmsArchived);
-	public static Flags flagFlagged=new Flags(Flags.Flag.FLAGGED);
 	
 //	protected List<Tag> atags=new ArrayList<>();
 //	protected HashMap<String,Tag> htags=new HashMap<>();
@@ -3355,18 +3350,15 @@ public class Service extends BaseService {
 		}
 		
 		QueryObj queryObj = null;
-		SearchTerm searchTerm = null;	
 		try {
 			queryObj = ServletUtils.getObjectParameter(request, "query", new QueryObj(), QueryObj.class);
 		}
 		catch(ParameterException parameterException) {
 				logger.error("Exception getting query obejct parameter", parameterException);
 		}
-		searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, queryObj, environment.getProfile().getTimeZone());
+		ImapQuery iq = new ImapQuery(this.allFlagStrings, queryObj, environment.getProfile().getTimeZone());
 
-		boolean hasAttachment = queryObj.conditions.stream().anyMatch(condition -> condition.value.equals("attachment"));
-		
-		Message msgs[] = mcache.getMessages(sortby, ascending, false, sort_group, groupascending, threaded, searchTerm, hasAttachment);
+		Message msgs[] = mcache.getMessages(sortby, ascending, false, sort_group, groupascending, threaded, iq);
 		ArrayList<String> aids = new ArrayList<String>();
 		for (Message m : msgs) {
 			aids.add(""+mcache.getUID(m));
@@ -5458,8 +5450,8 @@ public class Service extends BaseService {
 			if (query == null) {
 				String folderId = account.getInboxFolderFullName();
 				FolderCache fc=account.getFolderCache(folderId);
-				SearchTerm searchTerm=new FlagTerm(new Flags(Flags.Flag.SEEN), false);
-				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, searchTerm, false);
+				ImapQuery iq = new ImapQuery(new FlagTerm(new Flags(Flags.Flag.SEEN), false),false);
+				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, iq);
 				if (msgs!=null) fc.fetch(msgs, getMessageFetchProfile(),0,50);
 				else msgs=new Message[0];
 				
@@ -5817,7 +5809,7 @@ public class Service extends BaseService {
 		}*/
 	}
 	
-	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, SortGroupInfo sgi, long timestamp, SearchTerm searchTerm, boolean hasAttachment) throws MessagingException {
+	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, SortGroupInfo sgi, long timestamp, ImapQuery iq) throws MessagingException {
 		MessageListThread mlt = null;
 		synchronized(mlThreads) {
 			mlt = mlThreads.get(key);
@@ -5826,7 +5818,7 @@ public class Service extends BaseService {
 				//	System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
 				//else
 				//	System.out.println(page+": mlt not found");
-				mlt = new MessageListThread(mcache, sgi.sortby, sgi.sortascending, refresh, sgi.sortgroup, sgi.groupascending, sgi.threaded, searchTerm, hasAttachment);
+				mlt = new MessageListThread(mcache, sgi.sortby, sgi.sortascending, refresh, sgi.sortgroup, sgi.groupascending, sgi.threaded, iq);
 				mlt.lastRequest = timestamp;
 				mlThreads.put(key, mlt);
 			}
@@ -5970,7 +5962,6 @@ public class Service extends BaseService {
 		boolean showMessagePreviewOnRow=us.getGridShowMessagePreview();
 		
 		QueryObj queryObj = null;
-		SearchTerm searchTerm = null;	
 		try {
 			queryObj = ServletUtils.getObjectParameter(request, "query", new QueryObj(), QueryObj.class);
 		}
@@ -6096,11 +6087,10 @@ public class Service extends BaseService {
 					key += "|" + psortdir + "|" + psortfield;
 				}
 
-				searchTerm = ImapQuery.toSearchTerm(this.allFlagStrings, queryObj, profile.getTimeZone());
+				ImapQuery iq = new ImapQuery(this.allFlagStrings, queryObj, profile.getTimeZone());
 
-				boolean hasAttachment = queryObj.conditions.stream().anyMatch(condition -> condition.value.equals("attachment"));
 				if(queryObj != null) refresh = true; 
-				MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, timestamp, searchTerm, hasAttachment);
+				MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, timestamp, iq);
 				Message xmsgs[] = messagesInfo.messages;
 
 				if (pthreadaction!=null && pthreadaction.trim().length()>0) {
@@ -6371,7 +6361,7 @@ public class Service extends BaseService {
 
 							if (cflag.length()==0 && flags.contains(Flags.Flag.FLAGGED)) cflag="special";
 
-							boolean hasNote=flags.contains(sflagNote);
+							boolean hasNote=flags.contains(MailManager.getFlagNoteString());
 							ArrayList<String> svtags = flagsToTagsIds(flags,tagsMap);
 							boolean autoedit=false;
 							boolean issched=false;
@@ -6412,7 +6402,7 @@ public class Service extends BaseService {
 							if (hasDmsDocumentArchiving()) {
 								archived=xm.getHeader("X-WT-Archived")!=null;
 								if (!archived) {
-									archived=flags.contains(sflagDmsArchived);
+									archived=flags.contains(MailManager.getFlagDmsArchivedString());
 								}
 							}
 
@@ -6673,7 +6663,7 @@ public class Service extends BaseService {
 //				key +="|" + pquickfilter;
 //			}
 			
-			MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, 0, null, false);
+			MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, 0, new ImapQuery(false));
             Message xmsgs[]=messagesInfo.messages;
 			if (xmsgs!=null) {
 				boolean found=false;
@@ -6770,8 +6760,7 @@ public class Service extends BaseService {
 		boolean groupascending;
 		boolean refresh;
 		long millis;
-		SearchTerm searchTerm;
-		boolean hasAttachment;
+		ImapQuery imapQuery;
 		
 		boolean isPec=false;
 		HashMap<String,Message> hpecsent=null;
@@ -6784,7 +6773,7 @@ public class Service extends BaseService {
 		final Object lock = new Object();
 		long lastRequest = 0;
 		
-		MessageListThread(FolderCache fc, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, SearchTerm searchTerm, boolean hasAttachment) {
+		MessageListThread(FolderCache fc, int sortby, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, ImapQuery imapQuery) {
 			this.fc = fc;
 			this.sortby = sortby;
 			this.ascending = ascending;
@@ -6792,8 +6781,7 @@ public class Service extends BaseService {
 			this.sort_group = sort_group;
 			this.groupascending = groupascending;
 			this.threaded=threaded;
-			this.searchTerm = searchTerm;
-			this.hasAttachment = hasAttachment;
+			this.imapQuery = imapQuery;
 		}
 		
 		public void run() {
@@ -6802,7 +6790,7 @@ public class Service extends BaseService {
 			synchronized (lock) {
 				try {
 					this.millis = System.currentTimeMillis();
-					msgs = fc.getMessages(sortby, ascending, refresh, sort_group, groupascending, threaded, searchTerm, hasAttachment);
+					msgs = fc.getMessages(sortby, ascending, refresh, sort_group, groupascending, threaded, imapQuery);
 					
 					/*
 					UserProfileId profileId=getEnv().getProfileId();
@@ -7395,9 +7383,9 @@ public class Service extends BaseService {
 			if (text.length() > 0) {
 				ONote onote = new ONote(profile.getDomainId(), id, text);
 				NoteDAO.getInstance().insert(con, onote);
-				msg.setFlags(flagNote, true);
+				msg.setFlags(MailManager.getFlagNote(), true);
 			} else {
-				msg.setFlags(flagNote, false);
+				msg.setFlags(MailManager.getFlagNote(), false);
 			}
 			result = true;
 		} catch (Exception exc) {
@@ -8151,11 +8139,11 @@ public class Service extends BaseService {
 					if (hasDmsDocumentArchiving()) {
 						archived=m.getHeader("X-WT-Archived")!=null;
 						if (!archived) {
-							archived=flags.contains(sflagDmsArchived);
+							archived=flags.contains(MailManager.getFlagDmsArchivedString());
 						}
 					}
 					
-					boolean hasNote=flags.contains(sflagNote);
+					boolean hasNote=flags.contains(MailManager.getFlagNoteString());
 					items.add(new JsAdvSearchMessage(folder, foldername, folder + "|" + nuid, nuid, priority, status, to, from, subject, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), unread, msgsize, cflag, archived, isToday, hasNote));
 				}								
 				new JsonResult("messages", items)
@@ -8254,7 +8242,7 @@ public class Service extends BaseService {
 			
 			sst = new SmartSearchThread(this ,account, folderIds, fromme, tome, attachments,
 				ispersonfilters, isnotpersonfilters, isfolderfilters, isnotfolderfilters,
-				year, month, day, searchTerm, false);
+				year, month, day, new ImapQuery(searchTerm, false));
 			sst.start();
 			new JsonResult().printTo(out);
 		} catch (Exception exc) {
@@ -8321,7 +8309,7 @@ public class Service extends BaseService {
 					terms.toArray(vterms);
 					searchTerm = new AndTerm(vterms);
 			}
-			pst = new PortletSearchThread(this, account, folderIds, searchTerm, false);
+			pst = new PortletSearchThread(this, account, folderIds, new ImapQuery(searchTerm, false));
 			pst.start();
 			new JsonResult().printTo(out);
 		} catch (Exception exc) {
