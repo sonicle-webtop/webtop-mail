@@ -35,7 +35,7 @@
 package com.sonicle.webtop.mail;
 
 import java.util.ArrayList;
-import javax.mail.*;
+import jakarta.mail.*;
 
 /**
  *

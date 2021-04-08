@@ -35,11 +35,11 @@ package com.sonicle.webtop.mail;
 
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import java.util.Comparator;
-import javax.mail.Message;
-import javax.mail.Address;
-import javax.mail.internet.InternetAddress;
-import javax.mail.Flags;
-import javax.mail.MessagingException;
+import jakarta.mail.Message;
+import jakarta.mail.Address;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.Flags;
+import jakarta.mail.MessagingException;
 
 public class MessageComparator implements Comparator<Message> {
 
@@ -115,7 +115,7 @@ public class MessageComparator implements Comparator<Message> {
           String rcpt1="";
           String rcpt2="";
           try {
-            Address rcpts[]=m1.getRecipients(javax.mail.Message.RecipientType.TO);
+            Address rcpts[]=m1.getRecipients(jakarta.mail.Message.RecipientType.TO);
             if (rcpts!=null) {
               InternetAddress ia=(InternetAddress)rcpts[0];
               String personal=ia.getPersonal();
@@ -125,7 +125,7 @@ public class MessageComparator implements Comparator<Message> {
             }
           } catch(Exception exc) {}
           try {
-            Address rcpts[]=m2.getRecipients(javax.mail.Message.RecipientType.TO);
+            Address rcpts[]=m2.getRecipients(jakarta.mail.Message.RecipientType.TO);
             if (rcpts!=null) {
               InternetAddress ia=(InternetAddress)rcpts[0];
               String personal=ia.getPersonal();

@@ -5,7 +5,7 @@
 package com.sonicle.webtop.mail;
 
 import java.io.InputStream;
-import javax.mail.*;
+import jakarta.mail.*;
 
 /**
  *

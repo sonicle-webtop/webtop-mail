@@ -44,7 +44,7 @@ import com.sonicle.webtop.core.sdk.BaseController;
 import com.sonicle.webtop.core.sdk.ServiceVersion;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
-import javax.mail.MessagingException;
+import jakarta.mail.MessagingException;
 
 /**
  *

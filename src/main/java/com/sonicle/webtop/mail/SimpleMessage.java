@@ -36,8 +36,8 @@ package com.sonicle.webtop.mail;
 
 import com.sonicle.webtop.mail.bol.model.Identity;
 import java.util.*;
-import javax.mail.*;
-import javax.mail.internet.*;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
 
 public class SimpleMessage {
   private long id=0;

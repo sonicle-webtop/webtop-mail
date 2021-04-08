@@ -35,8 +35,8 @@ package com.sonicle.webtop.mail;
 
 import java.io.*;
 import java.util.*;
-import javax.mail.*;
-import javax.mail.internet.*;
+import jakarta.mail.*;
+import jakarta.mail.internet.*;
 
 /**
  *
@@ -45,7 +45,7 @@ import javax.mail.internet.*;
 public class TestPart {
     
     public static void main(String args[]) throws Exception {
-        Session session = javax.mail.Session.getInstance(new Properties());
+        Session session = jakarta.mail.Session.getInstance(new Properties());
         InputStream in = new FileInputStream("C:\\Users\\gabriele.bulfon\\Desktop\\test.eml");
         MimeMessage msg = new MimeMessage(session, in);
         output(msg,0);

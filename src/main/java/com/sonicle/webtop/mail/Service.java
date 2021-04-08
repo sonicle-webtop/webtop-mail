@@ -131,10 +131,10 @@ import java.text.MessageFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import javax.activation.*;
-import javax.mail.*;
-import javax.mail.Message.RecipientType;
-import javax.mail.internet.*;
+import jakarta.activation.*;
+import jakarta.mail.*;
+import jakarta.mail.Message.RecipientType;
+import jakarta.mail.internet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import net.fortuna.ical4j.model.parameter.PartStat;
@@ -168,10 +168,10 @@ import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.text.Normalizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import javax.mail.search.AndTerm;
-import javax.mail.search.FlagTerm;
-import javax.mail.search.OrTerm;
-import javax.mail.search.SearchTerm;
+import jakarta.mail.search.AndTerm;
+import jakarta.mail.search.FlagTerm;
+import jakarta.mail.search.OrTerm;
+import jakarta.mail.search.SearchTerm;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -2107,19 +2107,19 @@ public class Service extends BaseService {
 			charset = "ISO-8859-1";
 		}
 		try {
-			if (p instanceof javax.mail.internet.MimeMessage) {
-				javax.mail.internet.MimeMessage mm = (javax.mail.internet.MimeMessage) p;
+			if (p instanceof jakarta.mail.internet.MimeMessage) {
+				jakarta.mail.internet.MimeMessage mm = (jakarta.mail.internet.MimeMessage) p;
 				istream = mm.getInputStream();
-			} else if (p instanceof javax.mail.internet.MimeBodyPart) {
-				javax.mail.internet.MimeBodyPart mm = (javax.mail.internet.MimeBodyPart) p;
+			} else if (p instanceof jakarta.mail.internet.MimeBodyPart) {
+				jakarta.mail.internet.MimeBodyPart mm = (jakarta.mail.internet.MimeBodyPart) p;
 				istream = mm.getInputStream();
 			}
 		} catch (Exception exc) { //unhandled format, get Raw data
-			if (p instanceof javax.mail.internet.MimeMessage) {
-				javax.mail.internet.MimeMessage mm = (javax.mail.internet.MimeMessage) p;
+			if (p instanceof jakarta.mail.internet.MimeMessage) {
+				jakarta.mail.internet.MimeMessage mm = (jakarta.mail.internet.MimeMessage) p;
 				istream = mm.getRawInputStream();
-			} else if (p instanceof javax.mail.internet.MimeBodyPart) {
-				javax.mail.internet.MimeBodyPart mm = (javax.mail.internet.MimeBodyPart) p;
+			} else if (p instanceof jakarta.mail.internet.MimeBodyPart) {
+				jakarta.mail.internet.MimeBodyPart mm = (jakarta.mail.internet.MimeBodyPart) p;
 				istream = mm.getRawInputStream();
 			}
 		}
@@ -7826,11 +7826,11 @@ public class Service extends BaseService {
 			//smsg.setContent(icalContent,"this is a meeting invitation",icalContentType);
 			smsg.setContent("");
 
-			javax.mail.internet.MimeBodyPart part2 = new javax.mail.internet.MimeBodyPart();
+			jakarta.mail.internet.MimeBodyPart part2 = new jakarta.mail.internet.MimeBodyPart();
 			part2.setContent(icalContent, MailUtils.buildPartContentType(icalContentType, "UTF-8"));
 			part2.setHeader("Content-Transfer-Encoding", "8BIT");
 			//part2.setFileName("webtop-reply.ics");
-			//javax.mail.internet.MimeBodyPart part1 = new javax.mail.internet.MimeBodyPart();
+			//jakarta.mail.internet.MimeBodyPart part1 = new jakarta.mail.internet.MimeBodyPart();
 			//part1.setText(content, "UTF8", "application/ics");
 			//part1.setHeader("Content-type", "application/ics");
 			//part1.setFileName("webtop-reply.ics");
@@ -7841,7 +7841,7 @@ public class Service extends BaseService {
 			mbp.setHeader("Content-type", "multipart/mixed");
 			mbp.setContent(mp);
 
-			smsg.setAttachments(new javax.mail.Part[]{mbp});
+			smsg.setAttachments(new jakarta.mail.Part[]{mbp});
 
 			Exception exc=sendMsg(profile.getFullEmailAddress(), smsg, null);
 			if (exc!=null) throw exc;

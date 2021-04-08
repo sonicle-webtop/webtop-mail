@@ -40,9 +40,9 @@ import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sun.mail.imap.IMAPFolder;
 import java.util.ArrayList;
-import javax.mail.*;
-import javax.mail.internet.InternetAddress;
-import javax.mail.search.SearchTerm;
+import jakarta.mail.*;
+import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.search.SearchTerm;
 
 /**
  *

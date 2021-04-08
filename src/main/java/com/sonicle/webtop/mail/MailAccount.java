@@ -47,16 +47,16 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import javax.mail.Flags;
-import javax.mail.Folder;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.NoSuchProviderException;
-import javax.mail.Provider;
-import javax.mail.Quota;
-import javax.mail.Session;
-import javax.mail.Store;
-import javax.mail.search.HeaderTerm;
+import jakarta.mail.Flags;
+import jakarta.mail.Folder;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.NoSuchProviderException;
+import jakarta.mail.Provider;
+import jakarta.mail.Quota;
+import jakarta.mail.Session;
+import jakarta.mail.Store;
+import jakarta.mail.search.HeaderTerm;
 import org.apache.commons.lang3.StringUtils;
 
 /**

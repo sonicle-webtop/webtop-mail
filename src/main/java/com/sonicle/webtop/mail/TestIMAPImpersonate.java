@@ -35,8 +35,8 @@ package com.sonicle.webtop.mail;
 
 import com.sun.mail.imap.IMAPStore;
 import java.util.Properties;
-import javax.mail.Folder;
-import javax.mail.Session;
+import jakarta.mail.Folder;
+import jakarta.mail.Session;
 
 /**
  *

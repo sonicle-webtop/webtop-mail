@@ -47,15 +47,15 @@ import com.sun.mail.imap.*;
 import java.io.*;
 //import com.sonicle.webtop.util.*;
 import java.util.*;
-import javax.mail.*;
-import javax.mail.Flags;
-import javax.mail.Flags.Flag;
-import javax.mail.event.MessageChangedEvent;
-import javax.mail.event.MessageChangedListener;
-import javax.mail.event.MessageCountEvent;
-import javax.mail.event.MessageCountListener;
-import javax.mail.internet.*;
-import javax.mail.search.*;
+import jakarta.mail.*;
+import jakarta.mail.Flags;
+import jakarta.mail.Flags.Flag;
+import jakarta.mail.event.MessageChangedEvent;
+import jakarta.mail.event.MessageChangedListener;
+import jakarta.mail.event.MessageCountEvent;
+import jakarta.mail.event.MessageCountListener;
+import jakarta.mail.internet.*;
+import jakarta.mail.search.*;
 import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import net.fortuna.ical4j.data.*;
@@ -881,15 +881,6 @@ public class FolderCache {
         ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
     }
 	
-	public Message[] searchMessagesByXHeader(String headerName, String headerValue) throws MessagingException {
-		open();
-		Message[] msgs=((SonicleIMAPFolder)getFolder()).sort(
-				new DateSortTerm(true),
-				new TextSearchTerm(headerName+": "+headerValue)
-		);
-		return msgs;
-	}
-    
 	public Message[] getMessages(int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, ImapQuery iq) throws MessagingException, IOException {
         boolean rebuilt=false;
         boolean sortchanged=false;
@@ -2083,19 +2074,19 @@ public class FolderCache {
 //        if (!ischarset) charset="UTF-8";
 		if (dispPart.isMimeType("text/plain")||dispPart.isMimeType("text/html")||dispPart.isMimeType("message/delivery-status")||dispPart.isMimeType("message/disposition-notification")||dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
             try {
-              if (dispPart instanceof javax.mail.internet.MimeMessage) {
-                javax.mail.internet.MimeMessage mm=(javax.mail.internet.MimeMessage)dispPart;
+              if (dispPart instanceof jakarta.mail.internet.MimeMessage) {
+                jakarta.mail.internet.MimeMessage mm=(jakarta.mail.internet.MimeMessage)dispPart;
                 istream=mm.getInputStream();
-              } else if (dispPart instanceof javax.mail.internet.MimeBodyPart) {
-                javax.mail.internet.MimeBodyPart mm=(javax.mail.internet.MimeBodyPart)dispPart;
+              } else if (dispPart instanceof jakarta.mail.internet.MimeBodyPart) {
+                jakarta.mail.internet.MimeBodyPart mm=(jakarta.mail.internet.MimeBodyPart)dispPart;
                 istream=mm.getInputStream();
               }
             } catch(Exception exc) { //unhandled format, get Raw data
-              if (dispPart instanceof javax.mail.internet.MimeMessage) {
-                javax.mail.internet.MimeMessage mm=(javax.mail.internet.MimeMessage)dispPart;
+              if (dispPart instanceof jakarta.mail.internet.MimeMessage) {
+                jakarta.mail.internet.MimeMessage mm=(jakarta.mail.internet.MimeMessage)dispPart;
                 istream=mm.getRawInputStream();
-              } else if (dispPart instanceof javax.mail.internet.MimeBodyPart) {
-                javax.mail.internet.MimeBodyPart mm=(javax.mail.internet.MimeBodyPart)dispPart;
+              } else if (dispPart instanceof jakarta.mail.internet.MimeBodyPart) {
+                jakarta.mail.internet.MimeBodyPart mm=(jakarta.mail.internet.MimeBodyPart)dispPart;
                 istream=mm.getRawInputStream();
               }
             }
