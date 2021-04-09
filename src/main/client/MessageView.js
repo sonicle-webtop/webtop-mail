@@ -521,8 +521,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			//TODO: update tooltips (necessary???)
             //me.divFromName.set({ 'data-qtitle': me.fromName, 'data-qtip': me.fromEmail })
             me.divFromName.update(
-				"<a data-qtip='"+me.fromEmail+"' data-qtitle='"+me.fromName+"' href='javascript:Ext.emptyFn()'>"+
-					me.fromName+" &lt;"+me.fromEmail+"&gt;</a>"
+				"<a data-qtip='" + me.fromEmail + "' data-qtitle='" + Ext.String.htmlEncode(me.fromName) + "' href='javascript:Ext.emptyFn()'>" +
+					me.fromName + " &lt;" + me.fromEmail + "&gt;" + 
+				"</a>"
 			);
             tdh.insertFirst(me.divLine);
 			
@@ -1261,9 +1262,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     },
     
     appendEmail: function(name, desc, email) {
-        if (name==null) name="";
-        else name+=" - ";
-        name+="<span data-qtip='"+email+"' data-qtitle='"+desc+"'><a data-qtip='"+email+"' data-qtitle='"+desc+"' href='javascript:Ext.emptyFn()'>"+desc+"</a></span>";
+        if (name === null) name = "";
+        else name += " - ";
+        name += "<span data-qtip='" + email + "' data-qtitle='" + Ext.String.htmlEncode(desc) + "'><a data-qtip='" + email + "' data-qtitle='" + Ext.String.htmlEncode(desc) + "' href='javascript:Ext.emptyFn()'>" + desc + "</a></span>";
         return name;
     },
 
