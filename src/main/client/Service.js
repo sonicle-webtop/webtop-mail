@@ -578,10 +578,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return function(s,e) {
 			var g=me.getCtxGrid(e),
 			fname='action'+actionName,
-			fn=g[fname];
+			fn=g[fname],
+			sel=g.getSelection();
 		
-			if (Ext.isFunction(fn)) fn.call(g,obj);
-			else Ext.Error.raise('missing grid action function '+fname);
+			if (sel && sel.length>0) {
+				if (Ext.isFunction(fn)) fn.call(g,obj);
+				else Ext.Error.raise('missing grid action function '+fname);
+			} else {
+				WT.info(me.res("act-no-selection"));
+			}
 		};
 	},
 	
