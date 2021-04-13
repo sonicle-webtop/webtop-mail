@@ -35,6 +35,7 @@ package com.sonicle.webtop.mail;
 
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.commons.MailUtils;
+import com.sonicle.commons.RegexUtils;
 import com.sonicle.mail.imap.*;
 import com.sonicle.mail.tnef.internet.*;
 import com.sonicle.webtop.core.CoreManager;
@@ -68,6 +69,7 @@ import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.nio.charset.Charset;
 import org.apache.commons.io.Charsets;
+import org.apache.commons.io.IOUtils;
 
 
 /**
@@ -87,7 +89,7 @@ public class FolderCache {
     public static final int SORT_BY_FLAG=8;
     public static final int SORT_BY_SEEN=9;
 
-    private PrivateEnvironment environment=null;
+	private PrivateEnvironment environment=null;
     //private WebTopDomain wtd=null;
     private Service ms=null;
 	private MailManager mailManager=null;
@@ -2147,96 +2149,21 @@ public class FolderCache {
 					mailData.addAttachmentPart(dispPart,0);
 				}
             } else {
-				xhtml.append("<html><head><meta content='text/html; charset="+charset+"' http-equiv='Content-Type'></head><body><tt>");
-                String line=null;
-                java.io.BufferedReader br;
-				try {
-					br=new java.io.BufferedReader(new java.io.InputStreamReader(istream,charset));
-				} catch(UnsupportedEncodingException exc) {
-					//in case of unknown charset, try without charset.
-					br=new java.io.BufferedReader(new java.io.InputStreamReader(istream,Charsets.ISO_8859_1));
-				}
-                while((line=br.readLine())!=null) {
-                    while(true) {
-                      String token=null;
-                      boolean ismail=false;
-                      int x=line.indexOf((token="http://"));
-					  if (x==-1) x=line.indexOf((token="https://"));
-                      if (x==-1) x=line.indexOf((token="ftp://"));
-                      if (x==-1) {
-                          x=line.indexOf((token="www."));
-                          if (x==(line.length()-1) || Character.isSpaceChar(line.charAt(x+1))) {
-                            x=-1;
-                            token=null;
-                          }
-                      }
-                      if (x==-1) {
-                        x=line.indexOf((token="@"));
-                        int atx=x;
-                        --x;
-                        while(x>=0) {
-                          char ch=line.charAt(x);
-                          if (Character.isLetterOrDigit(ch) || ch=='.' || ch=='-' || ch=='_') {
-                            --x;
-                            if (x<0) {
-                              x=0;
-                              break;
-                            }
-                          } else {
-                            ++x;
-                            break;
-                          }
-                        }
-                        if (atx==x) x=-1; //nothing before @
-                        if (x>=0) ismail=true;
-                      }
-                      if (token!=null && x>=0) {
-                        xhtml.append(MailUtils.htmlescape(line.substring(0,x)));
-                        int y=0;
-                        if (ismail) {
-                          int ats=0;
-                          for(int c=x+1;c<line.length();++c) {
-                            char ch=line.charAt(c);
-                            if (ats==0 && ch=='@') ++ats;
-                            else if (Character.isSpaceChar(ch) || (ch!='.' && ch!='-' && !Character.isLetterOrDigit(ch))) {
-                              y=c;
-                              break;
-                            }
-                          }
-                        } else {
-                          for(int c=x+token.length();c<line.length();++c) {
-                            char ch=line.charAt(c);
-                            if (Character.isSpaceChar(ch) || (ch!='.' && ch!='-' && ch!='_' && ch!=':' && ch!='/' && ch!='?' && ch!='=' && ch!='@' && ch!='+' && ch!='&' && ch!='%' && !Character.isLetterOrDigit(ch))) {
-                              y=c;
-                              break;
-                            }
-                          }
-                        }
-                        if (y>0) {
-                          token=line.substring(x,y);
-                          line=line.substring(y);
-                        } else {
-                          token=line.substring(x);
-                          line=null;
-                        }
-                        String href=token;
-                        String onclick="";
-                    //                if (ismail) {
-                    //                  href="#";
-                    //                  onclick="handleMailClick(\""+token+"\"); return false;";
-                    //                }
-                        if (href.startsWith("www.")) href="http://"+token;
-                        xhtml.append("<A TARGET=_new HREF=\""+href+"\" onClick='"+onclick+"'>"+MailUtils.htmlescape(token)+"</A>");
-                        if (line==null) break;
-                      } else {
-                        xhtml.append(MailUtils.htmlescape(line));
-                        break;
-                      }
-                    }
-                    xhtml.append("<BR>");
-                }
-                xhtml.append("</tt><HR></body></html>");
-                htmlparts.add(xhtml.toString());
+				xhtml.append("<html><head><meta content='text/html; charset="+charset+"' http-equiv='Content-Type'></head><body><pre>");
+				
+				String content = IOUtils.toString(istream);
+				String replacement = "$1";
+				String sparams="\"" + replacement + "\"";
+				String onEmailClick = "parent.WT.handleMailAddress(" + sparams + "); return false;";
+				
+				content = content.replaceAll("(" + RegexUtils.MATCH_EMAIL_ADDRESS + ")", "<a target=_blank href=$1 onClick ='"+onEmailClick+"'>$1</a>");
+				content = content.replaceAll("(" + RegexUtils.MATCH_URL + ")", "<a target= _blank href=$1>$1</a>");
+				content = content.replaceAll("(" + RegexUtils.MATCH_WWW_URL + ")", "$2<a target=_blank href='http://$3'>$3</a>$4");
+
+				xhtml.append(content);	
+                xhtml.append("<BR>");
+                xhtml.append("</pre><HR></body></html>");
+				htmlparts.add(xhtml.toString());
             }
         } else if (dispPart.isMimeType("message/*")) {
           StringBuffer xhtml=new StringBuffer();

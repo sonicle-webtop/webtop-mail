@@ -3745,7 +3745,7 @@ public class Service extends BaseService {
 			
 		} catch(Exception ex) {
 			logger.error("Error saving columns order.", ex);
-			new JsonResult(false).printTo(out);
+			new JsonResult(ex).printTo(out);
 		}
 	}
 		
@@ -3773,7 +3773,7 @@ public class Service extends BaseService {
 
 		} catch(Exception ex) {
 			logger.error("Error saving column visibility.", ex);
-			new JsonResult(false).printTo(out);
+			new JsonResult(ex).printTo(out);
 		}
 	}
 	
@@ -3797,7 +3797,7 @@ public class Service extends BaseService {
 			
 			newfolder = mcache.createFolder(name);
 			if (newfolder == null) {
-				new JsonResult(false).printTo(out);
+				new JsonResult(false, "Error creating folder").printTo(out);
 			} else {
 				if (mailManager.isAuditEnabled())
 					mailManager.writeAuditLog(
@@ -3872,7 +3872,7 @@ public class Service extends BaseService {
 		try {
 			account.checkStoreConnected();
 			if (account.isSpecialFolder(folder)) {
-				new JsonResult(false).printTo(out);
+				new JsonResult(false, "Cannot hide special folders").printTo(out);
 			} else {
 				hideFolder(account,folder);
 				new JsonResult().printTo(out);
@@ -3892,14 +3892,14 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			mcache = account.getFolderCache(folder);
 			if (!account.isUnderFolder(account.getFolderArchive(),folder) && account.isSpecialFolder(folder)) {
-				new JsonResult(false).printTo(out);
+				new JsonResult(false, "Cannot delete special folders").printTo(out);
 			} else {
 				if (account.deleteFolder(folder)) {
 					JsOperateFolder deletedFolder = new JsOperateFolder()
 							.setOldid(folder);
 					new JsonResult(deletedFolder).printTo(out, false);
 				} else {
-					new JsonResult(false).printTo(out);
+					new JsonResult(false, "Error deleting folder").printTo(out);
 				}
 			}
 		} catch (Throwable t) {
@@ -3919,7 +3919,7 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			
 			if (!account.isUnderFolder(account.getFolderArchive(),folder) && account.isSpecialFolder(folder)) {
-				new JsonResult(false).printTo(out);
+				new JsonResult(false, "Cannot trash special folder").printTo(out);
 			} else {
 				FolderCache newfc = account.trashFolder(folder);
 				if (newfc!=null) {
@@ -3945,7 +3945,7 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			mcache = account.getFolderCache(folder);
 			if (account.isSpecialFolder(folder)) {
-				new JsonResult(false).printTo(out);
+				new JsonResult(false, "Cannot move special folders").printTo(out);
 			} else {
 				FolderCache newfc = account.moveFolder(folder, to);
 				Folder newf = newfc.getFolder();
