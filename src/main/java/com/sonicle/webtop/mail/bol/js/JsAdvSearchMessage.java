@@ -40,6 +40,7 @@ package com.sonicle.webtop.mail.bol.js;
 public class JsAdvSearchMessage {
 	public String folder;
 	public String folderdesc;
+	public String fullfolderdesc;
 	public String idmandfolder;
 	public Long idmessage;
 	public Integer priority;
@@ -55,9 +56,10 @@ public class JsAdvSearchMessage {
 	public Boolean istoday;
 	public Boolean note;
 
-	public JsAdvSearchMessage(String folder, String folderdesc, String idmandfolder, Long idmessage, Integer priority, String status, String to, String from, String subject, String date, Boolean unread, Integer size, String flag, Boolean arch, Boolean istoday, Boolean note) {
+	public JsAdvSearchMessage(String folder, String folderdesc, String fullfolderdesc, String idmandfolder, Long idmessage, Integer priority, String status, String to, String from, String subject, String date, Boolean unread, Integer size, String flag, Boolean arch, Boolean istoday, Boolean note) {
 		this.folder = folder;
 		this.folderdesc = folderdesc;
+		this.fullfolderdesc = fullfolderdesc;
 		this.idmandfolder = idmandfolder;
 		this.idmessage = idmessage;
 		this.priority = priority;
