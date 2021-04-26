@@ -1849,8 +1849,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				node: n,
 				callback: function() {
 					if (!expanded) {
-						n.expand(false,function() {
-							n.collapse();
+						if (n) n.expand(false,function() {
+							if (n) n.collapse();
 						});
 					}
 				}
