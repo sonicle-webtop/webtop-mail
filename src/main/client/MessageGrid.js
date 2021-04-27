@@ -1779,50 +1779,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			callback: function(success,json) {
 				Ext.callback(data.cb,data.scope||me,[json.success]);
 				if (json.success) {
-					var d=data,
-					//TODO: update imap tree?
-					//tree=me.mys.imapTree,
-					seen=d.seen,
-						s=me.store;
-					//TODO: update imap tree?
-					//var nt=tree.getNodeById(options.tofolder);
-					if (!d.multifolder) {
-						//s.reload();
-					} else {
-											//TODO: update imap tree?
-						/*var ids=d.ids;
-						var dorel=false;
-						var remove=(action!="CopyMessages");
-						for(var i=0;i<ids.length;++i) {
-						  var r=s.getById(ids[i]);
-						  if (!seen[i]) {
-							var fid=r.get("folder");
-							if (fid==this.currentFolder) dorel=true;
-							else {
-								var n=this.ms.imapTree.getNodeById(fid);
-								if (n) {
-									var a=n.attributes;
-									jd={ unread: a.unread-1, millis: o.millis };
-									this.ms.updateUnreads(fid,jd,false);
-								}
+					var tonode=me.mys.getFolderNodeById(acctto,to),
+						unseen=0;
+				
+					for(var i=0;i<data.seen.length;++i)
+						if (!data.seen[i]) ++unseen;
+					
+					if (unseen) {
+						me.mys.unreadChanged({
+							payload: {
+								accountid: acctto,
+								foldername: to,
+								unread: tonode.get('unread')+unseen
 							}
-						  }
-						  if (remove) s.remove(r);
-						}*/
-						//if (dorel) {
-							//s.reload();
-						//}
+						},true)
 					}
-					//TODO: update imap tree?
-					/*
-					var info=nt.attributes;
-					info.millis=o.millis;
-					for(var i=0;i<seen.length;++i) {
-						if (!seen[i]) info.unread++;
-					}
-					this.ms.updateUnreads(options.tofolder,info,false);
-					*/
-				   
+					
 				    //if archiving, reload archive branch
 					if (json.data.archiving) me._refreshArchiveNode(acctto,json.data.tofolder);
 				} else {
