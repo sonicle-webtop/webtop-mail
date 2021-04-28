@@ -763,7 +763,7 @@ public class FolderCache {
 		sendUnreadChangedMessage();
         if (hasUnreadChildren) {
             FolderCache fcparent=parent;
-            while(!fcparent.isRoot()) {
+            while(fcparent!=null && !fcparent.isRoot()) {
 				fcparent.updateUnreads();
                 fcparent=fcparent.parent;
             }
