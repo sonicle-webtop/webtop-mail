@@ -752,23 +752,18 @@ public class FolderCache {
     }
 
     protected void updateUnreads() {
-        //if (unread>0) hasUnreadChildren=true;
-        //else {
-            hasUnreadChildren=false;
-            if (children!=null) {
-                for(FolderCache child: children) {
-                    hasUnreadChildren|=(child.unread>0 || child.hasUnreadChildren);
-                }
-            }
-        //}
+		hasUnreadChildren=false;
+		if (children!=null) {
+			for(FolderCache child: children) {
+				hasUnreadChildren|=(child.unread>0 || child.hasUnreadChildren);
+			}
+		}
 		sendUnreadChangedMessage();
-        if (hasUnreadChildren) {
-            FolderCache fcparent=parent;
-            while(fcparent!=null && !fcparent.isRoot()) {
-				fcparent.updateUnreads();
-                fcparent=fcparent.parent;
-            }
-        }
+		FolderCache fcparent=parent;
+		while(fcparent!=null && !fcparent.isRoot()) {
+			fcparent.updateUnreads();
+			fcparent=fcparent.parent;
+		}
     }
     
     public boolean toBeRefreshed() {
