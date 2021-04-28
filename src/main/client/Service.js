@@ -464,9 +464,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		me.setToolComponent(tool);
 
-		me.onMessage('unread',me.unreadChanged,me);
-		me.onMessage('recent',me.recentMessage,me);
-		me.onMessage('addContact', me.addContact, me);
+		me.onMessage('unread',me.onUnreadChanged,me);
+		me.onMessage('recent',me.onRecentMessage,me);
+		me.onMessage('addContact', me.onAddContact, me);
 		
         var xb=new Array();
 		xx=0;
@@ -1081,9 +1081,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return account;
 	},
 	
-	unreadChanged: function(msg,unreadOnly) {
+	onUnreadChanged: function(msg,pl) {
+		this.unreadChanged(pl,false);
+	},
+	
+	unreadChanged: function(pl,unreadOnly) {
 		var me=this,
-			pl=msg.payload,
 			tree=me.acctTrees[pl.accountid],
 			node=tree.getStore().getById(pl.foldername);
 
@@ -1101,7 +1104,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.updateFavoritesUnreads(pl.accountid,pl.foldername,pl.unread);
 	},
 	
-	addContact: function(msg) {
+	onAddContact: function(msg) {
 		var me = this,
 			pl = msg.payload,
 			email = pl.email,
@@ -1142,7 +1145,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 	},
 	
-	recentMessage: function(msg) {
+	onRecentMessage: function(msg) {
 		var me=this,
 		pl = msg.payload,
 		favoriteNotifications = me.getVar('favoriteNotifications'),
@@ -2060,12 +2063,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			
 				if (json.success) {
 					n.set("scanEnabled",v);
-					if (!v) me.unreadChanged({ payload: { accountid: acct, foldername: folder, unread: 0 } },true);
+					if (!v) {
+						//me.unreadChanged({ accountid: acct, foldername: folder, unread: 0 },true); 
+					}
 					else me.refreshFolder(n);
 					if (recursive)
 						n.cascadeBy(function(n) {
 							n.set("scanEnabled",v);
-							if (!v) me.unreadChanged({ payload: { accountid: acct, foldername: n.get("id"), unread: 0 } },true);
+							if (!v) {
+								//me.unreadChanged({ accountid: acct, foldername: n.get("id"), unread: 0 },true);
+							}
 							else me.refreshFolder(n);
 						});
 				} else {
