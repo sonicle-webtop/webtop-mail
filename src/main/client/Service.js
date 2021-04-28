@@ -1630,31 +1630,35 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this,
 		n=me.getCtxNode(e),
 		folder=n.get("id"),
+		acct=me.getAccount(n);
 		v=mi.checked;
 	
 		if (n.hasChildNodes()) {
 			WT.confirm(me.res('recursive'),function(bid) {
-				me.setScanFolder(folder,v,(bid=='yes'));
+				me.setScanFolder(acct,folder,v,(bid=='yes'));
 			});
 		} else {
-			me.setScanFolder(folder,v,false);
+			me.setScanFolder(acct,folder,v,false);
 		}
 	},
 	
 	actionFolderHide: function(s,e) {
 		var me=this,
-		n=me.getCtxNode(e),
-		folder=n.get("id");
+			n=me.getCtxNode(e),
+			folder=n.get("id"),
+			acct=me.getAccount(n);
 	
 		WT.confirm(me.res('confirm.folder-hide'),function(bid) {
 			if (bid=='yes') 
-				me.hideFolder(folder);
+				me.hideFolder(acct,folder);
 		});
 	},
 	
 	actionManageHiddenFolders: function(s,e) {
 		var me=this,
-			acct = me.acctTrees.main.acct;
+			n=me.getCtxNode(e),
+			acct=me.getAccount(n);
+	
 		WT.createView(me.ID,'view.HiddenFolders',{
 			viewCfg: {
 				callback: function() {
@@ -1779,15 +1783,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
         window.open(url);
     },
 	
-	hideFolder: function(folder) {
+	hideFolder: function(acct, folder) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'HideFolder', {
 			params: {
+				account: acct,
 				folder: folder
 			},
 			callback: function(success,json) {
 				if (json.success) {
-					var node=me.imapTree.getStore().getById(folder);
+					var node=me.acctTrees[acct].getStore().getById(folder);
 					if (node) node.remove();
 				} else {
 					WT.error(json.message);
@@ -2039,10 +2044,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});					
 	},
 	
-    setScanFolder: function(folder,v,recursive) {
+    setScanFolder: function(acct,folder,v,recursive) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'SetScanFolder', {
 			params: {
+				account: acct,
 				folder: folder,
 				value: (v?"1":"0"),
 				recursive: (recursive?"1":"0")
@@ -2054,12 +2060,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			
 				if (json.success) {
 					n.set("scanEnabled",v);
-					if (!v) me.unreadChanged({ foldername: folder, unread: 0 },true);
+					if (!v) me.unreadChanged({ payload: { accountid: acct, foldername: folder, unread: 0 } },true);
 					else me.refreshFolder(n);
 					if (recursive)
 						n.cascadeBy(function(n) {
 							n.set("scanEnabled",v);
-							if (!v) me.unreadChanged({ foldername: n.get("id"), unread: 0 },true);
+							if (!v) me.unreadChanged({ payload: { accountid: acct, foldername: n.get("id"), unread: 0 } },true);
 							else me.refreshFolder(n);
 						});
 				} else {
