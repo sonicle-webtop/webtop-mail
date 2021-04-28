@@ -1779,7 +1779,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			callback: function(success,json) {
 				Ext.callback(data.cb,data.scope||me,[json.success]);
 				if (json.success) {
-					var tonode=me.mys.getFolderNodeById(acctto,to),
+					/*var tonode=me.mys.getFolderNodeById(acctto,to),
 						unseen=0;
 				
 					for(var i=0;i<data.seen.length;++i)
@@ -1787,13 +1787,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					
 					if (unseen) {
 						me.mys.unreadChanged({
-							payload: {
-								accountid: acctto,
-								foldername: to,
-								unread: tonode.get('unread')+unseen
-							}
+							accountid: acctto,
+							foldername: to,
+							unread: tonode.get('unread')+unseen
 						},true)
-					}
+					}*/
 					
 				    //if archiving, reload archive branch
 					if (json.data.archiving) me._refreshArchiveNode(acctto,json.data.tofolder);

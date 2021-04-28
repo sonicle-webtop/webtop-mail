@@ -464,9 +464,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		me.setToolComponent(tool);
 
-		me.onMessage('unread',me.unreadChanged,me);
-		me.onMessage('recent',me.recentMessage,me);
-		me.onMessage('addContact', me.addContact, me);
+		me.onMessage('unread',me.onUnreadChanged,me);
+		me.onMessage('recent',me.onRecentMessage,me);
+		me.onMessage('addContact', me.onAddContact, me);
 		
         var xb=new Array();
 		xx=0;
@@ -1081,9 +1081,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return account;
 	},
 	
-	unreadChanged: function(msg,unreadOnly) {
+	onUnreadChanged: function(msg,pl) {
+		this.unreadChanged(pl,false);
+	},
+	
+	unreadChanged: function(pl,unreadOnly) {
 		var me=this,
-			pl=msg.payload,
 			tree=me.acctTrees[pl.accountid],
 			node=tree.getStore().getById(pl.foldername);
 
@@ -1101,7 +1104,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.updateFavoritesUnreads(pl.accountid,pl.foldername,pl.unread);
 	},
 	
-	addContact: function(msg) {
+	onAddContact: function(msg) {
 		var me = this,
 			pl = msg.payload,
 			email = pl.email,
@@ -1142,7 +1145,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 	},
 	
-	recentMessage: function(msg) {
+	onRecentMessage: function(msg) {
 		var me=this,
 		pl = msg.payload,
 		favoriteNotifications = me.getVar('favoriteNotifications'),
@@ -1630,31 +1633,35 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this,
 		n=me.getCtxNode(e),
 		folder=n.get("id"),
+		acct=me.getAccount(n);
 		v=mi.checked;
 	
 		if (n.hasChildNodes()) {
 			WT.confirm(me.res('recursive'),function(bid) {
-				me.setScanFolder(folder,v,(bid=='yes'));
+				me.setScanFolder(acct,folder,v,(bid=='yes'));
 			});
 		} else {
-			me.setScanFolder(folder,v,false);
+			me.setScanFolder(acct,folder,v,false);
 		}
 	},
 	
 	actionFolderHide: function(s,e) {
 		var me=this,
-		n=me.getCtxNode(e),
-		folder=n.get("id");
+			n=me.getCtxNode(e),
+			folder=n.get("id"),
+			acct=me.getAccount(n);
 	
 		WT.confirm(me.res('confirm.folder-hide'),function(bid) {
 			if (bid=='yes') 
-				me.hideFolder(folder);
+				me.hideFolder(acct,folder);
 		});
 	},
 	
 	actionManageHiddenFolders: function(s,e) {
 		var me=this,
-			acct = me.acctTrees.main.acct;
+			n=me.getCtxNode(e),
+			acct=me.getAccount(n);
+	
 		WT.createView(me.ID,'view.HiddenFolders',{
 			viewCfg: {
 				callback: function() {
@@ -1779,15 +1786,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
         window.open(url);
     },
 	
-	hideFolder: function(folder) {
+	hideFolder: function(acct, folder) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'HideFolder', {
 			params: {
+				account: acct,
 				folder: folder
 			},
 			callback: function(success,json) {
 				if (json.success) {
-					var node=me.imapTree.getStore().getById(folder);
+					var node=me.acctTrees[acct].getStore().getById(folder);
 					if (node) node.remove();
 				} else {
 					WT.error(json.message);
@@ -2039,10 +2047,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});					
 	},
 	
-    setScanFolder: function(folder,v,recursive) {
+    setScanFolder: function(acct,folder,v,recursive) {
 		var me=this;
 		WT.ajaxReq(me.ID, 'SetScanFolder', {
 			params: {
+				account: acct,
 				folder: folder,
 				value: (v?"1":"0"),
 				recursive: (recursive?"1":"0")
@@ -2054,12 +2063,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			
 				if (json.success) {
 					n.set("scanEnabled",v);
-					if (!v) me.unreadChanged({ foldername: folder, unread: 0 },true);
+					if (!v) {
+						//me.unreadChanged({ accountid: acct, foldername: folder, unread: 0 },true); 
+					}
 					else me.refreshFolder(n);
 					if (recursive)
 						n.cascadeBy(function(n) {
 							n.set("scanEnabled",v);
-							if (!v) me.unreadChanged({ foldername: n.get("id"), unread: 0 },true);
+							if (!v) {
+								//me.unreadChanged({ accountid: acct, foldername: n.get("id"), unread: 0 },true);
+							}
 							else me.refreshFolder(n);
 						});
 				} else {

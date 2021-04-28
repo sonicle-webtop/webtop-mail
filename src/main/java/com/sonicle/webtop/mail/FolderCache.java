@@ -505,8 +505,11 @@ public class FolderCache {
 
     public void setScanEnabled(boolean b) {
         scanEnabled=b;
-		if (b) updateUnreads();
-		else sendClearUnreadChangedMessage();
+		/*if (b) */updateUnreads();
+		/*else {
+			sendClearUnreadChangedMessage();
+			if (parent!=null) parent.updateUnreads();
+		}*/
     }
 
     public boolean isScanEnabled() {
@@ -613,7 +616,7 @@ public class FolderCache {
 	
 	private void sendUnreadChangedMessage() {
 		//NO MORE send ws message only if it's not special or has "scan forced on" active
-		//if (/*!isSpecial() || */ isScanForcedOrEnabled())
+		//if (/*!isSpecial() || */ isScanForcedOrEnabled())		
 			this.environment.notify(
 				new UnreadChangedMessage(account.getId(),foldername, unread, hasUnreadChildren)
 			);
@@ -661,6 +664,7 @@ public class FolderCache {
             if (oldunread!=unread) {
 				unreadChanged=true;
 				sendUnreadChangedMessage();
+				if (parent!=null) parent.updateUnreads();
 			}
         }
     }
@@ -727,7 +731,7 @@ public class FolderCache {
             if (fcchild.children!=null) {
                 hasUnread|=fcchild.checkSubfolders(all,mft);
             }
-            fcchild.setHasUnreadChildren(hasUnread);
+            //fcchild.setHasUnreadChildren(hasUnread);
             pHasUnread|=hasUnread;
         }
         return pHasUnread;
@@ -747,25 +751,21 @@ public class FolderCache {
         return (unread>0);
     }
 
-    private void updateUnreads() {
-		boolean oldhuc=hasUnreadChildren;
-        if (unread>0) hasUnreadChildren=true;
-        else {
+    protected void updateUnreads() {
+        //if (unread>0) hasUnreadChildren=true;
+        //else {
             hasUnreadChildren=false;
             if (children!=null) {
                 for(FolderCache child: children) {
                     hasUnreadChildren|=(child.unread>0 || child.hasUnreadChildren);
                 }
             }
-        }
-		//if (oldhuc!=hasUnreadChildren)
-			sendUnreadChangedMessage();
+        //}
+		sendUnreadChangedMessage();
         if (hasUnreadChildren) {
             FolderCache fcparent=parent;
-            while(fcparent!=null) {
-                if (fcparent.parent!=null) {
-                    fcparent.updateUnreads();
-                }
+            while(!fcparent.isRoot()) {
+				fcparent.updateUnreads();
                 fcparent=fcparent.parent;
             }
         }
@@ -1099,6 +1099,8 @@ public class FolderCache {
 			to.setForceRefresh();
 			modified=true;
 			to.modified=true;
+			refreshUnreads();
+			to.refreshUnreads();
 		}
 		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
     }
@@ -1114,6 +1116,7 @@ public class FolderCache {
             Message mmsgs[]=getMessages(uids,fullthreads);
             folder.copyMessages(mmsgs, to.folder);
             to.setForceRefresh();
+			to.refreshUnreads();
             to.modified=true;
         }
     }
