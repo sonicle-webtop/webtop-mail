@@ -49,6 +49,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.upload.Button',
 		'Sonicle.webtop.mail.ux.ChooseListConfirmBox'
 	],
+	uses: [
+		'Sonicle.webtop.core.view.Meeting'
+	],
 	
 	statics: {
 		buildMsgId: function() {
@@ -1877,19 +1880,21 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	addMeetingUI: function() {
 		var me = this,
+				Meeting = Sonicle.webtop.core.view.Meeting,
 				name = WT.getVar('userDisplayName'),
 				fmt = Ext.String.format;
-		Sonicle.webtop.core.view.Meeting.promptForInfo({
+		Meeting.promptForInfo({
+			whatAsRoomName: true,
 			callback: function(ok, values) {
 				if (ok) {
 					me.wait();
-					me.getMeetingLink({
+					Meeting.getMeetingLink(values[0], {
 						callback: function(success, data) {
 							me.unwait();
 							if (success) {
-								var psubj = values[0], pdate = values[1], ptz = values[2],
+								var pdate = values[1], ptz = values[2],
 										sdate = Ext.isDate(pdate) ? Ext.Date.format(pdate, WT.getShortDateTimeFmt()) + ' ('+ptz+')' : null,
-										subj = !Ext.isEmpty(psubj) ? psubj : fmt(data.embedTexts.subject, name),
+										subj = fmt(data.embedTexts.subject, name),
 										desc = sdate ? fmt(data.embedTexts.schedDescription, name, sdate, data.link) : fmt(data.embedTexts.unschedDescription, name, data.link),
 										format = me.contentFormat,
 										mo = me.getModel(),
@@ -1917,19 +1922,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						}
 					});
 				}
-			}
-		});
-	},
-	
-	getMeetingLink: function(opts) {
-		opts = opts || {};
-		var me = this;	
-		WT.ajaxReq(WT.ID, 'ManageMeeting', {
-			params: {
-				crud: 'create'
-			},
-			callback: function(success, json) {
-				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
 			}
 		});
 	},
