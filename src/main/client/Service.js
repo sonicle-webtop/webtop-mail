@@ -1905,7 +1905,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		for(var c=0;before==null && c<cn.length;++c) {
 			var cid=cn[c].id;
 			if (me.specialFolders[cid]) continue;
-			if (cid>newfullname) before=cn[c];
+			if (cid.localeCompare(newfullname, WT.getApp().getLocale()) > 0) before=cn[c];
 		}
 		if (before) n.insertBefore(newnode,before);
 		else n.appendChild(newnode);
