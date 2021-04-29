@@ -981,12 +981,14 @@ public class MailAccount {
 			throw new MessagingException("Permission denied");
 		} else {
 			if (fcsrc != null) destroyFolderCache(fcsrc);
+			FolderCache fcdst;
 			if (dest != null) {
 				FolderCache tfc = getFolderCache(newfolder.getParent().getFullName());
-				return addFoldersCache(tfc, newfolder);
+				fcdst=addFoldersCache(tfc, newfolder);
 			} else {
-				return addFoldersCache(fcRoot, newfolder);
+				fcdst=addFoldersCache(fcRoot, newfolder);
 			}
+			return fcdst;
 		}
 	}
 	
