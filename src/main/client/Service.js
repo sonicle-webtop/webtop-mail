@@ -1952,10 +1952,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 									s = tr.store,
 									n = s.getById(data.oldid);
 							if (n) n.remove();
-							if (data.parent !== null && data.parent === me.getFolderInbox()) {
+							if (data.newidparent !== null && data.newidparent === me.getFolderInbox()) {
 								me.reloadTree(acct);
 							} else {
-								n=(data.parent ? s.getNodeById(data.parent) : s.getRoot());
+								n=(data.newidparent ? s.getNodeById(data.newidparent) : s.getRoot());
 								if (n.get("leaf")) n.set("leaf",false);
 								n.expand(false, function(nodes) {
 									Ext.defer(function() {
@@ -1964,6 +1964,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 								});
 							}
 							me.reloadFavorites();
+							
+							//ask refresh of unreads on both folders
+							var folders=[];
+							folders.push(data.newid);
+							if (data.oldidparent) folders.push(data.oldidparent);
+							WT.ajaxReq(me.ID, 'RunRefreshUnreads', {
+								params: {
+									account: acct,
+									folders: folders,
+								},
+								callback: function(success,json) {
+									if (json.success) {
+									}
+								}
+							});
 						} else {
 							WT.error(json.message);
 						}

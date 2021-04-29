@@ -3383,6 +3383,22 @@ public class Service extends BaseService {
         return uids;
 	}
 	
+	public void processRunRefreshUnreads(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			MailAccount account=getAccount(request);
+			ArrayList<String> foldernames=ServletUtils.getStringParameters(request, "folders");
+			for(String foldername: foldernames) {
+				FolderCache fc=account.getFolderCache(foldername);
+				if (fc==null) throw new Exception("Folder "+foldername+" not in cache");
+				fc.refreshUnreads();
+			}
+			new JsonResult().printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
+		}
+	}
+	
 	public void processDeleteMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String fromfolder = request.getParameter("fromfolder");
@@ -3817,7 +3833,7 @@ public class Service extends BaseService {
 				
 				String parent = !account.isRoot(mcache) ? mcache.getFolderName() : null;
 				JsOperateFolder createdFolder = new JsOperateFolder()
-						.setParent(parent)
+						.setNewIdParent(parent)
 						.setName(newfolder.getName())
 						.setFullname(newfolder.getFullName());
 				new JsonResult(createdFolder).printTo(out, false);
@@ -3955,13 +3971,15 @@ public class Service extends BaseService {
 			if (account.isSpecialFolder(folder)) {
 				new JsonResult(false, "Cannot move special folders").printTo(out);
 			} else {
+				FolderCache oldfcparent = account.getFolderCache(folder).getParent();
 				FolderCache newfc = account.moveFolder(folder, to);
 				Folder newf = newfc.getFolder();
 				JsOperateFolder movedFolder = new JsOperateFolder()
 						.setOldid(folder)
 						.setNewid(newf.getFullName())
 						.setNewname(newf.getName());
-				if (to != null) movedFolder.setParent(newf.getParent().getFullName());
+				if (to != null) movedFolder.setNewIdParent(newf.getParent().getFullName());
+				if (oldfcparent != null) movedFolder.setOldIdParent(oldfcparent.getFolderName());
 				new JsonResult(movedFolder).printTo(out, false);
 			}
 		} catch (Throwable t) {

@@ -38,19 +38,25 @@ package com.sonicle.webtop.mail.bol.js;
  * @author Federico Ballarini
  */
 public class JsOperateFolder {
-	public String parent;
 	public String name;
 	public String fullname;
 	public String oldid;
+	public String oldidparent;
 	public String newid;
+	public String newidparent;
 	public String newname;
 	public String trashid;
 
 	public JsOperateFolder() {
 	}
 
-	public JsOperateFolder setParent(String parent) {
-		this.parent = parent;
+	public JsOperateFolder setNewIdParent(String parent) {
+		this.newidparent = parent;
+		return this;
+	}
+
+	public JsOperateFolder setOldIdParent(String parent) {
+		this.oldidparent = parent;
 		return this;
 	}
 
