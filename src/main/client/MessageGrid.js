@@ -2644,6 +2644,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					dataIndex: 'folderdesc',
 					stateId: 'stid-folderdesc',
 					hidden: false,
+					renderer: function(value,metadata,record,rowIndex,colIndex,store) {
+							return "<span data-qtip='"+record.get('fullfolderdesc')+"'>"+value+"</span>";
+					},
 					filter: { xtype: 'textfield'}
 				});
 			}
