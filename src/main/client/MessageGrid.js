@@ -1820,7 +1820,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				callback: function() {
 					if (!expanded) {
 						if (n) n.expand(false,function() {
-							if (n) n.collapse();
+							if (n)
+								Ext.defer(function() { n.collapse(); },500);
 						});
 					}
 				}
