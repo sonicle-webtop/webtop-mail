@@ -977,8 +977,8 @@ public class FolderCache {
         dhash.clear();
 //        hash.clear();
 //        list.clear();
-        unread=0;
-        recent=0;
+        //unread=0;
+        //recent=0;
         msgs=null;
     }
 
