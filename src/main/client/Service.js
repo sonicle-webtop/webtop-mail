@@ -1961,24 +1961,25 @@ Ext.define('Sonicle.webtop.mail.Service', {
 									Ext.defer(function() {
 										me.selectChildNode(acct, n, data.newid);
 									},200);
+									
+									//ask refresh of unreads on both folders
+									var folders=[];
+									folders.push(data.newid);
+									if (data.oldidparent) folders.push(data.oldidparent);
+									WT.ajaxReq(me.ID, 'RunRefreshUnreads', {
+										params: {
+											account: acct,
+											folders: folders,
+										},
+										callback: function(success,json) {
+											if (json.success) {
+											}
+										}
+									});
 								});
 							}
 							me.reloadFavorites();
 							
-							//ask refresh of unreads on both folders
-							var folders=[];
-							folders.push(data.newid);
-							if (data.oldidparent) folders.push(data.oldidparent);
-							WT.ajaxReq(me.ID, 'RunRefreshUnreads', {
-								params: {
-									account: acct,
-									folders: folders,
-								},
-								callback: function(success,json) {
-									if (json.success) {
-									}
-								}
-							});
 						} else {
 							WT.error(json.message);
 						}
