@@ -89,8 +89,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 	//default protocol ports
 	protPorts: null,
+	
     
-
 	api: null,
 	
 	getApiInstance: function() {
@@ -1903,9 +1903,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		before=null;
 	
 		for(var c=0;before==null && c<cn.length;++c) {
-			var cid=cn[c].id;
+			var node=cn[c],
+				cid=node.id;
 			if (me.specialFolders[cid]) continue;
-			if (cid.localeCompare(newfullname, WT.getApp().getLocale()) > 0) before=cn[c];
+			if (node.get("isSharedRoot") || cid>newfullname) before=cn[c];
 		}
 		if (before) n.insertBefore(newnode,before);
 		else n.appendChild(newnode);
