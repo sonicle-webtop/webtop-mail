@@ -68,6 +68,7 @@ import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
 
@@ -2140,7 +2141,13 @@ public class FolderCache {
             } else {
 				xhtml.append("<html><head><meta content='text/html; charset="+charset+"' http-equiv='Content-Type'></head><body><pre>");
 				
-				String content = IOUtils.toString(istream);
+				String content;
+				try {
+					Charset xcharset=Charsets.toCharset(charset);
+					content=IOUtils.toString(istream,xcharset);
+				} catch(UnsupportedCharsetException exc) {
+					content=IOUtils.toString(istream,Charsets.ISO_8859_1);
+				}
 				String replacement = "$1";
 				String sparams="\"" + replacement + "\"";
 				String onEmailClick = "parent.WT.handleMailAddress(" + sparams + "); return false;";
