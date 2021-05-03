@@ -3055,6 +3055,7 @@ public class Service extends BaseService {
 				for(FavoriteFolderData ffd: ffds) {
 					JsFolder jsFolder=createJsFolder(ffd.folderCache, true);
 					jsFolder.folder=ffd.description;
+					jsFolder.hasUnread=false;
 					jsFolders.add(jsFolder);
 				}
 				//outputFolders(mainAccount, mainAccount.getDefaultFolder(), folders, false, true, jsFolders);
