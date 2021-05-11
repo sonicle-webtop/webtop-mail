@@ -332,11 +332,11 @@ public class MailSettings {
 		
 		public static class List extends ArrayList<ExternalProvider> {
 			public static ExternalProvider.List fromJson(String value) {
-				return JsonResult.gson.fromJson(value, ExternalProvider.List.class);
+				return JsonResult.gson().fromJson(value, ExternalProvider.List.class);
 			}
 
 			public static String toJson(ExternalProvider.List value) {
-				return JsonResult.gson.toJson(value, ExternalProvider.List.class);
+				return JsonResult.gson().toJson(value, ExternalProvider.List.class);
 			}
 		}
 		

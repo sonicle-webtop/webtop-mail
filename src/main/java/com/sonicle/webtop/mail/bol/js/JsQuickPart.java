@@ -61,11 +61,11 @@ public class JsQuickPart {
 	
 	public static class List extends ArrayList<JsQuickPart> {
 		public static JsQuickPart.List fromJson(String value) {
-			return JsonResult.gson.fromJson(value, JsQuickPart.List.class);
+			return JsonResult.gson().fromJson(value, JsQuickPart.List.class);
 		}
 
 		public static String toJson(JsQuickPart.List value) {
-			return JsonResult.gson.toJson(value, JsQuickPart.List.class);
+			return JsonResult.gson().toJson(value, JsQuickPart.List.class);
 		}
 	}
 }

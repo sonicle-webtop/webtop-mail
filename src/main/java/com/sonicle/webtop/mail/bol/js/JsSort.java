@@ -57,7 +57,7 @@ public class JsSort {
 		
 		public static List fromJson(String value) {
 			if(value == null) return null;
-			return JsonResult.gson.fromJson(value, List.class);
+			return JsonResult.gson().fromJson(value, List.class);
 		}
 	}
 }

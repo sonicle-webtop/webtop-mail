@@ -602,7 +602,7 @@ public class Service extends BaseService {
 				String syyyy = "" + yyyy;
 				
 				FileOutputStream fos = new FileOutputStream(file);
-				msg.writeTo(fos);
+					msg.writeTo(fos);
 				fos.close();
 				
 				PrintWriter pw = new PrintWriter(txtfile);
@@ -4664,7 +4664,7 @@ public class Service extends BaseService {
 							MailManager.AuditContext.MAIL,
 							MailManager.AuditAction.FORWARD, 
 							jsmsg.forwardedfrom, 
-							JsonResult.GSON.toJson(rcpts)
+							JsonResult.gson().toJson(rcpts)
 						);
 					try {
 						foundfolder = foundfolder=flagForwardedMessage(account,jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
@@ -4699,7 +4699,7 @@ public class Service extends BaseService {
 								MailManager.AuditContext.MAIL,
 								MailManager.AuditAction.REPLY, 
 								jsmsg.inreplyto, 
-								JsonResult.GSON.toJson(rcpts)
+								JsonResult.gson().toJson(rcpts)
 							);
 						
 						try {
@@ -8730,7 +8730,7 @@ public class Service extends BaseService {
 			co.put("messageViewMaxTos",ss.getMessageViewMaxTos());
 			co.put("messageViewMaxCcs",ss.getMessageViewMaxCcs());
 			co.put("messageEditSubject", ss.isMessageEditSubject());
-			co.put("columnSizes",JsonResult.gson.toJson(us.getColumnSizes()));
+			co.put("columnSizes",JsonResult.gson().toJson(us.getColumnSizes()));
 			co.put("autoResponderActive", mailManager.isAutoResponderActive());
 			co.put("showUpcomingEvents", us.getShowUpcomingEvents());
 			co.put("showUpcomingTasks", us.getShowUpcomingTasks());

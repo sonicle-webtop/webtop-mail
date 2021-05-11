@@ -77,7 +77,7 @@ public class MailServiceTest extends BaseService {
 				break;
 		}
 			
-		out.println(JsonResult.gson.toJson(jsfolders));
+		out.println(JsonResult.gson().toJson(jsfolders));
 	}
 	
 	private class JSonFolder {

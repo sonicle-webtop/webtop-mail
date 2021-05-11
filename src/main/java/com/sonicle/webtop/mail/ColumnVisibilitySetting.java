@@ -62,7 +62,7 @@ public class ColumnVisibilitySetting extends HashMap<String, Boolean> {
 	public static ColumnVisibilitySetting fromJson(String value) {
 		try {
 			if(StringUtils.isEmpty(value)) return new ColumnVisibilitySetting();
-			return JsonResult.GSON_PLAIN_WONULLS.fromJson(value, ColumnVisibilitySetting.class);
+			return JsonResult.gsonPlain(false).fromJson(value, ColumnVisibilitySetting.class);
 		} catch(Exception ex) {
 			Service.logger.error("Exception",ex);
 			return new ColumnVisibilitySetting();
@@ -70,6 +70,6 @@ public class ColumnVisibilitySetting extends HashMap<String, Boolean> {
 	}
 	
 	public static String toJson(ColumnVisibilitySetting cvs) {
-		return JsonResult.GSON_PLAIN_WONULLS.toJson(cvs);
+		return JsonResult.gsonPlain(false).toJson(cvs);
 	}
 }

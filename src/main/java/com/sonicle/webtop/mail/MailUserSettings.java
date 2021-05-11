@@ -649,11 +649,11 @@ public class MailUserSettings extends BaseUserSettings {
 		}
 		
 		public static FavoriteFolders fromJson(String value) {
-			return JsonResult.gson.fromJson(value, FavoriteFolders.class);
+			return JsonResult.gson().fromJson(value, FavoriteFolders.class);
 		}
 		
 		public static String toJson(FavoriteFolders value) {
-			return JsonResult.gson.toJson(value, FavoriteFolders.class);
+			return JsonResult.gson().toJson(value, FavoriteFolders.class);
 		}
 		
 		public FavoriteFolder remove(String accountId, String folderId) {
@@ -690,11 +690,11 @@ public class MailUserSettings extends BaseUserSettings {
 		}
 		
 		public static Favorites fromJson(String value) {
-			return JsonResult.gson.fromJson(value, Favorites.class);
+			return JsonResult.gson().fromJson(value, Favorites.class);
 		}
 		
 		public static String toJson(Favorites value) {
-			return JsonResult.gson.toJson(value, Favorites.class);
+			return JsonResult.gson().toJson(value, Favorites.class);
 		}
 		
 	}
