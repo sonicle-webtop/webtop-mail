@@ -505,7 +505,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								} else {
 									if (me.showMailcard) {
 										if (WT.getVar('useNewHTMLEditor')) {
-											me.replaceMailcardUI(me.identHash[nv].mailcard.html, me.identHash[ov].mailcard.html);
+											me.replaceMailcardUI(me.identHash[nv].mailcard, me.identHash[ov].mailcard);
 										} else {
 											me.setContent(me.replaceMailcardOld(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
 										}
@@ -1092,9 +1092,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				me.showMailcard = b.pressed;
 		if (WT.getVar('useNewHTMLEditor')) {
 			if (me.showMailcard) {
-				me.replaceMailcardUI(me.selectedIdentity.mailcard.html, dumbMailcard.mailcard.html);
+				me.replaceMailcardUI(me.selectedIdentity.mailcard, dumbMailcard.mailcard);
 			} else {
-				me.replaceMailcardUI(dumbMailcard.mailcard.html, me.selectedIdentity.mailcard.html);
+				me.replaceMailcardUI(dumbMailcard.mailcard, me.selectedIdentity.mailcard);
 			}
 		} else {
 			if(me.showMailcard) {
@@ -1428,7 +1428,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if ('html' === format) {
 			if (mailcard) {
 				if (mailcard.text.trim()) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
-				else mcContent = '<div id="wt-mailcard" style="border: none !important">' + mailcard.html + '</div>';
+				else mcContent = '<div id="wt-mailcard" style="display: none !important">' + mailcard.html + '</div>';
 			}
 			if (WT.getVar('useNewHTMLEditor')) {
 				var HE = Sonicle.form.field.tinymce.HTMLEditor,
@@ -1502,13 +1502,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		var me = this,
 				hed = me.htmlEditor,
 				mcNode, origMc, curMc;
-		if (!Ext.isEmpty(nmc) && !Ext.isEmpty(omc)) {
+		if (!Ext.isEmpty(nmc.html) && !Ext.isEmpty(omc.html)) {
 			mcNode = hed.editorDomQuery('#wt-mailcard', {first: true});
 			if (mcNode) {
-				origMc = hed.editorSerialize(Ext.DomHelper.createDom({html: omc}));
+				origMc = hed.editorSerialize(Ext.DomHelper.createDom({html: omc.html}));
 				curMc = hed.editorSerialize(mcNode);
 				if (origMc === curMc) {
-					hed.editorSetHtml(mcNode, nmc);
+					if (nmc.text.trim()) mcNode.style="display: block !important";
+					else mcNode.style="display: none !important";
+					hed.editorSetHtml(mcNode, nmc.html);
 					return true;
 				}
 			}
