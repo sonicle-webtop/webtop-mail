@@ -2279,7 +2279,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			}
 			if (!arr || arr.length === 0) return false;
 		});
-		return arr;
+		return arr || [];
 	},
 		
 	manageMailItemTagsUI: function(grid,recs) {
