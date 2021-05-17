@@ -1086,7 +1086,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				 format=me.contentFormat,
 				 dumbMailcard = {
 					mailcard: {
-						html: me.dumbMailcard
+						html: me.dumbMailcard,
+						text: ''
 					}
 				};
 				me.showMailcard = b.pressed;
@@ -1508,8 +1509,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				origMc = hed.editorSerialize(Ext.DomHelper.createDom({html: omc.html}));
 				curMc = hed.editorSerialize(mcNode);
 				if (origMc === curMc) {
-					if (nmc.text.trim()) mcNode.style="display: block !important";
-					else mcNode.style="display: none !important";
+					if (!Ext.isEmpty(Ext.String.trim(nmc.text))) mcNode.style = 'display: block !important';
+					else mcNode.style = 'display: none !important';
 					hed.editorSetHtml(mcNode, nmc.html);
 					return true;
 				}
