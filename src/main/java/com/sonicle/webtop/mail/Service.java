@@ -7939,7 +7939,7 @@ public class Service extends BaseService {
 	
 	boolean checkFileRules(String foldername) {
 		try {
-			List<MailFilter> filters = mailManager.getMailFilters(MailFiltersType.INCOMING, true);
+			List<MailFilter> filters = mailManager.getCachedMailFilters(MailFiltersType.INCOMING, true);
 			for(MailFilter filter : filters) {
 				for(SieveAction action : filter.getSieveActions()) {
 					if (action.getMethod() == SieveActionMethod.FILE_INTO) {

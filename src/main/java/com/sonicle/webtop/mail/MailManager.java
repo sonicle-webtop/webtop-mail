@@ -133,6 +133,8 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	private SieveConfig sieveConfig = null;
 	List<Identity> identities=null;
+	List<MailFilter> filtersCache=null;
+	Object filtersCacheLock=new Object();
 	
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
@@ -913,37 +915,57 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	public List<MailFilter> getMailFilters(MailFiltersType type) throws WTException {
-		return getMailFilters(type, false);
+		return getMailFilters(type, false, false);
 	}
 	
 	public List<MailFilter> getMailFilters(MailFiltersType type, boolean enabledOnly) throws WTException {
-		InFilterDAO indao = InFilterDAO.getInstance();
-		List<MailFilter> filters = new ArrayList<>();
-		Connection con = null;
+		return getMailFilters(type, enabledOnly, false);
+	}
+	
+	public List<MailFilter> getCachedMailFilters(MailFiltersType type) throws WTException {
+		return getMailFilters(type, false, true);
+	}
+	
+	public List<MailFilter> getCachedMailFilters(MailFiltersType type, boolean enabledOnly) throws WTException {
+		return getMailFilters(type, enabledOnly, true);
+	}
+	
+	public List<MailFilter> getMailFilters(MailFiltersType type, boolean enabledOnly, boolean cache) throws WTException {
 		
-		try {
-			con = WT.getConnection(SERVICE_ID);
-			
-			if (type.equals(MailFiltersType.INCOMING)) {
-				List<OInFilter> items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
-				if (enabledOnly) {
-					items = indao.selectEnabledByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
-				} else {
-					items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+		synchronized(filtersCacheLock) {
+			if (!cache || filtersCache==null) {
+				InFilterDAO indao = InFilterDAO.getInstance();
+				List<MailFilter> filters = filtersCache = new ArrayList<>();
+				Connection con = null;
+
+				try {
+					con = WT.getConnection(SERVICE_ID);
+
+					if (type.equals(MailFiltersType.INCOMING)) {
+						List<OInFilter> items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+						if (enabledOnly) {
+							items = indao.selectEnabledByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+						} else {
+							items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+						}
+						for (OInFilter item : items) {
+							filters.add(createMailFilter(item));
+						}
+						return filters;
+					} else {
+						throw new WTException("Type not supported yet [{0}]", type.toString());
+					}
+
+				} catch(SQLException | DAOException ex) {
+					throw new WTException(ex, "DB error");
+				} finally {
+					DbUtils.closeQuietly(con);
 				}
-				for (OInFilter item : items) {
-					filters.add(createMailFilter(item));
-				}
-				return filters;
-			} else {
-				throw new WTException("Type not supported yet [{0}]", type.toString());
 			}
-			
-		} catch(SQLException | DAOException ex) {
-			throw new WTException(ex, "DB error");
-		} finally {
-			DbUtils.closeQuietly(con);
+
 		}
+		
+		return filtersCache;
 	}
 	
 	public void updateMailFilters(MailFiltersType type, List<MailFilter> filters) throws WTException {
