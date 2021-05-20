@@ -55,8 +55,9 @@ public class JsAdvSearchMessage {
 	public Boolean arch;
 	public Boolean istoday;
 	public Boolean note;
+	public Boolean atts;
 
-	public JsAdvSearchMessage(String folder, String folderdesc, String fullfolderdesc, String idmandfolder, Long idmessage, Integer priority, String status, String to, String from, String subject, String date, Boolean unread, Integer size, String flag, Boolean arch, Boolean istoday, Boolean note) {
+	public JsAdvSearchMessage(String folder, String folderdesc, String fullfolderdesc, String idmandfolder, Long idmessage, Integer priority, String status, String to, String from, String subject, String date, Boolean unread, Integer size, String flag, Boolean arch, Boolean istoday, Boolean note, Boolean attachments) {
 		this.folder = folder;
 		this.folderdesc = folderdesc;
 		this.fullfolderdesc = fullfolderdesc;
@@ -74,5 +75,6 @@ public class JsAdvSearchMessage {
 		this.arch = arch;
 		this.istoday = istoday;
 		this.note = note;
+		this.atts = attachments;
 	}
 }

@@ -8163,6 +8163,8 @@ public class Service extends BaseService {
 					}
 					
 					boolean hasNote=flags.contains(MailManager.getFlagNoteString());
+
+					boolean hasAttachments=fc.hasAttachements(xm);
 					
 					String fullfolderdesc=fc.getDescription();
 					FolderCache xfc=fc;
@@ -8173,7 +8175,7 @@ public class Service extends BaseService {
 						if (!StringUtils.isEmpty(desc)) fullfolderdesc=desc+sep+fullfolderdesc;
 					}
 					
-					items.add(new JsAdvSearchMessage(folder, foldername, fullfolderdesc, folder + "|" + nuid, nuid, priority, status, to, from, subject, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), unread, msgsize, cflag, archived, isToday, hasNote));
+					items.add(new JsAdvSearchMessage(folder, foldername, fullfolderdesc, folder + "|" + nuid, nuid, priority, status, to, from, subject, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), unread, msgsize, cflag, archived, isToday, hasNote, hasAttachments));
 				}								
 				new JsonResult("messages", items)
 						.setTotal(totalrows)
