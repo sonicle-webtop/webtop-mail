@@ -344,67 +344,11 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		
 		me.on('viewload', me.onViewLoad);
 	},
-			
-	onViewLoad: function(s, success) {
-		if (!success) return;
-		var me = this,
-				mo = me.getModel();
-		
-		// A new record to add is passed from outside
-		if (me.opts.addMailFilter) {
-			me.addMailFilter(me.opts.addMailFilter, {
-				callback: function(success, model) {
-					if (success) me.addFilterRec(model.getData());
-				}
-			});
-		}
-		
-		if (mo.get('activeScript') !== me.self.WT_SCRIPT) {
-			WT.confirm(me.mys.res('inMailFilters.confirm.notwebtop', WT.getPlatformName()), function(bid) {
-				if (bid === 'yes') mo.set('activeScript', me.self.WT_SCRIPT);
-			}, this);
-		}
-	},
-	
-	addMailFilterUI: function() {
-		var me = this;
-		me.addMailFilter({}, {
-			callback: function(success, model) {
-				if (success) me.addFilterRec(model.getData());
-			}
-		});
-	},
-	
-	editMailFilterUI: function(rec) {
-		var me = this,
-				vct = WT.createView(me.mys.ID, 'view.SieveFilter');
-		
-		vct.getView().on('viewsave', function(s, success, model) {
-			if (success) me.updateFilterRec(model.getId(), model.getData());
-		});
-		vct.show(false, function() {
-			vct.getView().begin('edit', {
-				data: me.toSieveFilterData(rec.getData())
-			});
-		});
-	},
-	
-	deleteMailFilterUI: function(rec) {
-		var me = this,
-				grid = me.lref('gpfilters'),
-				sto = grid.getStore();
-		
-		WT.confirm(WT.res('confirm.delete'), function(bid) {
-			if(bid === 'yes') {
-				sto.remove(rec);
-			}
-		}, me);
-	},
 	
 	addMailFilter: function(data, opts) {
 		var me = this,
 				vct = WT.createView(me.mys.ID, 'view.SieveFilter');
-		
+
 		vct.getView().on('viewsave', function(s, success, model) {
 			Ext.callback(opts.callback, opts.scope || me, [success, model]);
 		});
@@ -418,42 +362,108 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		});
 	},
 	
-	updateFilterRec: function(id, data) {
-		var me = this,
+	privates: {
+		onViewLoad: function(s, success) {
+			if (!success) return;
+			var me = this,
+					mo = me.getModel();
+
+			// A new record to add is passed from outside
+			if (me.opts.addMailFilter) {
+				me.addMailFilter(me.opts.addMailFilter, {
+					callback: function(success, model) {
+						if (success) me.addFilterRec(model.getData());
+					}
+				});
+			}
+
+			if (mo.get('activeScript') !== me.self.WT_SCRIPT) {
+				WT.confirm(me.mys.res('inMailFilters.confirm.notwebtop', WT.getPlatformName()), function(bid) {
+					if (bid === 'yes') mo.set('activeScript', me.self.WT_SCRIPT);
+				}, this);
+			}
+		},
+		
+		addMailFilterUI: function() {
+			var me = this;
+			me.addMailFilter({}, {
+				callback: function(success, model) {
+					if (success) me.addFilterRec(model.getData());
+				}
+			});
+		},
+
+		editMailFilterUI: function(rec) {
+			var me = this,
+					vct = WT.createView(me.mys.ID, 'view.SieveFilter');
+
+			vct.getView().on('viewsave', function(s, success, model) {
+				if (success) me.updateFilterRec(model.getId(), model.getData());
+			});
+			vct.show(false, function() {
+				vct.getView().begin('edit', {
+					data: me.toSieveFilterData(rec.getData())
+				});
+			});
+		},
+
+		deleteMailFilterUI: function(rec) {
+			var me = this,
+					grid = me.lref('gpfilters'),
+					sto = grid.getStore();
+
+			WT.confirm(WT.res('confirm.delete'), function(bid) {
+				if(bid === 'yes') {
+					sto.remove(rec);
+				}
+			}, me);
+		},
+		
+		updateFilterRec: function(id, data) {
+			var me = this,
 				sto = me.lref('gpfilters').getStore(),
 				rec = sto.getById(id);
-		if (rec) {
-			rec.set(me.fromSieveFilterData(data));
-		}
-	},
-	
-	addFilterRec: function(data) {
-		var me = this,
+			if (rec) {
+				rec.set(me.fromSieveFilterData(data));
+			}
+		},
+
+		addFilterRec: function(data) {
+			var me = this,
 				sto = me.lref('gpfilters').getStore(),
 				recData = me.fromSieveFilterData(data);
-		recData.order = sto.getCount()+1;
-		sto.add(sto.createModel(recData));
-	},
-	
-	toSieveFilterData: function(data) {
-		return {
-			filterId: data.filterId,
-			name: data.name,
-			enabled: data.enabled,
-			match: data.sieveMatch,
-			rules: data.sieveRules,
-			actions: data.sieveActions
-		};
-	},
-	
-	fromSieveFilterData: function(data) {
-		return {
-			name: data.name,
-			enabled: data.enabled,
-			sieveMatch: data.match,
-			sieveRules: data.rules,
-			sieveActions: data.actions
-		};
+			recData.order = me.calcNewOrder(sto);
+			sto.add(sto.createModel(recData));
+		},
+		
+		calcNewOrder: function(store) {
+			var order = 0;
+			store.each(function(rec) {
+				order = Math.max(order, rec.get('order'));
+			}, this, {filtered: true});
+			return order+1;
+		},
+
+		toSieveFilterData: function(data) {
+			return {
+				filterId: data.filterId,
+				name: data.name,
+				enabled: data.enabled,
+				match: data.sieveMatch,
+				rules: data.sieveRules,
+				actions: data.sieveActions
+			};
+		},
+
+		fromSieveFilterData: function(data) {
+			return {
+				name: data.name,
+				enabled: data.enabled,
+				sieveMatch: data.match,
+				sieveRules: data.rules,
+				sieveActions: data.actions
+			};
+		}
 	},
 	
 	statics: {

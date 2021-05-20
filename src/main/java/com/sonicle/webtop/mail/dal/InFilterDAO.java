@@ -38,10 +38,15 @@ import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.mail.bol.OInFilter;
 import static com.sonicle.webtop.mail.jooq.Sequences.SEQ_IN_FILTERS;
 import static com.sonicle.webtop.mail.jooq.Tables.IN_FILTERS;
+import com.sonicle.webtop.mail.jooq.tables.InFilters;
 import com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord;
 import java.sql.Connection;
 import java.util.List;
 import org.jooq.DSLContext;
+import org.jooq.Field;
+import org.jooq.Record2;
+import org.jooq.Table;
+import org.jooq.impl.DSL;
 
 /**
  *
@@ -124,6 +129,30 @@ public class InFilterDAO extends BaseDAO {
 			.set(IN_FILTERS.SIEVE_ACTIONS, item.getSieveActions())
 			.where(
 				IN_FILTERS.IN_FILTER_ID.equal(item.getInFilterId())
+			)
+			.execute();
+	}
+	
+	public int updateOrderByProfile(Connection con, String domainId, String userId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		InFilters IF2 = IN_FILTERS.as("if2");
+		Field<Short> NEW_ORDER = DSL.rowNumber().over().orderBy(IF2.ORDER).cast(Short.class).as("new_order");
+		Table<Record2<Short, Integer>> tab = DSL.select(
+			NEW_ORDER,
+			IF2.IN_FILTER_ID
+		)
+		.from(IF2)
+		.where(
+			IF2.DOMAIN_ID.equal(domainId)
+			.and(IF2.USER_ID.equal(userId))
+		)
+		.asTable("t2");
+		
+		return dsl.update(IN_FILTERS)
+			.set(IN_FILTERS.ORDER, NEW_ORDER)
+			.from(tab)
+			.where(
+				IN_FILTERS.IN_FILTER_ID.equal(tab.field(IF2.IN_FILTER_ID))
 			)
 			.execute();
 	}

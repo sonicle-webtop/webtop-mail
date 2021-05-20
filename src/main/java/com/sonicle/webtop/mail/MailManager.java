@@ -997,6 +997,10 @@ public class MailManager extends BaseManager implements IMailManager {
 					indao.delete(con, filter.getFilterId());
 				}
 				
+				if (!changeSet.deleted.isEmpty()) {
+					indao.updateOrderByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+				}
+				
 				DbUtils.commitQuietly(con);
 				
 			} else {
