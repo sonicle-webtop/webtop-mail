@@ -656,17 +656,17 @@ public class FolderCache {
 
     protected void refreshUnreadMessagesCount() throws MessagingException {
         if ((folder.getType() & Folder.HOLDS_MESSAGES)>0) {
-            //int oldunread=unread;
+            int oldunread=unread;
             if (folder.isOpen()) {
                 Message umsgs[]=folder.search(unseenSearchTerm);
                 unread=umsgs.length;
             } else unread=folder.getUnreadMessageCount();
 			//Service.logger.debug("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
-            //if (oldunread!=unread) {
+            if (oldunread!=unread) {
 				unreadChanged=true;
 				sendUnreadChangedMessage();
 				if (parent!=null) parent.updateUnreads();
-			//}
+			}
         }
     }
 
@@ -753,13 +753,14 @@ public class FolderCache {
     }
 
     protected void updateUnreads() {
+		boolean oldHasUnreadChildren=hasUnreadChildren;
 		hasUnreadChildren=false;
 		if (children!=null) {
 			for(FolderCache child: children) {
 				hasUnreadChildren|=(child.unread>0 || child.hasUnreadChildren);
 			}
 		}
-		sendUnreadChangedMessage();
+		if (hasUnreadChildren!=oldHasUnreadChildren) sendUnreadChangedMessage();
 		FolderCache fcparent=parent;
 		while(fcparent!=null && !fcparent.isRoot()) {
 			fcparent.updateUnreads();
