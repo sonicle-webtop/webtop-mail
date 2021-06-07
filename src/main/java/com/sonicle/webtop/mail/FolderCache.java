@@ -1226,7 +1226,7 @@ public class FolderCache {
     public void deleteMessages(long uids[], boolean fullthreads) throws MessagingException {
 		if (canDelete()) {
 			Message mmsgs[]=getMessages(uids,fullthreads);
-			_deleteMessages(mmsgs);
+			if (mmsgs!=null && mmsgs.length>0) _deleteMessages(mmsgs);
 			removeDHash(uids);
 		}
 		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
