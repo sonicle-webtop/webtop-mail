@@ -1246,7 +1246,7 @@ public class FolderCache {
     
 	private void _deleteMessages(Message mmsgs[]) throws MessagingException {
         for(Message dmsg: mmsgs) {
-          dmsg.setFlag(Flags.Flag.DELETED, true);
+          if (dmsg!=null) dmsg.setFlag(Flags.Flag.DELETED, true);
         }
         folder.expunge();
         setForceRefresh();
