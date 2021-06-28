@@ -8036,7 +8036,6 @@ public class Service extends BaseService {
 					boolean wasopen=xmfolder.isOpen();
 					if (!wasopen) xmfolder.open(Folder.READ_ONLY);
                     long nuid=xmfolder.getUID(xm);
-					if (!wasopen) xmfolder.close(false);
 					IMAPMessage m = (IMAPMessage) xm;
 					//Date
 					java.util.Date d = m.getSentDate();
@@ -8176,6 +8175,8 @@ public class Service extends BaseService {
 					}
 					
 					items.add(new JsAdvSearchMessage(folder, foldername, fullfolderdesc, folder + "|" + nuid, nuid, priority, status, to, from, subject, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), unread, msgsize, cflag, archived, isToday, hasNote, hasAttachments));
+					
+					if (!wasopen) xmfolder.close(false);
 				}								
 				new JsonResult("messages", items)
 						.setTotal(totalrows)

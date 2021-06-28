@@ -88,8 +88,8 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 					iconCls: 'wt-icon-saveClose-xs',
 					handler: function() {
 						me.saveView(true);
-						}
-					})
+					}
+				})
 			]
 		});
 		me.callParent(arguments);
@@ -212,54 +212,51 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 	onProtocolSelectionChange: function(field, newValue, oldValue, eOpts) {
 		var me = this;
 		
-			if(newValue === 'imaps') {
+		if (newValue === 'imaps') {
 			me.lref('portField').setValue(993);
-			} else if(newValue === 'imap') {
+		} else if (newValue === 'imap') {
 			me.lref('portField').setValue(143);
-			}
+		}
 	},
 	
 	onPortSelectionChange: function(field, newValue, oldValue, eOpts) {
 		var me = this;
 		
-			if(newValue === 143) {
+		if (newValue === 143) {
 			me.lref('protocolField').setValue('imap');
-			} else if(newValue === 993) {
+		} else if (newValue === 993) {
 			me.lref('protocolField').setValue('imaps');
-			}
+		}
 	},
 	
 	onModelLoad: function(success, model, op, pass) {
 		var me = this;
 		me.callParent(arguments);
-			WTU.applyExtraParams(model.getProxy(), {
-				optionsProfile: me.profileId
-			});
+		WTU.applyExtraParams(model.getProxy(), {
+			optionsProfile: me.profileId
+		});
 	
-			if(me.mode === 'new') {
-					me.createCssClass(me.iconUrl);
-					me.lref('emailField').setValue(me.email);
-					me.lref('hostField').setValue(me.server);
-					me.lref('protocolField').setValue(me.protocol);
-					me.lref('portField').setValue(me.port);
-					me.lref('folderSentField').setValue(me.folderSent);
-					me.lref('readOnlyField').setValue(me.readOnly);
-					me.lref('providerIdField').setValue(me.providerId);
-					me.lref('folderPrefixField').setValue(me.folderPrefix);
-					me.lref('folderDraftsField').setValue(me.folderDrafts);
-					me.lref('folderTrashField').setValue(me.folderTrash);
-					me.lref('folderSpamField').setValue(me.folderSpam);
-					me.lref('folderArchiveField').setValue(me.folderArchive);
-					if(me.readOnly)
-					me.lref('readOnlyField').setDisabled(true);
-				}
-			else if(me.mode === 'edit') {
-				var checkBox = me.lref('readOnlyField');
-				me.createCssClass(me.getModel().data.iconUrl);
-				if(me.getModel().data.readOnlyProvider)
-					checkBox.setDisabled(true);
-			}
-			me.setIconCls('wtmail-icon-email-external-account');
+		if (model && me.isMode(me.MODE_NEW)) {
+			me.createCssClass(me.iconUrl);
+			me.lref('emailField').setValue(me.email);
+			me.lref('hostField').setValue(me.server);
+			me.lref('protocolField').setValue(me.protocol);
+			me.lref('portField').setValue(me.port);
+			me.lref('folderSentField').setValue(me.folderSent);
+			me.lref('readOnlyField').setValue(me.readOnly);
+			me.lref('providerIdField').setValue(me.providerId);
+			me.lref('folderPrefixField').setValue(me.folderPrefix);
+			me.lref('folderDraftsField').setValue(me.folderDrafts);
+			me.lref('folderTrashField').setValue(me.folderTrash);
+			me.lref('folderSpamField').setValue(me.folderSpam);
+			me.lref('folderArchiveField').setValue(me.folderArchive);
+			if (me.readOnly) me.lref('readOnlyField').setDisabled(true);
+		} else if (model && me.isMode(me.MODE_EDIT)) {
+			var checkBox = me.lref('readOnlyField');
+			me.createCssClass(model.data.iconUrl);
+			if (model.data.readOnlyProvider) checkBox.setDisabled(true);
+		}
+		me.setIconCls('wtmail-icon-email-external-account');
 	},
 	
 	createCssClass: function(iconUrl) {
