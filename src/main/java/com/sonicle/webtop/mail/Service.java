@@ -3629,7 +3629,7 @@ public class Service extends BaseService {
 		try {
 			account.checkStoreConnected();
 			mcache = account.getFolderCache(folder);
-			setMessagesSeen(mcache, true, recursive);
+			setMessagesSeen(mcache, true, recursive,true);
 			long millis = System.currentTimeMillis();
 			JsOperateMessage message = new JsOperateMessage(millis);
 			new JsonResult(message).printTo(out);
@@ -3655,7 +3655,7 @@ public class Service extends BaseService {
 		try {
 			account.checkStoreConnected();
 			mcache = account.getFolderCache(folder);
-			setMessagesSeen(mcache, false, recursive);
+			setMessagesSeen(mcache, false, recursive,true);
 			new JsonResult().printTo(out);
 		} catch (Throwable t) {
 			new JsonResult(t)
@@ -3666,19 +3666,19 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void setMessagesSeen(FolderCache mcache, boolean seen, boolean recursive) throws MessagingException {
-		if (seen) {
-			mcache.setMessagesSeen();
-		} else {
-			mcache.setMessagesUnseen();
-		}
+	private void setMessagesSeen(FolderCache mcache, boolean seen, boolean recursive, boolean updateParents) throws MessagingException {
 		if (recursive) {
 			ArrayList<FolderCache> children = mcache.getChildren();
 			if (children != null) {
 				for (FolderCache fc : children) {
-					setMessagesSeen(fc, seen, recursive);
+					setMessagesSeen(fc, seen, recursive, false);
 				}
 			}
+		}
+		if (seen) {
+			mcache.setMessagesSeen(updateParents);
+		} else {
+			mcache.setMessagesUnseen(updateParents);
 		}
 	}
 	

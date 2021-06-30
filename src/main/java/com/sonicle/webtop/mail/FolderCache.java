@@ -753,6 +753,15 @@ public class FolderCache {
     }
 
     protected void updateUnreads() {
+		updateUnreadChildren();
+		FolderCache fcparent=parent;
+		while(fcparent!=null && !fcparent.isRoot()) {
+			fcparent.updateUnreads();
+			fcparent=fcparent.parent;
+		}
+    }
+	
+	protected boolean updateUnreadChildren() {
 		boolean oldHasUnreadChildren=hasUnreadChildren;
 		hasUnreadChildren=false;
 		if (children!=null) {
@@ -760,13 +769,12 @@ public class FolderCache {
 				hasUnreadChildren|=(child.unread>0 || child.hasUnreadChildren);
 			}
 		}
-		if (hasUnreadChildren!=oldHasUnreadChildren) sendUnreadChangedMessage();
-		FolderCache fcparent=parent;
-		while(fcparent!=null && !fcparent.isRoot()) {
-			fcparent.updateUnreads();
-			fcparent=fcparent.parent;
+		if (hasUnreadChildren!=oldHasUnreadChildren) {
+			sendUnreadChangedMessage();
+			return true;
 		}
-    }
+		return false;
+	}
     
     public boolean toBeRefreshed() {
         return forceRefresh;
@@ -1464,7 +1472,7 @@ public class FolderCache {
         }
     }
 
-    public void setMessagesSeen() throws MessagingException {
+    public void setMessagesSeen(boolean updateParents) throws MessagingException {
         //try {
         //    open();
         //} catch(Exception exc) {
@@ -1478,12 +1486,15 @@ public class FolderCache {
             Message umsgs[]=folder.search(unseenSearchTerm);
             folder.setFlags(umsgs, seenFlags, true);
             unread=0;
-            updateUnreads();
-        }
+			if (!updateUnreadChildren()) sendUnreadChangedMessage();
+        } else {
+			updateUnreadChildren();
+		}
+		if (updateParents && parent!=null && !parent.isRoot()) parent.updateUnreads();
         if (!wasOpen) folder.close(true);
     }
 
-    public void setMessagesUnseen() throws MessagingException {
+    public void setMessagesUnseen(boolean updateParents) throws MessagingException {
         try {
             open();
         } catch(Exception exc) {
@@ -1493,7 +1504,8 @@ public class FolderCache {
         Message umsgs[]=folder.search(seenSearchTerm);
         folder.setFlags(umsgs, seenFlags, false);
         unread=n;
-        updateUnreads();
+		if (!updateUnreadChildren()) sendUnreadChangedMessage();
+        if (updateParents && parent!=null && !parent.isRoot()) parent.updateUnreads();
     }
 
     private int setMessagesSeen(Message mmsgs[], boolean seen) throws MessagingException {
