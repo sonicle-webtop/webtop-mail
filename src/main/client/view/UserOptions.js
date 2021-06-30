@@ -456,7 +456,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								}),
 								listeners: {
 									beforesync: function() {
-										me.needReload=true;
+										me.needLogin = true;
 									}
 								}
 							},

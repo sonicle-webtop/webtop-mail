@@ -770,48 +770,103 @@ public class MailAccount {
 	}
 	
 	public boolean isSentFolder(String fullname) {
+		MailManager mailManager = this.ms.getManager();
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(folderSent);
+		
 		if (lastname.equals(plastname)) {
-			return true;
+			if (isUnderSharedFolder(fullname)) {
+				if (StringUtils.countMatches(fullname, folderSeparator + "") == 2) return true;
+			} else {
+				try {
+					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
+				} catch (Throwable t) {
+					Service.logger.error("Error getting folder", t);
+				}
+			}
+			if (fullname.equals(folderSent)) return true;
 		}
 		return false;
 	}
 	
 	public boolean isTrashFolder(String fullname) {
+		MailManager mailManager = this.ms.getManager();
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(folderTrash);
+		
 		if (lastname.equals(plastname)) {
-			return true;
+			if (isUnderSharedFolder(fullname)) {
+				if (StringUtils.countMatches(fullname, folderSeparator + "") == 2) return true;
+			} else {
+				try {
+					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
+				} catch (Throwable t) {
+					Service.logger.error("Error getting folder", t);
+				}
+			}
+			if (fullname.equals(folderTrash)) return true;
 		}
 		return false;
 	}
 	
 	public boolean isDraftsFolder(String fullname) {
+		MailManager mailManager = this.ms.getManager();
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(folderDrafts);
+		
 		if (lastname.equals(plastname)) {
-			return true;
+			if (isUnderSharedFolder(fullname)) {
+				if (StringUtils.countMatches(fullname, folderSeparator + "") == 2) return true;
+			} else {
+				try {
+					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
+				} catch (Throwable t) {
+					Service.logger.error("Error getting folder", t);
+				}
+			}
+			if (fullname.equals(folderDrafts)) return true;
 		}
 		return false;
 	}
 	
 	public boolean isArchiveFolder(String fullname) {
-		if (folderArchive!=null) {
+		if (folderArchive != null) {
+			MailManager mailManager = this.ms.getManager();
 			String lastname = getLastFolderName(fullname);
 			String plastname = getLastFolderName(folderArchive);
+			
 			if (lastname.equals(plastname)) {
-				return true;
+				if (isUnderSharedFolder(fullname)) {
+					if (StringUtils.countMatches(fullname, folderSeparator + "") == 2) return true;
+				} else {
+					try {
+						if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
+					} catch (Throwable t) {
+						Service.logger.error("Error getting folder", t);
+					}
+				}
+				if (fullname.equals(folderArchive)) return true;
 			}
 		}
 		return false;
 	}
 	
 	public boolean isSpamFolder(String fullname) {
+		MailManager mailManager = this.ms.getManager();
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(folderSpam);
+		
 		if (lastname.equals(plastname)) {
-			return true;
+			if (isUnderSharedFolder(fullname)) {
+				if (StringUtils.countMatches(fullname, folderSeparator + "") == 2) return true;
+			} else {
+				try {
+					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
+				} catch (Throwable t) {
+					Service.logger.error("Error getting folder", t);
+				}
+			}
+			if (fullname.equals(folderSent)) return true;
 		}
 		return false;
 	}
