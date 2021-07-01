@@ -1873,11 +1873,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					n=(parent?s.getNodeById(parent):s.getRoot()),
 					newname=name,
 					newfullname=json.data.fullname;
-					me._createNode(n,newfullname,newname);
-					n.expand(false,function(nodes) {
-						var newnode=n.findChild("text",newname);
-						v.setSelection(newnode);
-						me.folderClicked(acct,newnode);
+					if (n.get("leaf")) n.set("leaf", false);
+					n.expand(false, function(nodes) {
+						Ext.defer(function() {
+							me.selectChildNode(acct, n, newfullname);
+						}, 200);
 					});
 				} else {
 					WT.error(json.message);

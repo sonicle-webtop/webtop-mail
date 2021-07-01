@@ -100,6 +100,7 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.search.SearchTerm;
+import java.util.HashMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.format.DateTimeFormatter;
@@ -133,6 +134,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	private SieveConfig sieveConfig = null;
 	List<Identity> identities=null;
+	HashMap<String, Identity> identHash = new HashMap<>();
 	List<MailFilter> filtersCache=null;
 	Object filtersCacheLock=new Object();
 	
@@ -194,6 +196,10 @@ public class MailManager extends BaseManager implements IMailManager {
         }
         return identities.get(0);
     }
+	
+	public Identity folderHasIdentity(String folder) {
+		return identHash.get(folder);
+	}
 	
 	public Identity addIdentity(Identity ident) throws WTException {
 		Connection con=null;
@@ -303,6 +309,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			for(OIdentity oi: items) {
 				Identity ident=new Identity(oi);
 				idents.add(ident);
+				identHash.put(ident.getMainFolder(), ident);
 			}
 			
 			//add automatic shared identities
