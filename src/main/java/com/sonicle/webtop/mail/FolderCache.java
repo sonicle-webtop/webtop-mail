@@ -68,6 +68,7 @@ import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
@@ -2158,7 +2159,7 @@ public class FolderCache {
 				try {
 					Charset xcharset=Charsets.toCharset(charset);
 					content=IOUtils.toString(istream,xcharset);
-				} catch(UnsupportedCharsetException exc) {
+				} catch(UnsupportedCharsetException | IllegalCharsetNameException exc) {
 					content=IOUtils.toString(istream,Charsets.ISO_8859_1);
 				}
 				String replacement = "$1";
