@@ -111,6 +111,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 
 	dumbMailcard: "<p id='wt-mailcard-dumb' style='padding: 0; margin: 0;'>&#160;</p>",
 	
+	htmlStartMailcard: "<div id=\"wt-mailcard\"",
+	
 	initComponent: function() {
 		var me = this,
 				vm = me.getVM();
@@ -1067,6 +1069,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				setPosition.delay(350);
 			}
 		}
+		
+		if (data.contentReady && data.content.indexOf(me.htmlStartMailcard)<0) {
+			me.getRef("showMailcard").toggle(false,true);
+		}
+		
 	},
 	
 	actionReceipt: function(b) {
@@ -1428,8 +1435,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		if ('html' === format) {
 			if (mailcard) {
-				if (mailcard.text.trim()) mcContent = '<div id="wt-mailcard">' + mailcard.html + '</div>';
-				else mcContent = '<div id="wt-mailcard" style="display: none !important">' + mailcard.html + '</div>';
+				if (mailcard.text.trim()) mcContent = me.htmlStartMailcard+'>' + mailcard.html + '</div>';
+				else mcContent = me.htmlStartMailcard+' style="display: none !important">' + mailcard.html + '</div>';
 			}
 			if (WT.getVar('useNewHTMLEditor')) {
 				var HE = Sonicle.form.field.tinymce.HTMLEditor,
@@ -1512,9 +1519,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					if (!Ext.isEmpty(Ext.String.trim(nmc.text))) mcNode.style = 'display: block !important';
 					else mcNode.style = 'display: none !important';
 					hed.editorSetHtml(mcNode, nmc.html);
-					return true;
 				}
+			} else {
+				var tpl=hed.editorGetDocument().createElement("template");
+				tpl.innerHTML=me.htmlStartMailcard+'>' + nmc.html + '</div>';
+				hed.editorGetBody().appendChild(tpl.content.firstChild);
 			}
+			return true;
 		}
 		return false;
 	},
