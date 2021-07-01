@@ -598,7 +598,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     names=me.appendAttachmentName(names,html);
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
-                me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+me.mys.res('saveall-desc')+"' data-qtitle='"+me.mys.res('saveall')+"' href='"+allhref.replace("'","%27")+"'>"+me.mys.res('attachments')+"</a>:&nbsp;</span>"+names);
+                me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+me.mys.res('saveall-desc')+"' data-qtitle='"+me.mys.res('saveall')+"' href='"+allhref.replace("'","%27")+"'>"+me.mys.res('attachments')+"&nbsp;("+len+")</a>:&nbsp;</span>"+names);
 				
 				if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
 					
