@@ -251,6 +251,7 @@ div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 .wtmail-td-editor-attachment-icon { width:16px }
 .wtmail-td-editor-attachment-text { text-overflow: ellipsis; overflow: hidden; white-space: nowrap; padding-right: 4px; }
 .wtmail-td-editor-attachment-text A {text-decoration: none; font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: normal; color: black; }
+.wtmail-td-editor-attachment-size { white-space: nowrap; padding-right: 4px; text-align: right; }
 .wtmail-td-editor-attachment-delete-icon { width:16px }
 .wtmail-td-editor-attachment-delete-icon IMG { width: 16px; height: 16px; }
 
