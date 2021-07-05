@@ -55,6 +55,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	searchComponent: null,
     //groupCombo: null,
 	labelMessages: null,
+	progressQuota: null,
     folderList: null,
     messageView: null,
     messageViewContainer: null,
@@ -93,6 +94,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.labelMessages=Ext.create({
 			xtype: 'tbtext',
 			text: '0'
+		});
+		
+		me.progressQuota=Ext.create({
+			xtype: 'progressbar',
+			value: 0,
+			width: 200,
+			text: "",
+			hidden: true
 		});
 		
 		me.searchComponent = Ext.create({
@@ -275,9 +284,39 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			if (me.folderList.threaded && realTotal)
 				text+=" ["+realTotal+"]";
 			if (quotaLimit) {
-				text+=" - "+WT.res("word.quota")+": "+Math.round(quotaUsage/1024)+"MB / "+
-						Math.round(quotaLimit/1024)+"MB ("+
-						Math.round(100*quotaUsage/quotaLimit)+"%)";
+				var val=quotaUsage/quotaLimit;
+				me.progressQuota.setHidden(false);
+				me.progressQuota.updateText(
+						WTU.humanReadableSize(quotaUsage*1024, { decimals: 0 })+" / "+WTU.humanReadableSize(quotaLimit*1024, { decimals: 0 })+" - "+
+						Math.round(100*val)+"%"
+				);
+				me.progressQuota.setValue(val);
+				if (val<0.9) {
+					me.progressQuota.removeCls("wtmail-quota-progress-warn");
+					me.progressQuota.removeCls("wtmail-quota-progress-over");
+				}
+				else if (val<1.0) {
+					me.progressQuota.addCls("wtmail-quota-progress-warn");
+					me.progressQuota.removeCls("wtmail-quota-progress-over");
+					WT.toast({
+						 html: me.res('quota.warn.msg'),
+						 title: me.res('quota.warn.title'),
+						 width: 300,
+						 align: 'br',
+						 timeout: 10000
+					});
+				} else {
+					me.progressQuota.removeCls("wtmail-quota-progress-warn");
+					me.progressQuota.addCls("wtmail-quota-progress-over");
+					WT.toast({
+						 html: me.res('quota.over.msg'),
+						 title: me.res('quota.over.title'),
+						 width: 300,
+						 align: 'br',
+						 timeout: 10000
+					});
+				}
+				text+=" - "+WT.res("word.quota")+": ";
 			}
 			me.labelMessages.setText(text);
 		});
@@ -323,7 +362,18 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				{ xtype: 'tbspacer', width: 100 },
 				'->',
 				me.res('messages')+":",
-				me.labelMessages
+				me.labelMessages,
+/*				{
+					xtype: 'gauge',
+					padding: 0,
+					value: 45,
+					minValue: 0,
+					maxValue: 100,
+					trackStart: 90,
+					trackLength: 360,
+					style: 'color: transparent;'
+				},*/
+				me.progressQuota
 			]
 		});
 		

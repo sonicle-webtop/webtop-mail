@@ -397,3 +397,11 @@ blockquote {
 .wtmail-dockbottom-menu-item-unchecked .x-menu-item-icon-default.x-menu-item-checkbox {
 	background-image: url('dock-bottom-off_16.svg') !important; background-size: contain;
 }
+
+.wtmail-quota-progress-warn .x-progress-bar-default {
+	background-color: #f3930e
+}
+
+.wtmail-quota-progress-over .x-progress-bar-default {
+	background-color: #ff5e28
+}
