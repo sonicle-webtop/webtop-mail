@@ -1,3 +1,18 @@
+$	5.12.0
+	%	Versione 5.12.0
+	*	<h1>Miglioramento gestione quote</h1>
+		<p>Per gli account con quote impostate, la visualizzazione è stata migliorata graficamente aggiungendo anche colori
+		ed avvisi al raggiungimento del 90% e del 100%</p>
+		<img src="5.12.0_quota.png"/>
+	*	<h1>Inserimento firma in bozze che non la contengono</h1>
+		<p>Nel caso di bozze non generate da WebTop che mancano della firma, è ora possibile aprirle in WebTop ed
+		aggiungerla, utilizzando il tasto mostra/nascondi firma</p>
+	*	<h1>Numero allegati in anteprima</h1>
+		<p>L'anteprima email, nell'area allegati, ora mostra il numero degli allegati presenti</p>
+		<img src="5.12.0_attachemntscount.png"/>
+	*	<h1>Dimensione allegati in composizione</h1>
+		<p>Durante la composizione email, aggiungendo allegati, l'area mostra anche la dimensione di ciascuno</p>
+		<img src="5.12.0_attachemntssize.png"/>
 $	5.10.0
 	%	Versione 5.10.0
 	*	<h1>Integrazione ai meeting</h1>
