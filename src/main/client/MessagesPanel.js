@@ -298,13 +298,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				else if (val<1.0) {
 					me.progressQuota.addCls("wtmail-quota-progress-warn");
 					me.progressQuota.removeCls("wtmail-quota-progress-over");
-					WT.toast({
-						 html: me.res('quota.warn.msg'),
-						 title: me.res('quota.warn.title'),
-						 width: 300,
-						 align: 'br',
-						 timeout: 10000
-					});
 				} else {
 					me.progressQuota.removeCls("wtmail-quota-progress-warn");
 					me.progressQuota.addCls("wtmail-quota-progress-over");
