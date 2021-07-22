@@ -866,7 +866,7 @@ public class MailAccount {
 					Service.logger.error("Error getting folder", t);
 				}
 			}
-			if (fullname.equals(folderSent)) return true;
+			if (fullname.equals(folderSpam)) return true;
 		}
 		return false;
 	}
