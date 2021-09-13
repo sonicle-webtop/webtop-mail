@@ -4125,11 +4125,11 @@ public class Service extends BaseService {
 		zos.flush();
 	}
         
-        private boolean isImageFilename(String filename) { //WT-822
-            String ext=FileUtils.getExtension(filename).toLowerCase(); //WT-822
-            if (ext.equals("jpg")||ext.equals("png")||ext.equals("gif")) return true; //WT-822
-            return false; //WT-822
-        } //WT-822
+        private boolean isImageFilename(String filename) {
+            String ext=FileUtils.getExtension(filename).toLowerCase();
+            if (ext.equals("jpg")||ext.equals("png")||ext.equals("gif")) return true;
+            return false;
+        }
 
 	public void processGetReplyMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
@@ -4197,13 +4197,13 @@ public class Service extends BaseService {
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
 						Part part = maildata.getAttachmentPart(i);
-					        boolean inline = false; //WT-822
-					        if (part.getDisposition() != null) { //WT-822
-					        	inline = part.getDisposition().equalsIgnoreCase(Part.INLINE); //WT-822
-					        } //WT-822
+					        boolean inline = false;
+					        if (part.getDisposition() != null) {
+					        	inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
+					        }
 						String filename = getPartName(part);
 						String cids[] = part.getHeader("Content-ID");
-					        if (inline && cids!=null && cids[0]!=null && isImageFilename(filename)) {  //WT-822
+					        if (inline && cids!=null && cids[0]!=null && isImageFilename(filename)) {
 							String cid = cids[0];
 							if (cid.startsWith("<")) cid=cid.substring(1);
 							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
