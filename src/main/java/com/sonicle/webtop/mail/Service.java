@@ -7770,7 +7770,11 @@ public class Service extends BaseService {
 			ICalendarManager cm = (ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
 			
 			Integer calendarId = cm.getDefaultCalendarId();
-			if (calendarId == null) calendarId = cm.getBuiltInCalendar().getCalendarId();
+			// Overrides default calendar if shared: this kind of events needs to
+			// be saved into personal calendars.
+			if (!cm.listMyCalendarIds().contains(calendarId)) {
+				calendarId = cm.getBuiltInCalendarId();
+			}
 			
 			if (pcalaction.equals("accept")) {
 				Event ev = cm.addEventFromICal(calendarId, ir.getCalendar());
