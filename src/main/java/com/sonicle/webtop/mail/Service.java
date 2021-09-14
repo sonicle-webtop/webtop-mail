@@ -172,7 +172,6 @@ import jakarta.mail.search.AndTerm;
 import jakarta.mail.search.FlagTerm;
 import jakarta.mail.search.OrTerm;
 import jakarta.mail.search.SearchTerm;
-import org.codehaus.plexus.util.FileUtils;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -4126,7 +4125,7 @@ public class Service extends BaseService {
 	}
         
         private boolean isImageFilename(String filename) {
-            String ext=FileUtils.getExtension(filename).toLowerCase();
+            String ext=PathUtils.getFileExtension(filename).toLowerCase();
             if (ext.equals("jpg")||ext.equals("png")||ext.equals("gif")) return true;
             return false;
         }
