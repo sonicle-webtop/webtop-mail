@@ -859,6 +859,8 @@ public class MailAccount {
 		if (lastname.equals(plastname)) {
 			if (isUnderSharedFolder(fullname)) {
 				if (StringUtils.countMatches(fullname, folderSeparator + "") == 2) return true;
+			} else if (isDovecot() && fullname.equals("Public" + folderSeparator + folderSpam)) {
+				return true;
 			} else {
 				try {
 					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;

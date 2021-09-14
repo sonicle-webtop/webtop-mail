@@ -4123,6 +4123,12 @@ public class Service extends BaseService {
 		}
 		zos.flush();
 	}
+        
+        private boolean isImageFilename(String filename) {
+            String ext=PathUtils.getFileExtension(filename).toLowerCase();
+            if (ext.equals("jpg")||ext.equals("png")||ext.equals("gif")) return true;
+            return false;
+        }
 
 	public void processGetReplyMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
@@ -4190,9 +4196,13 @@ public class Service extends BaseService {
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
 						Part part = maildata.getAttachmentPart(i);
+					        boolean inline = false;
+					        if (part.getDisposition() != null) {
+					        	inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
+					        }
 						String filename = getPartName(part);
 						String cids[] = part.getHeader("Content-ID");
-						if (cids!=null && cids[0]!=null) {
+					        if (inline && cids!=null && cids[0]!=null && isImageFilename(filename)) {
 							String cid = cids[0];
 							if (cid.startsWith("<")) cid=cid.substring(1);
 							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
