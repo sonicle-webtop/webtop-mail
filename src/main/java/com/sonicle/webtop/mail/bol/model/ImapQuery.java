@@ -34,7 +34,6 @@ package com.sonicle.webtop.mail.bol.model;
 
 import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.json.bean.QueryObj;
-import com.sonicle.commons.web.json.bean.QueryObj.Condition;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.MailManager;
@@ -107,11 +106,11 @@ public class ImapQuery {
 	}
 	
 	private void parseQuery(String allFlagStrings[], QueryObj query, DateTimeZone timezone) {
-		ArrayList<SearchTerm> terms = new ArrayList<SearchTerm>();
+		ArrayList<SearchTerm> terms = new ArrayList<>();
 		
 		if(query != null) {
-			ArrayList<Condition> conditionsList = query.conditions;
-			String allText = query.allText;
+			List<QueryObj.ConditionEntry> conditionsList = query.getConditions();
+			String allText = query.getAllText();
 			
 			if(allText !=null && allText.trim().length() > 0) {
 				SearchTerm defaultterms[] = toDefaultSearchTerm(allText);
