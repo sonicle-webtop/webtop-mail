@@ -8194,7 +8194,7 @@ public class Service extends BaseService {
 						.setStart(start)
 						.setLimit(newrows)
 						.set("progress", ast.getProgress())
-						.set("curfoldername", getInternationalFolderName(ast.getCurrentFolder()))
+						.set("curfoldername", ast.getCurrentFolderInternationalName())
 						.set("max", ast.isMoreThanMax())
 						.set("finished", (ast.isFinished() || ast.isCanceled() || !ast.isRunning()))
 						.printTo(out);
