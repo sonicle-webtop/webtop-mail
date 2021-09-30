@@ -1041,6 +1041,9 @@ public class MailAccount {
 			FolderCache fcdst;
 			if (dest != null) {
 				FolderCache tfc = getFolderCache(newfolder.getParent().getFullName());
+				
+				dovecotRenameTrick(newfolder, tfc);
+
 				fcdst=addFoldersCache(tfc, newfolder);
 			} else {
 				fcdst=addFoldersCache(fcRoot, newfolder);
@@ -1065,6 +1068,13 @@ public class MailAccount {
 		//destroy folder cache only if rename was done
 		destroyFolderCache(fc);
 		
+		dovecotRenameTrick(newfolder, fcparent);
+		
+		addFoldersCache(fcparent, newfolder);
+		return newfolder.getFullName();
+	}
+	
+	private void dovecotRenameTrick(Folder newfolder, FolderCache fcparent) throws MessagingException {
 		//trick for Dovecot on NethServer: under shared folders, create and destroy a fake folder
 		//or rename will not work correctly
 		if (isUnderSharedFolder(newfolder.getFullName())) {
@@ -1080,9 +1090,6 @@ public class MailAccount {
 				}
 			}
 		}
-		
-		addFoldersCache(fcparent, newfolder);
-		return newfolder.getFullName();
 	}
 	
 	public void cleanup() {
