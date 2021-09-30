@@ -108,6 +108,7 @@ public class ImapQuery {
 	
 	private void parseQuery(String allFlagStrings[], QueryObj query, DateTimeZone timezone) {
 		ArrayList<SearchTerm> terms = new ArrayList<SearchTerm>();
+		ArrayList<SearchTerm> tagTerms = new ArrayList<SearchTerm>();
 		
 		if(query != null) {
 			ArrayList<Condition> conditionsList = query.conditions;
@@ -148,14 +149,14 @@ public class ImapQuery {
 
 				} else if(key.equals(TAG)) {
 					try {
-						terms.add(
-								new FlagTerm(
-										new Flags(
-												TagsHelper.tagIdToFlagString(
-														WT.getCoreManager().getTag(value)
-												)
-										),true
-								)
+						tagTerms.add(
+							new FlagTerm(
+								new Flags(
+									TagsHelper.tagIdToFlagString(
+											WT.getCoreManager().getTag(value)
+									)
+								),true
+							)
 						);
 					} catch(Exception exc) {
 						
@@ -195,8 +196,19 @@ public class ImapQuery {
 			});
 		}
 		
-		int n = terms.size();
-		if (n==1) {
+		//add tags terms as or
+		int n = tagTerms.size();
+		if (n == 1) {
+			terms.add(tagTerms.get(0));
+		} 
+		else if (n>1) {
+			SearchTerm tterms[] = new SearchTerm[n];
+			tagTerms.toArray(tterms);
+			terms.add(new OrTerm(tterms));
+		}
+		
+		n = terms.size();
+		if (n == 1) {
 			searchTerm = terms.get(0);
 		}
 		else if (n>1) {
@@ -204,6 +216,7 @@ public class ImapQuery {
 			terms.toArray(vterms);
 			searchTerm = new AndTerm(vterms);
 		}
+		
 	}
 	
 	public SearchTerm getSearchTerm() {
