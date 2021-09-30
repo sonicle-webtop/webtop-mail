@@ -64,6 +64,7 @@ public class AdvancedSearchThread extends Thread {
     private Throwable exception=null;
     private int progress=0;
     private FolderCache curfolder;
+    private String curfolderInternationalName;
 
     ArrayList<FolderCache> folders=new ArrayList<FolderCache>();
     ArrayList<Message> result=new ArrayList<Message>();
@@ -127,6 +128,7 @@ public class AdvancedSearchThread extends Thread {
         try {
             for(FolderCache fc: folders) {
                 curfolder=fc;
+		curfolderInternationalName=ms.getInternationalFolderName(curfolder);
                 progress++;
                 if (cancel) {
                     Service.logger.debug("CANCELING ADVANCED SEARCH");
@@ -214,6 +216,10 @@ public class AdvancedSearchThread extends Thread {
 
     public FolderCache getCurrentFolder() {
         return curfolder;
+    }
+
+    public String getCurrentFolderInternationalName() {
+        return curfolderInternationalName;
     }
 
 }
