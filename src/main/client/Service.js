@@ -1362,14 +1362,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		identities=me.getVar("identities"),
 		ident=identities[0];
 	
-        for(var i=1;i<identities.length;++i) {
-            var ifolder=identities[i].mainFolder;
-            if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
-                ident=identities[i];
-                ident.index=i;
-                break;
-            }
-        }
+		//on slow servers the current folder may not yet be selected
+		if (idfolder) {
+			for(var i=1;i<identities.length;++i) {
+				var ifolder=identities[i].mainFolder;
+				if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
+					ident=identities[i];
+					ident.index=i;
+					break;
+				}
+			}
+		}
 		
 		return ident;
 	},
