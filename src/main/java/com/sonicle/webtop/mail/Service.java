@@ -7789,7 +7789,10 @@ public class Service extends BaseService {
 			if (pcalaction.equals("accept")) {
 				Event ev = cm.addEventFromICal(calendarId, ir.getCalendar());
 				String ekey = cm.getEventInstanceKey(ev.getEventId());
-				sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED);
+				// in case mail was sent as ccn we don't have any recipient
+				// so we don't send any reply
+				if (m.getRecipients(RecipientType.TO)!=null)
+					sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED);
 				new JsonResult(ekey).printTo(out);
 				
 			} else if (pcalaction.equals("import")) {
