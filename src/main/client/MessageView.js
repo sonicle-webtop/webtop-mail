@@ -1327,9 +1327,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
     print: function() {
         var me=this,
+			html="<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+me.mys.getIdentity(0).displayName+"</b></font></div><br>",
 			//pre style to force wrapping of preofrmatted text
-			html="<style> pre { white-space: pre-wrap !important; } </style>"+
-				 "<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+me.mys.getIdentity(0).displayName+"</b></font></div><br>"
+			styles="<style> pre { white-space: pre-wrap !important; } </style>\n";
         
 		me.expandRecipientsList('to');
 		me.expandRecipientsList('cc');
@@ -1342,10 +1342,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 if (i>0) html+="<hr><br>";
                 var xif=me.iframes[i];
                 var data=me.getFrameData(xif.name);
-                var thebody=data.doc.body;
-                html+='<span>'+thebody.innerHTML+"</span><br>";
+                html+='<span>'+data.doc.body.innerHTML+"</span><br>";
+				styles+=data.doc.head.innerHTML;
             }
-            //html+='</body></html>';
+			html=styles+html;
             Sonicle.PrintMgr.print(html);
 			
 			//inform service of print action
