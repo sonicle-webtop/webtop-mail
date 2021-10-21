@@ -33,7 +33,7 @@
  */
 
 Ext.define('Sonicle.webtop.mail.model.ExternalAccount', {
-    extend: 'WTA.model.Base',
+    extend: 'WTA.ux.data.BaseModel',
 	
 	proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'ManageExternalAccounts', 'data'),
 	

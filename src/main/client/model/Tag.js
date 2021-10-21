@@ -35,7 +35,7 @@
 
 
 Ext.define('Sonicle.webtop.mail.model.Tag', {
-    extend: 'WTA.model.Base',
+    extend: 'WTA.ux.data.BaseModel',
 	
 	identifier: 'negative',
 	idProperty: 'hashId',

@@ -32,7 +32,7 @@
  * the words "Powered by Sonicle WebTop".
  */
 Ext.define('Sonicle.webtop.mail.model.SharingRights', {
-	extend: 'WTA.model.Base',
+	extend: 'WTA.ux.data.BaseModel',
 	
 	identifier: 'negativestring',
 	idProperty: 'roleUid',

@@ -33,7 +33,7 @@
  */
 
 Ext.define('Sonicle.webtop.mail.model.QuickPartModel', {
-    extend: 'WTA.model.Base',
+    extend: 'WTA.ux.data.BaseModel',
     idProperty: 'id',
 	
     fields: [

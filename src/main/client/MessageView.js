@@ -33,7 +33,7 @@
  */
 
 Ext.define('Sonicle.webtop.mail.MessageViewModel', {
-    extend: 'WTA.model.Base',
+    extend: 'WTA.ux.data.BaseModel',
     idProperty: 'id',
     fields: [
 		{ name: "id", type: 'int' },

@@ -31,7 +31,7 @@
  * display the words "Copyright (C) 2020 Sonicle S.r.l.".
  */
 Ext.define('Sonicle.webtop.mail.model.QuickPart', {
-	extend: 'WTA.model.Base',
+	extend: 'WTA.ux.data.BaseModel',
 	
 	fields: [
 		WTF.field('name', 'string', false),
