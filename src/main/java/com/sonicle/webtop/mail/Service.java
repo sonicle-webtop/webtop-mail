@@ -1473,7 +1473,7 @@ public class Service extends BaseService {
 					forward.setText(getForwardBody(msg, textsb.toString(), SimpleMessage.FORMAT_TEXT, false, fromtitle, totitle, cctitle, datetitle, subjecttitle));
 				} else if (!isHtml) {
                                         //use html content, which is text content with possible html encoded characters
-					forward.setText(getForwardBody(msg, htmlsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, false, fromtitle, totitle, cctitle, datetitle, subjecttitle));
+					forward.setText(getForwardBody(msg, htmlsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, true, fromtitle, totitle, cctitle, datetitle, subjecttitle));
 				} else {
                                         //take care of possible html shit
 					forward.setText(
@@ -1573,7 +1573,7 @@ public class Service extends BaseService {
 		}
 		if (format != SimpleMessage.FORMAT_HTML) {
 			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
-				sb.append("<TT>");
+				sb.append("<PRE>");
 			}
 			sb.append(cr + cr + cr + "----------------------------------------------------------------------------------" + cr + cr);
 			sb.append(fromtitle + ": " + msgFrom + cr);
@@ -1586,7 +1586,7 @@ public class Service extends BaseService {
 			sb.append(datetitle + ": " + msgDate + cr);
 			sb.append(subjecttitle + ": " + msgSubject + cr + cr);
 			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
-				sb.append("</TT>");
+				sb.append("</PRE>");
 			}
 		} else {
 			sb.append(cr + "<HR>" + cr + cr);
@@ -1613,7 +1613,7 @@ public class Service extends BaseService {
 			if (!isHtml) {
 				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
 //          sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
-					sb.append("<tt>");
+					sb.append("<pre>");
 				}
 				StringTokenizer st = new StringTokenizer(body, "\n", true);
 				while (st.hasMoreTokens()) {
@@ -1629,7 +1629,7 @@ public class Service extends BaseService {
 					}
 				}
 				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
-					sb.append("</tt>");
+					sb.append("</pre>");
 //          sb.append("</BLOCKQUOTE>");
 				}
 			} else {
@@ -1852,7 +1852,7 @@ public class Service extends BaseService {
 				if (!richContent) {
 					text = getReplyBody(msg, textsb.toString(), SimpleMessage.FORMAT_TEXT, false, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
 				} else if (!isHtml) {
-					text = getReplyBody(msg, textsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, false, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
+					text = getReplyBody(msg, htmlsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, true, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
 				} else {
 					text = getReplyBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
 				}
@@ -1930,7 +1930,7 @@ public class Service extends BaseService {
 		}
 		if (format != SimpleMessage.FORMAT_HTML) {
 			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
-				sb.append("<TT>");
+				sb.append("<PRE>");
 			}
 			sb.append(cr + cr + cr + "----------------------------------------------------------------------------------" + cr + cr);
 			sb.append(fromtitle + ": " + msgFrom + cr);
@@ -1943,7 +1943,7 @@ public class Service extends BaseService {
 			sb.append(datetitle + ": " + msgDate + cr);
 			sb.append(subjecttitle + ": " + msgSubject + cr + cr);
 			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
-				sb.append("</TT>");
+				sb.append("</PRE>");
 			}
 		} else {
 			sb.append(cr + "<HR>" + cr + cr);
@@ -1969,8 +1969,8 @@ public class Service extends BaseService {
 			}
 			if (!isHtml) {
 				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
-					sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
-					sb.append("<tt>");
+					//sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
+					sb.append("<pre>");
 				}
 				StringTokenizer st = new StringTokenizer(body, "\n", true);
 				while (st.hasMoreTokens()) {
@@ -1986,8 +1986,8 @@ public class Service extends BaseService {
 					}
 				}
 				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
-					sb.append("</tt>");
-					sb.append("</BLOCKQUOTE>");
+					sb.append("</pre>");
+					//sb.append("</BLOCKQUOTE>");
 				}
 			} else {
 				/*
