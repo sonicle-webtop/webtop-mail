@@ -460,6 +460,8 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 			personfilters=clear?{ is: [], isnot: [] }:me.getFilters("gridPersons","email"),
 			folderfilters=clear?{ is: [], isnot: [] }:me.getFilters("gridMailFolders","id");
 	
+		if (Ext.isEmpty(pattern)) return;
+		
 		//if (pattern.length<minlen) {
 		//	WT.error(me.mys.res("smartsearch.error.shortword"),minlen);
 		//	return;
@@ -489,6 +491,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 			callback: function(success,json) {
 				//me.unwait();
 				if (success) {
+					me.searchRunning=true;
 					if (!me.polltask) me.polltask=new Ext.util.DelayedTask();
 					me.polltask.delay(1000, me.doPolling, me);
 				} else {
@@ -521,6 +524,44 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 			}
 		});					
 	},
+	
+    stopSearch: function() {
+		var me=this;
+		
+        if (me.searchRunning) {
+            me.searchRunning=false;
+			WT.ajaxReq(me.mys.ID, 'CancelSmartSearch', {
+				params: { },
+				callback: function(success,json) {
+					if (json.success) {
+					} else {
+						WT.error(json.message);
+					}
+				}
+			});
+        }
+    },
+	
+	onBeforeClose: function() {
+        var me=this,rv=false;
+		
+        if (me.searchRunning) {
+			WT.confirm(
+				me.res('advsearch-surestopsearch'),
+				function(btn) {
+                    if (btn=='yes') {
+                        me.stopSearch();
+                        me.closeView();
+                    }
+                },{ 
+					title: me.res('advsearch-stopsearch')
+				}
+			);
+        } else {
+            rv=true;
+        }
+        return rv;
+	},	
 	
 	getFilters: function(lref,idfield) {
 		var me=this,

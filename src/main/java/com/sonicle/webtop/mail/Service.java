@@ -8249,11 +8249,12 @@ public class Service extends BaseService {
 			ArrayList<SearchTerm> terms = new ArrayList<>();
 			SearchTerm searchTerm = null;
 				
-			//sort folders, placing first interesting ones
 			ArrayList<String> folderIds=new ArrayList<>();
-			Collections.sort(folderIds);
-			String firstFolders[]={account.getInboxFolderFullName(), account.getFolderSent()};
-			for(String folderId: firstFolders) folderIds.add(folderId);
+			String firstFolders[]={};
+			if (folder==null || folder.trim().length()==0) {
+				firstFolders=new String[] {account.getInboxFolderFullName(), account.getFolderSent()};
+				for(String folderId: firstFolders) folderIds.add(folderId);
+			}
 			for(String folderId: _folderIds) {
 				
 				//if folder selected, look only under that folder
@@ -8316,6 +8317,13 @@ public class Service extends BaseService {
 		}
 	}
 	
+	public void processCancelSmartSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		if (sst != null && sst.isRunning()) {
+			sst.cancel();
+		}
+		new JsonResult().printTo(out);
+	}
+
 	public void processPortletRunSearch(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			UserProfile profile = environment.getProfile();
