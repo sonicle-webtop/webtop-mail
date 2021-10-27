@@ -110,7 +110,7 @@ public class SmartSearchThread extends Thread {
         progress=0;
 		int visibleRows=0;
 		int maxVisibleRows=20;
-        Service.logger.info("START OF SMART SEARCH THREAD");
+        Service.logger.debug("START OF SMART SEARCH THREAD");
         try {
 			for(String folderId: folderIds) {
                 progress++;
@@ -131,11 +131,11 @@ public class SmartSearchThread extends Thread {
 					continue;
 				}
                 if (cancel) {
-                    Service.logger.info("CANCELING SMART SEARCH");
+                    Service.logger.debug("CANCELING SMART SEARCH");
                     break;
                 }
 				
-                Service.logger.info("SMART SEARCH IN "+fc.getFolderName());
+                Service.logger.debug("SMART SEARCH IN "+fc.getFolderName());
 				Message msgs[]=null;
 				//some folders (e.g. NS7 Public) may not allow search
 				try {
@@ -290,20 +290,20 @@ public class SmartSearchThread extends Thread {
 			sst.month=month;
 			sst.day=day;
 			
-            Service.logger.info("FINISHED SMART SEARCH");
+            Service.logger.debug("FINISHED SMART SEARCH");
         } catch(Exception exc) {
             exception=exc;
             com.sonicle.webtop.mail.Service.logger.error("Exception",exc);
         }
         sst.finished=finished=true;
-        Service.logger.info("END OF SMART SEARCH THREAD");
+        Service.logger.debug("END OF SMART SEARCH THREAD");
     }
 	
 	public JsSmartSearchTotals getSmartSearchTotals() {
 		return sst;
 	}
 
-    public boolean isRunning() {
+    public boolean isRunning()	 {
         return (isAlive() && !finished);
     }
 
