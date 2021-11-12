@@ -779,7 +779,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					beforeshow: function(s) {
 						var sto = me.store,
 								meta = sto.getProxy().getReader().metaData,
-								sortField = (meta && meta.sortInfo) ? meta.sortInfo.field : null,
+								sortField = (meta && meta.sortInfo) ? meta.sortInfo.property : null,
 								sortDir = (meta && meta.sortInfo) ? meta.sortInfo.direction : null,
 								groupField = meta ? meta.groupField : null,
 								itm;
@@ -898,7 +898,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			key = Sonicle.String.removeStart(s.getItemId(), 'sortDirection-');
 			var sto = me.store,
 					meta = sto.getProxy().getReader().metaData,
-					field = (meta && meta.sortInfo) ? meta.sortInfo.field : null;
+					field = (meta && meta.sortInfo) ? meta.sortInfo.property : null;
 			field = field || 'date';
 			sto.sort(field, me.sortDirection_key2dir(key)); 
 		}
@@ -1173,7 +1173,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				var itm=tb.lookupReference('itmgmg'+gf);
 				if (itm) itm.setChecked(true);
 
-				var sf=json.metaData?json.metaData.sortInfo.field:'date';
+				var sf=json.metaData?json.metaData.sortInfo.property:'date';
 				itm=tb.lookupReference('itmsmg'+sf);
 				if (itm) itm.setChecked(true);
 
