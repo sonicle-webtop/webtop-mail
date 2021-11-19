@@ -1327,15 +1327,24 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
     print: function() {
         var me=this,
-			html="<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+me.mys.getIdentity(0).displayName+"</b></font></div><br>",
-			//pre style to force wrapping of preofrmatted text
-			styles="<style> pre { white-space: pre-wrap !important; } </style>\n";
+			html="<div style='border-bottom: 2px black solid'><font face=Arial size=3><b>"+me.mys.getIdentity(0).displayName+"</b></font></div><br>";
+			
+		var styles="<style>\n";
+		//pre style to force wrapping of preofrmatted text
+		styles+=" pre { white-space: pre-wrap !important; }\n";
+		//fix chrome bug on page breaks
+		styles+=" * { page: unset !important; }\n";
+		//remove decoration and color from attachments text
+		styles+=" .wtmail-mv-hattach span a { text-decoration: none; color: black; }\n";
+		
+		styles+="</style>\n";
         
 		me.expandRecipientsList('to');
 		me.expandRecipientsList('cc');
 		me.expandRecipientsList('bcc');
 		html+=me.tdHeader.dom.innerHTML;
-        
+        html+="<hr>";
+		
 		if (me.iframes) {
             var len=me.iframes.length;
             for(var i=0;i<len;++i) {
