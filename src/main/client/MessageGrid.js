@@ -1590,7 +1590,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },
 	
 	actionMarkSeenState: function(seen) {
-		if (this.storeLoading || this.readonly) return;
+		if (this.storeLoading) return;
 		
 		var me=this;
 		me.markSelectionSeenState(
