@@ -85,7 +85,7 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 				me.addAct('saveClose', {
 					text: WT.res('act-saveClose.lbl'),
 					tooltip: null,
-					iconCls: 'wt-icon-saveClose-xs',
+					iconCls: 'wt-icon-saveClose',
 					handler: function() {
 						me.saveView(true);
 					}

@@ -44,7 +44,7 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 	
 	dockableConfig: {
 		title: '{opts.mailcard-editor.tit}',
-		iconCls: 'wtmail-icon-mailcardedit-xs',
+		iconCls: 'wtmail-icon-mailcard',
 		modal: true,
 		width: 675,
 		height: 350
@@ -159,7 +159,7 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 					'-',
 					Ext.create("Ext.button.Button",{
 						tabIndex: -1,
-						iconCls: 'wtmail-icon-htmleditor-template-xs',
+						iconCls: 'wtmail-icon-htmleditor-template',
 						tooltip: {
 							title: me.res('opts.mailcard-editor.b-tpl.tit'),
 							text: me.res('opts.mailcard-editor.b-tpl.tip')
@@ -224,7 +224,7 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 					}),
 					Ext.create("Ext.button.Button",{
 						tabIndex: -1,
-						iconCls: 'wt-icon-format-insertimageurl-xs',
+						iconCls: 'wt-icon-format-insertimageurl',
 						tooltip: {
 							title: me.res('editor.pubimg.tit'),
 							text: me.res('editor.pubimg.tip')

@@ -93,35 +93,6 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	 * Defaults to this Column.
 	 */
 	
-	/**
-	 * Map of flag CSS classes
-	 */
-	flagsCls: {
-		red: 'wtmail-flag-red',
-		orange: 'wtmail-flag-orange',
-		green: 'wtmail-flag-green',
-		blue: 'wtmail-flag-blue',
-		purple: 'wtmail-flag-purple',
-		yellow: 'wtmail-flag-yellow',
-		black: 'wtmail-flag-black',
-		gray: 'wtmail-flag-gray',
-		white: 'wtmail-flag-white',
-		brown: 'wtmail-flag-brown',
-		azure: 'wtmail-flag-azure',
-		pink: 'wtmail-flag-pink',
-		special: 'wtmail-flag-special',
-		complete: 'wtmail-flag-complete'
-	},
-	
-	/**
-	 * Map of flag glyph CSS classes
-	 */
-	flagsGlyphs: {
-		flag: 'fa fa-bookmark',
-		special: 'fa fa-star',
-		complete: 'fa fa-check'
-	},
-	
 	alwaysShowTime: false,
 	dateShortFormat: 'm/d/Y',
 	dateLongFormat: 'M d Y',
@@ -164,7 +135,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				'<tpl if="threaded">',
 					'<tpl if="threadIndent == 0 && threadHasChildren">',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}" data-qtip="{collapseTooltip}">',
-							'<i class="wtmail-messagecolumn-collapsetool fa <tpl if="!threadOpen">fa-plus-square-o<tpl else>fa-minus-square-o</tpl>">&nbsp;</i>',
+							'<i class="wtmail-messagecolumn-collapsetool far <tpl if="!threadOpen">fa-plus-square<tpl else>fa-minus-square</tpl>">&nbsp;</i>',
 						'</div>',
 					'<tpl else>',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
@@ -183,14 +154,10 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			'<div class="wtmail-messagecolumn-body-float">',
 				'<tpl for="tags">',
 					'<div class="wtmail-messagecolumn-glyph" style="color:{color};" data-qtip="{tooltip}">',
-						'<i class="fa fa-tag"></i>',
+						'<i class="fas fa-tag"></i>',
 					'</div>',
 				'</tpl>',
 				'<tpl if="flag">',
-					//'<div class="wtmail-messagecolumn-glyph" style="color:{flag.color};" data-qtip="{flag.tooltip}">',
-					//	'<i class="fa fa-{flag.glyph}"></i>',
-					//'</div>',
-					
 					'<div class="wtmail-messagecolumn-glyph {flag.colorCls}" data-qtip="{flag.tooltip}">',
 						'<i class="{flag.glyphCls}"></i>',
 					'</div>',
@@ -202,7 +169,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				'</tpl>',
 				'<tpl if="note">',
 					'<div class="wtmail-messagecolumn-glyph" data-qtip="{note.tooltip}">',
-						'<i class="wtmail-messagecolumn-notetool fa fa-sticky-note"></i>',
+						'<i class="wtmail-messagecolumn-notetool fas fa-sticky-note"></i>',
 					'</div>',
 				'</tpl>',
 				'<span data-qtip="{size.tooltip}">{size.text}</span>',
@@ -214,14 +181,14 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 					'<div class="wtmail-messagecolumn-thread">',
 				'</tpl>',
 					'<tpl if="hasAttachment">',
-						'<div class="wtmail-messagecolumn-glyph" style="font-size:1.1em;">',
-							'<i class="fa fa-paperclip"></i>',
+						'<div class="wtmail-messagecolumn-glyph">',
+							'<i class="fas fa-paperclip fa-flip-horizontal"></i>',
 						'</div>',
 					'</tpl>',
 					'</div>',
 				'<tpl if="highPriority">',
 					'<div class="wtmail-messagecolumn-glyph" style="margin-right:5px;color:#f44336;">',
-						'<i class="fa fa-exclamation"></i>',
+						'<i class="fas fa-exclamation"></i>',
 					'</div>',
 				'</tpl>',
 				'<tpl if="threaded && !threadOpen && threadUnseenChildren &gt; 0">',
@@ -301,12 +268,16 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			highPriority: rec.get('priority') < 3 ? true : false,
 			hasAttachment: rec.get('atts'),
 			note: rec.get('note') === true ? {tooltip: me.noteTooltip} : null,
-			flag: me.buildFlag(rec.get('flag')),
-			star: rec.get('starred') ? me.buildFlag('special') : null,
+			flag: me.self.buildFlag(rec.get('flag'), {flagsTexts: me.flagsTexts}),
+			star: rec.get('starred') ? me.self.buildFlag('special', {flagsTexts: me.flagsTexts}) : null,
+			//flag: me.buildFlag(rec.get('flag')),
+			//star: rec.get('starred') ? me.buildFlag('special') : null,
 			tags: me.buildTags(rec.get('tags')),
 			unread: rec.get('unread') === true,
-			headIconCls: me.buildStatusIcon(rec),
-			headFloatIcon: me.buildTypeIcon(rec),
+			headIconCls: me.self.buildStatusIcon(rec.get('status')),
+			headFloatIcon: me.self.buildTypeIcon(rec.get('pecstatus')),
+			//headIconCls: me.buildStatusIcon(rec),
+			//headFloatIcon: me.buildTypeIcon(rec),
 			collapseTooltip: me.collapseTooltip
 		});
 		return this.tpl.apply(data);
@@ -365,61 +336,94 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		return arr;
 	},
 	
-	buildFlag: function(flag) {
-		if (Ext.isEmpty(flag)) return null;
-		var textMap = this.flagsTexts,
-				colorClsMap = this.flagsCls,
-				glyphClsMap = this.flagsGlyphs,
-				key = Sonicle.String.removeEnd(flag, '-complete'),
-				completed = Ext.String.endsWith(flag, '-complete'),
-				colorCls, glyphCls, tip;
+	statics: {
+		/**
+		 * Map of flag CSS classes
+		 */
+		flagsCls: {
+			red: 'wtmail-flag-red',
+			orange: 'wtmail-flag-orange',
+			green: 'wtmail-flag-green',
+			blue: 'wtmail-flag-blue',
+			purple: 'wtmail-flag-purple',
+			yellow: 'wtmail-flag-yellow',
+			black: 'wtmail-flag-black',
+			gray: 'wtmail-flag-gray',
+			white: 'wtmail-flag-white',
+			brown: 'wtmail-flag-brown',
+			azure: 'wtmail-flag-azure',
+			pink: 'wtmail-flag-pink',
+			special: 'wtmail-flag-special',
+			complete: 'wtmail-flag-complete'
+		},
+
+		/**
+		 * Map of flag glyph CSS classes
+		 */
+		flagsGlyphs: {
+			flag: 'fas fa-bookmark',
+			special: 'fas fa-star',
+			complete: 'fas fa-check'
+		},
 		
-		if (completed) {
-			glyphCls = glyphClsMap['complete'];
-			colorCls = colorClsMap[key];
-			tip = Ext.String.format('{0} ({1})', textMap[key], Sonicle.String.lower(textMap['complete']));
-		} else {
-			glyphCls = (['special', 'complete'].indexOf(key) !== -1) ? glyphClsMap[key] : glyphClsMap['flag'];
-			colorCls = colorClsMap[key];
-			tip = textMap[key];
+		buildFlag: function(flag, opts) {
+			opts = opts || {};
+			if (!Ext.isObject(opts.flagsTexts)) Ext.raise('flagsTexts property is missing');
+			if (!Ext.isObject(opts.flagsCls)) opts.flagsCls = this.flagsCls;
+			if (!Ext.isObject(opts.flagsGlyphs)) opts.flagsGlyphs = this.flagsGlyphs;
+			if (Ext.isEmpty(flag)) return null;
+			var textMap = opts.flagsTexts,
+					colorClsMap = opts.flagsCls,
+					glyphClsMap = opts.flagsGlyphs,
+					key = Sonicle.String.removeEnd(flag, '-complete'),
+					completed = Ext.String.endsWith(flag, '-complete'),
+					colorCls, glyphCls, tip;
+
+			if (completed) {
+				glyphCls = glyphClsMap['complete'];
+				colorCls = colorClsMap[key];
+				tip = Ext.String.format('{0} ({1})', textMap[key], Sonicle.String.lower(textMap['complete']));
+			} else {
+				glyphCls = (['special', 'complete'].indexOf(key) !== -1) ? glyphClsMap[key] : glyphClsMap['flag'];
+				colorCls = colorClsMap[key];
+				tip = textMap[key];
+			}
+			return {glyphCls: glyphCls, colorCls: colorCls, tooltip: tip};
+		},
+		
+		buildStatusIcon: function(status) {
+			switch(status) {
+				case 'new':
+					//return 'fa-envelope';
+					return 'wtmail-icon-status-new';
+				case 'replied':
+					//return 'fa-reply';
+					return 'wtmail-icon-status-replied';
+				case 'forwarded':
+					//return 'fa-share';
+					return 'wtmail-icon-status-forwarded';
+				case 'repfwd':
+					//return 'fa-retweet';
+					return 'wtmail-icon-status-replied-forwarded';
+			}
+			return null;
+		},
+
+		buildTypeIcon: function(pstatus) {
+			//TODO: add support other message types (eg. appointment invitation)
+			switch(pstatus) {
+				case 'posta-certificata':
+					return {iconCls: 'wtmail-pec', tooltip: 'Messaggio PEC'};
+				case 'accettazione':
+					return {iconCls: 'wtmail-pec-accepted', tooltip: 'PEC (ricevuta di accettazione)'};
+				case 'non-accettazione':
+					return {iconCls: 'wtmail-pec-not-accepted', tooltip: 'PEC (ricevuta di NON accettazione)'};
+				case 'avvenuta-consegna':
+					return {iconCls: 'wtmail-pec-delivered', tooltip: 'PEC (ricevuta di consegna)'};
+				case 'errore':
+					return {iconCls: 'wtmail-pec-error', tooltip: 'PEC (errore)'};
+			}
+			return null;
 		}
-		return {glyphCls: glyphCls, colorCls: colorCls, tooltip: tip};
-	},
-	
-	buildStatusIcon: function(rec) {
-		var status = rec.get('status');
-		switch(status) {
-			case 'new':
-				//return 'fa-envelope';
-				return 'wtmail-icon-status-new';
-			case 'replied':
-				//return 'fa-reply';
-				return 'wtmail-icon-status-replied';
-			case 'forwarded':
-				//return 'fa-share';
-				return 'wtmail-icon-status-forwarded';
-			case 'repfwd':
-				//return 'fa-retweet';
-				return 'wtmail-icon-status-replied-forwarded';
-		}
-		return null;
-	},
-	
-	buildTypeIcon: function(rec) {
-		var pstatus = rec.get('pecstatus');
-		//TODO: add support other message types (eg. appointment invitation)
-		switch(pstatus) {
-			case 'posta-certificata':
-				return {iconCls: 'wtmail-pec', tooltip: 'Messaggio PEC'};
-			case 'accettazione':
-				return {iconCls: 'wtmail-pec-accepted', tooltip: 'PEC (ricevuta di accettazione)'};
-			case 'non-accettazione':
-				return {iconCls: 'wtmail-pec-not-accepted', tooltip: 'PEC (ricevuta di NON accettazione)'};
-			case 'avvenuta-consegna':
-				return {iconCls: 'wtmail-pec-delivered', tooltip: 'PEC (ricevuta di consegna)'};
-			case 'errore':
-				return {iconCls: 'wtmail-pec-error', tooltip: 'PEC (errore)'};
-		}
-		return null;
 	}
 });

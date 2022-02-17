@@ -2643,34 +2643,34 @@ public class Service extends BaseService {
 			}
 			else {
 /*				
-				String iconCls = "wtmail-icon-imap-folder-xs";
+				String iconCls = "wtmail-icon-imapfolder";
 				int unread = 0;
 				boolean hasUnread = false;
 				boolean nounread = false;
 				if (mc.isSharedFolder()) {
-					iconCls = "wtmail-icon-shared-folder-xs";
+					iconCls = "wtmail-icon-sharefolder";
 					nounread = true;
 				} else if (mc.isInbox()) {
-					iconCls = "wtmail-icon-inbox-folder-xs";
+					iconCls = "wtmail-icon-inboxfolder";
 				} else if (mc.isSent()) {
-					iconCls = "wtmail-icon-sent-folder-xs";
+					iconCls = "wtmail-icon-sentfolder";
 					nounread = true;
 				} else if (mc.isDrafts()) {
-					iconCls = "wtmail-icon-drafts-folder-xs";
+					iconCls = "wtmail-icon-draftsfolder";
 					nounread = true;
 				} else if (mc.isTrash()) {
-					iconCls = "wtmail-icon-trash-folder-xs";
+					iconCls = "wtmail-icon-trashfolder";
 					nounread = true;
 				} else if (mc.isArchive()) {
-					iconCls = "wtmail-icon-archive-folder-xs";
+					iconCls = "wtmail-icon-archivefolder";
 					nounread = true;
 				} else if (mc.isSpam()) {
-					iconCls = "wtmail-icon-spam-folder-xs";
+					iconCls = "wtmail-icon-junkfolder";
 					nounread = true;
 				} else if (mc.isDms()) {
-					iconCls = "wtmail-icon-dms-folder-xs";
+					iconCls = "wtmail-icon-dmsfolder";
 				} else if (mc.isSharedInbox()) {
-					iconCls = "wtmail-icon-inbox-folder-xs";
+					iconCls = "wtmail-icon-inboxfolder";
 				}
 				if (!nounread) {
 					unread = mc.getUnreadMessagesCount();
@@ -2753,34 +2753,34 @@ public class Service extends BaseService {
 	private JsFolder createJsFolder(FolderCache fc, boolean leaf) {
 		String foldername=fc.getFolderName();
 		MailAccount account=fc.getAccount();
-		String iconCls = "wtmail-icon-imap-folder-xs";
+		String iconCls = "wtmail-icon-imapfolder";
 		int unread = 0;
 		boolean hasUnread = false;
 		boolean nounread = false;
 		if (fc.isSharedFolder()) {
-			iconCls = "wtmail-icon-shared-folder-xs";
+			iconCls = "wtmail-icon-sharefolder";
 			nounread = true;
 		} else if (fc.isInbox()) {
-			iconCls = "wtmail-icon-inbox-folder-xs";
+			iconCls = "wtmail-icon-inboxfolder";
 		} else if (fc.isSent()) {
-			iconCls = "wtmail-icon-sent-folder-xs";
+			iconCls = "wtmail-icon-sentfolder";
 			//nounread = true;
 		} else if (fc.isDrafts()) {
-			iconCls = "wtmail-icon-drafts-folder-xs";
+			iconCls = "wtmail-icon-draftsfolder";
 			//nounread = true;
 		} else if (fc.isTrash()) {
-			iconCls = "wtmail-icon-trash-folder-xs";
+			iconCls = "wtmail-icon-trashfolder";
 			//nounread = true;
 		} else if (fc.isArchive()) {
-			iconCls = "wtmail-icon-archive-folder-xs";
+			iconCls = "wtmail-icon-archivefolder";
 			//nounread = true;
 		} else if (fc.isSpam()) {
-			iconCls = "wtmail-icon-spam-folder-xs";
+			iconCls = "wtmail-icon-junkfolder";
 			//nounread = true;
 		} else if (fc.isDms()) {
-			iconCls = "wtmail-icon-dms-folder-xs";
+			iconCls = "wtmail-icon-dmsfolder";
 		} else if (fc.isSharedInbox()) {
-			iconCls = "wtmail-icon-inbox-folder-xs";
+			iconCls = "wtmail-icon-inboxfolder";
 		} 
 		if (!nounread) {
 			unread = fc.getUnreadMessagesCount();

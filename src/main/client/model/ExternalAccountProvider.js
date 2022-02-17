@@ -47,6 +47,6 @@ Ext.define('Sonicle.webtop.mail.model.ExternalAccountProvider', {
 		WTF.field('folderTrash', 'string', false),
 		WTF.field('folderSpam', 'string', false),
 		WTF.field('folderArchive', 'string', false),
-		WTF.field('iconUrl', 'string', false),
+		WTF.field('iconUrl', 'string', false)
 	]
 });

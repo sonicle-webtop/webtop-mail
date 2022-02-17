@@ -74,7 +74,7 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 					text: 'Email Imap Tree',
 					folder: WT.getVar("userDisplayName"),
 					unread: 0,
-					iconCls: 'wtmail-icon-emailaccount-xs',
+					iconCls: 'wtmail-icon-mailaccount',
 					expanded: true
 				},
 				rootVisible: false,

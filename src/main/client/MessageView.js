@@ -154,12 +154,12 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				}, {
 					dirty: true
 				});
-			}, iconCls: 'wtcon-icon-newContact-xs'});
+			}, iconCls: 'wtcon-icon-newContact'});
 		}
 		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createrule"), handler: function() {
 			var ae=me.emailMenu.activeElement;
 			me.createRule(ae.recEmail,ae.recType);
-		}, iconCls: 'wtmail-icon-addMailFilter-xs'});
+		}, iconCls: 'wtmail-icon-addMailFilter'});
 		me.emailMenu=new Ext.menu.Menu({
 			items: actions
 		});
@@ -171,11 +171,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				new Ext.Action({text: me.mys.res("attachmenu.save"),handler:function() {
 					var el=me.attachMenu.activeElement;
 					if (el.linkSave) window.open(el.linkSave);
-				}, scope:me, iconCls: 'wt-icon-save-xs'}),
+				}, scope:me, iconCls: 'wt-icon-save'}),
 				new Ext.Action({text: me.mys.res("attachmenu.saveall"),handler:function() {
 					var el=me.attachMenu.activeElement;
 					if (el.linkSaveAll) window.open(el.linkSaveAll);
-				}, scope:me, iconCls: 'wt-icon-save-all-xs'}),
+				}, scope:me, iconCls: 'wt-icon-saveAll'}),
 				new Ext.Action({text: me.mys.res("attachment.savetocloud"),
 					disabled: !WT.getApp().hasDescriptor('com.sonicle.webtop.vfs'),
 					handler: function() {
@@ -197,7 +197,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 							});
 						}
 					},
-				scope:me, iconCls: 'wt-icon-save-xs'})
+				scope:me, iconCls: 'wt-icon-save'})
 			]
 		});
     },
@@ -300,10 +300,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		var me = this, html;
 		if (me.tdBody && !me.emptyEl) {
 			html = '<div class="wt-centered">'
-				+ '<div class="wt-theme-text-tit" style="font-size:1.2em">'
+				+ '<div class="wt-theme-text-header1" style="font-size:1.2em">'
 				+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.tit'))
 				+ '</div>'
-				+ '<div class="wt-theme-text-sub" style="font-size:0.9em">'
+				+ '<div class="wt-theme-text-subtitle" style="font-size:0.9em">'
 				+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.txt'))
 				+ '</div>'
 				+ '</div>';

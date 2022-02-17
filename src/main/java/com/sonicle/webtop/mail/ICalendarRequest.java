@@ -248,12 +248,12 @@ public class ICalendarRequest {
 	private String getParstatClassName(Property p) {
 		if (p==null) return "";
 		Parameter param=p.getParameter("PARTSTAT");
-		if (param==null) return "wtmail-ical-tentative-xs";
+		if (param==null) return "wtmail-ical-tentative";
 		String v=param.getValue();
-		if (v.equals("ACCEPTED")) return "wtmail-ical-accepted-xs"; 
-		else if (v.equals("DECLINED")) return "wtmail-ical-declined-xs"; 
-		else if (v.equals("NEEDS-ACTION")) return "wtmail-ical-needaction-xs"; 
-		return "wtmail-ical-tentative-xs"; 
+		if (v.equals("ACCEPTED")) return "wtmail-ical-accepted"; 
+		else if (v.equals("DECLINED")) return "wtmail-ical-declined"; 
+		else if (v.equals("NEEDS-ACTION")) return "wtmail-ical-needaction"; 
+		return "wtmail-ical-tentative"; 
 	}
 
 	private String getParstat(Property p) {

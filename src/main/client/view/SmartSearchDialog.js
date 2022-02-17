@@ -39,7 +39,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 	],
 	
 	dockableConfig: {
-		iconCls: 'wtmail-icon-smartsearch-xs',
+		iconCls: 'wtmail-icon-smartSearch',
 		title: '{smartsearch.tit}',
 		width: 800,
 		height: 600
@@ -208,7 +208,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					},
 					columns: [
 						{ 
-							dataIndex: 'name', flex: 1, tdCls: 'wt-theme-txt-hi wtmail-smartsearch-name-column',
+							dataIndex: 'name', flex: 1, tdCls: 'wt-theme-text-hyperlink wtmail-smartsearch-name-column',
 							renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 								var t=record.get("type"),
 									v=Ext.String.htmlEncode(value);
@@ -247,7 +247,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					},
 					columns: [
 						{ 
-							dataIndex: 'name', flex: 1, tdCls: 'wt-theme-txt-hi wtmail-smartsearch-name-column',
+							dataIndex: 'name', flex: 1, tdCls: 'wt-theme-text-hyperlink wtmail-smartsearch-name-column',
 							renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 								var t=record.get("type"),
 									v=Ext.String.htmlEncode(value);
@@ -317,7 +317,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 							axes: [{
 								type: 'numeric',
 								position: 'left',
-								titleMargin: 20,
+								titleMargin: 20
 /*								majorTickSteps: 1,
 								minimum: 0,
 								label: {
@@ -416,7 +416,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 								]
 							},
 							columns: [
-								{ dataIndex: 'subject', flex: 1, tdCls: 'wt-theme-txt-hi wtmail-smartsearch-name-column' },
+								{ dataIndex: 'subject', flex: 1, tdCls: 'wt-theme-text-hyperlink wtmail-smartsearch-name-column' },
 								{ dataIndex: 'date', width: 160 }
 							],
 							features: [{
@@ -549,7 +549,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 			WT.confirm(
 				me.res('advsearch-surestopsearch'),
 				function(btn) {
-                    if (btn=='yes') {
+                    if (btn==='yes') {
                         me.stopSearch();
                         me.closeView();
                     }

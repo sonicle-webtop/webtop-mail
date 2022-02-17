@@ -34,6 +34,7 @@
 Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
+		'Sonicle.grid.column.Action',
 		'Sonicle.webtop.mail.model.InMailFilters',
 		'Sonicle.webtop.mail.store.SieveVacationDays'
 	],
@@ -119,20 +120,12 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 			tbar: [
 				'-',
 				me.addAct('addMailFilter', {
+					ignoreSize: true,
 					text: null,
 					tooltip: me.mys.res('inMailFilters.addMailFilter.tip'),
 					handler: function() {
 						me.addMailFilterUI();
 					}
-				}),
-				me.addAct('deleteMailFilter', {
-					text: null,
-					tooltip: me.mys.res('inMailFilters.deleteMailFilter.tip'),
-					handler: function() {
-						var sm = me.lref('gpfilters').getSelectionModel();
-						me.deleteMailFilterUI(sm.getSelection()[0]);
-					},
-					disabled: true
 				}),
 				'->',
 				WTF.lookupCombo('id', 'desc', {
@@ -198,7 +191,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					menuDisabled: true,
 					stopSelection: true,
 					getIconCls: function (value, rec) {
-						return WTF.cssIconCls(WT.XID, 'traffic-light-' + (value ? 'green' : 'red'), 'xs');
+						return WTF.cssIconCls(WT.XID, 'traffic-light-' + (value ? 'green' : 'red'));
 					},
 					getTip: function(v,rec) {
 						if (v === true) {
@@ -215,11 +208,20 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					dataIndex: 'name',
 					header: me.mys.res('inMailFilters.gp-filters.name.lbl'),
 					flex: 1
+				}, {
+					xtype: 'soactioncolumn',
+					items: [
+						{
+							iconCls: 'far fa-trash-alt',
+							tooltip: WT.res('act-remove.lbl'),
+							handler: function(g, ridx) {
+								var rec = g.getStore().getAt(ridx);
+								me.deleteMailFilterUI(rec);
+							}
+						}
+					]
 				}],
 				listeners: {
-					selectionchange: function(s,recs) {
-						me.getAct('deleteMailFilter').setDisabled(!recs.length);
-					},
 					rowdblclick: function(s, rec) {
 						me.editMailFilterUI(rec);
 					}

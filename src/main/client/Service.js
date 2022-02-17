@@ -300,7 +300,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 
 		var trees=[
-			me.favoritesTree,
+			me.favoritesTree
 		];
 		if (me.archiveTree) {
 			trees.push(me.archiveTree);
@@ -464,9 +464,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		me.setToolComponent(tool);
 
-		me.onMessage('unread',me.onUnreadChanged,me);
-		me.onMessage('recent',me.onRecentMessage,me);
-		me.onMessage('addContact', me.onAddContact, me);
+		me.onPushMessage('unread',me.onUnreadChanged,me);
+		me.onPushMessage('recent',me.onRecentMessage,me);
+		me.onPushMessage('addContact', me.onAddContact, me);
 		
         var xb=new Array();
 		xx=0;
@@ -593,14 +593,14 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	initActions: function() {
 		var me = this;
 	
-        me.addNewAction("newmsg",{ handler: me.actionNew, scope: me, iconCls: 'wtmail-icon-newmsg' });
+        me.addNewAction("newmsg",{ iconCls: 'wtmail-icon-mailNew', handler: me.actionNew, scope: me });
 		if (WT.isPermitted(me.ID,'FAX','ACCESS'))
-			me.addNewAction("newfax",{ handler: me.actionNewFax, scope: me});
+			me.addNewAction("newfax",{ iconCls: 'wtmail-icon-faxNew', handler: me.actionNewFax, scope: me});
 		
         me.addAct("open",{ handler: me.gridAction(me,'Open'), iconCls: '' });
         me.addAct("opennew",{ handler: me.gridAction(me,'OpenNew'), iconCls: '' });
         
-        me.addAct("newfax",{ handler: function() { me.actionNewFax(); }, text: null });
+        me.addAct("newfax",{ iconCls: 'wtmail-icon-faxNew', handler: function() { me.actionNewFax(); }, text: null });
         me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print', hidden: !WT.plTags.desktop });
         me.addAct("reply",{ handler: me.gridAction(me,'Reply'), iconCls: 'wtmail-icon-reply'  });
         me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll'), iconCls: 'wtmail-icon-replyall' });
@@ -621,20 +621,20 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.addAct("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi', enableToggle: true });
 		
 		
-        me.addAct("special",{ text: me.res('message.flag.special'), glyph: 'xf005@FontAwesome', iconCls: 'wtmail-flag-special', handler: me.gridAction(me,'Flag','special') });
-        me.addAct("flagred",{ text: me.res('message.flag.red'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-red', handler: me.gridAction(me,'Flag','red')});
-        me.addAct("flagblue",{ text: me.res('message.flag.blue'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-blue', handler: me.gridAction(me,'Flag','blue')});
-        me.addAct("flagyellow",{ text: me.res('message.flag.yellow'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-yellow', handler: me.gridAction(me,'Flag','yellow')});
-        me.addAct("flaggreen",{ text: me.res('message.flag.green'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-green', handler: me.gridAction(me,'Flag','green')});
-        me.addAct("flagorange",{ text: me.res('message.flag.orange'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-orange', handler: me.gridAction(me,'Flag','orange')});
-        me.addAct("flagpurple",{ text: me.res('message.flag.purple'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-purple', handler: me.gridAction(me,'Flag','purple')});
-        me.addAct("flagblack",{ text: me.res('message.flag.black'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-black', handler: me.gridAction(me,'Flag','black')});
-        me.addAct("flaggray",{ text: me.res('message.flag.gray'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-gray', handler: me.gridAction(me,'Flag','gray')});
-        me.addAct("flagwhite",{ text: me.res('message.flag.white'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-white', handler: me.gridAction(me,'Flag','white')});
-        me.addAct("flagbrown",{ text: me.res('message.flag.brown'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-brown', handler: me.gridAction(me,'Flag','brown')});
-        me.addAct("flagazure",{ text: me.res('message.flag.azure'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-azure', handler: me.gridAction(me,'Flag','azure')});
-        me.addAct("flagpink",{ text: me.res('message.flag.pink'), glyph: 'xf02e@FontAwesome', iconCls: 'wtmail-flag-pink', handler: me.gridAction(me,'Flag','pink')});
-        me.addAct("flagcomplete",{ text: me.res('message.flag.complete'), glyph: 'xf00c@FontAwesome', iconCls: 'wtmail-flag-complete', handler: me.gridAction(me,'Flag','complete')});
+        me.addAct("special",{ text: me.res('message.flag.special'), iconCls: 'fas fa-star wtmail-flag-special', handler: me.gridAction(me,'Flag','special') });
+        me.addAct("flagred",{ text: me.res('message.flag.red'), iconCls: 'fas fa-bookmark wtmail-flag-red', handler: me.gridAction(me,'Flag','red')});
+        me.addAct("flagblue",{ text: me.res('message.flag.blue'), iconCls: 'fas fa-bookmark wtmail-flag-blue', handler: me.gridAction(me,'Flag','blue')});
+        me.addAct("flagyellow",{ text: me.res('message.flag.yellow'), iconCls: 'fas fa-bookmark wtmail-flag-yellow', handler: me.gridAction(me,'Flag','yellow')});
+        me.addAct("flaggreen",{ text: me.res('message.flag.green'), iconCls: 'fas fa-bookmark wtmail-flag-green', handler: me.gridAction(me,'Flag','green')});
+        me.addAct("flagorange",{ text: me.res('message.flag.orange'), iconCls: 'fas fa-bookmark wtmail-flag-orange', handler: me.gridAction(me,'Flag','orange')});
+        me.addAct("flagpurple",{ text: me.res('message.flag.purple'), iconCls: 'fas fa-bookmark wtmail-flag-purple', handler: me.gridAction(me,'Flag','purple')});
+        me.addAct("flagblack",{ text: me.res('message.flag.black'), iconCls: 'fas fa-bookmark wtmail-flag-black', handler: me.gridAction(me,'Flag','black')});
+        me.addAct("flaggray",{ text: me.res('message.flag.gray'), iconCls: 'fas fa-bookmark wtmail-flag-gray', handler: me.gridAction(me,'Flag','gray')});
+        me.addAct("flagwhite",{ text: me.res('message.flag.white'), iconCls: 'fas fa-bookmark wtmail-flag-white', handler: me.gridAction(me,'Flag','white')});
+        me.addAct("flagbrown",{ text: me.res('message.flag.brown'), iconCls: 'fas fa-bookmark wtmail-flag-brown', handler: me.gridAction(me,'Flag','brown')});
+        me.addAct("flagazure",{ text: me.res('message.flag.azure'), iconCls: 'fas fa-bookmark wtmail-flag-azure', handler: me.gridAction(me,'Flag','azure')});
+        me.addAct("flagpink",{ text: me.res('message.flag.pink'), iconCls: 'fas fa-bookmark wtmail-flag-pink', handler: me.gridAction(me,'Flag','pink')});
+        me.addAct("flagcomplete",{ text: me.res('message.flag.complete'), iconCls: 'fas fa-check wtmail-flag-complete wt-theme-glyph', handler: me.gridAction(me,'Flag','complete')});
         me.addAct("clear",{ handler: me.gridAction(me,'Flag','clear'), iconCls: '' });
 		
         //me.addAct("newtag",{ handler: me.gridAction(me,'NewTag') });
@@ -680,19 +680,19 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		
 		
-        me.addAct("addnote",{ handler: me.gridAction(me,'AddNote'), iconCls: 'wtmail-icon-addnote-color fa fa-sticky-note' });
-	   
-        me.addAct("markseen",{ handler: me.gridAction(me,'MarkSeen') });
-        me.addAct("markunseen",{ handler: me.gridAction(me,'MarkUnseen') });
-        me.addAct("spam",{ handler: me.gridAction(me,'Spam'), iconCls: 'wt-icon-block-xs' });
+        me.addAct("addnote",{ handler: me.gridAction(me,'AddNote'), iconCls: 'wtmail-note fas fa-sticky-note' });
+		
+        me.addAct("markseen",{ ignoreSize:true, handler: me.gridAction(me,'MarkSeen') });
+        me.addAct("markunseen",{ ignoreSize:true, handler: me.gridAction(me,'MarkUnseen') });
+        me.addAct("spam",{ handler: me.gridAction(me,'Spam'), iconCls: 'wt-icon-block' });
         me.addAct("delete",{ handler: me.gridAction(me,'Delete'), iconCls: 'wt-icon-delete' });
-        me.addAct("movetofolder",{ handler: me.gridAction(me,'MoveToFolder') });
+        me.addAct("movetofolder",{ ignoreSize:true, handler: me.gridAction(me,'MoveToFolder') });
 		//me.addAct('uploadtofolder', {} );
 	
         me.addAct("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh' });
-        me.addAct("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save-xs' });
-        me.addAct("createreminder",{ handler: me.gridAction(me,'CreateReminder'), iconCls: 'wtcal-icon-newEvent-xs' });
-        me.addAct("archive",{ handler: me.gridAction(me,'Archive'), iconCls: 'wtmail-icon-archive-xs' });
+        me.addAct("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save' });
+        me.addAct("createreminder",{ handler: me.gridAction(me,'CreateReminder'), iconCls: 'wtcal-icon-newEvent' });
+        me.addAct("archive",{ handler: me.gridAction(me,'Archive'), iconCls: 'wtmail-icon-archive' });
         me.addAct("resetcolumns",{ handler: me.gridAction(me,'ResetColumns'), iconCls: '' });
         me.addAct("viewheaders",{ handler: me.gridAction(me,'ViewHeaders'), iconCls: '' });
         me.addAct("viewsource",{ handler: me.gridAction(me,'ViewSource'), iconCls: '' });
@@ -700,9 +700,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("showarchive",{ handler: null, iconCls: '', tooltip: null });
         //me.addAct("filterrow",{ handler: me.gridAction(me,'FilterRow'), enableToggle: true });		
         me.addAct("advsearch",{ handler: me.actionAdvancedSearch, scope: me, iconCls: 'wt-icon-search-adv' });
-        me.addAct("sharing",{ handler: me.actionSharing, scope: me, iconCls: 'wt-icon-sharing-xs' });
+        me.addAct("sharing",{ handler: me.actionSharing, scope: me, iconCls: 'wt-icon-sharing' });
         me.addAct("showsharings",{ handler: null, iconCls: '', tooltip: null });
-        me.addAct("threaded",{ handler: function() { me.messagesPanel.actionThreaded(); }, iconCls: 'wtmail-icon-threaded-xs', enableToggle: true });
         me.addAct("emptyfolder",{ handler: me.actionEmptyFolder, scope: me });
         me.addAct("deletefolder",{ handler: me.actionDeleteFolder, scope: me, iconCls: 'wt-icon-delete' });
         me.addAct("renamefolder",{ handler: me.actionRenameFolder, scope: me });
@@ -711,26 +710,26 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("movetomain",{ handler: me.actionMoveToMainFolder, scope: me, iconCls: '' });
         me.addAct("refresh",{ handler: me.actionFolderRefresh, scope: me, iconCls: 'wt-icon-refresh' });
         me.addAct("refreshtree",{ handler: me.actionTreeRefresh, scope: me, iconCls: '' });
-        me.addAct("favorite",{ handler: me.actionFavorite, scope: me, iconCls: 'wtmail-icon-favoriteadd-xs' });
-        me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wtmail-icon-favoriteremove-xs' });
+        me.addAct("favorite",{ handler: me.actionFavorite, scope: me, iconCls: 'wtmail-icon-favoritesAdd' });
+        me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wtmail-icon-favoritesRemove' });
 
         me.addAct("scanfolder",{ handler: null, iconCls: '', tooltip: null });
 		
         me.addAct("hidefolder",{ handler: me.actionFolderHide, scope: me, iconCls: '' });
         me.addAct("managehiddenfolders",{ handler: me.actionManageHiddenFolders, scope: me, iconCls: '' });
-        me.addAct("markseenfolder",{ handler: me.actionFolderMarkSeen, scope: me, iconCls: 'wtmail-icon-markseen-xs' });
-        me.addAct("downloadmails",{ handler: me.actionDownloadMails, scope: me, iconCls: 'wt-icon-save-xs' });
+        me.addAct("markseenfolder",{ handler: me.actionFolderMarkSeen, scope: me, iconCls: 'wtmail-icon-markseen' });
+        me.addAct("downloadmails",{ handler: me.actionDownloadMails, scope: me, iconCls: 'wt-icon-save' });
 
         /*if (WT.docmgt) this.aDocMgt=this.addDependencyAction("docmgt","webtop/js/mail/DocMgt.js","actionDocMgt",this,'iconDocMgt');
         if (WT.docmgtwt) this.aDocMgtwt=this.addDependencyAction("docmgtwt","webtop/js/mail/DocMgt.js","actionDocMgtWt",this,'iconDocMgt');
 		 */
 		
 		if (me.hasAudit()) {
-			me.addAct("auditRead",{ text:null, tooltip: me.res("act-auditRead.lbl"), glyph: 'xf06e@FontAwesome', handler: me.gridAction(me,'AuditRead'), scope: me });
-			me.addAct("auditReplied",{ text:null, tooltip: me.res("act-auditReplied.lbl"), glyph: 'xf112@FontAwesome', handler: me.gridAction(me,'AuditReplied'), scope: me });
-			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), glyph: 'xf064@FontAwesome',  handler: me.gridAction(me,'AuditForwarded'), scope: me });
-			me.addAct("auditPrinted",{ text:null, tooltip: me.res("act-auditPrinted.lbl"), glyph: 'xf02f@FontAwesome',  handler: me.gridAction(me,'AuditPrinted'), scope: me });
-			me.addAct("auditTagged",{ text:null, tooltip: me.res("act-auditTagged.lbl"), glyph: 'xf02c@FontAwesome',  handler: me.gridAction(me,'AuditTagged'), scope: me });
+			me.addAct("auditRead",{ text:null, tooltip: me.res("act-auditRead.lbl"), iconCls: 'far fa-eye', handler: me.gridAction(me,'AuditRead'), scope: me });
+			me.addAct("auditReplied",{ text:null, tooltip: me.res("act-auditReplied.lbl"), iconCls: 'fas fa-reply', handler: me.gridAction(me,'AuditReplied'), scope: me });
+			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), iconCls: 'fas fa-share',  handler: me.gridAction(me,'AuditForwarded'), scope: me });
+			me.addAct("auditPrinted",{ text:null, tooltip: me.res("act-auditPrinted.lbl"), iconCls: 'fas fa-print',  handler: me.gridAction(me,'AuditPrinted'), scope: me });
+			me.addAct("auditTagged",{ text:null, tooltip: me.res("act-auditTagged.lbl"), iconCls: 'fas fa-tags',  handler: me.gridAction(me,'AuditTagged'), scope: me });
 		}		
 	},
 	
@@ -924,7 +923,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 								params: {
 									account: ctxAccount,
 									folder:  ctxFolder,
-									uploadId: resp.data.uploadId,
+									uploadId: resp.data.uploadId
 								},
 								callback: function(success,json) {
 									if (success) {
@@ -1287,7 +1286,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			viewCfg: {
 				dockableConfig: {
 					title: opts.fax?'{fax.tit}':'{message.tit}',
-					iconCls: opts.fax?'wtmail-icon-newfax-xs':'wtmail-icon-newmsg'
+					iconCls: opts.fax?'wtmail-icon-faxNew':'wtmail-icon-mailNew'
 				},
 				msgId: opts.msgId||0,
 				mys: me,
@@ -1897,7 +1896,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			text: newname,
 			folder: newname,
 			leaf: true,
-			iconCls: 'wtmail-icon-imap-folder-xs',
+			iconCls: 'wtmail-icon-imapfolder',
 			unread:0,
 			hasUnread: false,
 			canRename: true
@@ -1973,7 +1972,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 									WT.ajaxReq(me.ID, 'RunRefreshUnreads', {
 										params: {
 											account: acct,
-											folders: folders,
+											folders: folders
 										},
 										callback: function(success,json) {
 											if (json.success) {

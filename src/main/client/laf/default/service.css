@@ -7,119 +7,94 @@
 /* actions */
 .wtmail-icon-newmsg { background-image: url('statusnew_16.svg') !important; background-size: contain; }
 .wtmail-icon-message { background-image: url('message_16.svg') !important; background-size: contain; }
-.wtmail-icon-newfax-xs { background-image: url('newfax_16.png') !important; }
-.wtmail-icon-sendfax-xs { background-image: url('fax_16.png') !important; }
-.wtmail-icon-reply { background-image: url('statusreplied_16.svg') !important; background-size: contain; }
-.wtmail-icon-replyall { background-image: url('replyall_16.svg') !important; background-size: contain; }
-.wtmail-icon-forward { background-image: url('statusforwarded_16.svg') !important; background-size: contain; }
-.wtmail-icon-flagred-xs { background-image: url('flagred_16.gif') !important; }
-.wtmail-icon-flagblue-xs { background-image: url('flagblue_16.gif') !important; }
-.wtmail-icon-flagyellow-xs { background-image: url('flagyellow_16.gif') !important; }
-.wtmail-icon-flaggreen-xs { background-image: url('flaggreen_16.gif') !important; }
-.wtmail-icon-flagorange-xs { background-image: url('flagorange_16.gif') !important; }
-.wtmail-icon-flagpurple-xs { background-image: url('flagpurple_16.gif') !important; }
-.wtmail-icon-flagblack-xs { background-image: url('flagblack_16.gif') !important; }
-.wtmail-icon-flaggray-xs { background-image: url('flaggray_16.gif') !important; }
-.wtmail-icon-flagwhite-xs { background-image: url('flagwhite_16.gif') !important; }
-.wtmail-icon-flagbrown-xs { background-image: url('flagbrown_16.gif') !important; }
-.wtmail-icon-flagazure-xs { background-image: url('flagazure_16.gif') !important; }
-.wtmail-icon-flagpink-xs { background-image: url('flagpink_16.gif') !important; }
-.wtmail-icon-flagcomplete-xs { background-image: url('flagcomplete_16.gif') !important; }
+.wtmail-icon-mailNew { background-image: url('mail-new_16.svg') !important; background-size: contain; }
+.wtmail-icon-mailSend { background-image: url('mail-send_16.svg') !important; background-size: contain; }
+.wtmail-icon-mailSchedule { background-image: url('mail-schedule_16.svg') !important; background-size: contain; }
+.wtmail-icon-faxNew { background-image: url('fax-new_16.svg') !important; background-size: contain; }
+.wtmail-icon-faxSend { background-image: url('fax-send_16.svg') !important; background-size: contain; }
+.wtmail-icon-faxSchedule { background-image: url('fax-schedule_16.svg') !important; background-size: contain; }
+.wtmail-icon-reply { background-image: url('mail-reply_16.svg') !important; background-size: contain; }
+.wtmail-icon-replyall { background-image: url('mail-replyAll_16.svg') !important; background-size: contain; }
+.wtmail-icon-forward { background-image: url('mail-forward_16.svg') !important; background-size: contain; }
+.wtmail-icon-archive { background-image: url('mail-movetoarchive_16.svg') !important; background-size: contain; }
+.wtmail-icon-movetofolder { background-image: url('mail-movetofolder_16.svg') !important; background-size: contain; }
+.wtmail-icon-markseen { background-image: url('mail-markseen_16.svg') !important; background-size: contain; }
+.wtmail-icon-markunseen { background-image: url('mail-markunseen_16.svg') !important; background-size: contain; }
 .wtmail-icon-tag { background-image: url('tag_16.svg') !important; background-size: contain; }
-.wtmail-icon-special-xs { background-image: url('flagspecial_16.gif') !important; }
-.wtmail-icon-addnote-xs { background-image: url('mailnote_16.gif') !important; } 
-.wtmail-icon-addnote-color { color: #e7b465; }
-.wtmail-icon-markseen-xs { background-image: url('statusread_16.png') !important; }
-.wtmail-icon-markunseen-xs { background-image: url('statusunread_16.png') !important; }
-/*.wtmail-icon-filters-xs { background-image: url('filters_16.png') !important; }
-.wtmail-icon-newfilter-xs { background-image: url('filters_16.png') !important; }*/
-.wtmail-icon-threaded-xs { background-image: url('threaded_16.png') !important; }
-.wtmail-icon-movetofolder-xs { background-image: url('movetofolder_16.png') !important; }
-.wtmail-icon-mailcardedit-xs { background-image: url('mailcard_edit_16.png') !important; }
-.wtmail-icon-mailcardremove-xs { background-image: url('mailcard_remove_16.png') !important; }
-.wtmail-icon-htmleditor-template-xs { background-image: url('htmleditor_template_16.png') !important; }
-.wtmail-icon-attachment-xs { background-image: url('attachment_16.png') !important; }
-.wtmail-icon-send-xs { background-image: url('send_16.png') !important; }
-.wtmail-icon-schedule-xs { background-image: url('schedule_16.png') !important; }
-.wtmail-icon-addressbook-xs { background-image: url('addressbook_16.png') !important; }
-.wtmail-icon-receipt-xs { background-image: url('receipt_16.png') !important; }
-.wtmail-icon-cloud-download-xs { background-image: url('cloud-download_16.png') !important; }
-.wtmail-icon-cloud-upload-xs { background-image: url('cloud-upload_16.png') !important; }
-.wtmail-icon-smartsearch-xs { background-image: url('smartsearch_16.png') !important; }
-.wtmail-icon-archive-xs { background-image: url('imap-folder-archive_16.png') !important; }
-.wtmail-icon-emailaccount-xs { background-image: url('emailaccount_16.png') !important; }
-.wtmail-icon-favorites-xs { background-image: url('favorites_16.png') !important; }
-.wtmail-icon-favoriteadd-xs { background-image: url('favoriteadd_16.png') !important; }
-.wtmail-icon-favoriteremove-xs { background-image: url('favoriteremove_16.png') !important; }
+.wtmail-icon-identityAdd { background-image: url('identity-add_16.svg') !important; background-size: contain; }
+.wtmail-icon-mailcard { background-image: url('mailcard_16.svg') !important; background-size: contain; }
+.wtmail-icon-editMailcard { background-image: url('mailcard-edit_16.svg') !important; background-size: contain; }
+.wtmail-icon-deleteMailcard { background-image: url('mailcard-delete_16.svg') !important; background-size: contain; }
+.wtmail-icon-attachment { background-image: url('attachment_16.svg') !important; background-size: contain; }
+.wtmail-icon-addressbook { background-image: url('addressbook_16.svg') !important; background-size: contain; }
+.wtmail-icon-cloud-download { background-image: url('cloud-download_16.svg') !important; background-size: contain; }
+.wtmail-icon-cloud-upload { background-image: url('cloud-upload_16.svg') !important; background-size: contain; }
+.wtmail-icon-mailAccount { background-image: url('mailaccount_16.svg') !important; background-size: contain; }
+.wtmail-icon-favorites { background-image: url('favorites_16.svg') !important; background-size: contain; }
+.wtmail-icon-favoritesAdd { background-image: url('favorites-add_16.svg') !important; background-size: contain; }
+.wtmail-icon-favoritesRemove { background-image: url('favorites-remove_16.svg') !important; background-size: contain; }
+.wtmail-icon-smartSearch { background-image: url('search-smart_16.svg') !important; background-size: contain; }
 
-.wtmail-icon-format-insertimagefile-xs { background-image: url('format-insertimagefile_16.png') !important; }
-.wtmail-icon-format-quickpart-xs { background-image: url('format-quickpart_16.png') !important; }
+.wtmail-icon-status-unread { background-image: url('msg-status-unread_16.svg') !important; background-size: contain; }
+.wtmail-icon-status-read { background-image: url('msg-status-read_16.svg') !important; background-size: contain; }
+.wtmail-icon-status-unseen { background-image: url('msg-status-unseen_16.svg') !important; background-size: contain; }
+.wtmail-icon-status-seen { background-image: url('msg-status-seen_16.svg') !important; background-size: contain; }
+.wtmail-icon-status-new { background-image: url('msg-status-new_16.svg') !important; background-size: contain; }
+.wtmail-icon-status-replied { background-image: url('msg-status-replied_16.svg') !important; background-size: contain; }
+.wtmail-icon-status-forwarded { background-image: url('msg-status-forwarded_16.svg') !important; background-size: contain; }
+.wtmail-icon-status-replied-forwarded { background-image: url('msg-status-repfwd_16.svg') !important; background-size: contain; }
 
-.wtmail-icon-header-priority-xs { background-image: url('headerpriority_16.gif') !important; background-repeat: no-repeat; background-position: center; }
-.wtmail-icon-priority-high-xs { background-image: url('headerpriority_16.gif') !important; background-repeat: no-repeat; background-position: center; }
-
-.wtmail-icon-header-status-xs { background-image: url('headerstatus_16.gif') !important; background-repeat: no-repeat; background-position: center; }
-.wtmail-icon-status-unread-xs { background-image: url('statusread_16.png') !important; }
-.wtmail-icon-status-read-xs { background-image: url('statusunread_16.png') !important; }
-.wtmail-icon-status-unseen-xs { background-image: url('status-seen_16.png') !important; }
-.wtmail-icon-status-seen-xs { background-image: url('status-unseen_16.png') !important; }
-.wtmail-icon-status-new { background-image: url('statusnew_16.svg') !important; background-size: contain; }
-.wtmail-icon-status-replied { background-image: url('statusreplied_16.svg') !important; background-size: contain; }
-.wtmail-icon-status-forwarded { background-image: url('statusforwarded_16.svg') !important; background-size: contain; }
-.wtmail-icon-status-replied-forwarded { background-image: url('statusrepfwd_16.svg') !important; background-size: contain; }
-
-.wtmail-icon-status-shared-xs { background-image: url('shared_16.png') !important; }
-
-.wtmail-icon-header-attach-xs { background-image: url('headerattach_16.gif') !important; background-repeat: no-repeat; background-position: center; }
-.wtmail-icon-header-flag-xs { background-image: url('headerflag_16.gif') !important; background-repeat: no-repeat; background-position: center; }
-.wtmail-icon-header-note-xs { background-image: url('headermailnote_16.gif') !important; background-repeat: no-repeat; background-position: center; }
-.wtmail-icon-header-dms-xs { background-image: url('headerdms_16.png') !important; background-repeat: no-repeat; background-position: center; }
-
-.x-tool-graph  { background-image: url('showgraph_50x23.png') !important; width: 50px; height: 24px; }
-.x-tool-empty  { background-image: none !important; background-color: transparent !important; }
 .wtmail-smartsearch-name-column { padding-left: 6px; font-size: 13px }
 .wtmail-smartsearch-total-column { color: gray; font-size: 13px }
 
+.x-tool-graph  { background-image: url('showgraph_50x23.png') !important; width: 50px; height: 24px; }
+.x-tool-empty  { background-image: none !important; background-color: transparent !important; }
 .wtmail-header-text-clip div div div div { text-overflow: clip; }
 
 .wtmail-icon-inMailFilters { background-image: url('mailfilter-in_16.svg') !important; background-size: contain; }
-.wtmail-icon-outMailFilters { background-image: url('mailfilter-out_16.png') !important; background-size: contain; }
-.wtmail-icon-addMailFilter-xs { background-image: url('mailFilter-add_16.png') !important; }
-.wtmail-icon-deleteMailFilter-xs { background-image: url('mailFilter-delete_16.png') !important; }
-.wtmail-icon-sieveFilter-xs { background-image: url('sieveFilter_16.png') !important; }
+.wtmail-icon-outMailFilters { background-image: url('mailfilter-out_16.svg') !important; background-size: contain; }
+.wtmail-icon-addMailFilter { background-image: url('mailfilter-add_16.svg') !important; background-size: contain; }
+.wtmail-icon-sieveFilter { background-image: url('sievefilter_16.svg') !important; background-size: contain; }
 
 .wtmail-icon-msgAddReminder { background-image: url('msg-reminder-add_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgAddReminder-grayed { background-image: url('msg-reminder-add-grayed_16.svg') !important; background-size: contain; }
-.wtmail-icon-msgReceipt { background-image: url('msg-receipt_16.svg') !important; background-size: contain; }
-.wtmail-icon-msgReceipt-grayed { background-image: url('msg-receipt-grayed_16.svg') !important; background-size: contain; }
-.wtmail-icon-msgPriorityHigh { background-image: url('msg-priority-high_16.svg') !important; background-size: contain; }
-.wtmail-icon-msgPriorityHigh-grayed { background-image: url('msg-priority-high-grayed_16.svg') !important; background-size: contain; }
-.wtmail-icon-msgMailcard { background-image: url('mailcard_16.svg') !important; background-size: contain; }
-.wtmail-icon-msgMailcard-grayed { background-image: url('mailcard-grayed_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetReceipt { background-image: url('msg-receipt_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetReceipt-grayed { background-image: url('msg-receipt-grayed_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetPriorityHigh { background-image: url('msg-priority-high_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetPriorityHigh-grayed { background-image: url('msg-priority-high-grayed_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetMailcard { background-image: url('mailcard_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetMailcard-grayed { background-image: url('mailcard-grayed_16.svg') !important; background-size: contain; }
 
-/* tree */
-.wtmail-icon-imap-folder-xs { background-image: url(imap-folder-default_16.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-imap-folder-xs { background-image: url(imap-folder-default-open_16.png) !important; }
-.wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox_16.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-inbox-folder-xs { background-image: url(imap-folder-inbox-open_16.png) !important; }
-.wtmail-icon-drafts-folder-xs { background-image: url(imap-folder-drafts_16.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-drafts-folder-xs { background-image: url(imap-folder-drafts-open_16.png) !important; }
-.wtmail-icon-sent-folder-xs { background-image: url(imap-folder-sent_16.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-sent-folder-xs { background-image: url(imap-folder-sent-open_16.png) !important; }
-.wtmail-icon-spam-folder-xs { background-image: url(imap-folder-spam_16.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-spam-folder-xs { background-image: url(imap-folder-spam-open_16.png) !important; }
-.wtmail-icon-trash-folder-xs { background-image: url(imap-folder-trash_16.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-trash-folder-xs { background-image: url(imap-folder-trash-open_16.png) !important; }
-.wtmail-icon-archive-folder-xs { background-image: url(imap-folder-archive_16.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-archive-folder-xs { background-image: url(imap-folder-archive-open_16.png) !important; }
-.wtmail-icon-shared-folder-xs { background-image: url(imap-folder-shared_16.png) !important; }
-.x-grid-tree-node-expanded .wtmail-icon-shared-folder-xs { background-image: url(imap-folder-shared-open_16.png) !important; }
+.wtmail-pec { background-image: url('pec_16.svg') !important; background-size: contain; }
+.wtmail-pec-accepted { background-image: url('pec-accepted_16.svg') !important; background-size: contain; }
+.wtmail-pec-not-accepted { background-image: url('pec-notaccepted_16.svg') !important; background-size: contain; }
+.wtmail-pec-delivered { background-image: url('pec-delivered_16.svg') !important; background-size: contain; }
+.wtmail-pec-error { background-image: url('pec-error_16.svg') !important; background-size: contain; }
 
-.wtmail-icon-htmleditor-template-xs { background-image: url('htmleditor_template_16.png') !important; }
+/* Icons: IMAP tree */
+.wtmail-icon-imapfolder { background-image: url('folder_16.svg') !important; background-size: contain; }
+.wtmail-icon-inboxfolder { background-image: url('folder-inbox_16.svg') !important; background-size: contain; }
+.wtmail-icon-sentfolder { background-image: url('folder-sent_16.svg') !important; background-size: contain; }
+.wtmail-icon-draftsfolder { background-image: url('folder-drafts_16.svg') !important; background-size: contain; }
+.wtmail-icon-junkfolder { background-image: url('folder-junk_16.svg') !important; background-size: contain; }
+.wtmail-icon-trashfolder { background-image: url('folder-trash_16.svg') !important; background-size: contain; }
+.wtmail-icon-archivefolder { background-image: url('folder-archive_16.svg') !important; background-size: contain; }
+.wtmail-icon-sharefolder { background-image: url('folder-share_16.svg') !important; background-size: contain; }
+.x-grid-tree-node-expanded .wtmail-icon-imapfolder { background-image: url('folder-open_16.svg') !important; background-size: contain; }
+.x-grid-tree-node-expanded .wtmail-icon-inboxfolder { background-image: url('folder-inbox-open_16.svg') !important; background-size: contain; }
+.x-grid-tree-node-expanded .wtmail-icon-sentfolder { background-image: url('folder-sent-open_16.svg') !important; background-size: contain; }
+.x-grid-tree-node-expanded .wtmail-icon-draftsfolder { background-image: url('folder-drafts-open_16.svg') !important; background-size: contain; }
+.x-grid-tree-node-expanded .wtmail-icon-junkfolder { background-image: url('folder-junk-open_16.svg') !important; background-size: contain; }
+.x-grid-tree-node-expanded .wtmail-icon-trashfolder { background-image: url('folder-trash-open_16.svg') !important; background-size: contain; }
+.x-grid-tree-node-expanded .wtmail-icon-archivefolder { background-image: url('folder-archive-open_16.svg') !important; background-size: contain; }
+.x-grid-tree-node-expanded .wtmail-icon-sharefolder { background-image: url('folder-share-open_16.svg') !important; background-size: contain; }
+.wtmail-icon-folderStatus-shared { background-image: url('folderstatus-shared_16.svg') !important; background-size: contain; }
 
 .wtmail-row-unread TD DIV { font-weight: bold; }
 .wtmail-row-hidden { display: none; }
 /* .wtmail-icon-testaction { background-image: url('mail_16.png') !important; }*/
+
+.wtmail-cell-ico-unseen { background-size: 10px 10px; }
 
 .wtmail-row-body { max-height: 30; color: gray }
 .wtmail-row-body-hidden { display: none; }
@@ -138,12 +113,7 @@
 .wtmail-flag-pink { color: #e91e63; opacity: 1 !important; }
 .wtmail-flag-special { color: #ffc107; opacity: 1 !important; }
 .wtmail-flag-complete { color: initial;}
-
-.wtmail-pec { background-image: url('pec_16.svg') !important; background-size: contain; }
-.wtmail-pec-accepted { background-image: url('pec-accepted_16.svg') !important; background-size: contain; }
-.wtmail-pec-not-accepted { background-image: url('pec-notaccepted_16.svg') !important; background-size: contain; }
-.wtmail-pec-delivered { background-image: url('pec-delivered_16.svg') !important; background-size: contain; }
-.wtmail-pec-error { background-image: url('pec-error_16.svg') !important; background-size: contain; }
+.wtmail-note { color: #e7b465; }
 
 .wtmail-row-pec-error { background: red; }
 .wtmail-row-pec-accepted { background: lightsalmon; }
@@ -240,10 +210,10 @@ div#wtmail-editor-mailcard { border: 1px dotted lightgray !important; }
 .wtmail-ical-title { background-color: #77AAFF; color: white; text-align: center; font-weight: bold }
 .wtmail-ical-label { background-color: #cccccc; width: 150px; vertical-align: top }
 .wtmail-ical-data { word-wrap: break-word }
-.wtmail-ical-accepted-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-accepted_16.png') !important; }
-.wtmail-ical-declined-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-declined_16.png') !important; }
-.wtmail-ical-needaction-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-needaction_16.png') !important; }
-.wtmail-ical-tentative-xs { display: inline-block; width:16px; height:16px; background-image:url('ical-tentative_16.png') !important; }
+.wtmail-ical-accepted { display: inline-block; width:16px; height:16px; background-image:url('ical-accepted_16.png') !important; }
+.wtmail-ical-declined { display: inline-block; width:16px; height:16px; background-image:url('ical-declined_16.png') !important; }
+.wtmail-ical-needaction { display: inline-block; width:16px; height:16px; background-image:url('ical-needaction_16.png') !important; }
+.wtmail-ical-tentative { display: inline-block; width:16px; height:16px; background-image:url('ical-tentative_16.png') !important; }
 
 .wtmail-table-editor-attachment-container { border: none; }
 .wtmail-table-editor-attachment { width: 100%; table-layout: fixed; background-color: transparent; border: none; cursor: pointer }
@@ -304,12 +274,14 @@ blockquote {
 }
 .wtmail-messagecolumn-collapsetool {
 	cursor: pointer;
+    opacity: 0.8;
 }
 .wtmail-messagecolumn-notetool {
 	cursor: pointer;
 	color: #e7b465;
 }
 .wtmail-messagecolumn-glyph {
+    opacity: 0.7;
 	display: inline-block;
 	margin: 0 0 0 2px;
 	text-align: center;

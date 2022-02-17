@@ -40,7 +40,7 @@ Ext.define('Sonicle.webtop.mail.view.AddressBookView', {
 	
 	dockableConfig: {
 		title: '{addressbook.tit}',
-		iconCls: 'wt-icon-addressbook-xs',
+		iconCls: 'wtmail-icon-addressbook',
 		width: 700,
 		height: 500
 	},
@@ -65,7 +65,7 @@ Ext.define('Sonicle.webtop.mail.view.AddressBookView', {
 			tbar: [
 				{
 					xtype: 'button',
-					iconCls: 'wt-icon-save-xs', 
+					iconCls: 'wt-icon-save', 
 					tooltip: WT.res('act-saveClose.lbl'),
 					text: WT.res('act-saveClose.lbl'),
 					handler: me.actionSave,

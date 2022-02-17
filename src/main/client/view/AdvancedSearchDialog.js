@@ -202,7 +202,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 							data: [
 								['replied',me.res('streplied'),'wtmail-icon-status-replied'],
 								['forwarded',me.res('stforwarded'),'wtmail-icon-status-forwarded'],
-								['read',me.res('stread'),'wtmail-icon-status-read-xs'],
+								['read',me.res('stread'),'wtmail-icon-status-read'],
 								['new',me.res('strecent'),'wtmail-icon-status-new']
 							]
 						}),
@@ -221,19 +221,19 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						store: new Ext.data.SimpleStore({
 							fields: ['id','desc','icon'],
 							data: [
-								['red',me.res('message.flag.red'),'wtmail-icon-flagred-xs'],
-								['blue',me.res('message.flag.blue'),'wtmail-icon-flagblue-xs'],
-								['yellow',me.res('message.flag.yellow'),'wtmail-icon-flagyellow-xs'],
-								['green',me.res('message.flag.green'),'wtmail-icon-flaggreen-xs'],
-								['orange',me.res('message.flag.orange'),'wtmail-icon-flagorange-xs'],
-								['purple',me.res('message.flag.purple'),'wtmail-icon-flagpurple-xs'],
-								['black',me.res('message.flag.black'),'wtmail-icon-flagblack-xs'],
-								['gray',me.res('message.flag.gray'),'wtmail-icon-flaggray-xs'],
-								['white',me.res('message.flag.white'),'wtmail-icon-flagwhite-xs'],
-								['brown',me.res('message.flag.brown'),'wtmail-icon-flagbrown-xs'],
-								['azure',me.res('message.flag.azure'),'wtmail-icon-flagazure-xs'],
-								['pink',me.res('message.flag.pink'),'wtmail-icon-flagpink-xs'],
-								['complete',me.res('message.flag.complete'),'wtmail-icon-flagcomplete-xs']
+								['red',me.res('message.flag.red'),'fas fa-bookmark wtmail-flag-red'],
+								['blue',me.res('message.flag.blue'),'fas fa-bookmark wtmail-flag-blue'],
+								['yellow',me.res('message.flag.yellow'),'fas fa-bookmark wtmail-flag-yellow'],
+								['green',me.res('message.flag.green'),'fas fa-bookmark wtmail-flag-green'],
+								['orange',me.res('message.flag.orange'),'fas fa-bookmark wtmail-flag-orange'],
+								['purple',me.res('message.flag.purple'),'fas fa-bookmark wtmail-flag-purple'],
+								['black',me.res('message.flag.black'),'fas fa-bookmark wtmail-flag-black'],
+								['gray',me.res('message.flag.gray'),'fas fa-bookmark wtmail-flag-gray'],
+								['white',me.res('message.flag.white'),'fas fa-bookmark wtmail-flag-white'],
+								['brown',me.res('message.flag.brown'),'fas fa-bookmark wtmail-flag-brown'],
+								['azure',me.res('message.flag.azure'),'fas fa-bookmark wtmail-flag-azure'],
+								['pink',me.res('message.flag.pink'),'fas fa-bookmark wtmail-flag-pink'],
+								['complete',me.res('message.flag.complete'),'fas fa-check wtmail-flag-complete wt-theme-glyph']
 							]
 						}),
 						//value: this.method,

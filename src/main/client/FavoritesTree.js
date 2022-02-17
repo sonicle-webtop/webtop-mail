@@ -68,7 +68,7 @@ Ext.define('Sonicle.webtop.mail.FavoritesTree', {
 					text: 'Favorites Tree',
 					folder: WT.res("word.favorites"),
 					unread: 0,
-					iconCls: 'wtmail-icon-favorites-xs',
+					iconCls: 'wtmail-icon-favorites',
 					expanded: true
 				},
 				rootVisible: false,

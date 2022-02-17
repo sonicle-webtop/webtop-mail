@@ -36,7 +36,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 	extend: 'WTA.sdk.DockableView',
 	
 	dockableConfig: {
-		iconCls: 'wtmail-icon-movetofolder-xs',
+		iconCls: 'wtmail-icon-movetofolder',
 		title: '{act-movetofolder.lbl}',
 		width: 700,
 		height: 500

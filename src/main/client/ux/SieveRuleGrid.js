@@ -35,6 +35,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 	extend: 'Ext.grid.Panel',
 	alias: 'widget.wtmailsieverulegrid',
 	requires: [
+		'Sonicle.grid.column.Action',
 		'Sonicle.grid.plugin.DDOrdering',
 		'WTA.ux.data.SimpleModel',
 		'Sonicle.webtop.mail.store.SieveRuleField',
@@ -142,16 +143,16 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 				},
 				flex: 2
 			}, {
-				xtype: 'actioncolumn',
-				align: 'center',
-				width: 50,
-				items: [{
-					iconCls: 'fa fa-minus-circle',
-					tooltip: WT.res('act-remove.lbl'),
-					handler: function(gp, ri) {
-						gp.getStore().removeAt(ri);
+				xtype: 'soactioncolumn',
+				items: [
+					{
+						iconCls: 'far fa-trash-alt',
+						tooltip: WT.res('act-remove.lbl'),
+						handler: function(g, ridx) {
+							g.getStore().removeAt(ridx);
+						}
 					}
-				}]
+				]
 			}];
 		}
 

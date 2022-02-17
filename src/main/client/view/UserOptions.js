@@ -369,9 +369,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							items: [{
 								xtype: 'button',
 								reference: 'addIdentity',
-								text: WT.res('act-add.lbl'),
-								tooltip: null,
-								iconCls: 'wt-icon-add-xs',
+								tooltip: WT.res('act-add.lbl'),
+								iconCls: 'wtmail-icon-identityAdd',
 								handler: function() {
 									var g=me.lref('gpidents'),
 									r=g.store.add({
@@ -383,18 +382,6 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									})[0];
 									g.getPlugin('gpidentseditor').startEdit(r);
 								}
-							}, {
-								xtype: 'button',
-								reference: 'deleteIdentity',
-								text: WT.res('act-delete.lbl'),
-								tooltip: null,
-								iconCls: 'wt-icon-delete',
-								handler: function() {
-									var sel = me.lref('gpidents').getSelection();
-									if (sel.length>0)
-										me.lref('gpidents').store.remove(sel[0]);
-								},
-								disabled: true
 							},
 							'-',
 							{
@@ -407,7 +394,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								xtype: 'button',
 								reference: 'editIdentityMailcard',
 								tooltip: me.res('opts.a-mailcardedit.tip'),
-								iconCls: 'wtmail-icon-mailcardedit-xs',
+								iconCls: 'wtmail-icon-editMailcard',
 								bind: {
 									hidden: '{!foCanManageMailcard}'
 								},
@@ -425,7 +412,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								xtype: 'button',
 								reference: 'deleteIdentityMailcard',
 								tooltip: me.res('opts.a-mailcardremove.tip'),
-								iconCls: 'wtmail-icon-mailcardremove-xs',
+								iconCls: 'wtmail-icon-deleteMailcard',
 								bind: {
 									hidden: '{!foCanManageMailcard}'
 								},
@@ -465,7 +452,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								clicksToEdit: 2,
 								pluginId: 'gpidentseditor'
 							},
-							columns: [{
+							columns: [
+								{
 									dataIndex: 'displayName',
 									header: me.res('opts.ident.displayName.lbl'),
 									editor: {xtype: 'textfield'},
@@ -499,11 +487,23 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 									dataIndex: 'fax',
 									header: me.res('opts.ident.fax.lbl'),
 									editor: { xtype: 'checkbox' },
-									flex: 1
-								}],
+									width: 45
+								}, {
+									xtype: 'soactioncolumn',
+									items: [
+										{
+											iconCls: 'far fa-trash-alt',
+											tooltip: WT.res('act-remove.lbl'),
+											handler: function(g, ridx) {
+												var rec = g.getStore().getAt(ridx);
+												me.lref('gpidents').store.remove(rec);
+											}
+										}
+									]
+								}
+							],
 							listeners: {
 								selectionchange: function(s,recs) {
-									me.lref('deleteIdentity').setDisabled(!recs.length);
 									me.lref('deleteIdentityMailcard').setDisabled(!recs.length);
 									me.lref('editIdentityMailcard').setDisabled(!recs.length);
 								}
@@ -752,7 +752,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 							items: [ {
 									xtype: 'splitbutton',
 									text: WT.res('act-add.lbl'),
-									iconCls: 'wt-icon-add-xs',
+									iconCls: 'wt-icon-add',
 									bind: {
 										disabled: '{!foCanManageExternalAccounts}'
 									},
@@ -813,7 +813,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 								xtype: 'button',
 								text: WT.res('act-edit.lbl'),
 								reference: 'editExternalAccount',
-								iconCls: 'wt-icon-edit-xs',
+								iconCls: 'wt-icon-edit',
 								scope: me,
 								handler: function() {
 									var sel = me.lref('gpExternalAccounts').getSelection(),

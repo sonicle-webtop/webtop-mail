@@ -44,7 +44,7 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartsManager', {
 	
 	dockableConfig: {
 		title: '{editor.quickpartsmgr.tit}',
-		iconCls: 'wtmail-icon-format-quickpart-xs',
+		iconCls: 'wtmail-icon-format-quickpart',
 		width: 200,
 		height: 300
 	},
@@ -61,8 +61,8 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartsManager', {
 		Ext.apply(me, {
 			tbar: [
 				Ext.create('Ext.button.Button', {
-					tooltip: WT.res('act-remove.lbl'),
-					iconCls: 'wt-icon-remove-xs',
+					tooltip: WT.res('act-delete.lbl'),
+					iconCls: 'wt-icon-delete',
 					handler: function() {
 						if (me.gpQPs.getSelectionModel().hasSelection()) {
 							WT.confirm(WT.res('confirm.delete'), function(bid) {

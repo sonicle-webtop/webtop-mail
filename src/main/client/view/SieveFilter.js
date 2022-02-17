@@ -44,7 +44,7 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 	
 	dockableConfig: {
 		title: '{sieveFilter.tit}',
-		iconCls: 'wtmail-icon-sieveFilter-xs',
+		iconCls: 'wtmail-icon-sieveFilter',
 		width: 650,
 		height: 500
 	},

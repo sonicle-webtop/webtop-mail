@@ -93,7 +93,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 
 		me.labelMessages=Ext.create({
 			xtype: 'tbtext',
-			text: '0'
+			html: '0'
 		});
 		
 		me.progressQuota=Ext.create({
@@ -252,7 +252,8 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			breadcrumb: me.bcFolders,
 			createPagingToolbar: true,
 			stateful: WT.plTags.desktop ? true : false,
-			baseStateId: me.mys.buildStateId('messagegrid')
+			stateId: me.mys.buildStateId('messagegrid')
+			//baseStateId: me.mys.buildStateId('messagegrid')
         });
 		if (me.gridMenu) {
 			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
@@ -311,7 +312,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				}
 				text+=" - "+WT.res("word.quota")+": ";
 			}
-			me.labelMessages.setText(text);
+			me.labelMessages.setHtml(text);
 		});
 		
 		me.folderList.on("afterrender",function() {

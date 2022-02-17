@@ -73,7 +73,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 						editor: 'textfield'
 					},
 					{
-						header: WTF.headerWithGlyphIcon('fa fa-eye'),
+						header: WTF.headerWithGlyphIcon('far fa-eye'),
 						dataIndex: 'unread',
 						align: 'right',
 						flex: 1,
@@ -84,13 +84,13 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 					},
 					{
 						xtype: 'soiconcolumn',
-						header: WTF.headerWithGlyphIcon('fa fa-share-alt'),
+						header: WTF.headerWithGlyphIcon('fas fa-share-alt'),
 						dataIndex: 'isSharedToSomeone',
 						flex: 1,
 						sortable: false,
 						hidden: true,
 						getIconCls: function(value,rec) {
-							return value?WTF.cssIconCls(me.mys.XID, 'status-shared', 'xs'):WTF.cssIconCls(WT.XID, 'empty', 'xs');
+							return value ? 'wtmail-icon-folderStatus-shared' : '';
 						},
 						handler: function(grid, rix, cix, e, rec) {
 							me.mys.showSharingView(rec);

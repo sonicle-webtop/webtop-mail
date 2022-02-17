@@ -44,7 +44,7 @@ Ext.define('Sonicle.webtop.mail.view.QuickPartEditor', {
 	
 	dockableConfig: {
 		title: '{editor.btn-quickpart.tit}',
-		iconCls: 'wtmail-icon-format-quickpart-xs',
+		iconCls: 'wtmail-icon-format-quickpart',
 		modal: true,
 		width: 400,
 		height: 300

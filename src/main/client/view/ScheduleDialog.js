@@ -37,7 +37,7 @@ Ext.define('Sonicle.webtop.mail.view.ScheduleDialog', {
 	
 	dockableConfig: {
 		title: '{editor.send.btn-schedule.lbl}',
-		iconCls: 'wtmail-icon-schedule-xs',
+		iconCls: 'wtmail-icon-mailSchedule',
 		modal: true,
 		width: 400,
 		height: 250

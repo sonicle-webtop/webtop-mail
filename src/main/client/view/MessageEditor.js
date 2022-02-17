@@ -233,27 +233,27 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		
 		var smenu=[],sx=0;
 		if (!me.fax) {
-			smenu[sx++]={ text: me.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-send-xs', handler: me.actionSend, scope: me };
+			smenu[sx++]={ text: me.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-mailSend', handler: me.actionSend, scope: me };
 			if (!me.mys.getVar("schedDisabled"))
-				smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me };
+				smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-mailSchedule', handler: me.actionSchedule, scope: me };
 			tbitems[tbx++]={
 				xtype: 'splitbutton',
 				text: me.res('editor.send.btn-send.lbl'),
 				tooltip: me.res('editor.send.btn-send.lbl'),
-				iconCls: 'wtmail-icon-send-xs',
+				iconCls: 'wtmail-icon-mailSend',
 				handler: me.actionSend,
 				scope: me,
 				menu: smenu
 			};
 		} else {
-			smenu[sx++]={ text: me.res('editor.send.btn-sendfax.lbl'), iconCls: 'wtmail-icon-sendfax-xs', handler: me.actionSend, scope: me };
+			smenu[sx++]={ text: me.res('editor.send.btn-sendfax.lbl'), iconCls: 'wtmail-icon-faxSend', handler: me.actionSend, scope: me };
 			if (!me.mys.getVar("schedDisabled"))
-				smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-schedule-xs', handler: me.actionSchedule, scope: me };
+				smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-faxSchedule', handler: me.actionSchedule, scope: me };
 			tbitems[tbx++]={
 				xtype: 'splitbutton',
 				text: me.res('editor.send.btn-sendfax.lbl'),
 				tooltip: me.res('editor.send.btn-sendfax.lbl'),
-				iconCls: 'wtmail-icon-sendfax-xs',
+				iconCls: 'wtmail-icon-faxSend',
 				handler: me.actionSend,
 				scope: me,
 				menu: smenu
@@ -266,24 +266,23 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'splitbutton',
 				//text: me.res('editor.send.btn-save.tip'),
 				tooltip: me.res('editor.btn-save.tip'),
-				iconCls: 'wt-icon-save-xs',
+				iconCls: 'wt-icon-save',
 				handler: me.actionSave,
 				scope: me,
 				menu: [
 					{
 						text: me.res('editor.btn-save.tip'),
 						//tooltip: me.res('editor.btn-save.tip'),
-						iconCls: 'wt-icon-save-xs',
+						iconCls: 'wt-icon-save',
 						handler: me.actionSave,
 						scope: me				
-					},
-					{
+					}, {
 						text: me.res('editor.btn-save-new.tip'),
 						//tooltip: me.res('editor.btn-save-new.tip'),
-						iconCls: 'wt-icon-save-new-xs',
+						iconCls: 'wt-icon-save-new',
 						handler: me.actionSaveNew,
 						scope: me				
-					},
+					}
 				]
 			};
 			tbitems[tbx++]='-';
@@ -293,7 +292,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbitems[tbx++]={
 				xtype: 'button',
 				tooltip: me.res('editor.btn-addressbook.tip'),
-				iconCls: 'wtmail-icon-addressbook-xs',
+				iconCls: 'wtmail-icon-addressbook',
 				handler: me.actionAddressBook,
 				scope: me
 			};
@@ -306,8 +305,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'sotogglebutton',
 				offTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.off.tip.txt')},
 				onTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.on.tip.txt')},
-				offIconCls: 'wtmail-icon-msgReceipt-grayed',
-				onIconCls: 'wtmail-icon-msgReceipt',
+				offIconCls: 'wtmail-icon-msgSetReceipt-grayed',
+				onIconCls: 'wtmail-icon-msgSetReceipt',
 				handler: me.actionReceipt,
 				scope: me
 			}));
@@ -318,8 +317,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'sotogglebutton',
 				offTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.off.tip.txt')},
 				onTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.on.tip.txt')},
-				offIconCls: 'wtmail-icon-msgPriorityHigh-grayed',
-				onIconCls: 'wtmail-icon-msgPriorityHigh',
+				offIconCls: 'wtmail-icon-msgSetPriorityHigh-grayed',
+				onIconCls: 'wtmail-icon-msgSetPriorityHigh',
 				handler: me.actionPriority,
 				scope: me
 			}));
@@ -359,7 +358,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbitems[tbx++]={
 				xtype:'souploadbutton',
 				tooltip: me.res('editor.btn-attach.tip'),
-				iconCls: 'wtmail-icon-attachment-xs',
+				iconCls: 'wtmail-icon-attachment',
 				uploaderConfig: WTF.uploader(me.mys.ID,'UploadAttachment',{
 					extraParams: {
 						tag: me.msgId
@@ -443,8 +442,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			xtype: 'sotogglebutton',
 			offTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.off.tip.txt')},
 			onTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.on.tip.txt')},
-			offIconCls: 'wtmail-icon-msgMailcard-grayed',
-			onIconCls: 'wtmail-icon-msgMailcard',
+			offIconCls: 'wtmail-icon-msgSetMailcard-grayed',
+			onIconCls: 'wtmail-icon-msgSetMailcard',
 			handler: me.showMailcardAction,
 			pressed: me.showMailcard,
 			scope: me
@@ -532,7 +531,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					xtype: 'souploadbutton',
 					itemId: 'btncloudattach',
 					tooltip: me.res('editor.btn-cloud-download.tip'),
-					iconCls: 'wtmail-icon-cloud-download-xs',
+					iconCls: 'wtmail-icon-cloud-download',
 					uploaderConfig: WTF.uploader(me.mys.ID, 'UploadCloudFile', {
 						extraParams: {
 							tag: me.msgId
@@ -599,7 +598,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				tbitems[tbx++]={
 					xtype: 'button',
 					tooltip: me.res('editor.btn-cloud-upload.tip'),
-					iconCls: 'wtmail-icon-cloud-upload-xs',
+					iconCls: 'wtmail-icon-cloud-upload',
 					handler: function() {
 						var subject=me.subject.getValue().trim();
 						
@@ -829,7 +828,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								text: me.res('editor.btn-insertimagefile.tip'),
 								cls: Ext.baseCSSPrefix + 'html-editor-tip'
 							},
-							iconCls: 'wtmail-icon-format-insertimagefile-xs',
+							iconCls: 'wtmail-icon-format-insertimagefile',
 							uploaderConfig: WTF.uploader(me.mys.ID, 'UploadCid',{
 								extraParams: {
 									tag: me.msgId
@@ -876,7 +875,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						me.addRef('btnQuickp', {
 							xtype:'splitbutton',
 							tabIndex: -1,
-							iconCls: 'wtmail-icon-format-quickpart-xs',
+							iconCls: 'wtmail-icon-format-quickpart',
 							tooltip: {
 								title: me.res('editor.btn-quickpart.tit'),
 								text: me.res('editor.btn-quickpart.tip'),
@@ -2013,7 +2012,7 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 			else {
 				var params={
 					uploadId: r.get("uploadId")
-				}
+				};
 				if (r.get("editable")) me.viewFile(params);
 				else {
 					var href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",params);
