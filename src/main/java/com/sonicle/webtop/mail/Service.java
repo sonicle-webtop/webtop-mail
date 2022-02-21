@@ -272,6 +272,8 @@ public class Service extends BaseService {
 	private boolean previewBalanceTags=true;
 	private boolean useNewHTMLEditor=true;
 	
+	private boolean refwSanitizeDownlevelRevealedComments=false;
+	
 	@Override
 	public void initialize() {
 		
@@ -513,6 +515,7 @@ public class Service extends BaseService {
 		// Retrieve editor flag to avoid continuous lookups
 		// (temporary until full transition)
 		useNewHTMLEditor = cus.getUseNewHTMLEditor();
+		refwSanitizeDownlevelRevealedComments = ss.isReFwSanitizeDownlevelRevealedComments();
 	}
 	
 	private MailAccount createAccount(String id) {
@@ -1475,12 +1478,14 @@ public class Service extends BaseService {
                                         //use html content, which is text content with possible html encoded characters
 					forward.setText(getForwardBody(msg, htmlsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, true, fromtitle, totitle, cctitle, datetitle, subjecttitle));
 				} else {
-                                        //take care of possible html shit
-					forward.setText(
-							MailUtils.removeMSWordShit(
-								getForwardBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle)
-							)
+					String newHtml=MailUtils.removeMSWordShit(
+						getForwardBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle)
 					);
+					if (refwSanitizeDownlevelRevealedComments)
+						newHtml=MailUtils.sanitizeDownlevelRevealedComments(newHtml);
+					
+                                        //take care of possible html shit
+					forward.setText(newHtml);
 				}
 			} catch (Exception exc) {
 				Service.logger.error("Exception",exc);
@@ -1856,7 +1861,12 @@ public class Service extends BaseService {
 				} else {
 					text = getReplyBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
 				}
-				reply.setText(MailUtils.removeMSWordShit(text));
+				String newHtml=MailUtils.removeMSWordShit(text);
+				
+				if (refwSanitizeDownlevelRevealedComments)
+					newHtml=MailUtils.sanitizeDownlevelRevealedComments(newHtml);
+
+				reply.setText(newHtml);
 			} else {
 				reply.setText("");
 			}

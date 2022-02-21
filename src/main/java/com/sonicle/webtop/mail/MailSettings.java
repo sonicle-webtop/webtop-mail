@@ -204,6 +204,14 @@ public class MailSettings {
 	 * [enum {list:LIST, vertical:VERTICAL, horizontal:HORIZONTAL}](right)
 	 */
 	public static final String VIEW_MODE = "viewmode";
+		
+	/**
+	 * [system+domain]
+	 * [boolean]
+	 * Do sanitize downleve revealed comments during reply or forward
+	 */
+	public static final String RE_FW_SANITIZE_DOWNLEVEL_REVEALED_COMMENTS = "re.fw.sanitize.downlevel.revealed.comments";
+	
 	
     public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
 	public static final String DMS_ARCHIVE = "archive";

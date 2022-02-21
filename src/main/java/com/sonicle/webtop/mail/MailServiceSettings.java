@@ -335,5 +335,9 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(AUTH_USER_STRIP_DOMAIN,false);
 	}
 	
+	public boolean isReFwSanitizeDownlevelRevealedComments() {
+		return getBoolean(RE_FW_SANITIZE_DOWNLEVEL_REVEALED_COMMENTS,false);
+	}
+	
 	
 }
