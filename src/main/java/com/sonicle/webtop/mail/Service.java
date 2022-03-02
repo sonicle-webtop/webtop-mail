@@ -7304,13 +7304,13 @@ public class Service extends BaseService {
 			
 			InputStream is = part.getInputStream();
 			try {
-				List<ContactInput> results = new VCardInput().fromVCardFile(is, null);
+				List<ContactInput> results = new VCardInput().parseVCard(is);
 				ContactInput ci = results.get(0);
 				
-				JsContactData js = new JsContactData(ci.contact);
+				JsContactData js = new JsContactData(ci.contact, ci.contactCompany);
 
-				if (ci.contact.hasPicture()) {
-					ContactPictureWithBytes picture = (ContactPictureWithBytes)ci.contact.getPicture();
+				if (ci.contactPicture != null) {
+					ContactPictureWithBytes picture = (ContactPictureWithBytes)ci.contactPicture;
 					WebTopSession.UploadedFile upl = null;
 					ByteArrayInputStream bais = null;
 					try {
