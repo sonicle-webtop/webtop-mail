@@ -71,6 +71,17 @@ public class IdentityDAO extends BaseDAO {
 			.fetchInto(OIdentity.class);
 	}
 	
+	public List<OIdentity> selectByDomain(Connection con, String domainId) throws DAOException {
+		DSLContext dsl = getDSL(con);
+		return dsl
+			.select()
+			.from(IDENTITIES)
+			.where(
+				IDENTITIES.DOMAIN_ID.equal(domainId)
+			)
+			.fetchInto(OIdentity.class);
+	}
+	
 	public int insert(Connection con, OIdentity item) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		return dsl

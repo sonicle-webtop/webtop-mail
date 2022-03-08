@@ -135,6 +135,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	private SieveConfig sieveConfig = null;
 	List<Identity> identities=null;
 	HashMap<String, Identity> identHash = new HashMap<>();
+	HashMap<String, List<Identity>> allPersonalIdentitiesDomains = new HashMap<>();
 	List<MailFilter> filtersCache=null;
 	Object filtersCacheLock=new Object();
 	
@@ -188,6 +189,15 @@ public class MailManager extends BaseManager implements IMailManager {
 		return identities;
 	}
     
+	public List<Identity> listAllPersonalIdentities(String domainId) throws WTException {
+		List<Identity> allPersonalIdentities=allPersonalIdentitiesDomains.get(domainId);
+		if (allPersonalIdentities==null) {
+			allPersonalIdentitiesDomains.put(domainId, allPersonalIdentities=buildAllPersonalIdentities(domainId));
+		}
+		
+		return allPersonalIdentities;
+	}
+	
     public Identity getMainIdentity() {
 		if (identities==null) {
             try {
@@ -289,6 +299,25 @@ public class MailManager extends BaseManager implements IMailManager {
 				return ident;
 		}
 		return null;
+	}
+	
+	protected List<Identity> buildAllPersonalIdentities(String domainId) throws WTException {
+		Connection con=null;
+		List<Identity> idents=new ArrayList();
+		try {			
+			con=WT.getConnection(SERVICE_ID);
+			IdentityDAO idao=IdentityDAO.getInstance();
+			List<OIdentity> items=idao.selectByDomain(con, domainId);
+			for(OIdentity oi: items) {
+				Identity ident=new Identity(oi);
+				idents.add(ident);
+			}
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+		return idents;
 	}
 	
 	private List<Identity> buildIdentities() throws WTException {
