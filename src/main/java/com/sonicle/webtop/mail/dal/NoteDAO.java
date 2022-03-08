@@ -55,6 +55,8 @@ public class NoteDAO extends BaseDAO {
 	
 	public ONote selectById(Connection con, String domainId, String messageId) throws DAOException {
 		DSLContext dsl = getDSL(con);
+		if (messageId.length()>255)
+			messageId=messageId.substring(0,255);
 		return dsl
 			.select()
 			.from(NOTES)
@@ -67,6 +69,8 @@ public class NoteDAO extends BaseDAO {
 	
 	public int insert(Connection con, ONote item) throws DAOException {
 		DSLContext dsl = getDSL(con);
+		if (item.getMessageId().length()>255)
+			item.setMessageId(item.getMessageId().substring(0,255));
 		NotesRecord record = dsl.newRecord(NOTES, item);
 		return dsl
 			.insertInto(NOTES)
@@ -76,6 +80,8 @@ public class NoteDAO extends BaseDAO {
 	
 	public int deleteById(Connection con, String domainId, String messageId) throws DAOException {
 		DSLContext dsl = getDSL(con);
+		if (messageId.length()>255)
+			messageId=messageId.substring(0,255);
 		return dsl
 			.delete(NOTES)
 			.where(NOTES.DOMAIN_ID.equal(domainId)
