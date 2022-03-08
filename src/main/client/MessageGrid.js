@@ -1920,7 +1920,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				fromfolder: from,
 				tofolder: to,
 				allfiltered: true,
-				isdd: true
+				isdd: false
 			};
 		if (oparams.sort) {
 			params.sort=oparams.sort.property;
