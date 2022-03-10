@@ -911,6 +911,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var me = this, key, field;
 		if (!me.skipViewOptionsCheckChange && checked) {
 			key = Sonicle.String.removeStart(s.getItemId(), 'sortField-');
+			if (key !== 'date' && me.store.getGroupField()) {
+				me.changeGrouping(me.groupField_key2field('none'));
+			}
 			// Sort direction will follow the best option for the choosen field;
 			// beforeshow will keep sortDirection value updated accordingly.
 			field = me.sortField_key2field(key);
