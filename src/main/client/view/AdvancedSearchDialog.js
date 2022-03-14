@@ -408,10 +408,13 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
         var me=this,
 			s=me.messageGrid.getStore();
 			jsd=s.proxy.reader.rawData;
-        if (jsd.finished) {
+        if (!jsd || jsd.finished) {
             me.searchRunning=false;
             me.stopSearch();
-            if (jsd.max) {
+			if (!jsd) {
+				WT.warn(me.res("advsearch-timeout"));
+			}
+            else if (jsd.max) {
                 WT.warn(me.res("advsearch-maxreached"));
             }
         }
