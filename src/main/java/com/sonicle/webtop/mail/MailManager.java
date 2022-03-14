@@ -100,7 +100,10 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.search.SearchTerm;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.format.DateTimeFormatter;
@@ -1107,6 +1110,15 @@ public class MailManager extends BaseManager implements IMailManager {
 		logger.debug("Working on autoresponder...");
 		AutoResponder autoResp = getAutoResponder();
 		if (autoResp.getEnabled()) {
+			String profileEmail = StringUtils.lowerCase(ud.getProfileEmailAddress());
+			String personalEmail = StringUtils.lowerCase(ud.getPersonalEmailAddress());
+			String tokens[] = StringUtils.splitByWholeSeparator(StringUtils.lowerCase(StringUtils.replace(autoResp.getAddresses(), " ", "")), ",");
+			Set<String> addresses = new HashSet(Arrays.asList(tokens));
+			
+			if (!profileEmail.equals(personalEmail) && !addresses.contains(personalEmail)) {
+				autoResp.setAddresses(LangUtils.joinStrings(",", autoResp.getAddresses(), personalEmail));
+			}
+			
 			ssb.setVacation(autoResp.toSieveVacation(ud.getPersonalEmail(), ud.getTimeZone()));
 		}
 		
