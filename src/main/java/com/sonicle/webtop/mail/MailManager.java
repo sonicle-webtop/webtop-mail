@@ -100,7 +100,10 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.search.SearchTerm;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.format.DateTimeFormatter;
@@ -135,6 +138,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	private SieveConfig sieveConfig = null;
 	List<Identity> identities=null;
 	HashMap<String, Identity> identHash = new HashMap<>();
+	HashMap<String, List<Identity>> allPersonalIdentitiesDomains = new HashMap<>();
 	List<MailFilter> filtersCache=null;
 	Object filtersCacheLock=new Object();
 	
@@ -188,6 +192,15 @@ public class MailManager extends BaseManager implements IMailManager {
 		return identities;
 	}
     
+	public List<Identity> listAllPersonalIdentities(String domainId) throws WTException {
+		List<Identity> allPersonalIdentities=allPersonalIdentitiesDomains.get(domainId);
+		if (allPersonalIdentities==null) {
+			allPersonalIdentitiesDomains.put(domainId, allPersonalIdentities=buildAllPersonalIdentities(domainId));
+		}
+		
+		return allPersonalIdentities;
+	}
+	
     public Identity getMainIdentity() {
 		if (identities==null) {
             try {
@@ -289,6 +302,25 @@ public class MailManager extends BaseManager implements IMailManager {
 				return ident;
 		}
 		return null;
+	}
+	
+	protected List<Identity> buildAllPersonalIdentities(String domainId) throws WTException {
+		Connection con=null;
+		List<Identity> idents=new ArrayList();
+		try {			
+			con=WT.getConnection(SERVICE_ID);
+			IdentityDAO idao=IdentityDAO.getInstance();
+			List<OIdentity> items=idao.selectByDomain(con, domainId);
+			for(OIdentity oi: items) {
+				Identity ident=new Identity(oi);
+				idents.add(ident);
+			}
+		} catch(SQLException | DAOException ex) {
+			throw new WTException(ex, "DB error");
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+		return idents;
 	}
 	
 	private List<Identity> buildIdentities() throws WTException {
@@ -1078,6 +1110,15 @@ public class MailManager extends BaseManager implements IMailManager {
 		logger.debug("Working on autoresponder...");
 		AutoResponder autoResp = getAutoResponder();
 		if (autoResp.getEnabled()) {
+			String profileEmail = StringUtils.lowerCase(ud.getProfileEmailAddress());
+			String personalEmail = StringUtils.lowerCase(ud.getPersonalEmailAddress());
+			String tokens[] = StringUtils.splitByWholeSeparator(StringUtils.lowerCase(StringUtils.replace(autoResp.getAddresses(), " ", "")), ",");
+			Set<String> addresses = new HashSet(Arrays.asList(tokens));
+			
+			if (!profileEmail.equals(personalEmail) && !addresses.contains(personalEmail)) {
+				autoResp.setAddresses(LangUtils.joinStrings(",", autoResp.getAddresses(), personalEmail));
+			}
+			
 			ssb.setVacation(autoResp.toSieveVacation(ud.getPersonalEmail(), ud.getTimeZone()));
 		}
 		

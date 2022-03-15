@@ -537,6 +537,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 							tag: me.msgId
 						},
 						maxFileSize: vfsapi.getVar('privateUploadMaxFileSize'),
+						multiSelection: false,
 						listeners: {
 							beforeupload: function(s,file) {
 								if (WT.getVar('useNewHTMLEditor')) {

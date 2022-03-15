@@ -978,7 +978,12 @@ public class MailAccount {
 		Folder folder=fc.getFolder();
 		Message[] oldmsgs=folder.search(new HeaderTerm(header,value));
 		if (oldmsgs!=null && oldmsgs.length>0) {
-			for(Message m: oldmsgs) m.setFlag(Flags.Flag.DELETED, true);
+			for(Message m: oldmsgs) {
+				//hack for possible bug in Cyrus 3.4 returning more than the searched items
+				String hdr[]=m.getHeader(header);
+				if (hdr!=null && hdr.length>0 && hdr[0].equalsIgnoreCase(value))
+					m.setFlag(Flags.Flag.DELETED, true);
+			}
 			folder.expunge();
 		}
 	}

@@ -4702,9 +4702,27 @@ public class Service extends BaseService {
 						for (String toRecipient : toRecipients) {
 							InternetAddress ia = getInternetAddress(toRecipient);
 							if (!StringUtils.isBlank(ia.getAddress())) {
-								Condition<ContactQuery> predicate = new ContactQuery().email().eq(ia.getAddress());
+								String email=ia.getAddress();
+								Condition<ContactQuery> predicate = new ContactQuery().email().eq(email);
 								if (!contactsManager.existContact(cats, predicate)) {
-									sendAddContactMessage(ia.getAddress(), ia.getPersonal());
+									boolean found=false;
+									//check also internal users profile email
+									List<OUser> users=coreMgr.listUsers(true);
+									for(OUser user: users) {
+										UserProfile.Data userData=WT.getUserData(new UserProfileId(user.getDomainId(),user.getUserId()));
+										if ((found=StringUtils.equalsIgnoreCase(userData.getPersonalEmailAddress(), email)))
+											break;
+									}
+									if (!found) {
+										//check also internal users identities
+										List<Identity> idents=mailManager.listAllPersonalIdentities(coreMgr.getTargetProfileId().getDomainId());
+										for(Identity ident: idents) {
+											if ((found=StringUtils.equalsIgnoreCase(ident.getEmail(), email)))
+												break;
+										}
+									}
+									
+									if (!found) sendAddContactMessage(ia.getAddress(), ia.getPersonal());
 									break;
 								}
 							}

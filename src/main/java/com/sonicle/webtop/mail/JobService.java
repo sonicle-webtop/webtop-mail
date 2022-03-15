@@ -200,19 +200,27 @@ public class JobService extends BaseJobService {
 						if (mids!=null) {
 							String mid=mids[0];
 							if (mid!=null && mid.length()>0) {
-								String senddate=getSingleHeaderValue(m,"Sonicle-send-date");
-								String sendtime=getSingleHeaderValue(m,"Sonicle-send-time");
-								boolean sendnotify=getSingleHeaderValue(m,"Sonicle-notify-delivery").equals("true");
-								if (isTimeToSend(senddate,sendtime)) {
-									sendScheduledMessage(session, pid, domain, folderSent, locale, m, sendnotify);
+								try {
+									String senddate=getSingleHeaderValue(m,"Sonicle-send-date");
+									String sendtime=getSingleHeaderValue(m,"Sonicle-send-time");
+									//hack for possible bug in Cyrus 3.4 returning more than the searched items
+									if (senddate!=null && sendtime!=null) {
+										String hsendnotify=getSingleHeaderValue(m,"Sonicle-notify-delivery");
+										boolean sendnotify=hsendnotify!=null && hsendnotify.equals("true");
+										if (isTimeToSend(senddate,sendtime)) {
+											sendScheduledMessage(session, pid, domain, folderSent, locale, m, sendnotify);
+										}
+									}
+								} catch(Exception exc) {
+									logger.debug("Error during sendScheduledMails on user "+pid.getUserId()+ " message-id "+mid, exc);
+
 								}
-								//scheduleSendTask(mu, mid, senddate, sendtime, sendnotify);
 							}
 						}
 					}
 					//targetfolder.close(true);
 				} catch(Exception exc2) {
-					//MailService.logger.error("");
+					logger.debug("Error during sendScheduledMails on user "+pid.getUserId(), exc2);
 				} finally {
 					try  { targetfolder.close(true); } catch(Exception exc3) {}
 				}
