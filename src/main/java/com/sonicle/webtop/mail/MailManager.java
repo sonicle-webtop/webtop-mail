@@ -1113,7 +1113,10 @@ public class MailManager extends BaseManager implements IMailManager {
 			String profileEmail = StringUtils.lowerCase(ud.getProfileEmailAddress());
 			String personalEmail = StringUtils.lowerCase(ud.getPersonalEmailAddress());
 			String tokens[] = StringUtils.splitByWholeSeparator(StringUtils.lowerCase(StringUtils.replace(autoResp.getAddresses(), " ", "")), ",");
-			Set<String> addresses = new HashSet(Arrays.asList(tokens));
+			Set<String> addresses = Collections.<String>emptySet();
+			if (tokens != null) {
+				addresses = new HashSet(Arrays.asList(tokens));
+			}
 			
 			if (!profileEmail.equals(personalEmail) && !addresses.contains(personalEmail)) {
 				autoResp.setAddresses(LangUtils.joinStrings(",", autoResp.getAddresses(), personalEmail));
