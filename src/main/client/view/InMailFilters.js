@@ -349,13 +349,13 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 	
 	addMailFilter: function(data, opts) {
 		var me = this,
-				vct = WT.createView(me.mys.ID, 'view.SieveFilter');
+				vw = WT.createView(me.mys.ID, 'view.SieveFilter', { swapReturn: true });
 
-		vct.getView().on('viewsave', function(s, success, model) {
+		vw.on('viewsave', function(s, success, model) {
 			Ext.callback(opts.callback, opts.scope || me, [success, model]);
 		});
-		vct.show(false, function() {
-			vct.getView().begin('new', {
+		vw.showView(function() {
+			vw.begin('new', {
 				data: Ext.applyIf(data || {}, {
 					enabled: true,
 					match: 'all'
@@ -397,13 +397,13 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 
 		editMailFilterUI: function(rec) {
 			var me = this,
-					vct = WT.createView(me.mys.ID, 'view.SieveFilter');
+					vw = WT.createView(me.mys.ID, 'view.SieveFilter', { swapReturn: true });
 
-			vct.getView().on('viewsave', function(s, success, model) {
+			vw.on('viewsave', function(s, success, model) {
 				if (success) me.updateFilterRec(model.getId(), model.getData());
 			});
-			vct.show(false, function() {
-				vct.getView().begin('edit', {
+			vw.showView(function() {
+				vw.begin('edit', {
 					data: me.toSieveFilterData(rec.getData())
 				});
 			});

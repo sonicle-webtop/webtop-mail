@@ -278,7 +278,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 		}
 		
 		// Give the editor a unique ID because the CellEditing plugin caches them
-		ed.editorId = rec.getId();
+		ed.editorId = key + rec.getId();
 		//ed.field.column = me.valueColumn;
 		return ed;
 	},
