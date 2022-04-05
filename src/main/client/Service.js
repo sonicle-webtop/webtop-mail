@@ -2241,13 +2241,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	editInMailFilters: function(opts) {
 		opts = opts || {};
 		var me = this,
-		vct = WT.createView(me.ID, 'view.InMailFilters');
+			vw = WT.createView(me.ID, 'view.InMailFilters', { swapReturn: true });
 		
-		vct.getView().on('viewsave', function(s, success, model) {
+		vw.on('viewsave', function(s, success, model) {
 			Ext.callback(opts.callback, opts.scope || me, [success, model]);
 		});
-		vct.show(false, function() {
-			vct.getView().begin('edit', {
+		vw.showView(function() {
+			vw.begin('edit', {
 				data: {
 					id: 'in'
 				},
@@ -2258,12 +2258,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	showManageTagsUI: function() {
 		var me = this,
-				vw = WT.createView(WT.ID, 'view.Tags', {
-					swapReturn: true,
-					viewCfg: {
-						enableSelection: false
-					}
-				});
+			vw = WT.createView(WT.ID, 'view.Tags', {
+				swapReturn: true,
+				viewCfg: {
+					enableSelection: false
+				}
+			});
 		vw.on('viewclose', function(s) {
 			//if (s.syncCount > 0) me.reloadContacts();
 		});

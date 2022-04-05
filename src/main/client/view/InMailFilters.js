@@ -349,7 +349,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 	
 	addMailFilter: function(data, opts) {
 		var me = this,
-				vw = WT.createView(me.mys.ID, 'view.SieveFilter', { swapReturn: true });
+			vw = WT.createView(me.mys.ID, 'view.SieveFilter', { swapReturn: true });
 
 		vw.on('viewsave', function(s, success, model) {
 			Ext.callback(opts.callback, opts.scope || me, [success, model]);

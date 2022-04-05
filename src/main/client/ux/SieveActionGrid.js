@@ -60,68 +60,74 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 		me.columnLines = true;
 		me.selModel = 'rowmodel';
 		me.plugins = me.plugins || [];
-		me.plugins.push({
-			ptype: 'cellediting',
-			clicksToEdit: 1,
-			listeners: {
-				//beforeedit: me.onCellBeforeEdit,
-				edit: me.onCellEdit,
-				//validateedit: me.onCellValidateEdit,
-				scope: me
+		me.plugins.push(
+			{
+				ptype: 'cellediting',
+				clicksToEdit: 1,
+				listeners: {
+					//beforeedit: me.onCellBeforeEdit,
+					edit: me.onCellEdit,
+					//validateedit: me.onCellValidateEdit,
+					scope: me
+				}
 			}
-		});
+		);
 		
-		if(!me.viewConfig) {
+		if (!me.viewConfig) {
 			me.viewConfig = {
 				deferEmptyText: false,
 				emptyText: WT.res(sid, 'wtmailsieveactiongrid.emp'),
-				plugins: [{
-					ptype: 'sogridviewddordering',
-					orderField: 'order'
-				}]
+				plugins: [
+					{
+						ptype: 'sogridviewddordering',
+						orderField: 'order'
+					}
+				]
 			};
 		}
 		
 		if(!me.columns) {
 			me.hideHeaders = true;
-			me.columns = [{
-				xtype: 'solookupcolumn',
-				dataIndex: 'method',
-				store: me.methodStore,
-				displayField: 'desc',
-				editor: Ext.create(WTF.lookupCombo('id', 'desc', {
-					allowBlank: false,
-					store: me.methodStore
-				})),
-				width: 250
-			}, {
-				dataIndex: 'argument',
-				getEditor: me.getArgumentEditor.bind(me),
-				renderer: function(val, meta, rec) {
-					var mtd = rec.get('method');
-					if (Ext.isEmpty(val)) {
-						if (['reject', 'redirect', 'fileinto', 'addflag'].indexOf(mtd) !== -1) {
-							return me.styleAsEmpty(WT.res(sid, 'wtmailsieveactiongrid.argument.'+mtd+'.emp'));
+			me.columns = [
+				{
+					xtype: 'solookupcolumn',
+					dataIndex: 'method',
+					store: me.methodStore,
+					displayField: 'desc',
+					editor: Ext.create(WTF.lookupCombo('id', 'desc', {
+						allowBlank: false,
+						store: me.methodStore
+					})),
+					width: 250
+				}, {
+					dataIndex: 'argument',
+					getEditor: Ext.pass(me.getArgumentEditor, [me]),
+					renderer: function(val, meta, rec) {
+						var mtd = rec.get('method');
+						if (Ext.isEmpty(val)) {
+							if (['reject', 'redirect', 'fileinto', 'addflag'].indexOf(mtd) !== -1) {
+								return me.styleAsEmpty(WT.res(sid, 'wtmailsieveactiongrid.argument.'+mtd+'.emp'));
+							}
 						}
-					}
-					if (mtd === 'addflag') {
-						return WT.res(sid, 'store.sieveActionArgFlag.'+val);
-					}
-					return val;
-				},
-				flex: 1
-			}, {
-				xtype: 'soactioncolumn',
-				items: [
-					{
-						iconCls: 'far fa-trash-alt',
-						tooltip: WT.res('act-remove.lbl'),
-						handler: function(g, ridx) {
-							g.getStore().removeAt(ridx);
+						if (mtd === 'addflag') {
+							return WT.res(sid, 'store.sieveActionArgFlag.'+val);
 						}
-					}
-				]
-			}];
+						return val;
+					},
+					flex: 1
+				}, {
+					xtype: 'soactioncolumn',
+					items: [
+						{
+							iconCls: 'far fa-trash-alt',
+							tooltip: WT.res('act-remove.lbl'),
+							handler: function(g, ridx) {
+								g.getStore().removeAt(ridx);
+							}
+						}
+					]
+				}
+			];
 		}
 
 		me.tools = me.tools || [];
@@ -182,70 +188,9 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 	
 	destroy: function() {
 		var me = this;
-		me.callParent();
 		me.methodStore = null;
-	},
-	
-	onCellBeforeEdit: function(ed, cntx) {
-		//console.log('onCellBeforeEdit');
-	},
-	
-	onCellEdit: function(ed, cntx) {
-		if (cntx.field === 'method') {
-			var rec = cntx.record,
-					nv = cntx.value,
-					ov = cntx.originalValue,
-					methodsWArg = ['keep','discard','stop'],
-					newReqArg = methodsWArg.indexOf(nv) !== -1,
-					oldReqArg = methodsWArg.indexOf(ov) !== -1;
-			
-			if (newReqArg !== oldReqArg) {
-				ed.editors.removeAtKey(rec.getId());
-				rec.set({argument: null});
-			}
-		}
-	},
-	
-	onCellValidateEdit: function(ed, cntx) {
-		//console.log('onCellBeforeEdit');
-	},
-	
-	getArgumentEditor: function(rec, col) {
-		if (!rec) return false;
-		var me = this,
-				method = rec.get('method');
-		switch(method) {
-			case 'reject':
-				return me.getCellEditor('argtextarea', rec);
-			case 'redirect':
-				return me.getCellEditor('argemail', rec);
-			case 'fileinto':
-				return me.getCellEditor('argfolder', rec);
-			case 'addflag':
-				return me.getCellEditor('argflag', rec);
-			default:
-				return false;
-		}
-	},
-	
-	getCellEditor: function(key, rec) {
-		var me = this,
-				ed = me.editors[key],
-				fld;
-		
-		fld = ed.field;
-		if (fld && fld.ui === 'default' && !fld.hasOwnProperty('ui')) {
-			fld.ui = me.editingPlugin.defaultFieldUI;	
-		}
-		
-		// Give the editor a unique ID because the CellEditing plugin caches them
-		ed.editorId = rec.getId();
-		//ed.field.column = me.valueColumn;
-		return ed;
-	},
-	
-	styleAsEmpty: function(text) {
-		return '<span style="color:gray;font-style:italic;">' + text + '</span>';
+		me.destroyEditors(me.editors);
+		me.callParent();
 	},
 	
 	addAction: function() {
@@ -258,5 +203,69 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 			method: 'discard'
 		}));
 		edp.startEditByPosition({row: sto.getCount(), column: 0});
+	},
+	
+	privates: {
+		onCellEdit: function(ed, cntx) {
+			if (cntx.field === 'method') {
+				var rec = cntx.record,
+					nv = cntx.value,
+					ov = cntx.originalValue,
+					methodsWArg = ['keep','discard','stop'],
+					newReqArg = methodsWArg.indexOf(nv) !== -1,
+					oldReqArg = methodsWArg.indexOf(ov) !== -1;
+
+				if (newReqArg !== oldReqArg) {
+					ed.editors.removeAtKey(rec.getId());
+					rec.set({argument: null});
+				}
+			}
+		},
+		
+		getArgumentEditor: function(grid, record) {
+			var column = this,
+				method = record.get('method');
+			switch(method) {
+				case 'reject':
+					return grid.getCellEditor(record, column, 'argtextarea');
+				case 'redirect':
+					return grid.getCellEditor(record, column, 'argemail');
+				case 'fileinto':
+					return grid.getCellEditor(record, column, 'argfolder');
+				case 'addflag':
+					return grid.getCellEditor(record, column, 'argflag');
+				default:
+					return false;
+			}
+		},
+		
+		getCellEditor: function(record, column, type) {
+			var me = this,
+				editor = me.editors[type],
+				field;
+
+			field = editor.field;
+			if (field && field.ui === 'default' && !field.hasOwnProperty('ui')) {
+				field.ui = me.editingPlugin.defaultFieldUI;
+			}
+
+			// Give the editor a unique ID because the CellEditing plugin caches them
+			editor.editorId = type + record.getId();
+			editor.field.column = me.column;
+			return editor;
+		},
+		
+		destroyEditors: function(editors) {
+			var ed;
+			for (ed in editors) {
+				if (editors.hasOwnProperty(ed)) {
+					Ext.destroy(editors[ed]);
+				}
+			}
+		},
+		
+		styleAsEmpty: function(text) {
+			return '<span style="color:gray;font-style:italic;">' + text + '</span>';
+		}
 	}
 });
