@@ -39,10 +39,10 @@
 .wtmail-icon-status-read { background-image: url('msg-status-read_16.svg') !important; background-size: contain; }
 .wtmail-icon-status-unseen { background-image: url('msg-status-unseen_16.svg') !important; background-size: contain; }
 .wtmail-icon-status-seen { background-image: url('msg-status-seen_16.svg') !important; background-size: contain; }
-.wtmail-icon-status-new { background-image: url('msg-status-new_16.svg') !important; background-size: contain; }
-.wtmail-icon-status-replied { background-image: url('msg-status-replied_16.svg') !important; background-size: contain; }
-.wtmail-icon-status-forwarded { background-image: url('msg-status-forwarded_16.svg') !important; background-size: contain; }
-.wtmail-icon-status-replied-forwarded { background-image: url('msg-status-repfwd_16.svg') !important; background-size: contain; }
+.wtmail-icon-status-new { background-image: url('msg-status-new_16.svg') !important; background-size: contain; vertical-align: bottom; }
+.wtmail-icon-status-replied { background-image: url('msg-status-replied_16.svg') !important; background-size: contain; vertical-align: bottom; }
+.wtmail-icon-status-forwarded { background-image: url('msg-status-forwarded_16.svg') !important; background-size: contain; vertical-align: bottom; }
+.wtmail-icon-status-replied-forwarded { background-image: url('msg-status-repfwd_16.svg') !important; background-size: contain; vertical-align: bottom; }
 
 .wtmail-smartsearch-name-column { padding-left: 6px; font-size: 13px }
 .wtmail-smartsearch-total-column { color: gray; font-size: 13px }
