@@ -1876,7 +1876,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					newname=name,
 					newfullname=json.data.fullname;
 					if (n.get("leaf")) n.set("leaf", false);
-					n.expand(false, function(nodes) {
+					
+					if (n.isExpanded()) {
+						tr.getStore().load({ node: n });
+					}
+					else n.expand(false, function(nodes) {
 						//This selection is not necessary and often annoying
 						//It also may rise a bug in ExtJS sometimes
 						//
