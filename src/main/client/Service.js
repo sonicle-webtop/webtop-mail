@@ -1877,9 +1877,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					newfullname=json.data.fullname;
 					if (n.get("leaf")) n.set("leaf", false);
 					n.expand(false, function(nodes) {
-						Ext.defer(function() {
-							me.selectChildNode(acct, n, newfullname);
-						}, 200);
+						//This selection is not necessary and often annoying
+						//It also may rise a bug in ExtJS sometimes
+						//
+						//Ext.defer(function() {
+						//	me.selectChildNode(acct, n, newfullname);
+						//}, 200);
 					});
 				} else {
 					WT.error(json.message);
