@@ -229,7 +229,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 		boolean ismailto = false;
 		boolean changedTarget = false;
 		String mailtoParams = null;
-		if (qName.equalsIgnoreCase("a")) {
+		if (qName.equalsIgnoreCase("a")||qName.equalsIgnoreCase("area")) {
 			islink = true;
 
 		}
