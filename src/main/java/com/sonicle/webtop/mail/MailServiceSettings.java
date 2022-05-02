@@ -102,6 +102,14 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(INLINEABLE_MIME_TYPES,null);
 	}
 	
+	public String getPasDangerousExtensions() {
+		return getString(PAS_DANGEROUS_EXTENSIONS,"exe,bat,dll,com,cmd,bin,cab,js,jar");
+	}
+	
+	public float getPasSpamThreshold() {
+		return getFloat(PAS_SPAM_THRESHOLD,6.0f);
+	}
+	
     public boolean isAutocreateSpecialFolders() {
         return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);
     }

@@ -157,12 +157,14 @@ import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
 import com.sonicle.webtop.core.app.servlet.js.BlobInfoPayload;
+import com.sonicle.webtop.core.model.RecipientFieldType;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.js.JsAdvSearchMessage;
 import com.sonicle.webtop.mail.bol.js.JsListedMessage;
 import com.sonicle.webtop.mail.bol.js.JsMessageDetails;
 import com.sonicle.webtop.mail.bol.js.JsOperateFolder;
 import com.sonicle.webtop.mail.bol.js.JsOperateMessage;
+import com.sonicle.webtop.mail.bol.js.JsProActiveSecurity;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import java.text.Normalizer;
@@ -172,6 +174,7 @@ import jakarta.mail.search.AndTerm;
 import jakarta.mail.search.FlagTerm;
 import jakarta.mail.search.OrTerm;
 import jakarta.mail.search.SearchTerm;
+import org.codehaus.plexus.util.FileUtils;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -273,6 +276,10 @@ public class Service extends BaseService {
 	private boolean useNewHTMLEditor=true;
 	
 	private boolean refwSanitizeDownlevelRevealedComments=false;
+	
+	private ProActiveSecurityRules pasRules=new ProActiveSecurityRules();
+	private ArrayList<String> pasDangerousExtensions=new ArrayList<>();
+	private float pasDefaultSpamThreshold;
 	
 	@Override
 	public void initialize() {
@@ -516,6 +523,28 @@ public class Service extends BaseService {
 		// (temporary until full transition)
 		useNewHTMLEditor = cus.getUseNewHTMLEditor();
 		refwSanitizeDownlevelRevealedComments = ss.isReFwSanitizeDownlevelRevealedComments();
+		
+		//PAS
+		UserProfileId tpid=mailManager.getTargetProfileId();
+		String sid=SERVICE_ID;
+		String pkey="PRO_ACTIVE_SECURITY";
+		pasRules.setActive(!RunContext.isPermitted(true, tpid, sid, pkey, "DISABLED"));
+		pasRules.setLinkDomainCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_LINK_DOMAIN_CHECK"));
+		pasRules.setMyDomainCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_MY_DOMAIN_CHECK"));
+		pasRules.setFrequentContactCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_FREQUENT_CONTACT_CHECK"));
+		pasRules.setAnyContactsCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_ANY_CONTACTS_CHECK"));
+		pasRules.setTrustedContactsCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_TRUSTED_CONTACTS_CHECK"));
+		pasRules.setFakePatternsCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_FAKE_PATTERNS_CHECK"));
+		pasRules.setUnsubscribeDirectivesCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_UNSUBSCRIBE_DIRECTIVES_CHECK"));
+		pasRules.setDisplaynameCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_DISPLAYNAME_CHECK"));
+		pasRules.setSpamScoreVisualization(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_SPAM_SCORE_VISUALIZATION"));
+		pasRules.setLinkClickPrompt(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_LINK_CLICK_PROMPT"));
+		pasRules.setZipCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_ZIP_CHECK"));
+		pasRules.setLinkGeolocalization(RunContext.isPermitted(true, tpid, sid, pkey, "DO_LINK_GEOLOCALIZATION"));
+		
+		pasDefaultSpamThreshold=ss.getPasSpamThreshold();
+		String exts[]=ss.getPasDangerousExtensions().split(",");
+		for(String ext: exts) pasDangerousExtensions.add(ext.trim().toLowerCase());
 	}
 	
 	private MailAccount createAccount(String id) {
@@ -4479,9 +4508,9 @@ public class Service extends BaseService {
 			
 			String html = "";
 			boolean balanceTags=isPreviewBalanceTags(iafrom);
-			ArrayList<String> htmlparts = mcache.getHTMLParts((MimeMessage) m, newmsgid, true, balanceTags);
-			for (String xhtml : htmlparts) {
-				html += xhtml + "<BR><BR>";
+			ArrayList<FolderCache.HTMLPart> htmlparts = mcache.getHTMLParts((MimeMessage) m, newmsgid, true, balanceTags);
+			for (FolderCache.HTMLPart htmlPart : htmlparts) {
+				html += htmlPart.html + "<BR><BR>";
 			}
             HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
 			//if(!wasseen){
@@ -7094,23 +7123,25 @@ public class Service extends BaseService {
                     items.add(new JsMessageDetails("bcc", bccName, bccEmail));
 					++recs;
                 }
-			ArrayList<String> htmlparts = null;
+			ArrayList<FolderCache.HTMLPart> htmlparts = null;
 			boolean balanceTags=isPreviewBalanceTags(iafrom);
 			if (providername == null) {
 				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false, balanceTags);
 			} else {
 				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid, balanceTags);
 			}
+			
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			ICalendarRequest ir=mailData.getICalRequest();
 			if (ir!=null) {
 			    if (htmlparts.size() > 0) {
-					items.add(new JsMessageDetails("html", htmlparts.get(0)));
+					FolderCache.HTMLPart htmlPart=htmlparts.get(0);
+					items.add(new JsMessageDetails("html", htmlPart.html));
 				}
 			} else {
-				for (String html : htmlparts) {
+				for (FolderCache.HTMLPart htmlPart : htmlparts) {
 					//sout += "{iddata:'html',value1:'" + OldUtils.jsEscape(html) + "',value2:'',value3:0},\n";
-					items.add(new JsMessageDetails("html", html));
+					items.add(new JsMessageDetails("html", htmlPart.html));
 					++recs;
 			    }
 			}
@@ -7151,6 +7182,7 @@ public class Service extends BaseService {
 				);
 			}
 			
+			ArrayList<String> attnames=null;
 			int acount = mailData.getAttachmentPartCount();
 			for (int i = 0; i < acount; ++i) {
 				Part p = mailData.getAttachmentPart(i);
@@ -7200,6 +7232,8 @@ public class Service extends BaseService {
 				String iddata = ctype.equalsIgnoreCase("message/rfc822") ? "eml" : (inline ? "inlineattach" : "attach");
 				boolean editable=isFileEditableInDocEditor(pname);
 				
+				if (attnames==null) attnames=new ArrayList<String>();
+				attnames.add(pname);
 				items.add(new JsMessageDetails(iddata, Integer.toString(i + idattach), pname, rsize, imgname, editable));
 			}
 			if (!mcache.isDrafts() && !mcache.isSent() && !mcache.isSpam() && !mcache.isTrash() && !mcache.isArchive()) {
@@ -7294,13 +7328,17 @@ public class Service extends BaseService {
 			}
 			long millis = System.currentTimeMillis();
 			ArrayList<String> svtags = flagsToTagsIds(m.getFlags());
+			JsProActiveSecurity jsPas=null;
+			if (!mcache.isPEC()) jsPas=setupProActiveSecurity(fromName, fromEmail, htmlparts, attnames, m);
 			
-			new JsonResult("message", items)
+			JsonResult ret=new JsonResult("message", items)
 					.set("tags", svtags)
 					.set("pec", isPECView)
 					.setTotal(recs)
-					.set("millis", millis)
-					.printTo(out, false);
+					.set("millis", millis);
+			if (jsPas!=null) ret.set("pas", jsPas);
+			
+			ret.printTo(out, false);
 			
 			if (im!=null) im.setPeek(false);
 			
@@ -7309,6 +7347,208 @@ public class Service extends BaseService {
 			new JsonResult(t).printTo(out);
 			Service.logger.error("Exception", t);
 		}
+	}
+	
+	private JsProActiveSecurity setupProActiveSecurity(String fromDisplayname, String fromAddress, ArrayList<FolderCache.HTMLPart> htmlparts, ArrayList<String> attnames, Message m) throws WTException {
+		JsProActiveSecurity jsPas=null;
+			
+		if (pasRules.isActive()) {
+			jsPas=new JsProActiveSecurity();
+			String internetDomain=WT.getDomainInternetName(environment.getProfileId().getDomainId()).toLowerCase();
+			String senderDomain=null;
+			
+			boolean isSpam=false;
+			boolean isNewsletter=false;
+			boolean senderTrusted=false;
+			
+			if (pasRules.hasSpamScoreVisualization()) {
+				try {
+					float score=0;
+					//check rspamd first
+					String hdrs[]=m.getHeader("X-Spamd-Result");
+					float threshold=0.0f;
+					if (hdrs!=null && hdrs.length>0) {
+						String hdr=hdrs[0];
+						int ix1=hdr.indexOf("[");
+						int ix2=hdr.indexOf("/");
+						if (ix1>=0 && ix2>ix1) {
+							threshold=pasDefaultSpamThreshold;
+							String v=hdr.substring(ix1+1,ix2);
+							score=Float.parseFloat(v);
+							isSpam=score>=threshold;
+						}
+					} 
+					//check spamassassin second
+					else {
+						hdrs=m.getHeader("X-Spam-Status");
+						if (hdrs!=null && hdrs.length>0) {
+							String tokens[]=StringUtils.split(hdrs[0]);
+							boolean scoreDone=false;
+							boolean thresholdDone=false;
+							for(String token: tokens) {
+								if (!scoreDone && StringUtils.startsWithIgnoreCase(token, "score=")) {
+									score=Float.parseFloat(token.substring(6));
+									scoreDone=true;
+								}
+								else if (!thresholdDone && StringUtils.startsWithIgnoreCase(token, "required=")) {
+									threshold=Float.parseFloat(token.substring(9));
+									thresholdDone=true;
+								}
+								if (scoreDone && thresholdDone) break;
+							}
+							if (scoreDone && !thresholdDone) threshold=pasDefaultSpamThreshold;
+						}
+					}
+					jsPas.setIsSpam(isSpam, score, threshold);
+				} catch(MessagingException exc) {
+					jsPas.setIsSpam(false, 0f, 0f);
+				}
+			}
+			
+			if (!isSpam) {
+				//check for newsletter
+				if (pasRules.hasUnsubscribeDirectivesCheck()) {
+					try {
+						String hdrs[]=m.getHeader("List-Unsubscribe");
+						isNewsletter=(hdrs!=null && hdrs.length>0);
+						jsPas.setIsNewsletter(isNewsletter);
+						senderTrusted=isNewsletter;
+					} catch(MessagingException exc) {
+					}
+				}
+			}
+
+			
+			//If not spam and not a valid newsletter, goes on with sender checks
+			if (!isSpam && !isNewsletter) {
+				
+				int ix=fromAddress.indexOf("@");
+				if (ix>=0 && fromAddress.length()>(ix+1)) senderDomain=fromAddress.substring(ix+1).toLowerCase();
+
+				//check sender against my domain
+				if (!senderTrusted && pasRules.hasMyDomainCheck()) {
+					jsPas.setIsSenderMyDomain(
+							senderTrusted=senderDomain.equals(internetDomain)
+					);
+				}
+
+				//check against frequent contacts
+				if (!senderTrusted && pasRules.hasFrequentContactCheck()) {
+					final ArrayList<String> ids = new ArrayList<>();
+					ids.add(CoreManager.RECIPIENT_PROVIDER_AUTO_SOURCE_ID);
+					CoreManager core = WT.getCoreManager();
+					jsPas.setIsSenderFrequent(
+						senderTrusted=core.listProviderRecipients(RecipientFieldType.EMAIL, ids, fromAddress, 1).size()>0
+					);
+				}
+
+				//check against any contacts
+				if (!senderTrusted && pasRules.hasAnyContactsCheck()) {
+					final ArrayList<String> ids = new ArrayList<>();
+					CoreManager core = WT.getCoreManager();
+					ids.addAll(core.listRecipientProviderSourceIds());
+					List<Recipient> rcpnts=core.listProviderRecipients(RecipientFieldType.EMAIL, ids, fromAddress, Integer.MAX_VALUE);
+					if (rcpnts.size()>0) {
+						//prepare sender dn tokens upper case
+						ArrayList<String> fromTokens=new ArrayList<>();
+						for(String dnToken: StringUtils.split(fromDisplayname))
+							fromTokens.add(dnToken.toUpperCase());
+
+						for(Recipient rcpnt: rcpnts) {
+							boolean addressEqual=rcpnt.getAddress().equalsIgnoreCase(fromAddress);
+							jsPas.setIsSenderAnyContact(addressEqual);
+							if (addressEqual) {
+								//check for consinstency with contact Dn
+								// looking for words in contact Dn
+								// and check if they're all present in email Dn
+								if (pasRules.hasDisplaynameCheck()) {
+									String rcpntDnTokens[]=StringUtils.split(rcpnt.getPersonal());
+									boolean dnOk=true;
+									for(String token: rcpntDnTokens) {
+										if (!fromTokens.contains(token.toUpperCase())) {
+											dnOk=false;
+											break;
+										}
+									}
+									jsPas.setIsSenderDisplaynameConsistentWithContact(
+										senderTrusted=dnOk
+									);
+								} else {
+									senderTrusted=true;
+								}
+								if (senderTrusted) break;
+							}
+						}
+					}
+					else jsPas.setIsSenderAnyContact(false);
+				}
+
+			}
+			
+			//check against fake sender patterns
+			//force untrusted in this case
+			if (senderTrusted && pasRules.hasFakePatternsCheck()) {
+				//check if displayname is an email address
+				if (InternetAddressUtils.isAddressValid(fromDisplayname)) {
+					//check if the email in displayname is same as the real email
+					if (!fromDisplayname.equalsIgnoreCase(fromAddress)) {
+						senderTrusted=false;
+						jsPas.setIsSenderFakePattern(true);
+					}
+				}
+			}
+
+			jsPas.setIsSenderTrusted(senderTrusted);
+			
+			//if sender is not trusted
+			//go with external links and attachment check
+			if (!senderTrusted) {
+				for(FolderCache.HTMLPart htmlPart: htmlparts) {
+					ArrayList<String> hosts=new ArrayList<>();
+					//get unique hosts
+					for(String href: htmlPart.hrefs) {
+						String host=URI.create(href).getHost();
+						if (host!=null && !hosts.contains(host)) hosts.add(host);
+					}
+					//check external links
+					for(String host: hosts) {
+						//host link verifications
+						boolean hostTrusted=false;
+
+						//check host against my internet domain
+						if (host.endsWith(internetDomain)) hostTrusted=true;
+
+						//check host against sender domain
+						if (senderDomain!=null && host.endsWith(senderDomain)) hostTrusted=true;
+
+						if (!hostTrusted) jsPas.addExternalLinkHost(host);
+					}
+				}
+				
+				if (attnames!=null) {
+					
+					//check dangerous attachments
+					for(String attname: attnames) {
+						String ext=FilenameUtils.getExtension(attname).toLowerCase();
+						if (pasDangerousExtensions.contains(ext))
+							jsPas.addDangerousExtension(ext);
+					}
+					
+					//check for zip attachments
+					if (pasRules.hasZipCheck()) {
+						for(String attname: attnames) {
+							String ext=FilenameUtils.getExtension(attname).toLowerCase();
+							if (ext.equals("zip")) {
+								jsPas.setHasZipAttachment(true);
+								break;
+							}
+						}
+					}
+				}
+				
+			}
+		}
+		return jsPas;
 	}
 	
 	public void processGetContactFromVCard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {

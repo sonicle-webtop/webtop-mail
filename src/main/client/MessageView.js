@@ -66,6 +66,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     divBccs: null,
     divCcs: null,
     divAttach: null,
+	divPas: null,
 	divTags: null,
 	divICal: null,
     divLine: null,
@@ -267,6 +268,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.removeElement(me.divCcs);
             me.removeElement(me.divBccs);
             me.removeElement(me.divAttach);
+			if (me.divPas) me.removeElement(me.divPas);
             me.removeElement(me.divTags);
 			me.removeElement(me.divICal);
             me.removeElement(me.divLine);
@@ -392,6 +394,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.workflow=false;
 			me.messageid=null;
             Ext.each(r,me.evalRecord,me);
+			me.tags=me.proxy.getReader().rawData.tags;
+			me.pec=me.proxy.getReader().rawData.pec;
+			me.pas=me.proxy.getReader().rawData.pas;
+			
 			
 			var div=document.createElement("div");
 			div.className="wtmail-mv-hsubject";
@@ -417,6 +423,42 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
 			me.divAttach=Ext.get(document.createElement("div"));
 			me.divAttach.addCls("wtmail-mv-hattach");
+			
+			if (me.pas && !me.pas.isSenderTrusted && 
+					(me.icalmethod || me.pas.externalLinkHosts || me.pas.dangerousExtensions || me.pas.hasZipAttachment)) {
+						me.divPas=Ext.get(document.createElement("div"));
+						me.divPas.addCls("wtmail-mv-pas");
+						
+						var pasText=WTF.imageTag(me.mys.ID,"pas-attention_16.svg",16,16,"valign=center")+"&nbsp;&nbsp;";
+						if (me.icalmethod) {
+							pasText+=Ext.String.htmlEncode(me.res("pas.text.untrusted-invite"));
+						} else {
+							pasText+=Ext.String.htmlEncode(me.res("pas.text.untrusted-sender"))+
+									"<ul style='list-style-type: disc;'>";
+							if (me.pas.externalLinkHosts) {
+								pasText+="<li><b>"+Ext.String.htmlEncode(me.res("pas.text.external-links"))+"</b>";
+								Ext.each(me.pas.externalLinkHosts, function(host) {
+									pasText+=" "+host;
+								});
+								pasText+="</li>";
+
+							}
+							if (me.pas.dangerousExtensions) {
+								pasText+="<li><b>"+Ext.String.htmlEncode(me.res("pas.text.dangerous-extensions"))+"</b>";
+								Ext.each(me.pas.dangerousExtensions, function(ext) {
+									pasText+=" "+ext;
+								});
+								pasText+="</li>";
+							}
+							if (me.pas.hasZipAttachment) {
+								pasText+="<li><b>"+Ext.String.htmlEncode(me.res("pas.text.zip-attachments"))+"</b> "+
+										Ext.String.htmlEncode(me.res("pas.text.zip-content-may-be-dangerous"))+
+										"</li>";
+							}
+							pasText+="</ul>";
+						}
+						me.divPas.update(pasText);
+			}
 			
 			me.divTags=Ext.get(document.createElement("div"));
 			me.divTags.addCls("wtmail-mv-tags");
@@ -487,10 +529,26 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			);*/
 
 			var tdPEC=(me.pec?"<td style='width:24px; padding-right:8px; background-repeat: no-repeat' class='wtmail-pec'><a data-qtip='Visualizza busta completa' data-qtitle='Posta Certificata' href='javascript:Ext.emptyFn()' certificata=1 style='text-decoration:none'>&nbsp;&nbsp;&nbsp;</a></td>":"");
+			var tdPasSpam="";
+			if (me.pas && Ext.isDefined(me.pas.isSpam)) {
+				var threshold1=me.pas.spamThreshold/2;
+				var tdPasSpamClass=
+						(me.pas.spamThreshold==0)?"wtmail-icon-pas-spam-unknown":
+							(me.pas.spamScore<threshold1)?"wtmail-icon-pas-spam-green":
+								(me.pas.spamScore<me.pas.spamThreshold)?"wtmail-icon-pas-spam-yellow":"wtmail-icon-pas-spam-red";
+				var qtip=(me.pas.spamThreshold==0)?
+						me.res('pas.text.spam-unknown'):
+								me.res('pas.text.spam-score')+"&nbsp;:&nbsp;"+me.pas.spamScore+"&nbsp;/&nbsp;"+me.pas.spamThreshold;
+						
+				tdPasSpam="<td style='width:24px; height:24px; padding-right:8px; background-repeat: no-repeat' "+
+						"data-qtip='"+qtip+"' "+
+						"class='"+tdPasSpamClass+"'></td>"; 
+			}
 			me.divSubject.update(
 				"<table class='wtmail-mv-subject-table'><tr>"+
 				tdPEC+
 				"<td>"+me.subject+"</td>"+
+				tdPasSpam+
 				"</tr></table>"
 			);
 			
@@ -520,12 +578,37 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			});
 			//TODO: update tooltips (necessary???)
             //me.divFromName.set({ 'data-qtitle': me.fromName, 'data-qtip': me.fromEmail })
+			
+			var divPasSender="";
+			if (me.pas) {
+				var qTitle=Ext.String.htmlEncode(me.pas.isSenderTrusted?me.res("pas.sender.trusted"):me.res("pas.sender.untrusted"));
+				var qTip="";
+				if (me.pas.isSpam) qTip=me._addPasTip(qTip, "spam", me.pas.isSpam);
+				if (me.pas.isNewsletter) qTip=me._addPasTip(qTip, "newsletter", me.pas.isNewsletter);
+				if (Ext.isDefined(me.pas.isSenderMyDomain)) qTip=me._addPasTip(qTip, "mydomain", me.pas.isSenderMyDomain);
+				if (Ext.isDefined(me.pas.isSenderFrequent)) qTip=me._addPasTip(qTip, "frequent", me.pas.isSenderFrequent);
+				if (Ext.isDefined(me.pas.isSenderAnyContact)) qTip=me._addPasTip(qTip, "anycontact", me.pas.isSenderAnyContact);
+				if (Ext.isDefined(me.pas.isSenderDisplaynameConsistentWithContact)) qTip=me._addPasTip(qTip, "contact-consistent", me.pas.isSenderDisplaynameConsistentWithContact, true);
+				if (Ext.isDefined(me.pas.isSenderFakePattern)) qTip=me._addPasTip(qTip, "fake-pattern", me.pas.isSenderFakePattern);
+				divPasSender="&nbsp;<div "+
+						"data-qtitle='" + qTitle + "' "+
+						"data-qtip='" + qTip + "' "+
+						"class='wtmail-icon-pas-"+
+							(me.pas.isSpam?"danger":me.pas.isSenderTrusted?"ok":"warning")
+						+"' style='display:inline-block; width: 16px;height: 16px;'></div>";
+			}
             me.divFromName.update(
 				"<a data-qtip='" + me.fromEmail + "' data-qtitle='" + Ext.String.htmlEncode(me.fromName) + "' href='javascript:Ext.emptyFn()'>" +
 					me.fromName + " &lt;" + me.fromEmail + "&gt;" + 
-				"</a>"
+				"</a>"+
+				divPasSender
 			);
+	
+	
             tdh.insertFirst(me.divLine);
+			
+			if (me.divPas) tdh.insertFirst(me.divPas);
+			
 			
 			if (me.tags) {
 				var tagsHtml="";
@@ -594,11 +677,17 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					if(name.toLowerCase().endsWith(".vcf")) vcf = " vcf='" + Ext.Object.toQueryString(aparams)+"'";
                     var eml=null;
                     if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
-                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"+(ics!=null?ics:"")+(eml!=null?eml:"")+ (vcf !== null ? vcf : "") + (docedit!=null?docedit:"")+"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
+                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"
+								+" filename='"+Ext.String.htmlEncode(name)+"'"
+								+(ics!=null?ics:"")
+								+(eml!=null?eml:"")
+								+(vcf !== null ? vcf : "")
+								+(docedit!=null?docedit:"")+
+							"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
-                me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+me.mys.res('saveall-desc')+"' data-qtitle='"+me.mys.res('saveall')+"' href='"+allhref.replace("'","%27")+"'>"+me.mys.res('attachments')+"&nbsp;("+len+")</a>:&nbsp;</span>"+names);
+                me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+me.mys.res('saveall-desc')+"' data-qtitle='"+me.mys.res('saveall')+"' href='"+allhref.replace("'","%27")+"' filename='*'>"+me.mys.res('attachments')+"&nbsp;("+len+")</a>:&nbsp;</span>"+names);
 				
 				if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
 					
@@ -712,6 +801,30 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						return false;
 					},me );
 				},me);
+				
+				//if pas and has dengerous extensions or zip, add prompt
+				if (me.pas && (me.pas.dangerousExtensions||me.pas.hasZipAttachment)) {
+					Ext.each(me.divAttach.query("a"),function(o) {
+						var xel=Ext.get(o),
+							fname=xel.getAttribute("filename"),
+							ix=fname.lastIndexOf('.'),
+							fext=(ix>=0)?fname.substring(ix+1):'',
+							dexts=me.pas.dangerousExtensions;
+						if (me.pas.hasZipAttachment) dexts=['zip'];
+						if (fname==='*'||dexts.includes(fext.toLowerCase()))
+							xel.on("click",function(e,t,o) {
+								WT.confirm(me.res('pas.prompt-attachment'), function(bid) {
+									if (bid === 'yes') window.open(xel.getAttribute("href"));
+								},
+								this, {
+									config: { icon: Ext.Msg.WARNING  } 
+								});
+								e.stopEvent();
+								return false;
+							},me );
+					},me);
+				}
+				
 				//TODO setAttachElements
                 me._setAttachElements(me.divAttach.first().next(),vparams);
             }
@@ -780,6 +893,22 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     doc.write(me.htmlparts[xi]);
                     doc.close();
                     if (doc.body) {
+						//if PAS enabled and sender is untrusted and we have external links
+						// enable confirm on link click
+						if (me.pas && !me.pas.isSenderTrusted && me.pas.externalLinkHosts) {
+							Ext.each(Ext.get(doc.body).query("a"),function(o) { 
+								var attrHref=o.attributes.getNamedItem('href');
+								if (attrHref && attrHref.nodeValue!='#' && Ext.isEmpty(o.onclick)) {
+									var href=o.href;
+									o.onclick=function() { 
+										parent.WT.handleConfirmAndFollowLink(href);
+										return false;
+									}
+									//o.href='#';
+								}
+							},me);
+						}
+						
 						me._fixTables(doc.body);
                         me.adjustIframe(xif.name);
                         donedoc=true;
@@ -806,6 +935,17 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             if (!provider) me.fireEvent('messageviewed',params.idmessage,me.proxy.getReader().rawData.millis,me.workflow);
         }
     },
+	
+	_addPasTip: function(tip,resname,state, nobr) {
+		var res=this.res("pas.sender."+(state?"":"not.")+resname);
+		if (!Ext.isEmpty(tip)) {
+			if (nobr) tip+="&nbsp;";
+			else tip+=",<br>";
+		} else {
+			res=res.charAt(0).toUpperCase()+res.substring(1);
+		}
+		return tip+Ext.String.htmlEncode(res);
+	},
 	
 	_fixTables: function(rootEl) {
 		Ext.each(Ext.dom.Query.select("table",rootEl),function(el) {
@@ -1257,8 +1397,6 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.wkfdaterequest=item.get('value1');
         }
 		
-		me.tags=me.proxy.getReader().rawData.tags;
-		me.pec=me.proxy.getReader().rawData.pec;
     },
     
     appendEmail: function(name, desc, email) {
@@ -1336,6 +1474,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		styles+=" * { page: unset !important; }\n";
 		//remove decoration and color from attachments text
 		styles+=" .wtmail-mv-hattach span a { text-decoration: none; color: black; }\n";
+		//remove PAS
+		styles+=" .wtmail-mv-pas  { visibility: hidden; }\n";
 		
 		styles+="</style>\n";
         

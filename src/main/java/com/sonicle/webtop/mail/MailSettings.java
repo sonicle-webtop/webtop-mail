@@ -192,6 +192,21 @@ public class MailSettings {
 	public static final String INLINEABLE_MIME_TYPES = "inlineable.mime.types";
 	
 	/**
+	 * [system+domain]
+	 * [string]
+	 * Pro-active security comma separated list of extensions to be considered dangerous.
+	 * This overwrite any internal default.
+	 */
+	public static final String PAS_DANGEROUS_EXTENSIONS = "pas.dangerous.extensions";
+	
+	/**
+	 * [system+domain]
+	 * [float]
+	 * Pro-active security default spam threshold.
+	 */
+	public static final String PAS_SPAM_THRESHOLD = "pas.spam.threshold";
+	
+	/**
 	 * [system+domain][default]
 	 * [string]
 	 * Transform WebTop Public Resource links (e.g. Public images for mailcards) into attached inline images (cids).

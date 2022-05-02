@@ -71,6 +71,8 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
   private HTMLMailData mailData=null;
   private String lastComment = null;
   private String currentEntity = null;
+  
+  private ArrayList<String> hrefs=new ArrayList<>();
 
   static {
     unenclosedTags.addElement("IMG");
@@ -116,6 +118,10 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
   
   public BufferedReader getParsedHTML() {
     return breader;
+  }
+  
+  public ArrayList<String> getHrefs() {
+	  return hrefs;
   }
 
   public void release() {
@@ -257,10 +263,17 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 				} else if (laqname.equals("target")) {
 					avalue = "_blank";
 					changedTarget = true;
-				} else if (laqname.equals("href") && lavalue.startsWith("mailto:")) {
-					mailtoParams = lavalue.substring(7);
-					avalue = "#";
-					ismailto = true;
+				} else if (laqname.equals("href")) {
+					if (lavalue.startsWith("mailto:")) {
+						mailtoParams = lavalue.substring(7);
+						avalue = "#";
+						ismailto = true;
+					}
+					else if (islink) {
+						//add href links to hrefs array
+						avalue = evaluateUrl(avalue);
+						hrefs.add(avalue.toLowerCase());
+					}
 				}
 			}
 			// Skip contenteditable attribute in order to avoid live editing

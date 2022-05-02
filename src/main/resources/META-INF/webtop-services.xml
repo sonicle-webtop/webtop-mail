@@ -96,6 +96,23 @@
 			<permission group="MAILCARD_SETTINGS" actions="CHANGE" />
 			<permission group="DOMAIN_MAILCARD_SETTINGS" actions="CHANGE" />
 			<permission group="FAX" actions="ACCESS" />
+			
+			<permission group="PRO_ACTIVE_SECURITY" 
+						actions="
+							DISABLED,
+							NO_LINK_DOMAIN_CHECK,
+							NO_MY_DOMAIN_CHECK,
+							NO_FREQUENT_CONTACT_CHECK,
+							NO_ANY_CONTACTS_CHECK,
+							NO_TRUSTED_CONTACTS_CHECK,
+							NO_FAKE_PATTERNS_CHECK,
+							NO_UNSUBSCRIBE_DIRECTIVES_CHECK,
+							NO_DISPLAYNAME_CHECK,
+							NO_SPAM_SCORE_VISUALIZATION,
+							NO_LINK_CLICK_PROMPT,
+							NO_ZIP_CHECK,
+							DO_LINK_GEOLOCALIZATION
+						" />
 		</permissions>
 		
 		<portlets>

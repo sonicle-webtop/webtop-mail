@@ -2037,17 +2037,31 @@ public class FolderCache {
 		int threadRoots=((SonicleIMAPFolder)folder).getThreadRoots();
 		return threadRoots+totalOpenThreadChildren;
 	}
+	
+	class HTMLPart {
+		
+		String html;
+		ArrayList<String> hrefs;
+		
+		HTMLPart(String html) {
+			this(html, new ArrayList<String>());
+		}
+		HTMLPart(String html, ArrayList<String> hrefs) {
+			this.html=html;
+			this.hrefs=hrefs;
+		}
+	}
     
-    public ArrayList<String> getHTMLParts(MimeMessage m, long msguid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
+    public ArrayList<HTMLPart> getHTMLParts(MimeMessage m, long msguid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
         return getHTMLParts(m, msguid, null, null, forEdit, balanceTags);
     }
     
-    public ArrayList<String> getHTMLParts(MimeMessage m, String provider, String providerid, boolean balanceTags) throws MessagingException, IOException {
+    public ArrayList<HTMLPart> getHTMLParts(MimeMessage m, String provider, String providerid, boolean balanceTags) throws MessagingException, IOException {
         return getHTMLParts(m, -1, provider, providerid, false, balanceTags);
     }
     
-    private ArrayList<String> getHTMLParts(MimeMessage m, long msguid, String provider, String providerid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
-      ArrayList<String> htmlparts=new ArrayList<>();
+    private ArrayList<HTMLPart> getHTMLParts(MimeMessage m, long msguid, String provider, String providerid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
+      ArrayList<HTMLPart> htmlparts=new ArrayList<>();
       //WebTopApp webtopapp=environment.getWebTopApp();
       //Session wts=environment.get();
       UserProfile profile=environment.getProfile();
@@ -2131,7 +2145,7 @@ public class FolderCache {
                 }
                 parserThread.notifyParserEndOfRead();
 
-                htmlparts.add(xhtml.toString());
+                htmlparts.add(new HTMLPart(xhtml.toString(),parserThread.getHrefs()));
                 //String key="htmlpart"+objid;
                 //controller.putTempData(key,html);
 			} else if (dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
@@ -2141,7 +2155,7 @@ public class FolderCache {
 						mailData.setICalRequest(ir);
 						if (!icalhtmlview) {
 							String irhtml=ir.getHtmlView(locale,ms.getManifest().getVersion().toString(),laf,java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
-							htmlparts.add(0,irhtml);
+							htmlparts.add(0,new HTMLPart(irhtml));
 							icalhtmlview=true;
 						}
 						if (!mailData.hasICalAttachment()) mailData.addAttachmentPart(dispPart,0);
@@ -2173,7 +2187,8 @@ public class FolderCache {
 				xhtml.append(content);	
                 xhtml.append("<BR>");
                 xhtml.append("</pre><HR></body></html>");
-				htmlparts.add(xhtml.toString());
+				//TODO : check converted urls above for external links
+				htmlparts.add(new HTMLPart(xhtml.toString()));
             }
         } else if (dispPart.isMimeType("message/*")) {
           StringBuffer xhtml=new StringBuffer();
@@ -2209,7 +2224,7 @@ public class FolderCache {
           xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_DATETITLE)+":</B> "+msgDate+"<BR>");
           xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_SUBJECTTITLE)+":</B> "+msgSubject+"<BR>");
           xhtml.append("</font><br></body></html>");
-          htmlparts.add(xhtml.toString());
+          htmlparts.add(new HTMLPart(xhtml.toString()));
         }
 
       }
@@ -2431,7 +2446,7 @@ public class FolderCache {
     Object threadLock=null;
     SaxHTMLMailParser saxHTMLMailParser=null;
     String appUrl=null;
-	boolean balanceTags=true;
+    boolean balanceTags=true;
     
     HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, long msguid, boolean forEdit, boolean balanceTags) {
         this.threadLock=tlock;
@@ -2476,6 +2491,10 @@ public class FolderCache {
           threadLock.notifyAll();
         }
         saxHTMLMailParser.release();
+    }
+    
+    public ArrayList<String> getHrefs() {
+		return saxHTMLMailParser.getHrefs();
     }
 
   }
