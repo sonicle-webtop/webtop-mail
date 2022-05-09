@@ -730,6 +730,17 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), iconCls: 'fas fa-share',  handler: me.gridAction(me,'AuditForwarded'), scope: me });
 			me.addAct("auditPrinted",{ text:null, tooltip: me.res("act-auditPrinted.lbl"), iconCls: 'fas fa-print',  handler: me.gridAction(me,'AuditPrinted'), scope: me });
 			me.addAct("auditTagged",{ text:null, tooltip: me.res("act-auditTagged.lbl"), iconCls: 'fas fa-tags',  handler: me.gridAction(me,'AuditTagged'), scope: me });
+			me.addAct("messageAuditLog",{ text:null, tooltip: WT.res('act-auditLog.lbl'), iconCls: 'fas fa-history',  handler: me.gridAction(me,'MessageAuditLog'), scope: me });
+			
+			me.addAct('folderAuditLog', {
+				text: WT.res('act-auditLog.lbl'),
+				tooltip: null,
+				handler: function(s, e) {
+					var rec = e.menuData.rec;
+					me.openAuditUI(rec.getId(), 'FOLDER');
+				},
+				scope: me
+			});
 		}		
 	},
 	
@@ -888,6 +899,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 '-',
                 me.getAct('refresh'),
                 me.getAct('refreshtree'),
+				me.hasAudit() ? me.getAct('folderAuditLog') : null,
                 '-',
                 me.getAct('sharing'),
 				mshowsharings=Ext.create('Ext.menu.CheckItem',me.getAct('showsharings')),
@@ -1604,6 +1616,97 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me=this,
 			rec=me.getCtxNode(e);
 		this.reloadTree(me.getAccount(rec));
+	},
+	
+	openAuditUI: function(referenceId, context) {
+		var me = this;
+		
+		WT.getServiceApi(WT.ID).showAuditLog(me.ID, context, null, referenceId, function(data) {
+			var str = '';
+
+			Ext.each(data, function(el) {
+				var logData = Ext.JSON.decode(el.data, true) || {};
+				str += me.auditActionBaseStringFormat(el, context);
+				
+				if (context === 'FOLDER') {
+					if (logData.oldId) str += Ext.String.format('\t{0}: {1}\n', me.res('auditLog.oldFolder.lbl'), logData.oldId);
+				}
+			});
+			return str;
+		});
+	},
+	
+	auditBaseStringFormat: function(el) {
+		var logDate = Ext.Date.parseDate(el.timestamp, 'Y-m-d H:i:s');
+		return Ext.String.format('{0} - {1} - ({2})\n', Ext.Date.format(logDate, WT.getShortDateTimeFmt()), el.userName, el.userId);
+	},
+	
+	auditActionBaseStringFormat: function(el, context) {
+		var me = this,
+				logDate = Ext.Date.parseDate(el.timestamp, 'Y-m-d H:i:s'),
+				actionString = Ext.String.format('auditLog.{0}.{1}', context, el.action);
+		return Ext.String.format('{0} - {1} - {2} ({3})\n', Ext.Date.format(logDate, WT.getShortDateTimeFmt()), me.res(actionString), el.userName, el.userId);
+	},
+	
+	auditMessageDetailsFormat: function(data, action) {
+		var me = this,
+				eldata = Ext.JSON.decode(data),
+				str = '';
+		
+		if (eldata) {
+			switch(action) {
+				case 'VIEW':
+				case 'REPLY':
+				case 'FORWARD':
+				case 'CREATE':
+					if (!Ext.isEmpty(eldata.from)) str += Ext.String.format('\t{0}: {1}\n', me.res('from'), me.createFullAddress(eldata.from, eldata.fromDN));
+					Ext.each(eldata.tos, function(to, index) {
+						str += Ext.String.format('\t{0}: {1}\n', me.res('to'), me.createFullAddress(to, eldata.tosDN[index]));
+					});
+					Ext.each(eldata.ccs, function(cc, index) {
+						str += Ext.String.format('\t{0}: {1}\n', me.res('cc'), me.createFullAddress(cc, eldata.ccsDN[index]));
+					});
+					Ext.each(eldata.bccs, function(bcc, index) {
+						str += Ext.String.format('\t{0}: {1}\n', me.res('bcc'), me.createFullAddress(bcc, eldata.bccsDN[index]));
+					});
+					if (!Ext.isEmpty(eldata.subject)) str += Ext.String.format('\t{0}: {1}\n', me.res('subject'), eldata.subject);
+					if (!Ext.isEmpty(eldata.folder) && eldata.folder !== 'INBOX') str += Ext.String.format('\t{0}: {1}\n', me.res('foldername'), eldata.folder);
+					if (!Ext.isEmpty(eldata.sched)) str += Ext.String.format('\t{0}\n', me.res('auditLog.schedEmail.lbl'));
+					break;
+				case 'TAG':
+					if (eldata.set) {
+						Ext.each(eldata.set, function(tag) {
+							var r = me.tagsStore.findRecord('id', tag);
+							var desc = r ? r.get('name') : tag;
+							str += Ext.String.format('\t+ {0}\n', desc);
+						});
+					}
+					if (eldata.unset) {
+						Ext.each(eldata.unset, function(tag) {
+							var r = me.tagsStore.findRecord('id', tag);
+							var desc = r ? r.get('name') : tag;
+							str += Ext.String.format('\t- {0}\n', desc);
+						});
+					}
+					break;
+				case 'RENAME':
+					if (!Ext.isEmpty(eldata.old)) str += Ext.String.format('\t{0}: {1}\n', me.res('auditLog.oldSubject.lbl'), eldata.old);
+					if (!Ext.isEmpty(eldata.new)) str += Ext.String.format('\t{0}: {1}\n', me.res('auditLog.newSubject.lbl'), eldata.new);
+					break;
+				case 'MOVE':
+				case 'COPY':
+				case 'ARCHIVE':
+				case 'TRASH':
+					if (!Ext.isEmpty(eldata.oldId)) str += Ext.String.format('\t{0}: {1}\n', me.res('auditLog.oldFolder.lbl'), eldata.oldId);
+					if (!Ext.isEmpty(eldata.newId)) str += Ext.String.format('\t{0}: {1}\n', me.res('auditLog.newFolder.lbl'), eldata.newId);
+					break;
+			}
+		}
+		return str;
+	},
+	
+	createFullAddress: function(email, personal) {
+		return Ext.isEmpty(personal) ? email : Ext.String.format('{0} <{1}>', personal, email);
 	},
 	
 	actionFavorite: function(s, e) {

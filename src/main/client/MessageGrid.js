@@ -1310,18 +1310,34 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     openMessage: function(r) {
 		var me=this;
 		
-		var win=WT.createView(me.mys.ID,'view.DockableMessageView',{
+		var fbar = me.mys.hasAudit() ?
+			Ext.create('Ext.toolbar.Toolbar', {
+				padding: '5 5 5 5',
+				items: [
+					'->',
+					me.mys.getAct("auditRead"),
+					me.mys.getAct("auditReplied"),
+					me.mys.getAct("auditForwarded"),
+					me.mys.getAct("auditPrinted"),
+					me.mys.getAct("auditTagged"),
+					me.mys.getAct("messageAuditLog")
+				]
+			})
+			: null;
+		
+		var win = WT.createView(me.mys.ID,'view.DockableMessageView', {
 			viewCfg: {
 				mys: me.mys,
 				acct: me.currentAccount,
-				folder: r.get('folder')||me.currentFolder,
+				folder: r.get('folder') || me.currentFolder,
 				idmessage: r.get('idmessage'),
 				title: r.get('subject'),
 				model: r,
-				messageGrid: me
+				messageGrid: me,
+				fbar: fbar
 			}
 		});
-		win.show(false,function() {
+		win.show(false, function() {
 			win.getView().showMessage();
 		});
 			
@@ -2428,43 +2444,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	
     },
 	
-	_actionAudit: function(r, serviceId, context, action, label, dataToStringFunction) {
-		var me=this;
+	getMessageAuditLog: function(r, action, text, dataToStringFunction) {
+		var me = this,
+				context = 'MAIL';
 		
 		WT.ajaxReq(me.mys.ID, 'GetMessageId', {
 			params: {
 				account: me.currentAccount,
-                folder: r.get('folder')||me.currentFolder,
+                folder: r.get('folder') || me.currentFolder,
                 idmessage: r.get('idmessage')
 			},
-			callback: function(success,json) {
+			callback: function(success, json) {
 				if (success) {
-					var messageId=json.message;
-					
-					WT.ajaxReq(WT.ID, 'LookupAudit', {
-						params: {
-							auditServiceId: serviceId,
-							auditContext: context,
-							auditAction: action,
-							auditReferenceId: messageId
-						},
-						callback: function(success,json) {
-							if (success) {
-								var value=Ext.callback(dataToStringFunction,me,[json.data]);
-								WT.confirm(label, null, me, {
-									buttons: Ext.Msg.OK,
-									title: WT.res('audit.info.tit'),
-									instClass: 'Sonicle.webtop.core.ux.AuditWindow',
-									config: {
-										value: value
-									}
-								});
-							} else {
-								WT.error(json.message);
-							}
-						}
-					});							
-				
+					var messageId = json.message;
+					WT.getServiceApi(WT.ID).showAuditLog(me.mys.ID, context, action, messageId, dataToStringFunction, {
+						text: text
+					});
 				} else {
 					WT.error(json.message);
 				}
@@ -2473,90 +2468,92 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	actionAuditRead: function() {
-		var me=this,
-			r=me.getSelectionModel().getSelection()[0];
+		var me = this,
+				r = me.getSelectionModel().getSelection()[0],
+				action = 'VIEW';
 	
-		me._actionAudit(r,me.mys.ID, "MAIL", "VIEW", me.mys.res('act-auditRead.lbl'), function(data) {
-			var str="";
-			Ext.each(data,function(el) {
-				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
+		me.getMessageAuditLog(r, action, me.res('act-auditRead.lbl'), function(data) {
+			var str = '';
+			Ext.each(data, function(el) {
+				str += me.mys.auditBaseStringFormat(el);
+				str += me.mys.auditMessageDetailsFormat(el.data, action);
 			});
 			return str;
 		});
 	},
 	
 	actionAuditReplied: function() {
-		var me=this,
-			r=me.getSelectionModel().getSelection()[0];
+		var me = this,
+				r = me.getSelectionModel().getSelection()[0],
+				action = 'REPLY';
 	
-		me._actionAudit(r,me.mys.ID, "MAIL", "REPLY", me.mys.res('act-auditReplied.lbl'), function(data) {
-			var str="";
-			Ext.each(data,function(el) {
-				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
-				var eldata=Ext.JSON.decode(el.data);
-				Ext.each(eldata.to,function(to) { str+="\t"+me.mys.res('to')+": "+to+"\n"; });
-				Ext.each(eldata.cc,function(cc) { str+="\t"+me.mys.res('cc')+": "+cc+"\n"; });
-				Ext.each(eldata.bcc,function(bcc) { str+="\t"+me.mys.res('bcc')+": "+bcc+"\n"; });
+		me.getMessageAuditLog(r, action, me.res('act-auditReplied.lbl'), function(data) {
+			var str = '';
+			Ext.each(data, function(el) {
+				str += me.mys.auditBaseStringFormat(el);
+				str += me.mys.auditMessageDetailsFormat(el.data, action);
 			});
 			return str;
 		});		
 	},
 	
 	actionAuditForwarded: function() {
-		var me=this,
-			r=me.getSelectionModel().getSelection()[0];
+		var me = this,
+				r = me.getSelectionModel().getSelection()[0],
+				action = 'FORWARD';
 	
-		me._actionAudit(r,me.mys.ID, "MAIL", "FORWARD", me.mys.res('act-auditForwarded.lbl'), function(data) {
-			var str="";
-			Ext.each(data,function(el) {
-				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
-				var eldata=Ext.JSON.decode(el.data);
-				Ext.each(eldata.to,function(to) { str+="\t"+me.mys.res('to')+": "+to+"\n"; });
-				Ext.each(eldata.cc,function(cc) { str+="\t"+me.mys.res('cc')+": "+cc+"\n"; });
-				Ext.each(eldata.bcc,function(bcc) { str+="\t"+me.mys.res('bcc')+": "+bcc+"\n"; });
+		me.getMessageAuditLog(r, action, me.res('act-auditForwarded.lbl'), function(data) {
+			var str = '';
+			Ext.each(data, function(el) {
+				str += me.mys.auditBaseStringFormat(el, action);
+				str += me.mys.auditMessageDetailsFormat(el.data, action);
 			});
 			return str;
 		});		
 	},
 	
 	actionAuditPrinted: function() {
-		var me=this,
-			r=me.getSelectionModel().getSelection()[0];
+		var me = this,
+				r = me.getSelectionModel().getSelection()[0];
 	
-		me._actionAudit(r,me.mys.ID, "MAIL", "PRINT", me.mys.res('act-auditPrinted.lbl'), function(data) {
-			var str="";
-			Ext.each(data,function(el) {
-				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
+		me.getMessageAuditLog(r, 'PRINT', me.res('act-auditPrinted.lbl'), function(data) {
+			var str = '';
+			Ext.each(data, function(el) {
+				str += me.mys.auditBaseStringFormat(el);
 			});
 			return str;
 		});
 	},
 	
 	actionAuditTagged: function() {
-		var me=this,
-			r=me.getSelectionModel().getSelection()[0];
+		var me = this,
+				r = me.getSelectionModel().getSelection()[0],
+				action = 'TAG';
 	
-		me._actionAudit(r,me.mys.ID, "MAIL", "TAG", me.mys.res('act-auditTagged.lbl'), function(data) {
-			var str="";
-			Ext.each(data,function(el) {
-				str+=el.userName+" - "+Ext.Date.format(new Date(Date.parse(el.timestamp)),WT.getShortDateTimeFmt())+"\n";
-				var eldata=Ext.JSON.decode(el.data);
-				
-				if (eldata.tag) {
-					var r=me.mys.tagsStore.findRecord('id',eldata.tag);
-					var desc=r?r.get("name"):eldata.tag;
-					str+="\t+ "+desc+"\n";
-				}
-				if (eldata.untag) {
-					var r=me.mys.tagsStore.findRecord('id',eldata.untag);
-					var desc=r?r.get("name"):eldata.untag;
-					str+="\t- "+desc+"\n";
-				}
+		me.getMessageAuditLog(r, action, me.res('act-auditTagged.lbl'), function(data) {
+			var str = '';
+			Ext.each(data, function(el) {
+				str += me.mys.auditBaseStringFormat(el);
+				str += me.mys.auditMessageDetailsFormat(el.data, action);
 			});
 			return str;
 		});		
 	},
-
+	
+	actionMessageAuditLog: function() {
+		var me = this,
+				r = me.getSelectionModel().getSelection()[0];
+		
+		me.getMessageAuditLog(r, null, null, function(data) {
+			var str = '';
+			Ext.each(data, function(el) {
+				str += me.mys.auditActionBaseStringFormat(el, 'MAIL');
+				str += me.mys.auditMessageDetailsFormat(el.data, el.action);
+			});
+			return str;
+		});
+	},
+	
 	reload: function() {
 		this.store.reload({ 
 			params: {

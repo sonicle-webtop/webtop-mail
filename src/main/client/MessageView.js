@@ -923,8 +923,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             var h,w;
             //if (!me.dockable) {
 				var ct=me.ownerCt;
-				//was -2, changed to -26 to keep space for h scrollbar
-                h=ct.getEl().getHeight()-26;
+				//was -2, then -26, changed to -38 to keep space for h scrollbar
+                h = ct.getEl().getHeight() - 38;
+				if (me.mys.hasAudit()) h -= 33;
                 w=ct.getEl().getWidth();
                 me.viewResized(me,w,h,w,h);
             //}

@@ -157,6 +157,7 @@ import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
 import com.sonicle.webtop.core.app.servlet.js.BlobInfoPayload;
+import com.sonicle.webtop.core.bol.js.JsAuditMessageInfo;
 import com.sonicle.webtop.core.model.RecipientFieldType;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.js.JsAdvSearchMessage;
@@ -733,7 +734,7 @@ public class Service extends BaseService {
 					account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
 
 					msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
-					Exception exc = saveMessage(msg, null, fc);
+					Exception exc = saveMessage(msg, null, fc, false);
 					
 				} catch(Exception exc) {
 					logger.debug("Error on autosave in drafts!",exc);
@@ -1008,7 +1009,7 @@ public class Service extends BaseService {
 			if (ex!=null) {
                             retexc = new SendException();
                             retexc.setMessageSent(true);
-                            
+							
                             //If shared account retry on main account
                             if (!ident.isMainIdentity()) {
                                 sentfolder=mainAccount.getFolderSent();
@@ -1022,6 +1023,10 @@ public class Service extends BaseService {
                             Service.logger.error("Exception",ex);
                             retexc.setException(ex);
                         }
+		}
+		
+		if (mailManager.isAuditEnabled() && (retexc == null || retexc.messageSaved) && msg != null) {
+			writeAuditCreateMessage(smsg, msg, sentfolder, null);
 		}
 		return retexc;
 		
@@ -1399,14 +1404,19 @@ public class Service extends BaseService {
 		
 	}
 	
-	public Exception saveMessage(SimpleMessage msg, List<JsAttachment> attachments, FolderCache fc) {
+	public Exception saveMessage(SimpleMessage msg, List<JsAttachment> attachments, FolderCache fc, boolean auditLog) {
 		Exception retexc = null;
+		Message newmsg = null;
+		
 		try {
-			_saveMessage(msg, attachments, fc);
+			newmsg = _saveMessage(msg, attachments, fc);
 		} catch (Exception exc) {
 			retexc = exc;
 			logger.error("Error during saveMessage in "+fc.getFolderName(),exc);
 		}
+		
+		if (mailManager.isAuditEnabled() && auditLog && newmsg != null) writeAuditCreateMessage(msg, newmsg, fc.getFolderName(), null);
+		
 		return retexc;
 	}
 	
@@ -1418,6 +1428,8 @@ public class Service extends BaseService {
 			msg.addHeaderLine("Sonicle-send-time: " + sendtime);
 			msg.addHeaderLine("Sonicle-notify-delivery: " + sendnotify);
 			Message m = _saveMessage(msg, attachments, fc);
+			
+			if (mailManager.isAuditEnabled() && m != null) writeAuditCreateMessage(msg, m, fc.getFolderName(), true);
 			/*        String mid=m.getHeader("Message-ID")[0];
 			 MailServiceGeneral mservgen=(MailServiceGeneral)wta.getServiceGeneralByName("mail");
         
@@ -3861,13 +3873,14 @@ public class Service extends BaseService {
 			if (newfolder == null) {
 				new JsonResult(false, "Error creating folder").printTo(out);
 			} else {
-				if (mailManager.isAuditEnabled())
+				if (mailManager.isAuditEnabled()) {
 					mailManager.writeAuditLog(
-							MailManager.AuditContext.FOLDER,
-							MailManager.AuditAction.CREATE, 
-							mcache.getFolderName(),
-							JsonUtils.toJson("name",name)
+						MailManager.AuditContext.FOLDER,
+						MailManager.AuditAction.CREATE, 
+						newfolder.getFullName(),
+						null
 					);
+				}
 				
 				String parent = !account.isRoot(mcache) ? mcache.getFolderName() : null;
 				JsOperateFolder createdFolder = new JsOperateFolder()
@@ -3911,6 +3924,16 @@ public class Service extends BaseService {
 				favorites.add(account.getId(),newid,name);
 				us.setFavoriteFolders(favorites);
 				}
+			}
+			
+			if (mailManager.isAuditEnabled()) {
+				mailManager.writeAuditLog(
+					MailManager.AuditContext.FOLDER,
+					MailManager.AuditAction.RENAME,
+					newid,
+					JsonUtils.toJson("oldId", folder)
+				);
+				mailManager.renameAuditLogReference(MailManager.AuditContext.FOLDER, folder, newid);
 			}
 			
 			JsOperateFolder renamedFolder = new JsOperateFolder()
@@ -3957,6 +3980,15 @@ public class Service extends BaseService {
 				new JsonResult(false, "Cannot delete special folders").printTo(out);
 			} else {
 				if (account.deleteFolder(folder)) {
+					if (mailManager.isAuditEnabled()) {
+						mailManager.writeAuditLog(
+							MailManager.AuditContext.FOLDER,
+							MailManager.AuditAction.DELETE,
+							folder,
+							null
+						);
+					}
+					
 					JsOperateFolder deletedFolder = new JsOperateFolder()
 							.setOldid(folder);
 					new JsonResult(deletedFolder).printTo(out, false);
@@ -3985,6 +4017,20 @@ public class Service extends BaseService {
 			} else {
 				FolderCache newfc = account.trashFolder(folder);
 				if (newfc!=null) {
+					if (mailManager.isAuditEnabled()) {
+						HashMap<String, String> trashAudit = new HashMap<>();
+						trashAudit.put("oldId", folder);
+						trashAudit.put("newId", newfc.getFolderName());
+						
+						mailManager.writeAuditLog(
+							MailManager.AuditContext.FOLDER,
+							MailManager.AuditAction.TRASH,
+							newfc.getFolderName(),
+							JsonResult.gson().toJson(trashAudit)
+						);
+						mailManager.renameAuditLogReference(MailManager.AuditContext.FOLDER, folder, newfc.getFolderName());
+					}
+					
 					JsOperateFolder trashedFolder = new JsOperateFolder()
 							.setNewid(newfc.getFolder().getFullName())
 							.setTrashid(newfc.getParent().getFolder().getFullName());
@@ -4012,6 +4058,17 @@ public class Service extends BaseService {
 				FolderCache oldfcparent = account.getFolderCache(folder).getParent();
 				FolderCache newfc = account.moveFolder(folder, to);
 				Folder newf = newfc.getFolder();
+				
+				if (mailManager.isAuditEnabled()) {
+					mailManager.writeAuditLog(
+						MailManager.AuditContext.FOLDER,
+						MailManager.AuditAction.MOVE,
+						newfc.getFolderName(),
+						JsonUtils.toJson("oldId", folder)
+					);
+					mailManager.renameAuditLogReference(MailManager.AuditContext.FOLDER, folder, newfc.getFolderName());
+				}
+				
 				JsOperateFolder movedFolder = new JsOperateFolder()
 						.setOldid(folder)
 						.setNewid(newf.getFullName())
@@ -4038,6 +4095,16 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			mcache = account.getFolderCache(folder);
 			account.emptyFolder(folder);
+			
+			if (mailManager.isAuditEnabled()) {
+				mailManager.writeAuditLog(
+					MailManager.AuditContext.FOLDER,
+					MailManager.AuditAction.EMPTY,
+					folder,
+					null
+				);
+			}
+			
 			JsOperateFolder emptyFolder = new JsOperateFolder().setOldid(folder);
 			new JsonResult(emptyFolder).printTo(out, false);
 		} catch (Throwable t) {
@@ -4669,9 +4736,9 @@ public class Service extends BaseService {
 				from = ifrom.getEmail();
 			}
 			account.checkStoreConnected();
-			SendException exc = sendMessage(msg, jsmsg.attachments);
+			SendException sendExc = sendMessage(msg, jsmsg.attachments);
                         String foundfolder = null;
-			if (exc == null || exc.messageSent) {
+			if (sendExc == null || sendExc.messageSent) {
 				//if is draft, check for deletion
 				if (jsmsg.draftuid>0 && jsmsg.draftfolder!=null && ss.isDefaultFolderDraftsDeleteMsgOnSend()) {
 					FolderCache fc=account.getFolderCache(jsmsg.draftfolder);
@@ -4679,10 +4746,21 @@ public class Service extends BaseService {
 				}
 				
 				//Save used recipients
+				ArrayList<InternetAddress> iaTos = new ArrayList<>();
+				ArrayList<InternetAddress> iaCcs = new ArrayList<>();
+				ArrayList<InternetAddress> iaBccs = new ArrayList<>();
 				for(JsRecipient rcpt: pl.data.recipients) {
 					InternetAddress ia = InternetAddressUtils.toInternetAddress(rcpt.email);
-					if (ia != null && !ContactsUtils.isListVirtualRecipient(ia)) {
-						coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+					if (ia != null) {
+						if (!ContactsUtils.isListVirtualRecipient(ia)) coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+						switch(rcpt.rtype) {
+							case "to": iaTos.add(ia);
+								break;
+							case "cc": iaCcs.add(ia);
+								break;
+							case "bcc": iaBccs.add(ia);
+								break;
+						}
 					}
 				}
 				
@@ -4713,14 +4791,20 @@ public class Service extends BaseService {
 				//try { origuid=Long.parseLong(soriguid); } catch(RuntimeException rexc) {}
 				
 				if (jsmsg.forwardedfrom != null && jsmsg.forwardedfrom.trim().length() > 0) {
-					HashMap<String,ArrayList<String>> rcpts=jsrecipientsToHashMap(pl.data.recipients);
-					if (mailManager.isAuditEnabled())
+					JsAuditMessageInfo jsAudit = iaRecipientsToAuditInfo(iaTos, iaCcs, iaBccs);
+					if (StringUtils.isNotEmpty(from)) jsAudit.setFrom(from);
+					if (ifrom != null && StringUtils.isNotEmpty(ifrom.getDisplayName())) jsAudit.setFromDN(ifrom.getDisplayName());
+					if (StringUtils.isNotEmpty(jsmsg.subject)) jsAudit.setSubject(jsmsg.subject);
+					jsAudit.setFolder(jsmsg.folder);
+					if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(jsmsg.forwardedfrom)) {
 						mailManager.writeAuditLog(
 							MailManager.AuditContext.MAIL,
 							MailManager.AuditAction.FORWARD, 
 							jsmsg.forwardedfrom, 
-							JsonResult.gson().toJson(rcpts)
+							JsonResult.gson(false).toJson(jsAudit)
 						);
+					}
+					
 					try {
 						foundfolder = foundfolder=flagForwardedMessage(account,jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
 					} catch (Exception xexc) {
@@ -4766,14 +4850,19 @@ public class Service extends BaseService {
 					} catch (Exception xexc) {
 						Service.logger.error("Exception",xexc);
 					} finally {
-						HashMap<String,ArrayList<String>> rcpts=jsrecipientsToHashMap(pl.data.recipients);
-						if (mailManager.isAuditEnabled())
+						JsAuditMessageInfo jsAudit = iaRecipientsToAuditInfo(iaTos, iaCcs, iaBccs);
+						if (StringUtils.isNotEmpty(from)) jsAudit.setFrom(from);
+						if (ifrom != null && StringUtils.isNotEmpty(ifrom.getDisplayName())) jsAudit.setFromDN(ifrom.getDisplayName());
+						if (StringUtils.isNotEmpty(jsmsg.subject)) jsAudit.setSubject(jsmsg.subject);
+						jsAudit.setFolder(jsmsg.folder);
+						if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(jsmsg.inreplyto)) {
 							mailManager.writeAuditLog(
 								MailManager.AuditContext.MAIL,
 								MailManager.AuditAction.REPLY, 
 								jsmsg.inreplyto, 
-								JsonResult.gson().toJson(rcpts)
+								JsonResult.gson(false).toJson(jsAudit)
 							);
+						}
 						
 						try {
 							foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
@@ -4782,30 +4871,29 @@ public class Service extends BaseService {
 						}
 					}
 				}
-                        }
-
-                        if (exc!=null) {
-                            if (!exc.messageSent) {
-                                json=new JsonResult(false,exc.exception.getMessage());
-                            }
-                            else {
-                                if (!exc.messageSaved)
-                                    environment.notify(
-                                        new SentMessageNotSavedSM(exc.exception)
-                                    );
-                                else 
-                                    environment.notify(
-                                        new SharedSentMessageSavedOnMainSM(exc.exception)
-                                    );
-                            }
-                        }
-                        
-                        if (json==null)
-                            json=new JsonResult()
-                                .set("foundfolder",foundfolder)
-                                .set("saved", Boolean.FALSE);
-                        
-                        
+			}
+			
+			if (sendExc!=null) {
+				if (!sendExc.messageSent) {
+					json=new JsonResult(false,sendExc.exception.getMessage());
+				} else {
+					if (!sendExc.messageSaved)
+						environment.notify(
+							new SentMessageNotSavedSM(sendExc.exception)
+						);
+					else
+						environment.notify(
+							new SharedSentMessageSavedOnMainSM(sendExc.exception)
+						);
+				}
+			}
+			
+			if (json==null)
+				json=new JsonResult()
+						.set("foundfolder",foundfolder)
+						.set("saved", Boolean.FALSE);
+			
+			
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 			Throwable cause = exc.getCause();
@@ -4815,24 +4903,178 @@ public class Service extends BaseService {
                 json.printTo(out);
 	}
 	
-	private HashMap<String,ArrayList<String>> jsrecipientsToHashMap(List<JsRecipient> recipients) {
-		ArrayList<String> tos=new ArrayList<>();
-		ArrayList<String> ccs=new ArrayList<>();
-		ArrayList<String> bccs=new ArrayList<>();
-		LinkedHashMap<String,ArrayList<String>> rcpts=new LinkedHashMap<>();
-		rcpts.put("to", tos);
-		rcpts.put("cc", ccs);
-		rcpts.put("bcc", bccs);
-		for(JsRecipient jsrec: recipients) {
-			if (jsrec.email!=null && jsrec.email.trim().length()>0) {
-				ArrayList<String> list=rcpts.get(jsrec.rtype);
-				if (list!=null) list.add(jsrec.email);
-			}
+	private JsAuditMessageInfo iaRecipientsToAuditInfo(List<InternetAddress> iaTos, List<InternetAddress> iaCcs, List<InternetAddress> iaBccs) {
+		ArrayList<String> tos = new ArrayList<>();
+		ArrayList<String> tosDN = new ArrayList<>();
+		ArrayList<String> ccs = new ArrayList<>();
+		ArrayList<String> ccsDN = new ArrayList<>();
+		ArrayList<String> bccs = new ArrayList<>();
+		ArrayList<String> bccsDN = new ArrayList<>();
+		
+		JsAuditMessageInfo jsAudit = new JsAuditMessageInfo();
+		
+		for (InternetAddress iarec : iaTos) {
+			tos.add(iarec.getAddress());
+			tosDN.add(iarec.getPersonal());
 		}
-		if (tos.isEmpty()) rcpts.remove(tos);
-		if (ccs.isEmpty()) rcpts.remove(ccs);
-		if (bccs.isEmpty()) rcpts.remove(bccs);
-		return rcpts;
+		for (InternetAddress iarec : iaCcs) {
+			ccs.add(iarec.getAddress());
+			ccsDN.add(iarec.getPersonal());
+		}
+		for (InternetAddress iarec : iaBccs) {
+			bccs.add(iarec.getAddress());
+			bccsDN.add(iarec.getPersonal());
+		}
+		
+		if (!tos.isEmpty()) jsAudit.setTos(tos);
+		if (!tosDN.isEmpty()) jsAudit.setTosDN(tosDN);
+		if (!ccs.isEmpty()) jsAudit.setCcs(ccs);
+		if (!ccsDN.isEmpty()) jsAudit.setCcs(ccsDN);
+		if (!bccs.isEmpty()) jsAudit.setBccs(bccs);
+		if (!bccsDN.isEmpty()) jsAudit.setBccsDN(bccsDN);
+		
+		return jsAudit;
+	}
+	
+	private void writeAuditCreateMessage(SimpleMessage msg, Message newmsg, String folder, Boolean scheduled) {
+		String messageId = null;
+		try {
+			messageId = getMessageID(newmsg);
+		} catch (MessagingException idExc) {
+			Service.logger.error("Error getting message ID", idExc);
+		}
+		
+		try {
+			Address tos[] = newmsg.getRecipients(RecipientType.TO);
+			ArrayList<String> listTos = new ArrayList<>();
+			ArrayList<String> listTosDN = new ArrayList<>();
+			if (tos != null) {
+				for (Address to : tos) {
+					InternetAddress ia = (InternetAddress) to;
+					listTos.add(ia.getAddress());
+					listTosDN.add(ia.getPersonal());
+				}
+			}
+
+			Address ccs[] = newmsg.getRecipients(RecipientType.CC);
+			ArrayList<String> listCcs = new ArrayList<>();
+			ArrayList<String> listCcsDN = new ArrayList<>();
+			if (ccs != null) {
+				for (Address cc : ccs) {
+					InternetAddress ia = (InternetAddress) cc;
+					listCcs.add(ia.getAddress());
+					listCcsDN.add(ia.getPersonal());
+				}
+			}
+
+			Address bccs[] = newmsg.getRecipients(RecipientType.BCC);
+			ArrayList<String> listBccs = new ArrayList<>();
+			ArrayList<String> listBccsDN = new ArrayList<>();
+			if (bccs != null) {
+				for (Address bcc : bccs) {
+					InternetAddress ia = (InternetAddress) bcc;
+					listBccs.add(ia.getAddress());
+					listBccsDN.add(ia.getPersonal());
+				}
+			}
+
+			JsAuditMessageInfo jsAudit = new JsAuditMessageInfo();
+			Identity ident = msg.getFrom();
+			if (StringUtils.isNotEmpty(ident.getEmail())) jsAudit.setFrom(ident.getEmail());
+			if (StringUtils.isNotEmpty(ident.getDisplayName())) jsAudit.setFromDN(ident.getDisplayName());
+			if (!listTos.isEmpty()) jsAudit.setTos(listTos);
+			if (!listTosDN.isEmpty()) jsAudit.setTosDN(listTosDN);
+			if (!listCcs.isEmpty()) jsAudit.setCcs(listCcs);
+			if (!listCcsDN.isEmpty()) jsAudit.setCcsDN(listCcsDN);
+			if (!listBccs.isEmpty()) jsAudit.setBccs(listBccs);
+			if (!listBccsDN.isEmpty()) jsAudit.setBccsDN(listBccsDN);
+			jsAudit.setFolder(folder);
+			if (StringUtils.isNotEmpty(msg.getForwardedFrom())) jsAudit.setForwardedFrom(msg.getForwardedFrom());
+			if (StringUtils.isNotEmpty(msg.getInReplyTo())) jsAudit.setInReplyTo(msg.getInReplyTo());
+			if (StringUtils.isNotEmpty(newmsg.getSubject())) jsAudit.setSubject(newmsg.getSubject());
+			if (scheduled != null) jsAudit.setScheduled(scheduled);
+
+			mailManager.writeAuditLog(
+				MailManager.AuditContext.MAIL,
+				MailManager.AuditAction.CREATE, 
+				messageId,
+				JsonResult.gson(false).toJson(jsAudit)
+			);
+		} catch(MessagingException messEx) {
+			Service.logger.error("Exception", messEx);
+		}
+		
+	}
+	
+	private void writeAuditCreateMessage(MimeMessage msg, String folder) {
+		String messageId = null;
+		try {
+			messageId = getMessageID(msg);
+		} catch (MessagingException idExc) {
+			Service.logger.error("Error getting message ID", idExc);
+		}
+		
+		try {
+			Address tos[] = msg.getRecipients(RecipientType.TO);
+			ArrayList<String> listTos = new ArrayList<>();
+			ArrayList<String> listTosDN = new ArrayList<>();
+			if (tos != null) {
+				for (Address to : tos) {
+					InternetAddress ia = (InternetAddress) to;
+					listTos.add(ia.getAddress());
+					listTosDN.add(ia.getPersonal());
+				}
+			}
+
+			Address ccs[] = msg.getRecipients(RecipientType.CC);
+			ArrayList<String> listCcs = new ArrayList<>();
+			ArrayList<String> listCcsDN = new ArrayList<>();
+			if (ccs != null) {
+				for (Address cc : ccs) {
+					InternetAddress ia = (InternetAddress) cc;
+					listCcs.add(ia.getAddress());
+					listCcsDN.add(ia.getPersonal());
+				}
+			}
+
+			Address bccs[] = msg.getRecipients(RecipientType.BCC);
+			ArrayList<String> listBccs = new ArrayList<>();
+			ArrayList<String> listBccsDN = new ArrayList<>();
+			if (bccs != null) {
+				for (Address bcc : bccs) {
+					InternetAddress ia = (InternetAddress) bcc;
+					listBccs.add(ia.getAddress());
+					listBccsDN.add(ia.getPersonal());
+				}
+			}
+
+			JsAuditMessageInfo jsAudit = new JsAuditMessageInfo();
+			Address from = msg.getFrom()[0];
+			InternetAddress iaFrom = null;
+			if (from instanceof InternetAddress) iaFrom = (InternetAddress)from;
+			if (iaFrom != null) {
+				if (StringUtils.isNotEmpty(iaFrom.getAddress())) jsAudit.setFrom(iaFrom.getAddress());
+				if (StringUtils.isNotEmpty(iaFrom.getPersonal())) jsAudit.setFromDN(iaFrom.getPersonal());
+			}
+			if (!listTos.isEmpty()) jsAudit.setTos(listTos);
+			if (!listTosDN.isEmpty()) jsAudit.setTosDN(listTosDN);
+			if (!listCcs.isEmpty()) jsAudit.setCcs(listCcs);
+			if (!listCcsDN.isEmpty()) jsAudit.setCcsDN(listCcsDN);
+			if (!listBccs.isEmpty()) jsAudit.setBccs(listBccs);
+			if (!listBccsDN.isEmpty()) jsAudit.setBccsDN(listBccsDN);
+			jsAudit.setFolder(folder);
+			if (StringUtils.isNotEmpty(msg.getSubject())) jsAudit.setSubject(msg.getSubject());
+			
+			mailManager.writeAuditLog(
+				MailManager.AuditContext.MAIL,
+				MailManager.AuditAction.CREATE, 
+				messageId,
+				JsonResult.gson(false).toJson(jsAudit)
+			);
+		} catch(MessagingException messEx) {
+			Service.logger.error("Exception", messEx);
+		}
+		
 	}
 	
 	private void sendAddContactMessage(String email, String personal) {
@@ -4918,7 +5160,7 @@ public class Service extends BaseService {
 			} else {
 				fc = account.getFolderCache(savefolder);
 			}
-			Exception exc = saveMessage(msg, jsmsg.attachments, fc);
+			Exception exc = saveMessage(msg, jsmsg.attachments, fc, true);
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				
@@ -5479,6 +5721,7 @@ public class Service extends BaseService {
 			if (msgContent != null) {
 				msgContent.setFlag(Flags.Flag.SEEN, true);
 				tomcache.appendMessage(msgContent);
+				if (mailManager.isAuditEnabled()) writeAuditCreateMessage(msgContent, ptofolder);
 				new JsonResult().printTo(out);
 			} else {
 				new JsonResult(false, lookupResource(locale, MailLocaleKey.ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED)).printTo(out);
@@ -5873,6 +6116,9 @@ public class Service extends BaseService {
 			FolderCache tomcache = account.getFolderCache(currentFolder);
 			msgContent.setFlag(Flags.Flag.SEEN, true);
 			tomcache.appendMessage(msgContent);
+			
+			if (mailManager.isAuditEnabled()) writeAuditCreateMessage(msgContent, currentFolder);
+			
 			new JsonResult().printTo(out);
 		} catch(Exception exc) {
 			logger.debug("Cannot upload to folder",exc);
@@ -6945,7 +7191,7 @@ public class Service extends BaseService {
 		return tags;
 	}
 	
-	private ArrayList<String> flagsToTagsIds(Flags flags) {
+	protected ArrayList<String> flagsToTagsIds(Flags flags) {
 		ArrayList<String> tags=null;
 		try {
 			tags=flagsToTagsIds(flags,WT.getCoreManager().listTags());
@@ -7083,11 +7329,16 @@ public class Service extends BaseService {
 			recs += 2;
 			
 			Address tos[] = m.getRecipients(RecipientType.TO);
+			ArrayList<String> listTos = new ArrayList<>();
+			ArrayList<String> listTosDN = new ArrayList<>();
 			if (tos != null) {
 				for (Address to : tos) {
 					InternetAddress ia = (InternetAddress) to;
 					String toName = ia.getPersonal();
 					String toEmail = adjustEmail(ia.getAddress());
+					listTos.add(toEmail);
+					listTosDN.add(toName);
+					
 					if (toName == null) {
 						toName = toEmail;
 					}
@@ -7097,11 +7348,16 @@ public class Service extends BaseService {
 				}
 			}
 			Address ccs[] = m.getRecipients(RecipientType.CC);
+			ArrayList<String> listCcs = new ArrayList<>();
+			ArrayList<String> listCcsDN = new ArrayList<>();
 			if (ccs != null) {
 				for (Address cc : ccs) {
 					InternetAddress ia = (InternetAddress) cc;
 					String ccName = ia.getPersonal();
 					String ccEmail = adjustEmail(ia.getAddress());
+					listCcs.add(ccEmail);
+					listCcsDN.add(ccName);
+					
 					if (ccName == null) {
 						ccName = ccEmail;
 					}
@@ -7111,12 +7367,17 @@ public class Service extends BaseService {
 				}
 			}
             Address bccs[]=m.getRecipients(RecipientType.BCC);
+			ArrayList<String> listBccs = new ArrayList<>();
+			ArrayList<String> listBccsDN = new ArrayList<>();
             if (bccs!=null)
                 for(Address bcc: bccs) {
                     InternetAddress ia=(InternetAddress)bcc;
                     String bccName=ia.getPersonal();
                     String bccEmail=adjustEmail(ia.getAddress());
-                    if (bccName==null) {
+                    listBccs.add(bccEmail);
+					listBccsDN.add(bccName);
+					
+					if (bccName==null) {
 						bccName=bccEmail;
 					}
 					
@@ -7164,21 +7425,33 @@ public class Service extends BaseService {
 				}
 				else {
 					if (setSeen) {
-                                            //uses morig so that it's ok also if it's a pec view
-                                            morig.setFlag(Flags.Flag.SEEN, true);
-                                        }
+						//uses morig so that it's ok also if it's a pec view
+						morig.setFlag(Flags.Flag.SEEN, true);
+					}
 				}
 			} catch(MethodNotSupportedException exc) {
 				logger.error("Cannot set Flags as SEEN",exc);
 			}
 			
 			//audit log only when changing state
-			if (!wasseen && mailManager.isAuditEnabled()) {
+			if (!wasseen && mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageid)) {
+				JsAuditMessageInfo jsAudit = new JsAuditMessageInfo();
+				if (StringUtils.isNotEmpty(fromEmail)) jsAudit.setFrom(fromEmail);
+				if (StringUtils.isNotEmpty(fromName)) jsAudit.setFromDN(fromName);
+				if (!listTos.isEmpty()) jsAudit.setTos(listTos);
+				if (!listTosDN.isEmpty()) jsAudit.setTosDN(listTosDN);
+				if (!listCcs.isEmpty()) jsAudit.setCcs(listCcs);
+				if (!listCcsDN.isEmpty()) jsAudit.setCcsDN(listCcsDN);
+				if (!listBccs.isEmpty()) jsAudit.setBccs(listBccs);
+				if (!listBccsDN.isEmpty()) jsAudit.setBccsDN(listBccsDN);
+				if (StringUtils.isNotEmpty(subject)) jsAudit.setSubject(subject);
+				jsAudit.setFolder(m.getFolder().getFullName());
+				
 				mailManager.writeAuditLog(
 					MailManager.AuditContext.MAIL,
 					MailManager.AuditAction.VIEW, 
 					messageid, 
-					null
+					JsonResult.gson(false).toJson(jsAudit)
 				);
 			}
 			
@@ -7624,13 +7897,15 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
             long msguid=Long.parseLong(puidmessage);
-			if (mailManager.isAuditEnabled())
+			String messageId = getMessageID(mcache.getMessage(msguid));
+			if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
 				mailManager.writeAuditLog(
 					MailManager.AuditContext.MAIL,
 					MailManager.AuditAction.PRINT, 
-					getMessageID(mcache.getMessage(msguid)), 
+					messageId, 
 					null
 				);
+			}
 
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
@@ -9243,11 +9518,26 @@ public class Service extends BaseService {
 			MailAccount account=getAccount(request);
 			FolderCache folderCache = account.getFolderCache(currentFolder);
 			Message currentMessage = folderCache.getMessage(messageId);
+			String oldSubject = currentMessage.getSubject();
 			
 			MimeMessage newMessage = new MimeMessage((MimeMessage)currentMessage);
 			newMessage.setSubject(newSubject);
 			folderCache.appendMessage(newMessage);
 			folderCache.deleteMessages(new long[]{messageId}, true);
+			String srvMessageId = getMessageID(newMessage);
+			
+			if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(srvMessageId)) {
+				HashMap<String, String> subjectMap = new HashMap<>();
+				subjectMap.put("old", oldSubject);
+				subjectMap.put("new", newSubject);
+				
+				mailManager.writeAuditLog(
+					MailManager.AuditContext.MAIL,
+					MailManager.AuditAction.RENAME,
+					srvMessageId,
+					JsonResult.gson().toJson(subjectMap)
+				);
+			}
 			
 			new JsonResult(true).printTo(out);
 			

@@ -1271,7 +1271,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	protected enum AuditAction {
-		CREATE, RENAME, DELETE, MOVE, FORWARD, REPLY, VIEW, PRINT, TAG
+		CREATE, RENAME, DELETE, MOVE, FORWARD, REPLY, VIEW, PRINT, TAG, EMPTY, TRASH, COPY, ARCHIVE
 	}
 	
 	protected void writeAuditLog(AuditContext context, AuditAction action, Object reference, Object data) {
@@ -1280,6 +1280,10 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	protected void writeAuditLog(AuditContext context, AuditAction action, Collection<AuditReferenceDataEntry> entries) {
 		writeAuditLog(EnumUtils.getName(context), EnumUtils.getName(action), entries);
+	}
+	
+	protected void renameAuditLogReference(AuditContext context, Object oldReference, Object newReference) {
+		renameAuditLogReference(EnumUtils.getName(context), String.valueOf(oldReference), String.valueOf(newReference));
 	}
 	
 }

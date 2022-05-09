@@ -51,6 +51,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 	idmessage: null,
 	title: null,
 	model: null,
+	fbar: null,
 
 	initComponent: function() {
 		var me = this,
@@ -96,7 +97,8 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 						iconCls: 'wtmail-icon-forward'
 					})
 				]
-			}
+			},
+			fbar: me.fbar
 		});
 		
 		me.dockableConfig.title=me.title;

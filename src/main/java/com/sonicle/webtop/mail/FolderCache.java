@@ -61,8 +61,9 @@ import org.xml.sax.*;
 import org.xml.sax.helpers.*;
 import net.fortuna.ical4j.data.*;
 import org.joda.time.LocalDate;
-import org.jooq.tools.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import com.sonicle.commons.collection.FifoMap;
+import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.JsonUtils;
 import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
@@ -1098,6 +1099,26 @@ public class FolderCache {
 		if (canDelete()) {
 			Message mmsgs[]=getMessages(uids,fullthreads);
 			folder.copyMessages(mmsgs, to.folder);
+			Boolean moveIsTrash = account.isTrashFolder(to.folder.getFullName());
+			
+			if (mailManager.isAuditEnabled()) {
+				for (Message m : mmsgs) {
+					String messageId = ms.getMessageID(m);
+					if (StringUtils.isEmpty(messageId)) continue;
+					
+					HashMap<String, String> auditMoveMessage = new HashMap<>();
+					auditMoveMessage.put("oldId", folder.getFullName());
+					auditMoveMessage.put("newId", to.folder.getFullName());
+
+					mailManager.writeAuditLog(
+						MailManager.AuditContext.MAIL,
+						moveIsTrash ? MailManager.AuditAction.TRASH : MailManager.AuditAction.MOVE,
+						messageId,
+						JsonResult.gson().toJson(auditMoveMessage)
+					);
+				}
+			}
+			
 			folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
 			removeDHash(uids);
 			folder.expunge();
@@ -1117,13 +1138,31 @@ public class FolderCache {
                 ms.isDmsSimpleArchiving() &&
                 ms.getDmsSimpleArchivingMailFolder()!=null &&
                 ms.getDmsSimpleArchivingMailFolder().equals(to.foldername)) {
-            dmsArchiveMessages(uids, to, fullthreads);
+				dmsArchiveMessages(uids, to, fullthreads);
         } else {
             Message mmsgs[]=getMessages(uids,fullthreads);
             folder.copyMessages(mmsgs, to.folder);
             to.setForceRefresh();
 			to.refreshUnreads();
             to.modified=true;
+			
+			if (mailManager.isAuditEnabled()) {
+				for (Message m : mmsgs) {
+					String messageId = ms.getMessageID(m);
+					if (StringUtils.isEmpty(messageId)) continue;
+					
+					HashMap<String, String> auditCopyMessage = new HashMap<>();
+					auditCopyMessage.put("oldId", folder.getFullName());
+					auditCopyMessage.put("newId", to.folder.getFullName());
+
+					mailManager.writeAuditLog(
+						MailManager.AuditContext.MAIL,
+						MailManager.AuditAction.COPY,
+						messageId,
+						JsonResult.gson().toJson(auditCopyMessage)
+					);
+				}
+			}
         }
     }
 	
@@ -1172,6 +1211,20 @@ public class FolderCache {
 				folder.copyMessages(xmmsg, fcto.folder);
 				fcto.setForceRefresh();
 				fcto.modified=true;
+				String messageId = ms.getMessageID(mmsg);
+				
+				if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
+					HashMap<String, String> auditArchiveMessage = new HashMap<>();
+					auditArchiveMessage.put("oldId", folder.getFullName());
+					auditArchiveMessage.put("newId", fcto.folder.getFullName());
+					
+					mailManager.writeAuditLog(
+						MailManager.AuditContext.MAIL,
+						MailManager.AuditAction.ARCHIVE,
+						messageId,
+						JsonResult.gson().toJson(auditArchiveMessage)
+					);
+				}
 			}
 			folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
 			removeDHash(uids);
@@ -1255,7 +1308,18 @@ public class FolderCache {
     
 	private void _deleteMessages(Message mmsgs[]) throws MessagingException {
         for(Message dmsg: mmsgs) {
-          if (dmsg!=null) dmsg.setFlag(Flags.Flag.DELETED, true);
+			if (dmsg!=null) {
+				dmsg.setFlag(Flags.Flag.DELETED, true);
+				String messageId = ms.getMessageID(dmsg);
+				if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
+					mailManager.writeAuditLog(
+						MailManager.AuditContext.MAIL,
+						MailManager.AuditAction.DELETE,
+						messageId,
+						null
+					);
+				}
+			}
         }
         folder.expunge();
         setForceRefresh();
@@ -1284,55 +1348,65 @@ public class FolderCache {
         }
     }
   
-    public void tagMessages(long uids[], String tagId) throws MessagingException {
-		ArrayList<AuditReferenceDataEntry> tagged = null;
-		if (mailManager.isAuditEnabled()) tagged=new ArrayList<>();		
+    public void tagMessages(long uids[], String tagId) throws MessagingException {	
         Message mmsgs[]=getMessages(uids,false);
 		MessagingException mexc=null;
 		try {
-			String flag=TagsHelper.tagIdToFlagString(WT.getCoreManager().getTag(tagId));
+			String flag = TagsHelper.tagIdToFlagString(WT.getCoreManager().getTag(tagId));
 			for(Message fmsg: mmsgs) {
 				fmsg.setFlags(new Flags(flag), true);
-				if (mailManager.isAuditEnabled()) tagged.add(new AuditMailTagObj(ms.getMessageID(fmsg), tagId));
+				String messageId = ms.getMessageID(fmsg);
+				if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
+					HashMap<String, ArrayList<String>> auditTag = new HashMap<>();
+					ArrayList<String> tags = new ArrayList<>();
+					tags.add(tagId);
+					auditTag.put("set", tags);
+					
+					mailManager.writeAuditLog(
+						MailManager.AuditContext.MAIL,
+						MailManager.AuditAction.TAG,
+						messageId,
+						JsonResult.gson().toJson(auditTag)
+					);
+				}
 			}
 		} catch(MessagingException exc) {
 			mexc=exc;
 		} catch(WTException exc) {
 			
 		}
-		if (mailManager.isAuditEnabled())
-			mailManager.writeAuditLog(
-				MailManager.AuditContext.MAIL,
-				MailManager.AuditAction.TAG, 
-				tagged
-			);
 		
 		if (mexc!=null) throw mexc;
 		
     }
   
-    public void untagMessages(long uids[], String tagId) throws MessagingException {
-		ArrayList<AuditReferenceDataEntry> untagged = null;
-		if (mailManager.isAuditEnabled()) untagged=new ArrayList<>();		
-        Message mmsgs[]=getMessages(uids,false);
-		MessagingException mexc=null;
+    public void untagMessages(long uids[], String tagId) throws MessagingException {		
+        Message mmsgs[] = getMessages(uids,false);
+		MessagingException mexc = null;
 		try {
-			String flag=TagsHelper.tagIdToFlagString(WT.getCoreManager().getTag(tagId));
-			for(Message fmsg: mmsgs) {
+			String flag = TagsHelper.tagIdToFlagString(WT.getCoreManager().getTag(tagId));
+			for (Message fmsg: mmsgs) {
 				fmsg.setFlags(new Flags(flag), false);
-				if (mailManager.isAuditEnabled()) untagged.add(new AuditMailUntagObj(ms.getMessageID(fmsg), tagId));
+				String messageId = ms.getMessageID(fmsg);
+				if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
+					HashMap<String, ArrayList<String>> auditTag = new HashMap<>();
+					ArrayList<String> tags = new ArrayList<>();
+					tags.add(tagId);
+					auditTag.put("unset", tags);
+					
+					mailManager.writeAuditLog(
+						MailManager.AuditContext.MAIL,
+						MailManager.AuditAction.TAG,
+						messageId,
+						JsonResult.gson().toJson(auditTag)
+					);
+				}
 			}
 		} catch(MessagingException exc) {
 			mexc=exc;
 		} catch(WTException exc) {
 			
 		}
-		if (mailManager.isAuditEnabled())
-			mailManager.writeAuditLog(
-				MailManager.AuditContext.MAIL,
-				MailManager.AuditAction.TAG, 
-				untagged
-			);
 		
 		if (mexc!=null) throw mexc;
     }
@@ -1367,8 +1441,6 @@ public class FolderCache {
 	}*/
 	
 	public void applyMessagesTags(long uids[], String tagIds[]) throws MessagingException {
-		ArrayList<AuditReferenceDataEntry> applied = null;
-		if (mailManager.isAuditEnabled()) applied=new ArrayList<>();		
         Message mmsgs[]=getMessages(uids,false);
 		MessagingException mexc=null;
 		Flags allFlags=new Flags();
@@ -1383,64 +1455,33 @@ public class FolderCache {
 		} catch(Exception exc) {
 		}
 		try {
-			for(Message fmsg: mmsgs) {
+			for (Message fmsg : mmsgs) {
+				List<String> msgNewFlags = null;
+				List<String> msgOldFlags = ms.flagsToTagsIds(fmsg.getFlags());
+				
+				if (tagIds != null) msgNewFlags = new ArrayList<>(Arrays.asList(tagIds));
+				
 				fmsg.setFlags(allFlags, false);
 				fmsg.setFlags(newFlags, true);
-				//if (mailManager.isAuditEnabled()) applied.add(new AuditMailClearTagObj(ms.getMessageID(fmsg)));
+				
+				String messageId = ms.getMessageID(fmsg);
+				if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
+					HashMap<String, List<String>> auditTag = WT.getCoreManager().compareTags(msgOldFlags, msgNewFlags);
+					
+					mailManager.writeAuditLog(
+						MailManager.AuditContext.MAIL,
+						MailManager.AuditAction.TAG,
+						messageId,
+						JsonResult.gson().toJson(auditTag)
+					);
+				}
 			}
 		} catch(MessagingException exc) {
 			mexc=exc;
 		}
 		
-		if (mailManager.isAuditEnabled())
-			mailManager.writeAuditLog(
-				MailManager.AuditContext.MAIL,
-				MailManager.AuditAction.TAG, 
-				applied
-			);
-		
 		if (mexc!=null) throw mexc;
     }
-  
-	protected class AuditMailTagObj implements AuditReferenceDataEntry {
-		public final String messageId;
-		public final String tagId;
-		
-		public AuditMailTagObj(String messageId, String tagId) {
-			this.messageId = messageId;
-			this.tagId = tagId;
-		}
-
-		@Override
-		public String getReference() {
-			return messageId;
-		}
-
-		@Override
-		public String getData() {
-			return JsonUtils.toJson("tag",tagId);
-		}
-	}
-	
-	protected class AuditMailUntagObj implements AuditReferenceDataEntry {
-		public final String messageId;
-		public final String tagId;
-		
-		public AuditMailUntagObj(String messageId, String tagId) {
-			this.messageId = messageId;
-			this.tagId = tagId;
-		}
-
-		@Override
-		public String getReference() {
-			return messageId;
-		}
-
-		@Override
-		public String getData() {
-			return JsonUtils.toJson("untag",tagId);
-		}
-	}
 	
     public void clearMessagesFlag(long uids[]) throws MessagingException {
 //        open();

@@ -403,20 +403,21 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         });
         me.messageView.on('messageviewed',me.messageViewed,me);
 
-		var fbar=me.mys.hasAudit()?
-			Ext.create('Ext.toolbar.Toolbar',{
+		var fbar = me.mys.hasAudit() ?
+			Ext.create('Ext.toolbar.Toolbar', {
 				hidden: true,
-//				border: "1 0 0 0",
-//				style: "border-top-width: 1 !important",
+				padding: '5 5 5 5',
 				items: [
+					'->',
 					me.getAct("auditRead"),
 					me.getAct("auditReplied"),
 					me.getAct("auditForwarded"),
 					me.getAct("auditPrinted"),
-					me.getAct("auditTagged")
+					me.getAct("auditTagged"),
+					me.getAct("messageAuditLog")
 				]
 			})
-			:null;
+			: null;
 			
         me.messageViewContainer=Ext.create({
 			xtype: 'wtpanel',
