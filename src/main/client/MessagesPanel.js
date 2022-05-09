@@ -404,11 +404,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
         me.messageView.on('messageviewed',me.messageViewed,me);
 
 		var fbar = me.mys.hasAudit() ?
-			Ext.create('Ext.toolbar.Toolbar', {
+			Ext.create('Ext.ux.StatusBar', {
 				hidden: true,
-				padding: '5 5 5 5',
 				items: [
-					'->',
 					me.getAct("auditRead"),
 					me.getAct("auditReplied"),
 					me.getAct("auditForwarded"),

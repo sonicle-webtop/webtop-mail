@@ -1311,10 +1311,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		var me=this;
 		
 		var fbar = me.mys.hasAudit() ?
-			Ext.create('Ext.toolbar.Toolbar', {
-				padding: '5 5 5 5',
+			Ext.create('Ext.ux.StatusBar', {
 				items: [
-					'->',
 					me.mys.getAct("auditRead"),
 					me.mys.getAct("auditReplied"),
 					me.mys.getAct("auditForwarded"),
