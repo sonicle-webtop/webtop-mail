@@ -65,6 +65,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.sonicle.commons.collection.FifoMap;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.JsonUtils;
+import com.sonicle.webtop.core.app.AuditLogManager;
 import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
@@ -1102,20 +1103,22 @@ public class FolderCache {
 			Boolean moveIsTrash = account.isTrashFolder(to.folder.getFullName());
 			
 			if (mailManager.isAuditEnabled()) {
-				for (Message m : mmsgs) {
-					String messageId = ms.getMessageID(m);
-					if (StringUtils.isEmpty(messageId)) continue;
-					
-					HashMap<String, String> auditMoveMessage = new HashMap<>();
-					auditMoveMessage.put("oldId", folder.getFullName());
-					auditMoveMessage.put("newId", to.folder.getFullName());
+				AuditLogManager.Batch auditBatch = mailManager.auditLogGetBatch(MailManager.AuditContext.MAIL, moveIsTrash ? MailManager.AuditAction.TRASH : MailManager.AuditAction.MOVE);
+				if (auditBatch != null) {
+					for (Message m : mmsgs) {
+						String messageId = ms.getMessageID(m);
+						if (StringUtils.isEmpty(messageId)) continue;
 
-					mailManager.writeAuditLog(
-						MailManager.AuditContext.MAIL,
-						moveIsTrash ? MailManager.AuditAction.TRASH : MailManager.AuditAction.MOVE,
-						messageId,
-						JsonResult.gson().toJson(auditMoveMessage)
-					);
+						HashMap<String, String> auditMoveMessage = new HashMap<>();
+						auditMoveMessage.put("oldId", folder.getFullName());
+						auditMoveMessage.put("newId", to.folder.getFullName());
+						
+						auditBatch.write(
+							messageId,
+							JsonResult.gson().toJson(auditMoveMessage)
+						);
+					}
+					auditBatch.flush();
 				}
 			}
 			
@@ -1155,7 +1158,7 @@ public class FolderCache {
 					auditCopyMessage.put("oldId", folder.getFullName());
 					auditCopyMessage.put("newId", to.folder.getFullName());
 
-					mailManager.writeAuditLog(
+					mailManager.auditLogWrite(
 						MailManager.AuditContext.MAIL,
 						MailManager.AuditAction.COPY,
 						messageId,
@@ -1218,7 +1221,7 @@ public class FolderCache {
 					auditArchiveMessage.put("oldId", folder.getFullName());
 					auditArchiveMessage.put("newId", fcto.folder.getFullName());
 					
-					mailManager.writeAuditLog(
+					mailManager.auditLogWrite(
 						MailManager.AuditContext.MAIL,
 						MailManager.AuditAction.ARCHIVE,
 						messageId,
@@ -1312,7 +1315,7 @@ public class FolderCache {
 				dmsg.setFlag(Flags.Flag.DELETED, true);
 				String messageId = ms.getMessageID(dmsg);
 				if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
-					mailManager.writeAuditLog(
+					mailManager.auditLogWrite(
 						MailManager.AuditContext.MAIL,
 						MailManager.AuditAction.DELETE,
 						messageId,
@@ -1362,7 +1365,7 @@ public class FolderCache {
 					tags.add(tagId);
 					auditTag.put("set", tags);
 					
-					mailManager.writeAuditLog(
+					mailManager.auditLogWrite(
 						MailManager.AuditContext.MAIL,
 						MailManager.AuditAction.TAG,
 						messageId,
@@ -1394,7 +1397,7 @@ public class FolderCache {
 					tags.add(tagId);
 					auditTag.put("unset", tags);
 					
-					mailManager.writeAuditLog(
+					mailManager.auditLogWrite(
 						MailManager.AuditContext.MAIL,
 						MailManager.AuditAction.TAG,
 						messageId,
@@ -1431,7 +1434,7 @@ public class FolderCache {
 		}
 		
 		if (mailManager.isAuditEnabled())
-			mailManager.writeAuditLog(
+			mailManager.auditLogWrite(
 				MailManager.AuditContext.MAIL,
 				MailManager.AuditAction.TAG, 
 				updated
@@ -1468,7 +1471,7 @@ public class FolderCache {
 				if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
 					HashMap<String, List<String>> auditTag = WT.getCoreManager().compareTags(msgOldFlags, msgNewFlags);
 					
-					mailManager.writeAuditLog(
+					mailManager.auditLogWrite(
 						MailManager.AuditContext.MAIL,
 						MailManager.AuditAction.TAG,
 						messageId,

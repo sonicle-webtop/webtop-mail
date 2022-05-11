@@ -3874,7 +3874,7 @@ public class Service extends BaseService {
 				new JsonResult(false, "Error creating folder").printTo(out);
 			} else {
 				if (mailManager.isAuditEnabled()) {
-					mailManager.writeAuditLog(
+					mailManager.auditLogWrite(
 						MailManager.AuditContext.FOLDER,
 						MailManager.AuditAction.CREATE, 
 						newfolder.getFullName(),
@@ -3927,13 +3927,13 @@ public class Service extends BaseService {
 			}
 			
 			if (mailManager.isAuditEnabled()) {
-				mailManager.writeAuditLog(
+				mailManager.auditLogWrite(
 					MailManager.AuditContext.FOLDER,
 					MailManager.AuditAction.RENAME,
 					newid,
 					JsonUtils.toJson("oldId", folder)
 				);
-				mailManager.renameAuditLogReference(MailManager.AuditContext.FOLDER, folder, newid);
+				mailManager.auditLogRebaseReference(MailManager.AuditContext.FOLDER, folder, newid);
 			}
 			
 			JsOperateFolder renamedFolder = new JsOperateFolder()
@@ -3981,7 +3981,7 @@ public class Service extends BaseService {
 			} else {
 				if (account.deleteFolder(folder)) {
 					if (mailManager.isAuditEnabled()) {
-						mailManager.writeAuditLog(
+						mailManager.auditLogWrite(
 							MailManager.AuditContext.FOLDER,
 							MailManager.AuditAction.DELETE,
 							folder,
@@ -4022,13 +4022,13 @@ public class Service extends BaseService {
 						trashAudit.put("oldId", folder);
 						trashAudit.put("newId", newfc.getFolderName());
 						
-						mailManager.writeAuditLog(
+						mailManager.auditLogWrite(
 							MailManager.AuditContext.FOLDER,
 							MailManager.AuditAction.TRASH,
 							newfc.getFolderName(),
 							JsonResult.gson().toJson(trashAudit)
 						);
-						mailManager.renameAuditLogReference(MailManager.AuditContext.FOLDER, folder, newfc.getFolderName());
+						mailManager.auditLogRebaseReference(MailManager.AuditContext.FOLDER, folder, newfc.getFolderName());
 					}
 					
 					JsOperateFolder trashedFolder = new JsOperateFolder()
@@ -4060,13 +4060,13 @@ public class Service extends BaseService {
 				Folder newf = newfc.getFolder();
 				
 				if (mailManager.isAuditEnabled()) {
-					mailManager.writeAuditLog(
+					mailManager.auditLogWrite(
 						MailManager.AuditContext.FOLDER,
 						MailManager.AuditAction.MOVE,
 						newfc.getFolderName(),
 						JsonUtils.toJson("oldId", folder)
 					);
-					mailManager.renameAuditLogReference(MailManager.AuditContext.FOLDER, folder, newfc.getFolderName());
+					mailManager.auditLogRebaseReference(MailManager.AuditContext.FOLDER, folder, newfc.getFolderName());
 				}
 				
 				JsOperateFolder movedFolder = new JsOperateFolder()
@@ -4097,7 +4097,7 @@ public class Service extends BaseService {
 			account.emptyFolder(folder);
 			
 			if (mailManager.isAuditEnabled()) {
-				mailManager.writeAuditLog(
+				mailManager.auditLogWrite(
 					MailManager.AuditContext.FOLDER,
 					MailManager.AuditAction.EMPTY,
 					folder,
@@ -4797,7 +4797,7 @@ public class Service extends BaseService {
 					if (StringUtils.isNotEmpty(jsmsg.subject)) jsAudit.setSubject(jsmsg.subject);
 					jsAudit.setFolder(jsmsg.folder);
 					if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(jsmsg.forwardedfrom)) {
-						mailManager.writeAuditLog(
+						mailManager.auditLogWrite(
 							MailManager.AuditContext.MAIL,
 							MailManager.AuditAction.FORWARD, 
 							jsmsg.forwardedfrom, 
@@ -4856,7 +4856,7 @@ public class Service extends BaseService {
 						if (StringUtils.isNotEmpty(jsmsg.subject)) jsAudit.setSubject(jsmsg.subject);
 						jsAudit.setFolder(jsmsg.folder);
 						if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(jsmsg.inreplyto)) {
-							mailManager.writeAuditLog(
+							mailManager.auditLogWrite(
 								MailManager.AuditContext.MAIL,
 								MailManager.AuditAction.REPLY, 
 								jsmsg.inreplyto, 
@@ -4994,7 +4994,7 @@ public class Service extends BaseService {
 			if (StringUtils.isNotEmpty(newmsg.getSubject())) jsAudit.setSubject(newmsg.getSubject());
 			if (scheduled != null) jsAudit.setScheduled(scheduled);
 
-			mailManager.writeAuditLog(
+			mailManager.auditLogWrite(
 				MailManager.AuditContext.MAIL,
 				MailManager.AuditAction.CREATE, 
 				messageId,
@@ -5065,7 +5065,7 @@ public class Service extends BaseService {
 			jsAudit.setFolder(folder);
 			if (StringUtils.isNotEmpty(msg.getSubject())) jsAudit.setSubject(msg.getSubject());
 			
-			mailManager.writeAuditLog(
+			mailManager.auditLogWrite(
 				MailManager.AuditContext.MAIL,
 				MailManager.AuditAction.CREATE, 
 				messageId,
@@ -7447,7 +7447,7 @@ public class Service extends BaseService {
 				if (StringUtils.isNotEmpty(subject)) jsAudit.setSubject(subject);
 				jsAudit.setFolder(m.getFolder().getFullName());
 				
-				mailManager.writeAuditLog(
+				mailManager.auditLogWrite(
 					MailManager.AuditContext.MAIL,
 					MailManager.AuditAction.VIEW, 
 					messageid, 
@@ -7899,7 +7899,7 @@ public class Service extends BaseService {
             long msguid=Long.parseLong(puidmessage);
 			String messageId = getMessageID(mcache.getMessage(msguid));
 			if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(messageId)) {
-				mailManager.writeAuditLog(
+				mailManager.auditLogWrite(
 					MailManager.AuditContext.MAIL,
 					MailManager.AuditAction.PRINT, 
 					messageId, 
@@ -9531,7 +9531,7 @@ public class Service extends BaseService {
 				subjectMap.put("old", oldSubject);
 				subjectMap.put("new", newSubject);
 				
-				mailManager.writeAuditLog(
+				mailManager.auditLogWrite(
 					MailManager.AuditContext.MAIL,
 					MailManager.AuditAction.RENAME,
 					srvMessageId,
