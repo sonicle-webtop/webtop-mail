@@ -122,7 +122,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 				me.addAct('addMailFilter', {
 					ignoreSize: true,
 					text: null,
-					tooltip: me.mys.res('inMailFilters.addMailFilter.tip'),
+					tooltip: me.res('inMailFilters.addMailFilter.tip'),
 					handler: function() {
 						me.addMailFilterUI();
 					}
@@ -138,14 +138,14 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 						model: 'WTA.model.Simple',
 						proxy: WTF.proxy(me.mys.ID, 'LookupSieveScripts')
 					},
-					fieldLabel: me.mys.res('inMailFilters.fld-activeScript.lbl'),
+					fieldLabel: me.res('inMailFilters.fld-activeScript.lbl'),
 					labelAlign: 'right',
 					labelWidth: 140,
 					width: 240,
 					listeners: {
 						select: function(s, rec) {
 							if (rec.getId() !== me.self.WT_SCRIPT) {
-								WT.warn(me.mys.res('inMailFilters.warn.notwebtop', me.self.WT_SCRIPT));
+								WT.warn(me.res('inMailFilters.warn.notwebtop', me.self.WT_SCRIPT));
 							}
 						}
 					}
@@ -153,13 +153,15 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 			],
 			bbar: {
 				xtype: 'statusbar',
-				items: [{
-					xtype: 'tbtext',
-					bind: {
-						hidden: '{foSieveAvail}'
-					},
-					text: me.mys.res('inMailFilters.warn.nosieve')
-				}]
+				items: [
+					{
+						xtype: 'tbtext',
+						bind: {
+							hidden: '{foSieveAvail}'
+						},
+						text: me.res('inMailFilters.warn.nosieve')
+					}
+				]
 			}
 		});
 		me.callParent(arguments);
@@ -177,50 +179,54 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 				border: false,
 				viewConfig: {
 					deferEmptyText: false,
-					plugins: [{
-						ptype: 'sogridviewddordering',
-						orderField: 'order',
-						zeroBased: false
-					}]
-				},
-				columns: [{
-					xtype: 'soiconcolumn',
-					dataIndex: 'enabled',
-					header: '',
-					sortable: false,
-					menuDisabled: true,
-					stopSelection: true,
-					getIconCls: function (value, rec) {
-						return WTF.cssIconCls(WT.XID, 'traffic-light-' + (value ? 'green' : 'red'));
-					},
-					getTip: function(v,rec) {
-						if (v === true) {
-							return me.mys.res('inMailFilters.gp-filters.enabled.true');
-						} else {
-							return me.mys.res('inMailFilters.gp-filters.enabled.false');
-						}
-					},
-					handler: function (grid, rix, cix, e, rec) {
-						rec.set('enabled', !rec.get('enabled'));
-					},
-					width: 30
-				}, {
-					dataIndex: 'name',
-					header: me.mys.res('inMailFilters.gp-filters.name.lbl'),
-					flex: 1
-				}, {
-					xtype: 'soactioncolumn',
-					items: [
+					plugins: [
 						{
-							iconCls: 'far fa-trash-alt',
-							tooltip: WT.res('act-remove.lbl'),
-							handler: function(g, ridx) {
-								var rec = g.getStore().getAt(ridx);
-								me.deleteMailFilterUI(rec);
-							}
+							ptype: 'sogridviewddordering',
+							orderField: 'order',
+							zeroBased: false
 						}
 					]
-				}],
+				},
+				columns: [
+					{
+						xtype: 'soiconcolumn',
+						dataIndex: 'enabled',
+						header: '',
+						sortable: false,
+						menuDisabled: true,
+						stopSelection: true,
+						getIconCls: function (value, rec) {
+							return WTF.cssIconCls(WT.XID, 'traffic-light-' + (value ? 'green' : 'red'));
+						},
+						getTip: function(v,rec) {
+							if (v === true) {
+								return me.res('inMailFilters.gp-filters.enabled.true');
+							} else {
+								return me.res('inMailFilters.gp-filters.enabled.false');
+							}
+						},
+						handler: function (grid, rix, cix, e, rec) {
+							rec.set('enabled', !rec.get('enabled'));
+						},
+						width: 30
+					}, {
+						dataIndex: 'name',
+						header: me.res('inMailFilters.gp-filters.name.lbl'),
+						flex: 1
+					}, {
+						xtype: 'soactioncolumn',
+						items: [
+							{
+								iconCls: 'far fa-trash-alt',
+								tooltip: WT.res('act-remove.lbl'),
+								handler: function(g, ridx) {
+									var rec = g.getStore().getAt(ridx);
+									me.deleteMailFilterUI(rec);
+								}
+							}
+						]
+					}
+				],
 				listeners: {
 					rowdblclick: function(s, rec) {
 						me.editMailFilterUI(rec);
@@ -230,116 +236,132 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 				flex: 1
 			}, {
 				xtype: 'wtform',
-				title: me.mys.res('inMailFilters.autoResponder.tit'),
+				title: me.res('inMailFilters.autoResponder.tit'),
 				modelValidation: true,
 				defaults: {
 					labelWidth: 150
 				},
-				items: [{
-					xtype: 'checkbox',
-					reference: 'fldAutoRespEnabled',
-					bind: '{foAutoRespEnabled}',
-					hideEmptyLabel: false,
-					boxLabel: me.mys.res('sieveFilter.autoResponder.fld-enabled.lbl')
-				}, {
-					xtype: 'textfield',
-					bind: {
-						value: '{record.autoResponder.subject}',
-						disabled: '{!fldAutoRespEnabled.checked}'
+				items: [
+					{
+						xtype: 'checkbox',
+						reference: 'fldAutoRespEnabled',
+						bind: '{foAutoRespEnabled}',
+						hideEmptyLabel: false,
+						boxLabel: me.res('sieveFilter.autoResponder.fld-enabled.lbl')
+					}, {
+						xtype: 'textfield',
+						bind: {
+							value: '{record.autoResponder.subject}',
+							disabled: '{!fldAutoRespEnabled.checked}'
+						},
+						fieldLabel: me.res('sieveFilter.autoResponder.fld-subject.lbl'),
+						emptyText: me.res('sieveFilter.autoResponder.fld-subject.emp'),
+						anchor: '100%'
+					},{
+						xtype: 'textareafield',
+						bind: {
+							value: '{record.autoResponder.message}',
+							disabled: '{!fldAutoRespEnabled.checked}'
+						},
+						fieldLabel: me.res('sieveFilter.autoResponder.fld-message.lbl'),
+						height: 80,
+						anchor: '100%'
+					}, {
+						xtype: 'tagfield',
+						bind: {
+							value: '{record.autoResponder.addresses}',
+							disabled: '{!fldAutoRespEnabled.checked}'
+						},
+						createNewOnEnter: true,
+						createNewOnBlur: true,
+						filterPickList: false,
+						forceSelection: false,
+						hideTrigger: true,
+						autoLoadOnValue: true,
+						store: {
+							model: 'WTA.ux.data.ValueModel'
+						},
+						maskRe: /^[a-zA-Z0-9_\-\.\@]/,
+						fieldLabel: me.res('sieveFilter.autoResponder.fld-addresses.lbl'),
+						emptyText: me.res('sieveFilter.autoResponder.fld-addresses.emp'),
+						anchor: '100%'
 					},
-					fieldLabel: me.mys.res('sieveFilter.autoResponder.fld-subject.lbl'),
-					emptyText: me.mys.res('sieveFilter.autoResponder.fld-subject.emp'),
-					anchor: '100%'
-				},{
-					xtype: 'textareafield',
-					bind: {
-						value: '{record.autoResponder.message}',
-						disabled: '{!fldAutoRespEnabled.checked}'
-					},
-					fieldLabel: me.mys.res('sieveFilter.autoResponder.fld-message.lbl'),
-					height: 80,
-					anchor: '100%'
-				}, {
-					xtype: 'textfield',
-					bind: {
-						value: '{record.autoResponder.addresses}',
-						disabled: '{!fldAutoRespEnabled.checked}'
-					},
-					fieldLabel: me.mys.res('sieveFilter.autoResponder.fld-addresses.lbl'),
-					emptyText: me.mys.res('sieveFilter.autoResponder.fld-addresses.emp'),
-					anchor: '100%'
-				},
-				WTF.lookupCombo('id', 'desc', {
-					bind: {
-						value: '{record.autoResponder.daysInterval}',
-						disabled: '{!fldAutoRespEnabled.checked}'
-					},
-					store: {
-						type: 'wtmailsievevacationdays',
-						autoLoad: true
-					},
-					fieldLabel: me.mys.res('sieveFilter.autoResponder.fld-daysInterval.lbl'),
-					emptyText: '7',
-					width: 230
-				}),
-				{
-					xtype: 'soformseparator',
-					bind: {
-						disabled: '{!fldAutoRespEnabled.checked}'
+					WTF.lookupCombo('id', 'desc', {
+						bind: {
+							value: '{record.autoResponder.daysInterval}',
+							disabled: '{!fldAutoRespEnabled.checked}'
+						},
+						store: {
+							type: 'wtmailsievevacationdays',
+							autoLoad: true
+						},
+						fieldLabel: me.res('sieveFilter.autoResponder.fld-daysInterval.lbl'),
+						emptyText: '7',
+						width: 230
+					}),
+					{
+						xtype: 'soformseparator',
+						bind: {
+							disabled: '{!fldAutoRespEnabled.checked}'
+						}
+					}, {
+						xtype: 'fieldcontainer',
+						bind: {
+							disabled: '{!fldAutoRespEnabled.checked}'
+						},
+						defaults: {
+							margin: '0 0 0 10'
+						},
+						layout: 'hbox',
+						items: [
+							{
+								xtype: 'checkbox',
+								reference: 'fldautorespstartenabled',
+								bind: '{foAutoRespStartEnabled}',
+								hideEmptyLabel: true,
+								boxLabel: me.res('sieveFilter.autoResponder.fld-enableOn.lbl'),
+								width: 220
+							}, {
+								xtype: 'datefield',
+								bind: {
+									value: '{foAutoRespStartDate}',
+									disabled: '{!fldautorespstartenabled.checked}'
+								},
+								startDay: WT.getStartDay(),
+								format: WT.getShortDateFmt(),
+								width: 140
+							}
+						]
+					}, {
+						xtype: 'fieldcontainer',
+						bind: {
+							disabled: '{!fldAutoRespEnabled.checked}'
+						},
+						defaults: {
+							margin: '0 0 0 10'
+						},
+						layout: 'hbox',
+						items: [
+							{
+								xtype: 'checkbox',
+								reference: 'fldautorespendenabled',
+								bind: '{foAutoRespEndEnabled}',
+								hideEmptyLabel: true,
+								boxLabel: me.res('sieveFilter.autoResponder.fld-disableOn.lbl'),
+								width: 220
+							}, {
+								xtype: 'datefield',
+								bind: {
+									value: '{foAutoRespEndDate}',
+									disabled: '{!fldautorespendenabled.checked}'
+								},
+								startDay: WT.getStartDay(),
+								format: WT.getShortDateFmt(),
+								width: 140
+							}
+						]
 					}
-				}, {
-					xtype: 'fieldcontainer',
-					bind: {
-						disabled: '{!fldAutoRespEnabled.checked}'
-					},
-					defaults: {
-						margin: '0 0 0 10'
-					},
-					layout: 'hbox',
-					items: [{
-						xtype: 'checkbox',
-						reference: 'fldautorespstartenabled',
-						bind: '{foAutoRespStartEnabled}',
-						hideEmptyLabel: true,
-						boxLabel: me.mys.res('sieveFilter.autoResponder.fld-enableOn.lbl'),
-						width: 220
-					}, {
-						xtype: 'datefield',
-						bind: {
-							value: '{foAutoRespStartDate}',
-							disabled: '{!fldautorespstartenabled.checked}'
-						},
-						startDay: WT.getStartDay(),
-						format: WT.getShortDateFmt(),
-						width: 140
-					}]
-				}, {
-					xtype: 'fieldcontainer',
-					bind: {
-						disabled: '{!fldAutoRespEnabled.checked}'
-					},
-					defaults: {
-						margin: '0 0 0 10'
-					},
-					layout: 'hbox',
-					items: [{
-						xtype: 'checkbox',
-						reference: 'fldautorespendenabled',
-						bind: '{foAutoRespEndEnabled}',
-						hideEmptyLabel: true,
-						boxLabel: me.mys.res('sieveFilter.autoResponder.fld-disableOn.lbl'),
-						width: 220
-					}, {
-						xtype: 'datefield',
-						bind: {
-							value: '{foAutoRespEndDate}',
-							disabled: '{!fldautorespendenabled.checked}'
-						},
-						startDay: WT.getStartDay(),
-						format: WT.getShortDateFmt(),
-						width: 140
-					}]
-				}],
+				],
 				width: '100%'
 			}]
 		});
@@ -349,8 +371,10 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 	
 	addMailFilter: function(data, opts) {
 		var me = this,
-			vw = WT.createView(me.mys.ID, 'view.SieveFilter', { swapReturn: true });
-
+			vw = WT.createView(me.mys.ID, 'view.SieveFilter', {
+				swapReturn: true
+			});
+		
 		vw.on('viewsave', function(s, success, model) {
 			Ext.callback(opts.callback, opts.scope || me, [success, model]);
 		});
@@ -368,7 +392,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		onViewLoad: function(s, success) {
 			if (!success) return;
 			var me = this,
-					mo = me.getModel();
+				mo = me.getModel();
 
 			// A new record to add is passed from outside
 			if (me.opts.addMailFilter) {
@@ -380,7 +404,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 			}
 
 			if (mo.get('activeScript') !== me.self.WT_SCRIPT) {
-				WT.confirm(me.mys.res('inMailFilters.confirm.notwebtop', WT.getPlatformName()), function(bid) {
+				WT.confirm(me.res('inMailFilters.confirm.notwebtop', WT.getPlatformName()), function(bid) {
 					if (bid === 'yes') mo.set('activeScript', me.self.WT_SCRIPT);
 				}, this);
 			}
@@ -397,7 +421,9 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 
 		editMailFilterUI: function(rec) {
 			var me = this,
-					vw = WT.createView(me.mys.ID, 'view.SieveFilter', { swapReturn: true });
+				vw = WT.createView(me.mys.ID, 'view.SieveFilter', {
+					swapReturn: true
+				});
 
 			vw.on('viewsave', function(s, success, model) {
 				if (success) me.updateFilterRec(model.getId(), model.getData());
@@ -411,11 +437,11 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 
 		deleteMailFilterUI: function(rec) {
 			var me = this,
-					grid = me.lref('gpfilters'),
-					sto = grid.getStore();
+				grid = me.lref('gpfilters'),
+				sto = grid.getStore();
 
 			WT.confirm(WT.res('confirm.delete'), function(bid) {
-				if(bid === 'yes') {
+				if (bid === 'yes') {
 					sto.remove(rec);
 				}
 			}, me);
@@ -472,4 +498,3 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		WT_SCRIPT: 'webtop5'
 	}
 });
-	
