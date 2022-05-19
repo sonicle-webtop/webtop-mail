@@ -634,7 +634,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("flagbrown",{ text: me.res('message.flag.brown'), iconCls: 'fas fa-bookmark wtmail-flag-brown', handler: me.gridAction(me,'Flag','brown')});
         me.addAct("flagazure",{ text: me.res('message.flag.azure'), iconCls: 'fas fa-bookmark wtmail-flag-azure', handler: me.gridAction(me,'Flag','azure')});
         me.addAct("flagpink",{ text: me.res('message.flag.pink'), iconCls: 'fas fa-bookmark wtmail-flag-pink', handler: me.gridAction(me,'Flag','pink')});
-        me.addAct("flagcomplete",{ text: me.res('message.flag.complete'), iconCls: 'fas fa-check wtmail-flag-complete wt-theme-glyph', handler: me.gridAction(me,'Flag','complete')});
+        me.addAct("flagcomplete",{ text: me.res('message.flag.complete'), iconCls: 'fas fa-check wtmail-flag-complete', handler: me.gridAction(me,'Flag','complete')});
         me.addAct("clear",{ handler: me.gridAction(me,'Flag','clear'), iconCls: '' });
 		
         //me.addAct("newtag",{ handler: me.gridAction(me,'NewTag') });
@@ -725,12 +725,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		 */
 		
 		if (me.hasAudit()) {
-			me.addAct("auditRead",{ text:null, tooltip: me.res("act-auditRead.lbl"), iconCls: 'far fa-eye wt-theme-glyph', handler: me.gridAction(me,'AuditRead'), scope: me });
-			me.addAct("auditReplied",{ text:null, tooltip: me.res("act-auditReplied.lbl"), iconCls: 'fas fa-reply wt-theme-glyph', handler: me.gridAction(me,'AuditReplied'), scope: me });
-			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), iconCls: 'fas fa-share wt-theme-glyph',  handler: me.gridAction(me,'AuditForwarded'), scope: me });
-			me.addAct("auditPrinted",{ text:null, tooltip: me.res("act-auditPrinted.lbl"), iconCls: 'fas fa-print wt-theme-glyph',  handler: me.gridAction(me,'AuditPrinted'), scope: me });
-			me.addAct("auditTagged",{ text:null, tooltip: me.res("act-auditTagged.lbl"), iconCls: 'fas fa-tags wt-theme-glyph',  handler: me.gridAction(me,'AuditTagged'), scope: me });
-			me.addAct("messageAuditLog",{ text:null, tooltip: WT.res('act-auditLog.lbl'), iconCls: 'fas fa-history wt-theme-glyph',  handler: me.gridAction(me,'MessageAuditLog'), scope: me });
+			me.addAct("auditRead",{ text:null, tooltip: me.res("act-auditRead.lbl"), iconCls: 'far fa-eye', handler: me.gridAction(me,'AuditRead'), scope: me });
+			me.addAct("auditReplied",{ text:null, tooltip: me.res("act-auditReplied.lbl"), iconCls: 'fas fa-reply', handler: me.gridAction(me,'AuditReplied'), scope: me });
+			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), iconCls: 'fas fa-share',  handler: me.gridAction(me,'AuditForwarded'), scope: me });
+			me.addAct("auditPrinted",{ text:null, tooltip: me.res("act-auditPrinted.lbl"), iconCls: 'fas fa-print',  handler: me.gridAction(me,'AuditPrinted'), scope: me });
+			me.addAct("auditTagged",{ text:null, tooltip: me.res("act-auditTagged.lbl"), iconCls: 'fas fa-tags',  handler: me.gridAction(me,'AuditTagged'), scope: me });
+			me.addAct("messageAuditLog",{ text:null, tooltip: WT.res('act-auditLog.lbl'), iconCls: 'fas fa-history',  handler: me.gridAction(me,'MessageAuditLog'), scope: me });
 			
 			me.addAct('folderAuditLog', {
 				text: WT.res('act-auditLog.lbl'),

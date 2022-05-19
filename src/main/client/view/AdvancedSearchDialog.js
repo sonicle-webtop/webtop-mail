@@ -233,7 +233,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 								['brown',me.res('message.flag.brown'),'fas fa-bookmark wtmail-flag-brown'],
 								['azure',me.res('message.flag.azure'),'fas fa-bookmark wtmail-flag-azure'],
 								['pink',me.res('message.flag.pink'),'fas fa-bookmark wtmail-flag-pink'],
-								['complete',me.res('message.flag.complete'),'fas fa-check wtmail-flag-complete wt-theme-glyph']
+								['complete',me.res('message.flag.complete'),'fas fa-check wtmail-flag-complete wt-opacity-60']
 							]
 						}),
 						//value: this.method,
