@@ -724,7 +724,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         if (WT.docmgtwt) this.aDocMgtwt=this.addDependencyAction("docmgtwt","webtop/js/mail/DocMgt.js","actionDocMgtWt",this,'iconDocMgt');
 		 */
 		
-		if (me.hasAudit()) {
+		if (me.hasAuditUI()) {
 			me.addAct("auditRead",{ text:null, tooltip: me.res("act-auditRead.lbl"), iconCls: 'far fa-eye', handler: me.gridAction(me,'AuditRead'), scope: me });
 			me.addAct("auditReplied",{ text:null, tooltip: me.res("act-auditReplied.lbl"), iconCls: 'fas fa-reply', handler: me.gridAction(me,'AuditReplied'), scope: me });
 			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), iconCls: 'fas fa-share',  handler: me.gridAction(me,'AuditForwarded'), scope: me });
@@ -742,10 +742,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				scope: me
 			});
 		}		
-	},
-	
-	hasAudit: function() {
-		return this.getVar("hasAudit");
 	},
 	
 	initCxm: function() {
@@ -899,7 +895,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 '-',
                 me.getAct('refresh'),
                 me.getAct('refreshtree'),
-				me.hasAudit() ? me.getAct('folderAuditLog') : null,
+				me.hasAuditUI() ? me.getAct('folderAuditLog') : null,
                 '-',
                 me.getAct('sharing'),
 				mshowsharings=Ext.create('Ext.menu.CheckItem',me.getAct('showsharings')),

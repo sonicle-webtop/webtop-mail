@@ -1310,7 +1310,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     openMessage: function(r) {
 		var me=this;
 		
-		var fbar = me.mys.hasAudit() ?
+		var fbar = me.mys.hasAuditUI() ?
 			Ext.create('Ext.ux.StatusBar', {
 				items: [
 					me.mys.getAct("auditRead"),
