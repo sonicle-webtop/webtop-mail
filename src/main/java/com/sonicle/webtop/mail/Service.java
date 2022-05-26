@@ -6768,6 +6768,7 @@ public class Service extends BaseService {
 					JsonResult jsr=new JsonResult();
 					jsr.set("page", ((int)(startx/rowsperpage)+1));
 					jsr.set("row", startx);
+					jsr.set("account", account.getId());
 					if (tId>0) jsr.set("threadid", tId);
 					jsr.printTo(out);
 				}
