@@ -1,3 +1,14 @@
+$	5.15.1
+	%	Versione 5.15.1
+	*	<h1>Sicurezza Proattiva</h1>
+		<p>Durante la visualizzazione dei messaggi vengono effettuati dei controlli proattivi sul mittente, sugli allegati
+		e sui link presenti all'interno del corpo del messaggio, mostrando la sua affidabilità tramite uno scudo colorato e
+		attivando eventuali avvisi su allegati e link esterni potenzialmente pericolosi.<br>
+		In alto a destra viene visualizzato il punteggio spam rilevato nell'intestazione della mail.<br>
+		L'amministratore può decidere quali controlli attivare o disattivare per utenti o gruppi di utenti, al fine di
+		proteggerli da situazioni di pericolo.
+		</p>
+		<img src="5.15.1_pas.png"/>
 $	5.12.0
 	%	Versione 5.12.0
 	*	<h1>Miglioramento gestione quote</h1>

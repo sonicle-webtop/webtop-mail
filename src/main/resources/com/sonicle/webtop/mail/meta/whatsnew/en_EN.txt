@@ -1,3 +1,13 @@
+$	5.15.1
+	%	Version 5.15.1
+	*	<h1>Proactive Security</h1>
+		<p>The message view now features various proactive checks on sender, attachments and links inside the message body,
+		showing its reliability through a colored shield and activating warnings on possibly dangerous attachments and external links.<br>
+		On the top-right you can see the spam score as it's been detected in the mail headers.<br>
+		The administrator can trim which checks to activate or deactivate on users or groups os users, to protect them even more
+		from dangerous situations.
+		</p>
+		<img src="5.15.1_pas.png"/>
 $	5.12.0
 	%	Version 5.12.0
 	*	<h1>Enhanced quota management</h1>
