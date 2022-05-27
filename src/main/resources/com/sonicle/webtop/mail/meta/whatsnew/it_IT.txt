@@ -1,5 +1,5 @@
-$	5.15.1
-	%	Versione 5.15.1
+$	5.15.0
+	%	Versione 5.15.0
 	*	<h1>Sicurezza Proattiva</h1>
 		<p>Durante la visualizzazione dei messaggi vengono effettuati dei controlli proattivi sul mittente, sugli allegati
 		e sui link presenti all'interno del corpo del messaggio, mostrando la sua affidabilità tramite uno scudo colorato e
@@ -8,7 +8,7 @@ $	5.15.1
 		L'amministratore può decidere quali controlli attivare o disattivare per utenti o gruppi di utenti, al fine di
 		proteggerli da situazioni di pericolo.
 		</p>
-		<img src="5.15.1_pas.png"/>
+		<img src="5.15.0_pas.png"/>
 $	5.12.0
 	%	Versione 5.12.0
 	*	<h1>Miglioramento gestione quote</h1>
