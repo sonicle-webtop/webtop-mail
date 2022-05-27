@@ -7781,7 +7781,14 @@ public class Service extends BaseService {
 					ArrayList<String> hosts=new ArrayList<>();
 					//get unique hosts
 					for(String href: htmlPart.hrefs) {
-						String host=URI.create(href).getHost();
+						String host=null;
+						try {
+							host=URI.create(href.trim()).getHost();
+						} catch(IllegalArgumentException exc) {
+							//if href is invalid, use it entirely
+							//so it will be shown as dangerous
+							host=href;
+						}
 						if (host!=null && !hosts.contains(host)) hosts.add(host);
 					}
 					//check external links
