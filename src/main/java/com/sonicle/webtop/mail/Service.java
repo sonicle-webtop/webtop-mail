@@ -541,6 +541,7 @@ public class Service extends BaseService {
 		pasRules.setSpamScoreVisualization(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_SPAM_SCORE_VISUALIZATION"));
 		pasRules.setLinkClickPrompt(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_LINK_CLICK_PROMPT"));
 		pasRules.setZipCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_ZIP_CHECK"));
+		pasRules.setForgedSenderCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_FORGED_SENDER_CHECK,"));
 		pasRules.setLinkGeolocalization(RunContext.isPermitted(true, tpid, sid, pkey, "DO_LINK_GEOLOCALIZATION"));
 		
 		pasDefaultSpamThreshold=ss.getPasSpamThreshold();
@@ -7634,6 +7635,7 @@ public class Service extends BaseService {
 			boolean isSpam=false;
 			boolean isNewsletter=false;
 			boolean senderTrusted=false;
+			boolean hasForgedSender=false;
 			
 			if (pasRules.hasSpamScoreVisualization()) {
 				try {
@@ -7650,6 +7652,12 @@ public class Service extends BaseService {
 							String v=hdr.substring(ix1+1,ix2);
 							score=Float.parseFloat(v);
 							isSpam=score>=threshold;
+						}
+						if (pasRules.hasForgedSenderCheck()) {
+							//check forged sender only if spam score is yellow
+							float threshold1=threshold/2;
+							if (!isSpam && score>=threshold1)
+								hasForgedSender=hdr.contains("FORGED_SENDER");
 						}
 					} 
 					//check spamassassin second
@@ -7674,12 +7682,13 @@ public class Service extends BaseService {
 						}
 					}
 					jsPas.setIsSpam(isSpam, score, threshold);
+					jsPas.setHasForgedSender(hasForgedSender);
 				} catch(MessagingException exc) {
 					jsPas.setIsSpam(false, 0f, 0f);
 				}
 			}
 			
-			if (!isSpam) {
+			if (!isSpam && !hasForgedSender) {
 				//check for newsletter
 				if (pasRules.hasUnsubscribeDirectivesCheck()) {
 					try {
@@ -7693,8 +7702,8 @@ public class Service extends BaseService {
 			}
 
 			
-			//If not spam and not a valid newsletter, goes on with sender checks
-			if (!isSpam && !isNewsletter) {
+			//If not spam and not a forged sender and not a valid newsletter, goes on with sender checks
+			if (!isSpam && !hasForgedSender && !isNewsletter) {
 				
 				int ix=fromAddress.indexOf("@");
 				if (ix>=0 && fromAddress.length()>(ix+1)) senderDomain=fromAddress.substring(ix+1).toLowerCase();

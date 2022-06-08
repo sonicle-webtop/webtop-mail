@@ -51,6 +51,7 @@ public class ProActiveSecurityRules {
 	private boolean spamScoreVisualization;
 	private boolean linkClickPrompt;
 	private boolean zipCheck;
+	private boolean forgedSenderCheck;
 	private boolean linkGeolocalization;
 
 	public boolean isActive() {
@@ -147,6 +148,14 @@ public class ProActiveSecurityRules {
 
 	public void setZipCheck(boolean zipCheck) {
 		this.zipCheck = zipCheck;
+	}
+
+	public boolean hasForgedSenderCheck() {
+		return forgedSenderCheck;
+	}
+
+	public void setForgedSenderCheck(boolean forgedSenderCheck) {
+		this.forgedSenderCheck = forgedSenderCheck;
 	}
 
 	public boolean hasLinkGeolocalization() {

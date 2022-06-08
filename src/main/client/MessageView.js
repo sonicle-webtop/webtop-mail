@@ -584,6 +584,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				var qTitle=Ext.String.htmlEncode(me.pas.isSenderTrusted?me.res("pas.sender.trusted"):me.res("pas.sender.untrusted"));
 				var qTip="";
 				if (me.pas.isSpam) qTip=me._addPasTip(qTip, "spam", me.pas.isSpam);
+				if (me.pas.hasForgedSender) qTip=me._addPasTip(qTip, "forged-sender", me.pas.hasForgedSender);
 				if (me.pas.isNewsletter) qTip=me._addPasTip(qTip, "newsletter", me.pas.isNewsletter);
 				if (Ext.isDefined(me.pas.isSenderMyDomain)) qTip=me._addPasTip(qTip, "mydomain", me.pas.isSenderMyDomain);
 				if (Ext.isDefined(me.pas.isSenderFrequent)) qTip=me._addPasTip(qTip, "frequent", me.pas.isSenderFrequent);

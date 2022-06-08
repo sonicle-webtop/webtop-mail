@@ -52,6 +52,7 @@ public class JsProActiveSecurity {
 	Boolean isSenderFakePattern;
 	Boolean hasZipAttachment;
 	Boolean isSpam;
+	Boolean hasForgedSender;
 	Float	spamScore;
 	Float	spamThreshold;
 
@@ -103,4 +104,7 @@ public class JsProActiveSecurity {
 		this.spamThreshold = spamThreshold;
 	}
 	
+	public void setHasForgedSender(Boolean hasForgedSender) {
+		this.hasForgedSender = hasForgedSender;
+	}
 }
