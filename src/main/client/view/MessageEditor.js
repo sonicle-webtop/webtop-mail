@@ -61,7 +61,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	dockableConfig: {
 		title: '{message.tit}',
-		iconCls: 'wtmail-icon-newmsg',
+		iconCls: 'wtmail-icon-mailNew',
 		width: 860,
 		height: 500
 	},

@@ -129,7 +129,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.writeemail"), handler: function() {
 			var el=me.emailMenu.activeElement;
 			me._startNewMessage(el.recDesc,el.recEmail);
-		}, iconCls: 'wtmail-icon-newmsg'});
+		}, iconCls: 'wtmail-icon-mailNew'});
 		if (capi) {
 			actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.addcontact"), handler: function() {
 				var el=me.emailMenu.activeElement,
