@@ -5774,6 +5774,15 @@ public class Service extends BaseService {
 		}
 	}
 
+	public void processMarkEmailAsTrusted(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String email = request.getParameter("email");
+		if (!StringUtils.isEmpty(email)) {
+			CoreManager coreMgr=WT.getCoreManager();
+			coreMgr.autoLearnInternetRecipient(email);
+		}
+		new JsonResult().printTo(out);
+	}
+	
 	public void processPortletMail(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		ArrayList<JsPreviewMessage> items = new ArrayList<>();
 		
@@ -7633,62 +7642,65 @@ public class Service extends BaseService {
 			String senderDomain=null;
 			
 			boolean isSpam=false;
+			boolean isAlmostSpam=false;
 			boolean isNewsletter=false;
 			boolean senderTrusted=false;
 			boolean hasForgedSender=false;
 			
-			if (pasRules.hasSpamScoreVisualization()) {
-				try {
-					float score=0;
-					//check rspamd first
-					String hdrs[]=m.getHeader("X-Spamd-Result");
-					float threshold=0.0f;
-					if (hdrs!=null && hdrs.length>0) {
-						String hdr=hdrs[0];
-						int ix1=hdr.indexOf("[");
-						int ix2=hdr.indexOf("/");
-						if (ix1>=0 && ix2>ix1) {
-							threshold=pasDefaultSpamThreshold;
-							String v=hdr.substring(ix1+1,ix2);
-							score=Float.parseFloat(v);
-							isSpam=score>=threshold;
-						}
-						if (pasRules.hasForgedSenderCheck()) {
-							//check forged sender only if spam score is yellow
-							float threshold1=threshold/2;
-							if (!isSpam && score>=threshold1)
-								hasForgedSender=hdr.contains("FORGED_SENDER");
-						}
-					} 
-					//check spamassassin second
-					else {
-						hdrs=m.getHeader("X-Spam-Status");
-						if (hdrs!=null && hdrs.length>0) {
-							String tokens[]=StringUtils.split(hdrs[0]);
-							boolean scoreDone=false;
-							boolean thresholdDone=false;
-							for(String token: tokens) {
-								if (!scoreDone && StringUtils.startsWithIgnoreCase(token, "score=")) {
-									score=Float.parseFloat(token.substring(6));
-									scoreDone=true;
-								}
-								else if (!thresholdDone && StringUtils.startsWithIgnoreCase(token, "required=")) {
-									threshold=Float.parseFloat(token.substring(9));
-									thresholdDone=true;
-								}
-								if (scoreDone && thresholdDone) break;
-							}
-							if (scoreDone && !thresholdDone) threshold=pasDefaultSpamThreshold;
-						}
+			try {
+				float score=0;
+				//check rspamd first
+				String hdrs[]=m.getHeader("X-Spamd-Result");
+				float threshold=pasDefaultSpamThreshold;
+				float threshold1=threshold/2;
+				if (hdrs!=null && hdrs.length>0) {
+					String hdr=hdrs[0];
+					int ix1=hdr.indexOf("[");
+					int ix2=hdr.indexOf("/");
+					if (ix1>=0 && ix2>ix1) {
+						String v=hdr.substring(ix1+1,ix2);
+						score=Float.parseFloat(v);
+						isSpam=score>=threshold;
+						isAlmostSpam=!isSpam && score>=threshold1;
 					}
-					jsPas.setIsSpam(isSpam, score, threshold);
-					jsPas.setHasForgedSender(hasForgedSender);
-				} catch(MessagingException exc) {
-					jsPas.setIsSpam(false, 0f, 0f);
+					if (pasRules.hasForgedSenderCheck()) {
+						//check forged sender only if spam score is yellow
+						if (isAlmostSpam)
+							hasForgedSender=hdr.contains("FORGED_SENDER");
+					}
+				} 
+				//check spamassassin second
+				else {
+					hdrs=m.getHeader("X-Spam-Status");
+					if (hdrs!=null && hdrs.length>0) {
+						String tokens[]=StringUtils.split(hdrs[0]);
+						boolean scoreDone=false;
+						boolean thresholdDone=false;
+						for(String token: tokens) {
+							if (!scoreDone && StringUtils.startsWithIgnoreCase(token, "score=")) {
+								score=Float.parseFloat(token.substring(6));
+								scoreDone=true;
+							}
+							else if (!thresholdDone && StringUtils.startsWithIgnoreCase(token, "required=")) {
+								threshold=Float.parseFloat(token.substring(9));
+								thresholdDone=true;
+							}
+							if (scoreDone && thresholdDone) break;
+						}
+						if (scoreDone && !thresholdDone) threshold=pasDefaultSpamThreshold;
+						threshold1=threshold/2;
+						isSpam=score>=threshold;
+						isAlmostSpam=!isSpam && score>=threshold1;
+					}
 				}
+				if (pasRules.hasSpamScoreVisualization()) jsPas.setIsSpam(isSpam, score, threshold);
+				jsPas.setHasForgedSender(hasForgedSender);
+			} catch(MessagingException exc) {
+				if (pasRules.hasSpamScoreVisualization()) jsPas.setIsSpam(false, 0f, 0f);
 			}
 			
-			if (!isSpam && !hasForgedSender) {
+			//check for newsletter only if spam is green and no forged sender
+			if (!isSpam && !isAlmostSpam && !hasForgedSender) {
 				//check for newsletter
 				if (pasRules.hasUnsubscribeDirectivesCheck()) {
 					try {

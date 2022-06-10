@@ -121,86 +121,6 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         
         me.addListener('resize',me.viewResized,me);
 
-		//create email menu
-		var capi=WT.getServiceApi("com.sonicle.webtop.contacts"),
-			i=0,
-			actions=new Array();
-	
-		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.writeemail"), handler: function() {
-			var el=me.emailMenu.activeElement;
-			me._startNewMessage(el.recDesc,el.recEmail);
-		}, iconCls: 'wtmail-icon-mailNew'});
-		if (capi) {
-			actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.addcontact"), handler: function() {
-				var el=me.emailMenu.activeElement,
-					email=el.recEmail,
-					desc=(el.recDesc===el.recEmail)?null:el.recDesc;
-					firstName=null,
-					lastName=null;
-					
-				firstName=desc;
-				
-				if (desc!=null) {
-					var ix=desc.lastIndexOf(' ');
-					if (ix>0) {
-						firstName=desc.substring(0,ix);
-						lastName=desc.substring(ix+1);
-					}
-				}
-				
-				capi.addContact({
-					firstName: firstName,
-					lastName: lastName,
-					workEmail: email
-				}, {
-					dirty: true
-				});
-			}, iconCls: 'wtcon-icon-newContact'});
-		}
-		actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createrule"), handler: function() {
-			var ae=me.emailMenu.activeElement;
-			me.createRule(ae.recEmail,ae.recType);
-		}, iconCls: 'wtmail-icon-addMailFilter'});
-		me.emailMenu=new Ext.menu.Menu({
-			items: actions
-		});
-		
-		
-		//create attach menu
-		me.attachMenu=new Ext.menu.Menu({
-			items: [
-				new Ext.Action({text: me.mys.res("attachmenu.save"),handler:function() {
-					var el=me.attachMenu.activeElement;
-					if (el.linkSave) window.open(el.linkSave);
-				}, scope:me, iconCls: 'wt-icon-save'}),
-				new Ext.Action({text: me.mys.res("attachmenu.saveall"),handler:function() {
-					var el=me.attachMenu.activeElement;
-					if (el.linkSaveAll) window.open(el.linkSaveAll);
-				}, scope:me, iconCls: 'wt-icon-saveAll'}),
-				new Ext.Action({text: me.mys.res("attachment.savetocloud"),
-					disabled: !WT.getApp().hasDescriptor('com.sonicle.webtop.vfs'),
-					handler: function() {
-						var el = me.attachMenu.activeElement;
-						if (el.linkSave) {
-							var api = WT.getApp().getServiceApi('com.sonicle.webtop.vfs');
-							api.chooseFolder({
-								callback: function(s, file) {
-									if (s === false) return;
-									me.saveInCloud({
-										fileId : file.fileId,
-										path : file.path,
-										storeId : file.storeId,
-										folder : el.attachItem.folder,
-										idAttach : el.attachItem.idAttach,
-										idMessage : el.attachItem.idMessage
-									});
-								}
-							});
-						}
-					},
-				scope:me, iconCls: 'wt-icon-save'})
-			]
-		});
     },
 	
 	saveInCloud: function(data) {
@@ -579,8 +499,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			//TODO: update tooltips (necessary???)
             //me.divFromName.set({ 'data-qtitle': me.fromName, 'data-qtip': me.fromEmail })
 			
+			var canMarkAsTrusted=false;
 			var divPasSender="";
 			if (me.pas) {
+				canMarkAsTrusted=!me.pas.isSenderTrusted && !me.pas.isSpam && !me.pas.hasForgedSender;
+				
 				var qTitle=Ext.String.htmlEncode(me.pas.isSenderTrusted?me.res("pas.sender.trusted"):me.res("pas.sender.untrusted"));
 				var qTip="";
 				if (me.pas.isSpam) qTip=me._addPasTip(qTip, "spam", me.pas.isSpam);
@@ -591,12 +514,16 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				if (Ext.isDefined(me.pas.isSenderAnyContact)) qTip=me._addPasTip(qTip, "anycontact", me.pas.isSenderAnyContact);
 				if (Ext.isDefined(me.pas.isSenderDisplaynameConsistentWithContact)) qTip=me._addPasTip(qTip, "contact-consistent", me.pas.isSenderDisplaynameConsistentWithContact, true);
 				if (Ext.isDefined(me.pas.isSenderFakePattern)) qTip=me._addPasTip(qTip, "fake-pattern", me.pas.isSenderFakePattern);
+				
+				if (canMarkAsTrusted) {
+					qTip+="<br><br>"+me.res("pas.sender.clicktotrust");
+				}
 				divPasSender="&nbsp;<div "+
 						"data-qtitle='" + qTitle + "' "+
 						"data-qtip='" + qTip + "' "+
 						"class='wtmail-icon-pas-"+
 							(me.pas.isSpam?"danger":me.pas.isSenderTrusted?"ok":"warning")
-						+"' style='display:inline-block; width: 16px;height: 16px;'></div>";
+						+"' style='display:inline-block; width: 16px;height: 16px;"+(canMarkAsTrusted?"cursor: pointer;":"")+"'></div>";
 			}
             me.divFromName.update(
 				"<a data-qtip='" + me.fromEmail + "' data-qtitle='" + Ext.String.htmlEncode(me.fromName) + "' href='javascript:Ext.emptyFn()'>" +
@@ -605,6 +532,92 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				divPasSender
 			);
 	
+			//prepare email menu
+			var capi=WT.getServiceApi("com.sonicle.webtop.contacts"),
+				i=0, actions=new Array();
+	
+			actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.writeemail"), handler: function() {
+				var el=me.emailMenu.activeElement;
+				me._startNewMessage(el.recDesc,el.recEmail);
+			}, iconCls: 'wtmail-icon-mailNew'});
+			if (capi) {
+				actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.addcontact"), handler: function() {
+					var el=me.emailMenu.activeElement,
+						email=el.recEmail,
+						desc=(el.recDesc===el.recEmail)?null:el.recDesc;
+						firstName=null,
+						lastName=null;
+
+					firstName=desc;
+
+					if (desc!=null) {
+						var ix=desc.lastIndexOf(' ');
+						if (ix>0) {
+							firstName=desc.substring(0,ix);
+							lastName=desc.substring(ix+1);
+						}
+					}
+
+					capi.addContact({
+						firstName: firstName,
+						lastName: lastName,
+						workEmail: email
+					}, {
+						dirty: true
+					});
+				}, iconCls: 'wtcon-icon-newContact'});
+			}
+			actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createrule"), handler: function() {
+				var ae=me.emailMenu.activeElement;
+				me.createRule(ae.recEmail,ae.recType);
+			}, iconCls: 'wtmail-icon-addMailFilter'});
+			if (canMarkAsTrusted) {
+				actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.marktrusted"), handler: function() {
+					var ae=me.emailMenu.activeElement;
+					me.markEmailAsTrusted(ae.recEmail,ae.recType);
+				}, iconCls: 'wtmail-icon-pas-ok'});
+			}
+			me.emailMenu=new Ext.menu.Menu({
+				items: actions
+			});
+
+
+			//create attach menu
+			me.attachMenu=new Ext.menu.Menu({
+				items: [
+					new Ext.Action({text: me.mys.res("attachmenu.save"),handler:function() {
+						var el=me.attachMenu.activeElement;
+						if (el.linkSave) window.open(el.linkSave);
+					}, scope:me, iconCls: 'wt-icon-save'}),
+					new Ext.Action({text: me.mys.res("attachmenu.saveall"),handler:function() {
+						var el=me.attachMenu.activeElement;
+						if (el.linkSaveAll) window.open(el.linkSaveAll);
+					}, scope:me, iconCls: 'wt-icon-saveAll'}),
+					new Ext.Action({text: me.mys.res("attachment.savetocloud"),
+						disabled: !WT.getApp().hasDescriptor('com.sonicle.webtop.vfs'),
+						handler: function() {
+							var el = me.attachMenu.activeElement;
+							if (el.linkSave) {
+								var api = WT.getApp().getServiceApi('com.sonicle.webtop.vfs');
+								api.chooseFolder({
+									callback: function(s, file) {
+										if (s === false) return;
+										me.saveInCloud({
+											fileId : file.fileId,
+											path : file.path,
+											storeId : file.storeId,
+											folder : el.attachItem.folder,
+											idAttach : el.attachItem.idAttach,
+											idMessage : el.attachItem.idMessage
+										});
+									}
+								});
+							}
+						},
+					scope:me, iconCls: 'wt-icon-save'})
+				]
+			});
+			
 	
             tdh.insertFirst(me.divLine);
 			
@@ -852,6 +865,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.divBody.dom.style.width=tdh.dom.scrollWidth-5;//"100%";
             tdb.insertFirst(me.divBody);
             me._setEmailElement(me.divFromName.first(),'from');
+			if (canMarkAsTrusted)
+				me.divFromName.first().next().on('click', function() {
+					me.markEmailAsTrusted(me.divFromName.first().getAttribute('data-qtip'));
+				});
+
             
             var tc=document.createElement("table");
             tc.cellPadding=0;
@@ -959,7 +977,6 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	},
 	
     createRule: function(email,type) {
-		var me=this,context="INBOX";
 		var me = this, rfld, rval;
 		if (type === 'from') {
 			rfld = 'from';
@@ -976,6 +993,31 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			});
 		}
     },
+	
+	markEmailAsTrusted: function(email,type) {
+		var me = this;
+		WT.confirm(me.mys.res("mark-email-as-trusted.confirm",email),function(btn) {
+			if (btn=='yes') {
+				WT.ajaxReq(me.mys.ID, 'MarkEmailAsTrusted', {
+					params: {
+						email: email
+					},
+					callback: function(success,json) {
+						if (success) {
+							var acct=me.acct,
+								folder=me.folder,
+								idmessage=me.idmessage,
+								model=me.model;
+							me._clear();
+							me._showMessage(acct, folder, idmessage, false, model);
+						} else {
+							WT.error(json.message);
+						}
+					}
+				});					
+			}
+		});
+	},
 
     
 	//TODO Workflow
