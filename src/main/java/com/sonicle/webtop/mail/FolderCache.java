@@ -2340,7 +2340,8 @@ public class FolderCache {
       }
       
     } else if (msg.isMimeType("application/pkcs7-signature")||msg.isMimeType("application/x-pkcs7-signature")) {
-        //skip signature
+        mailData.addUnknownPart(msg,level);
+        mailData.addAttachmentPart(msg,level);
     } else if(msg.isMimeType("multipart/alternative")) {
       Part ap=getAlternativePart((Multipart)msg.getContent(),mailData,level);
       if(ap!=null) {
@@ -2412,7 +2413,8 @@ public class FolderCache {
             Service.logger.error("Exception",exc);
           }
         } else if (p.isMimeType("application/pkcs7-signature")||p.isMimeType("application/x-pkcs7-signature")) {
-            //skip signature
+		mailData.addUnknownPart(p,level);
+		mailData.addAttachmentPart(p,level);
         } else {
           mailData.addUnknownPart(p,level);
           mailData.addAttachmentPart(p,level);
