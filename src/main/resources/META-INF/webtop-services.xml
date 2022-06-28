@@ -109,9 +109,10 @@
 							NO_DISPLAYNAME_CHECK,
 							NO_SPAM_SCORE_VISUALIZATION,
 							NO_LINK_CLICK_PROMPT,
-							NO_ZIP_CHECK,
-							NO_FORGED_SENDER_CHECK
+							NO_ZIP_CHECK
+							
 						" />
+						<!-- NO_FORGED_SENDER_CHECK - removed at the moment -->
 		</permissions>
 		
 		<portlets>

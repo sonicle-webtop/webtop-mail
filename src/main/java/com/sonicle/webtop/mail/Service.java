@@ -541,7 +541,8 @@ public class Service extends BaseService {
 		pasRules.setSpamScoreVisualization(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_SPAM_SCORE_VISUALIZATION"));
 		pasRules.setLinkClickPrompt(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_LINK_CLICK_PROMPT"));
 		pasRules.setZipCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_ZIP_CHECK"));
-		pasRules.setForgedSenderCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_FORGED_SENDER_CHECK,"));
+		//pasRules.setForgedSenderCheck(!RunContext.isPermitted(true, tpid, sid, pkey, "NO_FORGED_SENDER_CHECK,"));
+		pasRules.setForgedSenderCheck(false);
 		pasRules.setLinkGeolocalization(RunContext.isPermitted(true, tpid, sid, pkey, "DO_LINK_GEOLOCALIZATION"));
 		
 		pasDefaultSpamThreshold=ss.getPasSpamThreshold();
