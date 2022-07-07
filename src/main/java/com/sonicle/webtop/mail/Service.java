@@ -7679,12 +7679,20 @@ public class Service extends BaseService {
 						boolean thresholdDone=false;
 						for(String token: tokens) {
 							if (!scoreDone && StringUtils.startsWithIgnoreCase(token, "score=")) {
-								score=Float.parseFloat(token.substring(6));
-								scoreDone=true;
+								try {
+									score=Float.parseFloat(token.substring(6));
+									scoreDone=true;
+								} catch(Throwable t) {
+									
+								}
 							}
 							else if (!thresholdDone && StringUtils.startsWithIgnoreCase(token, "required=")) {
-								threshold=Float.parseFloat(token.substring(9));
-								thresholdDone=true;
+								try {
+									threshold=Float.parseFloat(token.substring(9));
+									thresholdDone=true;
+								} catch(Throwable t) {
+									
+								}
 							}
 							if (scoreDone && thresholdDone) break;
 						}
