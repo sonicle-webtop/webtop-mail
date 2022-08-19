@@ -94,6 +94,7 @@ public class MailAccount {
 	private boolean hasAnnotations=false;
 	private boolean hasInboxFolder=false;
 	private boolean isDovecot=false;
+	private boolean isCyrus=false;
 	private boolean hasDifferentDefaultFolder=false;
 	private String defaultFolderName= null;
 	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
@@ -140,6 +141,10 @@ public class MailAccount {
 	
 	public boolean isDovecot() {
 		return isDovecot;
+	}
+	
+	public boolean isCyrus() {
+		return isCyrus;
 	}
 	
 	public boolean isReadOnly() {
@@ -383,7 +388,11 @@ public class MailAccount {
 			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
 			if (((IMAPStore)store).hasCapability("ID")) {
 				Map<String,String> map=((IMAPStore)store).id(null);
-				isDovecot=(map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot"));
+				if (map!=null && map.containsKey("name")) {
+					String idname=map.get("name").toLowerCase();
+					isDovecot=idname.equals("dovecot");
+					isCyrus=idname.startsWith("cyrus");
+				}
 				//leave hasInboxFolder as it was set in case it's not Dovecot
 				if (isDovecot) hasInboxFolder=true;
 			}

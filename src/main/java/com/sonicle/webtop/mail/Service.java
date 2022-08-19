@@ -2920,6 +2920,36 @@ public class Service extends BaseService {
 		ArrayList<Folder> afolders = new ArrayList<Folder>();
 		ArrayList<Folder> sfolders=new ArrayList<Folder>();
 		HashMap<String,Folder> mfolders=new HashMap<String,Folder>();
+		
+		if (account.isCyrus()) {
+			/* Hack for Cyrus bug :
+			 *  - when there are two subfolders with same initial name and second one longer
+			 *    continuing with space/dash etc (e.g "Test" and "Test 2"), first one is
+			 *    listed twice, with first instance always "\HasNoChildren"
+			 *  - in this case code is misleaded showing only first instance with no children
+			 *    even if second instance actually has children.
+			 *
+			 *  Detect this situation and get rid of first instance, keeping only last one.
+			 */
+			HashMap<String, Integer> hackMap=new HashMap<String,Integer>();
+			ArrayList<Folder> hackFolders=new ArrayList<>();
+			boolean bugfound=false;
+			for(Folder f: folders) {
+				String name=f.getName();
+				Integer ix=hackMap.get(name);
+				if (ix==null) {
+					ix=hackFolders.size();
+					hackFolders.add(f);
+					hackMap.put(name, ix);
+				} else {
+					hackFolders.set(ix, f);
+					bugfound=true;
+				}
+			}
+			if (bugfound) folders=hackFolders.toArray(new Folder[] {});
+			
+		}
+		
 		//add all non special fo the array and map special ones for later insert
 		Folder inbox = null;
 		Folder sent = null;
