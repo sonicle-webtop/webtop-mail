@@ -38,7 +38,14 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 	plugins: {
         ptype: 'cellediting',
 		pluginId: 'cellediting',
-        clicksToEdit: 2
+        clicksToEdit: 2,
+		listeners: {
+			'edit': function(ed,ctx) { 
+				Ext.defer(function() {
+					ctx.record.getTreeStore().load({ node: ctx.record });
+				},2000);
+			}
+		}
     },	
 
 	constructor: function(cfg) {
