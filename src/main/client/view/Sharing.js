@@ -174,6 +174,7 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 									sto = grid.getStore(),
 									r = sto.getAt(ri);
 								r.set("forceMailcard",false);
+								r.set("alwaysCc",false);
 							};
 						}
 					}
@@ -181,6 +182,21 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 					xtype: 'checkcolumn',
 					header: me.mys.res('sharing.rights-force-mailcard.lbl'),
 					dataIndex: 'forceMailcard',
+					flex: 1,
+					listeners: {
+						checkchange: function(c , ri , v) {
+							if (v) { 
+								var grid = me.lref('gprights'),
+									sto = grid.getStore(),
+									r = sto.getAt(ri);
+								r.set("shareIdentity",true); 
+							}
+						}
+					}
+				},{
+					xtype: 'checkcolumn',
+					header: me.mys.res('sharing.rights-always-cc.lbl'),
+					dataIndex: 'alwaysCc',
 					flex: 1,
 					listeners: {
 						checkchange: function(c , ri , v) {

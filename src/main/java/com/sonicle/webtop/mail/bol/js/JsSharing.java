@@ -83,6 +83,7 @@ public class JsSharing {
 		public String imapId;
 		public Boolean shareIdentity;
 		public Boolean forceMailcard;
+		public Boolean alwaysCc;
 		public Boolean l;
 		public Boolean r;
 		public Boolean s;
@@ -98,13 +99,14 @@ public class JsSharing {
 		
 		public SharingRights() {}
 		
-		public SharingRights(String _fk, String ruid, String rdesc, String imapId, boolean shareIdentity, boolean forceMailcard, boolean l, boolean r, boolean s, boolean w, boolean i, boolean p, boolean k, boolean a, boolean x, boolean t, boolean n, boolean e) {
+		public SharingRights(String _fk, String ruid, String rdesc, String imapId, boolean shareIdentity, boolean forceMailcard, boolean alwaysCc, boolean l, boolean r, boolean s, boolean w, boolean i, boolean p, boolean k, boolean a, boolean x, boolean t, boolean n, boolean e) {
 			this._fk = _fk;
 			roleUid = ruid;
 			roleDescription = rdesc;
 			this.imapId=imapId;
 			this.shareIdentity=shareIdentity;
 			this.forceMailcard=forceMailcard;
+			this.alwaysCc=alwaysCc;
 			this.l=l;
 			this.r=r;
 			this.s=s;

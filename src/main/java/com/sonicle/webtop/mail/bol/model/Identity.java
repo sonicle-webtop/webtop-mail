@@ -59,11 +59,12 @@ public class Identity {
 	protected boolean fax;
 	protected boolean forceMailcard;
 	protected boolean lockMailcard = false;
+	protected boolean alwaysCc;
 	
 	protected boolean isMainIdentity=false;
 	
 	public Identity(OIdentity oi) {
-        this(Identity.TYPE_USER, oi.getIdentityId(), oi.getIdentityUid(), oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false);
+        this(Identity.TYPE_USER, oi.getIdentityId(), oi.getIdentityUid(), oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false, false);
 	}
 
 	public Identity(int identityId, String identityUid, String displayName, String email, String mainFolder) {
@@ -71,10 +72,10 @@ public class Identity {
 	}
 	
 	public Identity(String type, int identityId, String identityUid, String displayName, String email, String mainFolder) {
-		this(type,identityId,identityUid,displayName,email,mainFolder,false,false);
+		this(type,identityId,identityUid,displayName,email,mainFolder,false,false,false);
 	}
 	
-	public Identity(String type, int identityId, String identityUid, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard) {
+	public Identity(String type, int identityId, String identityUid, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard, boolean alwaysCc) {
 		this.type = type;
 		this.identityId = identityId;
 		this.identityUid = identityUid;
@@ -83,6 +84,7 @@ public class Identity {
 		this.mainFolder=mainFolder;
 		this.fax=fax;
 		this.forceMailcard=forceMailcard;
+		this.alwaysCc=alwaysCc;
 	}
     
 	public String getType() {
@@ -163,6 +165,14 @@ public class Identity {
 
 	public void setForceMailcard(boolean forceMailcard) {
 		this.forceMailcard = forceMailcard;
+	}
+	
+	public boolean isAlwaysCc() {
+		return alwaysCc;
+	}
+
+	public void setAlwaysCc(boolean alwaysCc) {
+		this.alwaysCc = alwaysCc;
 	}
 	
 	public boolean isType(String type) {

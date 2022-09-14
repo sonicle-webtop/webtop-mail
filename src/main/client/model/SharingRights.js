@@ -43,6 +43,7 @@ Ext.define('Sonicle.webtop.mail.model.SharingRights', {
 		WTF.field('imapId', 'string', false),
 		WTF.field('shareIdentity', 'boolean', false, {defaultValue: false}),
 		WTF.field('forceMailcard', 'boolean', false, {defaultValue: false}),
+		WTF.field('alwaysCc', 'boolean', false, {defaultValue: false}),
 		WTF.field('l', 'boolean', false, {defaultValue: true}),
 		WTF.field('r', 'boolean', false, {defaultValue: true}),
 		WTF.field('s', 'boolean', false, {defaultValue: true}),

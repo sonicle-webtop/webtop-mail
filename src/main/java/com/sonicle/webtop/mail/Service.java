@@ -4767,6 +4767,8 @@ public class Service extends BaseService {
 			if (ifrom != null) {
 				from = ifrom.getEmail();
 			}
+			if (ifrom.isAlwaysCc()) msg.addCc(new String[] { ifrom.getEmail() });
+			
 			account.checkStoreConnected();
 			SendException sendExc = sendMessage(msg, jsmsg.attachments);
                         String foundfolder = null;
@@ -9113,6 +9115,7 @@ public class Service extends BaseService {
 				String roleDescription=null;
 				boolean shareIdentity=false;
 				boolean forceMailcard=false;
+				boolean alwaysCc=false;
 				if (roleUid==null) { 
 					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 					roleUid=aclUserId; 
@@ -9122,6 +9125,7 @@ public class Service extends BaseService {
 					if (wtrr!=null) {
 						shareIdentity=wtrr.folderRead;
 						forceMailcard=wtrr.folderUpdate;
+						alwaysCc=wtrr.folderDelete;
 					}
 					String dn;
 					try {
@@ -9141,6 +9145,7 @@ public class Service extends BaseService {
 						aclUserId,
 						shareIdentity,
 						forceMailcard,
+						alwaysCc,
 						ar.contains(Rights.Right.getInstance('l')),
 						ar.contains(Rights.Right.getInstance('r')),
 						ar.contains(Rights.Right.getInstance('s')),
@@ -9202,7 +9207,7 @@ public class Service extends BaseService {
 					if (!pl.data.hasImapId(sr.imapId)) {
 						logger.debug("Folder ["+foldername+"] - remove acl for "+imapId+" recursive="+recursive);
 						account.removeFolderSharing(foldername,imapId,recursive);
-						updateIdentitySharingRights(newwtrights,sr.roleUid,false,false);
+						updateIdentitySharingRights(newwtrights,sr.roleUid,false,false,false);
 					}
 				}
 				
@@ -9213,7 +9218,7 @@ public class Service extends BaseService {
 						String srights=sr.toString();
 						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+imapId+" recursive="+recursive);
 						account.setFolderSharing(foldername, imapId, srights, recursive);
-						updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard);
+						updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard,sr.alwaysCc);
 					}
 				}
 				
@@ -9231,12 +9236,13 @@ public class Service extends BaseService {
 		}
 	}
 	
-	private void updateIdentitySharingRights(ArrayList<Sharing.RoleRights> wtrights, String roleUid, boolean shareIdentity, boolean forceMailcard) throws WTException {
+	private void updateIdentitySharingRights(ArrayList<Sharing.RoleRights> wtrights, String roleUid, boolean shareIdentity, boolean forceMailcard, boolean alwaysCc) throws WTException {
 		//update sharing settings
 		SharePermsFolder spf=new SharePermsFolder();
-		if (shareIdentity||forceMailcard) {
+		if (shareIdentity||forceMailcard||alwaysCc) {
 			if (shareIdentity) spf.add(SharePermsFolder.READ);
 			if (forceMailcard) spf.add(SharePermsFolder.UPDATE);
+			if (alwaysCc) spf.add(SharePermsFolder.DELETE);
 			wtrights.add(new Sharing.RoleRights(roleUid,null,spf,new SharePermsElements()));
 		}
 	}

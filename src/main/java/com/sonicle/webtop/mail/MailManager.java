@@ -352,8 +352,9 @@ public class MailManager extends BaseManager implements IMailManager {
 					SharePermsFolder spf=core.getShareFolderPermissions(folder.getShareId().toString());
 					boolean shareIdentity=spf.implies("READ");
 					boolean forceMailcard=spf.implies("UPDATE");
+					boolean alwaysCc=spf.implies("DELETE");
 					if (shareIdentity) {
-						id = new Identity(Identity.TYPE_AUTO,autoid--,null,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard);
+						id = new Identity(Identity.TYPE_AUTO,autoid--,null,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard,alwaysCc);
 						id.setOriginPid(opid);
 						idents.add(id);
 					}
