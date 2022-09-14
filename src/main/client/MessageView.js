@@ -691,7 +691,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					if(name.toLowerCase().endsWith(".vcf")) vcf = " vcf='" + Ext.Object.toQueryString(aparams)+"'";
                     var eml=null;
                     if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
-                    var html="<a href='"+href.replace("'","%27")+"' target='_blank'"
+                    var html="<a href='"+href.replaceAll("'","%27")+"' target='_blank'"
 								+" filename='"+Ext.String.htmlEncode(name)+"'"
 								+(ics!=null?ics:"")
 								+(eml!=null?eml:"")
@@ -701,7 +701,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     names=me.appendAttachmentName(names,html);
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
-                me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+me.mys.res('saveall-desc')+"' data-qtitle='"+me.mys.res('saveall')+"' href='"+allhref.replace("'","%27")+"' filename='*'>"+me.mys.res('attachments')+"&nbsp;("+len+")</a>:&nbsp;</span>"+names);
+                me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+me.mys.res('saveall-desc')+"' data-qtitle='"+me.mys.res('saveall')+"' href='"+allhref.replaceAll("'","%27")+"' filename='*'>"+me.mys.res('attachments')+"&nbsp;("+len+")</a>:&nbsp;</span>"+names);
 				
 				if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
 					
