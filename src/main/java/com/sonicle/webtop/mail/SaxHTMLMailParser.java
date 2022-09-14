@@ -35,6 +35,7 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.MailUtils;
+import com.sonicle.commons.web.ServletUtils;
 import java.io.*;
 import java.nio.charset.Charset;
 import java.util.*;
@@ -414,16 +415,16 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
         if (appUrl!=null) cidUrl+=appUrl;
         cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=GetAttachment&nowriter=true";
         if (provider==null) {
-            cidUrl+="&folder="+XURLEncoder.encode(mailData.getFolderName())+"&idmessage="+msguid;
+            cidUrl+="&folder="+ServletUtils.toURLEncodedString(mailData.getFolderName())+"&idmessage="+msguid;
                 
         } else {
-            cidUrl+="&provider="+provider+"&providerid="+XURLEncoder.encode(providerid);
+            cidUrl+="&provider="+provider+"&providerid="+ServletUtils.toURLEncodedString(providerid);
         }
         cidUrl+="&cid="+name;
     } else {
         /*cidUrl+="service-request?csrf="+securityToken+"&service=com.sonicle.webtop.mail&action=PreviewAttachment&nowriter=true"+
             "&newmsgid="+msguid+
-            "&cid="+XURLEncoder.encode(name);*/
+            "&cid="+ServletUtils.toURLEncodedString(name);*/
         cidUrl=avalue;
     }
 	mailData.addReferencedCid(name);
