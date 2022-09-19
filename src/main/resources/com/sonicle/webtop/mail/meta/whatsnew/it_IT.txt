@@ -1,3 +1,13 @@
+$	5.16.0
+	%	Versione 5.16.0
+	*	<h1>Condivisione con opzione "Sempre in Cc"</h1>
+		<p>Una nuova opzione nella condivisione delle cartelle di posta, permette di
+		specificare "Sempre in Cc".<br>
+		Scrivendo qualunque email da quell'account condiviso,
+		la stessa verrà mandata sempre in copia conoscenza anche alla mail condivisa automaticamente.<br>
+		Molto utile nel caso di caselle condivise dove serve poter vedere tutta la discussione
+		</p>
+		<img src="5.16.0_alwayscc.png"/>
 $	5.15.0
 	%	Versione 5.15.0
 	*	<h1>Sicurezza Proattiva</h1>

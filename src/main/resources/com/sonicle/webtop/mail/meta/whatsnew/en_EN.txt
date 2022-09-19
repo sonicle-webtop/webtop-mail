@@ -1,3 +1,12 @@
+$	5.16.0
+	%	Version 5.16.0
+	*	<h1>Sharing option "Always Cc"</h1>
+		<p>A new option while sharing mail folders, allows to specify "Always Cc".<br>
+		Writing any email from that shared account, that email will be also sent as carbon copy
+		to the shared email automatically.<br>
+		Useful for shared accounts where you need to see the entire discussion in one place.
+		</p>
+		<img src="5.16.0_alwayscc.png"/>
 $	5.15.0
 	%	Version 5.15.0
 	*	<h1>Proactive Security</h1>
