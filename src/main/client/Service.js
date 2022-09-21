@@ -1280,15 +1280,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			ident = me.getFolderIdentity(idfolder);
 		}
 	
-		/*        for(var i=1;i<identities.length;++i) {
-            var ifolder=identities[i].mainFolder;
-            if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
-                identIndex=i;
-                ident=identities[i];
-                break;
-            }
-        }*/
-
 		var meditor=WT.createView(me.ID,'view.MessageEditor',{
 			swapReturn: true,
 			viewCfg: {
@@ -1373,7 +1364,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if (idfolder) {
 			for(var i=1;i<identities.length;++i) {
 				var ifolder=identities[i].mainFolder;
-				if (ifolder && idfolder.substring(0,ifolder.length)===ifolder) {
+				if (ifolder && idfolder===ifolder) {
 					ident=identities[i];
 					ident.index=i;
 					break;
