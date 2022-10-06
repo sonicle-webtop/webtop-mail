@@ -1364,10 +1364,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if (idfolder) {
 			for(var i=1;i<identities.length;++i) {
 				var ifolder=identities[i].mainFolder;
-				if (ifolder && idfolder===ifolder) {
-					ident=identities[i];
-					ident.index=i;
-					break;
+				if (ifolder) {
+					var ifolderx=ifolder+"/",
+						idfolderx=idfolder+"/";
+					if (idfolderx.startsWith(ifolderx)) {
+						ident=identities[i];
+						ident.index=i;
+						break;
+					}
+				
 				}
 			}
 		}
