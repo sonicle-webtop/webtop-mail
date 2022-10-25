@@ -4195,6 +4195,7 @@ public class Service extends BaseService {
 			FolderCache mcache = account.getFolderCache(foldername);
 			Message msg=mcache.getMessage(Long.parseLong(uid));
 			String subject = msg.getSubject();
+			if (StringUtils.isEmpty(subject)) subject="No subject";
 			ServletUtils.setFileStreamHeadersForceDownload(response, subject + ".eml");
 			OutputStream out = response.getOutputStream();
 			msg.writeTo(out);
