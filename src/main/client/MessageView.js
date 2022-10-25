@@ -408,12 +408,15 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				if (me.receipt==="ask") {
 					WT.confirm(me.mys.res("receipt.confirm"),function(btn) {
 						if (btn=='yes') {
-							me.sendReceipt();
+							me.sendReceipt(true);
+						}
+						else if (btn=='no') {
+							me.sendReceipt(false);
 						}
 					});
 				}
 				else if (me.receipt==="always") {
-					me.sendReceipt();
+					me.sendReceipt(true);
 				}
             }
             
@@ -1484,7 +1487,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         }
     },
 
-    sendReceipt: function() {
+    sendReceipt: function(send) {
 		var me=this,
 			ident=me.mys.getFolderIdentity(me.folder),
 			from=ident.displayName + " <" + ident.email + ">";
@@ -1496,7 +1499,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 to: me.receiptTo,
                 folder: me.folder,
 				messageid: me.messageid,
-				bodyuserlang: me.mys.res("receipt.message", from, me.subject)
+				bodyuserlang: me.mys.res("receipt.message", from, me.subject),
+				send: send
 			},
 			callback: function(success,json) {
 				if (success) {

@@ -5769,6 +5769,9 @@ public class Service extends BaseService {
 	
 	public void processSendReceipt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
+		boolean send = ServletUtils.getBooleanParameter(request, "send", true);
+		//if not send, it will not send but save info not to send anymore
+		
 		String messageid = request.getParameter("messageid");
 		String subject = request.getParameter("subject");
 		//String from = request.getParameter("from");
@@ -5792,7 +5795,8 @@ public class Service extends BaseService {
 		
 		try {
 			account.checkStoreConnected();
-			Exception exc = sendReceipt(ident, from, to, subject, body);
+			Exception exc = null;
+			if (send) exc = sendReceipt(ident, from, to, subject, body);
 			if (exc == null) {
 				CoreManager coreMgr=WT.getCoreManager();
 				coreMgr.addServiceStoreEntry(SERVICE_ID, "receipt", messageid, "sent");
