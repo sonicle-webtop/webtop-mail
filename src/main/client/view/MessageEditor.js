@@ -601,7 +601,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					tooltip: me.res('editor.btn-cloud-upload.tip'),
 					iconCls: 'wtmail-icon-cloud-upload',
 					handler: function() {
-						var subject=me.subject.getValue().trim();
+						var subject=me.subject.getValue();
+						if (subject) subject=subject.trim();
 						
 						if (Ext.isEmpty(subject)) {
 							WT.error(me.res("warn-cloud-empty-subject"));
