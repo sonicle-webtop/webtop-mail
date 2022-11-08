@@ -2378,6 +2378,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	
 	decodeEntities : function(str) {
+		if (Ext.isEmpty(str)) return '';
+		
 	   var temp_div = document.createElement('div');
 	   temp_div.innerHTML = str;
 	   return temp_div.firstChild.nodeValue;
