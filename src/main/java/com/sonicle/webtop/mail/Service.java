@@ -8184,6 +8184,8 @@ public class Service extends BaseService {
 				mcache = fcProvided;
 				m = mcache.getProvidedMessage(providername, providerid);
 			}
+			IMAPMessage im=(IMAPMessage)m;
+			im.setPeek(us.isManualSeen());
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			String name = m.getSubject();
 			if (name == null) {
@@ -8249,6 +8251,7 @@ public class Service extends BaseService {
 			zos.flush();
 			zos.close();
 			
+			im.setPeek(false);
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
