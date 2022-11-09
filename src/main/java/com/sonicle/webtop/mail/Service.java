@@ -5930,7 +5930,7 @@ public class Service extends BaseService {
 			try {
 				String crud = ServletUtils.getStringParameter(request, "crud", true);
 				if (crud.equals(Crud.READ)) {
-					List<JsQuickPart> items = JsQuickPart.toList(us.getMessageQuickParts());
+					List<JsQuickPart> items = JsQuickPart.toSortedList(us.getMessageQuickParts());
 					new JsonResult(items, items.size()).printTo(out);
 
 				} else if (crud.equals(Crud.CREATE)) {

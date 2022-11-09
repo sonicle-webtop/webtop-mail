@@ -35,6 +35,7 @@ package com.sonicle.webtop.mail.bol.js;
 
 import com.sonicle.commons.web.json.JsonResult;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -42,7 +43,7 @@ import java.util.Map;
  *
  * @author malbinola
  */
-public class JsQuickPart {
+public class JsQuickPart implements Comparable {
 	public String name;
 	public String html;
 	
@@ -57,6 +58,17 @@ public class JsQuickPart {
 			values.add(new JsQuickPart(entry.getKey(), entry.getValue()));
 		}
 		return values;
+	}
+	
+	public static List toSortedList(HashMap<String, String> map) {
+		List list=toList(map);
+		Collections.sort(list);
+		return list;
+	}
+
+	@Override
+	public int compareTo(Object o) {
+		return name.compareTo(((JsQuickPart)o).name);
 	}
 	
 	public static class List extends ArrayList<JsQuickPart> {

@@ -753,6 +753,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						store: {
 							autoLoad: true,
 							model: 'Sonicle.webtop.mail.model.QuickPart',
+							sorters: 'name',
 							proxy: WTF.apiProxy(me.mys.ID, 'ManageQuickParts', null, {
 								writer: {
 									allowSingle: false
@@ -1740,7 +1741,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			},
 			callback: function(success,json) {
 				if (success) {
-					me.fillQPMenu(json.data);
+					//me.fillQPMenu(json.data);
+					me.reloadQuickParts();
 				} else {
 					WT.error(json.message);
 				}
