@@ -1313,6 +1313,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 								me.reloadFolderList();
 								me.messagesPanel.clearMessageView();
 							}
+							me.messagesPanel.folderList.focus();
 						}
 					},
 					viewclose: function() {
@@ -1320,6 +1321,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 								me.reloadFolderList();
 								me.messagesPanel.clearMessageView();
 							}
+							me.messagesPanel.folderList.focus();
 					}
 				}
 			}
