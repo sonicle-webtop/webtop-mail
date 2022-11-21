@@ -2418,6 +2418,16 @@ public class FolderCache {
         } else {
           mailData.addUnknownPart(p,level);
           mailData.addAttachmentPart(p,level);
+	  evaluateCidPart(p, mailData, level);
+        }
+      }
+    } else {
+      mailData.addUnknownPart(msg,level);
+      mailData.addAttachmentPart(msg,level);
+    }
+  }
+  
+  protected void evaluateCidPart(Part p, HTMLMailData mailData, int level) throws MessagingException, IOException {
           //Look for a possible Cid
           String filename=p.getFileName();
           String id[]=p.getHeader("Content-ID");
@@ -2426,7 +2436,7 @@ public class FolderCache {
               filename=id[0];
             }
 			filename=normalizeCidFileName(filename);
-            mailData.addCidPart(filename, p,level);
+            mailData.addCidPart(filename, p, level);
           }
           //Look for a possible Url copy
           String location[]=p.getHeader("Content-Location");
@@ -2439,12 +2449,6 @@ public class FolderCache {
             }
             mailData.addUrlPart(url, p,level);
           }
-        }
-      }
-    } else {
-      mailData.addUnknownPart(msg,level);
-      mailData.addAttachmentPart(msg,level);
-    }
   }
 
   protected String normalizeCidFileName(String filename) {
@@ -2473,7 +2477,12 @@ public class FolderCache {
     for(int x=0; x<amp.getCount(); ++x) {
       Part ap=amp.getBodyPart(x);
       if(ap.isMimeType("multipart/*")) {
-        prepareHTMLMailData(ap, mailData, level);
+	if (ap.isMimeType("multipart/related")) {
+		dispPart=getAlternativePart((Multipart)ap.getContent(), mailData, level);
+		if (dispPart.isMimeType("text/html")) status.htmlfound=true;
+		else if (dispPart.isMimeType("text/plain")) status.textfound=true;
+	}
+	else prepareHTMLMailData(ap, mailData, level);
       } else if(ap.isMimeType("text/html")) {
         dispPart=ap;
         status.htmlfound=true;
@@ -2491,8 +2500,10 @@ public class FolderCache {
 		  //break;
 		}
       } else {
-		mailData.addAttachmentPart(ap,level);
-	  }
+          mailData.addUnknownPart(ap,level);
+	  mailData.addAttachmentPart(ap,level);
+	  evaluateCidPart(ap, mailData, level);
+      }
     }
     return dispPart;
   }
