@@ -1307,13 +1307,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						if (success) {
 							var f=opts.forwardedfolder||opts.replyfolder;
 							if (me.getFolderNodeById(me.currentAccount,me.currentFolder).get("isSent") || (f && f===me.currentFolder)) {
-								me.messagesPanel.reloadGrid();
+								//me.messagesPanel.reloadGrid();
+								me.messagesPanel.refreshGridWhenIdle(me.currentFolder);
 							}
 							else if (me.isDrafts(me.currentAccount,me.currentFolder) || (opts.draftuid>0 && opts.draftfolder===me.currentFolder)) {
 								me.reloadFolderList();
 								me.messagesPanel.clearMessageView();
 							}
-							me.messagesPanel.folderList.focus();
+//							Ext.defer(function() {
+//								me.messagesPanel.folderList.focus();
+//							}, 500);
 						}
 					},
 					viewclose: function() {
@@ -1321,7 +1324,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 								me.reloadFolderList();
 								me.messagesPanel.clearMessageView();
 							}
-							me.messagesPanel.folderList.focus();
+							Ext.defer(function() {
+								me.messagesPanel.folderList.focus();
+							}, 500);
 					}
 				}
 			}
