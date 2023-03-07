@@ -82,6 +82,7 @@
 		</userOptions>
 		<publicServiceClassName></publicServiceClassName>
 		<jobServiceClassName>JobService</jobServiceClassName>
+		<backgroundService className="BackgroundService" />
 		
 		<restApis>
 			<restApi oasFile="openapi-v1.json" />

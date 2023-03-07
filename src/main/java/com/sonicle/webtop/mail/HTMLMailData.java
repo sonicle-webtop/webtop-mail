@@ -33,22 +33,19 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.mail.MimeUtils;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
+import com.sonicle.mail.parser.MimeMessageParser;
+import com.sonicle.mail.parser.MimeMessageParser.ParsedMimeMessageComponents;
+import com.sonicle.mail.pec.PECUtils;
 import java.util.*;
 import java.io.*;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 
 public class HTMLMailData {
-
-  private final ArrayList<Part> dispParts=new ArrayList<>();
-  private final HashMap<String,Part> cidParts=new HashMap<>();
-  private final HashMap<String,Part> urlParts=new HashMap<>();
-  private final ArrayList<Part> unknownParts=new ArrayList<> ();
-  private final ArrayList<Part> attachmentParts=new ArrayList<> ();
+  private ParsedMimeMessageComponents parsed;
   private final ArrayList<String> referencedCids=new ArrayList<>();
-  //private final HashMap<String,CidProperties> cidProperties=new HashMap<>();
-  private HashMap<Part,Integer> partLevels=new HashMap<>();
 
   private MimeMessage message=null;
   private Folder folder=null;
@@ -58,19 +55,17 @@ public class HTMLMailData {
   private boolean hasICalAttachment=false;
   
   private boolean isPec=false;
-
+  
   public HTMLMailData(MimeMessage msg, FolderCache fc) throws MessagingException {
-    this.message=msg;
-    this.folder=fc.getFolder();
-    if (msg instanceof SonicleIMAPMessage)
-		this.nuid=((SonicleIMAPMessage)msg).getUID();
-	
-	if (fc.isPEC()) {
-		String hdrs[]=msg.getHeader(Service.HDR_PEC_TRASPORTO);
-		if (hdrs!=null && hdrs.length>0 && hdrs[0].equals("posta-certificata")) {
-			isPec=true;
-		}
-	}
+		this.message=msg;
+		this.folder=fc.getFolder();
+		if (msg instanceof SonicleIMAPMessage) this.nuid=((SonicleIMAPMessage)msg).getUID();
+		if (fc.isPEC()) isPec = PECUtils.isPECEnvelope(msg);
+		this.parsed = MimeMessageParser.parseMimeMessage(message, isPec);
+  }
+  
+  public ParsedMimeMessageComponents getParsedMimeMessageComponents() {
+	  return parsed;
   }
   
   public boolean isPEC() {
@@ -105,53 +100,28 @@ public class HTMLMailData {
 	  hasICalAttachment=b;
   }
   
+  /**
+   * @deprecated legacy method to replicate original logic: use hasCalendar instead
+   */
+  @Deprecated
   public boolean hasICalAttachment() {
 	  return hasICalAttachment;
   }
-  
-  public void addDisplayPart(Part part, int level) {
-    if (!dispParts.contains(part)) {
-        dispParts.add(part);
-        partLevels.put(part,level);
-    }
-  }
 
-  public void addUnknownPart(Part part, int level) {
-    if (!unknownParts.contains(part)) {
-        unknownParts.add(part);
-        partLevels.put(part,level);
-    }
-  }
-
-  public void addAttachmentPart(Part part, int level) {
-    if (!attachmentParts.contains(part)) {
-		boolean addPart=true;
+  public void addAttachmentPart(Part part, int depth) {
+    if (!parsed.geAttachmentParts().contains(part)) {
+		boolean addPart = true;
 		try {
-			if (part.isMimeType("application/ics") || part.isMimeType("text/calendar")) {
-				if (!hasICalAttachment) hasICalAttachment=true;
-				else addPart=false;
+			if (MimeUtils.isMimeType(part, "application/ics") || MimeUtils.isMimeType(part, "text/calendar")) {
+				if (!parsed.hasICalAttachment) {
+					parsed.hasICalAttachment = true;
+				} else {
+					addPart = false;
+				}
 			}
-		} catch(MessagingException exc) {
-		}
-		if (addPart) {
-                    attachmentParts.add(part);
-                    partLevels.put(part,level);
-                }
+		} catch(MessagingException exc) {}
+		if (addPart) parsed.appendAttachmentPart(part, depth);
 	}
-  }
-
-  public void addCidPart(String name, Part part, int level) {
-    if (!cidParts.containsKey(name)) {
-        cidParts.put(name, part);
-        partLevels.put(part,level);
-    }
-  }
-
-  public void addUrlPart(String url, Part part, int level) {
-    if (!urlParts.containsKey(url)) {
-        urlParts.put(url, part);
-        partLevels.put(part,level);
-    }
   }
   
   public void addReferencedCid(String name) {
@@ -159,52 +129,52 @@ public class HTMLMailData {
   }
   
   public int getDisplayPartCount() {
-    return dispParts.size();
+    return parsed.getDisplayParts().size();
   }
 
   public int getUnknownPartCount() {
-    return unknownParts.size();
+    return parsed.getUnknownParts().size();
   }
 
   public int getAttachmentPartCount() {
-    return attachmentParts.size();
+    return parsed.geAttachmentParts().size();
   }
 
   public int getCidPartCount() {
-    return cidParts.size();
+    return parsed.getCidParts().size();
   }
   
   public int getPartLevel(Part p) {
-      Integer i=partLevels.get(p);
+      Integer i=parsed.getPartsDepthMap().get(p);
       return i!=null?i:0;
   }
 
   public Part getDisplayPart(int index) {
-    return dispParts.get(index);
+    return parsed.getDisplayParts().get(index);
   }
 
   public Part getUnknownPart(int index) {
-    return unknownParts.get(index);
+    return parsed.getUnknownParts().get(index);
   }
 
   public int getUnknownIndex(Part p) {
-    return unknownParts.indexOf(p);
+    return parsed.getUnknownParts().indexOf(p);
   }
 
   public Part getAttachmentPart(int index) {
-    return attachmentParts.get(index);
+    return parsed.geAttachmentParts().get(index);
   }
 
   public int getAttachmentIndex(Part p) {
-    return attachmentParts.indexOf(p);
+    return parsed.geAttachmentParts().indexOf(p);
   }
 
   public Part getCidPart(String name) {
-    return(Part)cidParts.get(name);
+    return(Part)parsed.getCidParts().get(name);
   }
 
   public Set<String> getCidNames() {
-    return cidParts.keySet();
+    return parsed.getCidParts().keySet();
   }
 
   public boolean isReferencedCid(String name) {
@@ -212,19 +182,19 @@ public class HTMLMailData {
   }
 
   public boolean conatinsUrlPart(String url) {
-    return urlParts.containsKey(url);
+    return parsed.getUrlParts().containsKey(url);
   }
 
   public Part getUrlPart(String url) {
-    return(Part)urlParts.get(url);
+    return(Part)parsed.getUrlParts().get(url);
   }
 
   public void removeUnknownPart(Part part) {
-    unknownParts.remove(part);
+    parsed.getUnknownParts().remove(part);
   }
 
   public void removeAttachmentPart(Part part) {
-    attachmentParts.remove(part);
+    parsed.geAttachmentParts().remove(part);
   }
   
   public int getRealPartSize(Part part) throws MessagingException, IOException {

@@ -37,6 +37,8 @@ import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.model.Domain;
+import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.bol.ODomain;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.BaseJobService;
@@ -129,8 +131,7 @@ public class JobService extends BaseJobService {
 			Connection con=null;
 			try {
 				con=jobService.getConnection();
-				List<ODomain> domains=globalCm.listDomains(true);
-				for(ODomain domain: domains) {
+				for(Domain domain : globalCm.listDomains(EnabledCond.ENABLED_ONLY).values()) {
 					if (jobService.doCleanup) break;
 					String domainId=domain.getDomainId();
 					UserProfileId adminPid=new UserProfileId(domainId,"admin");
@@ -144,13 +145,11 @@ public class JobService extends BaseJobService {
 						continue;
 					}
 					String vmailSecret=mss.getNethTopVmailSecret();
-					List<OUser> ousers=domainCm.listUsers(true);
 					//List<OUserMap> musers=UserMapDAO.getInstance().selectByDomainId(con, domainId);
-					for(OUser ouser: ousers) {
+					for (String userId : domainCm.listUserIds(EnabledCond.ENABLED_ONLY)) {
 						if (jobService.doCleanup) break;
 						Store store=null;
 						try {
-							String userId=ouser.getUserId();
 							UserProfileId pid=new UserProfileId(domainId,userId);
 							MailUserSettings mus=getMailUserSettings(pid, mss);
 							String host=mus.getHost();
@@ -190,7 +189,7 @@ public class JobService extends BaseJobService {
 			}
 		}
 		
-		public void sendScheduledMails(Session session, UserProfileId pid, ODomain domain, Folder outgoings[], Folder folderSent, Locale locale) {
+		public void sendScheduledMails(Session session, UserProfileId pid, Domain domain, Folder outgoings[], Folder folderSent, Locale locale) {
 			for(Folder targetfolder: outgoings) {
 				try {
 					targetfolder.open(Folder.READ_WRITE);
@@ -227,7 +226,7 @@ public class JobService extends BaseJobService {
 			}
 		}
 		
-		private Folder[] getOutgoingFolders(Store store, ODomain domain, UserProfileId pid, String vmailSecret, MailUserSettings mus) throws MessagingException {
+		private Folder[] getOutgoingFolders(Store store, Domain domain, UserProfileId pid, String vmailSecret, MailUserSettings mus) throws MessagingException {
 			String foldername=mus.getFolderDrafts();
 			String folderprefix=mus.getFolderPrefix();
 			if (folderprefix!=null && folderprefix.length()>0 && foldername.startsWith(folderprefix)) {
@@ -242,7 +241,7 @@ public class JobService extends BaseJobService {
 					Folder un=uns[i];
 					char sep=un.getSeparator();
 					String fname=pid.getUserId()+sep+foldername;
-					if (StringUtils.startsWithIgnoreCase(domain.getDirUri(),"ldapWebTop:")) fname+="@"+domain.getInternetName();
+					if (StringUtils.startsWithIgnoreCase(domain.getDirScheme(),"ldapWebTop:")) fname+="@"+domain.getInternetName();
 					outgoings[i]=un.getFolder(fname);
 				}
 			} else {
@@ -252,7 +251,7 @@ public class JobService extends BaseJobService {
 			return outgoings;
 		}
 		
-		private Folder getSentFolder(Store store, UserProfileId pid, ODomain domain, String vmailSecret, MailUserSettings mus) throws MessagingException {
+		private Folder getSentFolder(Store store, UserProfileId pid, Domain domain, String vmailSecret, MailUserSettings mus) throws MessagingException {
 			String foldername=mus.getFolderSent();
 			String folderprefix=mus.getFolderPrefix();
 			if (folderprefix!=null && folderprefix.length()>0 && foldername.startsWith(folderprefix)) {
@@ -266,7 +265,7 @@ public class JobService extends BaseJobService {
 					Folder un=uns[0];
 					char sep=un.getSeparator();
 					String fname=pid.getUserId()+sep+foldername;
-					if (StringUtils.startsWithIgnoreCase(domain.getDirUri(),"ldapWebTop:")) fname+="@"+domain.getInternetName();
+					if (StringUtils.startsWithIgnoreCase(domain.getDirScheme(),"ldapWebTop:")) fname+="@"+domain.getInternetName();
 					sent=un.getFolder(fname);
 				}
 			} else {
@@ -316,7 +315,7 @@ public class JobService extends BaseJobService {
 			return cal;
 		}
 		
-		private void sendScheduledMessage(Session session, UserProfileId pid, ODomain domain, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
+		private void sendScheduledMessage(Session session, UserProfileId pid, Domain domain, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
 			try {
 				MimeMessage nm=new MimeMessage((MimeMessage)m);
 				nm.removeHeader("Sonicle-send-scheduled");

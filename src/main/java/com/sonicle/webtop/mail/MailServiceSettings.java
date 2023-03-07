@@ -36,6 +36,9 @@ package com.sonicle.webtop.mail;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sonicle.mail.ImpersonateMode;
+import com.sonicle.mail.StoreHostParams;
+import com.sonicle.mail.StoreProtocol;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseServiceSettings;
@@ -259,6 +262,23 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public int getDefaultPageRows() {
 		return getInteger(DEFAULT_PREFIX+MailSettings.PAGE_ROWS,50);
 	}
+	
+	public StoreHostParams getMailboxHostParamsAsAdmin() {
+		StoreHostParams shd = new StoreHostParams(getDefaultHost(), getDefaultPort(), StoreProtocol.parse(getDefaultProtocol(), false));
+		shd.withUsername(getAdminUser());
+		shd.withPassword(getAdminPassword());
+		return shd;
+	}
+	
+	/*
+	public StoreHostParams getMailboxHostParamsAsVMail(final String domainId) {
+		final String vmailAtDomain = WT.buildDomainInternetAddress(domainId, "vmail", null).getAddress();
+		StoreHostParams shd = new StoreHostParams(getDefaultHost(), getDefaultPort(), StoreProtocol.parse(getDefaultProtocol(), false));
+		shd.withUsername(vmailAtDomain);
+		shd.withVMAILImpersonate(getNethTopVmailSecret());
+		return shd;
+	}
+	*/
 	
 	public String getDefaultHost() {
 		return getString(DEFAULT_PREFIX+MailSettings.HOST,"localhost");

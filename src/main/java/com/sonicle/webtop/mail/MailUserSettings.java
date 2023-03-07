@@ -36,6 +36,9 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.mail.StoreHostParams;
+import com.sonicle.mail.StoreProtocol;
+import com.sonicle.mail.StoreUtils;
 import static com.sonicle.webtop.mail.MailSettings.*;
 import com.sonicle.webtop.mail.model.ViewMode;
 import com.sonicle.webtop.core.sdk.BaseUserSettings;
@@ -369,6 +372,24 @@ public class MailUserSettings extends BaseUserSettings {
 	
 	public boolean setPageRows(int rows) {
 		return setInteger(PAGE_ROWS, rows);
+	}
+	
+	public StoreHostParams getMailboxHostParams(String username, String password, boolean impersonate) {
+		StoreHostParams shd = new StoreHostParams(getHost(), getPort(), StoreProtocol.parse(getProtocol(), false));
+		String finalPassword = LangUtils.coalesceStrings(getPassword(), password);
+		if (impersonate) {
+			if (!StringUtils.isBlank(mss.getNethTopVmailSecret())) {
+				shd.withUsername(LangUtils.coalesceStrings(getUsername(), StoreUtils.toPlainUser(username)));
+				shd.withVMAILImpersonate(mss.getNethTopVmailSecret());
+			} else if (!StringUtils.isBlank(mss.getAdminUser())) {
+				shd.withUsername(LangUtils.coalesceStrings(getUsername(), username));
+				shd.withSASLImpersonate(mss.getAdminUser(), mss.getAdminPassword());
+			}
+		} else {
+			shd.withUsername(LangUtils.coalesceStrings(getUsername(), username));
+			shd.withPassword(finalPassword);
+		}
+		return shd;
 	}
 	
 	public String getHost() {

@@ -153,13 +153,19 @@ import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.commons.web.json.extjs.FieldMeta;
 import com.sonicle.commons.web.json.extjs.GridMetadata;
 import com.sonicle.commons.web.json.extjs.SortMeta;
+import com.sonicle.mail.email.CalendarMethod;
+import com.sonicle.mail.email.EmailMessage;
+import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.webtop.contacts.ContactsUtils;
+import com.sonicle.webtop.core.TplHelper;
 import com.sonicle.webtop.core.app.CoreManifest;
+import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
 import com.sonicle.webtop.core.app.servlet.js.BlobInfoPayload;
 import com.sonicle.webtop.core.bol.js.JsAuditMessageInfo;
 import com.sonicle.webtop.core.model.RecipientFieldType;
 import com.sonicle.webtop.core.model.Tag;
+import com.sonicle.webtop.core.util.ICalendarHelper;
 import com.sonicle.webtop.mail.bol.js.JsAdvSearchMessage;
 import com.sonicle.webtop.mail.bol.js.JsListedMessage;
 import com.sonicle.webtop.mail.bol.js.JsMessageDetails;
@@ -175,6 +181,7 @@ import jakarta.mail.search.AndTerm;
 import jakarta.mail.search.FlagTerm;
 import jakarta.mail.search.OrTerm;
 import jakarta.mail.search.SearchTerm;
+import net.fortuna.ical4j.data.ParserException;
 import org.codehaus.plexus.util.FileUtils;
 import org.slf4j.Logger;
 
@@ -940,6 +947,16 @@ public class Service extends BaseService {
 			return false;
 		}
 		
+	}
+	
+	public String getSentFolder(InternetAddress address) {
+		Identity ident = null;
+		try {
+			ident=findIdentity((InternetAddress)(address));
+		} catch(Exception exc) {
+
+		}
+		return getSentFolder(ident);
 	}
 	
 	public String getSentFolder(Identity ident) {
@@ -4861,9 +4878,8 @@ public class Service extends BaseService {
 								if (!contactsManager.existContact(cats, predicate)) {
 									boolean found=false;
 									//check also internal users profile email
-									List<OUser> users=coreMgr.listUsers(true);
-									for(OUser user: users) {
-										UserProfile.Data userData=WT.getUserData(new UserProfileId(user.getDomainId(),user.getUserId()));
+									for (String userId : coreMgr.listUserIds(EnabledCond.ENABLED_ONLY)) {
+										UserProfile.Data userData=WT.getUserData(new UserProfileId(coreMgr.getTargetProfileId().getDomainId(), userId));
 										if ((found=StringUtils.equalsIgnoreCase(userData.getPersonalEmailAddress(), email)))
 											break;
 									}
@@ -8395,7 +8411,63 @@ public class Service extends BaseService {
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
+		UserProfile.Data pdata = WT.getUserData(environment.getProfileId());
+		
 		try {
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
+            long newmsguid = Long.parseLong(puidmessage);
+            Message m = mcache.getMessage(newmsguid);
+            HTMLMailData mailData = mcache.getMailData((MimeMessage)m);
+			
+			//CalendarMethod calendarMethod = mailData.getParsedMimeMessageComponents().getCalendarMethod();
+			ICalendarManager cm = (ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
+
+			// Parse Calendar content
+			final net.fortuna.ical4j.model.Calendar iCal;
+			try {
+				iCal = ICalendarUtils.parse(mailData.getParsedMimeMessageComponents().getCalendarContent());
+			} catch (IOException | ParserException ex) {
+				throw new WTException(ex);
+			}
+
+
+			Integer calendarId = cm.getDefaultCalendarId();
+			// Overrides default calendar if shared: this kind of events needs to
+			// be saved into personal calendars.
+			if (!cm.listMyCalendarIds().contains(calendarId)) {
+				calendarId = cm.getBuiltInCalendarId();
+			}
+
+			if (pcalaction.equals("accept")) {
+				Event ev = cm.addEventFromICal(calendarId, iCal);
+				String ekey = cm.getEventInstanceKey(ev.getEventId());
+
+				final List<InternetAddress> tos = MimeMessageParser.parseToAddresses((MimeMessage)m, true);
+				// in case mail was sent as ccn we don't have any recipient, so we don't send any reply
+				if (!tos.isEmpty()) {
+					final String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
+					final InternetAddress iaOrganizer = ICalendarUtils.getOrganizerAddress(ICalendarUtils.getVEvent(iCal));
+					final EmailMessage email = ICalendarHelper.prepareICalendarReply(prodId, iCal, tos.get(0), iaOrganizer, PartStat.ACCEPTED, pdata.getLocale());
+					final String sentFolder = getSentFolder(tos.get(0));
+					WT.sendEmail(environment.getProfileId(), email, sentFolder);
+				}
+				new JsonResult(ekey).printTo(out);
+
+			} else if (pcalaction.equals("import")) {
+				Event ev = cm.addEventFromICal(calendarId, iCal);
+				String ekey = cm.getEventInstanceKey(ev.getEventId());
+				new JsonResult(ekey).printTo(out);
+
+			} else if (pcalaction.equals("cancel") || pcalaction.equals("update")) {
+				cm.updateEventFromICal(iCal);
+				new JsonResult().printTo(out);
+
+			} else {
+				throw new Exception("Unsupported calendar request action : " + pcalaction);
+			}
+			
+			/*
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
 			long newmsguid = Long.parseLong(puidmessage);
@@ -8434,6 +8506,7 @@ public class Service extends BaseService {
 			} else {
 				throw new Exception("Unsupported calendar request action : " + pcalaction);
 			}
+			*/
 		} catch (Exception exc) {
 			new JsonResult(exc).printTo(out);
 			logger.error("Error sending " + pcalaction, exc);
@@ -8445,16 +8518,39 @@ public class Service extends BaseService {
         String pfoldername=request.getParameter("folder");
         String puidmessage=request.getParameter("idmessage");
         String pidattach=request.getParameter("idattach");
+		UserProfile.Data pdata = WT.getUserData(environment.getProfileId());
+		
         try {
             account.checkStoreConnected();
-            FolderCache mcache=account.getFolderCache(pfoldername);
-            long newmsguid=Long.parseLong(puidmessage);
-            Message m=mcache.getMessage(newmsguid);
-            HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
-            Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
-            
-			ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.DECLINED);
+            FolderCache mcache = account.getFolderCache(pfoldername);
+            long newmsguid = Long.parseLong(puidmessage);
+            Message m = mcache.getMessage(newmsguid);
+            HTMLMailData mailData = mcache.getMailData((MimeMessage)m);
+			
+			CalendarMethod calendarMethod = mailData.getParsedMimeMessageComponents().getCalendarMethod();
+			if (CalendarMethod.REQUEST.equals(calendarMethod)) {
+				// Parse Calendar content
+				final net.fortuna.ical4j.model.Calendar iCal;
+				try {
+					iCal = ICalendarUtils.parse(mailData.getParsedMimeMessageComponents().getCalendarContent());
+				} catch (IOException | ParserException ex) {
+					throw new WTException(ex);
+				}
+				
+				final String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
+				final List<InternetAddress> tos = MimeMessageParser.parseToAddresses((MimeMessage)m, true);
+				final InternetAddress iaOrganizer = ICalendarUtils.getOrganizerAddress(ICalendarUtils.getVEvent(iCal));
+				final EmailMessage email = ICalendarHelper.prepareICalendarReply(prodId, iCal, tos.get(0), iaOrganizer, PartStat.DECLINED, pdata.getLocale());
+				final String sentFolder = getSentFolder(tos.get(0));
+				WT.sendEmail(environment.getProfileId(), email, sentFolder);
+				
+			} else {
+				throw new WTException("Cannod decline a NON request");
+			}
+			
+            //Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
+			//ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
+			//sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.DECLINED);
 			new JsonResult().printTo(out);
         } catch(Exception exc) {
             new JsonResult(false,exc.getMessage()).printTo(out);
@@ -8512,6 +8608,7 @@ public class Service extends BaseService {
 		
 	}*/
 	
+	/*
 	private void sendICalendarReply(MailAccount account, ICalendarRequest request, InternetAddress forAddress, PartStat response) throws Exception {
 		InternetAddress organizerAddress = InternetAddressUtils.toInternetAddress(request.getOrganizerAddress());
 		sendICalendarReply(account, request.getCalendar(), organizerAddress, forAddress, response, request.getSummary());
@@ -8520,7 +8617,6 @@ public class Service extends BaseService {
 	private void sendICalendarReply(MailAccount account, net.fortuna.ical4j.model.Calendar ical, InternetAddress organizerAddress, InternetAddress forAddress, PartStat response, String eventSummary) throws Exception {
 		String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
 		net.fortuna.ical4j.model.Calendar icalReply = ICalendarUtils.buildInvitationReply(ical, prodId, forAddress, response);
-		if (icalReply == null) throw new WTException("Unable to build ICalendar reply or maybe you are not into attendee list");
 		
 		// Creates base message parts
 		net.fortuna.ical4j.model.property.Method icalMethod = net.fortuna.ical4j.model.property.Method.REPLY;
@@ -8539,6 +8635,7 @@ public class Service extends BaseService {
 		
 		sendMsg(message);
 	}
+	*/
 	
 	private MimeMessage createMessage(MailAccount account, InternetAddress from, String subject) throws MessagingException {
 		try {
@@ -9119,7 +9216,7 @@ public class Service extends BaseService {
 				String aclUserId=acl.getName();
 				UserProfileId pid=aclUserIdToUserId(aclUserId);
 				if (pid==null) continue;
-				String roleUid=core.getUserUid(pid);
+				String roleUid=core.lookupUserSid(pid);
 				String roleDescription=null;
 				boolean shareIdentity=false;
 				boolean forceMailcard=false;

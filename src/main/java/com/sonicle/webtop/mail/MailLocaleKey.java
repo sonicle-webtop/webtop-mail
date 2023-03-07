@@ -83,8 +83,6 @@ public class MailLocaleKey {
 	public static final String ICAL_ACCEPTED="ical.accpeted";
 	public static final String ICAL_DECLINED="ical.declined";
 	public static final String ICAL_CANCELED="ical.canceled";
-	public static final String ICAL_REPLY_ACCEPTED="ical.reply.accepted";
-	public static final String ICAL_REPLY_DECLINED="ical.reply.declined";
     public static final String ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED="error.attachment.type.not.supported";
 	public static final String PERMISSION_DENIED="permission.denied";
         public static final String SENT_MESSAGE_NOT_SAVED_MESSAGE="sentMessage.notSaved.message";

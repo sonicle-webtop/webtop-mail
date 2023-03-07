@@ -33,30 +33,58 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
-import java.util.Locale;
-import net.fortuna.ical4j.model.parameter.PartStat;
-import org.apache.commons.lang3.StringUtils;
+import com.sonicle.webtop.mail.bg.ResourcesAutoresponderManager;
+import com.sonicle.webtop.core.sdk.BaseBackgroundService;
+import com.sonicle.webtop.core.sdk.BaseManager;
+import com.sonicle.webtop.mail.bg.ResourcesAutoresponderReloadTask;
+import java.util.Arrays;
+import java.util.Collection;
+import org.quartz.SimpleScheduleBuilder;
+import org.quartz.TriggerBuilder;
 
 /**
  *
  * @author malbinola
  */
-public class TplHelper {
-	private static final String SERVICE_ID = "com.sonicle.webtop.mail";
+public class BackgroundService extends BaseBackgroundService {
+	private ResourcesAutoresponderManager resourceAutoresponderMgr;
 	
-	public static String buildEventInvitationReplyEmailSubject(Locale locale, PartStat response, String eventTitle) {
-		StringBuilder sb = new StringBuilder();
-		if (PartStat.ACCEPTED.equals(response)) {
-			sb.append(WT.lookupResource(SERVICE_ID, locale, MailLocaleKey.ICAL_REPLY_ACCEPTED));
-		} else if (PartStat.DECLINED.equals(response)) {
-			sb.append(WT.lookupResource(SERVICE_ID, locale, MailLocaleKey.ICAL_REPLY_DECLINED));
-		} else if (PartStat.TENTATIVE.equals(response)) {
-			sb.append(WT.lookupResource(SERVICE_ID, locale, MailLocaleKey.ICAL_REPLY_ACCEPTED));
+	@Override
+	public void initialize() throws Exception {
+		resourceAutoresponderMgr = new ResourcesAutoresponderManager(this);
+	}
+
+	@Override
+	public void cleanup() throws Exception {
+		if (resourceAutoresponderMgr != null) resourceAutoresponderMgr.cleanup();
+	}
+
+	@Override
+	protected Collection<TaskDefinition> createTasks() {
+		if (isCalendarServiceInstalled()) {
+			return Arrays.asList(
+				new TaskDefinition(
+					ResourcesAutoresponderReloadTask.class,
+					TriggerBuilder.newTrigger()
+						.withSchedule(SimpleScheduleBuilder.repeatMinutelyForever(1))
+						.build()
+				)
+			);
+		} else {
+			return Arrays.asList();
 		}
-		sb.append(" ");
-		sb.append(StringUtils.abbreviate(eventTitle, 30));
-		
-		return sb.toString();
+	}
+	
+	private boolean isCalendarServiceInstalled() {
+		try {
+			if (WT.getServiceManager("com.sonicle.webtop.calendar", true, RunContext.getRunProfileId()) != null) return true;
+		} catch (Exception ex) {}
+		return false;
+	}
+	
+	public ResourcesAutoresponderManager getResourcesAutoresponderManager() {
+		return resourceAutoresponderMgr;
 	}
 }

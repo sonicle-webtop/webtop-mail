@@ -365,7 +365,7 @@ public class FolderCache {
 			UserProfileId pid=ms.aclUserIdToUserId(aclUserId);
 			if (pid==null) continue;
 			CoreManager core=WT.getCoreManager();
-			String roleUid=core.getUserUid(pid);
+			String roleUid=core.lookupUserSid(pid);
 			if (roleUid==null) { 
 				if (!RunContext.isPermitted(true, ms.SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 			}
@@ -2287,7 +2287,12 @@ public class FolderCache {
       }
       return htmlparts;
   }
+	
+	public synchronized HTMLMailData prepareHTMLMailData(MimeMessage msg) throws MessagingException, IOException {
+		return new HTMLMailData(msg,this);
+	}
 
+/*
   public synchronized HTMLMailData prepareHTMLMailData(MimeMessage msg) throws MessagingException, IOException {
     HTMLMailData mailData=new HTMLMailData(msg,this);
 
@@ -2323,16 +2328,16 @@ public class FolderCache {
         }
 		
 		
-        /*Part tnefp=net.freeutils.tnef.mime.TNEFMime.convert(this.ms.getMailSession(), (Part)msg, false);
-        if (tnefp instanceof Multipart) {
-            Multipart tnefmp=(Multipart)tnefp;
-            int tnefparts=tnefmp.getCount();
-            for(int j=0; j<tnefparts; ++j) {
-              tnefp=tnefmp.getBodyPart(j);
-              prepareHTMLMailData(tnefp,mailData);
-            }
-        }
-        else prepareHTMLMailData(tnefp,mailData);*/
+        //Part tnefp=net.freeutils.tnef.mime.TNEFMime.convert(this.ms.getMailSession(), (Part)msg, false);
+        //if (tnefp instanceof Multipart) {
+        //    Multipart tnefmp=(Multipart)tnefp;
+        //    int tnefparts=tnefmp.getCount();
+        //    for(int j=0; j<tnefparts; ++j) {
+        //      tnefp=tnefmp.getBodyPart(j);
+        //      prepareHTMLMailData(tnefp,mailData);
+        //    }
+        //}
+        //else prepareHTMLMailData(tnefp,mailData);
       } catch(Exception exc) {
         Service.logger.error("Exception",exc);
         mailData.addUnknownPart(msg,level);
@@ -2365,7 +2370,8 @@ public class FolderCache {
           prepareHTMLMailData(p, mailData,level);
         } else if(p.isMimeType("text/html")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
-            /*if (!mailData.isPEC())*/ mailData.addDisplayPart(p,level);
+            //if (!mailData.isPEC())
+			  mailData.addDisplayPart(p,level);
           else mailData.addAttachmentPart(p,level);
         } else if(p.isMimeType("text/plain")) {
           if (p.getDisposition()==null || p.getDisposition().equalsIgnoreCase(Part.INLINE))
@@ -2397,16 +2403,16 @@ public class FolderCache {
               prepareHTMLMailData(tnefp,mailData,level);
             }
 
-            /*Part tnefp=net.freeutils.tnef.mime.TNEFMime.convert(this.ms.getMailSession(), (Part) p, false);
-            if (tnefp instanceof Multipart) {
-                Multipart tnefmp=(Multipart)tnefp;
-                int tnefparts=tnefmp.getCount();
-                for(int j=0; j<tnefparts; ++j) {
-                  tnefp=tnefmp.getBodyPart(j);
-                  prepareHTMLMailData(tnefp,mailData);
-                }
-            }
-            else prepareHTMLMailData(tnefp,mailData);*/
+            //Part tnefp=net.freeutils.tnef.mime.TNEFMime.convert(this.ms.getMailSession(), (Part) p, false);
+            //if (tnefp instanceof Multipart) {
+            //    Multipart tnefmp=(Multipart)tnefp;
+            //    int tnefparts=tnefmp.getCount();
+            //    for(int j=0; j<tnefparts; ++j) {
+            //      tnefp=tnefmp.getBodyPart(j);
+            //      prepareHTMLMailData(tnefp,mailData);
+            //    }
+            //}
+            else prepareHTMLMailData(tnefp,mailData);
           } catch(Exception exc) {
             mailData.addUnknownPart(p,level);
             mailData.addAttachmentPart(p,level);
@@ -2450,6 +2456,7 @@ public class FolderCache {
             mailData.addUrlPart(url, p,level);
           }
   }
+  */
 
   protected String normalizeCidFileName(String filename) {
 	if(filename.startsWith("<")) {
@@ -2465,6 +2472,7 @@ public class FolderCache {
 	}
 	return filename;
   }
+  /*
   class PrepareStatus {
     boolean htmlfound=false;
     boolean textfound=false;
@@ -2507,6 +2515,7 @@ public class FolderCache {
     }
     return dispPart;
   }
+  */
 
 
   class HTMLMailParserThread implements Runnable {

@@ -31,25 +31,49 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail;
+package com.sonicle.webtop.mail.bg;
 
+import com.sonicle.webtop.core.CoreManager;
+import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
-import java.util.List;
+import com.sonicle.webtop.core.app.model.EnabledCond;
+import com.sonicle.webtop.core.sdk.BaseBackgroundServiceTask;
+import com.sonicle.webtop.core.sdk.UserProfileId;
+import com.sonicle.webtop.mail.BackgroundService;
+import java.util.LinkedHashSet;
+import org.joda.time.DateTime;
+import org.quartz.JobExecutionContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author malbinola
  */
-public class ManagerUtils {
+public class ResourcesAutoresponderReloadTask extends BaseBackgroundServiceTask {
+	private static final Logger LOGGER = (Logger)LoggerFactory.getLogger(ResourcesAutoresponderReloadTask.class);
 	
-	public static String getProductName() {
-		return WT.getPlatformName() + " Mail";
+	@Override
+	public Logger getLogger() {
+		return LOGGER;
 	}
-	
-	public static String findActiveScriptName(final List<com.fluffypeople.managesieve.SieveScript> scripts) {
-		for (com.fluffypeople.managesieve.SieveScript script : scripts) {
-			if (script.isActive()) return script.getName();
+
+	@Override
+	public void executeWork(JobExecutionContext jec, DateTime now) throws Exception {
+		BackgroundService bs = ((BackgroundService)getBackgroundService(jec));
+
+		LinkedHashSet<UserProfileId> resourcesProfiles = new LinkedHashSet<>();
+		for (String domainId : WT.getCoreManager().listDomainIds(EnabledCond.ENABLED_ONLY)) {
+			if (shouldStop()) break; // Speed-up shutdown process!
+
+			CoreManager coreMgr = WT.getCoreManager(RunContext.buildDomainAdminProfileId(domainId));
+			for (String resourceId : coreMgr.listResourceIds(EnabledCond.ENABLED_ONLY)) {
+				if (shouldStop()) break; // Speed-up shutdown process!
+				resourcesProfiles.add(new UserProfileId(domainId, resourceId));
+			}
 		}
-		return null;
+
+		if (shouldStop()) return; // Speed-up shutdown process!
+		bs.getResourcesAutoresponderManager().updateMonitoredResources(resourcesProfiles);
 	}
 }

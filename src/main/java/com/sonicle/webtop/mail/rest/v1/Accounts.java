@@ -33,10 +33,14 @@
  */
 package com.sonicle.webtop.mail.rest.v1;
 
+import com.sonicle.commons.flags.BitFlags;
 import com.sonicle.security.auth.directory.AbstractDirectory;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.model.EnabledCond;
+import com.sonicle.webtop.core.app.model.User;
+import com.sonicle.webtop.core.app.model.UserGetOption;
 import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
@@ -49,6 +53,7 @@ import com.sonicle.webtop.mail.swagger.v1.model.Account;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiError;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -103,25 +108,25 @@ public class Accounts extends AccountsApi {
 			
 			logger.debug("Getting avail users...");
 			CoreManager coreMgr = WT.getCoreManager(targetPid);
-			List<OUser> ousers = null;
+			Collection<User> users = null;
 			if (RunContext.isWebTopAdmin()) {
-				ousers = coreMgr.listUsers(true);
+				users = coreMgr.listUsers(EnabledCond.ENABLED_ONLY).values();
 			} else {
-				OUser ouser = coreMgr.getUser();
-				if (ouser == null) 
-				ousers = new ArrayList<>(Arrays.asList(ouser));
+				User user = coreMgr.getUser(BitFlags.noneOf(UserGetOption.class));
+				if (user == null) throw new WTException("user null");
+				users = new ArrayList<>(Arrays.asList(user));
 			}
-			logger.debug("Found {} users", ousers.size());
+			logger.debug("Found {} users", users.size());
 			
 			Map<String, AbstractDirectory> dirCache = new HashMap<>();
 			ArrayList<Account> items = new ArrayList<>();
-			for (OUser ouser : ousers) {
-				UserProfileId pid = new UserProfileId(ouser.getDomainId(), ouser.getUserId());
+			for (User user : users) {
+				UserProfileId pid = new UserProfileId(targetPid.getDomainId(), user.getUserId());
 				logger.debug("Checking {}", pid.toString());
 				MailUserProfile mailProfile = getMailUserProfile(coreMgr, dirCache, pid);
 				if (mailProfile == null) continue;
 				
-				items.add(createAccount(ouser, mailProfile));
+				items.add(createAccount(user, mailProfile));
 			}
 			return respOk(items);
 			
@@ -131,10 +136,10 @@ public class Accounts extends AccountsApi {
 		}
 	}
 	
-	private Account createAccount(OUser ouser, MailUserProfile mailProfile) {
+	private Account createAccount(User user, MailUserProfile mailProfile) {
 		return new Account()
-				.userId(ouser.getUserId())
-				.displayName(ouser.getDisplayName())
+				.userId(user.getUserId())
+				.displayName(user.getDisplayName())
 				.mailUsername(mailProfile.getMailUsername());
 	}
 	
