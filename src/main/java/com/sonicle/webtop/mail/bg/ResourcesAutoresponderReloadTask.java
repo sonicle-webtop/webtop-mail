@@ -59,7 +59,7 @@ public class ResourcesAutoresponderReloadTask extends BaseBackgroundServiceTask 
 	}
 
 	@Override
-	public void executeWork(JobExecutionContext jec, DateTime now) throws Exception {
+	public void executeWork(JobExecutionContext jec, TaskContext context) throws Exception {
 		BackgroundService bs = ((BackgroundService)getBackgroundService(jec));
 
 		LinkedHashSet<UserProfileId> resourcesProfiles = new LinkedHashSet<>();
