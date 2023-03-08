@@ -281,7 +281,7 @@ public class ResourcesAutoresponderManager {
 		try {
 			StoreHostParams hostParams = mus.getMailboxHostParams(user, null, true);
 			LOGGER.debug("[{}] Preparing mailbox...", resourceProfile);
-			mailbox = new Mailbox(hostParams, createMailboxConfig(mus), createMailboxProperties(hostParams.getProtocol()));
+			mailbox = new Mailbox(hostParams, ManagerUtils.createMailboxConfig(mus), createMailboxProperties(hostParams.getProtocol()));
 			mailbox.connect();
 			inbox = StoreUtils.openFolder(mailbox.getInboxFolder(), true);
 			
@@ -419,17 +419,6 @@ public class ResourcesAutoresponderManager {
 			.build();
 	}
 	
-	private MailboxConfig createMailboxConfig(MailUserSettings mus) {
-		return new MailboxConfig.Builder()
-			.withUserFoldersPrefix(mus.getFolderPrefix())
-			.withSentFolderName(mus.getFolderSent())
-			.withDraftsFolderName(mus.getFolderDrafts())
-			.withTrashFolderName(mus.getFolderTrash())
-			.withSpamFolderName(mus.getFolderSpam())
-			.withArchiveFolderName(mus.getFolderArchive())
-			.build();
-	}
-	
 	private enum MessageOperation {
 		ARCHIVE, TRASH, NOOP;
 	}
@@ -536,7 +525,7 @@ public class ResourcesAutoresponderManager {
 				}
 				
 				try {
-					WT.sendEmail(resourceProfileId, reply, sentFolder);
+					WT.sendEmailMessage(resourceProfileId, reply, sentFolder);
 					return MessageOperation.ARCHIVE;
 					
 				} catch (WTEmailSendException ex1) {

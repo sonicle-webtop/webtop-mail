@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.mail.MailboxConfig;
 import com.sonicle.webtop.core.app.WT;
 import java.util.List;
 
@@ -51,5 +52,16 @@ public class ManagerUtils {
 			if (script.isActive()) return script.getName();
 		}
 		return null;
+	}
+	
+	public static MailboxConfig createMailboxConfig(MailUserSettings mus) {
+		return new MailboxConfig.Builder()
+			.withUserFoldersPrefix(mus.getFolderPrefix())
+			.withSentFolderName(mus.getFolderSent())
+			.withDraftsFolderName(mus.getFolderDrafts())
+			.withTrashFolderName(mus.getFolderTrash())
+			.withSpamFolderName(mus.getFolderSpam())
+			.withArchiveFolderName(mus.getFolderArchive())
+			.build();
 	}
 }

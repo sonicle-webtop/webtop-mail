@@ -8450,7 +8450,7 @@ public class Service extends BaseService {
 					final InternetAddress iaOrganizer = ICalendarUtils.getOrganizerAddress(ICalendarUtils.getVEvent(iCal));
 					final EmailMessage email = ICalendarHelper.prepareICalendarReply(prodId, iCal, tos.get(0), iaOrganizer, PartStat.ACCEPTED, pdata.getLocale());
 					final String sentFolder = getSentFolder(tos.get(0));
-					WT.sendEmail(environment.getProfileId(), email, sentFolder);
+					WT.sendEmailMessage(environment.getProfileId(), email, sentFolder);
 				}
 				new JsonResult(ekey).printTo(out);
 
@@ -8542,7 +8542,7 @@ public class Service extends BaseService {
 				final InternetAddress iaOrganizer = ICalendarUtils.getOrganizerAddress(ICalendarUtils.getVEvent(iCal));
 				final EmailMessage email = ICalendarHelper.prepareICalendarReply(prodId, iCal, tos.get(0), iaOrganizer, PartStat.DECLINED, pdata.getLocale());
 				final String sentFolder = getSentFolder(tos.get(0));
-				WT.sendEmail(environment.getProfileId(), email, sentFolder);
+				WT.sendEmailMessage(environment.getProfileId(), email, sentFolder);
 				
 			} else {
 				throw new WTException("Cannod decline a NON request");
