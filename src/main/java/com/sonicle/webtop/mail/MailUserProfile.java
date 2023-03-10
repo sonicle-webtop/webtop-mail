@@ -131,7 +131,8 @@ public class MailUserProfile {
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
 				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=profile.getUserId();
-				if (mailUsername.indexOf('@')<0 && schemeWantsUserWithDomain(dirScheme)) mailUsername+="@"+WT.getDomainInternetName(profile.getDomainId());
+				//TODO: which domain-name is needed here?
+				if (mailUsername.indexOf('@')<0 && schemeWantsUserWithDomain(dirScheme)) mailUsername+="@"+WT.getPrimaryDomainName(profile.getDomainId());
 				if (principal!=null && (mailPassword==null||mailPassword.trim().length()==0)) mailPassword=new String(principal.getPassword());
 			}
 			

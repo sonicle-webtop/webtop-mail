@@ -7692,7 +7692,7 @@ public class Service extends BaseService {
 			
 		if (pasRules.isActive()) {
 			jsPas=new JsProActiveSecurity();
-			String internetDomain=WT.getDomainInternetName(environment.getProfileId().getDomainId()).toLowerCase();
+			String internetDomain=WT.getPrimaryDomainName(environment.getProfileId().getDomainId()).toLowerCase();
 			String senderDomain=null;
 			
 			boolean isSpam=false;
@@ -9377,7 +9377,7 @@ public class Service extends BaseService {
 				desc=LangUtils.value(ouser.getDisplayName(),"");
 			} else {
 				String email=mailUserId;
-				if (email.indexOf("@")<0) email+="@"+WT.getDomainInternetName(domainId);
+				if (email.indexOf("@")<0) email+="@"+WT.getPrimaryDomainName(domainId);
 				UserProfile.Data udata=WT.guessUserData(email);
 				if (udata!=null) desc=LangUtils.value(udata.getDisplayName(),"");
 			}
@@ -9602,7 +9602,7 @@ public class Service extends BaseService {
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
-		return username+"@"+WT.getDomainInternetName(userProfileId.getDomainId());
+		return username+"@"+WT.getPrimaryDomainName(userProfileId.getDomainId());
 	}
 	
 	public void processLookupSieveScripts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {

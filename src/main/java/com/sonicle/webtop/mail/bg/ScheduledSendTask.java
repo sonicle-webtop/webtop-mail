@@ -202,7 +202,7 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 			String toAddress=WT.getUserData(sendingProfile).getEmail().toString();
 			
 			EmailMessage email = EmailMessageBuilder.startingBlank()
-				.from("webtop@"+WT.getDomainInternetName(sendingProfile.getDomainId()))
+				.from("webtop@"+WT.getPrimaryDomainName(sendingProfile.getDomainId()))
 				.to(toAddress)
 				.withSubject(subject)
 				.withHTMLText(html)
