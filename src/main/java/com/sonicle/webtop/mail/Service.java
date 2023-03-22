@@ -6684,7 +6684,7 @@ public class Service extends BaseService {
 								}
 							}*/
 
-							boolean hasAttachments=mcache.hasAttachements(xm);
+							boolean hasAttachments=mcache.hasAttachments(xm, null);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
@@ -8904,7 +8904,7 @@ public class Service extends BaseService {
 					
 					boolean hasNote=flags.contains(MailManager.getFlagNoteString());
 
-					boolean hasAttachments=fc.hasAttachements(xm);
+					boolean hasAttachments=fc.hasAttachments(xm, null);
 					
 					String fullfolderdesc=fc.getDescription();
 					FolderCache xfc=fc;

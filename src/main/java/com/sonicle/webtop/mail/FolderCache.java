@@ -1750,10 +1750,10 @@ public class FolderCache {
 	private Message[] applyImapQuerySecondaryFilters(Message msgs[], ImapQuery iq) throws MessagingException, IOException {
 		Message rmsgs[]=msgs;
 		
-		if (iq.hasAttachment()) {
+		if (iq.hasAttachment() || iq.hasAttachmentName()) {
 			ArrayList<Message> amsgs=new ArrayList<Message>();
 			for(Message m: msgs) {
-				if (hasAttachements(m)) amsgs.add(m);
+				if (hasAttachments(m, iq.getAttachmentName())) amsgs.add(m);
 			}
 			rmsgs=new SonicleIMAPMessage[amsgs.size()];
 			amsgs.toArray(rmsgs);
@@ -1808,18 +1808,23 @@ public class FolderCache {
 		return false;
 	}
     
-    protected boolean hasAttachements(Part p) throws MessagingException, IOException {
+    protected boolean hasAttachments(Part p, String namePattern) throws MessagingException, IOException {
         boolean retval=false;
         
-        //String disp=p.getDisposition();
-		if (isAttachment(p)) retval=true;
-		//if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT)) retval=true;
+		if (isAttachment(p)) {
+			if (namePattern!=null) {
+				String filename = ms.getPartName(p);
+				if (StringUtils.containsIgnoreCase(filename, namePattern))
+					retval=true;
+			}
+			else retval=true;
+		}
         else if(p.isMimeType("multipart/*")) {
             Multipart mp=(Multipart)p.getContent();
             int parts=mp.getCount();
             for(int i=0;i<parts;++i) {
                 Part bp=mp.getBodyPart(i);
-                if (hasAttachements(bp)) {
+                if (hasAttachments(bp, namePattern)) {
                     retval=true;
                     break;
                 }

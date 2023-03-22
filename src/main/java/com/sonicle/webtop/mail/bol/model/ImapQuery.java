@@ -79,6 +79,7 @@ public class ImapQuery {
 	private static final String AFTER = "after";
 	private static final String BEFORE = "before";
 	private static final String ATTACHMENT = "attachment";
+	private static final String ATTACHMENT_NAME = "attachname";
 	private static final String UNREAD = "unread";
 	private static final String FLAGGED = "flagged";
 //	private static final String TAGGED = "tagged";
@@ -90,6 +91,7 @@ public class ImapQuery {
 	private SearchTerm searchTerm;
 	private String notePattern;
 	private boolean hasAttachment=false;
+	private String attachmentName=null;
 	
 	public ImapQuery(String allFlagStrings[], QueryObj query, DateTimeZone timezone) {
 		parseQuery(allFlagStrings, query, timezone);
@@ -163,6 +165,8 @@ public class ImapQuery {
 				} else if(key.equals(NOTES)) {
 					terms.add(new FlagTerm(MailManager.getFlagNote(), true));
 					if (!"*".equals(value)) notePattern=valueToLikePattern(value);
+				} else if(key.equals(ATTACHMENT_NAME)) {
+					attachmentName=value;
 				} else if(value.equals(ATTACHMENT)) {
 					hasAttachment=true;
 				} else if(value.equals(UNREAD)) {
@@ -232,6 +236,14 @@ public class ImapQuery {
 	
 	public boolean hasAttachment() {
 		return hasAttachment;
+	}
+	
+	public boolean hasAttachmentName() {
+		return attachmentName!=null;
+	}
+	
+	public String getAttachmentName() {
+		return attachmentName;
 	}
 	
 	private String valueToLikePattern(String value) {

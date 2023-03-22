@@ -155,6 +155,11 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				boolKeyword: 'has',
 				label: me.res('fld-search.field.attachment.lbl')
 			}, {
+				name: 'attachname',
+				type: 'string',
+				labelAlign: 'left',
+				label: me.res('fld-search.field.attachmentName.lbl')
+			}, {
 				name: 'unread',
 				type: 'boolean',
 				boolKeyword: 'has',
