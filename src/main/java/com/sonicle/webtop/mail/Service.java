@@ -188,6 +188,10 @@ import org.slf4j.Logger;
 public class Service extends BaseService {
 	
 	public final static Logger logger = WT.getLogger(Service.class);
+	public final String[] SPAM_THRESHOLD_HEADERS = new String[] {
+		"X-Rspamd-Flag-Threshold",
+		"X-Spam-Threshold"
+	};
 	
 	class WebtopFlag {
 		String label;
@@ -7706,6 +7710,16 @@ public class Service extends BaseService {
 				//check rspamd first
 				String hdrs[]=m.getHeader("X-Spamd-Result");
 				float threshold=pasDefaultSpamThreshold;
+				//check for threshold headers
+				for(String spamThresholdHeader: SPAM_THRESHOLD_HEADERS) {
+					String thhdrs[]=m.getHeader(spamThresholdHeader);
+					if (thhdrs!=null && thhdrs.length>0 && thhdrs[0]!=null) {
+						try {
+							threshold=Float.parseFloat(thhdrs[0]);
+						} catch(NumberFormatException nexc) {
+						}
+					}
+				}
 				float threshold1=threshold/2;
 				if (hdrs!=null && hdrs.length>0) {
 					String hdr=hdrs[0];
