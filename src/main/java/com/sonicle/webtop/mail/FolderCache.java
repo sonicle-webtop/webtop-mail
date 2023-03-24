@@ -1779,6 +1779,15 @@ public class FolderCache {
 		return rmsgs;
 	}
 	
+	protected boolean isInvitationRequest(Part part) throws MessagingException {
+		if (part.isMimeType("text/calendar")) {
+			String ctype=part.getContentType();
+			if (ctype!=null && StringUtils.containsIgnoreCase(ctype, "method=REQUEST"))
+				return true;
+		}
+		return false;
+	}
+	
 	protected boolean isAttachment(Part part) throws MessagingException {
 		String disp = part.getDisposition();
 		String cid=null;
@@ -1825,6 +1834,27 @@ public class FolderCache {
             for(int i=0;i<parts;++i) {
                 Part bp=mp.getBodyPart(i);
                 if (hasAttachments(bp, namePattern)) {
+                    retval=true;
+                    break;
+                }
+            }
+        }
+        
+        return retval;
+    }
+
+    protected boolean hasInvitationRequest(Part p) throws MessagingException, IOException {
+        boolean retval=false;
+        
+		if (isInvitationRequest(p)) {
+			retval=true;
+		}
+        else if(p.isMimeType("multipart/*")) {
+            Multipart mp=(Multipart)p.getContent();
+            int parts=mp.getCount();
+            for(int i=0;i<parts;++i) {
+                Part bp=mp.getBodyPart(i);
+                if (hasInvitationRequest(bp)) {
                     retval=true;
                     break;
                 }

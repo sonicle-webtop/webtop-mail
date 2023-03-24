@@ -6694,6 +6694,7 @@ public class Service extends BaseService {
 							}*/
 
 							boolean hasAttachments=mcache.hasAttachments(xm, null);
+							boolean hasInvitationRequest=mcache.hasInvitationRequest(xm);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
@@ -6731,7 +6732,10 @@ public class Service extends BaseService {
 							}
 
 							String status="read";
-							if (flags!=null) {
+							if (hasInvitationRequest) {
+								status="invitation";
+							}
+							else if (flags!=null) {
 								if (flags.contains(Flags.Flag.ANSWERED)) {
 									if (flags.contains("$Forwarded")) status = "repfwd";
 									else status = "replied";

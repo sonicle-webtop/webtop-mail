@@ -405,6 +405,8 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 				case 'repfwd':
 					//return 'fa-retweet';
 					return 'wtmail-icon-status-replied-forwarded';
+				case 'invitation':
+					return 'wtmail-icon-status-invitation';
 			}
 			return null;
 		},

@@ -43,6 +43,7 @@
 .wtmail-icon-status-replied { background-image: url('msg-status-replied_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-status-forwarded { background-image: url('msg-status-forwarded_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-status-replied-forwarded { background-image: url('msg-status-repfwd_16.svg') !important; background-size: contain; vertical-align: bottom; }
+.wtmail-icon-status-invitation { background-image: url('msg-status-invitation_16.svg') !important; background-size: contain; vertical-align: bottom; }
 
 .wtmail-smartsearch-name-column { padding-left: 6px; font-size: 13px }
 .wtmail-smartsearch-total-column { color: gray; font-size: 13px }
