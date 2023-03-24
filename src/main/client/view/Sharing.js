@@ -154,6 +154,10 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 			items: [{
 				xtype: 'gridpanel',
 				reference: 'gprights',
+				plugins: {
+					ptype: 'cellediting',
+					clicksToEdit: 1
+				},
 				bind: {
 					store: '{record.rights}'
 				},
@@ -200,13 +204,26 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 					flex: 1,
 					listeners: {
 						checkchange: function(c , ri , v) {
+							var grid = me.lref('gprights'),
+								sto = grid.getStore(),
+								r = sto.getAt(ri);
 							if (v) { 
-								var grid = me.lref('gprights'),
-									sto = grid.getStore(),
-									r = sto.getAt(ri);
-								r.set("shareIdentity",true); 
+								r.set("shareIdentity",true);
+							} else {
+								r.set("alwaysCcEmail","");
 							}
 						}
+					}
+				},{
+					header: me.mys.res('sharing.rights-always-cc-email.lbl'),
+					dataIndex: 'alwaysCcEmail',
+					flex: 1,
+					editor: 'textfield',
+					renderer: function(val, meta, rec) {
+						if (Ext.isEmpty(val) && rec.get("alwaysCc")) {
+							return me.styleAsEmpty(me.mys.getIdentity(0).email);
+						}
+						return val;
 					}
 				}],
 				tbar: [
@@ -418,7 +435,12 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 				grid = me.lref('gprights');
 		
 		grid.getStore().remove(rec);
+	},
+	
+	styleAsEmpty: function(text) {
+		return '<span style="color:gray;font-style:italic;">' + text + '</span>';
 	}
+	
 	
 	
 });

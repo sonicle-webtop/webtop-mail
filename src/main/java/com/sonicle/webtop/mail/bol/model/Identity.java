@@ -37,6 +37,7 @@ import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.MailAccount;
 import com.sonicle.webtop.mail.Mailcard;
 import com.sonicle.webtop.mail.bol.OIdentity;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -60,11 +61,12 @@ public class Identity {
 	protected boolean forceMailcard;
 	protected boolean lockMailcard = false;
 	protected boolean alwaysCc;
+	protected String alwaysCcEmail;
 	
 	protected boolean isMainIdentity=false;
 	
 	public Identity(OIdentity oi) {
-        this(Identity.TYPE_USER, oi.getIdentityId(), oi.getIdentityUid(), oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false, false);
+        this(Identity.TYPE_USER, oi.getIdentityId(), oi.getIdentityUid(), oi.getDisplayName(), oi.getEmail(), oi.getMainFolder(), oi.getFax(), false, false, null);
 	}
 
 	public Identity(int identityId, String identityUid, String displayName, String email, String mainFolder) {
@@ -72,10 +74,10 @@ public class Identity {
 	}
 	
 	public Identity(String type, int identityId, String identityUid, String displayName, String email, String mainFolder) {
-		this(type,identityId,identityUid,displayName,email,mainFolder,false,false,false);
+		this(type,identityId,identityUid,displayName,email,mainFolder,false,false,false,null);
 	}
 	
-	public Identity(String type, int identityId, String identityUid, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard, boolean alwaysCc) {
+	public Identity(String type, int identityId, String identityUid, String displayName, String email, String mainFolder, boolean fax, boolean forceMailcard, boolean alwaysCc, String alwaysCcEmail) {
 		this.type = type;
 		this.identityId = identityId;
 		this.identityUid = identityUid;
@@ -85,6 +87,7 @@ public class Identity {
 		this.fax=fax;
 		this.forceMailcard=forceMailcard;
 		this.alwaysCc=alwaysCc;
+		this.alwaysCcEmail=alwaysCcEmail;
 	}
     
 	public String getType() {
@@ -173,6 +176,18 @@ public class Identity {
 
 	public void setAlwaysCc(boolean alwaysCc) {
 		this.alwaysCc = alwaysCc;
+	}
+	
+	public String getAlwaysCcEmail() {
+		return alwaysCcEmail;
+	}
+	
+	public void setAlwaysCcEmail(String alwaysCcEmail) {
+		this.alwaysCcEmail=alwaysCcEmail;
+	}
+	
+	public boolean hasAlwaysCcEmail() {
+		return !StringUtils.isEmpty(alwaysCcEmail);
 	}
 	
 	public boolean isType(String type) {

@@ -160,6 +160,7 @@ import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.TplHelper;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.model.EnabledCond;
+import com.sonicle.webtop.core.app.model.FolderSharing;
 import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
 import com.sonicle.webtop.core.app.servlet.js.BlobInfoPayload;
 import com.sonicle.webtop.core.bol.js.JsAuditMessageInfo;
@@ -173,7 +174,9 @@ import com.sonicle.webtop.mail.bol.js.JsOperateFolder;
 import com.sonicle.webtop.mail.bol.js.JsOperateMessage;
 import com.sonicle.webtop.mail.bol.js.JsProActiveSecurity;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
+import com.sonicle.webtop.mail.bol.js.JsSharing.SharingRights;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
+import com.sonicle.webtop.mail.model.FolderShareParameters;
 import java.text.Normalizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -4789,7 +4792,9 @@ public class Service extends BaseService {
 			if (ifrom != null) {
 				from = ifrom.getEmail();
 			}
-			if (ifrom.isAlwaysCc()) msg.addCc(new String[] { ifrom.getEmail() });
+			if (ifrom.isAlwaysCc()) {
+				msg.addCc(new String[] { ifrom.hasAlwaysCcEmail()?ifrom.getAlwaysCcEmail():ifrom.getEmail() });
+			}
 			
 			account.checkStoreConnected();
 			SendException sendExc = sendMessage(msg, jsmsg.attachments);
@@ -9224,35 +9229,37 @@ public class Service extends BaseService {
 			
 			fc = account.getFolderCache(id);
 			SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
-			Sharing wtsharing=core.getSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, MailManager.IDENTITY_SHARING_ID);
 			description = folder.getName();
 			for(ACL acl : folder.getACL()) {
 				String aclUserId=acl.getName();
 				UserProfileId pid=aclUserIdToUserId(aclUserId);
 				if (pid==null) continue;
-				String roleUid=core.lookupUserSid(pid);
+				FolderShareParameters fsp=core.getShareData(pid, SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", FolderShareParameters.class, false);
+				String roleUid=null;
+				try {
+					roleUid=core.lookupUserSid(pid);
+				} catch(WTException exc) {
+				}
 				String roleDescription=null;
 				boolean shareIdentity=false;
 				boolean forceMailcard=false;
 				boolean alwaysCc=false;
+				String alwaysCcEmail=null;
 				if (roleUid==null) { 
 					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 					roleUid=aclUserId; 
 					roleDescription=roleUid; 
 				} else {
-					Sharing.RoleRights wtrr=wtsharing.getRoleRights(roleUid);
-					if (wtrr!=null) {
-						shareIdentity=wtrr.folderRead;
-						forceMailcard=wtrr.folderUpdate;
-						alwaysCc=wtrr.folderDelete;
+					if (fsp!=null) {
+						shareIdentity=fsp.shareIdentity;
+						forceMailcard=fsp.forceMailcard;
+						alwaysCc=fsp.alwaysCc;
+						alwaysCcEmail=fsp.alwaysCcEmail;
 					}
 					String dn;
-					try {
-						OUser ouser=core.getUser(pid);
-						dn=ouser.getDisplayName();
-					} catch(WTException exc) {
-						dn="no description available";
-					}
+					UserProfile.Data pdata=WT.getProfileData(pid);
+					if (pdata!=null) dn=pdata.getDisplayName();
+					else dn="no description available";
 					roleDescription=pid.getUserId()+" ["+dn+"]";
 				}
 
@@ -9265,6 +9272,7 @@ public class Service extends BaseService {
 						shareIdentity,
 						forceMailcard,
 						alwaysCc,
+						alwaysCcEmail,
 						ar.contains(Rights.Right.getInstance('l')),
 						ar.contains(Rights.Right.getInstance('r')),
 						ar.contains(Rights.Right.getInstance('s')),
@@ -9316,33 +9324,46 @@ public class Service extends BaseService {
 				//Prepare new sharing structure
 				//
 				
-				Sharing newwtsharing=new Sharing();
-				newwtsharing.setId(MailManager.IDENTITY_SHARING_ID);
-				ArrayList<Sharing.RoleRights> newwtrights=new ArrayList<>();
-				
 				//first delete all removed roles
 				for(JsSharing.SharingRights sr: sharing.rights) {
 					String imapId=ss.isImapAclLowercase()?sr.imapId.toLowerCase(): sr.imapId ;
 					if (!pl.data.hasImapId(sr.imapId)) {
 						logger.debug("Folder ["+foldername+"] - remove acl for "+imapId+" recursive="+recursive);
 						account.removeFolderSharing(foldername,imapId,recursive);
-						updateIdentitySharingRights(newwtrights,sr.roleUid,false,false,false);
+						//updateIdentitySharingRights(newwtrights,sr.roleUid,false,false,false);
 					}
 				}
 				
 				//now apply new acls
+				List<com.sonicle.webtop.core.app.model.Sharing.SubjectRights> srights=new ArrayList<>();
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					String imapId=ss.isImapAclLowercase()?sr.imapId.toLowerCase(): sr.imapId ;
 					if (!StringUtils.isEmpty(sr.imapId)) {
-						String srights=sr.toString();
-						logger.debug("Folder ["+foldername+"] - add acl "+srights+" for "+imapId+" recursive="+recursive);
-						account.setFolderSharing(foldername, imapId, srights, recursive);
-						updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard,sr.alwaysCc);
+						String strrights=sr.toString();
+						logger.debug("Folder ["+foldername+"] - add acl "+strrights+" for "+imapId+" recursive="+recursive);
+						account.setFolderSharing(foldername, imapId, strrights, recursive);
+						//updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard,sr.alwaysCc);
+						srights.add(new com.sonicle.webtop.core.app.model.Sharing.SubjectRights(sr.roleUid, LangUtils.asSet("READ")));
 					}
 				}
 				
-				newwtsharing.setRights(newwtrights);
-				WT.getCoreManager().updateSharing(SERVICE_ID, MailManager.IDENTITY_SHARING_GROUPNAME, newwtsharing);
+				core.updateShareRights(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, srights);
+				for(JsSharing.SharingRights sr: pl.data.rights) {
+					FolderShareParameters fsp=new FolderShareParameters();
+					fsp.shareIdentity=sr.shareIdentity;
+					fsp.forceMailcard=sr.forceMailcard;
+					fsp.alwaysCc=sr.alwaysCc;
+					fsp.alwaysCcEmail=sr.alwaysCcEmail;
+					core.updateShareData(
+							core.lookupUserProfileIdBySid(sr.roleUid), 
+							SERVICE_ID, 
+							MailManager.IDENTITY_SHARING_CONTEXT, 
+							environment.getProfileId(), 
+							"*", 
+							fsp, 
+							FolderShareParameters.class, 
+							false);
+				}
 				
 				new JsonResult().printTo(out);
 			}

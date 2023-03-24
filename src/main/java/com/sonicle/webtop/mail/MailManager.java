@@ -66,6 +66,8 @@ import com.sonicle.mail.sieve.SieveMatch;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.SessionContext;
 import com.sonicle.webtop.core.app.WebTopSession;
+import com.sonicle.webtop.core.app.model.FolderShareOriginFolders;
+import com.sonicle.webtop.core.app.model.ShareOrigin;
 import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
@@ -77,6 +79,7 @@ import com.sonicle.webtop.mail.dal.ExternalAccountDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.TagDAO;
 import com.sonicle.webtop.mail.model.ExternalAccount;
+import com.sonicle.webtop.mail.model.FolderShareParameters;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
 import com.sonicle.webtop.mail.model.Tag;
@@ -113,8 +116,8 @@ import org.slf4j.Logger;
 public class MailManager extends BaseManager implements IMailManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
-	public static final String IDENTITY_SHARING_GROUPNAME = "IDENTITY";
-	public static final String IDENTITY_SHARING_ID = "0";
+	public static final String IDENTITY_SHARING_CONTEXT = "IDENTITY@FOLDER";
+	public static final String IDENTITY_PERMISSION_KEY = "IDENTITY";
 	public static final String SIEVE_OLD_WEBTOP_SCRIPT = "webtop";
 	public static final String SIEVE_WEBTOP_SCRIPT = "webtop5";
 	public static final int MAX_EXT_ACCOUNTS = 3; // Update this fixed limit also in UserOptions.js
@@ -342,22 +345,25 @@ public class MailManager extends BaseManager implements IMailManager {
 			
 			//add automatic shared identities
 			int autoid=-1;
-			CoreManager core=WT.getCoreManager(getTargetProfileId());
-			for(IncomingShareRoot share: core.listIncomingShareRoots(SERVICE_ID, IDENTITY_SHARING_GROUPNAME)) {
-				UserProfileId opid=share.getOriginPid();
-				udata=WT.getUserData(opid);
-				List<OShare> folders=core.listIncomingShareFolders(share.getShareId(), IDENTITY_SHARING_GROUPNAME);
-				if (folders!=null && folders.size()>0) {
-					OShare folder=folders.get(0);
-					SharePermsFolder spf=core.getShareFolderPermissions(folder.getShareId().toString());
-					boolean shareIdentity=spf.implies("READ");
-					boolean forceMailcard=spf.implies("UPDATE");
-					boolean alwaysCc=spf.implies("DELETE");
-					if (shareIdentity) {
-						id = new Identity(Identity.TYPE_AUTO,autoid--,null,udata.getDisplayName(),udata.getEmail().getAddress(),null,false,forceMailcard,alwaysCc);
-						id.setOriginPid(opid);
-						idents.add(id);
-					}
+			CoreManager core=WT.getCoreManager(pid);
+			for(ShareOrigin origin: core.listShareOrigins(SERVICE_ID, IDENTITY_SHARING_CONTEXT, Arrays.asList(IDENTITY_PERMISSION_KEY))) {
+				UserProfileId opid=origin.getProfileId(); 
+				UserProfile.Data opdata=WT.getProfileData(opid);
+				FolderShareParameters fsp=core.getShareData(pid, SERVICE_ID, IDENTITY_SHARING_CONTEXT, opid, "*", FolderShareParameters.class, false);
+				if (fsp!=null && fsp.shareIdentity) {
+					id = new Identity(
+							Identity.TYPE_AUTO,
+							autoid--,
+							null,
+							opdata.getDisplayName(),
+							opdata.getPersonalEmailAddress(),
+							null,
+							false,
+							fsp.forceMailcard,
+							fsp.alwaysCc,
+							fsp.alwaysCcEmail);
+					id.setOriginPid(opid);
+					idents.add(id);
 				}
 			}
 		} catch(SQLException | DAOException ex) {
