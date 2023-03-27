@@ -113,6 +113,9 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getFloat(PAS_SPAM_THRESHOLD,6.0f);
 	}
 	
+	public String getPasAdditionalDomainsWhitelist() {
+		return getString(PAS_ADDITIONAL_DOMAINS_WHITELIST,null);
+	}
     public boolean isAutocreateSpecialFolders() {
         return getBoolean(SPECIALFOLDERS_AUTOCREATE,true);
     }

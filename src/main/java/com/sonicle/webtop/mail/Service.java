@@ -44,6 +44,7 @@ import java.nio.channels.*;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.RegexUtils;
+import com.sonicle.commons.ResourceUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.http.HttpClientUtils;
@@ -184,6 +185,7 @@ import jakarta.mail.search.AndTerm;
 import jakarta.mail.search.FlagTerm;
 import jakarta.mail.search.OrTerm;
 import jakarta.mail.search.SearchTerm;
+import java.net.URL;
 import net.fortuna.ical4j.data.ParserException;
 import org.codehaus.plexus.util.FileUtils;
 import org.slf4j.Logger;
@@ -295,6 +297,7 @@ public class Service extends BaseService {
 	private ProActiveSecurityRules pasRules=new ProActiveSecurityRules();
 	private ArrayList<String> pasDangerousExtensions=new ArrayList<>();
 	private float pasDefaultSpamThreshold;
+	private Pattern pasDomainsWhiteListRegexPattern;
 	
 	@Override
 	public void initialize() {
@@ -562,6 +565,33 @@ public class Service extends BaseService {
 		pasDefaultSpamThreshold=ss.getPasSpamThreshold();
 		String exts[]=ss.getPasDangerousExtensions().split(",");
 		for(String ext: exts) pasDangerousExtensions.add(ext.trim().toLowerCase());
+
+		List<String> domainsWhiteList=new ArrayList<String>();
+		try {
+			URL dwlUrl=ResourceUtils.getResource("com/sonicle/webtop/mail/pas-domains-whitelist.txt");
+			if (dwlUrl!=null) {
+				BufferedReader dwlIn = new BufferedReader(
+					new InputStreamReader(dwlUrl.openStream()));
+				String line;
+				while ((line = dwlIn.readLine()) != null) {
+					domainsWhiteList.add(line.trim().toLowerCase());
+				}
+				dwlIn.close();
+			}
+		} catch(Exception exc) {}
+		String additionalDomainsWhiteList = ss.getPasAdditionalDomainsWhitelist();
+		if (!StringUtils.isEmpty(additionalDomainsWhiteList)) {
+			for (String dom: additionalDomainsWhiteList.split(",")) {
+				domainsWhiteList.add(dom.trim().toLowerCase());
+			}
+		}
+		String regex=null;
+		for (String dom: domainsWhiteList) {
+			if (regex==null) regex="";
+			else regex+="|";
+			regex+=".*"+RegexUtils.escapeRegexSpecialChars(dom)+"$";
+		}
+		pasDomainsWhiteListRegexPattern = Pattern.compile(regex);
 	}
 	
 	private MailAccount createAccount(String id) {
@@ -7895,7 +7925,7 @@ public class Service extends BaseService {
 							//so it will be shown as dangerous
 							host=href;
 						}
-						if (host!=null && !hosts.contains(host)) hosts.add(host);
+						if (host!=null && !hosts.contains(host)) hosts.add(host.toLowerCase());
 					}
 					//check external links
 					for(String host: hosts) {
@@ -7907,6 +7937,11 @@ public class Service extends BaseService {
 
 						//check host against sender domain
 						if (senderDomain!=null && host.endsWith(senderDomain)) hostTrusted=true;
+						
+						//check against white list
+						if (!hostTrusted) {
+							hostTrusted = pasDomainsWhiteListRegexPattern.matcher(host).matches();
+						}
 
 						if (!hostTrusted) jsPas.addExternalLinkHost(host);
 					}

@@ -207,6 +207,13 @@ public class MailSettings {
 	public static final String PAS_SPAM_THRESHOLD = "pas.spam.threshold";
 	
 	/**
+	 * [system+domain]
+	 * [float]
+	 * Pro-active security additional domains white list, comma separated.
+	 */
+	public static final String PAS_ADDITIONAL_DOMAINS_WHITELIST = "pas.additional.domains.whitelist";
+	
+	/**
 	 * [system+domain][default]
 	 * [string]
 	 * Transform WebTop Public Resource links (e.g. Public images for mailcards) into attached inline images (cids).
