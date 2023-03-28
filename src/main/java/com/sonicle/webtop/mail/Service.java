@@ -585,7 +585,7 @@ public class Service extends BaseService {
 			else regex+="|";
 			regex+=".*"+RegexUtils.escapeRegexSpecialChars(dom)+"$";
 		}
-		pasDomainsWhiteListRegexPattern = Pattern.compile(regex);
+		if (regex!=null) pasDomainsWhiteListRegexPattern = Pattern.compile(regex);
 	}
 	
 	private MailAccount createAccount(String id) {
