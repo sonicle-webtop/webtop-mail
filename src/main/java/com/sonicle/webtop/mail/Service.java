@@ -86,9 +86,6 @@ import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.bol.js.JsHiddenFolder;
 import com.sonicle.webtop.core.bol.js.JsSimple;
 import com.sonicle.webtop.core.model.Recipient;
-import com.sonicle.webtop.core.model.SharePermsElements;
-import com.sonicle.webtop.core.model.SharePermsFolder;
-import com.sonicle.webtop.core.bol.model.Sharing;
 import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.sdk.*;
 import com.sonicle.webtop.core.sdk.interfaces.IServiceUploadStreamListener;
@@ -158,10 +155,9 @@ import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.webtop.contacts.ContactsUtils;
-import com.sonicle.webtop.core.TplHelper;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.model.EnabledCond;
-import com.sonicle.webtop.core.app.model.FolderSharing;
+import com.sonicle.webtop.core.app.model.Sharing;
 import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
 import com.sonicle.webtop.core.app.servlet.js.BlobInfoPayload;
 import com.sonicle.webtop.core.bol.js.JsAuditMessageInfo;
@@ -175,7 +171,6 @@ import com.sonicle.webtop.mail.bol.js.JsOperateFolder;
 import com.sonicle.webtop.mail.bol.js.JsOperateMessage;
 import com.sonicle.webtop.mail.bol.js.JsProActiveSecurity;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
-import com.sonicle.webtop.mail.bol.js.JsSharing.SharingRights;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.model.FolderShareParameters;
 import java.text.Normalizer;
@@ -187,7 +182,6 @@ import jakarta.mail.search.OrTerm;
 import jakarta.mail.search.SearchTerm;
 import java.net.URL;
 import net.fortuna.ical4j.data.ParserException;
-import org.codehaus.plexus.util.FileUtils;
 import org.slf4j.Logger;
 
 public class Service extends BaseService {
@@ -1985,6 +1979,7 @@ public class Service extends BaseService {
 		}
 	}
 	
+	@SuppressWarnings("StringConcatenationInsideStringBufferAppend")
 	private String getReplyBody(Message msg, String body, int format, boolean isHtml, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, ArrayList<String> attnames) throws MessagingException {
 		UserProfile profile = environment.getProfile();
 		Locale locale = profile.getLocale();
@@ -9269,17 +9264,22 @@ public class Service extends BaseService {
 			fc = account.getFolderCache(id);
 			SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
 			description = folder.getName();
+			Map<String, Sharing.SubjectConfiguration> sconfigurations=core.getShareSubjectConfiguration(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, FolderShareParameters.class);
 			for(ACL acl : folder.getACL()) {
 				String aclUserId=acl.getName();
 				UserProfileId pid=aclUserIdToUserId(aclUserId);
 				if (pid==null) continue;
-				FolderShareParameters fsp=core.getShareData(pid, SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", FolderShareParameters.class, false);
 				String roleUid=null;
 				try {
 					roleUid=core.lookupUserSid(pid);
 				} catch(WTException exc) {
 				}
 				String roleDescription=null;
+				FolderShareParameters fsp=null;
+				if (roleUid!=null) {
+					Sharing.SubjectConfiguration sconfiguration=sconfigurations.get(roleUid);
+					if (sconfiguration!=null) fsp=sconfiguration.getTypedData(FolderShareParameters.class);
+				}
 				boolean shareIdentity=false;
 				boolean forceMailcard=false;
 				boolean alwaysCc=false;
@@ -9374,7 +9374,7 @@ public class Service extends BaseService {
 				}
 				
 				//now apply new acls
-				List<com.sonicle.webtop.core.app.model.Sharing.SubjectRights> srights=new ArrayList<>();
+				Set<Sharing.SubjectConfiguration> setconfigurations=new LinkedHashSet<>();
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					String imapId=ss.isImapAclLowercase()?sr.imapId.toLowerCase(): sr.imapId ;
 					if (!StringUtils.isEmpty(sr.imapId)) {
@@ -9382,12 +9382,19 @@ public class Service extends BaseService {
 						logger.debug("Folder ["+foldername+"] - add acl "+strrights+" for "+imapId+" recursive="+recursive);
 						account.setFolderSharing(foldername, imapId, strrights, recursive);
 						//updateIdentitySharingRights(newwtrights,sr.roleUid,sr.shareIdentity,sr.forceMailcard,sr.alwaysCc);
-						srights.add(new com.sonicle.webtop.core.app.model.Sharing.SubjectRights(sr.roleUid, LangUtils.asSet("READ")));
+
+						FolderShareParameters fsp=new FolderShareParameters();
+						fsp.shareIdentity=sr.shareIdentity;
+						fsp.forceMailcard=sr.forceMailcard;
+						fsp.alwaysCc=sr.alwaysCc;
+						fsp.alwaysCcEmail=sr.alwaysCcEmail;
+
+						setconfigurations.add(new Sharing.SubjectConfiguration(sr.roleUid, LangUtils.asSet("READ"), fsp));
 					}
 				}
 				
-				core.updateShareRights(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, srights);
-				for(JsSharing.SharingRights sr: pl.data.rights) {
+				core.updateShareConfigurations(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, setconfigurations, FolderShareParameters.class);
+/*				for(JsSharing.SharingRights sr: pl.data.rights) {
 					FolderShareParameters fsp=new FolderShareParameters();
 					fsp.shareIdentity=sr.shareIdentity;
 					fsp.forceMailcard=sr.forceMailcard;
@@ -9402,7 +9409,7 @@ public class Service extends BaseService {
 							fsp, 
 							FolderShareParameters.class, 
 							false);
-				}
+				}*/
 				
 				new JsonResult().printTo(out);
 			}
@@ -9412,17 +9419,6 @@ public class Service extends BaseService {
 			new JsonResult(false, "Error").printTo(out);
 		} finally {
 			DbUtils.closeQuietly(con);
-		}
-	}
-	
-	private void updateIdentitySharingRights(ArrayList<Sharing.RoleRights> wtrights, String roleUid, boolean shareIdentity, boolean forceMailcard, boolean alwaysCc) throws WTException {
-		//update sharing settings
-		SharePermsFolder spf=new SharePermsFolder();
-		if (shareIdentity||forceMailcard||alwaysCc) {
-			if (shareIdentity) spf.add(SharePermsFolder.READ);
-			if (forceMailcard) spf.add(SharePermsFolder.UPDATE);
-			if (alwaysCc) spf.add(SharePermsFolder.DELETE);
-			wtrights.add(new Sharing.RoleRights(roleUid,null,spf,new SharePermsElements()));
 		}
 	}
 	

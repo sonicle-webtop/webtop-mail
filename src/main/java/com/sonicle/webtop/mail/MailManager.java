@@ -68,6 +68,7 @@ import com.sonicle.webtop.core.app.SessionContext;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.model.FolderShareOriginFolders;
 import com.sonicle.webtop.core.app.model.ShareOrigin;
+import com.sonicle.webtop.core.app.model.Sharing;
 import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
@@ -102,6 +103,8 @@ import jakarta.mail.internet.MimeMultipart;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -349,7 +352,10 @@ public class MailManager extends BaseManager implements IMailManager {
 			for(ShareOrigin origin: core.listShareOrigins(SERVICE_ID, IDENTITY_SHARING_CONTEXT, Arrays.asList(IDENTITY_PERMISSION_KEY))) {
 				UserProfileId opid=origin.getProfileId(); 
 				UserProfile.Data opdata=WT.getProfileData(opid);
-				FolderShareParameters fsp=core.getShareData(pid, SERVICE_ID, IDENTITY_SHARING_CONTEXT, opid, "*", FolderShareParameters.class, false);
+				Map<String, Sharing.SubjectConfiguration> sconfigurations = core.getShareSubjectConfiguration(SERVICE_ID, IDENTITY_SHARING_CONTEXT, opid, "*", IDENTITY_PERMISSION_KEY, LangUtils.asSet(pid), FolderShareParameters.class);
+				if (sconfigurations.isEmpty()) continue;
+				Entry<String, Sharing.SubjectConfiguration> entry = sconfigurations.entrySet().iterator().next();
+				FolderShareParameters fsp = entry.getValue().getTypedData(FolderShareParameters.class);
 				if (fsp!=null && fsp.shareIdentity) {
 					id = new Identity(
 							Identity.TYPE_AUTO,
