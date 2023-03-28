@@ -120,7 +120,7 @@ public class MailManager extends BaseManager implements IMailManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
 	public static final String IDENTITY_SHARING_CONTEXT = "IDENTITY@FOLDER";
-	public static final String IDENTITY_PERMISSION_KEY = "IDENTITY";
+	public static final String IDENTITY_PERMISSION_KEY = "IDENTITY@SHARE_FOLDER";
 	public static final String SIEVE_OLD_WEBTOP_SCRIPT = "webtop";
 	public static final String SIEVE_WEBTOP_SCRIPT = "webtop5";
 	public static final int MAX_EXT_ACCOUNTS = 3; // Update this fixed limit also in UserOptions.js
