@@ -3,6 +3,8 @@
 -- ---------------------------------------------------------
 -- Convert mail roles_permissions into shares_data
 -- ---------------------------------------------------------
+truncate table core.shares_data;
+
 insert into core.shares_data (share_id, user_uid, value)
  select distinct 
   "instance"::int,
