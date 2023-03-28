@@ -7934,7 +7934,7 @@ public class Service extends BaseService {
 						if (senderDomain!=null && host.endsWith(senderDomain)) hostTrusted=true;
 						
 						//check against white list
-						if (!hostTrusted) {
+						if (!hostTrusted && pasDomainsWhiteListRegexPattern!=null) {
 							hostTrusted = pasDomainsWhiteListRegexPattern.matcher(host).matches();
 						}
 
