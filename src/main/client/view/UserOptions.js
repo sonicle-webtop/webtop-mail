@@ -951,6 +951,22 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				fieldLabel: me.res('opts.adv.fld-favoriteFolderNotifications.lbl'),
 				width: 100,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			},{
+				xtype: 'container',
+				layout: {
+					type: 'hbox',
+					pack: 'center',
+					align: 'middle'
+				},
+				items: [{
+					xtype: 'button',
+					text: me.res('opts.adv.btn-registerMailto.lbl'),
+					width: 250,
+					handler: function() {
+						Sonicle.ProtocolHandlerMgr.resetPromptState('mailto');
+						Sonicle.ProtocolHandlerMgr.register('mailto', location.href.split('?')[0] + '?service=com.sonicle.webtop.mail&action=mailto&args=%s', { friendlyName: 'WebTop' });
+					}
+				}]
 			}]
 		});
 		

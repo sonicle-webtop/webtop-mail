@@ -43,7 +43,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		'Sonicle.webtop.mail.view.HiddenFolders',
 		'Sonicle.webtop.mail.ux.SieveRuleGrid',
 		'Sonicle.menu.StoreMenu',
-		'Sonicle.webtop.mail.model.Tag'
+		'Sonicle.webtop.mail.model.Tag',
+		'WTA.ux.field.Search',
+		'WTA.ux.menu.TagMenu',
+		'WTA.store.Timezone'
 	],
 	uses: [
 		'Sonicle.ColorUtils'
@@ -97,6 +100,49 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var me = this;
 		if (!me.api) me.api = Ext.create('Sonicle.webtop.mail.ServiceApi', {service: me});
 		return me.api;
+	},
+	
+	initMiniMode: function(cfg) {
+		var me = this;
+		switch(cfg.action) {
+			case "mailto":
+				var ix=cfg.args.indexOf('?'),
+				    email=ix>0?cfg.args.substring(7,ix):cfg.args.substring(7),
+					obj=ix>0?Ext.Object.fromQueryString(cfg.args.substring(ix+1)):{};
+				me.startNewMessage(me.getFolderInbox(), { 
+					dockableConfig: {
+						minimizable : false,
+						maximizable: false,
+						closable: false,
+						maximized: true,
+						header: false
+					},
+					format: me.getVar("format"),
+					recipients: [ { rtype: 'to', email: email } ],
+					subject: obj.subject,
+					content: obj.body,
+					contentAfter: false
+				}
+				/*{ 
+					format: data.format,
+					subject: data.subject,
+					content: data.content,
+					recipients: rcpts,
+					contentReady: true,
+					folder: data.folder,
+					identityId: data.identityId,
+					replyfolder: data.replyfolder,
+					inreplyto: data.inreplyto,
+					references: data.references,
+					origuid: data.origuid,
+					forwardedfolder: data.forwardedfolder,
+					forwardedfrom: data.forwardedfrom,
+					draftuid: data.draftuid,
+					draftfolder: data.draftfolder
+				}*/);
+				
+		}
+		
 	},
 	
 	init: function() {
@@ -531,6 +577,27 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			if (me.tasksTool) me.tasksTool.refresh();
 		});
 		
+		me.checkMailtoRegistration();
+	},
+	
+	checkMailtoRegistration: function() {
+		var me=this,
+			SoPH = Sonicle.ProtocolHandlerMgr;
+		if (SoPH.isSupported() && SoPH.checkPromptState('mailto') !== SoPH.PSTATE_PROMPTED) {
+			Sonicle.Announcement.show({
+				type: 'info',
+				message: me.res('mailto.announcement'),
+				buttons: Sonicle.AnnouncementBar.YESNO,
+				callback: function(bid) {
+					if (bid === 'yes') {
+						SoPH.register('mailto', location.href.split('?')[0] + '?service=com.sonicle.webtop.mail&action=mailto&args=%s', { friendlyName: 'WebTop' });
+					}
+					else {
+						SoPH.setPromptState('mailto', SoPH.PSTATE_PROMPTED);
+					}
+				}
+			});
+		}
 	},
 	
 	_unselectAllTreesBut: function(tree) {
@@ -1283,7 +1350,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		var meditor=WT.createView(me.ID,'view.MessageEditor',{
 			swapReturn: true,
 			viewCfg: {
-				dockableConfig: {
+				dockableConfig: opts.dockableConfig || {
 					title: opts.fax?'{fax.tit}':'{message.tit}',
 					iconCls: opts.fax?'wtmail-icon-faxNew':'wtmail-icon-mailNew'
 				},
@@ -1306,7 +1373,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					modelsave: function(s,success) {
 						if (success) {
 							var f=opts.forwardedfolder||opts.replyfolder;
-							if (me.getFolderNodeById(me.currentAccount,me.currentFolder).get("isSent") || (f && f===me.currentFolder)) {
+							if (me.isSent(me.currentAccount,me.currentFolder) || (f && f===me.currentFolder)) {
 								//me.messagesPanel.reloadGrid();
 								me.messagesPanel.refreshGridWhenIdle(me.currentFolder);
 							}
@@ -1320,6 +1387,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						}
 					},
 					viewclose: function() {
+						if (me.messagesPanel) {
 							if (me.isDrafts(me.currentAccount,me.currentFolder) || (opts.draftuid>0 && opts.draftfolder===me.currentFolder)) {
 								me.reloadFolderList();
 								me.messagesPanel.clearMessageView();
@@ -1327,6 +1395,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 							Ext.defer(function() {
 								me.messagesPanel.folderList.focus();
 							}, 500);
+						}
 					}
 				}
 			}
@@ -2272,13 +2341,21 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});							
     },	
 	
+	isSent: function(acct,folder) {
+		var acctree=this.acctTrees[acct],
+			rfolder=acctree?acctree.getStore().getById(folder):null;
+		return rfolder?rfolder.get("isSent"):false;
+	},
+	
 	isDrafts: function(acct,folder) {
-		var rfolder=this.acctTrees[acct].getStore().getById(folder);
+		var acctree=this.acctTrees[acct],
+			rfolder=acctree?acctree.getStore().getById(folder):null;
 		return rfolder?rfolder.get("isDrafts"):false;
 	},
 	
 	isTrash: function(acct,folder) {
-		var rfolder=this.acctTrees[acct].getStore().getById(folder);
+		var acctree=this.acctTrees[acct],
+			rfolder=acctree?acctree.getStore().getById(folder):null;
 		return rfolder?rfolder.get("isTrash"):false;
 	},
 	

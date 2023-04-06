@@ -324,7 +324,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			}));
             dash=true;
         }
-        if (this.showReminder) {
+        if (this.showReminder && WT.getServiceApi('com.sonicle.webtop.calendar')) {
 			tbitems[tbx++]={
 				xtype: 'sotogglebutton',
 				offTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.off.tip.txt')},
@@ -413,27 +413,30 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		
 		if (me.showImportEmail) {
-			tbitems[tbx++]={
-				xtype: 'splitbutton',
-				tooltip: me.res('act-pasteList.lbl'),
-				iconCls: 'wt-icon-clipboard-paste',
-				handler: me.pasteList,
-				scope: me,
-				menu: [
+			var mitems = [
 					{
 						text: me.res('act-pasteList.lbl'),
 						tooltip: me.res('act-pasteList.tip'),
 						iconCls: 'wt-icon-clipboard-paste',
 						handler: me.pasteList,
 						scope: me				
-					},
-					{
-						text: me.res('act-pasteContactsList.lbl'),
-						iconCls: 'wt-icon-clipboard-paste',
-						handler: me.pasteContactsList,
-						scope: me				
 					}
-				]
+			];
+			if (WT.getServiceApi('com.sonicle.webtop.contacts'))
+				mitems[1] = {
+					text: me.res('act-pasteContactsList.lbl'),
+					iconCls: 'wt-icon-clipboard-paste',
+					handler: me.pasteContactsList,
+					scope: me				
+				};
+
+			tbitems[tbx++]={
+				xtype: 'splitbutton',
+				tooltip: me.res('act-pasteList.lbl'),
+				iconCls: 'wt-icon-clipboard-paste',
+				handler: me.pasteList,
+				scope: me,
+				menu: mitems
 			};
 		}
 		
