@@ -8475,15 +8475,35 @@ public class Service extends BaseService {
 			
 			//CalendarMethod calendarMethod = mailData.getParsedMimeMessageComponents().getCalendarMethod();
 			ICalendarManager cm = (ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
-
+			
 			// Parse Calendar content
-			final net.fortuna.ical4j.model.Calendar iCal;
+			net.fortuna.ical4j.model.Calendar iCal = null;
 			try {
-				iCal = ICalendarUtils.parse(mailData.getParsedMimeMessageComponents().getCalendarContent());
+				Part part = mailData.getAttachmentPart(Integer.parseInt(pidattach));
+				if (part != null) {
+					try (InputStream is = part.getInputStream()) {
+						iCal = ICalendarUtils.parse(is);
+					}
+				}
 			} catch (IOException | ParserException ex) {
 				throw new WTException(ex);
 			}
-
+			
+			// For actions evaluation related to invitations, the above impl. bases
+			// its logic on the presence of an attachment equal to the invitation part 
+			// in message structure: if the attachment is not present, accept/cancel/update
+			// operations will not work! Fortunately adding the attachment is a common practice in invitation requests.
+			// Vice-versa, for imports, the attachment part will be enought; the action is done a specific attachment.
+			// Maybe in future we should separate these paths in two handling methods.
+			/*
+			try {
+				String calendarContent = mailData.getParsedMimeMessageComponents().getCalendarContent();
+				if (!StringUtils.isBlank(calendarContent)) {
+					iCal = ICalendarUtils.parse(mailData.getParsedMimeMessageComponents().getCalendarContent());
+				}
+			} catch (IOException | ParserException ex) {}
+			*/
+			///////////////////////////////////////////////////////////////
 
 			Integer calendarId = cm.getDefaultCalendarId();
 			// Overrides default calendar if shared: this kind of events needs to
