@@ -34,19 +34,13 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.MailUtils;
-import com.sonicle.commons.db.DbUtils;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.model.Domain;
 import com.sonicle.webtop.core.app.model.EnabledCond;
-import com.sonicle.webtop.core.bol.ODomain;
-import com.sonicle.webtop.core.bol.OUser;
 import com.sonicle.webtop.core.sdk.BaseJobService;
 import com.sonicle.webtop.core.sdk.BaseJobServiceTask;
 import com.sonicle.webtop.core.sdk.UserProfileId;
-import com.sonicle.webtop.mail.bol.OUserMap;
-import com.sonicle.webtop.mail.dal.UserMapDAO;
-import java.sql.Connection;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -64,8 +58,6 @@ import jakarta.mail.Store;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.search.HeaderTerm;
-import org.apache.commons.lang.StringUtils;
-import org.quartz.CronScheduleBuilder;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
@@ -128,9 +120,7 @@ public class JobService extends BaseJobService {
 		
 		@Override
 		public void executeWork() {
-			Connection con=null;
 			try {
-				con=jobService.getConnection();
 				for(Domain domain : globalCm.listDomains(EnabledCond.ENABLED_ONLY).values()) {
 					if (jobService.doCleanup) break;
 					String domainId=domain.getDomainId();
@@ -184,8 +174,6 @@ public class JobService extends BaseJobService {
 				}
 			} catch(Exception exc) {
 				logger.error("Error during executeWork",exc);
-			} finally {
-				DbUtils.closeQuietly(con);
 			}
 		}
 		
@@ -241,7 +229,7 @@ public class JobService extends BaseJobService {
 					Folder un=uns[i];
 					char sep=un.getSeparator();
 					String fname=pid.getUserId()+sep+foldername;
-					if (StringUtils.startsWithIgnoreCase(domain.getDirScheme(),"ldapWebTop:")) fname+="@"+domain.getInternetName();
+					if ("ldapWebTop".equalsIgnoreCase(domain.getDirScheme())) fname+="@"+domain.getInternetName();
 					outgoings[i]=un.getFolder(fname);
 				}
 			} else {
@@ -265,7 +253,7 @@ public class JobService extends BaseJobService {
 					Folder un=uns[0];
 					char sep=un.getSeparator();
 					String fname=pid.getUserId()+sep+foldername;
-					if (StringUtils.startsWithIgnoreCase(domain.getDirScheme(),"ldapWebTop:")) fname+="@"+domain.getInternetName();
+					if ("ldapWebTop".equalsIgnoreCase(domain.getDirScheme())) fname+="@"+domain.getInternetName();
 					sent=un.getFolder(fname);
 				}
 			} else {
