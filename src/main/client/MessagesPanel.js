@@ -107,6 +107,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.searchComponent = Ext.create({
 			xtype: 'wtsearchfield',
 			reference: 'fldsearch',
+			suggestionServiceId: me.mys.ID,
+			suggestionContext: 'mainsearch',
+			enableQuerySaving: true,
 			fields: [{
 				name: 'from',
 				type: 'string',
@@ -587,11 +590,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	
 	queryMails: function(query) {
 		var isString = Ext.isString(query),
+			value = isString ? query : query.value,
 			obj = {
 				allText: isString ? query : query.anyText,
 				conditions: isString ? [] : query.conditionArray
 			};
-		this.reloadCurrentFolder({query: Ext.JSON.encode(obj)});
+		this.reloadCurrentFolder({
+			query: Ext.JSON.encode(obj),
+			queryText: value
+		});
 	},
 	    
 	reloadFiltered: function(quickfilter, query) {
