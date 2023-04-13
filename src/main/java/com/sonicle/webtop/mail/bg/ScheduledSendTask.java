@@ -70,6 +70,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
@@ -101,7 +102,7 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 		for (String domainId : WT.getCoreManager().listDomainIds(EnabledCond.ENABLED_ONLY)) {
 			if (shouldStop()) break; // Speed-up shutdown process!
 			
-			LOGGER.trace("Processing domain '{}'... ");
+			LOGGER.debug("Processing domain '{}'... ");
 			MailServiceSettings mss = getMailServiceSettings(bs.SERVICE_ID, domainId);
 			if (mss.isScheduledEmailsDisabled()) {
 				LOGGER.debug("Scheduled emails are disabled for '{}' domain, skipping... ");
