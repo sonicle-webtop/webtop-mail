@@ -187,6 +187,7 @@ import org.slf4j.Logger;
 public class Service extends BaseService {
 	
 	public final static Logger logger = WT.getLogger(Service.class);
+	public static final String META_CONTEXT_SEARCH = "mainsearch";
 	public final String[] SPAM_THRESHOLD_HEADERS = new String[] {
 		"X-Rspamd-Flag-Threshold",
 		"X-Spam-Threshold"
@@ -6396,6 +6397,16 @@ public class Service extends BaseService {
 		String pthreadactionuid=request.getParameter("threadactionuid");
 		
 		boolean showMessagePreviewOnRow=us.getGridShowMessagePreview();
+		
+		try {
+			String queryText = ServletUtils.getStringParameter(request, "queryText", null);
+			if (!StringUtils.isBlank(queryText)) {
+				CoreManager core = WT.getCoreManager();
+				core.saveMetaEntry(SERVICE_ID, META_CONTEXT_SEARCH, queryText, queryText, false);
+			}
+		} catch(WTException exc) {
+			logger.error("Exception getting queryText parameter", exc);
+		}
 		
 		QueryObj queryObj = null;
 		try {
