@@ -688,7 +688,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.addAct("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi', enableToggle: true });
 		
 		
-        me.addAct("special",{ text: me.res('message.flag.special'), iconCls: 'fas fa-star wtmail-flag-special', handler: me.gridAction(me,'Flag','special') });
+        me.addAct("special",{ text: me.res('message.flag.special'), iconCls: 'wtmail-icon-starred', handler: me.gridAction(me,'Flag','special') });
         me.addAct("flagred",{ text: me.res('message.flag.red'), iconCls: 'fas fa-bookmark wtmail-flag-red', handler: me.gridAction(me,'Flag','red')});
         me.addAct("flagblue",{ text: me.res('message.flag.blue'), iconCls: 'fas fa-bookmark wtmail-flag-blue', handler: me.gridAction(me,'Flag','blue')});
         me.addAct("flagyellow",{ text: me.res('message.flag.yellow'), iconCls: 'fas fa-bookmark wtmail-flag-yellow', handler: me.gridAction(me,'Flag','yellow')});
@@ -777,8 +777,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("movetomain",{ handler: me.actionMoveToMainFolder, scope: me, iconCls: '' });
         me.addAct("refresh",{ handler: me.actionFolderRefresh, scope: me, iconCls: 'wt-icon-refresh' });
         me.addAct("refreshtree",{ handler: me.actionTreeRefresh, scope: me, iconCls: '' });
-        me.addAct("favorite",{ handler: me.actionFavorite, scope: me, iconCls: 'wtmail-icon-favoritesAdd' });
-        me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wtmail-icon-favoritesRemove' });
+        me.addAct("favorite",{ handler: me.actionFavorite, scope: me, iconCls: 'wtmail-icon-favorites' });
+        me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wt-icon-remove' });
 
         me.addAct("scanfolder",{ handler: null, iconCls: '', tooltip: null });
 		

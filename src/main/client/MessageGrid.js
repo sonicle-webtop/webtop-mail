@@ -622,7 +622,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			},
 			{
 				text: null,
-				iconCls: 'fas fa-bookmark',
+				iconCls: 'wtmail-icon-bookmark',
 				menu: {
 					items: [
 						me.mys.getAct('flagred'),
