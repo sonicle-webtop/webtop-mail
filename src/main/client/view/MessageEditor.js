@@ -39,7 +39,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.button.Toggle',
 		'Sonicle.webtop.core.ux.RecipientsGrid',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
-		'Sonicle.webtop.core.ux.field.HTMLEditor', // Remove this line when useNewHTMLEditor is no more necessary!
 		'Sonicle.webtop.core.ux.field.htmleditor.Field',
 		'Sonicle.webtop.core.ux.field.htmleditor.PublicImageTool',
 		'Sonicle.webtop.core.ux.field.htmleditor.TemplateTool',
@@ -218,11 +217,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				keydown: function(cb, e, eOpts) {
 					if (e.getKey() === e.TAB) {
 						e.stopEvent();
-						if (WT.getVar('useNewHTMLEditor')) {
-							me.htmlEditor.focus();			
-						} else {
-							me.htmlEditor.focusEditor();
-						}
+						me.htmlEditor.focus();
 					}
 				}
 			},
@@ -368,36 +363,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}),
 				listeners: {
 					beforeupload: function(s,file) {
-						if (WT.getVar('useNewHTMLEditor')) {
-							me.wait(file.name, true);
-						} else {
-							me.htmlEditor.showProgress(file.name);
-						}
+						me.wait(file.name, true);
 					},
 					uploadcomplete: function(s,fok,ffailed) {
 						//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
 					},
 					uploaderror: function(s, file, cause) {
-						if (WT.getVar('useNewHTMLEditor')) {
-							me.unwait();
-						} else {
-							me.htmlEditor.hideProgress();
-						}
+						me.unwait();
 						WTA.ux.UploadBar.handleUploadError(s, file, cause);
 					},
 					uploadprogress: function(s,file) {
-						if (WT.getVar('useNewHTMLEditor')) {
-							me.wait(Ext.String.format('{0}: {1}%', file.name, file.percent), true);
-						} else {
-							me.htmlEditor.setProgress(file.percent);
-						}
+						me.wait(Ext.String.format('{0}: {1}%', file.name, file.percent), true);
 					},
 					fileuploaded: function(s,file,resp) {
-						if (WT.getVar('useNewHTMLEditor')) {
-							me.unwait();
-						} else {
-							me.htmlEditor.hideProgress();
-						}
+						me.unwait();
 						me.attlist.addAttachment({
 							msgId: me.msgId,
 							uploadId: resp.data.uploadId,
@@ -508,11 +487,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 									me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
 								} else {
 									if (me.showMailcard) {
-										if (WT.getVar('useNewHTMLEditor')) {
-											me.replaceMailcardUI(me.identHash[nv].mailcard, me.identHash[ov].mailcard);
-										} else {
-											me.setContent(me.replaceMailcardOld(me.htmlEditor.getValue(), me.identHash[ov].mailcard.html, me.identHash[nv].mailcard.html),format);
-										}
+										me.replaceMailcardUI(me.identHash[nv].mailcard, me.identHash[ov].mailcard);
 									}
 								}
 							},
@@ -543,36 +518,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						multiSelection: false,
 						listeners: {
 							beforeupload: function(s,file) {
-								if (WT.getVar('useNewHTMLEditor')) {
-									me.wait(file.name, true);
-								} else {
-									me.htmlEditor.showProgress(file.name);
-								}
+								me.wait(file.name, true);
 							},
 							uploadcomplete: function(s,fok,ffailed) {
 								//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
 							},
 							uploaderror: function(s, file, cause) {
-								if (WT.getVar('useNewHTMLEditor')) {
-									me.unwait();
-								} else {
-									me.htmlEditor.hideProgress();
-								}
+								me.unwait();
 								WTA.ux.UploadBar.handleUploadError(s, file, cause);
 							},
 							uploadprogress: function(s,file) {
-								if (WT.getVar('useNewHTMLEditor')) {
-									me.wait(Ext.String.format('{0}: {1}%', file.name, file.percent), true);
-								} else {
-									me.htmlEditor.setProgress(file.percent);
-								}
+								me.wait(Ext.String.format('{0}: {1}%', file.name, file.percent), true);
 							},
 							fileuploaded: function(s,file,resp) {
-								if (WT.getVar('useNewHTMLEditor')) {
-									me.unwait();
-								} else {
-									me.htmlEditor.hideProgress();
-								}
+								me.unwait();
 								vfsapi.addSharingLinkForDownload({
 									fileId: vfsapi.buildFileId(0,resp.data.storeId,resp.data.filePath)
 								},{
@@ -580,17 +539,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 										if (success) {
 											var format = me.contentFormat,
 													newContent;
-											if (WT.getVar('useNewHTMLEditor')) {
-												if ('html' === format) {
-													newContent = result.embed;
-												} else if ('plain' === format) {
-													newContent = Sonicle.String.htmlToText(result.embed, {preserveHyperlinksHref: true});
-												}
-												me.htmlEditor.insertContent(newContent);
-											} else {
-												//FIXME: like other, but i think this will NOT work with plain format!!
-												me.htmlEditor.execCommand('inserthtml', false, "<br>"+result.embed+"<br>");
+											
+											if ('html' === format) {
+												newContent = result.embed;
+											} else if ('plain' === format) {
+												newContent = Sonicle.String.htmlToText(result.embed, {preserveHyperlinksHref: true});
 											}
+											me.htmlEditor.insertContent(newContent);
 										}
 									}
 								});
@@ -625,17 +580,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 											if (success) {
 												var format = me.contentFormat,
 													newContent;
-												if (WT.getVar('useNewHTMLEditor')) {
-													if ('html' === format) {
-														newContent = result.embed;
-													} else if ('plain' === format) {
-														newContent = Sonicle.String.htmlToText(result.embed, {preserveHyperlinksHref: true});
-													}
-													me.htmlEditor.insertContent(newContent);
-												} else {
-													//FIXME: like other, but i think this will NOT work with plain format!!
-													me.htmlEditor.execCommand('inserthtml', false, "<br>"+result.embed+"<br>");
+												
+												if ('html' === format) {
+													newContent = result.embed;
+												} else if ('plain' === format) {
+													newContent = Sonicle.String.htmlToText(result.embed, {preserveHyperlinksHref: true});
 												}
+												me.htmlEditor.insertContent(newContent);
 											}	
 										}
 									});
@@ -682,297 +633,130 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			]
 		}));
 		
-		if (WT.getVar('useNewHTMLEditor')) {
-			me.htmlEditor = me.add({
-				region: 'center',
-				xtype: 'wthtmleditor',
-				bind: '{record.content}',
-				disabled: me.faxsubject ? true : false,
-				wysiwyg: me.contentFormat === 'plain' ? false : true,
-				enableFont: true,
-				defaultFont: me.fontFace,
-				enableFontSize: true,
-				defaultFontSize: me.fontSize+'px',
-				enableColors: true,
-				defaultForeColor: Sonicle.String.removeStart(me.fontColor, '#'),
-				enableFormats: true,
-				enableAlignments: true,
-				enableLists: true,
-				enableEmoticons: true,
-				enableSymbols: true,
-				enableLink: true,
-				enableImage: true,
-				imageConfig: {
-					useEditorProgress: false,
-					uploaderConfig: WTF.uploader(me.mys.ID, 'UploadCid',{
-						extraParams: {
-							tag: me.msgId
-						},
-						maxFileSize: me.mys.getVar('attachmentMaxFileSize'),
-						mimeTypes: 'image/'+'*'
-					}),
-					prepareImageData: function(file, resp) {
-						var upid = resp.data.uploadId;
-						return {
-							url: WTF.processBinUrl(me.mys.ID, 'PreviewAttachment', {
-								uploadId: upid,
-								cid: upid
-							}),
-							name: file.name
-						};
+		me.htmlEditor = me.add({
+			region: 'center',
+			xtype: 'wthtmleditor',
+			bind: '{record.content}',
+			disabled: me.faxsubject ? true : false,
+			wysiwyg: me.contentFormat === 'plain' ? false : true,
+			enableFont: true,
+			defaultFont: me.fontFace,
+			enableFontSize: true,
+			defaultFontSize: me.fontSize+'px',
+			enableColors: true,
+			defaultForeColor: Sonicle.String.removeStart(me.fontColor, '#'),
+			enableFormats: true,
+			enableAlignments: true,
+			enableLists: true,
+			enableEmoticons: true,
+			enableSymbols: true,
+			enableLink: true,
+			enableImage: true,
+			imageConfig: {
+				useEditorProgress: false,
+				uploaderConfig: WTF.uploader(me.mys.ID, 'UploadCid',{
+					extraParams: {
+						tag: me.msgId
 					},
-					listeners: {
-						imagebeforeupload: function(s, upl, file) {
-							me.wait(file.name);
-						},
-						imageuploadprogress: function(s, upl, file) {
-							me.wait(Ext.String.format('{0}: {1}%', file.name, file.percent), true);
-						},
-						imageuploaderror: function(s, upl, file, cause) {
-							me.unwait();
-							WTA.ux.UploadBar.handleUploadError(s, file, cause);
-						},
-						imageuploaded: function(s, upl, file, resp) {
-							me.unwait();
-							var upid = resp.data.uploadId;
+					maxFileSize: me.mys.getVar('attachmentMaxFileSize'),
+					mimeTypes: 'image/'+'*'
+				}),
+				prepareImageData: function(file, resp) {
+					var upid = resp.data.uploadId;
+					return {
+						url: WTF.processBinUrl(me.mys.ID, 'PreviewAttachment', {
+							uploadId: upid,
+							cid: upid
+						}),
+						name: file.name
+					};
+				},
+				listeners: {
+					imagebeforeupload: function(s, upl, file) {
+						me.wait(file.name);
+					},
+					imageuploadprogress: function(s, upl, file) {
+						me.wait(Ext.String.format('{0}: {1}%', file.name, file.percent), true);
+					},
+					imageuploaderror: function(s, upl, file, cause) {
+						me.unwait();
+						WTA.ux.UploadBar.handleUploadError(s, file, cause);
+					},
+					imageuploaded: function(s, upl, file, resp) {
+						me.unwait();
+						var upid = resp.data.uploadId;
+						me.attlist.addAttachment({ 
+							msgId: me.msgId, 
+							uploadId: upid, 
+							fileName: file.name, 
+							cid: upid,
+							inline: true,
+							fileSize: file.size,
+							editable: resp.data.editable
+						});
+					}
+				}
+			},
+			enableTable: true,
+			enableDevTools: true,
+			customTools: {
+				template: {
+					pos: 19,
+					xtype: 'wt-htmleditortooltemplate',
+					store: {
+						autoLoad: true,
+						model: 'Sonicle.webtop.mail.model.QuickPart',
+						sorters: 'name',
+						proxy: WTF.apiProxy(me.mys.ID, 'ManageQuickParts', null, {
+							writer: {
+								allowSingle: false
+							}
+						})
+					},
+					tooltip: {title: me.mys.res('htmleditor.tool.template.quickpart.tip.tit'), text: me.mys.res('htmleditor.tool.template.quickpart.tip.txt')}
+				}
+			},
+			imagesUploadHandler: function(blobInfo, successCb, failureCb, progress) {
+				var blob = blobInfo.blob(),
+						payload = {
+							filename: blobInfo.filename(),
+							mediaType: blob.type,
+							size: blob.size,
+							base64: blobInfo.base64()
+						};
+				me.wait('Processing pasted images', true);
+				WT.ajaxReq(me.mys.ID, 'UploadBlobInfo', {
+					params: {
+						tag: me.msgId
+					},
+					jsonData: payload,
+					callback: function(success, json) {
+						me.unwait();
+						if (success) {
+							var upid = json.data;
 							me.attlist.addAttachment({ 
 								msgId: me.msgId, 
 								uploadId: upid, 
-								fileName: file.name, 
+								fileName: payload.filename, 
 								cid: upid,
 								inline: true,
-								fileSize: file.size,
-								editable: resp.data.editable
+								fileSize: payload.size,
+								editable: false
 							});
+							successCb(WTF.processBinUrl(me.mys.ID, 'PreviewAttachment', {
+								uploadId: upid,
+								cid: upid
+							}));
+						} else {
+							failureCb();
 						}
 					}
-				},
-				enableTable: true,
-				enableDevTools: true,
-				customTools: {
-					template: {
-						pos: 19,
-						xtype: 'wt-htmleditortooltemplate',
-						store: {
-							autoLoad: true,
-							model: 'Sonicle.webtop.mail.model.QuickPart',
-							sorters: 'name',
-							proxy: WTF.apiProxy(me.mys.ID, 'ManageQuickParts', null, {
-								writer: {
-									allowSingle: false
-								}
-							})
-						},
-						tooltip: {title: me.mys.res('htmleditor.tool.template.quickpart.tip.tit'), text: me.mys.res('htmleditor.tool.template.quickpart.tip.txt')}
-					}
-				},
-				imagesUploadHandler: function(blobInfo, successCb, failureCb, progress) {
-					var blob = blobInfo.blob(),
-							payload = {
-								filename: blobInfo.filename(),
-								mediaType: blob.type,
-								size: blob.size,
-								base64: blobInfo.base64()
-							};
-					me.wait('Processing pasted images', true);
-					WT.ajaxReq(me.mys.ID, 'UploadBlobInfo', {
-						params: {
-							tag: me.msgId
-						},
-						jsonData: payload,
-						callback: function(success, json) {
-							me.unwait();
-							if (success) {
-								var upid = json.data;
-								me.attlist.addAttachment({ 
-									msgId: me.msgId, 
-									uploadId: upid, 
-									fileName: payload.filename, 
-									cid: upid,
-									inline: true,
-									fileSize: payload.size,
-									editable: false
-								});
-								successCb(WTF.processBinUrl(me.mys.ID, 'PreviewAttachment', {
-									uploadId: upid,
-									cid: upid
-								}));
-							} else {
-								failureCb();
-							}
-						}
-					});
-				},
-				contentStyle: [
-					'div#wt-mailcard { border: 1px dotted lightgray !important; }'
-				].join(' ')
-			});
-			
-		} else {
-			me.add(
-				me.htmlEditor=Ext.create({
-					xtype: 'wthtmleditor_old',
-					region: 'center',
-					bind: '{record.content}',
-					disabled: me.faxsubject?true:false,
-					enableFont: true,
-					enableFontSize: true,
-					enableFormat: true,
-					enableColors: true,
-					enableEmoticons: true,
-					enableAlignments: true,
-					enableLinks: true,
-					enableLists: true,
-					enableSourceEdit: true,
-					enableClean: true,
-					enableImageUrls: true,
-					customButtons: [
-						{
-							xtype:'souploadbutton',
-							tooltip: {
-								title: me.res('editor.btn-insertimagefile.tit'),
-								text: me.res('editor.btn-insertimagefile.tip'),
-								cls: Ext.baseCSSPrefix + 'html-editor-tip'
-							},
-							iconCls: 'wtmail-icon-format-insertimagefile',
-							uploaderConfig: WTF.uploader(me.mys.ID, 'UploadCid',{
-								extraParams: {
-									tag: me.msgId
-								},
-								maxFileSize: me.mys.getVar('attachmentMaxFileSize')
-							}),
-							listeners: {
-								beforeupload: function(s,file) {
-									me.htmlEditor.showProgress(file.name);
-								},
-								uploadcomplete: function(s,fok,ffailed) {
-									//console.log("Upload completed - ok: "+fok.length+" - failed: "+ffailed.length);
-								},
-								uploaderror: function(s, file, cause) {
-									me.htmlEditor.hideProgress();
-									WTA.ux.UploadBar.handleUploadError(s, file, cause);
-								},
-								uploadprogress: function(s,file) {
-									me.htmlEditor.setProgress(file.percent);
-								},
-								fileuploaded: function(s,file,resp) {
-									var uid=resp.data.uploadId;
-									me.htmlEditor.hideProgress();
-									me.attlist.addAttachment(
-											{ 
-												msgId: me.msgId, 
-												uploadId: uid, 
-												fileName: file.name, 
-												cid: uid,
-												inline: true,
-												fileSize: file.size,
-												editable: resp.data.editable
-											}
-									);
-									me.htmlEditor.execCommand('insertimage', false, 
-										WTF.processBinUrl(me.mys.ID,"PreviewAttachment",{
-											uploadId: uid,
-											cid: uid
-										})
-									);
-								}
-							}
-						},
-						me.addRef('btnQuickp', {
-							xtype:'splitbutton',
-							tabIndex: -1,
-							iconCls: 'wtmail-icon-format-quickpart',
-							tooltip: {
-								title: me.res('editor.btn-quickpart.tit'),
-								text: me.res('editor.btn-quickpart.tip'),
-								cls: Ext.baseCSSPrefix + 'html-editor-tip'
-							},
-							listeners: {
-								click: {
-									fn: function() {
-										var sel = me.htmlEditor.getSelection(false);
-										if(Ext.isEmpty(sel.textContent)) {
-											WT.error(me.res('editor.quickpart.error.selection'));
-											return;
-										}
-										WT.prompt(me.res('editor.quickpart.prompt.id'), {
-											title: me.res('editor.quickpart.f-id.lbl'),
-											fn: function(bid, id) {
-												if(bid === 'ok') {
-													if(Ext.isEmpty(id)) {
-														WT.error(me.res('editor.quickpart.error.id'));
-													} else {
-														WT.createView(me.mys.ID,'view.QuickPartEditor',{
-															viewCfg: {
-																mys: me.mys,
-																html: sel.html,
-																listeners: {
-																	viewok: function(s,html) {
-																		me.addQuickPart(id,html);
-																	}
-																}
-															}
-														}).show();
-													}
-												}
-											}
-										});
-									}
-								},
-								afterrender: {
-									fn: function(s) {
-										me.reloadQuickParts();
-									}
-								}
-							},
-							menu: new Ext.menu.Menu({
-								items: [
-									new Ext.menu.Item({
-										itemId: 'manage',
-										text: me.res('editor.quickpart.b-manage.lbl'),
-										handler: function() {
-											WT.createView(me.mys.ID,'view.QuickPartsManager',{
-												viewCfg: {
-													mys: me.mys,
-													listeners: {
-														viewclose: function() {
-															me.reloadQuickParts();
-														}
-													}
-												}
-											}).show();
-										},
-										scope: this
-									}),
-									'-'
-								],
-								listeners: {
-									click: {
-										fn: function(menu,item,e) {
-											if (item && item.getItemId()!=='manage') me.htmlEditor.execCommand('inserthtml', false, item.tag);
-										}
-									}
-								}
-							})
-						})
-
-					],
-					listeners: {
-						init: function() {
-							var xdoc=me.htmlEditor.getDoc(),
-								xstyle=xdoc.createElement('style');
-
-							xstyle.type='text/css';
-							xstyle.appendChild(xdoc.createTextNode(
-									'div#wt-mailcard { border: 1px dotted lightgray !important; } '+
-									'blockquote { display: block; margin-left: 5px; border-left: solid 2px blue; padding-left: 10px; } '
-							));
-							xdoc.head.appendChild(xstyle);
-						}
-					}
-				})
-			);
-		}
+				});
+			},
+			contentStyle: [
+				'div#wt-mailcard { border: 1px dotted lightgray !important; }'
+			].join(' ')
+		});
 
 		me.on('viewdiscard', me.onDiscard);
 		me.on('viewload', me.onViewLoad);
@@ -1006,11 +790,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		} else if (Ext.isEmpty(mo.get('subject'))) {
 			me.subject.focus();
 		} else {
-			if (WT.getVar('useNewHTMLEditor')) {
-				me.htmlEditor.focus();
-			} else {
-				me.htmlEditor.focusEditor();
-			}
+			me.htmlEditor.focus();
 		}
 		
 		if (me.autosave) {
@@ -1039,13 +819,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		//default of html editor is html, so no need to enable html mode
 		//also calling it seems to break binding
 		/*if (me.contentFormat==="html") me.htmlEditor.enableHtmlMode();
-		else */if (me.contentFormat==="plain") {
-			if (WT.getVar('useNewHTMLEditor')) {
-				// Not needed, MessageEditor view needs to be created with the right format.
-			} else {
-				me.htmlEditor.enableTextMode();
-			}
-		}
+		else */
 		
 		//check for empty recipients, force an empty one in case
 		//if (!data.recipients || data.recipients.length==0) {
@@ -1061,19 +835,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.beginNew({
 			data: data
 		});
-		
-		if (WT.getVar('useNewHTMLEditor')) {
-			// Not needed, focusing already handled internally by new HTMLEditor
-		} else {
-			if (me.contentFormat === "plain") {
-				var textarea = Ext.getDom(me.htmlEditor.tmce.inputEl.id);
-				var setPosition = new Ext.util.DelayedTask(function(){
-					textarea.setSelectionRange(0,0);
-					textarea.scrollTo(0,0);
-				});
-				setPosition.delay(350);
-			}
-		}
 		
 		if (data.contentReady && data.content.indexOf(me.htmlStartMailcard)<0) {
 			me.getRef("showMailcard").toggle(false,true);
@@ -1095,26 +856,18 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	showMailcardAction: function(b) {
 		var me = this,
-				 format=me.contentFormat,
-				 dumbMailcard = {
-					mailcard: {
-						html: me.dumbMailcard,
-						text: ''
-					}
-				};
-				me.showMailcard = b.pressed;
-		if (WT.getVar('useNewHTMLEditor')) {
-			if (me.showMailcard) {
-				me.replaceMailcardUI(me.selectedIdentity.mailcard, dumbMailcard.mailcard);
-			} else {
-				me.replaceMailcardUI(dumbMailcard.mailcard, me.selectedIdentity.mailcard);
-			}
+			dumbMailcard = {
+			   mailcard: {
+				   html: me.dumbMailcard,
+				   text: ''
+			   }
+		   };
+		   me.showMailcard = b.pressed;
+		
+		if (me.showMailcard) {
+			me.replaceMailcardUI(me.selectedIdentity.mailcard, dumbMailcard.mailcard);
 		} else {
-			if(me.showMailcard) {
-				me.setContent(me.replaceMailcardOld(me.htmlEditor.getValue(), dumbMailcard.mailcard.html, me.selectedIdentity.mailcard.html), format);
-			} else {
-				me.setContent(me.replaceMailcardOld(me.htmlEditor.getValue(), me.selectedIdentity.mailcard.html, dumbMailcard.mailcard.html), format);
-			}
+			me.replaceMailcardUI(dumbMailcard.mailcard, me.selectedIdentity.mailcard);
 		}
 	},
     
@@ -1443,32 +1196,19 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				if (mailcard.text.trim()) mcContent = me.htmlStartMailcard+'>' + mailcard.html + '</div>';
 				else mcContent = me.htmlStartMailcard+' style="display: none !important">' + mailcard.html + '</div>';
 			}
-			if (WT.getVar('useNewHTMLEditor')) {
-				var HE = Sonicle.form.field.tinymce.HTMLEditor,
-					ff = HE.getContentFontFamily(me.htmlEditor.fonts, me.fontFace),
-					fs = me.fontSize+'px', // Do NOT be strict, allow any font sizes!
-					//fs = HE.getContentFontSize(me.htmlEditor.fontSizes, me.fontSize+'px'), // BE strict, allow only a set of font sizes!
-					fc = HE.getContentColor(me.htmlEditor.fontColors, Sonicle.String.removeStart(me.fontColor, '#'));
-				
-				if (contentAfter) {
-					ret = HE.generateInitialParagraph('', ff, fs, fc, '#000000') + mcContent + content;
-				} else {
-					ret = HE.generateInitialParagraph(content, ff, fs, fc, '#000000') + mcContent;
-				}
-				
+			
+			var HE = Sonicle.form.field.tinymce.HTMLEditor,
+				ff = HE.getContentFontFamily(me.htmlEditor.fonts, me.fontFace),
+				fs = me.fontSize+'px', // Do NOT be strict, allow any font sizes!
+				//fs = HE.getContentFontSize(me.htmlEditor.fontSizes, me.fontSize+'px'), // BE strict, allow only a set of font sizes!
+				fc = HE.getContentColor(me.htmlEditor.fontColors, Sonicle.String.removeStart(me.fontColor, '#'));
+
+			if (contentAfter) {
+				ret = HE.generateInitialParagraph('', ff, fs, fc, '#000000') + mcContent + content;
 			} else {
-				if (contentAfter) {
-					ret = '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';"></div>'
-						+ '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';"></div>'
-						+ mcContent + content;
-				} else {
-					ret = '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';">'
-						+ content
-						+ '</div>'
-						+ '<div style="font-family:'+me.fontFace+';font-size:'+me.fontSize+'px;color:'+me.fontColor+';"></div>'
-						+ mcContent;
-				}
+				ret = HE.generateInitialParagraph(content, ff, fs, fc, '#000000') + mcContent;
 			}
+				
 		} else if ('plain' === format) {
 			if (mailcard && mailcard.text.trim()) mcContent = '\n\n' + mailcard.text + '\n';
 			ret = contentAfter ? (mcContent + content) : (content + mcContent);
@@ -1534,25 +1274,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		return false;
 	},
-
-	replaceMailcardOld: function(html, omc, nmc) {
-		if(Ext.isEmpty(omc) || Ext.isEmpty(nmc)) return html;
-		var htmlDom = Ext.dom.Helper.createDom({html: html}),
-			mcDom = htmlDom.querySelector('#wt-mailcard');
-		if(mcDom) {
-			var htmlOmc, htmlMcEl;
-			htmlOmc = this.htmlEditor.cleanUpHtml(omc);
-			htmlMcEl = this.htmlEditor.cleanUpHtmlFromDom(mcDom);
-
-			if (htmlMcEl == htmlOmc) {
-				mcDom.innerHTML = nmc;
-			} else {
-				WT.error(this.res('editor.mailcard.replace.no'));
-			}
-			html=htmlDom.innerHTML;
-		}
-		return html;
-	},
 	
     disableControls: function(/*showProgress,*/showSendmask) {
         var me=this;
@@ -1583,7 +1304,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             var mailparams={
 				folder: o.folder,
 				subject: me.subject.getValue(),
-				content: WT.getVar('useNewHTMLEditor') ? me.htmlEditor.getValue() : me.htmlEditor.getEditingValue(),
+				content: me.htmlEditor.getValue(),
 				identityId: me.selectedIdentity.identityId,
 				format: o.format,
 				replyfolder: o.replyfolder,
@@ -1857,7 +1578,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		return me.recgrid.isRecipientComboAutosaveDirty() || 
 			me.attlist.isAutosaveDirty() ||
 			(me.autosaveSubjectValue!==me.subject.getValue()) || 
-			(WT.getVar('useNewHTMLEditor') ? me.htmlEditor.isHistoryBookmarkDirty() : me.htmlEditor.isAutosaveDirty()) ||
+			me.htmlEditor.isHistoryBookmarkDirty() ||
 			me.getModel().isAutosaveDirty();
     },
     
@@ -1866,11 +1587,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         me.recgrid.clearAutosaveDirty();
 		me.attlist.clearAutosaveDirty();
         me.autosaveSubjectValue=me.subject.getValue();
-		if (WT.getVar('useNewHTMLEditor')) {
-			me.htmlEditor.resetHistoryBookmark();
-		} else {
-			me.htmlEditor.clearAutosaveDirty();
-		}
+		me.htmlEditor.resetHistoryBookmark();
         me.getModel().clearAutosaveDirty();
     },
 	
@@ -1932,12 +1649,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 								mo.set('meetingUrl', data.link);
 								mo.set('meetingSchedule', pdate);
 								mo.set('meetingScheduleTz', ptz);
-								if (WT.getVar('useNewHTMLEditor')) {
-									me.htmlEditor.insertContent(newContent);
-								} else {
-									//FIXME: like other, but i think this will NOT work with plain format!!
-									me.htmlEditor.execCommand('inserthtml', false, newContent);
-								}
+								me.htmlEditor.insertContent(newContent);
 							}
 						}
 					});

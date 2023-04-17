@@ -285,7 +285,6 @@ public class Service extends BaseService {
 	private PortletSearchThread pst;
 	
 	private boolean previewBalanceTags=true;
-	private boolean useNewHTMLEditor=true;
 	
 	private boolean refwSanitizeDownlevelRevealedComments=false;
 	
@@ -532,9 +531,6 @@ public class Service extends BaseService {
 		} catch (Exception exc) {
 			Service.logger.error("Exception",exc);
 		}
-		// Retrieve editor flag to avoid continuous lookups
-		// (temporary until full transition)
-		useNewHTMLEditor = cus.getUseNewHTMLEditor();
 		refwSanitizeDownlevelRevealedComments = ss.isReFwSanitizeDownlevelRevealedComments();
 		
 		//PAS
@@ -5976,68 +5972,40 @@ public class Service extends BaseService {
 	}
 	
 	public void processManageQuickParts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		//TODO: delete useNewHTMLEditor boolean when transition done!
-		if (useNewHTMLEditor) {
-			try {
-				String crud = ServletUtils.getStringParameter(request, "crud", true);
-				if (crud.equals(Crud.READ)) {
-					List<JsQuickPart> items = JsQuickPart.toSortedList(us.getMessageQuickParts());
-					new JsonResult(items, items.size()).printTo(out);
+		
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			if (crud.equals(Crud.READ)) {
+				List<JsQuickPart> items = JsQuickPart.toSortedList(us.getMessageQuickParts());
+				new JsonResult(items, items.size()).printTo(out);
 
-				} else if (crud.equals(Crud.CREATE)) {
-					PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
-					List<JsQuickPart> items = new ArrayList<>();
-					for (JsQuickPart jsqp : pl.data) {
-						us.setMessageQuickPart(jsqp.name, jsqp.html);
-						items.add(jsqp);
-					}
-					new JsonResult(items, items.size()).printTo(out);
-
-				} else if (crud.equals(Crud.UPDATE)) {
-					PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
-					for (JsQuickPart jsqp : pl.data) {
-						us.setMessageQuickPart(jsqp.name, jsqp.html);
-					}
-					new JsonResult().printTo(out);
-
-				} else if (crud.equals(Crud.DELETE)) {
-					PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
-					for (JsQuickPart jsqp : pl.data) {
-						us.deleteMessageQuickPart(jsqp.name);
-					}
-					new JsonResult().printTo(out);
+			} else if (crud.equals(Crud.CREATE)) {
+				PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
+				List<JsQuickPart> items = new ArrayList<>();
+				for (JsQuickPart jsqp : pl.data) {
+					us.setMessageQuickPart(jsqp.name, jsqp.html);
+					items.add(jsqp);
 				}
+				new JsonResult(items, items.size()).printTo(out);
 
-			} catch(Throwable t) {
-				logger.error("Error in ManageQuickParts", t);
-				new JsonResult(t).printTo(out);
-			}
-			
-		} else {
-			try {
-				String crud = ServletUtils.getStringParameter(request, "crud", true);
-				if (crud.equals(Crud.READ)) {
-					HashMap<String,String> items = us.getMessageQuickParts();
-					new JsonResult(JsQuickPartModel.asList(items)).printTo(out);
-
-				} else if (crud.equals(Crud.CREATE)) {
-					String id = ServletUtils.getStringParameter(request, "id", true);
-					String html = ServletUtils.getStringParameter(request, "html", true);
-					us.setMessageQuickPart(id, html);
-
-					HashMap<String,String> items = us.getMessageQuickParts();
-					new JsonResult(JsQuickPartModel.asList(items)).printTo(out);
-
-				} else if (crud.equals(Crud.DELETE)) {
-					Payload<MapItem, JsQuickPartModel> pl = ServletUtils.getPayload(request, JsQuickPartModel.class);
-					us.deleteMessageQuickPart(pl.data.id);
-
-					new JsonResult().printTo(out);
+			} else if (crud.equals(Crud.UPDATE)) {
+				PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
+				for (JsQuickPart jsqp : pl.data) {
+					us.setMessageQuickPart(jsqp.name, jsqp.html);
 				}
-			} catch (Exception ex) {
-			   logger.error("Error managing quickparts", ex);
-			   new JsonResult(false, "Error managing quickparts").printTo(out);
+				new JsonResult().printTo(out);
+
+			} else if (crud.equals(Crud.DELETE)) {
+				PayloadAsList<JsQuickPart.List> pl = ServletUtils.getPayloadAsList(request, JsQuickPart.List.class);
+				for (JsQuickPart jsqp : pl.data) {
+					us.deleteMessageQuickPart(jsqp.name);
+				}
+				new JsonResult().printTo(out);
 			}
+
+		} catch(Throwable t) {
+			logger.error("Error in ManageQuickParts", t);
+			new JsonResult(t).printTo(out);
 		}
 	}
 	
