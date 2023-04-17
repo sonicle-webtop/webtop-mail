@@ -1314,16 +1314,18 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
 		me._fixTables(doc.body);
 		
-		var xstyle=doc.createElement('style');
-		xstyle.type='text/css';
-		xstyle.appendChild(doc.createTextNode(
-				'pre { white-space: pre-wrap !important; } '+
-				'body { font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif; } '+
-				'blockquote { display: block; margin-left: 5px; border-left: solid 2px blue; padding-left: 10px; } '+
-				'img:not([width]), img:not([height]) { max-width: 100% !important; height: auto !important; } '+
-				'a { word-break: break-all }'
-		));
-		doc.head.appendChild(xstyle);
+		if (!doc._xstyle_appended) {
+			var xstyle=doc.createElement('style');
+			xstyle.type='text/css';
+			xstyle.appendChild(doc.createTextNode(
+					'pre { white-space: pre-wrap !important; } '+
+					'body { font-family: "Lucida Grande",Verdana,Arial,Helvetica,sans-serif; } '+
+					'blockquote { display: block; margin-left: 5px; border-left: solid 2px blue; padding-left: 10px; } '+
+					'img:not([width]), img:not([height]) { max-width: 100% !important; height: auto !important; } '
+			));
+			doc.head.appendChild(xstyle);
+			doc._xstyle_appended=true;
+		}
 		
         var thebody=doc.body;
         thebody.style.padding="0px 0px 0px 0px";
