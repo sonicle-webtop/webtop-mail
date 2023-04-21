@@ -81,7 +81,6 @@
 			<modelJsClassName>model.UserOptions</modelJsClassName>
 		</userOptions>
 		<publicServiceClassName></publicServiceClassName>
-		<jobServiceClassName>JobService</jobServiceClassName>
 		<backgroundService className="BackgroundService" />
 		
 		<restApis>

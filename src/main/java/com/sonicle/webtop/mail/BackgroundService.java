@@ -37,7 +37,7 @@ import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.mail.bg.ResourcesAutoresponderManager;
 import com.sonicle.webtop.core.sdk.BaseBackgroundService;
-import com.sonicle.webtop.core.sdk.BaseManager;
+import com.sonicle.webtop.mail.bg.LegacyScheduledSendTask;
 import com.sonicle.webtop.mail.bg.ResourcesAutoresponderReloadTask;
 import java.util.Arrays;
 import java.util.Collection;
@@ -65,6 +65,12 @@ public class BackgroundService extends BaseBackgroundService {
 	protected Collection<TaskDefinition> createTasks() {
 		if (isCalendarServiceInstalled()) {
 			return Arrays.asList(
+				new TaskDefinition(
+					LegacyScheduledSendTask.class,
+					TriggerBuilder.newTrigger()
+						.withSchedule(SimpleScheduleBuilder.repeatMinutelyForever(2))
+						.build()
+				),	
 				new TaskDefinition(
 					ResourcesAutoresponderReloadTask.class,
 					TriggerBuilder.newTrigger()

@@ -83,7 +83,7 @@ import org.slf4j.LoggerFactory;
  * @author malbinola
  */
 public class ScheduledSendTask extends BaseBackgroundServiceTask {
-	private static final Logger LOGGER = (Logger)LoggerFactory.getLogger(ResourcesAutoresponderReloadTask.class);
+	private static final Logger LOGGER = (Logger)LoggerFactory.getLogger(ScheduledSendTask.class);
 	
 	private static final HeaderTerm HT_SONICLE_SENDSCHEDULED = new HeaderTerm("Sonicle-send-scheduled", "true");
 	//private static final HeaderTerm HT_XWEBTOPSCHEDULED = new HeaderTerm("X-WebTop-Scheduled", "true");
