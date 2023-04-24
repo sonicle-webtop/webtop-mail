@@ -81,7 +81,7 @@
 			<modelJsClassName>model.UserOptions</modelJsClassName>
 		</userOptions>
 		<publicServiceClassName></publicServiceClassName>
-		<backgroundService className="BackgroundService" />
+		<backgroundService className=".BackgroundService" />
 		
 		<restApis>
 			<restApi oasFile="openapi-v1.json" />
