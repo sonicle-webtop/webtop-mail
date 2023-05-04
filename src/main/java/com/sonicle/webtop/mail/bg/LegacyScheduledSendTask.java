@@ -277,42 +277,44 @@ public class LegacyScheduledSendTask extends BaseBackgroundServiceTask {
 	private void sendScheduledMessage(Session session, UserProfileId pid, Domain domain, Folder sentFolder, Locale locale, Message m, boolean notify) throws MessagingException {
 		try {
 			MimeMessage nm=new MimeMessage((MimeMessage)m);
-			nm.removeHeader("Sonicle-send-scheduled");
-			nm.removeHeader("Sonicle-send-date");
-			nm.removeHeader("Sonicle-send-time");
-			nm.removeHeader("Sonicle-notify-delivery");
-			nm.setSentDate(new Date());
-			Transport.send(nm);
-			sentFolder.open(Folder.READ_WRITE);
-			nm.setFlag(Flags.Flag.SEEN, true);
-			Message msgs[]=new Message[1];
-			msgs[0]=nm;
-			sentFolder.appendMessages(msgs);
-			//folder.copyMessages(msgs, sentFolder);
-			sentFolder.close(true);
-			m.setFlag(Flags.Flag.DELETED, true);
+			if (nm.getAllRecipients() != null && nm.getAllRecipients().length > 0) { // Prevent unuseful "javax.mail.SendFailedException: No recipient addresses"
+				nm.removeHeader("Sonicle-send-scheduled");
+				nm.removeHeader("Sonicle-send-date");
+				nm.removeHeader("Sonicle-send-time");
+				nm.removeHeader("Sonicle-notify-delivery");
+				nm.setSentDate(new Date());
+				Transport.send(nm);
+				sentFolder.open(Folder.READ_WRITE);
+				nm.setFlag(Flags.Flag.SEEN, true);
+				Message msgs[]=new Message[1];
+				msgs[0]=nm;
+				sentFolder.appendMessages(msgs);
+				//folder.copyMessages(msgs, sentFolder);
+				sentFolder.close(true);
+				m.setFlag(Flags.Flag.DELETED, true);
 
-			Calendar cal=parseCalendar(getSingleHeaderValue(m,"Sonicle-send-date"),getSingleHeaderValue(m,"Sonicle-send-time"));
-			if (notify && cal!=null) {
-				String recipients="";
-				for(Address ia: nm.getRecipients(Message.RecipientType.TO)) {
-					if (recipients.length()>0) recipients+=" - ";
-					recipients+=ia.toString();
+				Calendar cal=parseCalendar(getSingleHeaderValue(m,"Sonicle-send-date"),getSingleHeaderValue(m,"Sonicle-send-time"));
+				if (notify && cal!=null) {
+					String recipients="";
+					for(Address ia: nm.getRecipients(Message.RecipientType.TO)) {
+						if (recipients.length()>0) recipients+=" - ";
+						recipients+=ia.toString();
+					}
+					String nmto=nm.getRecipients(Message.RecipientType.TO)[0].toString();
+					String nmsubject=nm.getSubject();
+					String fmtsubject=bs.lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_SUBJECT);
+					String fmthtml=bs.lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_HTML);
+					String subject=java.text.MessageFormat.format(fmtsubject,nmto);
+					String html=java.text.MessageFormat.format(fmthtml,
+							DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT,locale).format(cal.getTime()),
+							MailUtils.htmlescape(recipients),
+							MailUtils.htmlescape(nmsubject));
+					String email=WT.getUserData(pid).getEmail().toString();
+					WT.sendEmail(session, true, "webtop@"+domain.getInternetName(), email, subject, html);
 				}
-				String nmto=nm.getRecipients(Message.RecipientType.TO)[0].toString();
-				String nmsubject=nm.getSubject();
-				String fmtsubject=bs.lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_SUBJECT);
-				String fmthtml=bs.lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_HTML);
-				String subject=java.text.MessageFormat.format(fmtsubject,nmto);
-				String html=java.text.MessageFormat.format(fmthtml,
-						DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT,locale).format(cal.getTime()),
-						MailUtils.htmlescape(recipients),
-						MailUtils.htmlescape(nmsubject));
-				String email=WT.getUserData(pid).getEmail().toString();
-				WT.sendEmail(session, true, "webtop@"+domain.getInternetName(), email, subject, html);
 			}
 		} catch(Throwable t) {
-			LOGGER.error("Exception",t);
+			LOGGER.error("Exception sending message for '{}'", pid, t);
 		}
 	}
 
