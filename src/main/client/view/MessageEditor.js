@@ -1261,8 +1261,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				origMc = hed.editorSerialize(Ext.DomHelper.createDom({html: omc.html}));
 				curMc = hed.editorSerialize(mcNode);
 				if (origMc === curMc) {
-					if (!Ext.isEmpty(Ext.String.trim(nmc.text))) mcNode.style = 'display: block !important';
-					else mcNode.style = 'display: none !important';
+					var ed=hed.getEditor();
+					if (ed) {
+						var newDisplayStyle;
+						if (!Ext.isEmpty(Ext.String.trim(nmc.text))) newDisplayStyle = 'block !important';
+						else newDisplayStyle = 'none !important';
+						mcNode.style="display: "+newDisplayStyle;
+						ed.dom.setStyle(mcNode,'display',newDisplayStyle);
+					}					
 					hed.editorSetHtml(mcNode, nmc.html);
 				}
 			} else {
