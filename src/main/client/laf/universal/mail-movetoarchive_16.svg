@@ -3,13 +3,14 @@
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16" enable-background="new 0 0 16 16" xml:space="preserve">
   <g id="main">
     <g id="icon">
-      <path d="M0,14L6.8,14L6.8,5.8L14,5.8L14,2L8.155,2L6.205,0L0,0zM5.789,1L7.652,3L6.417,4L1,4L1,1zz" fill="#EDAC57"/>
+      <path d="M0,14L6.8,14L6.8,12.2L5.8,12.2L5.8,7.8L14,7.8L14,2L8.155,2L6.205,0L0,0zM5.789,1L7.652,3L6.417,4L1,4L1,1zz" fill="#EDAC57"/>
       <path d="M1,4L6.367,4L7.652,3L5.789,1L1,1zz" fill="#FFFFFF" opacity="0.5"/>
     </g>
     <g id="overlay">
-      <path d="M15,11H9V8h6V11zM15,12H9v3h6V12z" fill="#FFFFFF" opacity="0.4"/>
-      <path d="M16,16H8V7h8V16zM9,15h6v-3H9V15zM9,11h6V8H9V11z" fill="#6D6E71"/>
-      <path d="M14,14h-4v-1h1l0,0h2l0,0h1V14zM14,10h-4V9h1l0,0h2l0,0h1V10z" fill="#EEAC55"/>
+      <path d="M9,11v4h5v-4H9z" fill="#FFFFFF" opacity="0.4"/>
+      <path d="M15,16H8v-5.5h1v4.5h5v-4.5h1V16z" fill="#6D6E71"/>
+      <rect x="7" y="9" width="9" height="2" fill="#52B4C0"/>
+      <rect x="10" y="12" width="3" height="1" fill="#6D6E71"/>
     </g>
   </g>
 </svg>
