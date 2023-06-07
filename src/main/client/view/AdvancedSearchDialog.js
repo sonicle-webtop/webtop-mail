@@ -34,6 +34,9 @@
 
 Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 	extend: 'WTA.sdk.DockableView',
+	requires: [
+		'Sonicle.Utils'
+	],
 	
 	dockableConfig: {
 		iconCls: 'wt-icon-search-adv',
@@ -271,7 +274,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 		
 		if (me.gridMenu) {
 			me.messageGrid.on("itemcontextmenu",function(s, rec, itm, i, e) {
-				WT.showContextMenu(e, me.gridMenu, { rec: rec, row: i, grid: me.messageGrid });
+				Sonicle.Utils.showContextMenu(e, me.gridMenu, { rec: rec, row: i, grid: me.messageGrid });
 			});
 		}
 		

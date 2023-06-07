@@ -35,6 +35,7 @@
 Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 	extend: 'Ext.panel.Panel',
 	requires: [
+		'Sonicle.Utils',
 		'Sonicle.resizer.BorderSplitter',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.webtop.mail.MessageView',
@@ -266,7 +267,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		if (me.gridMenu) {
 			me.folderList.on("itemcontextmenu",function(s, rec, itm, i, e) {
 				me.mys.updateCxmGrid(rec);
-				WT.showContextMenu(e, me.gridMenu, { rec: rec, row: i, grid: me.folderList });
+				Sonicle.Utils.showContextMenu(e, me.gridMenu, { rec: rec, row: i, grid: me.folderList });
 			});
 		}
 		

@@ -35,6 +35,7 @@
 Ext.define('Sonicle.webtop.mail.Service', {
 	extend: 'WTA.sdk.Service',
 	requires: [
+		'Sonicle.Utils',
 		'Sonicle.webtop.mail.ImapTree',
 		'Sonicle.webtop.mail.MessagesPanel',
 		'Sonicle.webtop.mail.view.MessageEditor',
@@ -204,10 +205,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
-					WT.showContextMenu(e, me.getRef('cxmFavorites'), { rec: rec });
+					Sonicle.Utils.showContextMenu(e, me.getRef('cxmFavorites'), { rec: rec });
 				},
 				containercontextmenu: function(v, e, eopts) {
-					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
+					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
 				rowclick: function(t, r, tr, ix, e, eopts) {
 					//me.imapTree.setSelection(null);
@@ -240,10 +241,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 				listeners: {
 					itemcontextmenu: function(v, rec, itm, i, e, eopts) {
-						WT.showContextMenu(e, me.getRef('cxmArchiveTree'), { rec: rec });
+						Sonicle.Utils.showContextMenu(e, me.getRef('cxmArchiveTree'), { rec: rec });
 					},
 					containercontextmenu: function(v, e, eopts) {
-						WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
+						Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 					},
 					rowclick: function(t, r, tr, ix, e, eopts) {
 						//me.imapTree.setSelection(null);
@@ -282,15 +283,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
 					if(rec.isRoot()) {
-						WT.showContextMenu(e, me.getRef('cxmTreeRootNode'), { rec: rec });
+						Sonicle.Utils.showContextMenu(e, me.getRef('cxmTreeRootNode'), { rec: rec });
 					}
 					else {
 						me.updateCxmTree(rec);
-						WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
+						Sonicle.Utils.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });
 					}
 				},
 				containercontextmenu: function(v, e, eopts) {
-					WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
+					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
 				rowclick: function(t, r, tr, ix, e, eopts) {
 					//me.favoritesTree.setSelection(null);
@@ -382,15 +383,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						itemcontextmenu: function(v, rec, itm, i, e, eopts) {
 							
 							if(rec.isRoot()){
-							WT.showContextMenu(e, me.getRef('cxmTreeRootNode'), { rec: rec });
+							Sonicle.Utils.showContextMenu(e, me.getRef('cxmTreeRootNode'), { rec: rec });
 							}
 							else {
 							me.updateCxmTree(rec);
-							WT.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });	
+							Sonicle.Utils.showContextMenu(e, me.getRef('cxmTree'), { rec: rec });	
 							}
 						},
 						containercontextmenu: function(v, e, eopts) {
-							WT.showContextMenu(e, me.getRef('cxmBackTree'), { });
+							Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 						},
 						rowclick: function(t, r, tr, ix, e, eopts) {
 							//me.favoritesTree.setSelection(null);
