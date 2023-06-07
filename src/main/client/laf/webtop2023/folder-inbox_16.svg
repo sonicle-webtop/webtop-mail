@@ -3,7 +3,7 @@
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16" enable-background="new 0 0 16 16" xml:space="preserve">
   <g id="icon">
     <polygon points="15.5,9.5 11.7126,9.5 11,11.5 5,11.5 4.3041,9.5 0.5,9.5 0.5,15.5 15.5,15.5" fill="#FFFFFF" stroke-linejoin="miter" opacity="0.5"/>
-    <path d="M16,16H0V9h4.6595l0.6959,2h5.2919l0.7126,-2H16V16zM1,15h14v-5h-2.9348l-0.7126,2H4.6446l-0.6959,-2H1V15z" fill="#7B7B7B"/>
+    <path d="M16,16H0V9h4.6595l0.6959,2h5.2919l0.7126,-2H16V16zM1,15h14v-5h-2.9348l-0.7126,2H4.6446l-0.6959,-2H1V15z" fill="#EEAC55"/>
     <polygon points="12.6723,5.0327 11.359,3.7047 9,6.0264 9,0 7,0 7,5.9479 4.7204,3.7047 3.4071,5.0327 8.0397,9.6028" fill="#7B7B7B" stroke-linejoin="miter"/>
   </g>
 </svg>
