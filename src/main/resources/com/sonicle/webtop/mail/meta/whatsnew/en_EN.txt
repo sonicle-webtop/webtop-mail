@@ -1,3 +1,26 @@
+$	5.18.0
+	%	Version 5.18.0
+	*	<h1>Search for attachment name</h1>
+		<p>A new search field allows to look for emails by attachment name
+		</p>
+		<img src="5.18.0_searchattname.png"/>
+	*	<h1>Specific icon for invitations</h1>
+		<p>The invitation emails are now shown with a specific icon
+		</p>
+		<img src="5.18.0_invitationicon.png"/>
+	*	<h1>Default application for mailto links</h1>
+		<p>The system now offer the option to register WebTop as default
+		application for mailto links. Once permission is given, clicking on
+		a mailto link of any website, a new mini WebTop session is initiated
+		allowing only to write a new email to the clicked email.
+		</p>
+		<img src="5.18.0_mailtosupport.png"/>
+	*	<h1>Sharing with "Always Cc" to another email</h1>
+		<p>The sharing functionality with "Always Cc" option,
+		now features an email field to be used as Cc.
+		When left empty, it defaults to the sharing account email.
+		</p>
+		<img src="5.18.0_alwayscc.png"/>
 $	5.16.0
 	%	Version 5.16.0
 	*	<h1>Sharing option "Always Cc"</h1>

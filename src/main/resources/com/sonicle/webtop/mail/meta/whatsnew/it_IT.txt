@@ -1,3 +1,27 @@
+$	5.18.0
+	%	Versione 5.18.0
+	*	<h1>Rircerca per nome allegato</h1>
+		<p>Un nuovo campo di ricerca permette di cercare email per nome allegato
+		</p>
+		<img src="5.18.0_searchattname.png"/>
+	*	<h1>Inviti con icona specifica</h1>
+		<p>Le email di invito vengono mostrate ora con una icona specifica
+		</p>
+		<img src="5.18.0_invitationicon.png"/>
+	*	<h1>Applicazione predefinita per link mailto</h1>
+		<p>Il sistema ora propone se si vuole rendere WebTop la applicazione
+		predefinita per i link mailto. Una volta dato il permesso, cliccando
+		su un link mailto di qualunque sito internet, viene iniziata una mini
+		sessione WebTop con esclusivamente la possibilità di scrivere una nuova mail
+		al destinatario cliccato.
+		</p>
+		<img src="5.18.0_mailtosupport.png"/>
+	*	<h1>Condivisione con opzione "Sempre in Cc" verso altre email</h1>
+		<p>La funzionalità di condivisione con opzione "Sempre in Cc",
+		ora aggiunge un campo email a cui spedire in copia conoscenza.<br>
+		Se il campo viene lasciato vuoto, sarà predefinita la mail di chi sta condividendo.
+		</p>
+		<img src="5.18.0_alwayscc.png"/>
 $	5.16.0
 	%	Versione 5.16.0
 	*	<h1>Condivisione con opzione "Sempre in Cc"</h1>
