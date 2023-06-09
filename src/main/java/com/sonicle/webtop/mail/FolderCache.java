@@ -1779,10 +1779,10 @@ public class FolderCache {
 		return rmsgs;
 	}
 	
-	protected boolean isInvitationRequest(Part part) throws MessagingException {
+	protected boolean isInvitation(Part part) throws MessagingException {
 		if (part.isMimeType("text/calendar")) {
-			String ctype=part.getContentType();
-			if (ctype!=null && StringUtils.containsIgnoreCase(ctype, "method=REQUEST"))
+			//String ctype=part.getContentType();
+			//if (ctype!=null && StringUtils.containsIgnoreCase(ctype, "method=REQUEST"))
 				return true;
 		}
 		return false;
@@ -1843,10 +1843,10 @@ public class FolderCache {
         return retval;
     }
 
-    protected boolean hasInvitationRequest(Part p) throws MessagingException, IOException {
+    protected boolean hasInvitation(Part p) throws MessagingException, IOException {
         boolean retval=false;
         
-		if (isInvitationRequest(p)) {
+		if (isInvitation(p)) {
 			retval=true;
 		}
         else if(p.isMimeType("multipart/*")) {
@@ -1854,7 +1854,7 @@ public class FolderCache {
             int parts=mp.getCount();
             for(int i=0;i<parts;++i) {
                 Part bp=mp.getBodyPart(i);
-                if (hasInvitationRequest(bp)) {
+                if (hasInvitation(bp)) {
                     retval=true;
                     break;
                 }

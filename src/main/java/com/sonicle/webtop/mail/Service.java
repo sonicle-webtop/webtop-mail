@@ -6698,7 +6698,7 @@ public class Service extends BaseService {
 							}*/
 
 							boolean hasAttachments=mcache.hasAttachments(xm, null);
-							boolean hasInvitationRequest=mcache.hasInvitationRequest(xm);
+							boolean hasInvitation=mcache.hasInvitation(xm);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
@@ -6736,7 +6736,7 @@ public class Service extends BaseService {
 							}
 
 							String status="read";
-							if (hasInvitationRequest) {
+							if (hasInvitation) {
 								status="invitation";
 							}
 							else if (flags!=null) {
