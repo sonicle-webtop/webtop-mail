@@ -8236,7 +8236,7 @@ public class Service extends BaseService {
 			im.setPeek(us.isManualSeen());
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
 			String name = m.getSubject();
-			if (name == null) {
+			if (StringUtils.isEmpty(name)) {
 				name = "attachments";
 			}
 			try {
