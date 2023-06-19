@@ -1245,7 +1245,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			});
 			
 		}
-		if (me.currentAccount===pl.accountid && me.currentFolder===pl.foldername) {
+		if (!me.messagesPanel.hasFilterQuery() && me.currentAccount===pl.accountid && me.currentFolder===pl.foldername ) {
 			me.messagesPanel.refreshGridWhenIdle(pl.foldername);
 		}
 	},

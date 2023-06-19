@@ -2587,6 +2587,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});					
 	},
 	
+	hasFilterQuery: function() {
+		var q=this.getStore().getProxy().getExtraParams().query;
+		return (q && q.conditions && q.conditions.length>0);
+	},
+	
 	indexOfMessage: function(id) {
 		return this.store.findExact('idmessage',id);
 	},

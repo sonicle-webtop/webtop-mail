@@ -601,6 +601,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			queryText: value
 		});
 	},
+	
+	hasFilterQuery: function() {
+		return this.folderList.hasFilterQuery();
+	},
 	    
 	reloadFiltered: function(quickfilter, query) {
 		var me=this;
