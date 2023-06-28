@@ -38,7 +38,7 @@ Ext.define('Sonicle.webtop.mail.model.AutoResponder', {
 	fields: [
 		WTF.field('enabled', 'boolean', false),
 		WTF.field('subject', 'string', true),
-		WTF.field('message', 'string', true, /*{
+		WTF.field('message', 'string', true/*, {
 			validators: [{
 				type: 'presence',
 				ifField: 'enabled',
