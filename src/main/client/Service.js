@@ -445,7 +445,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				layout: 'vbox',
 				region: 'center',
 				scrollable: true,
-				items: trees
+				items: trees,
+				//hack to let Ext.dd.ScrollManager work with this Panel
+				//even though it's not a Table
+				getScrollerOwner: function() {
+					return me.trees;
+				}
 		});
 		
 		//me.messagesPanel.setImapStore(me.imapTree.getStore());

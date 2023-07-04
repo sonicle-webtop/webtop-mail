@@ -37,7 +37,11 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 	alias: 'plugin.imaptreeviewdragdrop',
 	
 	ddGroup: 'mail',
-	containerScroll: true,
+	
+	//autoscroll is manually managed using ScrollManager
+	//to allow it to work on the main panel containing all the trees
+	containerScroll: false,
+	
 	allowContainerDrops: false,
 	
     /**

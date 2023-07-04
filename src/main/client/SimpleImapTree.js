@@ -38,7 +38,17 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		'Sonicle.webtop.mail.model.ImapTreeModel'
 	],
 	
-	autoScroll: true,
+	//scrollable: true,
+	
+	//Instead of using containerScroll, that would register the view of the tree,
+	//manually register to Ext.dd.ScrollManager the main tree component element
+	//so that ScrollManager will find the containing panel as the owenerCt scroll owner
+	listeners: {
+		'render': function(s) {
+			Ext.dd.ScrollManager.register(s.getEl());
+		}
+	},
+	
 	
 	selModel: {
 		ignoreRightMouseSelection: true
