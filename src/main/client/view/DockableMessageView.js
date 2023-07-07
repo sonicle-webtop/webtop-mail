@@ -65,6 +65,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 		Ext.apply(me, {
 			tbar: {
 				enableOverflow: true,
+				cls: 'wtmail-messageview-toolbar',
 				items: [
 					me.addAct("print",{
 						handler: function() {

@@ -447,8 +447,20 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				scrollable: true,
 				items: trees,
 				//hack to let Ext.dd.ScrollManager work with this Panel
-				//even though it's not a Table
+				//even though it's not a Table.
 				getScrollerOwner: function() {
+					//scroll config must be on the scrollable element
+					var scr=me.trees.getScrollable(),
+						el=scr && scr.getElement();
+					if (!el.ddScrollConfig) {
+						el.ddScrollConfig = {
+							vthresh: 50,
+							hthresh: -1,
+							frequency: 500,
+							increment: 200
+						}
+					}
+					el.ddScrollConfig.increment=el.getHeight()/2;
 					return me.trees;
 				}
 		});

@@ -823,6 +823,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.addDocked({
 				xtype: 'toolbar',
 				dock: 'top',
+				cls: 'wtmail-messagegrid-toolbar',
 				border: false,
 				referenceHolder: true,
 				bodyStyle: {
