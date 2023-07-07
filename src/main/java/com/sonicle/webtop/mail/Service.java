@@ -1937,6 +1937,27 @@ public class Service extends BaseService {
 				}
 			}
 
+			
+			//if result is no destination, I may be the only destination
+			Address[] origTos=msg.getRecipients(RecipientType.TO);
+			Address[] newRcpts=reply.getAllRecipients();
+			if ((newRcpts==null || newRcpts.length==0) && origTos!=null) {
+				InternetAddress ia0=(InternetAddress) origTos[0];
+				InternetAddress newTo=null;
+				//If I was the only one keep myself as destination
+				if (origTos.length==1) {
+					newTo=ia0;
+				} else if (origTos.length>1) {
+					//if first was me, add second, or keep myself
+					if (ia0.getAddress().toLowerCase().equals(myemail)) newTo=(InternetAddress) origTos[1];
+					else newTo=ia0;
+				}
+				if (newTo!=null) {
+					reply.addRecipient(RecipientType.TO, newTo);
+				}
+			}
+			
+			
       // Setup the message body
 			//
 			StringBuffer htmlsb = new StringBuffer();
