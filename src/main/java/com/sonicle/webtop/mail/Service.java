@@ -7270,6 +7270,7 @@ public class Service extends BaseService {
 				}
 			}
 		}
+		if (tags==null) tags=new ArrayList<>();
 		return tags;
 	}
 	
@@ -7280,6 +7281,7 @@ public class Service extends BaseService {
 		} catch(WTException exc) {
 			logger.error("Error converting flags to tags",exc);
 		}
+		if (tags==null) tags=new ArrayList<>();
 		return tags;
 	}
 	

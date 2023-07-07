@@ -1476,6 +1476,7 @@ public class FolderCache {
 				List<String> msgOldFlags = ms.flagsToTagsIds(fmsg.getFlags());
 
 				if (tagIds != null) msgNewFlags = new ArrayList<>(Arrays.asList(tagIds));
+				else msgNewFlags=new ArrayList<>();
 
 				fmsg.setFlags(allFlags, false);
 				fmsg.setFlags(newFlags, true);
