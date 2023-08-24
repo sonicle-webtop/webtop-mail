@@ -530,6 +530,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		me.onPushMessage('unread',me.onUnreadChanged,me);
 		me.onPushMessage('recent',me.onRecentMessage,me);
+		me.onPushMessage('flags',me.onFlagsChanged,me);
 		me.onPushMessage('addContact', me.onAddContact, me);
 		
         var xb=new Array();
@@ -1171,6 +1172,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if(!account)
 			account = node.getTreeStore().acct;
 		return account;
+	},
+	
+	onFlagsChanged: function(msg,pl) {
+		var me=this;
+		if (!me.messagesPanel.hasFilterQuery() && me.currentAccount===pl.accountid && me.currentFolder===pl.foldername ) {
+			me.messagesPanel.refreshGridWhenIdle(pl.foldername);
+		}
 	},
 	
 	onUnreadChanged: function(msg,pl) {

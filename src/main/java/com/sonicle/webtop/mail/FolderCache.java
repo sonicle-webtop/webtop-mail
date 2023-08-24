@@ -69,6 +69,7 @@ import com.sonicle.webtop.core.app.AuditLogManager;
 import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
+import com.sonicle.webtop.mail.ws.FlagsChangedMessage;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
@@ -304,6 +305,8 @@ public class FolderCache {
 						try {
 							//Service.logger.info("MessageChanged: {},{},{}",mce.getMessage().getFolder().getFullName(),mce.getMessage().getSubject(),mce.getMessageChangeType());
 							refreshUnreads();
+							if (mce.getMessageChangeType()==MessageChangedEvent.FLAGS_CHANGED)
+								sendFlagsChangedMessage();
 						} catch(MessagingException exc) {
 						}
 					}
@@ -624,6 +627,12 @@ public class FolderCache {
 			this.environment.notify(
 				new UnreadChangedMessage(account.getId(),foldername, unread, hasUnreadChildren)
 			);
+	}
+
+	private void sendFlagsChangedMessage() {
+		this.environment.notify(
+			new FlagsChangedMessage(account.getId(),foldername)
+		);
 	}
 
 	private void sendClearUnreadChangedMessage() {
