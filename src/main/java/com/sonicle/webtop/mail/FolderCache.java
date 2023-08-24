@@ -273,7 +273,7 @@ public class FolderCache {
             wtuser=sharedInboxPrincipal.getUserId();
         }
         updateScanFlags();
-		if (isInbox) startIdle();
+		if (isInbox || isSharedInbox || account.isFavoriteFolder(foldername)) startIdle();
     }
 	
 	boolean goidle=true;
