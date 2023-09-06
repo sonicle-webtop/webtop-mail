@@ -1176,8 +1176,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	onFlagsChanged: function(msg,pl) {
 		var me=this;
-		if (!me.messagesPanel.hasFilterQuery() && me.currentAccount===pl.accountid && me.currentFolder===pl.foldername ) {
-			me.messagesPanel.refreshGridWhenIdle(pl.foldername);
+		//do this if no user recent action changed flags
+		if ((Date.now()-me.messagesPanel.folderList.lastFlagsChangedTS)>1000) {
+			if (!me.messagesPanel.hasFilterQuery() && me.currentAccount===pl.accountid && me.currentFolder===pl.foldername ) {
+				me.messagesPanel.refreshGridWhenIdle(pl.foldername);
+			}
 		}
 	},
 	

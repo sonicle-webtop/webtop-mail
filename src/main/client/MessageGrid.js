@@ -332,6 +332,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     frame: false,
 	enableColumnMove: true,
 	skipViewOptionsCheckChange: 0,
+	lastFlagsChangedTS: 0,
 	
 	features: [
 		{
@@ -1754,7 +1755,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					WT.error(json.message);
 				}
 			}
-		});					
+		});		
+		me.lastFlagsChangedTS=Date.now();
     },
 
     deleteMessage: function(acct,folder,idmessage,dview) {
@@ -1808,6 +1810,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.fireEvent('moving',me);
 		
         me.operateMessages("MoveMessages",acctfrom,from,acctto,to,data,selection,isdd);
+		me.lastFlagsChangedTS=Date.now();
     },	
 	
     copyMessages: function(acctfrom,from,acctto,to,data,selection,isdd) {
@@ -2027,6 +2030,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					WT.error(json.message);
 			}
 		});
+		me.lastFlagsChangedTS=Date.now();
 	},
 	
 	updateRecordSeenStateAtIndex: function(ix,seen) {
@@ -2111,6 +2115,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
               }
 			}
 		  });
+		  me.lastFlagsChangedTS=Date.now();
 		}
 		else {
 			WT.error(me.mys.res('mail.permission.denied'));
@@ -2159,6 +2164,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
               }
 			}
 		  });
+		  me.lastFlagsChangedTS=Date.now();
 		}
 		else {
 			WT.error(me.mys.res('mail.permission.denied'));
@@ -2211,6 +2217,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
               }
 			}
 		  });
+		  me.lastFlagsChangedTS=Date.now();
 		}
 		else {
 			WT.error(me.mys.res('mail.permission.denied'));
@@ -2290,6 +2297,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
               }
 			}
 		  });
+		  me.lastFlagsChangedTS=Date.now();
 		}
 		else {
 			WT.error(me.mys.res('mail.permission.denied'));
