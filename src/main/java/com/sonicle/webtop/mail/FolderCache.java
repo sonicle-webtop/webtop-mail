@@ -1343,6 +1343,7 @@ public class FolderCache {
         folder.expunge();
         setForceRefresh();
         modified=true;
+	refreshUnreads();
     }
 
     public void flagMessages(long uids[], String flag) throws MessagingException {
