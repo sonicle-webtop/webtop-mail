@@ -10,10 +10,7 @@ CREATE TABLE "mail"."tags" (
 "tag_id" varchar(255) NOT NULL,
 "description" varchar(255),
 "color" varchar(20)
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Primary Key structure for table tags

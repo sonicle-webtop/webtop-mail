@@ -29,10 +29,7 @@ CREATE TABLE "mail"."autoresponders" (
 "start_date" timestamptz(6),
 "end_date" timestamptz(6),
 "skip_mailing_lists" bool DEFAULT false NOT NULL
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Table structure for identities
@@ -47,10 +44,7 @@ CREATE TABLE "mail"."identities" (
 "main_folder" varchar(100),
 "fax" bool DEFAULT false,
 "identity_uid" varchar(36)
-)
-WITH (OIDS=TRUE)
-
-;
+);
 
 -- ----------------------------
 -- Table structure for in_filters
@@ -66,10 +60,7 @@ CREATE TABLE "mail"."in_filters" (
 "sieve_match" varchar(10) NOT NULL,
 "sieve_rules" text NOT NULL,
 "sieve_actions" text NOT NULL
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Table structure for notes
@@ -79,10 +70,7 @@ CREATE TABLE "mail"."notes" (
 "domain_id" varchar(20) NOT NULL,
 "message_id" varchar(128) NOT NULL,
 "text" text
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Table structure for scan
@@ -92,10 +80,7 @@ CREATE TABLE "mail"."scan" (
 "domain_id" varchar(20) DEFAULT ''::character varying NOT NULL,
 "user_id" varchar(100) NOT NULL,
 "foldername" varchar(255) NOT NULL
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Table structure for tags
@@ -107,10 +92,7 @@ CREATE TABLE "mail"."tags" (
 "tag_id" varchar(255) NOT NULL,
 "description" varchar(255),
 "color" varchar(20)
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Table structure for users_map
@@ -124,10 +106,7 @@ CREATE TABLE "mail"."users_map" (
 "mail_host" varchar(100),
 "mail_port" int4,
 "mail_protocol" varchar(10)
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Alter Sequences Owned By 

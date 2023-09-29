@@ -19,10 +19,7 @@ CREATE TABLE "mail"."autoresponders" (
 "start_date" timestamptz(6),
 "end_date" timestamptz(6),
 "skip_mailing_lists" bool DEFAULT false NOT NULL
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Table structure for in_filters
@@ -37,10 +34,7 @@ CREATE TABLE "mail"."in_filters" (
 "sieve_match" varchar(10) NOT NULL,
 "sieve_rules" text NOT NULL,
 "sieve_actions" text NOT NULL
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ----------------------------
 -- Indexes structure for table autoresponders

@@ -24,10 +24,7 @@ CREATE TABLE "mail"."external_accounts" (
 "folder_trash" varchar(255),
 "folder_spam" varchar(255),
 "folder_archive" varchar(255)
-)
-WITH (OIDS=FALSE)
-
-;
+);
 
 -- ---------------------------------------------------------
 -- Add readonly_provider column in table external_accounts
