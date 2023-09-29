@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.google.gson.annotations.SerializedName;
 import com.sonicle.commons.web.json.JsonResult;
 import java.util.ArrayList;
 
@@ -176,7 +177,21 @@ public class MailSettings {
 	 * Messages older that X days will be archived, newer messages will be skipped.
 	 */
 	public static final String ARCHIVING_EXTERNAL_MINAGE = "archiving.external.minage";
-
+	
+	/**
+	 * [system+domain]
+	 * [enum] (strip|append)
+	 * Overrides the default domainSuffix usage, based on domain's schema evaluation, when applying ACLs.
+	 * - strip: domain suffix is always REMOVED
+	 * - append: domain suffix is always ADDED
+	 */
+	public static final String ACL_DOMAINSUFFIX_POLICY_OVERRIDE = "acl.domainsuffix.policy.override";
+	
+	public static enum ACLDomainSuffixPolicy {
+		@SerializedName("strip") STRIP,
+		@SerializedName("append") APPEND;
+	}
+	
 	/**
 	 * [system+domain]
 	 * [boolean]

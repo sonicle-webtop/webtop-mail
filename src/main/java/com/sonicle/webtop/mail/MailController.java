@@ -161,7 +161,16 @@ public class MailController extends BaseController implements IControllerService
 					if (WebTopDirectory.SCHEME.equals(dirScheme)) user = profileId.getUserId();
 
 					final StoreHostParams hostParams = mss.getMailboxHostParamsAsAdmin();
-					Set<String> acls = LangUtils.asSet(user + ":" + StoreUtils.FOLDER_FULL_RIGHTS, hostParams.getUsername() + ":" + StoreUtils.FOLDER_FULL_RIGHTS);
+					String mailboxOwner = profileId.getUserId();
+					if (MailSettings.ACLDomainSuffixPolicy.APPEND.equals(mss.getACLDomainSuffixPolicy(dirScheme))) {
+						mailboxOwner += "@" + WT.getAuthDomainName(profileId.getDomainId());
+					}
+					final Set<String> acls = LangUtils.asSet(
+						// Full-rights for Admin: here the username used to connection is the admin (use it as is)!
+						hostParams.getUsername() + ":" + StoreUtils.FOLDER_FULL_RIGHTS,
+						// Full-rights for the owning user
+						mailboxOwner + ":" + StoreUtils.FOLDER_FULL_RIGHTS
+					);
 					StoreUtils.createMailbox(StoreUtils.createSession(hostParams, 1, WT.getProperties()), hostParams.getProtocol(), "user", user, acls);
 					
 				} catch (Exception ex) {

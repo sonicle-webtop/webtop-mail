@@ -366,6 +366,19 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(AUTH_USER_STRIP_DOMAIN,false);
 	}
 	
+	public ACLDomainSuffixPolicy getACLDomainSuffixPolicy(final String directoryScheme) {
+		ACLDomainSuffixPolicy policyOverride = getEnum(ACL_DOMAINSUFFIX_POLICY_OVERRIDE, null, ACLDomainSuffixPolicy.class);
+		if (policyOverride != null) {
+			return policyOverride;
+		} else {
+			if ("ad".equals(directoryScheme) || directoryScheme.startsWith("ldap")) {
+				return ACLDomainSuffixPolicy.APPEND;
+			} else {
+				return ACLDomainSuffixPolicy.STRIP;
+			}
+		}
+	}
+	
 	public boolean isReFwSanitizeDownlevelRevealedComments() {
 		return getBoolean(RE_FW_SANITIZE_DOWNLEVEL_REVEALED_COMMENTS,false);
 	}

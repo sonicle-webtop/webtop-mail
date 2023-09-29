@@ -86,9 +86,11 @@ public class MailUserProfile {
 	private boolean includeMessageInReply;
 	private int numMessageList;
     private MailManager mman;
+	private MailServiceSettings mss;
 
     public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, String dirScheme) {
 		this.mman=mman;
+		this.mss = mss;
 		UserProfileId profile = mman.getTargetProfileId();
 		Connection con = null;
 		
@@ -196,7 +198,8 @@ public class MailUserProfile {
 	
 	
     public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile) {
-        //this.env=env;
+        this.mss = mss;
+		//this.env=env;
 		//UserProfile profile=env.getProfile();
         
 		Connection con=null;
@@ -304,12 +307,14 @@ public class MailUserProfile {
     }
 	
 	private boolean schemeWantsUserWithDomain(String directoryScheme) {
-		return "ad".equals(directoryScheme) || directoryScheme.startsWith("ldap");
+		//return "ad".equals(directoryScheme) || directoryScheme.startsWith("ldap");
+		return MailSettings.ACLDomainSuffixPolicy.APPEND.equals(mss.getACLDomainSuffixPolicy(directoryScheme));
 	}
     
 	private boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
-		String scheme=ad.getDirUri().getScheme();
-		return scheme.equals("ad")||scheme.startsWith("ldap");
+		//String scheme=ad.getDirUri().getScheme();
+		//return scheme.equals("ad")||scheme.startsWith("ldap");
+		return MailSettings.ACLDomainSuffixPolicy.APPEND.equals(mss.getACLDomainSuffixPolicy(ad.getDirUri().getScheme()));
 	}
 	
     public String getFolderPrefix() {
