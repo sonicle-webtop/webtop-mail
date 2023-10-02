@@ -210,7 +210,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 						},
 						width: 30
 					}, {
-						dataIndex: 'name',
+						dataIndex: 'calcName',
 						header: me.res('inMailFilters.gp-filters.name.lbl'),
 						flex: 1
 					}, {
@@ -230,6 +230,14 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 				listeners: {
 					rowdblclick: function(s, rec) {
 						me.editMailFilterUI(rec);
+					},
+					beforedrop: function(node, data, overModel, dropPosition, dropHandlers) {
+						var dragRec = data.records[0];
+						if (dragRec && dragRec.isBuiltIn()) {
+							dropHandlers.cancelDrop();
+						} else if (overModel && overModel.isBuiltIn() && dropPosition === 'before') {
+							dropHandlers.cancelDrop();
+						}
 					}
 				},
 				width: '100%',
@@ -475,8 +483,9 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		toSieveFilterData: function(data) {
 			return {
 				filterId: data.filterId,
-				name: data.name,
+				builtIn: data.builtIn,
 				enabled: data.enabled,
+				name: data.name,
 				match: data.sieveMatch,
 				rules: data.sieveRules,
 				actions: data.sieveActions
@@ -486,6 +495,7 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		fromSieveFilterData: function(data) {
 			return {
 				name: data.name,
+				builtIn: data.builtIn,
 				enabled: data.enabled,
 				sieveMatch: data.match,
 				sieveRules: data.rules,

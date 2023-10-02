@@ -66,6 +66,7 @@ import com.sonicle.mail.sieve.SieveMatch;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.SessionContext;
 import com.sonicle.webtop.core.app.WebTopSession;
+import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.app.model.FolderShareOriginFolders;
 import com.sonicle.webtop.core.app.model.ShareOrigin;
 import com.sonicle.webtop.core.app.model.Sharing;
@@ -141,8 +142,6 @@ public class MailManager extends BaseManager implements IMailManager {
 	List<Identity> identities=null;
 	HashMap<String, Identity> identHash = new HashMap<>();
 	HashMap<String, List<Identity>> allPersonalIdentitiesDomains = new HashMap<>();
-	List<MailFilter> filtersCache=null;
-	Object filtersCacheLock=new Object();
 	
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
@@ -962,104 +961,88 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
-	public List<MailFilter> getMailFilters(MailFiltersType type) throws WTException {
-		return getMailFilters(type, false, false);
+	public List<MailFilter> getMailFilters(final MailFiltersType type, final EnabledCond enabled) throws WTException {
+		return getMailFilters(type, enabled, null);
 	}
 	
-	public List<MailFilter> getMailFilters(MailFiltersType type, boolean enabledOnly) throws WTException {
-		return getMailFilters(type, enabledOnly, false);
-	}
-	
-	public List<MailFilter> getCachedMailFilters(MailFiltersType type) throws WTException {
-		return getMailFilters(type, false, true);
-	}
-	
-	public List<MailFilter> getCachedMailFilters(MailFiltersType type, boolean enabledOnly) throws WTException {
-		return getMailFilters(type, enabledOnly, true);
-	}
-	
-	public List<MailFilter> getMailFilters(MailFiltersType type, boolean enabledOnly, boolean cache) throws WTException {
+	public List<MailFilter> getMailFilters(final MailFiltersType type, final EnabledCond enabled, final Short builtIn) throws WTException {
+		Connection con = null;
 		
-		synchronized(filtersCacheLock) {
-			if (!cache || filtersCache==null) {
-				InFilterDAO indao = InFilterDAO.getInstance();
-				List<MailFilter> filters = filtersCache = new ArrayList<>();
-				Connection con = null;
-
-				try {
-					con = WT.getConnection(SERVICE_ID);
-
-					if (type.equals(MailFiltersType.INCOMING)) {
-						List<OInFilter> items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
-						if (enabledOnly) {
-							items = indao.selectEnabledByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
-						} else {
-							items = indao.selectByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
-						}
-						for (OInFilter item : items) {
-							filters.add(createMailFilter(item));
-						}
-						return filters;
-					} else {
-						throw new WTException("Type not supported yet [{0}]", type.toString());
-					}
-
-				} catch(SQLException | DAOException ex) {
-					throw new WTException(ex, "DB error");
-				} finally {
-					DbUtils.closeQuietly(con);
-				}
-			}
-
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			return doMailFiltersGet(con, type, enabled, builtIn);
+			
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
 		}
-		
-		return filtersCache;
 	}
 	
-	public void updateMailFilters(MailFiltersType type, List<MailFilter> filters) throws WTException {
-		InFilterDAO indao = InFilterDAO.getInstance();
+	public void updateMailFilters(final MailFiltersType type, final List<MailFilter> filters) throws WTException {
 		Connection con = null;
 		
 		//TODO: valutare permessi... admin?
-		
 		try {
 			con = WT.getConnection(SERVICE_ID, false);
+			doMailFiltersUpdate(con, type, filters, true);
+			DbUtils.commitQuietly(con);
 			
-			if (type.equals(MailFiltersType.INCOMING)) {
-				List<MailFilter> origFilters = getMailFilters(type);
-				CollectionChangeSet<MailFilter> changeSet = LangUtils.getCollectionChanges(origFilters, filters);
-				
-				OInFilter ofil = null;
-				for(MailFilter filter : changeSet.inserted) {
-					ofil = createOInFilter(filter);
-					ofil.setInFilterId(indao.getSequence(con).intValue());
-					ofil.setDomainId(getTargetProfileId().getDomainId());
-					ofil.setUserId(getTargetProfileId().getUserId());
-					indao.insert(con, ofil);
-				}
-				for(MailFilter filter : changeSet.updated) {
-					ofil = createOInFilter(filter);
-					indao.update(con, ofil);
-				}
-				for(MailFilter filter : changeSet.deleted) {
-					indao.delete(con, filter.getFilterId());
-				}
-				
-				if (!changeSet.deleted.isEmpty()) {
-					indao.updateOrderByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
-				}
-				
-				DbUtils.commitQuietly(con);
-				
-			} else {
-				throw new WTException("Type not supported yet [{0}]", type.toString());
-			}
+			//TODO: update cache
 			
-		} catch(SQLException | DAOException ex) {
+		} catch (Exception ex) {
 			DbUtils.rollbackQuietly(con);
-			throw new WTException(ex, "DB error");
+			throw ExceptionUtils.wrapThrowable(ex);
 		} finally {
 			DbUtils.closeQuietly(con);
+		}
+	}
+	
+	private List<MailFilter> doMailFiltersGet(Connection con, MailFiltersType type, EnabledCond enabled) throws WTException {
+		return doMailFiltersGet(con, type, enabled, null);
+	}
+	
+	private List<MailFilter> doMailFiltersGet(Connection con, MailFiltersType type, EnabledCond enabled, Short builtIn) throws WTException {
+		InFilterDAO infDao = InFilterDAO.getInstance();
+		
+		if (type.equals(MailFiltersType.INCOMING)) {
+			List<OInFilter> ofilters = infDao.selectByProfileBuiltInEnabled(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), builtIn, enabled);
+			List<MailFilter> items = new ArrayList<>(ofilters.size());
+			for (OInFilter ofilter : ofilters) {
+				items.add(ManagerUtils.fillMailFilter(new MailFilter(), ofilter));
+			}
+			return items;
+			
+		} else {
+			throw new WTException("Type '{}' is not supported yet", type.toString());
+		}
+	}
+	
+	public void doMailFiltersUpdate(Connection con, final MailFiltersType type, final List<MailFilter> filters, final boolean refreshOrder) throws WTException {
+		InFilterDAO infDao = InFilterDAO.getInstance();
+		
+		if (type.equals(MailFiltersType.INCOMING)) {
+			List<MailFilter> oldFilters = doMailFiltersGet(con, type, EnabledCond.ANY_STATE);
+			LangUtils.ChangeSet<MailFilter> changes = LangUtils.computeChangeSet(oldFilters, filters);
+			for (MailFilter filter : changes.getAdded()) {
+				OInFilter oinfilter = ManagerUtils.fillOInFilter(new OInFilter(), filter);
+				oinfilter.setInFilterId(infDao.getSequence(con).intValue());
+				oinfilter.setDomainId(getTargetProfileId().getDomainId());
+				oinfilter.setUserId(getTargetProfileId().getUserId());
+				infDao.insert(con, oinfilter);
+			}
+			for (MailFilter filter : changes.getUpdated()) {
+				infDao.update(con, ManagerUtils.fillOInFilter(new OInFilter(), filter));
+			}
+			for (MailFilter filter : changes.getRemoved()) {
+				infDao.delete(con, filter.getFilterId());
+			}
+			if (refreshOrder) {
+				infDao.updateOrderByProfile(con, getTargetProfileId().getDomainId(), getTargetProfileId().getUserId());
+			}
+			
+		} else {
+			throw new WTException("Type '{}' is not supported yet", type.toString());
 		}
 	}
 	
@@ -1112,10 +1095,13 @@ public class MailManager extends BaseManager implements IMailManager {
 		SieveScriptBuilder ssb = new SieveScriptBuilder();
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID,getTargetProfileId().getDomainId());
 		MailUserSettings mus = new MailUserSettings(getTargetProfileId(),mss);
-		if (!mss.isSieveSpamFilterDisabled())
-			ssb.setSpamFilter(mus.getFolderSpam());
 		
 		ensureUser();
+		
+		if (!mss.isSieveSpamFilterDisabled()) {
+			ssb.setSpamFilter(mus.getFolderSpam());
+		}
+		
 		logger.debug("Working on autoresponder...");
 		AutoResponder autoResp = getAutoResponder();
 		if (autoResp.getEnabled()) {
@@ -1135,8 +1121,9 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 		
 		logger.debug("Working on incoming filters...");
-		List<MailFilter> filters = getMailFilters(MailFiltersType.INCOMING);
+		List<MailFilter> filters = getMailFilters(MailFiltersType.INCOMING, EnabledCond.ENABLED_ONLY);
 		
+		/*
 		// Arrange filters in the specified order and fill the builder
 		Collections.sort(filters, new Comparator<MailFilter>() {
 			@Override
@@ -1144,8 +1131,11 @@ public class MailManager extends BaseManager implements IMailManager {
 				return Short.compare(o1.getOrder(), o2.getOrder());
 			}
 		});
-		for(MailFilter filter : filters) {
-			if (filter.getEnabled()) {
+		*/
+		for (MailFilter filter : filters) {
+			if (ManagerUtils.MAILFILTER_SENDERBLACKLIST_BUILTIN.equals(filter.getBuiltIn())) {
+				ssb.addPrioritizedFilter(filter.getName(), filter.getSieveMatch(), filter.getSieveRules(), filter.getSieveActions());
+			} else {
 				ssb.addFilter(filter.getName(), filter.getSieveMatch(), filter.getSieveRules(), filter.getSieveActions());
 			}
 		}
@@ -1211,6 +1201,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		return oaut;
 	}
 	
+	/*
 	private OInFilter createOInFilter(MailFilter fil) {
 		if (fil == null) return null;
 		OInFilter ofil = new OInFilter();
@@ -1238,6 +1229,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		if (acts != null) fil.getSieveActions().addAll(acts);
 		return fil;
 	}
+	*/
 	
 	private static class SieveConfig {
 		private String host;

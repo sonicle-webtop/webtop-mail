@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail.dal;
 
+import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.dal.BaseDAO;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.mail.bol.OInFilter;
@@ -42,6 +43,7 @@ import com.sonicle.webtop.mail.jooq.tables.InFilters;
 import com.sonicle.webtop.mail.jooq.tables.records.InFiltersRecord;
 import java.sql.Connection;
 import java.util.List;
+import org.jooq.Condition;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record2;
@@ -85,23 +87,37 @@ public class InFilterDAO extends BaseDAO {
 				.and(IN_FILTERS.USER_ID.equal(userId))
 			)
 			.orderBy(
+				IN_FILTERS.BUILT_IN.desc(),
 				IN_FILTERS.ORDER.asc(),
 				IN_FILTERS.NAME.asc()
 			)
 			.fetchInto(OInFilter.class);
 	}
 	
-	public List<OInFilter> selectEnabledByProfile(Connection con, String domainId, String userId) throws DAOException {
+	public List<OInFilter> selectByProfileBuiltInEnabled(Connection con, String domainId, String userId, Short builtIn, EnabledCond enabled) throws DAOException {
 		DSLContext dsl = getDSL(con);
+		Condition cndtBuiltIn = DSL.trueCondition();
+		if (builtIn != null) {
+			cndtBuiltIn = IN_FILTERS.BUILT_IN.equal(builtIn);
+		}
+		Condition cndtEnabled = DSL.trueCondition();
+		if (EnabledCond.ENABLED_ONLY.equals(enabled)) {
+			cndtEnabled = IN_FILTERS.ENABLED.isTrue();
+		} else if (EnabledCond.DISABLED_ONLY.equals(enabled)) {
+			cndtEnabled = IN_FILTERS.ENABLED.isFalse();
+		}
+		
 		return dsl
 			.select()
 			.from(IN_FILTERS)
 			.where(
 				IN_FILTERS.DOMAIN_ID.equal(domainId)
 				.and(IN_FILTERS.USER_ID.equal(userId))
-				.and(IN_FILTERS.ENABLED.isTrue())
+				.and(cndtBuiltIn)
+				.and(cndtEnabled)
 			)
 			.orderBy(
+				IN_FILTERS.BUILT_IN.desc(),
 				IN_FILTERS.ORDER.asc(),
 				IN_FILTERS.NAME.asc()
 			)
@@ -121,6 +137,7 @@ public class InFilterDAO extends BaseDAO {
 		DSLContext dsl = getDSL(con);
 		return dsl
 			.update(IN_FILTERS)
+			.set(IN_FILTERS.BUILT_IN, item.getBuiltIn())
 			.set(IN_FILTERS.ENABLED, item.getEnabled())
 			.set(IN_FILTERS.ORDER, item.getOrder())
 			.set(IN_FILTERS.NAME, item.getName())
@@ -136,7 +153,10 @@ public class InFilterDAO extends BaseDAO {
 	public int updateOrderByProfile(Connection con, String domainId, String userId) throws DAOException {
 		DSLContext dsl = getDSL(con);
 		InFilters IF2 = IN_FILTERS.as("if2");
-		Field<Short> NEW_ORDER = DSL.rowNumber().over().orderBy(IF2.ORDER).cast(Short.class).as("new_order");
+		Field<Short> NEW_ORDER = DSL.rowNumber()
+			.over()
+			.orderBy(IF2.BUILT_IN.desc(), IF2.ORDER.asc())
+			.cast(Short.class).as("new_order");
 		Table<Record2<Short, Integer>> tab = DSL.select(
 			NEW_ORDER,
 			IF2.IN_FILTER_ID

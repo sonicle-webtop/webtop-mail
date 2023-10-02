@@ -43,6 +43,12 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 	
 	border: false,
 	
+	config: {
+		createDisabled: false,
+		updateDisabled: false,
+		deleteDisabled: false
+	},
+	
 	/*
 	 * @private
 	 * @readonly
@@ -65,7 +71,9 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 				ptype: 'cellediting',
 				clicksToEdit: 1,
 				listeners: {
-					//beforeedit: me.onCellBeforeEdit,
+					beforeedit: function() {
+						if (!!me.updateDisabled) return false;
+					},
 					edit: me.onCellEdit,
 					//validateedit: me.onCellValidateEdit,
 					scope: me
@@ -121,11 +129,13 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 						{
 							iconCls: 'far fa-trash-alt',
 							tooltip: WT.res('act-remove.lbl'),
+							disabled: me.deleteDisabled,
 							handler: function(g, ridx) {
 								g.getStore().removeAt(ridx);
 							}
 						}
-					]
+					],
+					hidden: me.deleteDisabled
 				}
 			];
 		}
@@ -133,6 +143,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 		me.tools = me.tools || [];
 		me.tools.push({
 			type: 'plus',
+			disabled: !!me.createDisabled,
 			callback: function() {
 				me.addAction();
 			}
@@ -193,11 +204,26 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 		me.callParent();
 	},
 	
+	updateCreateDisabled: function(nv, ov) {
+		var hd = this.getHeader();
+		if (ov !== null && hd) {
+			hd.getTools()[0].setDisabled(nv);
+		}
+	},
+	
+	updateDeleteDisabled: function(nv, ov) {
+		var cm = this.getColumnManager();
+		if (ov !== null && cm) {
+			cm.getHeaderAtIndex(2).setHidden(nv);
+		}
+	},
+	
 	addAction: function() {
 		var me = this,
 				edp = me.findPlugin('cellediting'),
 				sto = me.getStore();
 		
+		if (!!me.createDisabled) return;
 		edp.completeEdit();
 		sto.add(sto.createModel({
 			method: 'discard'

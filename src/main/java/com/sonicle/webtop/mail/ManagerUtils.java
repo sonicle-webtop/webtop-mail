@@ -33,8 +33,19 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.EnumUtils;
+import com.sonicle.commons.LangUtils;
 import com.sonicle.mail.MailboxConfig;
+import com.sonicle.mail.sieve.SieveMatch;
+import com.sonicle.mail.sieve.SieveRule;
+import com.sonicle.mail.sieve.SieveRuleField;
+import com.sonicle.mail.sieve.SieveRuleOperator;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.mail.bol.OInFilter;
+import com.sonicle.webtop.mail.model.MailFilter;
+import com.sonicle.webtop.mail.model.MailFilterBase;
+import com.sonicle.webtop.mail.model.SieveActionList;
+import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.util.List;
 
 /**
@@ -63,5 +74,65 @@ public class ManagerUtils {
 			.withSpamFolderName(mus.getFolderSpam())
 			.withArchiveFolderName(mus.getFolderArchive())
 			.build();
+	}
+	
+	static <T extends MailFilter> T fillMailFilter(T tgt, OInFilter src) {
+		fillMailFilterBase((MailFilterBase)tgt, src);
+		if ((tgt != null) && (src != null)) {
+			tgt.setFilterId(src.getInFilterId());
+		}
+		return tgt;
+	}
+	
+	static <T extends MailFilterBase> T fillMailFilterBase(T tgt, OInFilter src) {
+		if ((tgt != null) && (src != null)) {
+			tgt.setBuiltIn(src.getBuiltIn());
+			tgt.setEnabled(src.getEnabled());
+			tgt.setOrder(src.getOrder());
+			tgt.setName(src.getName());
+			tgt.setSieveMatch(EnumUtils.forSerializedName(src.getSieveMatch(), SieveMatch.class));
+			SieveRuleList rules = LangUtils.deserialize(src.getSieveRules(), null, SieveRuleList.class);
+			if (rules != null) tgt.getSieveRules().addAll(rules);
+			SieveActionList acts = LangUtils.deserialize(src.getSieveActions(), null, SieveActionList.class);
+			if (acts != null) tgt.getSieveActions().addAll(acts);
+		}
+		return tgt;
+	}
+	
+	static final Short MAILFILTER_SENDERBLACKLIST_BUILTIN = 1;
+	
+	static MailFilter createSenderBlacklistMailFilter() {
+		return fillSenderBlacklistMailFilterWithDefaults(new MailFilter());
+	}
+	
+	static MailFilter fillSenderBlacklistMailFilterWithDefaults(MailFilter tgt) {
+		tgt.setBuiltIn(MAILFILTER_SENDERBLACKLIST_BUILTIN);
+		tgt.setEnabled(true);
+		tgt.setOrder((short)0);
+		tgt.setName("Sender Blacklist (built-in)");
+		tgt.setSieveMatch(SieveMatch.ANY);
+		tgt.setSieveActions(SieveActionList.discardAndStop());
+		return tgt;
+	}
+	
+	static OInFilter fillOInFilter(OInFilter tgt, MailFilter src) {
+		fillOInFilter(tgt, (MailFilterBase)src);
+		if ((tgt != null) && (src != null)) {
+			tgt.setInFilterId(src.getFilterId());
+		}
+		return tgt;
+	}
+	
+	static OInFilter fillOInFilter(OInFilter tgt, MailFilterBase src) {
+		if ((tgt != null) && (src != null)) {
+			tgt.setBuiltIn(src.getBuiltIn());
+			tgt.setEnabled(src.getEnabled());
+			tgt.setOrder(src.getOrder());
+			tgt.setName(src.getName());
+			tgt.setSieveMatch(EnumUtils.toSerializedName(src.getSieveMatch()));
+			tgt.setSieveRules(LangUtils.serialize(src.getSieveRules(), SieveRuleList.class));
+			tgt.setSieveActions(LangUtils.serialize(src.getSieveActions(), SieveActionList.class));
+		}
+		return tgt;
 	}
 }

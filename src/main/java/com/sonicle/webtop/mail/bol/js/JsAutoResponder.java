@@ -33,6 +33,10 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
+import com.sonicle.commons.time.DateTimeUtils;
+import com.sonicle.webtop.mail.model.AutoResponder;
+import org.joda.time.DateTimeZone;
+
 /**
  *
  * @author malbinola
@@ -45,4 +49,28 @@ public class JsAutoResponder {
 	public String activationStartDate;
 	public String activationEndDate;
 	public Short daysInterval;
+	
+	public JsAutoResponder() {}
+	
+	public JsAutoResponder(AutoResponder autoResponder, DateTimeZone profileTz) {
+		this.enabled = autoResponder.getEnabled();
+		this.subject = autoResponder.getSubject();
+		this.message = autoResponder.getMessage();
+		this.addresses = autoResponder.getAddresses();
+		this.activationStartDate = DateTimeUtils.printYmdHmsWithZone(autoResponder.getActivationStartDate(), profileTz);
+		this.activationEndDate = DateTimeUtils.printYmdHmsWithZone(autoResponder.getActivationEndDate(), profileTz);
+		this.daysInterval = autoResponder.getDaysInterval();
+	}
+	
+	public AutoResponder createAutoResponderForUpdate(DateTimeZone profileTz) {
+		AutoResponder item = new AutoResponder();
+		item.setEnabled(enabled);
+		item.setSubject(subject);
+		item.setMessage(message);
+		item.setAddresses(addresses);
+		item.setDaysInterval(daysInterval);
+		item.setActivationStartDate(DateTimeUtils.withTimeAtStartOfDay(DateTimeUtils.parseYmdHmsWithZone(activationStartDate, profileTz)));
+		item.setActivationEndDate(DateTimeUtils.withTimeAtStartOfDay(DateTimeUtils.parseYmdHmsWithZone(activationEndDate, profileTz)));
+		return item;
+	}
 }

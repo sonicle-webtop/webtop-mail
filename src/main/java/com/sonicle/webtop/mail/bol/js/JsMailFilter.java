@@ -33,17 +33,21 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
+import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.web.json.JsonResult;
-import com.sonicle.webtop.core.bol.js.JsFkModel;
 import com.sonicle.mail.sieve.SieveMatch;
+import com.sonicle.webtop.mail.model.MailFilter;
+import com.sonicle.webtop.mail.model.SieveActionList;
+import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.util.ArrayList;
 
 /**
  *
  * @author malbinola
  */
-public class JsMailFilter extends JsFkModel {
+public class JsMailFilter {
 	public Integer filterId;
+	public Short builtIn;
 	public Boolean enabled;
 	public Short order;
 	public String name;
@@ -51,8 +55,30 @@ public class JsMailFilter extends JsFkModel {
 	public String sieveRules;
 	public String sieveActions;
 	
-	public JsMailFilter(Object _fk) {
-		super(_fk);
+	public JsMailFilter() {}
+	
+	public JsMailFilter(MailFilter filter) {
+		this.filterId = filter.getFilterId();
+		this.builtIn = filter.getBuiltIn();
+		this.enabled = filter.getEnabled();
+		this.order = filter.getOrder();
+		this.name = filter.getName();
+		this.sieveMatch = filter.getSieveMatch();
+		this.sieveRules = LangUtils.serialize(filter.getSieveRules(), SieveRuleList.class);
+		this.sieveActions = LangUtils.serialize(filter.getSieveActions(), SieveActionList.class);
+	}
+	
+	public MailFilter createMailFilterForUpdate() {
+		MailFilter item = new MailFilter();
+		item.setFilterId(filterId);
+		item.setBuiltIn(builtIn);
+		item.setEnabled(enabled);
+		item.setOrder(order);
+		item.setName(name);
+		item.setSieveMatch(sieveMatch);
+		item.setSieveRules(LangUtils.deserialize(sieveRules, new SieveRuleList(), SieveRuleList.class));
+		item.setSieveActions(LangUtils.deserialize(sieveActions, new SieveActionList(), SieveActionList.class));
+		return item;
 	}
 	
 	public static class List extends ArrayList<JsMailFilter> {

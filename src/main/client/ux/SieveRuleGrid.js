@@ -46,6 +46,12 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 	
 	border: false,
 	
+	config: {
+		createDisabled: false,
+		updateDisabled: false,
+		deleteDisabled: false
+	},
+	
 	/*
 	 * @private
 	 * @readonly
@@ -68,6 +74,9 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 				ptype: 'cellediting',
 				clicksToEdit: 1,
 				listeners: {
+					beforeedit: function() {
+						if (!!me.updateDisabled) return false;
+					},
 					edit: me.onCellEdit,
 					scope: me
 				}
@@ -151,18 +160,21 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 						{
 							iconCls: 'far fa-trash-alt',
 							tooltip: WT.res('act-remove.lbl'),
+							disabled: me.deleteDisabled,
 							handler: function(g, ridx) {
 								g.getStore().removeAt(ridx);
 							}
 						}
-					]
+					],
+					hidden: me.deleteDisabled
 				}
 			];
 		}
-
+		
 		me.tools = me.tools || [];
 		me.tools.push({
 			type: 'plus',
+			disabled: !!me.createDisabled,
 			callback: function() {
 				me.addRule();
 			}
@@ -216,11 +228,26 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 		me.callParent();
 	},
 	
+	updateCreateDisabled: function(nv, ov) {
+		var hd = this.getHeader();
+		if (ov !== null && hd) {
+			hd.getTools()[0].setDisabled(nv);
+		}
+	},
+	
+	updateDeleteDisabled: function(nv, ov) {
+		var cm = this.getColumnManager();
+		if (ov !== null && cm) {
+			cm.getHeaderAtIndex(2).setHidden(nv);
+		}
+	},
+	
 	addRule: function() {
 		var me = this,
-				edp = me.findPlugin('cellediting'),
-				sto = me.getStore();
+			edp = me.findPlugin('cellediting'),
+			sto = me.getStore();
 		
+		if (!!me.createDisabled) return;
 		edp.completeEdit();
 		sto.add(sto.createModel({
 			field: 'subject',

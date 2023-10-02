@@ -48,7 +48,7 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 		width: 650,
 		height: 500
 	},
-	fieldTitle: 'name',
+	fieldTitle: 'calcName',
 	modelName: 'Sonicle.webtop.mail.model.SieveFilter',
 	
 	constructor: function(cfg) {
@@ -56,6 +56,7 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 		me.callParent([cfg]);
 		
 		WTU.applyFormulas(me.getVM(), {
+			foIsBuiltIn: WTF.foIsEqual('record', 'builtIn', 0, true),
 			foEnabled: WTF.checkboxBind('record', 'enabled'),
 			foMatchUnconditionally: WTF.foIsEqual('record', 'match', 'allmsg')
 		});
@@ -75,11 +76,24 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 				defaults: {
 					labelWidth: 150
 				},
-				items: [{
+				items: [
+					{
 						xtype: 'textfield',
 						reference: 'fldname',
-						bind: '{record.name}',
+						bind: {
+							value: '{record.name}',
+							hidden: '{foIsBuiltIn}'
+						},
 						fieldLabel: me.mys.res('sieveFilter.fld-name.lbl'),
+						width: 500
+					}, {
+						xtype: 'textfield',
+						bind: {
+							value: '{record.calcName}',
+							hidden: '{!foIsBuiltIn}'
+						},
+						fieldLabel: me.mys.res('sieveFilter.fld-name.lbl'),
+						disabled: true,
 						width: 500
 					}, {
 						xtype: 'checkbox',
@@ -90,7 +104,10 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 						xtype: 'formseparator'
 					},
 					WTF.lookupCombo('id', 'desc', {
-						bind: '{record.match}',
+						bind: {
+							value: '{record.match}',
+							disabled: '{foIsBuiltIn}'
+						},
 						store: Ext.create('Sonicle.webtop.mail.store.SieveMatch', {
 							autoLoad: true
 						}),
@@ -102,30 +119,37 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 			}, {
 				xtype: 'container',
 				layout: 'vbox',
-				items: [{
-					xtype: 'wtmailsieverulegrid',
-					reference: 'gprules',
-					bind: {
-						disabled: '{foMatchUnconditionally}'
-					},
-					title: me.mys.res('sieveFilter.rules.tit'),
-					store: Ext.create('Ext.data.ArrayStore', {
-						model: 'Sonicle.webtop.mail.model.SieveRule'
-					}),
-					reserveScrollbar: true,
-					width: '100%',
-					flex: 1
-				}, {
-					xtype: 'wtmailsieveactiongrid',
-					reference: 'gpactions',
-					title: me.mys.res('sieveFilter.actions.tit'),
-					store: Ext.create('Ext.data.ArrayStore', {
-						model: 'Sonicle.webtop.mail.model.SieveAction'
-					}),
-					reserveScrollbar: true,
-					width: '100%',
-					flex: 1
-				}],
+				items: [
+					{
+						xtype: 'wtmailsieverulegrid',
+						reference: 'gprules',
+						bind: {
+							disabled: '{foMatchUnconditionally}',
+							createDisabled: '{foIsBuiltIn}',
+							updateDisabled: '{foIsBuiltIn}'
+						},
+						title: me.mys.res('sieveFilter.rules.tit'),
+						store: Ext.create('Ext.data.ArrayStore', {
+							model: 'Sonicle.webtop.mail.model.SieveRule'
+						}),
+						reserveScrollbar: true,
+						width: '100%',
+						flex: 1
+					}, {
+						xtype: 'wtmailsieveactiongrid',
+						reference: 'gpactions',
+						bind: {
+							disabled: '{foIsBuiltIn}'
+						},
+						title: me.mys.res('sieveFilter.actions.tit'),
+						store: Ext.create('Ext.data.ArrayStore', {
+							model: 'Sonicle.webtop.mail.model.SieveAction'
+						}),
+						reserveScrollbar: true,
+						width: '100%',
+						flex: 1
+					}
+				],
 				width: '100%',
 				flex: 1
 			}]

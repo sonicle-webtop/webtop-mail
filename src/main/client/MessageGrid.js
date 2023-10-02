@@ -1620,8 +1620,34 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		if (!selection || selection.length==0) return;
 		
         if (fspam) {
-			me.moveSelection(acct,curfolder,acct,fspam,selection);
-			me.focus();
+			var doMove = function() {
+				me.moveSelection(acct,curfolder,acct,fspam,selection);
+				me.focus();
+			};
+			if (selection.length === 1) {
+				var address = selection[0].get('fromemail');
+				WT.confirmYNC(me.res('message.confirm.markasspam', address), function(bid) {
+					if ('yes' === bid) {
+						me.blockSenderAddress(address, {
+							callback: function(success, data, json) {
+								if (success) doMove();
+								WT.handleError(success, json);
+							}
+						});
+					} else if ('no' === bid) {
+						doMove();
+					}
+				}, me, {
+					config: {
+						buttonText: {
+							yes: me.res('message.confirm.markasspam.yes'),
+							no: me.res('message.confirm.markasspam.no')
+						}
+					}
+				});
+			} else {
+				doMove();
+			}
         }
     },
 
@@ -2031,6 +2057,19 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 		});
 		me.lastFlagsChangedTS=Date.now();
+	},
+	
+	blockSenderAddress: function(address, opts) {
+		opts = opts || {};
+		var me = this;
+		WT.ajaxReq(me.mys.ID, 'BlockSenderAddress', {
+			params: {
+				address: address
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
+			}
+		});
 	},
 	
 	updateRecordSeenStateAtIndex: function(ix,seen) {
@@ -3531,7 +3570,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	*/
 	
     res: function(s) {
-        return this.mys.res(s);
+		return this.mys.res.apply(this, arguments);
     },
 	
 	privates: {

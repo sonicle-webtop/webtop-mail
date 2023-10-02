@@ -580,6 +580,15 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					me.markEmailAsTrusted(ae.recEmail,ae.recType);
 				}, iconCls: 'wtmail-icon-pas-ok'});
 			}
+			actions.push('-');
+			actions.push(new Ext.Action({
+				text: me.mys.res("emailmenu.blocksender"),
+				iconCls: 'wt-icon-block',
+				handler: function() {
+					var ae=me.emailMenu.activeElement;
+					me.blockSenderAddressUI(ae.recEmail);
+				}
+			}));
 			me.emailMenu=new Ext.menu.Menu({
 				items: actions
 			});
@@ -996,6 +1005,40 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			});
 		}
     },
+	
+	blockSenderAddressUI: function(address) {
+		var me = this;
+		WT.confirm(me.mys.res('message.confirm.blocksender', address), function(bid) {
+			if ('ok' === bid) {
+				me.blockSenderAddress(address, {
+					callback: function(success, data, json) {
+						if (success) WT.toast(me.mys.res('message.toast.blocksender.added'));
+						WT.handleError(success, json);
+					}
+				});
+			}
+		}, me, {
+			buttons: Ext.Msg.OKCANCEL,
+			config: {
+				buttonText: {
+					ok: me.mys.res('message.confirm.blocksender.ok')
+				}
+			}
+		});
+	},
+	
+	blockSenderAddress: function(address, opts) {
+		opts = opts || {};
+		var me = this;
+		WT.ajaxReq(me.mys.ID, 'BlockSenderAddress', {
+			params: {
+				address: address
+			},
+			callback: function(success, json) {
+				Ext.callback(opts.callback, opts.scope || me, [success, json.data, json]);
+			}
+		});
+	},
 	
 	markEmailAsTrusted: function(email,type) {
 		var me = this;

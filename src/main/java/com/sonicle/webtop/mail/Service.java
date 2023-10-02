@@ -46,6 +46,7 @@ import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.ResourceUtils;
 import com.sonicle.commons.URIUtils;
+import com.sonicle.commons.cache.AbstractPassiveExpiringBulkSet;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.http.HttpClientUtils;
 import com.sonicle.commons.time.DateTimeUtils;
@@ -154,6 +155,9 @@ import com.sonicle.commons.web.json.extjs.SortMeta;
 import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
+import com.sonicle.mail.sieve.SieveRule;
+import com.sonicle.mail.sieve.SieveRuleField;
+import com.sonicle.mail.sieve.SieveRuleOperator;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.model.EnabledCond;
@@ -173,6 +177,7 @@ import com.sonicle.webtop.mail.bol.js.JsProActiveSecurity;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.model.FolderShareParameters;
+import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.text.Normalizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -181,6 +186,7 @@ import jakarta.mail.search.FlagTerm;
 import jakarta.mail.search.OrTerm;
 import jakarta.mail.search.SearchTerm;
 import java.net.URL;
+import java.util.concurrent.TimeUnit;
 import net.fortuna.ical4j.data.ParserException;
 import org.slf4j.Logger;
 
@@ -292,6 +298,7 @@ public class Service extends BaseService {
 	private ArrayList<String> pasDangerousExtensions=new ArrayList<>();
 	private float pasDefaultSpamThreshold;
 	private Pattern pasDomainsWhiteListRegexPattern;
+	private final FoldersNamesInByFileFiltersCache cacheFoldersNamesInByFileFilters = new FoldersNamesInByFileFiltersCache(5, TimeUnit.MINUTES);
 	
 	@Override
 	public void initialize() {
@@ -8754,20 +8761,7 @@ public class Service extends BaseService {
 	}
 	
 	boolean checkFileRules(String foldername) {
-		try {
-			List<MailFilter> filters = mailManager.getCachedMailFilters(MailFiltersType.INCOMING, true);
-			for(MailFilter filter : filters) {
-				for(SieveAction action : filter.getSieveActions()) {
-					if (action.getMethod() == SieveActionMethod.FILE_INTO) {
-						if (StringUtils.equals(action.getArgument(), foldername)) return true;
-					}
-				}
-			}
-			
-		} catch(WTException ex) {
-			logger.error("Error checking file action [{}]", ex, foldername);
-		}
-		return false;
+		return cacheFoldersNamesInByFileFilters.contains(foldername);
 	}
 	
 	boolean checkScanRules(String foldername) {
@@ -9729,7 +9723,7 @@ public class Service extends BaseService {
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			DateTimeZone profileTz = getEnv().getProfile().getTimeZone();
 			
-			if(crud.equals(Crud.READ)) {
+			if (crud.equals(Crud.READ)) {
 				String id = ServletUtils.getStringParameter(request, "id", true);
 				
 				int scriptCount = -1;
@@ -9745,19 +9739,18 @@ public class Service extends BaseService {
 				
 				AutoResponder autoResp = mailManager.getAutoResponder();
 				MailFiltersType type = EnumUtils.forSerializedName(id, MailFiltersType.class);
-				List<MailFilter> filters = mailManager.getMailFilters(type);
+				List<MailFilter> filters = mailManager.getMailFilters(type, EnabledCond.ANY_STATE);
 				
 				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, autoResp, filters, profileTz);
 				
 				new JsonResult(js).printTo(out);
 				
-			} else if(crud.equals(Crud.UPDATE)) {
+			} else if (crud.equals(Crud.UPDATE)) {
 				Payload<MapItem, JsInMailFilters> pl = ServletUtils.getPayload(request, JsInMailFilters.class);
 				
 				if (EnumUtils.equals(pl.data.id, MailFiltersType.INCOMING)) {
-					List<MailFilter> filters = JsInMailFilters.createMailFilterList(pl.data);
-					mailManager.updateAutoResponder(JsInMailFilters.createAutoResponder(pl.data, profileTz));
-					mailManager.updateMailFilters(pl.data.id, filters);
+					mailManager.updateAutoResponder(pl.data.createAutoResponderForUpdate(profileTz));
+					mailManager.updateMailFilters(pl.data.id, pl.data.createMailFiltersForUpdate());
 					
 					boolean isWTScript = StringUtils.equals(pl.data.activeScript, MailManager.SIEVE_WEBTOP_SCRIPT);
 					if (!isWTScript && !StringUtils.isBlank(pl.data.activeScript)) {
@@ -9778,6 +9771,38 @@ public class Service extends BaseService {
 		} catch(Exception ex) {
 			logger.error("Error in ManageFilters", ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processBlockSenderAddress(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		
+		try {
+			String address = ServletUtils.getStringParameter(request, "address", true);
+			
+			List<MailFilter> filters = mailManager.getMailFilters(MailFiltersType.INCOMING, EnabledCond.ANY_STATE);
+			boolean blockFilterFound = false;
+			for (MailFilter filter : filters) {
+				if (ManagerUtils.MAILFILTER_SENDERBLACKLIST_BUILTIN.equals(filter.getBuiltIn())) {
+					blockFilterFound = true;
+					ManagerUtils.fillSenderBlacklistMailFilterWithDefaults(filter);
+					filter.getSieveRules().add(SieveRuleList.newRuleMatchFrom(address));
+				}
+			}
+			if (blockFilterFound == false) {
+				MailFilter filter = new MailFilter();
+				ManagerUtils.fillSenderBlacklistMailFilterWithDefaults(filter);
+				filter.getSieveRules().add(SieveRuleList.newRuleMatchFrom(address));
+				filters.add(filter);
+			}
+			mailManager.updateMailFilters(MailFiltersType.INCOMING, filters);
+			boolean isWTScript = StringUtils.equals(mailManager.getActiveSieveScriptName(), MailManager.SIEVE_WEBTOP_SCRIPT);
+			mailManager.applySieveScript(isWTScript);
+			
+			new JsonResult().printTo(out);
+			
+		} catch (Exception ex) {
+			logger.error("Error in BlockSender", ex);
+			new JsonResult(ex).printTo(out);
 		}
 	}
 	
@@ -9899,8 +9924,33 @@ public class Service extends BaseService {
 	private String formatCalendarDate(int year, int month, int day, int hours, int minutes, int seconds) {
 		return year + "-" + String.format("%02d", month + 1) + "-" + String.format("%02d", day) + " " + String.format("%02d", hours) + ":" + String.format("%02d", minutes) + ":" + String.format("%02d", seconds);
 	}
-
-        
+	
+	private class FoldersNamesInByFileFiltersCache extends AbstractPassiveExpiringBulkSet<String> {
+		
+		public FoldersNamesInByFileFiltersCache(final long timeToLive, final TimeUnit timeUnit) {
+			super(timeToLive, timeUnit);
+		}
+		
+		@Override
+		protected Set<String> internalGetSet() {
+			try {
+				Set<String> folders = new HashSet<>();
+				List<MailFilter> filters = mailManager.getMailFilters(MailFiltersType.INCOMING, EnabledCond.ENABLED_ONLY);
+				for (MailFilter filter : filters) {
+					for (SieveAction action : filter.getSieveActions()) {
+						if (action.getMethod() == SieveActionMethod.FILE_INTO) {
+							folders.add(action.getArgument());
+						}
+					}
+				}
+				return folders;
+				
+			} catch(Exception ex) {
+				logger.error("[FoldersNamesInByFileFiltersCache] Unable to build cache", ex);
+				throw new UnsupportedOperationException();
+			}
+		}
+	}
         
     class SentMessageNotSavedSM extends MessageBoxSM {
 

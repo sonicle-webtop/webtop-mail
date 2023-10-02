@@ -37,13 +37,20 @@ Ext.define('Sonicle.webtop.mail.model.MailFilter', {
 	identifier: 'negative',
 	idProperty: 'filterId',
 	fields: [
-		WTF.fkField('string'),
 		WTF.field('filterId', 'int', false),
+		WTF.field('builtIn', 'int', false, {defaultValue: 0}),
 		WTF.field('enabled', 'boolean', false),
 		WTF.field('order', 'int', false),
 		WTF.field('name', 'string', false),
 		WTF.field('sieveMatch', 'string', false),
 		WTF.field('sieveRules', 'string', false),
-		WTF.field('sieveActions', 'string', false)
-	]
+		WTF.field('sieveActions', 'string', false),
+		WTF.calcField('calcName', 'string', ['builtIn', 'name'], function(v, rec, builtIn, name) {
+			return builtIn === 0 ? name : WT.res('com.sonicle.webtop.mail', 'inMailFilters.filter.builtIn.name.' + builtIn);
+		})
+	],
+	
+	isBuiltIn: function() {
+		return this.get('builtIn') !== 0;
+	}
 });

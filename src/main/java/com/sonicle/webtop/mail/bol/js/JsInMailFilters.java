@@ -33,13 +33,9 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
-import com.sonicle.commons.LangUtils;
-import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.webtop.mail.model.AutoResponder;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
-import com.sonicle.webtop.mail.model.SieveActionList;
-import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.util.ArrayList;
 import java.util.List;
 import org.joda.time.DateTimeZone;
@@ -58,62 +54,20 @@ public class JsInMailFilters {
 	public JsInMailFilters(int scriptsCount, String activeScript, AutoResponder autoResponder, List<MailFilter> mailFilters, DateTimeZone profileTz) {
 		this.scriptsCount = scriptsCount;
 		this.activeScript = activeScript;
-		this.autoResponder = createJsAutoResponder(autoResponder, profileTz);
-		
-		for(MailFilter filter : mailFilters) {
-			JsMailFilter jsmf = new JsMailFilter(this.id);
-			jsmf.filterId = filter.getFilterId();
-			jsmf.enabled = filter.getEnabled();
-			jsmf.order = filter.getOrder();
-			jsmf.name = filter.getName();
-			jsmf.sieveMatch = filter.getSieveMatch();
-			jsmf.sieveRules = LangUtils.serialize(filter.getSieveRules(), SieveRuleList.class);
-			jsmf.sieveActions = LangUtils.serialize(filter.getSieveActions(), SieveActionList.class);
-			filters.add(jsmf);
+		this.autoResponder = new JsAutoResponder(autoResponder, profileTz);
+		for (MailFilter filter : mailFilters) {
+			this.filters.add(new JsMailFilter(filter));
 		}
 	}
 	
-	private JsAutoResponder createJsAutoResponder(AutoResponder aut, DateTimeZone profileTz) {
-		JsAutoResponder js = new JsAutoResponder();
-		js.enabled = aut.getEnabled();
-		js.subject = aut.getSubject();
-		js.message = aut.getMessage();
-		js.addresses = aut.getAddresses();
-		js.activationStartDate = DateTimeUtils.printYmdHmsWithZone(aut.getActivationStartDate(), profileTz);
-		js.activationEndDate = DateTimeUtils.printYmdHmsWithZone(aut.getActivationEndDate(), profileTz);
-		js.daysInterval = aut.getDaysInterval();
-		return js;
+	public AutoResponder createAutoResponderForUpdate(DateTimeZone profileTz) {
+		return autoResponder.createAutoResponderForUpdate(profileTz);
 	}
 	
-	public static AutoResponder createAutoResponder(JsInMailFilters jsimf, DateTimeZone profileTz) {
-		AutoResponder aut = new AutoResponder();
-		aut.setEnabled(jsimf.autoResponder.enabled);
-		aut.setSubject(jsimf.autoResponder.subject);
-		aut.setMessage(jsimf.autoResponder.message);
-		aut.setAddresses(jsimf.autoResponder.addresses);
-		aut.setDaysInterval(jsimf.autoResponder.daysInterval);
-		aut.setActivationStartDate(DateTimeUtils.withTimeAtStartOfDay(DateTimeUtils.parseYmdHmsWithZone(jsimf.autoResponder.activationStartDate, profileTz)));
-		aut.setActivationEndDate(DateTimeUtils.withTimeAtStartOfDay(DateTimeUtils.parseYmdHmsWithZone(jsimf.autoResponder.activationEndDate, profileTz)));
-		return aut;
-	}
-	
-	public static MailFilter createMailFilter(JsMailFilter jsmf) {
-		if (jsmf == null) return null;
-		MailFilter mf = new MailFilter();
-		mf.setFilterId(jsmf.filterId);
-		mf.setEnabled(jsmf.enabled);
-		mf.setOrder(jsmf.order);
-		mf.setName(jsmf.name);
-		mf.setSieveMatch(jsmf.sieveMatch);
-		mf.setSieveRules(LangUtils.deserialize(jsmf.sieveRules, new SieveRuleList(), SieveRuleList.class));
-		mf.setSieveActions(LangUtils.deserialize(jsmf.sieveActions, new SieveActionList(), SieveActionList.class));
-		return mf;
-	}
-	
-	public static ArrayList<MailFilter> createMailFilterList(JsInMailFilters jsimf) {
+	public ArrayList<MailFilter> createMailFiltersForUpdate() {
 		ArrayList<MailFilter> list = new ArrayList<>();
-		for(JsMailFilter jsmf : jsimf.filters) {
-			list.add(createMailFilter(jsmf));
+		for (JsMailFilter filter : filters) {
+			list.add(filter.createMailFilterForUpdate());
 		}
 		return list;
 	}
