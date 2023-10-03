@@ -1625,12 +1625,16 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.focus();
 			};
 			if (selection.length === 1) {
-				var address = selection[0].get('fromemail');
-				WT.confirmYNC(me.res('message.confirm.markasspam', address), function(bid) {
+				var address = selection[0].get('fromemail'),
+					warnMsg = '\n' + me.res('message.warn.blocksender.personal');
+				WT.confirmYNC(me.res('message.confirm.markasspam', address) + warnMsg, function(bid) {
 					if ('yes' === bid) {
 						me.blockSenderAddress(address, {
 							callback: function(success, data, json) {
-								if (success) doMove();
+								if (success) {
+									WT.toast(me.mys.res('message.toast.blocksender.added'));
+									doMove();
+								}
 								WT.handleError(success, json);
 							}
 						});
@@ -3569,8 +3573,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	},
 	*/
 	
-    res: function(s) {
-		return this.mys.res.apply(this, arguments);
+    res: function(key, args) {
+		return this.mys.res.apply(this.mys, arguments);
     },
 	
 	privates: {

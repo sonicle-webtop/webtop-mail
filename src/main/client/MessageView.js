@@ -1007,8 +1007,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     },
 	
 	blockSenderAddressUI: function(address) {
-		var me = this;
-		WT.confirm(me.mys.res('message.confirm.blocksender', address), function(bid) {
+		var me = this,
+			warnMsg = '\n' + me.mys.res('message.warn.blocksender.personal');
+		WT.confirm(me.mys.res('message.confirm.blocksender', address) + warnMsg, function(bid) {
 			if ('ok' === bid) {
 				me.blockSenderAddress(address, {
 					callback: function(success, data, json) {
