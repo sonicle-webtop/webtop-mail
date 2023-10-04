@@ -128,6 +128,7 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 							createDisabled: '{foIsBuiltIn}',
 							updateDisabled: '{foIsBuiltIn}'
 						},
+						valueEditableWhenUpdateDisabled: true,
 						title: me.mys.res('sieveFilter.rules.tit'),
 						store: Ext.create('Ext.data.ArrayStore', {
 							model: 'Sonicle.webtop.mail.model.SieveRule'

@@ -49,6 +49,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 	config: {
 		createDisabled: false,
 		updateDisabled: false,
+		valueEditableWhenUpdateDisabled: false,
 		deleteDisabled: false
 	},
 	
@@ -74,8 +75,12 @@ Ext.define('Sonicle.webtop.mail.ux.SieveRuleGrid', {
 				ptype: 'cellediting',
 				clicksToEdit: 1,
 				listeners: {
-					beforeedit: function() {
-						if (!!me.updateDisabled) return false;
+					beforeedit: function(ed, ctx) {
+						if ('value' === ctx.field) {
+							if (!!me.updateDisabled && !me.valueEditableWhenUpdateDisabled) return false;
+						} else {
+							if (!!me.updateDisabled) return false;
+						}
 					},
 					edit: me.onCellEdit,
 					scope: me
