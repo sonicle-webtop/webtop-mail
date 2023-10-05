@@ -1013,7 +1013,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			if ('ok' === bid) {
 				me.blockSenderAddress(address, {
 					callback: function(success, data, json) {
-						if (success) WT.toast(me.mys.res('message.toast.blocksender.added'));
+						if (success) WT.toast(me.mys.res('message.toast.blocksender.added', address));
 						WT.handleError(success, json);
 					}
 				});

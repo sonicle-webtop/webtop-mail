@@ -1632,7 +1632,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						me.blockSenderAddress(address, {
 							callback: function(success, data, json) {
 								if (success) {
-									WT.toast(me.mys.res('message.toast.blocksender.added'));
+									WT.toast(me.res('message.toast.blocksender.added', address));
 									doMove();
 								}
 								WT.handleError(success, json);
