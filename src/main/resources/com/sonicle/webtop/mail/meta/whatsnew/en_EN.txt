@@ -1,3 +1,10 @@
+$	5.19.0
+	%	Versione 5.19.0
+	*	<h1>Sender block</h1>
+		<p>A black-list can be created easily from a sender address in message 
+		preview or when marking a message as spam. This list can be maintained 
+		from incoming message rules.</p>
+		<img src="5.19.0_senderblock.png"/>
 $	5.18.0
 	%	Version 5.18.0
 	*	<h1>Search for attachment name</h1>

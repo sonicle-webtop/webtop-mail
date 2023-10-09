@@ -1,3 +1,11 @@
+$	5.19.0
+	%	Versione 5.19.0
+	*	<h1>Blocca mittente</h1>
+		<p>E' possbile creare facilmente una black-list dei mittenti a partire
+		da un indirizzo email nell'anteprima messaggio oppure durante la marcatura 
+		di un messaggio come inderiderato. Questa lista di blocco è manutenibile 
+		dalle regole per la posta in arrivo.</p>
+		<img src="5.19.0_senderblock.png"/>
 $	5.18.0
 	%	Versione 5.18.0
 	*	<h1>Rircerca per nome allegato</h1>
