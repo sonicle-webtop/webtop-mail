@@ -5,6 +5,9 @@ $	5.19.0
 		preview or when marking a message as spam. This list can be maintained 
 		from incoming message rules.</p>
 		<img src="5.19.0_senderblock.png"/>
+	*	<h1>Message statuses synchronization</h1>
+		<p>Message statuses are synchronized in real time between users and devices: 
+		read, completed, tagged, and deleted message states.</p>
 $	5.18.0
 	%	Version 5.18.0
 	*	<h1>Search for attachment name</h1>

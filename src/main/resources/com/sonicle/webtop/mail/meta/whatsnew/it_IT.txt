@@ -6,6 +6,9 @@ $	5.19.0
 		di un messaggio come inderiderato. Questa lista di blocco è manutenibile 
 		dalle regole per la posta in arrivo.</p>
 		<img src="5.19.0_senderblock.png"/>
+	*	<h1>Sincronizzazione stati messaggio</h1>
+		<p>Gli stati dei messaggi vengono sincronizzati in tempo reale tra gli 
+		utenti e i dispositivi: stati di lettura, completamento, etichette e messaggi eliminati.</p>
 $	5.18.0
 	%	Versione 5.18.0
 	*	<h1>Rircerca per nome allegato</h1>
