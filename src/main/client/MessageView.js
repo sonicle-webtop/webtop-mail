@@ -580,15 +580,17 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					me.markEmailAsTrusted(ae.recEmail,ae.recType);
 				}, iconCls: 'wtmail-icon-pas-ok'});
 			}
-			actions.push('-');
-			actions.push(new Ext.Action({
-				text: me.mys.res("emailmenu.blocksender"),
-				iconCls: 'wt-icon-block',
-				handler: function() {
-					var ae=me.emailMenu.activeElement;
-					me.blockSenderAddressUI(ae.recEmail);
-				}
-			}));
+			if (me.mys.isMainAccountInbox(me.acct, me.folder)) {
+				actions.push('-');
+				actions.push(new Ext.Action({
+					text: me.mys.res("emailmenu.blocksender"),
+					iconCls: 'wt-icon-block',
+					handler: function() {
+						var ae=me.emailMenu.activeElement;
+						me.blockSenderAddressUI(ae.recEmail);
+					}
+				}));
+			}	
 			me.emailMenu=new Ext.menu.Menu({
 				items: actions
 			});
@@ -1007,9 +1009,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     },
 	
 	blockSenderAddressUI: function(address) {
-		var me = this,
-			warnMsg = '\n' + me.mys.res('message.warn.blocksender.personal');
-		WT.confirm(me.mys.res('message.confirm.blocksender', address) + warnMsg, function(bid) {
+		var me = this;
+		WT.confirm(me.mys.res('message.confirm.blocksender', address), function(bid) {
 			if ('ok' === bid) {
 				me.blockSenderAddress(address, {
 					callback: function(success, data, json) {

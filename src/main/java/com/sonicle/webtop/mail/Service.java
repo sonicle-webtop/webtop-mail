@@ -9778,19 +9778,20 @@ public class Service extends BaseService {
 		
 		try {
 			String address = ServletUtils.getStringParameter(request, "address", true);
+			String spamFolder = us.getFolderSpam();
 			
 			List<MailFilter> filters = mailManager.getMailFilters(MailFiltersType.INCOMING, EnabledCond.ANY_STATE);
 			boolean blockFilterFound = false;
 			for (MailFilter filter : filters) {
 				if (ManagerUtils.MAILFILTER_SENDERBLACKLIST_BUILTIN.equals(filter.getBuiltIn())) {
 					blockFilterFound = true;
-					ManagerUtils.fillSenderBlacklistMailFilterWithDefaults(filter);
+					ManagerUtils.fillSenderBlacklistMailFilterWithDefaults(filter, spamFolder);
 					filter.getSieveRules().add(SieveRuleList.newRuleMatchFrom(address));
 				}
 			}
 			if (blockFilterFound == false) {
 				MailFilter filter = new MailFilter();
-				ManagerUtils.fillSenderBlacklistMailFilterWithDefaults(filter);
+				ManagerUtils.fillSenderBlacklistMailFilterWithDefaults(filter, spamFolder);
 				filter.getSieveRules().add(SieveRuleList.newRuleMatchFrom(address));
 				filters.add(filter);
 			}

@@ -47,6 +47,7 @@ import com.sonicle.webtop.mail.model.MailFilterBase;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.util.List;
+import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -101,17 +102,27 @@ public class ManagerUtils {
 	
 	static final Short MAILFILTER_SENDERBLACKLIST_BUILTIN = 1;
 	
-	static MailFilter createSenderBlacklistMailFilter() {
-		return fillSenderBlacklistMailFilterWithDefaults(new MailFilter());
+	static MailFilter createSenderBlacklistMailFilter(final String spamFolder) {
+		return fillSenderBlacklistMailFilterWithDefaults(new MailFilter(), spamFolder);
 	}
 	
-	static MailFilter fillSenderBlacklistMailFilterWithDefaults(MailFilter tgt) {
+	static MailFilter fillSenderBlacklistMailFilterWithDefaults(MailFilter tgt, final String spamFolder) {
 		tgt.setBuiltIn(MAILFILTER_SENDERBLACKLIST_BUILTIN);
 		tgt.setEnabled(true);
 		tgt.setOrder((short)0);
 		tgt.setName("Sender Blacklist (built-in)");
 		tgt.setSieveMatch(SieveMatch.ANY);
-		tgt.setSieveActions(SieveActionList.discardAndStop());
+		if (!StringUtils.isBlank(spamFolder)) {
+			tgt.setSieveActions(new SieveActionList.Builder()
+				.fileInto(spamFolder)
+				.stop()
+				.build());
+		} else {
+			tgt.setSieveActions(new SieveActionList.Builder()
+				.discard()
+				.stop()
+				.build());
+		}			
 		return tgt;
 	}
 	

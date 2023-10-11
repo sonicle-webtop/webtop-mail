@@ -1624,10 +1624,9 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.moveSelection(acct,curfolder,acct,fspam,selection);
 				me.focus();
 			};
-			if (selection.length === 1) {
-				var address = selection[0].get('fromemail'),
-					warnMsg = '\n' + me.res('message.warn.blocksender.personal');
-				WT.confirmYNC(me.res('message.confirm.markasspam', address) + warnMsg, function(bid) {
+			if (selection.length === 1 && me.mys.isMainAccountInbox(acct, curfolder)) {
+				var address = selection[0].get('fromemail');
+				WT.confirmYNC(me.res('message.confirm.markasspam', address), function(bid) {
 					if ('yes' === bid) {
 						me.blockSenderAddress(address, {
 							callback: function(success, data, json) {

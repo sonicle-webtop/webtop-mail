@@ -2517,7 +2517,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			}	
 		});
 		vw.showView();
+	},
+	
+	isMainAccountInbox: function(account, folder) {
+		return account === 'main' && folder === 'INBOX';
 	}
-	
-	
 });
