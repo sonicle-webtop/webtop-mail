@@ -383,5 +383,11 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(RE_FW_SANITIZE_DOWNLEVEL_REVEALED_COMMENTS,false);
 	}
 	
+	public boolean isIdleSharedInboxFolderEnabled() {
+		return getBoolean(IDLE_SHAREDINBOX_ENABLED, false);
+	}
 	
+	public boolean isIdleFavoriteFolderEnabled() {
+		return getBoolean(IDLE_FAVORITE_ENABLED, false);
+	}
 }

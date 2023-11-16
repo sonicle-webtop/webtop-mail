@@ -273,7 +273,12 @@ public class FolderCache {
             wtuser=sharedInboxPrincipal.getUserId();
         }
         updateScanFlags();
-		if (isInbox || isSharedInbox || account.isFavoriteFolder(foldername)) startIdle();
+		
+		boolean idle = isInbox
+			|| (isSharedInbox && ms.getMailServiceSettings().isIdleSharedInboxFolderEnabled())
+			|| (account.isFavoriteFolder(foldername) && ms.getMailServiceSettings().isIdleFavoriteFolderEnabled());
+		
+		if (idle) startIdle();
     }
 	
 	boolean goidle=true;

@@ -360,6 +360,20 @@ public class MailSettings {
 					" { 'id': 'yahoo', 'email': '@yahoo.com', 'server': 'imap.yahoo.com', 'protocol': 'imaps', 'port': '993', 'folderPrefix':'', 'folderSent': 'Sent', 'folderDrafts': 'Drafts', 'folderTrash': 'Trash', 'folderSpam': 'Spam', 'folderArchive': 'Archive', 'readOnly': 'false' }\n" +
 					"]";
 	
+	/**
+	 * [domain+system]
+	 * [boolean]
+	 * Override internal default for enabling/disabling idle mode for shared inbox folders.
+	 */
+	public static final String IDLE_SHAREDINBOX_ENABLED = "idle.sharedinbox.enabled";
+	
+	/**
+	 * [domain+system]
+	 * [boolean]
+	 * Override internal default for enabling/disabling idle mode for favorite folders.
+	 */
+	public static final String IDLE_FAVORITE_ENABLED = "idle.favorite.enabled";
+	
 	public static class ExternalProvider {
 		public String id;
 		public String email;
