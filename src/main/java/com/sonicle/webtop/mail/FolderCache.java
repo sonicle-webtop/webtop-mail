@@ -310,8 +310,10 @@ public class FolderCache {
 						try {
 							//Service.logger.info("MessageChanged: {},{},{}",mce.getMessage().getFolder().getFullName(),mce.getMessage().getSubject(),mce.getMessageChangeType());
 							refreshUnreads();
+							/*
 							if (mce.getMessageChangeType()==MessageChangedEvent.FLAGS_CHANGED)
 								sendFlagsChangedMessage();
+							*/
 						} catch(MessagingException exc) {
 						}
 					}
