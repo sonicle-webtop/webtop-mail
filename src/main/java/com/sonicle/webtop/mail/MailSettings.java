@@ -374,6 +374,13 @@ public class MailSettings {
 	 */
 	public static final String IDLE_FAVORITE_ENABLED = "idle.favorite.enabled";
 	
+	/**
+	 * [domain+system]
+	 * [int]
+	 * Override internal default value when buffering service messages generated from IMAP events.
+	 */
+	public static final String IMAP_EVENT_MESSAGE_BUFFERTTL = "imap.event.bufferttl";
+	
 	public static class ExternalProvider {
 		public String id;
 		public String email;

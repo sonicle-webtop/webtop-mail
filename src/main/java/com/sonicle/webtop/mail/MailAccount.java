@@ -34,9 +34,12 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.concurrent.ThreadFactoryBuilder;
+import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.mail.imap.SonicleIMAPStore;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
+import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sun.mail.imap.ACL;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
@@ -56,14 +59,20 @@ import jakarta.mail.Provider;
 import jakarta.mail.Quota;
 import jakarta.mail.Session;
 import jakarta.mail.Store;
+import jakarta.mail.event.MailEvent;
 import jakarta.mail.search.HeaderTerm;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author gabriele.bulfon
  */
 public class MailAccount {
+	private final static Logger LOGGER = (Logger) LoggerFactory.getLogger(MailAccount.class);
 	private String id;
 	private Service ms;
 	private PrivateEnvironment environment;
@@ -104,11 +113,30 @@ public class MailAccount {
 	private String skipForwardFolders[] = new String[]{};
 	private MailFoldersThread mft=null;
 	private Thread cacheLoadThread;
-
+	private IdleMailEventQueue mailEventQueue = null;
+	
 	public MailAccount(String id, Service mailService, PrivateEnvironment environment) {
 		this.id=id;
 		this.ms=mailService;
 		this.environment=environment;
+		ThreadFactory tf = new ThreadFactoryBuilder()
+			.setDaemon(true)
+			.withNamePrefix("eventqueue-"+environment.getProfileId()+":"+id)
+			.build();
+		long ttl = mailService.getMailServiceSettings().getImapEventMessageBufferTTL();
+		this.mailEventQueue = new IdleMailEventQueue(tf, ttl, TimeUnit.MILLISECONDS, (items) -> {
+			for (IdleMailEventQueue.Entry item : items) {
+				try {
+					if (LOGGER.isTraceEnabled()) LOGGER.trace("[{}] handling '{}'", environment.getProfileId()+":"+id, item.getKey());
+					item.getHandler().handle(item.getMailEvent());
+				} catch (Exception ex) { /* Do nothing... */ }
+			}
+		});
+	}
+	
+	public void queueFolderMailEvent(String eventId, MailEvent event, IdleMailEventHandler handler) {
+		this.mailEventQueue.push(eventId, event, handler);
+		if (LOGGER.isTraceEnabled()) LOGGER.trace("[{}] queued '{}'", environment.getProfileId()+":"+id, eventId);
 	}
 
 	public String getId() {
@@ -1107,6 +1135,8 @@ public class MailAccount {
 	}
 	
 	public void cleanup() {
+		Service.logger.trace("clean up mailEventQueue "+id);
+		mailEventQueue.stop();
 		Service.logger.trace("clean up account "+id);
 		if (fcRoot != null) {
 			fcRoot.cleanup(true);

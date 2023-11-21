@@ -70,6 +70,7 @@ import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.ws.FlagsChangedMessage;
+import jakarta.mail.event.MailEvent;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
@@ -169,7 +170,9 @@ public class FolderCache {
     //private static final HashMap<String,HashMap<String,Integer>> months=new HashMap<>();
 
     private HashMap<String,MessageEntry> providedMessages=new HashMap<>();
-    
+    private MessageChangedHandler messageChangedHandler = new MessageChangedHandler();
+	private MessagesAddedHandler messagesAddedHandler = new MessagesAddedHandler();
+	private MessageCountHandler messageCountHandler = new MessageCountHandler();
 
 
     //static {
@@ -303,64 +306,31 @@ public class FolderCache {
 	
 	public void startIdle() {
 		folder.addMessageChangedListener(
-				new MessageChangedListener() {
+			new MessageChangedListener() {
 
-					@Override
-					public void messageChanged(MessageChangedEvent mce) {
-						try {
-							//Service.logger.info("MessageChanged: {},{},{}",mce.getMessage().getFolder().getFullName(),mce.getMessage().getSubject(),mce.getMessageChangeType());
-							refreshUnreads();
-							/*
-							if (mce.getMessageChangeType()==MessageChangedEvent.FLAGS_CHANGED)
-								sendFlagsChangedMessage();
-							*/
-						} catch(MessagingException exc) {
-						}
+				@Override
+				public void messageChanged(MessageChangedEvent mce) {
+					if (mce.getMessageChangeType() == MessageChangedEvent.FLAGS_CHANGED) {
+						account.queueFolderMailEvent(foldername + "|mchange", mce, messageChangedHandler);
 					}
-					
 				}
+
+			}
 		);
 		folder.addMessageCountListener(
-				new MessageCountListener() {
+			new MessageCountListener() {
 
-					@Override
-					public void messagesAdded(MessageCountEvent mce) {
-						try {
-							//Service.logger.debug("MessageAdded: {}",mce.getType());
-							refreshUnreads();
-							for(Message m: mce.getMessages()) {
-								String id=((IMAPMessage)m).getMessageID();
-								if (m.getFlags().contains(Flag.RECENT) && !recentNotified.contains(id)) {
-									recentNotified.add(id);
-									String fromName="";
-									Address as[]=m.getFrom();
-									if (as!=null && as.length>0) {
-										InternetAddress ia=(InternetAddress)as[0];
-										fromName = ia.getPersonal();
-										String fromEmail = ms.adjustEmail(ia.getAddress());
-										if (fromName == null) {
-											fromName = fromEmail;
-										} else {
-											fromName = fromName+" <"+fromEmail+">";
-										}
-									}
-									sendRecentMessage(fromName,m.getSubject());
-								}
-							}
-						} catch(MessagingException exc) {
-						}
-					}
-
-					@Override
-					public void messagesRemoved(MessageCountEvent mce) {
-						try {
-							//Service.logger.debug("MessageRemoved: {}",mce.getType());
-							refreshUnreads();
-						} catch(MessagingException exc) {
-						}
-					}
-					
+				@Override
+				public void messagesAdded(MessageCountEvent mce) {
+					account.queueFolderMailEvent(foldername + "|mcount", mce, messageCountHandler);
+					account.queueFolderMailEvent(foldername + "|madd" , mce, messagesAddedHandler);
 				}
+
+				@Override
+				public void messagesRemoved(MessageCountEvent mce) {
+					account.queueFolderMailEvent(foldername + "|mcount", mce, messageCountHandler);
+				}
+			}
 		);
 		IdleThread ithread=new IdleThread();
 		ithread.start();
@@ -630,7 +600,7 @@ public class FolderCache {
 	
 	private void sendUnreadChangedMessage() {
 		//NO MORE send ws message only if it's not special or has "scan forced on" active
-		//if (/*!isSpecial() || */ isScanForcedOrEnabled())		
+		//if (/*!isSpecial() || */ isScanForcedOrEnabled())
 			this.environment.notify(
 				new UnreadChangedMessage(account.getId(),foldername, unread, hasUnreadChildren)
 			);
@@ -653,24 +623,9 @@ public class FolderCache {
 		);
 	}
 	
-	//detect multiple calls by message events
-	long lastRefreshUnreads=0;
-	Object refreshLock=new Object();
-	
     protected void refreshUnreads() throws MessagingException {
-		synchronized(refreshLock) {
-			long millis=System.currentTimeMillis();
-			long d=millis-lastRefreshUnreads;
-			if (d>=100) {
-				if(Service.logger.isTraceEnabled()) Service.logger.trace("Refreshing unreads");
-				lastRefreshUnreads=millis;
-				refreshUnreadMessagesCount();
-				updateUnreads();
-			} else {
-				lastRefreshUnreads=millis;
-				if(Service.logger.isTraceEnabled()) Service.logger.trace("Skipping call to refreshUnreads arrived in {} ms",d);
-			}
-		}
+		refreshUnreadMessagesCount();
+		updateUnreads();
     }
 
     protected void refreshUnreadMessagesCount() throws MessagingException {
@@ -2725,5 +2680,56 @@ public class FolderCache {
       }
 
   }
+	
+	private class MessageChangedHandler implements IdleMailEventHandler {
 
+		@Override
+		public void handle(MailEvent event) {
+			try {
+				refreshUnreads();
+				sendFlagsChangedMessage();
+			} catch(MessagingException ex) { /* Do nothing... */ }
+		}
+	}
+	
+	private class MessagesAddedHandler implements IdleMailEventHandler {
+		@Override
+		public void handle(MailEvent event) {
+			try {
+				MessageCountEvent mce = (MessageCountEvent)event;
+				int count = mce.getMessages().length;
+				if (count > 0) {
+					Message m = mce.getMessages()[count-1];
+					String id=((IMAPMessage)m).getMessageID();
+					if (m.getFlags().contains(Flag.RECENT) && !recentNotified.contains(id)) {
+						recentNotified.add(id);
+						String fromName="";
+						Address as[]=m.getFrom();
+						if (as!=null && as.length>0) {
+							InternetAddress ia=(InternetAddress)as[0];
+							fromName = ia.getPersonal();
+							String fromEmail = ms.adjustEmail(ia.getAddress());
+							if (fromName == null) {
+								fromName = fromEmail;
+							} else {
+								fromName = fromName+" <"+fromEmail+">";
+							}
+						}
+						sendRecentMessage(fromName,m.getSubject());
+					}
+				}
+
+			} catch(MessagingException ex) { /* Do nothing... */ }
+		}
+	}
+	
+	private class MessageCountHandler implements IdleMailEventHandler {
+		@Override
+		public void handle(MailEvent event) {
+			try {
+				refreshUnreads();
+
+			} catch(MessagingException ex) { /* Do nothing... */ }
+		}
+	}
 }

@@ -384,10 +384,14 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}
 	
 	public boolean isIdleSharedInboxFolderEnabled() {
-		return getBoolean(IDLE_SHAREDINBOX_ENABLED, false);
+		return getBoolean(IDLE_SHAREDINBOX_ENABLED, true);
 	}
 	
 	public boolean isIdleFavoriteFolderEnabled() {
-		return getBoolean(IDLE_FAVORITE_ENABLED, false);
+		return getBoolean(IDLE_FAVORITE_ENABLED, true);
+	}
+	
+	public int getImapEventMessageBufferTTL() {
+		return getInteger(IMAP_EVENT_MESSAGE_BUFFERTTL, 500);
 	}
 }
