@@ -31,42 +31,28 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.bol.js;
-
-/**
- *
- * @author gbulfon
- */
-public class JsFolder {
+Ext.define('Sonicle.webtop.mail.ux.PECChangePasswordConfirmBox', {
+	extend: 'WTA.ux.window.CustomPromptMsgBox',
+	requires: [
+		'Sonicle.form.field.Password',
+	],
 	
-	public String id;
-	public String text;
-	public String folder;
-	public Boolean leaf;
-	public String iconCls;
-	public int unread;
-	public Boolean hasUnread;
-	public String group;
-	public Boolean isReadOnly;
-	public Boolean isSharedToSomeone;
-	public Boolean isSharedRoot;
-	public Boolean isUnderShared;
-	public Boolean isInbox;
-	public Boolean isSent;
-	public Boolean isUnderSent;
-	public Boolean isDrafts;
-	public Boolean isTrash;
-	public Boolean isArchive;
-	public Boolean isSpam;
-	public Boolean scanOff;
-	public Boolean scanOn;
-	public Boolean scanEnabled;
-	public Boolean canRename;
-	public Boolean isPEC;
-	public String account;
-    
-	public JsFolder() {
-		
+	createCustomPrompt: function() {
+		var me = this;
+		return {
+			xtype: 'sopasswordfield',
+			id: me.id + '-password',
+			width: 300,
+			plugins: 'sonoautocomplete',
+			allowBlank: false
+		};
+	},
+	
+	setCustomPromptValue: function(value) {
+		this.customPrompt.setValue(value);
+	},
+	
+	getCustomPromptValue: function() {
+		return this.customPrompt.getValue();
 	}
-	
-}
+});

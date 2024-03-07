@@ -1044,8 +1044,6 @@ public class Service extends BaseService {
 				}
 			}
 		}*/
-		String sentfolder=getSentFolder(ident);
-		MailAccount account=getAccount(ident);
 		SendException retexc = null;
 		Message msg = null;
 		try {
@@ -1057,34 +1055,40 @@ public class Service extends BaseService {
                         retexc.setException(ex);
 		}
 
-		//if sent succesful, save outgoing message
-		if (retexc == null && msg != null) {
-			Exception ex = saveSent(account, msg, sentfolder);
-			if (ex!=null) {
-                            retexc = new SendException();
-                            retexc.setMessageSent(true);
-							
-                            //If shared account retry on main account
-                            if (!ident.isMainIdentity()) {
-                                sentfolder=mainAccount.getFolderSent();
-                                Exception sex = saveSent(mainAccount, msg, sentfolder);
-                                if (sex==null) {
-                                    retexc.setMessageSaved(true);
-                                }
-                            }
-                            
-                            
-                            Service.logger.error("Exception",ex);
-                            retexc.setException(ex);
-                        }
-		}
+		retexc = saveSentOrFallbackToMainSent(smsg, msg, ident, retexc);
 		
-		if (mailManager.isAuditEnabled() && (retexc == null || retexc.messageSaved) && msg != null) {
-			writeAuditCreateMessage(smsg, msg, sentfolder, null);
-		}
 		return retexc;
 		
 	} //end sendMsg, SimpleMessage version
+	
+	public SendException saveSentOrFallbackToMainSent(SimpleMessage smsg, Message msg, Identity ident, SendException retexc) {
+		String sentfolder=getSentFolder(ident);
+		if (retexc == null && msg != null) {
+			MailAccount account=getAccount(ident);
+			Exception ex = saveSent(account, msg, sentfolder);
+			if (ex!=null) {
+				retexc = new SendException();
+				retexc.setMessageSent(true);
+
+				//If shared account retry on main account
+				if (!ident.isMainIdentity()) {
+					sentfolder=mainAccount.getFolderSent();
+					Exception sex = saveSent(mainAccount, msg, sentfolder);
+					if (sex==null) {
+						retexc.setMessageSaved(true);
+					}
+				}
+
+
+				Service.logger.error("Exception",ex);
+				retexc.setException(ex);
+			}
+		}
+		if (mailManager.isAuditEnabled() && (retexc == null || retexc.messageSaved) && smsg!=null && msg != null) {
+			writeAuditCreateMessage(smsg, msg, sentfolder, null);
+		}
+		return retexc;
+	}
 
 	public SendException sendMessage(SimpleMessage msg, List<JsAttachment> attachments) {
 		UserProfile profile = environment.getProfile();
@@ -2984,6 +2988,8 @@ public class Service extends BaseService {
 		//so rename is accessible to shared root, to customize name
 		if (fc.isInbox() || fc.isSpecial() || (!fc.isUnderSharedFolder() && fc.isSharedFolder())) canRename=false;
 		jsFolder.canRename=canRename;
+		
+		if (fc.isPEC()) jsFolder.isPEC = true;
 
 		jsFolder.account=account.getId();
 		 
@@ -9841,6 +9847,24 @@ public class Service extends BaseService {
 			
 		} catch(Exception ex) {
 			logger.error("Error in EditEmailSubject", ex);
+			new JsonResult(ex).printTo(out);
+		}
+	}
+
+	public void processPECChangePassword(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account = getAccount(request);
+		String pfoldername = request.getParameter("foldername");
+		String ppassword = request.getParameter("password");
+		
+		try {
+			FolderCache mcache = account.getFolderCache(pfoldername);
+			String webtopProfileId = mcache.getWebTopUser()+"@"+getEnv().getProfile().getDomainId();
+			CoreManager core = WT.getCoreManager();
+			core.updatePecBridgeRelayPassword(webtopProfileId, ppassword);
+			core.updatePecBridgeFetcherPassword(webtopProfileId, ppassword);
+			new JsonResult(true).printTo(out);
+		} catch(Exception ex) {
+			logger.error("Error in PECChangePassword", ex);
 			new JsonResult(ex).printTo(out);
 		}
 	}

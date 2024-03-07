@@ -796,6 +796,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("movetomain",{ handler: me.actionMoveToMainFolder, scope: me, iconCls: '' });
         me.addAct("refresh",{ handler: me.actionFolderRefresh, scope: me, iconCls: 'wt-icon-refresh' });
         me.addAct("refreshtree",{ handler: me.actionTreeRefresh, scope: me, iconCls: '' });
+        me.addAct("pecchangepassword",{ handler: me.actionPECChangePassword, scope: me, iconCls: '' });
         me.addAct("favorite",{ handler: me.actionFavorite, scope: me, iconCls: 'wtmail-icon-favorites' });
         me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wt-icon-remove' });
 
@@ -971,6 +972,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
                 me.getAct('advsearch'),
 				me.getAct('favorite'),
                 me.getAct('emptyfolder'),
+				me.addRef('pecMenu', Ext.create({
+					xtype: 'menuitem',
+					text: 'PEC',
+					menu: {
+						items: [
+							me.getAct('pecchangepassword')
+						]      
+					}
+				})),
                 '-',
                 me.getAct('deletefolder'),
                 me.getAct('renamefolder'),
@@ -1715,6 +1725,37 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		this.reloadTree(me.getAccount(rec));
 	},
 	
+	actionPECChangePassword: function(s,e) {
+		var me=this,
+			rec=me.getCtxNode(e),
+			foldername = rec.get('id'),
+			pecEmail = me.getFolderIdentity(foldername).email;
+	
+		WT.confirm(me.res('confirmBox.pecChangePassword.lbl', pecEmail), function(bid, value) {
+			if (bid === 'ok') {
+				var foldername = rec.get('id');
+				WT.ajaxReq(me.ID, 'PECChangePassword', {
+					params: {
+						account: me.currentAccount,
+						foldername: foldername,
+						password: value
+					},
+					callback: function(success,json) {
+						if (json.success) {
+						} else {
+							WT.error(json.message);
+						}
+					}
+				});			
+			}
+		}, me, {
+			buttons: Ext.Msg.OKCANCEL,
+			title: me.res('act-pecChangePassword.confirm.tit'),
+			instClass: 'Sonicle.webtop.mail.ux.PECChangePasswordConfirmBox'
+		});
+	
+	},
+	
 	openAuditUI: function(referenceId, context) {
 		var me = this;
 		
@@ -2405,9 +2446,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			id=r.get("id"),
 			acct=me.getAccount(r),
 			rootid=me.acctTrees[acct].getRootNode().get("id"),
-			readonly=me.getVar('externalAccountReadOnly.'+acct);
+			readonly=me.getVar('externalAccountReadOnly.'+acct),
+			isPEC=r.get('isPEC'),
+			pecPasswordChange=WT.getVar('pecPasswordChange');
 	
 		me.getAct('emptyfolder').setDisabled(readonly || (!r.get("isTrash")&&!r.get("isSpam")));
+		
+		me.getRef('pecMenu').setVisible(isPEC && pecPasswordChange);
 
 		me.getAct('hidefolder').setDisabled(me.specialFolders[id]);
 		me.getAct('deletefolder').setDisabled(readonly || me.specialFolders[id]);
