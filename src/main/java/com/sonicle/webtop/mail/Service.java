@@ -1020,6 +1020,10 @@ public class Service extends BaseService {
             boolean messageSent=false;
             boolean messageSaved=false;
             Exception exception=null;
+			
+			SendException(String message) {
+				super(message);
+			}
             
             void setMessageSent(boolean b) { messageSent=b; }
             void setMessageSaved(boolean b) { messageSaved=b; }
@@ -1051,8 +1055,10 @@ public class Service extends BaseService {
 			Transport.send(msg);
 		} catch (Exception ex) {
 			Service.logger.error("Exception",ex);
-			retexc = new SendException();
-                        retexc.setException(ex);
+			String exmsg = ex.getMessage();
+			if (ex.getCause()!=null) exmsg = ex.getCause().getMessage();
+			retexc = new SendException(exmsg);
+            retexc.setException(ex);			
 		}
 
 		retexc = saveSentOrFallbackToMainSent(smsg, msg, ident, retexc);
@@ -1067,7 +1073,9 @@ public class Service extends BaseService {
 			MailAccount account=getAccount(ident);
 			Exception ex = saveSent(account, msg, sentfolder);
 			if (ex!=null) {
-				retexc = new SendException();
+				String exmsg = ex.getMessage();
+				if (ex.getCause()!=null) exmsg = ex.getCause().getMessage();
+				retexc = new SendException(exmsg);
 				retexc.setMessageSent(true);
 
 				//If shared account retry on main account
@@ -4991,7 +4999,7 @@ public class Service extends BaseService {
 			
 			if (sendExc!=null) {
 				if (!sendExc.messageSent) {
-					json=new JsonResult(false,sendExc.exception.getMessage());
+					json=new JsonResult(false,sendExc.getMessage());
 				} else {
 					if (!sendExc.messageSaved)
 						environment.notify(
