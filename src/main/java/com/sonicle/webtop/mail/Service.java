@@ -9870,6 +9870,16 @@ public class Service extends BaseService {
 			CoreManager core = WT.getCoreManager();
 			core.updatePecBridgeRelayPassword(webtopProfileId, ppassword);
 			core.updatePecBridgeFetcherPassword(webtopProfileId, ppassword);
+			//notify PECBridge about the password change
+			try {
+				MimeMessage msg = new MimeMessage(account.getMailSession());
+				msg.setFrom(new InternetAddress("pecbridge-manager"));
+				msg.setRecipient(RecipientType.TO, new InternetAddress("password-changed"));
+				msg.setContent("", "text/plain");
+				Transport.send(msg);
+			} catch(MessagingException exc) {
+				logger.error("Error sending reload command to PEC Bridge");
+			}
 			new JsonResult(true).printTo(out);
 		} catch(Exception ex) {
 			logger.error("Error in PECChangePassword", ex);
