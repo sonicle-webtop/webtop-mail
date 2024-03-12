@@ -7424,12 +7424,31 @@ public class Service extends BaseService {
 			if (subject == null) {
 				subject = "";
 			} else {
-				try {
-					subject = MailUtils.decodeQString(subject);
-				} catch (Exception exc) {
-					
+				subject = MimeUtility.decodeText(subject);
+			}
+			
+			//check for List-Unsubscribe, http or mailto only, http has precedence
+			String listUnsubscribe=null;
+			String hdrs[] = m.getHeader("List-Unsubscribe");
+			if (hdrs!=null && hdrs.length>0) {
+				String hdr = MimeUtility.decodeText(hdrs[0]);
+				String links[] = StringUtils.split(hdr, ",");
+				for(String link: links) {
+					link = StringUtils.strip(link);
+					link = StringUtils.strip(link, "<>");
+					//first http link found will be ok and break cycle
+					if (StringUtils.startsWithIgnoreCase(link, "http")) {
+						listUnsubscribe=link;
+						break;
+					}
+					//mailto is ok, but continue to check for an http link
+					else if (StringUtils.startsWithIgnoreCase(link, "mailto")) {
+						listUnsubscribe=link;
+					}
 				}
 			}
+			if (listUnsubscribe!=null) items.add(new JsMessageDetails("listUnsubscribe", listUnsubscribe));
+			
 			java.util.Date d = m.getSentDate();
 			if (d == null) {
 				d = m.getReceivedDate();

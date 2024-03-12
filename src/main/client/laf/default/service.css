@@ -388,3 +388,5 @@ blockquote {
 .wtmail-icon-pas-spam-red { background-image: url('pas-spam-red_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-pas-spam-unknown { background-image: url('pas-spam-unknown_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-mv-pas { background-color: gold; border: 1px goldenrod solid; padding: 4px; color: black; }
+
+.wtmail-unsubscribe-link { color: #157fcc !important; }

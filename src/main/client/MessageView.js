@@ -313,6 +313,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.nbccs=0;
 			me.workflow=false;
 			me.messageid=null;
+			me.listUnsubscribe=null;
             Ext.each(r,me.evalRecord,me);
 			me.tags=me.proxy.getReader().rawData.tags;
 			me.pec=me.proxy.getReader().rawData.pec;
@@ -528,11 +529,29 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 							(me.pas.isSpam?"danger":me.pas.isSenderTrusted?"ok":"warning")
 						+"' style='display:inline-block; width: 16px;height: 16px;"+(canMarkAsTrusted?"cursor: pointer;":"")+"'></div>";
 			}
+			
+			var divListUnsubscribe="";
+			if (me.listUnsubscribe) {
+				var prefix=me.listUnsubscribe.substring(0,6).toLowerCase();
+				if (prefix == 'mailto') {
+					var ix = me.listUnsubscribe.indexOf('?'),
+						email = ix >0 ? me.listUnsubscribe.substring(7,ix) : me.listUnsubscribe.substring(7),
+						params = ix > 0 ? Ext.Object.fromQueryString(me.listUnsubscribe.substring(ix+1)):null,
+						subject = params ? (params.subject ? params.subject : '') : '',
+						body = params ? (params.body ? params.body : '') : '',
+						sparams="'"+email+"','"+subject+"','"+body+"'";
+					divListUnsubscribe="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class='wtmail-unsubscribe-link' href='javascript:Ext.emptyFn()' onclick=\"parent.WT.handleMailAddress(" + sparams + "); return false;\">"+me.res("unsubscribe")+"</a>";
+				} else { //is http
+					divListUnsubscribe="&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a class='wtmail-unsubscribe-link' href='"+me.listUnsubscribe+"' target='_blank'>"+me.res("unsubscribe")+"</a>";
+				}
+			}
+			
             me.divFromName.update(
 				"<a data-qtip='" + me.fromEmail + "' data-qtitle='" + Ext.String.htmlEncode(me.fromName) + "' href='javascript:Ext.emptyFn()'>" +
 					me.fromName + " &lt;" + me.fromEmail + "&gt;" + 
 				"</a>"+
-				divPasSender
+				divPasSender+
+				divListUnsubscribe
 			);
 	
 			//prepare email menu
@@ -1422,6 +1441,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         //alert("iddata="+iddata);
         if (iddata=='subject') me.subject=item.get('value1');
         else if (iddata=='messageid') {me.messageid=item.get('value1');} 
+        else if (iddata=='listUnsubscribe') {me.listUnsubscribe=item.get('value1');} 
         else if (iddata=='date') { me.date=item.get('value1'); }
         else if (iddata=='scheddate') { me.scheddate=item.get('value1'); }
         else if (iddata=='from') { me.fromName=item.get('value1'); me.fromEmail=item.get('value2') }
