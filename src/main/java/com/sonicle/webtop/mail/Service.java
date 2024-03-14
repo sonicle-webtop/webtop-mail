@@ -169,6 +169,7 @@ import com.sonicle.webtop.core.model.RecipientFieldType;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.core.util.ICalendarHelper;
 import com.sonicle.webtop.mail.bol.js.JsAdvSearchMessage;
+import com.sonicle.webtop.mail.bol.js.JsEnvelope;
 import com.sonicle.webtop.mail.bol.js.JsListedMessage;
 import com.sonicle.webtop.mail.bol.js.JsMessageDetails;
 import com.sonicle.webtop.mail.bol.js.JsOperateFolder;
@@ -7761,6 +7762,81 @@ public class Service extends BaseService {
 			if (im!=null) im.setPeek(false);
 			
 //            if (!wasopen) folder.close(false);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
+		}
+	}
+	
+	public void processGetMessageEnvelope(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
+		String pfoldername = request.getParameter("folder");
+		String puidmessage = request.getParameter("idmessage");
+		
+		if (df == null) {
+			df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.MEDIUM, environment.getProfile().getLocale());
+		}
+		try {
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
+			long msguid=Long.parseLong(puidmessage);
+			Message m=mcache.getMessage(msguid);
+			if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
+			
+			String messageid=getMessageID(m);
+			String subject = m.getSubject();
+			if (subject == null) {
+				subject = "";
+			} else {
+				subject = MimeUtility.decodeText(subject);
+			}
+			
+			java.util.Date d = m.getSentDate();
+			if (d == null) {
+				d = m.getReceivedDate();
+			}
+			if (d == null) {
+				d = new java.util.Date(0);
+			}
+			String date = df.format(d).replaceAll("\\.", ":");
+
+			Address as[] = m.getFrom();
+			String from=null;
+			if (as != null && as.length > 0) {
+				from = InternetAddressUtils.toFullAddress((InternetAddress) as[0]);
+			}
+			
+			Address atos[] = m.getRecipients(RecipientType.TO);
+			String tos[] = null;
+			if (atos != null) {
+				tos = new String[atos.length];
+				for (int i=0; i<atos.length; ++i) {
+					tos[i] = InternetAddressUtils.toFullAddress((InternetAddress)atos[i]);
+				}
+			}
+			Address accs[] = m.getRecipients(RecipientType.CC);
+			String ccs[] = null;
+			if (accs != null) {
+				ccs = new String[accs.length];
+				for (int i=0; i<accs.length; ++i) {
+					ccs[i] = InternetAddressUtils.toFullAddress((InternetAddress)accs[i]);
+				}
+			}
+			Address abccs[] = m.getRecipients(RecipientType.BCC);
+			String bccs[] = null;
+			if (abccs != null) {
+				bccs = new String[abccs.length];
+				for (int i=0; i<abccs.length; ++i) {
+					bccs[i] = InternetAddressUtils.toFullAddress((InternetAddress)abccs[i]);
+				}
+			}
+
+			JsEnvelope jse = new JsEnvelope(messageid, date, subject, from, tos, ccs, bccs);
+			
+			JsonResult ret=new JsonResult("envelope", jse);
+			
+			ret.printTo(out, false);
+			
 		} catch (Throwable t) {
 			new JsonResult(t).printTo(out);
 			Service.logger.error("Exception", t);
