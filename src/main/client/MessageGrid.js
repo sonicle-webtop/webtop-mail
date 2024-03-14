@@ -2403,6 +2403,77 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     },	
 	
 	actionCreateReminder: function() {
+		var me = this;
+		
+		WT.confirm(me.res('act-createReminder.lbl'),function(bid) {
+			if (bid==='yes') {
+				me.doCreateReminderWithAttendees();
+			}
+			else if (bid==='no'){
+				me.doCreateSimpleReminder();
+			}
+		},me);
+	},
+	
+	doCreateReminderWithAttendees: function() {
+		var me = this,
+			r = me.getSelectionModel().getSelection()[0],
+			acct = me.currentAccount,
+			folder = r.get("folder")||me.currentFolder,
+			id = r.get('idmessage');
+	
+		WT.ajaxReq(me.mys.ID, 'GetMessageEnvelope', {
+			params: {
+				account: acct,
+                folder: folder,
+                idmessage: id
+			},
+			callback: function(success,json) {
+				if (success) {
+					var tomorrow=Sonicle.Date.add(new Date(),{ days: 1 }),
+						capi=WT.getServiceApi("com.sonicle.webtop.calendar"),
+						env=json.envelope,
+						attendees=null,
+						description=
+							me.res("column-date")+": "+env.date+"\n"+
+							me.res("column-from")+": "+env.from+"\n";
+					if (env.to) {
+						attendees = [];
+						Ext.each(env.to, function(to) {
+							attendees.push({
+								"recipient": to,
+								"recipientType": "IND",
+								"recipientRole": "REQ",
+								"responseStatus": "NA",
+								"notify": true
+							});
+						});
+						description += me.res("to")+": "+env.to.join(',\n    ')+"\n";
+					}
+					if (env.cc)
+						description += me.res("cc")+": "+env.cc.join(',\n    ')+"\n";
+					if (env.bcc)
+						description += me.res("bcc")+": "+env.bcc.join(',\n     ')+"\n";
+						
+					capi.addEvent({
+						startDate: tomorrow,
+						endDate: Sonicle.Date.add(tomorrow, { minutes: 30 }),
+						title: env.subject,
+						description: description,
+						reminder: 5,
+						attendees: attendees
+					},{
+						dirty: true
+					});
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});					
+		
+	},
+	
+	doCreateSimpleReminder: function() {
 		var me=this,
 			r=me.getSelectionModel().getSelection()[0],
 			capi=WT.getServiceApi("com.sonicle.webtop.calendar"),
@@ -2416,16 +2487,15 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				me.res("column-to")+": "+to+"\n",
 			tomorrow=Sonicle.Date.add(new Date(),{ days: 1 });
 			
-			capi.addEvent({
-				startDate: tomorrow,
-				endDate: Sonicle.Date.add(tomorrow, { minutes: 30 }),
-				title: subject,
-				description: description,
-				reminder: 5	
-			},{
-				dirty: true
-			});
-		
+		capi.addEvent({
+			startDate: tomorrow,
+			endDate: Sonicle.Date.add(tomorrow, { minutes: 30 }),
+			title: subject,
+			description: description,
+			reminder: 5	
+		},{
+			dirty: true
+		});		
 	},
 	
 	decodeEntities : function(str) {
