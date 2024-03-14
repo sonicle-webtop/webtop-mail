@@ -2445,6 +2445,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			d=r.getData(),
 			id=r.get("id"),
 			acct=me.getAccount(r),
+			depth=r.get("depth"),
 			rootid=me.acctTrees[acct].getRootNode().get("id"),
 			readonly=me.getVar('externalAccountReadOnly.'+acct),
 			isPEC=r.get('isPEC'),
@@ -2452,7 +2453,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 		me.getAct('emptyfolder').setDisabled(readonly || (!r.get("isTrash")&&!r.get("isSpam")));
 		
-		me.getRef('pecMenu').setVisible(isPEC && pecPasswordChange);
+		me.getRef('pecMenu').setVisible(isPEC && pecPasswordChange && depth==2);
 
 		me.getAct('hidefolder').setDisabled(me.specialFolders[id]);
 		me.getAct('deletefolder').setDisabled(readonly || me.specialFolders[id]);
