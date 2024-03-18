@@ -9960,8 +9960,11 @@ public class Service extends BaseService {
 		String ppassword = request.getParameter("password");
 		
 		try {
-			FolderCache mcache = account.getFolderCache(pfoldername);
-			String webtopProfileId = mcache.getWebTopUser()+"@"+getEnv().getProfile().getDomainId();
+			String webtopProfileId = getEnv().getProfile().getId().toString();
+			if (!StringUtils.isBlank(pfoldername)) {
+				FolderCache mcache = account.getFolderCache(pfoldername);
+				webtopProfileId = mcache.getWebTopUser()+"@"+getEnv().getProfile().getDomainId();
+			}
 			CoreManager core = WT.getCoreManager();
 			core.updatePecBridgeRelayPassword(webtopProfileId, ppassword);
 			core.updatePecBridgeFetcherPassword(webtopProfileId, ppassword);

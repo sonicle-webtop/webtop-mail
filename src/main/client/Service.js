@@ -283,6 +283,10 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {
 					if(rec.isRoot()) {
+						me.getRef('pecMenuRoot').setVisible(
+								WT.getVar('pecPasswordChange') &&
+								me.getFolderNodeById('main',me.getFolderInbox()).get('isPEC')
+						);
 						Sonicle.Utils.showContextMenu(e, me.getRef('cxmTreeRootNode'), { rec: rec });
 					}
 					else {
@@ -958,7 +962,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.addRef('cxmTreeRootNode', Ext.create({
 			xtype: 'menu',
 			items: [
-                me.getAct('sharing')
+                me.getAct('sharing'),
+				me.addRef('pecMenuRoot', Ext.create({
+					xtype: 'menuitem',
+					text: 'PEC',
+					menu: {
+						items: [
+							me.getAct('pecchangepassword')
+						]      
+					}
+				})),
 			],
 			listeners: {
 				beforeshow: function(s) {
@@ -1728,12 +1741,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	actionPECChangePassword: function(s,e) {
 		var me=this,
 			rec=me.getCtxNode(e),
-			foldername = rec.get('id'),
+			foldername = rec.isRoot()?null:rec.get('id'),
 			pecEmail = me.getFolderIdentity(foldername).email;
 	
 		WT.confirm(me.res('confirmBox.pecChangePassword.lbl', pecEmail), function(bid, value) {
 			if (bid === 'ok') {
-				var foldername = rec.get('id');
 				WT.ajaxReq(me.ID, 'PECChangePassword', {
 					params: {
 						account: me.currentAccount,
