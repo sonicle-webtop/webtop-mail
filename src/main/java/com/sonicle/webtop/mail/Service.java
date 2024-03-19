@@ -7772,6 +7772,7 @@ public class Service extends BaseService {
 		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
+		Boolean stripmyself = ServletUtils.getBooleanParameter(request, "stripmyself", false);
 		
 		if (df == null) {
 			df = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.MEDIUM, environment.getProfile().getLocale());
@@ -7809,22 +7810,28 @@ public class Service extends BaseService {
 			Address atos[] = m.getRecipients(RecipientType.TO);
 			String tos[] = null;
 			if (atos != null) {
+				if (stripmyself) atos = removeDestination(atos, environment.getProfile().getPersonalEmailAddress());
 				tos = new String[atos.length];
 				for (int i=0; i<atos.length; ++i) {
 					tos[i] = InternetAddressUtils.toFullAddress((InternetAddress)atos[i]);
 				}
 			}
+			
+			
 			Address accs[] = m.getRecipients(RecipientType.CC);
 			String ccs[] = null;
 			if (accs != null) {
+				if (stripmyself) accs = removeDestination(accs, environment.getProfile().getPersonalEmailAddress());
 				ccs = new String[accs.length];
 				for (int i=0; i<accs.length; ++i) {
 					ccs[i] = InternetAddressUtils.toFullAddress((InternetAddress)accs[i]);
 				}
 			}
+			
 			Address abccs[] = m.getRecipients(RecipientType.BCC);
 			String bccs[] = null;
 			if (abccs != null) {
+				if (stripmyself) abccs = removeDestination(abccs, environment.getProfile().getPersonalEmailAddress());
 				bccs = new String[abccs.length];
 				for (int i=0; i<abccs.length; ++i) {
 					bccs[i] = InternetAddressUtils.toFullAddress((InternetAddress)abccs[i]);

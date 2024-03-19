@@ -2426,7 +2426,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			params: {
 				account: acct,
                 folder: folder,
-                idmessage: id
+                idmessage: id,
+				stripmyself: true
 			},
 			callback: function(success,json) {
 				if (success) {
