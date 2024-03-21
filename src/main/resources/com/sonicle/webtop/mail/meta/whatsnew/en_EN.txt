@@ -1,3 +1,26 @@
+$	5.20.0
+	%	Version 5.20.0
+	*	<h1>Change of password of an integrated Italian PEC</h1>
+		<p>It is possible to give a permission to a user that will allow him/her
+		to change the password of incoming shared PEC accounts.
+		This makes it easier for these users to user these PEC accounts when
+		the providers requires a periodic change of password, as it may be
+		the case with the adoption of the upcoming European PEC.
+		The user will find the function in the context menu of the PEC account
+		by right-clicking on it.
+		</p>
+	*	<h1>Email redirection function</h1>
+		<p>It is now possible to forward an email with the "redirect" function
+		accessible through the mail grid context menu. The redirected email 
+		will be sent to the recipient as a clone of the original email, as if it
+		were directly sent to him/her, but with additional informations that allows
+		the software to know who redirected it and when. These informations can
+		be seen on the mail preview under the original sender.
+		</p>
+	*	<h1>Newsletter unsubscribe function</h1>
+		<p>Emails that contain headers with standard informations for unsubscription,
+		will show a button on the right of the sender to unsubscribe in one click.
+		</p>
 $	5.19.0
 	%	Versione 5.19.0
 	*	<h1>Sender block</h1>

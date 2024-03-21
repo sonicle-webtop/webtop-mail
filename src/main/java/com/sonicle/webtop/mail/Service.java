@@ -7832,7 +7832,7 @@ public class Service extends BaseService {
 			Address atos[] = m.getRecipients(RecipientType.TO);
 			String tos[] = null;
 			if (atos != null) {
-				if (stripmyself) atos = removeDestination(atos, environment.getProfile().getPersonalEmailAddress());
+				if (stripmyself) atos = removeDestination(atos, environment.getProfile().getEmailAddress());
 				tos = new String[atos.length];
 				for (int i=0; i<atos.length; ++i) {
 					tos[i] = InternetAddressUtils.toFullAddress((InternetAddress)atos[i]);
@@ -7843,7 +7843,7 @@ public class Service extends BaseService {
 			Address accs[] = m.getRecipients(RecipientType.CC);
 			String ccs[] = null;
 			if (accs != null) {
-				if (stripmyself) accs = removeDestination(accs, environment.getProfile().getPersonalEmailAddress());
+				if (stripmyself) accs = removeDestination(accs, environment.getProfile().getEmailAddress());
 				ccs = new String[accs.length];
 				for (int i=0; i<accs.length; ++i) {
 					ccs[i] = InternetAddressUtils.toFullAddress((InternetAddress)accs[i]);
@@ -7853,7 +7853,7 @@ public class Service extends BaseService {
 			Address abccs[] = m.getRecipients(RecipientType.BCC);
 			String bccs[] = null;
 			if (abccs != null) {
-				if (stripmyself) abccs = removeDestination(abccs, environment.getProfile().getPersonalEmailAddress());
+				if (stripmyself) abccs = removeDestination(abccs, environment.getProfile().getEmailAddress());
 				bccs = new String[abccs.length];
 				for (int i=0; i<abccs.length; ++i) {
 					bccs[i] = InternetAddressUtils.toFullAddress((InternetAddress)abccs[i]);
