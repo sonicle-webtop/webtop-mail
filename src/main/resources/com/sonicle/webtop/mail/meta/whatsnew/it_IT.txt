@@ -5,13 +5,13 @@ $	5.20.0
 		modificare le password degli account PEC integrati in WebTop.
 		Questo facilita l'autonomia di questi utenti nel caso di provider PEC
 		che richiedono il cambio periodico delle password, come si prevede
-		che accadrÃ  con l'avvento della PEC Europea.
-		L'utente troverÃ  la funzione nel menu contestuale dell'account PEC
+		che accadrà  con l'avvento della PEC Europea.
+		L'utente troverà  la funzione nel menu contestuale dell'account PEC
 		accessibile tramite il dasto destro del mouse.
 		</p>
 	*	<h1>Funzione di reindirizzamento email</h1>
 		<p>E' possbile inoltrare una mail con la funzione "reindirizza" accessibile
-		nel menu contestuale dell'elenco email. La email reindirizzata verrÃ 
+		nel menu contestuale dell'elenco email. La email reindirizzata verrà
 		mandata al destinatario clonata dall'originale, come se fosse stata mandata
 		direttamente a lui/lei, ma con delle informazioni che consentono al software
 		di sapere chi l'ha reindirizzata e quando. Queste informazioni vengono visualizzate
