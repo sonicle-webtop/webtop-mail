@@ -282,6 +282,9 @@ public class FolderCache {
 			|| (account.isFavoriteFolder(foldername) && ms.getMailServiceSettings().isIdleFavoriteFolderEnabled());
 		
 		if (idle) startIdle();
+		
+		//check recents only in important folders (idle mode ones)
+		setCheckRecents(idle);
     }
 	
 	boolean goidle=true;
@@ -719,7 +722,7 @@ public class FolderCache {
             Service.logger.debug("Exception on folder "+foldername,exc);
         }
         try {
-            if (checkRecents || scanForcedOn || scanEnabled) refreshRecentMessagesCount();
+            if (checkRecents /*|| scanForcedOn || scanEnabled*/) refreshRecentMessagesCount();
         } catch(MessagingException exc) {
             Service.logger.debug("Exception on folder "+foldername,exc);
         }
