@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.sonicle.webtop</groupId>
 	<artifactId>webtop-mail</artifactId>
-	<version>5.19.3</version>
+	<version>5.20.0</version>
 	<packaging>jar</packaging>
 	<name>webtop-mail</name>
 	
