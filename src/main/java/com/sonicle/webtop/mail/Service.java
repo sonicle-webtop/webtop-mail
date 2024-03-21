@@ -103,7 +103,6 @@ import com.sonicle.webtop.mail.bol.js.JsMailAutosave;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsPortletSearchResult;
 import com.sonicle.webtop.mail.bol.js.JsPreviewMessage;
-import com.sonicle.webtop.mail.bol.js.JsQuickPartModel;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSharing;
 import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
@@ -152,12 +151,10 @@ import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.commons.web.json.extjs.FieldMeta;
 import com.sonicle.commons.web.json.extjs.GridMetadata;
 import com.sonicle.commons.web.json.extjs.SortMeta;
+import com.sonicle.mail.UniqueValue;
 import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
-import com.sonicle.mail.sieve.SieveRule;
-import com.sonicle.mail.sieve.SieveRuleField;
-import com.sonicle.mail.sieve.SieveRuleOperator;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.model.EnabledCond;
@@ -6680,6 +6677,10 @@ public class Service extends BaseService {
 
 							//Date
 							java.util.Date d=xm.getSentDate();
+							String rdh[]=xm.getHeader("Resent-Date");
+							if (rdh!=null && rdh.length>0) {
+								d = new MailDateFormat().parse(rdh[0]);
+							}
 							if (d==null) d=xm.getReceivedDate();
 							if (d==null) d=new java.util.Date(0);
 							cal.setTime(d);
@@ -6699,7 +6700,7 @@ public class Service extends BaseService {
 								if (from==null) from=iafrom.getAddress();
 								fromemail=iafrom.getAddress();
 							}
-
+							
 							//To
 							String to="";
 							String toemail="";
@@ -7458,6 +7459,14 @@ public class Service extends BaseService {
 				d = new java.util.Date(0);
 			}
 			String date = df.format(d).replaceAll("\\.", ":");
+
+			String throughDate = null;
+			String rdh[]=m.getHeader("Resent-Date");
+			if (rdh!=null && rdh.length>0) {
+				d = new MailDateFormat().parse(rdh[0]);
+				throughDate = df.format(d).replaceAll("\\.", ":");
+			}
+
 			String fromName = "";
 			String fromEmail = "";
 			Address as[] = m.getFrom();
@@ -7470,9 +7479,22 @@ public class Service extends BaseService {
 					fromName = fromEmail;
 				}
 			}
-			
 			items.add(new JsMessageDetails("from", fromName, fromEmail));
 			recs += 2;
+			
+			String throughName=null;
+			String throughEmail=null;
+			String rfh[]=m.getHeader("Resent-From");
+			InternetAddress iathrough=null;
+			if (rfh!=null && rfh.length>0) {
+				iathrough = InternetAddressUtils.toInternetAddress(rfh[0]);
+				throughName = iathrough.getPersonal();
+				throughEmail = adjustEmail(iathrough.getAddress());
+				if (throughName == null) {
+					throughName = throughEmail;
+				}
+			}
+			items.add(new JsMessageDetails("through", throughName, throughEmail, 0, throughDate, false));
 			
 			Address tos[] = m.getRecipients(RecipientType.TO);
 			ArrayList<String> listTos = new ArrayList<>();
@@ -9961,6 +9983,44 @@ public class Service extends BaseService {
 		}
 	}
 
+	public void processForwardRedirect(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		Identity ident = mailManager.getMainIdentity();
+		MailAccount account=getAccount(ident);
+		String pfoldername = request.getParameter("folder");
+		String messageId = request.getParameter("messageId");
+		String to = request.getParameter("to");
+		try {
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
+			MimeMessage src = (MimeMessage) mcache.getMessage(Long.parseLong(messageId)); 
+			if (src.isExpunged()) throw new MessagingException("Message expunged");
+			
+			MimeMessage dst = new MimeMessage(src);
+			
+			dst.addHeader("Resent-From", ident.toString());
+			dst.addHeader("Resent-To", to);
+			dst.addHeader("Resent-Date", new MailDateFormat().format(new java.util.Date()));
+			
+			dst.setHeader("Message-ID", "<"+UniqueValue.getUniqueMessageIDValue(account.getMailSession())+">");
+			
+			SendException retexc = null;
+			try {
+				Transport.send(dst, new InternetAddress[] { new InternetAddress(to) });
+			} catch (Exception ex) {
+				Service.logger.error("Exception",ex);
+				String exmsg = ex.getMessage();
+				if (ex.getCause()!=null) exmsg = ex.getCause().getMessage();
+				retexc = new SendException(exmsg);
+				retexc.setException(ex);
+			}
+
+			retexc = saveSentOrFallbackToMainSent(null, dst, ident, retexc);
+		} catch(Exception ex) {
+			logger.error("Error in ForwardRedirect", ex);
+			new JsonResult(ex).printTo(out);
+		}
+	}
+	
 	public void processPECChangePassword(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account = getAccount(request);
 		String pfoldername = request.getParameter("foldername");

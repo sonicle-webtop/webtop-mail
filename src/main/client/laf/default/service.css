@@ -140,6 +140,10 @@
 .wtmail-mv-hfromname { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: plain; }
 .wtmail-mv-hfromname A {text-decoration: none; color: black; }
 .wtmail-mv-hfromname A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hthroughname { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
+.wtmail-mv-hthroughname A {text-decoration: none; color: black; }
+.wtmail-mv-hthroughname A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hlabelthrough {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; width: 25px; text-align: left; vertical-align: top; padding-left: 20px;}
 .wtmail-mv-hlabeldate {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelto {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}

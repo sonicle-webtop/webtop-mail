@@ -696,6 +696,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll'), iconCls: 'wtmail-icon-replyall' });
         me.addAct("forward",{ handler: me.gridAction(me,'Forward'), iconCls: 'wtmail-icon-forward'  });
         me.addAct("forwardeml",{ handler: me.gridAction(me,'ForwardEml') });
+        me.addAct("forwardredirect",{ handler: me.gridAction(me,'ForwardRedirect') });
 		if (me.getVar("messageEditSubject") === true ) {
 			me.addAct("editSubject",{ handler: me.gridAction(me,'EditSubject') });
 		}
@@ -850,6 +851,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				me.getAct('replyall'),
 				me.getAct('forward'),
 				me.getAct('forwardeml'),
+				me.getAct('forwardredirect'),
 				me.getAct('special'),
 				{
 					text: me.res("menu-complete"),

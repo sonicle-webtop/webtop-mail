@@ -62,6 +62,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     divSubject: null,
     divDate: null,
     divFromName: null,
+	divThroughName: null,
     divTos: null,
     divBccs: null,
     divCcs: null,
@@ -85,6 +86,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     scheddate: '',
     fromName: '',
     fromEmail: '',
+	throughName: '',
+	throughEmail: '',
     toNames: null,
 	toNamesFull: null,
     toEmails: null,
@@ -181,6 +184,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.removeElement(me.divSubject);
             me.removeElement(me.divDate);
             me.removeElement(me.divFromName);
+			if (me.divThroughName) {
+				me.removeElement(me.divThroughName);
+				me.divThroughName = null;
+			}
 			//TODO un click email
             //me.divFromName.un('click', WT.app.emailElementClicked, me.divFromName);
 
@@ -329,10 +336,15 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.divDate=Ext.get(div);
 
 			div=document.createElement("div");
-			//div.id="mvhFromNameElement";
 			div.className="wtmail-mv-hfromname";
 			me.divFromName=Ext.get(div);
 
+			if (me.throughEmail) {
+				div=document.createElement("div");
+				div.className="wtmail-mv-hthroughname";
+				me.divThroughName=Ext.get(div);
+			}
+			
 			me.divTos=Ext.get(document.createElement("div"));
 			me.divTos.addCls("wtmail-mv-hto");
 
@@ -554,6 +566,16 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				divListUnsubscribe
 			);
 	
+			if (me.divThroughName) {
+				me.divThroughName.update(
+					"<span class='wtmail-mv-hlabelthrough'>" + me.mys.res('through') + ":&nbsp;</span>"+
+					"<a data-qtip='" + me.throughEmail + "' data-qtitle='" + Ext.String.htmlEncode(me.throughName) + "' href='javascript:Ext.emptyFn()'>" +
+						me.throughName + " &lt;" + me.throughEmail + "&gt;" + "</a><br>" +
+					"<span class='wtmail-mv-hlabelthrough'>" + me.mys.res('date') + ":&nbsp;</span>" +
+						me.throughDate
+				);
+			}
+
 			//prepare email menu
 			var capi=WT.getServiceApi("com.sonicle.webtop.contacts"),
 				i=0, actions=new Array();
@@ -893,11 +915,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                 me._setEmailElements(me.divTos.first().next(),'to');
             }
             tdh.insertFirst(me.divDate);
+			if (me.divThroughName) tdh.insertFirst(me.divThroughName);
             tdh.insertFirst(me.divFromName);
             tdh.insertFirst(me.divSubject);
             me.divBody.dom.style.width=tdh.dom.scrollWidth-5;//"100%";
             tdb.insertFirst(me.divBody);
             me._setEmailElement(me.divFromName.first(),'from');
+			if (me.divThroughName) me._setEmailElement(me.divThroughName.first().next(),'from');
 			if (canMarkAsTrusted)
 				me.divFromName.first().next().on('click', function() {
 					me.markEmailAsTrusted(me.divFromName.first().getAttribute('data-qtip'));
@@ -1445,6 +1469,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         else if (iddata=='date') { me.date=item.get('value1'); }
         else if (iddata=='scheddate') { me.scheddate=item.get('value1'); }
         else if (iddata=='from') { me.fromName=item.get('value1'); me.fromEmail=item.get('value2') }
+		else if (iddata=='through') { me.throughName=item.get('value1'); me.throughEmail=item.get('value2'); me.throughDate=item.get('value4') }
         else if (iddata=='to') {
 			me.toNamesFull = me.appendEmail(me.toNamesFull,item.get('value1'),item.get('value2'));
             if (me.ntos<maxtos) {
