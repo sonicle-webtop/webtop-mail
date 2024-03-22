@@ -439,7 +439,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             
             var htmlDate="<span class='wtmail-mv-hlabeldate'>"+me.mys.res('date')+":&nbsp;</span>"+me.date;
             if (me.scheddate) {
-                htmlDate+="&nbsp;&nbsp;-&nbsp;&nbsp;"+WTF.imageTag(me.mys.ID,"statusscheduled_16.svg",16,16,"valign=bottom")+"&nbsp;&nbsp;"+me.scheddate;
+                htmlDate+="&nbsp;&nbsp;-&nbsp;&nbsp;"+WTF.imageTag(me.mys.ID,"mail-schedule_16.svg",16,16,"valign=bottom")+"&nbsp;&nbsp;"+me.scheddate;
             }
 			//TODO workflow
 			/*
