@@ -7,7 +7,7 @@ $	5.20.0
 		che richiedono il cambio periodico delle password, come si prevede
 		che accadrà  con l'avvento della PEC Europea.
 		L'utente troverà  la funzione nel menu contestuale dell'account PEC
-		accessibile tramite il dasto destro del mouse.
+		accessibile tramite il tasto destro del mouse.
 		</p>
 	*	<h1>Funzione di reindirizzamento email</h1>
 		<p>E' possbile inoltrare una mail con la funzione "reindirizza" accessibile
