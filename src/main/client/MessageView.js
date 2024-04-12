@@ -295,11 +295,11 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     messageRead: function(r, op, success) {
 		var me=this;
         if (op && success) {
-			var params=op.getProxy().getExtraParams(),
-				provider=params.provider,
-				providerid=params.providerid;
+			var extraParams=op.getProxy().getExtraParams(),
+				provider=extraParams.provider,
+				providerid=extraParams.providerid;
             if (!provider) {
-                if (params.folder!==me.folder || params.idmessage!==me.idmessage) return;
+                if (extraParams.folder!==me.folder || extraParams.idmessage!==me.idmessage) return;
             }
             me.htmlparts=new Array();
             me.toNames=null;
@@ -1009,7 +1009,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             //if (me.icalmethod) console.log("ical - method: "+me.icalmethod+" , uid: "+me.icaluid+" , webtopid: "+me.icalwebtopid);
 			
             me.cleared=false;
-            if (!provider) me.fireEvent('messageviewed',params.idmessage,me.proxy.getReader().rawData.millis,me.workflow);
+            if (!provider) me.fireEvent('messageviewed',extraParams.idmessage,me.proxy.getReader().rawData.millis,me.workflow);
         }
     },
 	
