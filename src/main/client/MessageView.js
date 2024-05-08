@@ -483,7 +483,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.divSubject.update(
 				"<table class='wtmail-mv-subject-table'><tr>"+
 				tdPEC+
-				"<td>"+me.subject+"</td>"+
+				"<td>"+Ext.String.htmlEncode(me.subject)+"</td>"+
 				tdPasSpam+
 				"</tr></table>"
 			);

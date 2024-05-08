@@ -316,9 +316,12 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	
 	buildSubject: function(subject) {
 		var sub = Ext.isEmpty(subject) ? this.noSubjectText : subject;
+		//sub is already html encoded, but looks like tooltip
+		//needs to be encoded twice or any html will be interpreted
+		//[ see https://forum.sencha.com/forum/showthread.php?333529 ]
 		return {
 			text: sub,
-			tooltip: sub
+			tooltip: Sonicle.String.htmlAttributeEncode(sub)
 		};
 	},
 	

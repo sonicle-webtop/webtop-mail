@@ -201,7 +201,8 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 			if (baseUrl == null && qName.equalsIgnoreCase("base")) {
 				baseUrl = attributes.getValue("href");
 				if (baseUrl != null) {
-					if (baseUrl.toLowerCase().startsWith("file:")) {
+					String lBaseUrl = baseUrl.toLowerCase();
+					if (lBaseUrl.startsWith("file:") || lBaseUrl.startsWith("javascript:")) {
 						baseUrl = null;
 						return;
 					} else if (baseUrl.charAt(baseUrl.length() - 1) != '/') {
@@ -270,6 +271,9 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 						avalue = "#";
 						ismailto = true;
 					}
+					else if (lavalue.startsWith("javascript:")) {
+						avalue = "#";
+					}
 					else if (islink) {
 						//add href links to hrefs array
 						avalue = evaluateUrl(avalue);
@@ -277,8 +281,9 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
 					}
 				}
 			}
+			// Skip any event handler attribute
 			// Skip contenteditable attribute in order to avoid live editing
-			if (!laqname.equals("contenteditable")) {
+			if (!laqname.startsWith("on") && !laqname.equals("contenteditable")) {
 				pwriter.print(" " + aqname + "=\"" + StringUtils.replace(avalue, "\"", "&quot;") + "\"");
 			}
 		}
