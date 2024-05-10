@@ -559,8 +559,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			}
 			
             me.divFromName.update(
-				"<a data-qtip='" + me.fromEmail + "' data-qtitle='" + Ext.String.htmlEncode(me.fromName) + "' href='javascript:Ext.emptyFn()'>" +
-					me.fromName + " &lt;" + me.fromEmail + "&gt;" + 
+				"<a data-qtip='" + me.fromEmail + "' data-qtitle='" + Sonicle.String.htmlAttributeEncode(me.fromName) + "' href='javascript:Ext.emptyFn()'>" +
+					Ext.String.htmlEncode(me.fromName) + " &lt;" + me.fromEmail + "&gt;" + 
 				"</a>"+
 				divPasSender+
 				divListUnsubscribe
@@ -1541,7 +1541,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     appendEmail: function(name, desc, email) {
         if (name === null) name = "";
         else name += " - ";
-        name += "<span data-qtip='" + email + "' data-qtitle='" + Ext.String.htmlEncode(desc) + "'><a data-qtip='" + email + "' data-qtitle='" + Ext.String.htmlEncode(desc) + "' href='javascript:Ext.emptyFn()'>" + desc + "</a></span>";
+        name += "<span data-qtip='" + email + "' data-qtitle='" + Sonicle.String.htmlAttributeEncode(desc) + "'><a data-qtip='" + email + "' data-qtitle='" + Sonicle.String.htmlAttributeEncode(desc) + "' href='javascript:Ext.emptyFn()'>" + Ext.String.htmlEncode(desc) + "</a></span>";
         return name;
     },
 

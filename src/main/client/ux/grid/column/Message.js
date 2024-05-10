@@ -263,7 +263,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			threadIndentStyle: threaded ? me.buildThreadIndentStyle(rec.get('threadIndent')) : '',
 			date: me.buildDate(sto, rec.get('istoday'), rec.get('fmtd'), rec.get('date')),
 			size: me.buildSize(rec.get('size')),
-			address: {text: addr, tooltip: addremail},
+			address: {text: Ext.String.htmlEncode(addr), tooltip: addremail},
 			subject: me.buildSubject(rec.get('subject')),
 			highPriority: rec.get('priority') < 3 ? true : false,
 			hasAttachment: rec.get('atts'),
