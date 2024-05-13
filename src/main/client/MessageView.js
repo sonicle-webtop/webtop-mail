@@ -520,7 +520,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			if (me.pas) {
 				canMarkAsTrusted=!me.pas.isSenderTrusted && !me.pas.isSpam && !me.pas.hasForgedSender;
 				
-				var qTitle=Ext.String.htmlEncode(me.pas.isSenderTrusted?me.res("pas.sender.trusted"):me.res("pas.sender.untrusted"));
+				var qTitle=Sonicle.String.htmlAttributeEncode(me.pas.isSenderTrusted?me.res("pas.sender.trusted"):me.res("pas.sender.untrusted"));
 				var qTip="";
 				if (me.pas.isSpam) qTip=me._addPasTip(qTip, "spam", me.pas.isSpam);
 				if (me.pas.hasForgedSender) qTip=me._addPasTip(qTip, "forged-sender", me.pas.hasForgedSender);
@@ -569,8 +569,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			if (me.divThroughName) {
 				me.divThroughName.update(
 					"<span class='wtmail-mv-hlabelthrough'>" + me.mys.res('through') + ":&nbsp;</span>"+
-					"<a data-qtip='" + me.throughEmail + "' data-qtitle='" + Ext.String.htmlEncode(me.throughName) + "' href='javascript:Ext.emptyFn()'>" +
-						me.throughName + " &lt;" + me.throughEmail + "&gt;" + "</a><br>" +
+					"<a data-qtip='" + me.throughEmail + "' data-qtitle='" + Sonicle.String.htmlAttributeEncode(me.throughName) + "' href='javascript:Ext.emptyFn()'>" +
+						Ext.String.htmlEncode(me.throughName) + " &lt;" + me.throughEmail + "&gt;" + "</a><br>" +
 					"<span class='wtmail-mv-hlabelthrough'>" + me.mys.res('date') + ":&nbsp;</span>" +
 						me.throughDate
 				);
@@ -747,7 +747,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     var eml=null;
                     if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
                     var html="<a href='"+href.replaceAll("'","%27")+"' target='_blank'"
-								+" filename='"+Ext.String.htmlEncode(name)+"'"
+								+" filename='"+Sonicle.String.htmlAttributeEncode(name)+"'"
 								+(ics!=null?ics:"")
 								+(eml!=null?eml:"")
 								+(vcf !== null ? vcf : "")
