@@ -752,7 +752,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 								+(eml!=null?eml:"")
 								+(vcf !== null ? vcf : "")
 								+(docedit!=null?docedit:"")+
-							"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+name+"</span>&nbsp;("+ssize+")</a>";
+							"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+Ext.String.htmlEncode(name)+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
