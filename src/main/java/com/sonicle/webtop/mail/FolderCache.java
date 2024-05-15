@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.LangUtils;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.RegexUtils;
@@ -2244,6 +2245,9 @@ public class FolderCache {
 				} catch(UnsupportedCharsetException | IllegalCharsetNameException exc) {
 					content=IOUtils.toString(istream,Charsets.ISO_8859_1);
 				}
+				//avoid possible XSS
+				content = LangUtils.encodeForHTML(content);
+				
 				String replacement = "$1";
 				String sparams="\"" + replacement + "\"";
 				String onEmailClick = "parent.WT.handleMailAddress(" + sparams + "); return false;";
