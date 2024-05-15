@@ -1888,7 +1888,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     },	
 	
 	_actionCalendarEvent: function(act, params) {
-		var me=this;
+		var me=this,
+			trashAfterAction = me.mys.getVar('invitationTrashAfterAction');
 		params.calaction=act;
 		delete params.nowriter;
 		WT.ajaxReq(me.mys.ID, 'CalendarRequest', {
@@ -1903,14 +1904,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						//		capi.editEvent({ ekey: json.data });
 						//	}
 						//},this);	
-						me.mys.messagesPanel.folderList.actionDelete();
+						if (trashAfterAction) me.mys.messagesPanel.folderList.actionDelete();
 					}
 					else if (act==="cancel") {
 						//canceled
 					}
 					else if (act==="update") {
 						//updated
-						me.mys.messagesPanel.folderList.actionDelete();
+						if (trashAfterAction) me.mys.messagesPanel.folderList.actionDelete();
 					}
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
@@ -1921,13 +1922,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     },
 	
     _updateCalendarReply: function(params) {
-		var me=this;
+		var me=this,
+			trashAfterAction = me.mys.getVar('invitationTrashAfterAction');
 		WT.ajaxReq(me.mys.ID, 'UpdateCalendarReply', {
 			params: params,
 			callback: function(success,json) {
 				if (success) {
 					WT.getApp().getService('com.sonicle.webtop.calendar').scheduler.editEvent(json.event_id);
-					me.mys.messagesPanel.folderList.actionDelete();
+					if (trashAfterAction) me.mys.messagesPanel.folderList.actionDelete();
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
 					WT.error(json.message);
@@ -1937,12 +1939,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     },
 	
     _declineCalendarEvent: function(params) {
-		var me=this;
+		var me=this,
+			trashAfterAction = me.mys.getVar('invitationTrashAfterAction');
 		WT.ajaxReq(me.mys.ID, 'DeclineInvitation', {
 			params: params,
 			callback: function(success,json) {
 				if (success) {
-					me.mys.messagesPanel.folderList.actionDelete();
+					if (trashAfterAction) me.mys.messagesPanel.folderList.actionDelete();
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
 					WT.error(json.message);

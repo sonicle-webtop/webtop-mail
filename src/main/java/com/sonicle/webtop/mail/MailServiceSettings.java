@@ -383,6 +383,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(RE_FW_SANITIZE_DOWNLEVEL_REVEALED_COMMENTS,false);
 	}
 	
+	public boolean isInvitationTrashAfterAction() {
+		return getBoolean(INVITATION_TRASH_AFTER_ACTION,false);
+	}
+	
 	public boolean isIdleSharedInboxFolderEnabled() {
 		return getBoolean(IDLE_SHAREDINBOX_ENABLED, true);
 	}

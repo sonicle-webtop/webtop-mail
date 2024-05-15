@@ -249,8 +249,16 @@ public class MailSettings {
 	 */
 	public static final String RE_FW_SANITIZE_DOWNLEVEL_REVEALED_COMMENTS = "re.fw.sanitize.downlevel.revealed.comments";
 	
+	/**
+	 * [system+domain]
+	 * [boolean]
+	 * Do trash invitation email after accept/decline/update action
+	 */
+	public static final String INVITATION_TRASH_AFTER_ACTION = "invitation.trash.after.action";
 	
-    public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
+	
+	
+	public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
 	public static final String DMS_ARCHIVE = "archive";
 	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";
 	public static final String ATTACHMENT_DIR = "attachment.dir";
