@@ -1898,17 +1898,19 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
 					capi.reloadEvents();
 					if (act==="accept" || act==="import"){
-						WT.confirm(me.res('ical.import.confirm.edit'), function(bid) {
-							if (bid==='yes') {
-								capi.editEvent({ ekey: json.data });
-							}
-						},this);	
+						//WT.confirm(me.res('ical.import.confirm.edit'), function(bid) {
+						//	if (bid==='yes') {
+						//		capi.editEvent({ ekey: json.data });
+						//	}
+						//},this);	
+						me.mys.messagesPanel.folderList.actionDelete();
 					}
 					else if (act==="cancel") {
 						//canceled
 					}
 					else if (act==="update") {
 						//updated
+						me.mys.messagesPanel.folderList.actionDelete();
 					}
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
@@ -1925,6 +1927,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			callback: function(success,json) {
 				if (success) {
 					WT.getApp().getService('com.sonicle.webtop.calendar').scheduler.editEvent(json.event_id);
+					me.mys.messagesPanel.folderList.actionDelete();
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
 					WT.error(json.message);
@@ -1939,6 +1942,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			params: params,
 			callback: function(success,json) {
 				if (success) {
+					me.mys.messagesPanel.folderList.actionDelete();
 					if (me.divICal) me.removeElement(me.divICal);
 				} else {
 					WT.error(json.message);
