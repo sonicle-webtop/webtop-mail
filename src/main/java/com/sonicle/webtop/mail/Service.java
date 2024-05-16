@@ -853,7 +853,7 @@ public class Service extends BaseService {
 	private InternetAddress getInternetAddress(String email) throws UnsupportedEncodingException, AddressException {
 	  email=email.trim();
 	  if (!email.startsWith("\"")) {
-		  int ix=email.indexOf("<");
+		  int ix=email.lastIndexOf("<");
 		  if (ix>=0) {
 			  String personal=email.substring(0,ix).trim();
 			  String address=email.substring(ix).trim();
