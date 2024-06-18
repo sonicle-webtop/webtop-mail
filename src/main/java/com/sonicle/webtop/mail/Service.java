@@ -6677,10 +6677,8 @@ public class Service extends BaseService {
 
 							//Date
 							java.util.Date d=xm.getSentDate();
-							String rdh[]=xm.getHeader("Resent-Date");
-							if (rdh!=null && rdh.length>0) {
-								d = new MailDateFormat().parse(rdh[0]);
-							}
+							java.util.Date rd = xm.getResentDate();
+							if (rd != null) d = rd;
 							if (d==null) d=xm.getReceivedDate();
 							if (d==null) d=new java.util.Date(0);
 							cal.setTime(d);
@@ -7371,7 +7369,7 @@ public class Service extends BaseService {
 			FolderCache mcache = null;
 			Message m = null;
                         Message morig = null;
-			IMAPMessage im=null;
+			SonicleIMAPMessage im=null;
 			int recs = 0;
 			long msguid=-1;
 			String vheader[] = null;
@@ -7385,7 +7383,7 @@ public class Service extends BaseService {
                                 msguid=Long.parseLong(puidmessage);
                                 //keeep morig copy in case pec changes m into its internal part
                                 morig=m=mcache.getMessage(msguid);
-				im=(IMAPMessage)m;
+				im=(SonicleIMAPMessage)m;
 				im.setPeek(us.isManualSeen());
                                 if (m.isExpunged()) throw new MessagingException("Message "+puidmessage+" expunged");
 				vheader = m.getHeader("Disposition-Notification-To");
@@ -7461,9 +7459,9 @@ public class Service extends BaseService {
 			String date = df.format(d).replaceAll("\\.", ":");
 
 			String throughDate = null;
-			String rdh[]=m.getHeader("Resent-Date");
-			if (rdh!=null && rdh.length>0) {
-				d = new MailDateFormat().parse(rdh[0]);
+			java.util.Date rd = im.getResentDate();
+			if (rd != null) {
+				d = rd;
 				throughDate = df.format(d).replaceAll("\\.", ":");
 			}
 
