@@ -5621,6 +5621,18 @@ public class Service extends BaseService {
 				if (htmlcontent.length()<6 || !htmlcontent.substring(0,6).toLowerCase().equals("<html>")) {
 					htmlcontent="<html><header></header><body>"+htmlcontent+"</body></html>";
 				}
+				
+				if (jsmsg.attachments!=null) {
+					//remove unreferenced cids attachments
+					//cycle through a copy of the list to delete elements from the original list
+					ArrayList<JsAttachment> atts = new ArrayList<>();
+					atts.addAll(jsmsg.attachments);
+					for(JsAttachment jsa: atts) {
+						if (!StringUtils.isEmpty(jsa.cid) && htmlcontent.indexOf("src=\"cid:"+jsa.cid)<0)
+							jsmsg.attachments.remove(jsa);
+					}
+				}
+				
 				msg.setContent(htmlcontent, textcontent, "text/html");
 			} else {
 				msg.setContent(jsmsg.content, null, "text/"+jsmsg.format);

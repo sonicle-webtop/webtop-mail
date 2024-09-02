@@ -1702,7 +1702,8 @@ Ext.define('Sonicle.webtop.mail.EditorAttachments', {
 	
 	tpl: new Ext.XTemplate(
 		"<tpl for='.'>",
-			"<table border=0 cellspacing=0 cellpadding=0 class='wtmail-table-editor-attachment'>",
+			"<table border=0 cellspacing=0 cellpadding=0 class='wtmail-table-editor-attachment'"+
+					" style='visibility:{[Ext.isEmpty(values['cid'])?'visibile':'hidden']}'>",
 			  "<tr>",
 				"<td class='wtmail-td-editor-attachment-icon'>",
 					"<div class='{[WTF.fileTypeCssIconCls(WTA.Util.getFileExtension(values['fileName']))]}' style='width:16px;height:16px'>",
