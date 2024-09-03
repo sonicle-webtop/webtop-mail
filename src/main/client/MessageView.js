@@ -1889,7 +1889,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	
 	_actionCalendarEvent: function(act, params) {
 		var me=this,
-			trashAfterAction = me.mys.getVar('invitationTrashAfterAction');
+			trashAfterAction = me.mys.getVar('invitationTrashAfterAction'),
+			askEditAfterAction = me.mys.getVar('invitationAskEditAfterAction');
 		params.calaction=act;
 		delete params.nowriter;
 		WT.ajaxReq(me.mys.ID, 'CalendarRequest', {
@@ -1899,11 +1900,13 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					var capi=WT.getServiceApi("com.sonicle.webtop.calendar");
 					capi.reloadEvents();
 					if (act==="accept" || act==="import"){
-						//WT.confirm(me.res('ical.import.confirm.edit'), function(bid) {
-						//	if (bid==='yes') {
-						//		capi.editEvent({ ekey: json.data });
-						//	}
-						//},this);	
+						if (askEditAfterAction) {
+							WT.confirm(me.res('ical.import.confirm.edit'), function(bid) {
+								if (bid==='yes') {
+									capi.editEvent({ ekey: json.data });
+								}
+							},this);	
+						}
 						if (trashAfterAction) me.mys.messagesPanel.folderList.actionDelete();
 					}
 					else if (act==="cancel") {
