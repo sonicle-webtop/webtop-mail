@@ -256,6 +256,12 @@ public class MailSettings {
 	 */
 	public static final String INVITATION_TRASH_AFTER_ACTION = "invitation.trash.after.action";
 	
+	/**
+	 * [system+domain]
+	 * [boolean]
+	 * Ask for edit event after accept/decline/update action
+	 */
+	public static final String INVITATION_ASK_EDIT_AFTER_ACTION = "invitation.ask.edit.after.action";
 	
 	
 	public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";

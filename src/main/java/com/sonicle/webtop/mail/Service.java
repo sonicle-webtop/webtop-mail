@@ -9729,6 +9729,7 @@ public class Service extends BaseService {
 			co.put("todayRowColor", us.getTodayRowColor());
 			co.put("favoriteNotifications", us.isFavoriteNotifications());
 			co.put("invitationTrashAfterAction", ss.isInvitationTrashAfterAction());
+			co.put("invitationAskEditAfterAction", ss.isInvitationAskEditAfterAction());
 			
 			if (RunContext.isPermitted(true, SERVICE_ID, "FAX", "ACCESS")) {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());

@@ -387,6 +387,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(INVITATION_TRASH_AFTER_ACTION,false);
 	}
 	
+	public boolean isInvitationAskEditAfterAction() {
+		return getBoolean(INVITATION_ASK_EDIT_AFTER_ACTION,false);
+	}
+	
 	public boolean isIdleSharedInboxFolderEnabled() {
 		return getBoolean(IDLE_SHAREDINBOX_ENABLED, true);
 	}
