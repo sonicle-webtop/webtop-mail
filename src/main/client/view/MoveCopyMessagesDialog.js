@@ -60,6 +60,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		var tree=Ext.create("Sonicle.webtop.mail.SimpleImapTree",{
 			mys: me.mys,
 			rootVisible: true,
+			hideEllipsisMenu: true,
 			store: me.mys.imapTree.getStore()
 		});			
 
@@ -74,6 +75,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			text: WT.res("act-move.lbl"),
 			disabled: true,
 			width:80,
+			ui: '{secondary}',
 			handler: function() {
 				me.loadMask.show();
                 if (chkfiltered.getValue()) {
@@ -90,6 +92,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			text: WT.res("act-copy.lbl"),
 			disabled: true,
 			width:80,
+			ui: '{secondary}',
 			handler: function() {
 				me.loadMask.show();
                 if (chkfiltered.getValue()) {
@@ -106,6 +109,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			text: WT.res("act-delete.lbl"),
 			disabled: false,
 			width:80,
+			ui: '{secondary}',
 			handler: function() {
 				WT.confirm(me.mys.res('suredeletepermanently'),function(bid) {
 					if (bid==='yes') {
@@ -124,9 +128,10 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		});
 		
 		var btnarchive=Ext.create("Ext.Button",{
-			text: me.mys.res("act-archive.lbl"),
+			text: me.mys.res("act-archive-short.lbl"),
 			disabled: false,
 			width:80,
+			ui: '{secondary}',
 			handler: function() {
 				var tofolder=me.mys.getFolderArchive();
 				me.loadMask.show();
@@ -140,23 +145,24 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 			}
 		});
 		
-		/*var btncancel=Ext.create("Ext.Button",{
+		var btncancel=Ext.create("Ext.Button",{
 			text: WT.res("act-cancel.lbl"),
 			width:80,
+			ui: '{secondary}',
 			handler: function() {
 				me.closeView(false);
 			}
-		});*/
+		});
 		
 		Ext.apply(me, {
 			buttons: [
 				chkfiltered,
 				'->',
-				btnmove,' ',' ',' ',' ',
-				btncopy,' ',' ',' ',' ',
-				btnarchive,' ',' ',' ',' ',
-				btndelete/*,' ',' ',' ',' ',
-				btncancel*/
+				btnmove,
+				btncopy,
+				btnarchive,
+				btndelete,
+				btncancel
 			]
 		});
 		

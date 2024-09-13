@@ -35,6 +35,8 @@
 Ext.define('Sonicle.webtop.mail.FavoritesTree', {
 	extend: 'Sonicle.webtop.mail.SimpleImapTree',
 	
+	hideEllipsisMenuDataIndex: 'hideEllipsisMenu',
+	
 	constructor: function(cfg) {
 		var me = this;
 		
@@ -69,7 +71,8 @@ Ext.define('Sonicle.webtop.mail.FavoritesTree', {
 					folder: WT.res("word.favorites"),
 					unread: 0,
 					iconCls: 'wtmail-icon-favorites',
-					expanded: true
+					expanded: true,
+					hideEllipsisMenu: true
 				},
 				rootVisible: false,
 				acct: cfg.acct

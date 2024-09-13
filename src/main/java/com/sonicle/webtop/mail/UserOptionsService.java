@@ -40,7 +40,10 @@ import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.Payload;
+import com.sonicle.webtop.core.CoreServiceSettings;
+import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.SessionContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.BaseUserOptionsService;
 import com.sonicle.webtop.core.sdk.UserProfileId;
@@ -322,8 +325,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 	public void processExternalAccountProviders(HttpServletRequest request, HttpServletResponse respomse , PrintWriter out) {
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetDomainId());
 		MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
-		
-		List<ExternalProvider> list = mss.getExternalProviders();
+		List<ExternalProvider> list = mss.getExternalProviders(new CoreUserSettings(getTargetProfileId()).getUILookAndFeel());
 		
 		list.forEach(item -> {
 			if(item.id.equals("internet")) {
@@ -343,7 +345,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetDomainId());
 		MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
 		
-		List<ExternalProvider> list = mss.getExternalProviders();
+		List<ExternalProvider> list = mss.getExternalProviders(new CoreUserSettings(getTargetProfileId()).getUILookAndFeel());
 		
 		return list.stream().filter(provider -> provider.id.equals(providerId)).findAny().orElse(new ExternalProvider()).iconUrl;
 	}
@@ -352,7 +354,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetDomainId());
 		MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
 		
-		List<ExternalProvider> list = mss.getExternalProviders();
+		List<ExternalProvider> list = mss.getExternalProviders(new CoreUserSettings(getTargetProfileId()).getUILookAndFeel());
 		
 		return list.stream().filter(provider -> provider.id.equals(providerId)).findAny().orElse(new ExternalProvider()).readOnly;
 	}

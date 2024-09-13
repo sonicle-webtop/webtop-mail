@@ -33,21 +33,17 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author gbulfon
  */
 public class JsRecipient {
     
-    public String rtype;
-    public String email;
-
-	public JsRecipient() {
+	public String email;
+	
+	public JsRecipient(String email) {
+		this.email=email;
 	}
-
-	public JsRecipient(String rtype, String email) {
-		this.rtype = rtype;
-		this.email = email;
-	}
-    
 }

@@ -33,16 +33,17 @@
  */
 
 Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
-	extend: 'WTA.sdk.DockableView',
+	extend: 'WTA.sdk.UIView',
 	requires: [
+		'Sonicle.form.field.LabelTag',
 		'Sonicle.Utils'
 	],
 	
 	dockableConfig: {
 		iconCls: 'wt-icon-search-adv',
 		title: '{act-advsearch.lbl}',
-		width: 750,
-		height: 600
+		width: 840,
+		height: 640
 	},
 	promptConfirm: false,
 	full: true,
@@ -111,13 +112,6 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 			
 			tbar: me.searchToolbar,		
 			buttons: [
-				me.searchButton=Ext.create('Ext.Button',{ 
-					width: 100, 
-					text: WT.res('word.search'), 
-					handler: me.runstopSearch, 
-					scope: me 
-				}),
-				' ',
 				me.searchLabel=Ext.create('Ext.form.Label',{ cls: 'x-mask-msg-text', width: 30, hidden: true }),
 				' ',
 				me.searchProgress=Ext.create('Ext.form.Label',{ width: 200, hidden: true, text: '0%' }),
@@ -129,11 +123,19 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 				}),
 				' ',*/
 				Ext.create('Ext.Button',{
-					width: 100, 
-					text: WT.res('act-close.lbl'), 
+					ui: '{tertiary}',
+					text: WT.res('act-close.lbl'),
 					handler: function() {
 						me.closeView();
-					}
+					},
+					width: 100
+				}),
+				me.searchButton=Ext.create('Ext.Button',{
+					ui: '{primary}',
+					text: WT.res('word.search'), 
+					handler: me.runstopSearch, 
+					scope: me ,
+					width: 100
 				})
 			]
 		});
@@ -243,7 +245,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchDialog', {
 						valueField: 'id'
 					},
 					'tags':{
-						xtype: 'sotagfield',
+						xtype: 'solabeltagfield',
 						forceSelection: true,
 						multiSelect: false,
 						displayField: 'name',

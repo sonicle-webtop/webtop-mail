@@ -44,8 +44,8 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 	
 	dockableConfig: {
 		title: '{sharing.tit@com.sonicle.webtop.core}',
-		width: 600,
-		height: 500
+		width: 800,
+		height: 590
 	},
 	//promptConfirm: false,
 	full: true,
@@ -66,50 +66,13 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 	
 	initComponent: function() {
 		var me = this;
-		Ext.apply(me, {
-			tbar: [
-				'-',' ',me.mys.res('sharing.apply-to.lbl')+': ',
-				{
-					xtype: 'radiogroup',
-					bind: {
-						value: '{foMethod}'
-					},
-					layout: 'hbox',
-					defaults: {
-						name: me.methodName,
-						margin: '0 20 0 0',
-						listeners: {
-							afterrender: function() {
-								this.getEl().on('click', function() {
-									//me.dirty=true;
-								});
-							}
-						}
-					},
-					items: [
-						{
-							boxLabel: me.mys.res('sharing.chk-this.lbl'),
-							inputValue: 'this'
-						},
-						{
-							boxLabel: me.mys.res('sharing.chk-branch.lbl'),
-							inputValue: 'branch'
-						},
-						{
-							boxLabel: me.mys.res('sharing.chk-all.lbl'),
-							inputValue: 'all'
-						}
-					]
-				}
-			]
-		});
-		
 		me.callParent(arguments);
 		
 		me.add({
-			region: 'north',
+			region: 'center',
 			xtype: 'wtfieldspanel',
-			height: 60,
+			paddingSides: true,
+			paddingTop: true,
 			layout: {
 				type: 'vbox',
 				align: 'stretch'
@@ -117,7 +80,6 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 			items: [
 				{
 					xtype: 'label',
-					height: 24,
 					bind: {
 						text: me.mys.res("column-folder")+': {record.id}'
 					}
@@ -142,183 +104,167 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 							var model = me.addRights(rec.get('id'),rec.get('desc'));
 							me.lref('gprights').setSelection(model);
 							s.setValue(null);
-							//me.dirty=true;
 						}
 					}
-				})]
-		});
-		me.add({
-			region: 'center',
-			xtype: 'wtfieldspanel',
-			layout: 'fit',
-			items: [{
-				xtype: 'gridpanel',
-				reference: 'gprights',
-				plugins: {
-					ptype: 'cellediting',
-					clicksToEdit: 1
-				},
-				bind: {
-					store: '{record.rights}'
-				},
-				border: true,
-				columns: [{
-					dataIndex: 'roleDescription',
-					header: WT.res('sharing.gp-rights.role.lbl'),
-					flex: 2
-				},{
-					xtype: 'checkcolumn',
-					header: me.mys.res('sharing.rights-share-identity.lbl'),
-					dataIndex: 'shareIdentity',
-					flex: 1,
-					listeners: {
-						checkchange: function(c , ri , v) {
-							if (!v) {
-								var grid = me.lref('gprights'),
-									sto = grid.getStore(),
-									r = sto.getAt(ri);
-								r.set("forceMailcard",false);
-								r.set("alwaysCc",false);
-							};
-						}
-					}
-				},{
-					xtype: 'checkcolumn',
-					header: me.mys.res('sharing.rights-force-mailcard.lbl'),
-					dataIndex: 'forceMailcard',
-					flex: 1,
-					listeners: {
-						checkchange: function(c , ri , v) {
-							if (v) { 
-								var grid = me.lref('gprights'),
-									sto = grid.getStore(),
-									r = sto.getAt(ri);
-								r.set("shareIdentity",true); 
-							}
-						}
-					}
-				},{
-					xtype: 'checkcolumn',
-					header: me.mys.res('sharing.rights-always-cc.lbl'),
-					dataIndex: 'alwaysCc',
-					flex: 1,
-					listeners: {
-						checkchange: function(c , ri , v) {
-							var grid = me.lref('gprights'),
-								sto = grid.getStore(),
-								r = sto.getAt(ri);
-							if (v) { 
-								r.set("shareIdentity",true);
-							} else {
-								r.set("alwaysCcEmail","");
-							}
-						}
-					}
-				},{
-					header: me.mys.res('sharing.rights-always-cc-email.lbl'),
-					dataIndex: 'alwaysCcEmail',
-					flex: 1,
-					editor: 'textfield',
-					renderer: function(val, meta, rec) {
-						if (Ext.isEmpty(val) && rec.get("alwaysCc")) {
-							return me.styleAsEmpty(me.mys.getIdentity(0).email);
-						}
-						return val;
-					}
-				}],
-				tbar: [
-					me.addAct('deleteRights', {
-						text: WT.res('act-delete.lbl'),
-						tooltip: null,
-						iconCls: 'wt-icon-delete',
-						handler: function() {
-							var sm = me.lref('gprights').getSelectionModel();
-							me.deleteRights(sm.getSelection());
-						},
-						disabled: true
-					})
-				],
-				listeners: {
-					selectionchange: function(s,recs) {
-						if (recs.length==1) {
-							var rights="",
-								cbo=me.lref('cboRights');
-							for(var i=0;i<me.fullRights.length;++i) {
-								var c=me.fullRights.charAt(i);
-								if (recs[0].get(c)) rights+=c;
-							}
-							if (rights.length>0 && cbo.store.findExact('rights',rights)>=0) cbo.setValue(rights);
-							else cbo.setValue("");
-						}
-						me.getAct('deleteRights').setDisabled(!recs.length);
-						me.lref('permspanel').setDisabled(!recs.length);
-					}
-				}
-			}]
-		});
-		me.add({
-			region: 'south',
-			xtype: 'panel',
-			reference: 'permspanel',
-			height: 170,
-			layout: 'border',
-			items: [
+				}),
 				{
-					xtype: 'toolbar',
-					region: 'north',
-					items: [{
-						xtype: 'combo',
-						reference: "cboRights",
-						fieldLabel: me.mys.res("sharing.fld-rights.lbl"),
-						store: new Ext.data.SimpleStore({
-							fields: ['rights','desc'],
-							data: [
-								[me.fullRights,me.mys.res("sharing.rights-full")],
-								['lrs',me.mys.res("sharing.rights-ro")],
-								['',me.mys.res("sharing.rights-custom")]
-							]
-						}),
-						editable: false,
-						mode: 'local',
-						width:300,
-						listWidth: 300,
-						displayField: 'desc',
-						triggerAction: 'all',
-						valueField: 'rights',
+					xtype: 'gridpanel',
+					reference: 'gprights',
+					flex: 1,
+					plugins: {
+						ptype: 'cellediting',
+						clicksToEdit: 1
+					},
+					bind: {
+						store: '{record.rights}'
+					},
+					border: true,
+					columns: [{
+						dataIndex: 'roleDescription',
+						header: WT.res('sharing.gp-rights.role.lbl'),
+						flex: 2
+					},{
+						xtype: 'checkcolumn',
+						header: me.mys.res('sharing.rights-share-identity.lbl'),
+						dataIndex: 'shareIdentity',
+						flex: 1,
 						listeners: {
-							select: function(c,r,i) {
-								var id=r.get('rights');
-								if (id.length>0) {
-									var rec = me.lref('gprights').getSelection()[0];
-									for(var i=0;i<me.fullRights.length;++i) {
-										var c=me.fullRights.charAt(i);
-										rec.set(c,id.indexOf(c)>=0);
-									}
-								} 
-								//me.dirty=true;
+							checkchange: function(c , ri , v) {
+								if (!v) {
+									var grid = me.lref('gprights'),
+										sto = grid.getStore(),
+										r = sto.getAt(ri);
+									r.set("forceMailcard",false);
+									r.set("alwaysCc",false);
+								};
 							}
 						}
-					},'->',{
-						xtype: 'checkbox',
-						boxLabel: me.mys.res('sharing.fld-advanced.lbl'),
-						checked: false,
-						width: 200,
+					},{
+						xtype: 'checkcolumn',
+						header: me.mys.res('sharing.rights-force-mailcard.lbl'),
+						dataIndex: 'forceMailcard',
+						flex: 1,
 						listeners: {
-							change: {
-								fn: function(c,ov,nv,eopts) {
-									var v=c.getValue(),
-										p=me.lref("elementsperms");
-									p.setHidden(!v);
-									if (v) p.setDisabled(false);
+							checkchange: function(c , ri , v) {
+								if (v) {
+									var grid = me.lref('gprights'),
+										sto = grid.getStore(),
+										r = sto.getAt(ri);
+									r.set("shareIdentity",true);
 								}
 							}
 						}
-					}]
+					},{
+						xtype: 'checkcolumn',
+						header: me.mys.res('sharing.rights-always-cc.lbl'),
+						dataIndex: 'alwaysCc',
+						flex: 1,
+						listeners: {
+							checkchange: function(c , ri , v) {
+								var grid = me.lref('gprights'),
+									sto = grid.getStore(),
+									r = sto.getAt(ri);
+								if (v) {
+									r.set("shareIdentity",true);
+								} else {
+									r.set("alwaysCcEmail","");
+								}
+							}
+						}
+					},{
+						header: me.mys.res('sharing.rights-always-cc-email.lbl'),
+						dataIndex: 'alwaysCcEmail',
+						flex: 1,
+						editor: 'textfield',
+						renderer: function(val, meta, rec) {
+							if (Ext.isEmpty(val) && rec.get("alwaysCc")) {
+								return me.styleAsEmpty(me.mys.getIdentity(0).email);
+							}
+							return val;
+						}
+					}],
+					tbar: [
+						me.addAct('deleteRights', {
+							text: WT.res('act-delete.lbl'),
+							tooltip: null,
+							iconCls: 'wt-icon-delete',
+							handler: function() {
+								var sm = me.lref('gprights').getSelectionModel();
+								me.deleteRights(sm.getSelection());
+							},
+							disabled: true
+						})
+					],
+					listeners: {
+						selectionchange: function(s,recs) {
+							if (recs.length==1) {
+								var rights="",
+									cbo=me.lref('cboRights');
+								for(var i=0;i<me.fullRights.length;++i) {
+									var c=me.fullRights.charAt(i);
+									if (recs[0].get(c)) rights+=c;
+								}
+								if (rights.length>0 && cbo.store.findExact('rights',rights)>=0) cbo.setValue(rights);
+								else cbo.setValue("");
+							}
+							me.getAct('deleteRights').setDisabled(!recs.length);
+							me.lref('permspanel').setDisabled(!recs.length);
+						}
+					}
 				},
 				{
-					xtype: 'panel',
-					region: 'center',
-					layout: 'fit',
+					xtype: 'wtfieldspanel',
+					reference: 'permspanel',
+					tbar: [
+						{
+							xtype: 'combo',
+							reference: "cboRights",
+							fieldLabel: me.mys.res("sharing.fld-rights.lbl"),
+							store: new Ext.data.SimpleStore({
+								fields: ['rights','desc'],
+								data: [
+									[me.fullRights,me.mys.res("sharing.rights-full")],
+									['lrs',me.mys.res("sharing.rights-ro")],
+									['',me.mys.res("sharing.rights-custom")]
+								]
+							}),
+							editable: false,
+							mode: 'local',
+							width:300,
+							listWidth: 300,
+							displayField: 'desc',
+							triggerAction: 'all',
+							valueField: 'rights',
+							listeners: {
+								select: function(c,r,i) {
+									var id=r.get('rights');
+									if (id.length>0) {
+										var rec = me.lref('gprights').getSelection()[0];
+										for(var i=0;i<me.fullRights.length;++i) {
+											var c=me.fullRights.charAt(i);
+											rec.set(c,id.indexOf(c)>=0);
+										}
+									} 
+									//me.dirty=true;
+								}
+							}
+						},'->',{
+							xtype: 'checkbox',
+							boxLabel: me.mys.res('sharing.fld-advanced.lbl'),
+							checked: false,
+							width: 200,
+							listeners: {
+								change: {
+									fn: function(c,ov,nv,eopts) {
+										var v=c.getValue(),
+											p=me.lref("elementsperms");
+										p.setHidden(!v);
+										if (v) p.setDisabled(false);
+									}
+								}
+							}
+						}
+					],
 					items: [
 						{
 							xtype: 'wtfieldspanel',
@@ -405,8 +351,53 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 				}
 			]
 		});
+		
 		me.on('viewload', me.onViewLoad);
 	},
+	
+	initTBar: function() {
+		var me = this,
+			SoU = Sonicle.Utils;
+		
+		me.dockedItems = SoU.mergeDockedItems(me.dockedItems, 'top', [
+			me.createTopToolbar1Cfg([
+				me.mys.res('sharing.apply-to.lbl')+': ',
+				{
+					xtype: 'radiogroup',
+					bind: {
+						value: '{foMethod}'
+					},
+					layout: 'hbox',
+					defaults: {
+						name: me.methodName,
+						margin: '0 20 0 0',
+						listeners: {
+							afterrender: function() {
+								this.getEl().on('click', function() {
+									//me.dirty=true;
+								});
+							}
+						}
+					},
+					items: [
+						{
+							boxLabel: me.mys.res('sharing.chk-this.lbl'),
+							inputValue: 'this'
+						},
+						{
+							boxLabel: me.mys.res('sharing.chk-branch.lbl'),
+							inputValue: 'branch'
+						},
+						{
+							boxLabel: me.mys.res('sharing.chk-all.lbl'),
+							inputValue: 'all'
+						}
+					]
+				}
+				
+			])
+		]);
+	},	
 	
 	onViewLoad: function(s, success) {
 		if(!success) return;

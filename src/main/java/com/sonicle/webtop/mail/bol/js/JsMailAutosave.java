@@ -54,7 +54,8 @@ public class JsMailAutosave {
 	public Boolean receipt;
 	public String forwardedfolder;
 	public String forwardedfrom;
-	public ArrayList<String> recipients;
-	public ArrayList<String> rtypes;
+	public ArrayList<JsRecipient> torecipients;
+	public ArrayList<JsRecipient> ccrecipients;
+	public ArrayList<JsRecipient> bccrecipients;
     
 }

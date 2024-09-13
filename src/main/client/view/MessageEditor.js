@@ -36,8 +36,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
 		'Sonicle.String',
+		'Sonicle.Utils',
 		'Sonicle.button.Toggle',
-		'Sonicle.webtop.core.ux.RecipientsGrid',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.webtop.core.ux.field.htmleditor.Field',
 		'Sonicle.webtop.core.ux.field.htmleditor.PublicImageTool',
@@ -46,7 +46,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		'Sonicle.webtop.mail.model.MessageModel',
 		'Sonicle.webtop.mail.view.AddressBookView',
 		'Sonicle.upload.Button',
-		'Sonicle.webtop.mail.ux.ChooseListConfirmBox'
+		'Sonicle.webtop.mail.ux.ChooseListConfirmBox',
+		'Sonicle.plugin.DropMask',
+		'Sonicle.plugin.TagDragDrop',
+		'WTA.ux.field.Recipients'
 	],
 	uses: [
 		'Sonicle.webtop.core.view.Meeting'
@@ -65,8 +68,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		height: 500
 	},
 	modelName: 'Sonicle.webtop.mail.model.MessageModel',
-	
-	confirm: 'yn',
 	
 	autoToolbar: false,
 	identityIndex: 0,
@@ -112,15 +113,60 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	htmlStartMailcard: "<div id=\"wt-mailcard\"",
 	
+	lastFocusedRecipientsType: 'to',
+	
+	viewModel: {
+		formulas: {
+			foHasAttachments: {
+				bind: { bindTo: '{record.attachments.data}', deep: true },
+				get: function(data) {
+					var ha = false;
+					for(i=0;i<data.length;++i) {
+						if (!data.items[i].get("inline") || Ext.isEmpty(data.items[i].get("cid"))) {
+							ha = true;
+							break;
+						}
+					}
+					return ha;
+				}
+			}
+		}
+	},
+	
 	initComponent: function() {
 		var me = this,
 				vm = me.getVM();
 		
-		me.plugins=me.plugins||[];
-		me.plugins.push({
-			ptype: 'sofiledrop',
-			text: WT.res('sofiledrop.text')
-		});
+		me.confirmMsg = me.res('editor.confirm.savechanges');
+		me.plugins = Sonicle.Utils.mergePlugins(me.plugins, [
+			{
+				ptype: 'sodropmask',
+				ddGroups: ['attachment', 'mail', 'wtvfs-storefile'],
+				shouldSkipMasking: function(dragOp) {
+					var SoDP = Sonicle.plugin.DropMask;
+					if (SoDP.isExtDrag(dragOp)) return false;
+					return !SoDP.isBrowserFileDrag(dragOp);
+				},
+				text: WT.res('sofiledrop.text'),
+				onExtNodeDrop: function(node, source, e, data) {
+					switch (source.ddGroup) {
+						case 'attachment':
+							me.attachFromMail(data.params);
+							return true;
+						case 'mail':
+							me.attachFromMessages(data.grid, data.srcFolder, data.records);
+							return true;
+						case 'wtvfs-storefile':
+							if (data.storeFile) {
+								me.attachFromCloud(data.storeFile);
+							}
+							return true;
+						default:
+							return false;
+					}
+				}			
+			}
+		]);
 		WTU.applyFormulas(vm, {
 			foHasMeeting: WTF.foIsEmpty('record', 'meetingUrl', true),
 			foMeetingDisabled: {
@@ -140,121 +186,46 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.identHash={};
 		Ext.each(me.identities,function(ident) { me.identHash[''+ident.identityId]=ident},me);
 		
-        me.attcontainer=Ext.create('Ext.container.Container', {
-            width: 250,
-            region: 'east',
-            scrollable: true,
-            cls: 'x-panel-body-default wtmail-table-editor-attachment-container',
-            items: [
-                me.attlist=Ext.create('Sonicle.webtop.mail.EditorAttachments', {
-                    region: 'center',
-                    mys: me.mys,
-                    bind: {
-                        store: '{record.attachments}'
-                    }
-                })                
-            ]
-        });
-		
-        me.attcontainer.on('afterrender',function() {
-            var dz=new Ext.dd.DropZone( me.attcontainer.getEl(), {
-                ddGroup : 'attachment', 
-                getTargetFromEvent: function( e ) {
-                    return  me.attcontainer;
-                },
-                onNodeOver : function(target, dd, e, data){ 
-                    return Ext.dd.DropZone.prototype.dropAllowed;
-                },                
-                onNodeDrop : function(target, dd, e, data){
-                    switch(dd.ddGroup) {
-						case "attachment":
-							me.attachFromMail(data.params);
-							break;
-						case "mail":
-							me.attachFromMessages(data.grid,data.srcFolder,data.records);
-							break;
-						case "wtvfs-storefile":
-							if (data.storeFile) {
-								me.attachFromCloud(data.storeFile);
-							}
-					}
-                    return true;
-                }
-            });		
-			dz.addToGroup("mail");
-			dz.addToGroup("wtvfs-storefile");
-        });
-		
-		me.recgrid=Ext.create({
-			xtype: 'wtrecipientsgrid',
-			height: 90,
-			region: 'center',
-			tabIndex: 2,
-			fields: { recipientType: 'rtype', email: 'email' },
-			rftype: me.fax?'fax':'email',
-			bind: {
-				store: '{record.recipients}'
-			},
-			listeners: {
-				exitfocus: function(recgrid) {
-					me.subject.focus();
-				}
-			}
-		});
-		
-		me.subject=Ext.create({
-			xtype: 'wtsuggestcombo',
-            sid: me.mys.ID,
-            suggestionContext: 'subject',
-            width: 600,
-			tabIndex: 3,
-			disabled: me.faxsubject?true:false,
-			enableKeyEvents: true,
-			fieldLabel: WT.res('word.subject'),
-			labelWidth: 60,
-			labelAlign: 'right',
-			listeners: {
-				keydown: function(cb, e, eOpts) {
-					if (e.getKey() === e.TAB) {
-						e.stopEvent();
-						me.htmlEditor.focus();
-					}
-				}
-			},
-			bind: '{record.subject}'
-        });
 		var tbitems=new Array(),
-			tbx=0;
+			tbx=0, tbitemsend,
+			vpbp=WT.getViewportProperties().viewPrimaryButtonPosition,
+			pbTR=vpbp=="tr",
+			pbTL=vpbp=="tl";
 		
 		var smenu=[],sx=0;
 		if (!me.fax) {
 			smenu[sx++]={ text: me.res('editor.send.btn-send.lbl'), iconCls: 'wtmail-icon-mailSend', handler: me.actionSend, scope: me };
 			if (!me.mys.getVar("schedDisabled"))
 				smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-mailSchedule', handler: me.actionSchedule, scope: me };
-			tbitems[tbx++]={
+			tbitemsend={
 				xtype: 'splitbutton',
 				text: me.res('editor.send.btn-send.lbl'),
 				tooltip: me.res('editor.send.btn-send.lbl'),
 				iconCls: 'wtmail-icon-mailSend',
 				handler: me.actionSend,
 				scope: me,
-				menu: smenu
+				menu: smenu,
+				ui: 'default'
 			};
 		} else {
 			smenu[sx++]={ text: me.res('editor.send.btn-sendfax.lbl'), iconCls: 'wtmail-icon-faxSend', handler: me.actionSend, scope: me };
 			if (!me.mys.getVar("schedDisabled"))
 				smenu[sx++]={ text: me.res('editor.send.btn-schedule.lbl'), iconCls: 'wtmail-icon-faxSchedule', handler: me.actionSchedule, scope: me };
-			tbitems[tbx++]={
+			tbitemsend={
 				xtype: 'splitbutton',
 				text: me.res('editor.send.btn-sendfax.lbl'),
 				tooltip: me.res('editor.send.btn-sendfax.lbl'),
 				iconCls: 'wtmail-icon-faxSend',
 				handler: me.actionSend,
 				scope: me,
-				menu: smenu
+				menu: smenu,
+				ui: 'default'
 			};
 		}
-		tbitems[tbx++]='-';
+		if (pbTL) {
+			tbitems[tbx++]=tbitemsend;
+			tbitems[tbx++]='-';
+		}
 		
 		if (me.showSave) {
 			tbitems[tbx++]={
@@ -283,6 +254,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			tbitems[tbx++]='-';
 		}
 		
+        var dash = false;
 		if (me.showAddressBook) {
 			tbitems[tbx++]={
 				xtype: 'button',
@@ -291,64 +263,43 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				handler: me.actionAddressBook,
 				scope: me
 			};
-			tbitems[tbx++]='-';
-		}
-		
-        var dash=false;
-        if (me.showReceipt) {
-			tbitems[tbx++]=me.addRef('chkReceipt', Ext.create({
-				xtype: 'sotogglebutton',
-				offTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.off.tip.txt')},
-				onTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.on.tip.txt')},
-				offIconCls: 'wtmail-icon-msgSetReceipt-grayed',
-				onIconCls: 'wtmail-icon-msgSetReceipt',
-				handler: me.actionReceipt,
-				scope: me
-			}));
-            dash=true;
-        }
-        if (this.showPriority) {
-			tbitems[tbx++]=me.addRef('chkPriority', Ext.create({
-				xtype: 'sotogglebutton',
-				offTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.off.tip.txt')},
-				onTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.on.tip.txt')},
-				offIconCls: 'wtmail-icon-msgSetPriorityHigh-grayed',
-				onIconCls: 'wtmail-icon-msgSetPriorityHigh',
-				handler: me.actionPriority,
-				scope: me
-			}));
-            dash=true;
-        }
-        if (this.showReminder && WT.getServiceApi('com.sonicle.webtop.calendar')) {
-			tbitems[tbx++]={
-				xtype: 'sotogglebutton',
-				offTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.off.tip.txt')},
-				onTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.on.tip.txt')},
-				offIconCls: 'wtmail-icon-msgAddReminder-grayed',
-				onIconCls: 'wtmail-icon-msgAddReminder',
-				handler: me.actionReminder,
-				scope: me
-			};
-            dash=true;
-        }
-		if (me.showMeeting) {
-			tbitems[tbx++] = me.addAct('addMeeting', {
-				text: null,
-				tooltip: WT.res(WT.ID, 'act-addMeeting.lbl', WT.getMeetingConfig().name),
-				iconCls: 'wt-icon-newMeeting',
-				bind: {
-					disabled: '{foMeetingDisabled}'
-				},
-				handler: function(s) {
-					me.addMeetingUI();
-				}
-			});
 			dash = true;
 		}
+		
+		if (me.showImportEmail) {
+			var mitems = [
+					{
+						text: me.res('act-pasteList.lbl'),
+						tooltip: me.res('act-pasteList.tip'),
+						iconCls: 'wt-icon-clipboard-paste',
+						handler: me.pasteList,
+						scope: me				
+					}
+			];
+			if (WT.getServiceApi('com.sonicle.webtop.contacts'))
+				mitems[1] = {
+					text: me.res('act-pasteContactsList.lbl'),
+					iconCls: 'wt-icon-clipboard-paste',
+					handler: me.pasteContactsList,
+					scope: me				
+				};
+
+			tbitems[tbx++]={
+				xtype: 'splitbutton',
+				tooltip: me.res('act-pasteList.lbl'),
+				iconCls: 'wt-icon-clipboard-paste',
+				handler: me.pasteList,
+				scope: me,
+				menu: mitems
+			};
+			dash = true;
+		}
+		
         if (dash) {
             tbitems[tbx++]='-';
         }
-		
+
+		dash = false;
         if (me.showAttach) {
 			tbitems[tbx++]={
 				xtype:'souploadbutton',
@@ -388,123 +339,14 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						});
 					}
 				}
-			};		
-		}
-		
-		if (me.showImportEmail) {
-			var mitems = [
-					{
-						text: me.res('act-pasteList.lbl'),
-						tooltip: me.res('act-pasteList.tip'),
-						iconCls: 'wt-icon-clipboard-paste',
-						handler: me.pasteList,
-						scope: me				
-					}
-			];
-			if (WT.getServiceApi('com.sonicle.webtop.contacts'))
-				mitems[1] = {
-					text: me.res('act-pasteContactsList.lbl'),
-					iconCls: 'wt-icon-clipboard-paste',
-					handler: me.pasteContactsList,
-					scope: me				
-				};
-
-			tbitems[tbx++]={
-				xtype: 'splitbutton',
-				tooltip: me.res('act-pasteList.lbl'),
-				iconCls: 'wt-icon-clipboard-paste',
-				handler: me.pasteList,
-				scope: me,
-				menu: mitems
 			};
-		}
-		
-		tbitems[tbx++]='-';
-		tbitems[tbx++] = me.addRef('showMailcard', Ext.create({
-			xtype: 'sotogglebutton',
-			offTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.off.tip.txt')},
-			onTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.on.tip.txt')},
-			offIconCls: 'wtmail-icon-msgSetMailcard-grayed',
-			onIconCls: 'wtmail-icon-msgSetMailcard',
-			handler: me.showMailcardAction,
-			pressed: me.showMailcard,
-			scope: me
-		}));
-		
-		if (me.showIdentities) {
-            var idents=new Array(),
-				selident=null;
-            if (me.identities) {
-				var x=0;
-                for(var i=0;i<me.identities.length;++i) {
-                    var id=me.identities[i];
-					if (me.fax) {
-						if (me.faxident && !id.fax) continue;
-					} else {
-						if (id.fax) continue;
-					}
-                    //var a=new Array);
-                    //a[0]=i;
-                    //a[1]=id.displayname+" - "+id.email;
-                    idents[x]=id;
-					if (me.identityIndex===i) selident=id;
-					++x;
-                }
-				if (!selident) selident=idents[0];
-				me.selectedIdentity=selident;
-				
-				tbitems[tbx++]={
-					xtype:'combo',
-					bind: '{record.identityId}',
-					tooltip: me.res('editor.cbo-identities.tip'),
-					queryMode: 'local',
-					displayField: 'description',
-					valueField: 'identityId',
-					width:me.customToolbarButtons?270:370,
-					editable: false,
-					selectOnFocus: false,
-					matchFieldWidth: false,
-					listConfig: {
-						width: 400
-					},
-					store: Ext.create('Ext.data.Store', {
-						model: 'Sonicle.webtop.mail.model.Identity',
-						data : idents
-					}),
-					//value: selident.identityId,
-					listeners: {
-						change: {
-							fn: function(s,nv,ov) {
-								// We are using the select event because change event is
-								// fired only after blur. Within this event we have to
-								// calculate new and old values manually.
-								//var ov = s.lastValue || s.startValue;
-								//var nv = r.get('id');
-								if (!Ext.isDefined(nv) || !Ext.isDefined(ov) || nv === null || ov === null || ov === nv) return;
-								me.selectedIdentity=me.identHash[nv];
-                                var format=me.contentFormat;
-								if (!me.htmlEditor.isReady()) {
-									me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
-								} else {
-									if (me.showMailcard) {
-										me.replaceMailcardUI(me.identHash[nv].mailcard, me.identHash[ov].mailcard);
-									}
-								}
-							},
-							scope: this
-						}
-					}
-					
-				};
-
-            }
+			dash = true;
 		}
 		
 		//TODO complete implementation
 		if (me.showCloud) {
 			var vfsapi = WT.getServiceApi('com.sonicle.webtop.vfs');
             if (vfsapi) {
-				tbitems[tbx++]='-';
 				tbitems[tbx++]={
 					xtype: 'souploadbutton',
 					itemId: 'btncloudattach',
@@ -598,45 +440,487 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						
 					}
 				};
+				dash = true;
 			}
 		}
 		
-		me.toolbar=Ext.create({
-			xtype: 'toolbar',
-			region: 'north',
-			items: tbitems
+        if (dash) {
+            tbitems[tbx++]='-';
+        }
+
+		tbitems[tbx++] = me.addRef('showMailcard', Ext.create({
+			xtype: 'sotogglebutton',
+			offTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.off.tip.txt')},
+			onTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.on.tip.txt')},
+			offIconCls: 'wtmail-icon-msgSetMailcard-grayed',
+			onIconCls: 'wtmail-icon-msgSetMailcard',
+			handler: me.showMailcardAction,
+			pressed: me.showMailcard,
+			scope: me
+		}));		
+        if (this.showReminder && WT.getServiceApi('com.sonicle.webtop.calendar')) {
+			tbitems[tbx++]={
+				xtype: 'sotogglebutton',
+				offTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.off.tip.txt')},
+				onTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.on.tip.txt')},
+				offIconCls: 'wtmail-icon-msgAddReminder-grayed',
+				onIconCls: 'wtmail-icon-msgAddReminder',
+				handler: me.actionReminder,
+				scope: me
+			};
+        }
+        if (me.showReceipt) {
+			tbitems[tbx++]=me.addRef('chkReceipt', Ext.create({
+				xtype: 'sotogglebutton',
+				offTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.off.tip.txt')},
+				onTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.on.tip.txt')},
+				offIconCls: 'wtmail-icon-msgSetReceipt-grayed',
+				onIconCls: 'wtmail-icon-msgSetReceipt',
+				handler: me.actionReceipt,
+				scope: me
+			}));
+        }
+		if (me.showMeeting) {
+			tbitems[tbx++] = me.addAct('addMeeting', {
+				text: null,
+				tooltip: WT.res(WT.ID, 'act-addMeeting.lbl', WT.getMeetingConfig().name),
+				iconCls: 'wt-icon-newMeeting',
+				bind: {
+					disabled: '{foMeetingDisabled}'
+				},
+				handler: function(s) {
+					me.addMeetingUI();
+				}
+			});
+		}
+		
+		if (!pbTR) {
+			me.addDocked(me.toolbar=Ext.create(me.createTopToolbarCfg({
+				dock: 'top',
+				overflowHandler: 'menu',
+				items: tbitems
+			})));
+		} else {
+			me.addDocked(
+				{
+					xtype: 'container',
+					dock: 'top',
+					layout: {
+						type: 'hbox',
+						align: 'middle'
+					},
+					border: false,
+					padding: "0 8 0 0",
+					items: [
+						me.toolbar=Ext.create(me.createTopToolbarCfg({
+							flex: 1,
+							cls: 'x-docked-noborder-top x-docked-noborder-left x-docked-noborder-right x-docked-noborder-bottom',
+							overflowHandler: 'menu',
+							items: tbitems
+						})),
+						tbitemsend
+					]
+				}
+			);
+		}
+		
+		var hitems=new Array(),
+			hx=0;
+	
+		if (me.showIdentities) {
+            var idents=new Array(),
+				selident=null;
+            if (me.identities) {
+				var x=0;
+                for(var i=0;i<me.identities.length;++i) {
+                    var id=me.identities[i];
+					if (me.fax) {
+						if (me.faxident && !id.fax) continue;
+					} else {
+						if (id.fax) continue;
+					}
+                    //var a=new Array);
+                    //a[0]=i;
+                    //a[1]=id.displayname+" - "+id.email;
+                    idents[x]=id;
+					if (me.identityIndex===i) selident=id;
+					++x;
+                }
+				if (!selident) selident=idents[0];
+				me.selectedIdentity=selident;
+				
+				hitems[hx++]={
+					xtype:'combo',
+					bind: '{record.identityId}',
+					tabIndex: 1,
+					tooltip: me.res('editor.cbo-identities.tip'),
+					anchor: '100%',
+					fieldLabel: me.res('from'),
+					labelWidth: 60,
+					labelAlign: 'right',
+					queryMode: 'local',
+					displayField: 'description',
+					valueField: 'identityId',
+					width:me.customToolbarButtons?270:370,
+					editable: false,
+					selectOnFocus: false,
+					matchFieldWidth: false,
+					listConfig: {
+						width: 400
+					},
+					store: Ext.create('Ext.data.Store', {
+						model: 'Sonicle.webtop.mail.model.Identity',
+						data : idents
+					}),
+					//value: selident.identityId,
+					listeners: {
+						change: {
+							fn: function(s,nv,ov) {
+								// We are using the select event because change event is
+								// fired only after blur. Within this event we have to
+								// calculate new and old values manually.
+								//var ov = s.lastValue || s.startValue;
+								//var nv = r.get('id');
+								if (!Ext.isDefined(nv) || !Ext.isDefined(ov) || nv === null || ov === null || ov === nv) return;
+								me.selectedIdentity=me.identHash[nv];
+                                var format=me.contentFormat;
+								if (!me.htmlEditor.isReady()) {
+									me.setContent(me.prepareContent(me.htmlEditor.getValue(),format,true,me.identHash[nv].mailcard),format);
+								} else {
+									if (me.showMailcard) {
+										me.replaceMailcardUI(me.identHash[nv].mailcard, me.identHash[ov].mailcard);
+									}
+								}
+							},
+							scope: this
+						}
+					}
+					
+				};
+
+            }
+		}
+		
+		var trf=me.fax?'fax':'email';
+		
+		hitems[hx++]={
+			xtype: 'fieldcontainer',
+			layout: { 
+				type: 'hbox'
+			},
+			fieldLabel: me.res('to'),
+			items: [
+				me.tos=Ext.create({
+					xtype: 'wtrecipientsfield',
+					bind: {
+						itemsStore: '{record.torecipients}'
+					},
+					itemsValueField: 'email',
+					itemsDisplayField: 'email',
+					targetRecipientFieldType: trf,
+					itemEditable: true, // Allows in place editing of tags
+					growMaxLines: 4,
+					plugins: [
+						{
+							ptype: 'sotagdnd',
+							ddGroup: trf + 'recipients',
+							onDrop: function(srcField, srcIdx, tgtField, tgtIdx) {
+								me.doRecipientTagDrop(srcField, srcIdx, tgtField, tgtIdx);
+							}
+						}
+					],
+					listeners: {
+						focusenter: function() {
+							me.lastFocusedRecipientsType = 'to';
+						},
+						focusleave: function(t, e, o) {
+							//keep last focused when clicking on toolbar buttons
+							if (!e.toComponent.ownerCt || e.toComponent.ownerCt.xtype!='toolbar')
+								me.lastFocusedRecipientsType = 'to';
+						}
+					},
+					tabIndex: 2,
+					flex: 1
+				}),
+				{ xtype: 'tbspacer', width: 8 },
+				me.tccs=Ext.create({
+					xtype: 'sotogglebutton',
+					text: me.res('cc'),
+					width: 70,
+					cls: 'x-btn-default-toolbar-small wtmail-editor-cc-button',
+					tabIndex: 99999,
+					listeners: {
+						beforetoggle: function(b, pressed) {
+							if (b.pressed) {
+							  if (me.getModel().ccrecipients().getCount()==0)
+								me.ccs.setHidden(true);
+							  else return false;
+							} else {
+								me.ccs.setHidden(false);
+							}
+						}
+					}
+				}),
+				{ xtype: 'tbspacer', width: 6 },
+				me.tbccs=Ext.create({
+					xtype: 'sotogglebutton',
+					text: me.res('bcc'),
+					width: 70,
+					cls: 'x-btn-default-toolbar-small wtmail-editor-bcc-button',
+					tabIndex: 99999,
+					listeners: {
+						beforetoggle: function(b, pressed) {
+							if (b.pressed) {
+							  if (me.getModel().bccrecipients().getCount()==0)
+								me.bccs.setHidden(true);
+							  else return false;
+							} else {
+								me.bccs.setHidden(false);
+							}
+						}
+					}
+				})
+			]
+		};
+		
+		hitems[hx++]=me.ccs=Ext.create({
+			xtype: 'wtrecipientsfield',
+			bind: {
+				itemsStore: '{record.ccrecipients}'
+			},
+			itemsValueField: 'email',
+			itemsDisplayField: 'email',
+			targetRecipientFieldType: trf,
+			itemEditable: true, // Allows in place editing of tags
+			growMaxLines: 2,
+			plugins: [
+				{
+					ptype: 'sotagdnd',
+					ddGroup: trf + 'recipients',
+					onDrop: function(srcField, srcIdx, tgtField, tgtIdx) {
+						me.doRecipientTagDrop(srcField, srcIdx, tgtField, tgtIdx);
+					}
+				}
+			],
+			listeners: {
+				focusenter: function() {
+					me.lastFocusedRecipientsType = 'cc';
+				},
+				focusleave: function(t, e, o) {
+					//keep last focused when clicking on toolbar buttons
+					if (!e.toComponent.ownerCt || e.toComponent.ownerCt.xtype!='toolbar')
+						me.lastFocusedRecipientsType = 'to';
+				}
+			},
+			fieldLabel: me.res('cc'),
+			tabIndex: 3,
+			anchor: '100%',
+			hidden: true
+		});
+		hitems[hx++]=me.bccs=Ext.create({
+			xtype: 'wtrecipientsfield',
+			bind: {
+				itemsStore: '{record.bccrecipients}'
+			},
+			itemsValueField: 'email',
+			itemsDisplayField: 'email',
+			targetRecipientFieldType: trf,
+			growMaxLines: 2,
+			plugins: [
+				{
+					ptype: 'sotagdnd',
+					ddGroup: trf + 'recipients',
+					onDrop: function(srcField, srcIdx, tgtField, tgtIdx) {
+						me.doRecipientTagDrop(srcField, srcIdx, tgtField, tgtIdx);
+					}
+				}
+			],
+			listeners: {
+				focusenter: function() {
+					me.lastFocusedRecipientsType = 'bcc';
+				},
+				focusleave: function(t, e, o) {
+					//keep last focused when clicking on toolbar buttons
+					if (!e.toComponent.ownerCt || e.toComponent.ownerCt.xtype!='toolbar')
+						me.lastFocusedRecipientsType = 'to';
+				}
+			},
+			fieldLabel: me.res('bcc'),
+			tabIndex: 4,
+			anchor: '100%',
+			hidden: true
+		});
+
+		var subitems=[],subx=0;
+		subitems[subx++]=me.subject=Ext.create({
+			xtype: 'wtsuggestcombo',
+			sid: me.mys.ID,
+			suggestionContext: 'subject',
+			flex: 1,
+			tabIndex: 5,
+			disabled: me.faxsubject?true:false,
+			enableKeyEvents: true,
+			listeners: {
+				keydown: function(cb, e, eOpts) {
+					if (e.getKey() === e.TAB) {
+						e.stopEvent();
+						me.htmlEditor.focus();
+					}
+				}
+			},
+			bind: '{record.subject}'
+		});
+
+        if (this.showPriority) {
+			subitems[subx++]={ xtype: 'tbspacer', width: 8 },
+			subitems[subx++]=me.addRef('chkPriority', Ext.create({
+				xtype: 'sotogglebutton',
+				offTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.off.tip.txt')},
+				onTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.on.tip.txt')},
+				offIconCls: 'wtmail-icon-msgSetPriorityHigh-grayed',
+				onIconCls: 'wtmail-icon-msgSetPriorityHigh',
+				handler: me.actionPriority,
+				scope: me,
+				cls: 'x-btn-default-toolbar-small wtmail-editor-priority-button',
+				tabIndex: 99999
+			}));
+            dash=true;
+        }
+		hitems[hx++]={
+			xtype: 'fieldcontainer',
+			layout: { 
+				type: 'hbox'
+			},
+			fieldLabel: WT.res('word.subject'),
+			items: subitems
+		};
+		
+		hitems[hx++]=me.attlist=Ext.create({
+			xtype: 'sotagviewfield',
+			bind: {
+				itemsStore: '{record.attachments}',
+				hidden: '{!foHasAttachments}'
+			},
+			itemsValueField: 'uploadId',
+			itemsDisplayField: 'fileName',
+			iconField: 'fileName',
+			tabIndex: 6,
+			valuesStoreRecordCreator: function(data, Model) {
+				return new Model({
+					uploadId: data.uploadId,
+					fileName: data.fileName,
+					fileSize: data.fileSize,
+					editable: data.editable,
+					cid: data.cid,
+					inline: data.inline
+				});
+			},
+			getIcon: function(values, value) {
+				return WTF.fileTypeCssIconCls(WTA.Util.getFileExtension(value));
+			},
+			isItemHidden: function(values, value) {
+				return values.data.inline && !Ext.isEmpty(values.data.cid);
+			},
+			labelTpl: new Ext.XTemplate(
+				'{[this.limitFileName(values.fileName)]} ({[this.formatBytes(values.fileSize)]})',
+				{
+					formatBytes: function(fileSize) {
+						return Sonicle.Bytes.format(fileSize);
+					},
+					limitFileName: function(fileName) {
+						return Ext.String.ellipsis(fileName, 50);
+					}
+				}
+			),
+			tipTpl: '{fileName}',
+			disablePicker: true,
+			itemEditable: true,
+			showItemIcon: true,
+			itemClickHandler: function(f, r) {
+				var params={
+					uploadId: r.get("uploadId")
+				};
+				if (r.get("editable")) f.viewFile(params);
+				else {
+					var href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",params);
+					Sonicle.URLMgr.open(href,true,"location=no,menubar=no,resizable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=no,top=10,left=10,width=770,height=480");
+				}
+			},
+			listeners: {
+				itemremove: function(s, r) {
+					me.autosaveDirty=true;
+				}
+			},
+			growMaxLines: 3,
+			cls: 'wtmail-attach-taglist',
+			fieldLabel: me.res('attachments'),
+			anchor: '100%',
+					
+			//custom impl
+			autosaveDirty: false,
+
+			addAttachment: function(config) {
+				this.getStore().add(config);
+				this.autosaveDirty=true;
+			},
+
+			isAutosaveDirty: function() {
+				return this.autosaveDirty;
+			},
+
+			clearAutosaveDirty: function() {
+				this.autosaveDirty=false;
+			},
+
+			viewFile: function(params) {
+				var me=this;
+				WT.ajaxReq(me.mys.ID, 'DocPreviewAttachment', {
+					params: params,
+					callback: function(success, json) {
+						if (success) {
+							var editingCfg=json.data;
+							var vw = WT.createView(WT.ID, 'view.DocEditor', {
+								swapReturn: true,
+								viewCfg: {
+									editingId: editingCfg.editingId,
+									editorConfig: {
+										editable: editingCfg.writeSupported,
+										token: editingCfg.token,
+										docType: editingCfg.docType,
+										docExtension: editingCfg.docExtension,
+										docKey: editingCfg.docKey,
+										docTitle: editingCfg.docName,
+										docUrl: editingCfg.docUrl,
+										//autosave: false,
+										callbackUrl: editingCfg.callbackUrl
+									}
+								}
+							});
+							vw.showView(function() {
+								vw.begin('view');
+							});
+						}
+					}
+				});
+			},	
 		});
 		
-		me.add(Ext.create({
-			xtype: 'panel',
-			region: 'north',
-//			bodyCls: 'wt-theme-bg-2',
-            border: false,
-            bodyBorder: false,
-			height: 160,
-			layout: 'anchor',
-			items: [
-				me.toolbar,
-				Ext.create({
-					xtype: 'panel',
-					region: 'center',
-                    border: false,
-                    bodyBorder: false,
-                    height: 90,
-                    layout: 'border',
-                    items: [
-                        me.recgrid,
-						me.attcontainer
-                    ]
-				}),
-				me.subject
-			]
-		}));
+		me.topFields=Ext.create({
+			xtype: 'wtfieldspanel',
+			modelValidation: true,
+			defaults: {
+				labelWidth: 60,
+				labelAlign: 'right'
+			},
+			paddingSides: true,
+			items: hitems
+		});
 		
-		me.htmlEditor = me.add({
-			region: 'center',
+		me.htmlEditor = Ext.create({
+			flex: 1,
 			xtype: 'wthtmleditor',
 			bind: '{record.content}',
+			tabIndex: 7,
 			disabled: me.faxsubject ? true : false,
 			wysiwyg: me.contentFormat === 'plain' ? false : true,
 			enableFont: true,
@@ -757,6 +1041,34 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				'div#wt-mailcard { border: 1px dotted lightgray !important; }'
 			].join(' ')
 		});
+		
+		me.add({
+			xtype: 'container',
+			region: 'center',
+			layout: {
+				type: 'vbox',
+				align: 'stretch'
+			},
+			flex: 1,
+            border: false,
+            bodyBorder: false,
+			items: [
+				me.topFields,
+				{
+					xtype: 'wtfieldspanel',
+					layout: {
+						type: 'vbox',
+						align: 'stretch'
+					},
+					flex: 1,
+					cls: 'wtmail-editor-htmleditor-container',
+					items: [
+						me.htmlEditor
+					]
+				}
+			]
+		});
+		
 
 		me.on('viewdiscard', me.onDiscard);
 		me.on('viewload', me.onViewLoad);
@@ -776,17 +1088,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		});
 	},
 	
+	createTopToolbarCfg: function(cfg) {
+		return Ext.apply({
+			xtype: 'toolbar'
+		}, cfg || {});
+	},
+	
 	onViewLoad: function(s, success) {
 		if (!success) return;
 		
 		var me = this,
-			mo = me.getModel(),
-			stoRcpts = mo.recipients();
+			mo = me.getModel();
 		
-		if (stoRcpts.getCount() === 0) {
-			stoRcpts.add(stoRcpts.createModel({rtype: 'to', email: ''}));
-			// Defers it otherwise grid's internal editor may not be available at the moment of method call!
-			Ext.defer(function() { me.recgrid.startEditAt(0); }, 200);
+		if (Ext.isEmpty(mo.get('torecipients'))) {
+			me.tos.focus();
 		} else if (Ext.isEmpty(mo.get('subject'))) {
 			me.subject.focus();
 		} else {
@@ -835,6 +1150,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.beginNew({
 			data: data
 		});
+		if (data.ccrecipients && data.ccrecipients.length>0) { me.tccs.toggle(true, true); me.ccs.setHidden(false); }
+		if (data.bccrecipients && data.bccrecipients.length>0) { me.tbccs.toggle(true, true); me.bccs.setHidden(false); }
 		
 		if (data.contentReady && data.content.indexOf(me.htmlStartMailcard)<0) {
 			me.getRef("showMailcard").toggle(false,true);
@@ -873,7 +1190,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     
     actionSend: function() {
         var me = this,
-			attachmentSize = me.attlist.all.elements.length,
+			attachmentSize = me.getModel().attachments().getCount(),
 			_sbj=me.subject.getValue(),
 			newSubject=Ext.isEmpty(_sbj)?'':_sbj.trim(),
 			oldSubject=Ext.isEmpty(me.originalSubject)?'':me.originalSubject.trim(),
@@ -891,7 +1208,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 		var attachmentsWarning = attachmentSize > 0 ? false : me.checkForAttachment(newSubjectDiffs.toLowerCase(), newTextDiffs.toLowerCase());
 	
-        me.recgrid.completeEdit();
 		if (newSubject.length > 0){
 			if(attachmentsWarning) {
 				WT.confirm(me.res('editor.warn.noattachment'), function(bid) {
@@ -941,21 +1257,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		}
 		return text;
 	},
-	
-//	checkForAttachment: function(subject, body) {
-//		var me = this,
-//				attachPatterns = me.res('editor.detect.attach.patterns'),
-//				attachList = attachPatterns.split(','),
-//				containsAttachKeyword = false;
-//		
-//		attachList.forEach(function(element) {
-//			if(subject.includes(element) || body.includes(element)) {
-//				containsAttachKeyword = true;
-//				return containsAttachKeyword;
-//			}
-//		});
-//		return containsAttachKeyword;
-//	},
 	
 	checkForAttachment: function(subject, body) {
 		var me = this,
@@ -1030,7 +1331,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 							var now = new Date(),
 									sentOn = Ext.Date.format(now, WT.getShortDateFmt()),
 									subject = mo.get('subject'),
-									desc = Ext.String.format(eventDesc, sentOn, subject, mo.get('from'), Sonicle.String.ellipsisJoin(', ', 5, mo.getRecipients()));
+									desc = Ext.String.format(eventDesc, sentOn, subject, mo.get('from'), Sonicle.String.ellipsisJoin(', ', 5, mo.getAllEmails()));
 							
 							if (hasMeeting) {
 								WT.confirm(me.res('editor.confirm.meetingFound'), function(bid) {
@@ -1092,7 +1393,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     
     actionSave: function() {
         var me=this;
-        me.recgrid.completeEdit();
         me.disableControls(/*false,*/true);
         if (me.fireEvent('beforesave',me)) {
             me.saveMessage();
@@ -1119,11 +1419,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	actionAddressBook: function() {
 		var me=this,
-			rcpts=[];
-		
-		Ext.each(me.recgrid.store.getRange(),function(r) {
-			rcpts[rcpts.length]={ type: r.get("rtype"), email: r.get("email") };
-		});
+			mo=me.getModel(),
+			rcpts=mo.getAllRecipients();
 		
 		WT.createView(me.mys.ID,'view.AddressBookView',{
 			viewCfg: {
@@ -1133,14 +1430,13 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					save: {
 						fn: function(abv) {
 							var rcpts=abv.getRecipients();
-							me.recgrid.clear();
-							if (rcpts && rcpts.length>0) {
-								Ext.each(rcpts,function(r) {
-									me.recgrid.addRecipient(r.type,r.email);
-								});
-							} else {
-								me.recgrid.addRecipient('to','');
-							}
+							mo.torecipients().removeAll();
+							mo.ccrecipients().removeAll();
+							mo.bccrecipients().removeAll();
+							Ext.each(rcpts,function(r) {
+								var s=r.type=="to"?mo.torecipients():r.type=="cc"?mo.ccrecipients():r.type=="bcc"?mo.bccrecipients():null;
+								if (s) s.add({ email: r.email });
+							});						
 						}
 					}
 				}
@@ -1150,7 +1446,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
     
     actionSchedule: function() {
         var me=this;
-        me.recgrid.completeEdit();
 		WT.createView(me.mys.ID,'view.ScheduleDialog',{
 			viewCfg: {
 				mys: me.mys,
@@ -1271,6 +1566,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					}					
 					hed.editorSetHtml(mcNode, nmc.html);
 				}
+				else return false;
 			} else {
 				var tpl=hed.editorGetDocument().createElement("template");
 				tpl.innerHTML=me.htmlStartMailcard+'>' + nmc.html + '</div>';
@@ -1290,22 +1586,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         //if (this.aReceipt) this.aReceipt.disable();
         if (!showSendmask) me.htmlEditor.disable();
         //else me.sendMask.show();
-        me.recgrid.disable();
+        me.tos.disable();
+		me.ccs.disable();
+		me.bccs.disable();
         me.subject.disable();
     },
 	
-    fillRecipients: function(rcpts,rtypes) {
-        Ext.each(
-          this.recgrid.store.getRange(),
-          function(r,index,allItems) {
-            rcpts[index]=Ext.util.Format.htmlDecode(r.get("email"));
-            rtypes[index]=r.get("rtype");
-          }
-        );
-    },	
+    fillRecipients: function(rcpts,range) {
+		Ext.each(range,function(r) {
+			rcpts[rcpts.length]={ email: Ext.util.Format.htmlDecode(r.get("email")) };
+		});
+    },
 
     doAutosave: function() {
-		var me=this,o=me.opts.data;
+		var me=this,o=me.opts.data,mo=me.getModel();
         if (me.isAutosaveDirty()) {
             var mailparams={
 				folder: o.folder,
@@ -1317,14 +1611,17 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				inreplyto: o.inreplyto,
 				references: o.references,
 				origuid: o.origuid,
-				priority: me.getModel().get("priority"),
-				receipt: me.getModel().get("receipt"),
+				priority: mo.get("priority"),
+				receipt: mo.get("receipt"),
 				forwardedfolder: o.forwardedfolder,
 				forwardedfrom: o.forwardedfrom,
-				recipients: [],
-				rtypes: []
+				torecipients: [],
+				ccrecipients: [],
+				bccrecipients: []
             };
-            me.fillRecipients(mailparams.recipients,mailparams.rtypes);
+            me.fillRecipients(mailparams.torecipients,mo.torecipients().getRange());
+			me.fillRecipients(mailparams.ccrecipients,mo.ccrecipients().getRange());
+			me.fillRecipients(mailparams.bccrecipients,mo.bccrecipients().getRange());
 
 			WT.ajaxReq(me.mys.ID, "ManageAutosave", {
 				params: {
@@ -1507,12 +1804,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			title: me.mys.res("act-pasteList.tit"),
 			fn: function(btn,text) {
 				if (btn==='ok') {
-					me.recgrid.loadValues(text);
+					var lfcrt = me.lastFocusedRecipientsType,
+						rcpts = lfcrt == 'cc' ? me.getModel().ccrecipients() :
+								lfcrt == 'bcc' ? me.getModel().bccrecipients() :
+								me.getModel().torecipients(),
+						emails=text.split("\n");
+					Ext.each(emails, function(email) {
+						rcpts.add({email: email});
+					});
+					me.lastFocusedRecipientsType = 'to';
 				}
 			},
 			scope: me,
-			width: 400,
-			multiline: 200,
+			width: WT.calcViewWidth(400),
+			multiline: WT.calcViewHeight(200),
 			value: ''
 		});
 	},
@@ -1527,12 +1832,15 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						}, {
 							callback: function(success, json) {
 								if (success) {
-									var data = json.data,
-											emails = '', i;
+									var data = json.data, i;
 									for (i=0; i<data.length; i++) {
-										emails += data[i] + '\n';
+										var rcpts = data[i].type == 'CC' ? me.getModel().ccrecipients() :
+													data[i].type == 'BCC' ? me.getModel().bccrecipients() :
+													me.getModel().torecipients();
+										rcpts.add({email: data[i].email});
 									}
-									this.recgrid.loadValues(emails);
+									if (me.getModel().ccrecipients().getCount()>0) { me.tccs.toggle(true, true); me.ccs.setHidden(false); }
+									if (me.getModel().bccrecipients().getCount()>0) { me.tbccs.toggle(true, true); me.bccs.setHidden(false); }
 								}
 							},
 							scope: me
@@ -1574,23 +1882,29 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         //if (this.aReceipt) this.aReceipt.enable();
         if (!me.faxsubject) me.htmlEditor.enable();
         //me.sendMask.hide();
-        me.recgrid.enable();
+        me.tos.enable();
+		me.ccs.enable();
+		me.bccs.enable();
         if (!me.faxsubject) me.subject.enable();
     },
 
 	
     isAutosaveDirty: function() {
 		var me=this;
-		return me.recgrid.isRecipientComboAutosaveDirty() || 
+		return me.autosaveTosValue!==me.tos.getValue() || 
+			me.autosaveCcsValue!==me.ccs.getValue() || 
+			me.autosaveBccsValue!==me.bccs.getValue() || 
 			me.attlist.isAutosaveDirty() ||
-			(me.autosaveSubjectValue!==me.subject.getValue()) || 
+			me.autosaveSubjectValue!==me.subject.getValue() || 
 			me.htmlEditor.isHistoryBookmarkDirty() ||
 			me.getModel().isAutosaveDirty();
     },
     
     clearAutosaveDirty: function() {
 		var me=this;
-        me.recgrid.clearAutosaveDirty();
+        me.autosaveTosValue=me.tos.getValue();
+		me.autosaveCcsValue=me.ccs.getValue();
+		me.autosaveBccsValue=me.bccs.getValue();
 		me.attlist.clearAutosaveDirty();
         me.autosaveSubjectValue=me.subject.getValue();
 		me.htmlEditor.resetHistoryBookmark();
@@ -1599,26 +1913,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	res: function(key) {
 		return this.mys.res(key);
-	},	
+	},
 	
-	showConfirm: function() {
-		var me = this, msg;
-		msg = me.confirmMsg || WT.res('confirm.areyousure');
-			WT.confirm(msg, function(bid) {
-				if (bid === 'yes') {
-					me.onDiscardView();
-				}
-				else if(bid === 'cancel') {
-					me.saveMessage();
-				}
-			}, me, {
-				config: {
-					buttonText: {
-						cancel: me.res('act-save.lbl')
-					}
-				}
-			});	
-				
+	onConfirmView: function() {
+		this.saveMessage();
 	},
 	
 	addMeetingUI: function() {
@@ -1687,112 +1985,31 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		} else {
 			return content;
 		}
-	}
-});
-
-Ext.define('Sonicle.webtop.mail.EditorAttachments', {
-	extend: 'Ext.view.View',
+	},
 	
-//	cls: 'x-panel-body-default',
-	overItemCls: 'wtmail-table-editor-attachement-over',
-	itemSelector: 'table.wtmail-table-editor-attachment',
-	
-	mys: null,
-	autosaveDirty: false,
-	
-	tpl: new Ext.XTemplate(
-		"<tpl for='.'>",
-			"<table border=0 cellspacing=0 cellpadding=0 class='wtmail-table-editor-attachment'"+
-					" style='display:{[values['inline'] && (!Ext.isEmpty(values['cid']))?'none':'table']}'>",
-			  "<tr>",
-				"<td class='wtmail-td-editor-attachment-icon'>",
-					"<div class='{[WTF.fileTypeCssIconCls(WTA.Util.getFileExtension(values['fileName']))]}' style='width:16px;height:16px'>",
-				"</td>",
-				"<td class='wtmail-td-editor-attachment-text'>",
-					"<a href='javascript:Ext.emptyFn()' title='{fileName:htmlAttributeEncode}'>",
-						"&nbsp;{fileName:htmlEncode}",
-					"</a>",
-				"</td>",
-				"<td class='wtmail-td-editor-attachment-size'>",
-					"({[WTU.humanReadableSize(values['fileSize'])]})",
-				"</td>",
-				"<td class='wtmail-td-editor-attachment-delete-icon'>",
-					"<div class='wt-icon-delete' style='width: 16px; height: 16px;'>",
-				"</td>",
-			  "</tr>",
-			"</table>",
-		"</tpl>"
-	),
-	
-	listeners: {
-		itemclick: function(s, r, item, ix, e) {
-			var me=this,
-				tgt=e.getTarget(null,null,true);
-
-			if (tgt.hasCls('wt-icon-delete')) {
-				//me.ownerCt.remove(this);
-				//me.fireEvent('remove',me);
-				me.getStore().remove(r);
-				me.autosaveDirty=true;
-			}
-			else {
-				var params={
-					uploadId: r.get("uploadId")
-				};
-				if (r.get("editable")) me.viewFile(params);
-				else {
-					var href=WTF.processBinUrl(me.mys.ID,"PreviewAttachment",params);
-					Sonicle.URLMgr.open(href,true,"location=no,menubar=no,resizable=yes,scrollbars=yes,status=yes,titlebar=yes,toolbar=no,top=10,left=10,width=770,height=480");
+	privates: {
+		doRecipientTagDrop: function(srcField, srcIdx, tgtField, tgtIdx) {
+			var me = this,
+				SoU = Sonicle.Utils,
+				isReorder = srcField.getId() === tgtField.getId(),
+				mo = me.getModel(),
+				email = srcField.getValue()[srcIdx],
+				tgtStore = mo[SoU.getBindingName(tgtField.getBind()['itemsStore'])](),
+				srcStore = isReorder ? tgtStore : mo[SoU.getBindingName(srcField.getBind()['itemsStore'])](),
+				//srcRec = srcStore.getAt(srcIdx);
+				srcRec;
+			
+			if (!Ext.isEmpty(email)) {
+				srcRec = srcStore.findRecord('email', email);
+				if (srcRec) srcStore.remove(srcRec);
+				if (Ext.isNumber(tgtIdx)) {
+					if (isReorder && srcIdx < tgtIdx) tgtIdx--;
+					tgtStore.insert(tgtIdx, {email: email});
+				} else {
+					tgtStore.add({email: email});
 				}
+				return true;
 			}
 		}
-	},
-	
-    viewFile: function(params) {
-		var me=this;
-		WT.ajaxReq(me.mys.ID, 'DocPreviewAttachment', {
-			params: params,
-			callback: function(success, json) {
-				if (success) {
-					var editingCfg=json.data;
-					var vw = WT.createView(WT.ID, 'view.DocEditor', {
-						swapReturn: true,
-						viewCfg: {
-							editingId: editingCfg.editingId,
-							editorConfig: {
-								editable: editingCfg.writeSupported,
-								token: editingCfg.token,
-								docType: editingCfg.docType,
-								docExtension: editingCfg.docExtension,
-								docKey: editingCfg.docKey,
-								docTitle: editingCfg.docName,
-								docUrl: editingCfg.docUrl,
-								//autosave: false,
-								callbackUrl: editingCfg.callbackUrl
-							}
-						}
-					});
-					vw.showView(function() {
-						vw.begin('view');
-					});
-				}
-			}
-		});
-    },	
-	
-	
-	
-	addAttachment: function(config) {
-		this.getStore().add(config);
-		this.autosaveDirty=true;
-	},
-	
-	isAutosaveDirty: function() {
-		return this.autosaveDirty;
-	},
-	
-	clearAutosaveDirty: function() {
-		this.autosaveDirty=false;
 	}
 });
-

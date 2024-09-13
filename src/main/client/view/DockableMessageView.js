@@ -77,7 +77,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 						handler: function() {
 							me.messageGrid.deleteMessage(me.acct,me.folder,me.idmessage,me);
 						},
-						iconCls: 'wt-icon-delete'
+						iconCls: 'wt-icon-trash'
 					}),
 					me.addAct("reply",{
 						handler: function() {

@@ -48,6 +48,10 @@ Ext.define('Sonicle.webtop.mail.MessageViewModel', {
 
 Ext.define('Sonicle.webtop.mail.MessageView',{
 	extend: 'Ext.container.Container',
+	uses: [
+		'Sonicle.form.field.InitialsAvatar',
+		'Sonicle.grid.column.Avatar'
+	],
 	mixins: [
 		'WTA.mixin.Waitable'
 	],
@@ -59,6 +63,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	
     //Elements
     tdHeader: null,
+	tdHeaderInnerTable: null,
     divSubject: null,
     divDate: null,
     divFromName: null,
@@ -71,6 +76,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	divTags: null,
 	divICal: null,
     divLine: null,
+	colAvatar: null,
     tdBody: null,
     divBody: null,
     tableContents: null,
@@ -124,6 +130,17 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         
         me.addListener('resize',me.viewResized,me);
 
+        var t=document.createElement("table");
+        t.className="wtmail-mv-table";
+        me.el=Ext.get(t);
+		
+		me.colAvatar = Ext.create('Sonicle.grid.column.Avatar', {
+			
+			//Define getName to return the sender name
+			getName: function() {
+				return me.fromName;
+			}
+		});
     },
 	
 	saveInCloud: function(data) {
@@ -154,9 +171,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	onRender: function(parentNode, containerIdx) {
 		var me=this;
 		
-        var t=document.createElement("table");
-        t.className="wtmail-mv-table";
-        me.el=Ext.get(t);
+        var t=me.el.dom;
       
         var tr=t.insertRow(-1);
         var td=tr.insertCell(-1);
@@ -177,7 +192,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		el.destroy();
     },
     
-    _clear: function(noEmptyMsg) {
+    _clear: function(noEmptyMsg, selCount) {
 		var me=this;
 		
         if (!me.cleared) {
@@ -199,6 +214,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             me.removeElement(me.divTags);
 			me.removeElement(me.divICal);
             me.removeElement(me.divLine);
+			me.removeElement(Ext.get(me.tdHeaderInnerTable));
             var bd=me.divBody.dom;
             if ( bd.hasChildNodes() ) {
                 while ( bd.childNodes.length > 0 ){
@@ -218,24 +234,35 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			me.icalwebtopid=0;
             me.iframes=new Array();
 			if(me.tdBody !== null) {
-				me.clearBody(noEmptyMsg);
+				me.clearBody(noEmptyMsg, selCount);
 			}	
         } else {
 			if (noEmptyMsg === true) me.clearEmptyEl();
+			else if(me.tdBody !== null) {
+				me.clearBody(noEmptyMsg, selCount);
+			}	
 		}
     },
 	
-	addEmptyEl: function() {
+	addEmptyEl: function(selCount) {
 		var me = this, html;
 		if (me.tdBody && !me.emptyEl) {
-			html = '<div class="wt-centered">'
-				+ '<div class="wt-theme-text-header1" style="font-size:1.2em">'
-				+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.tit'))
-				+ '</div>'
-				+ '<div class="wt-theme-text-subtitle" style="font-size:0.9em">'
-				+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.txt'))
-				+ '</div>'
-				+ '</div>';
+			if (selCount) {
+				html = '<div class="wt-centered">'
+					+ '<div class="wt-theme-text-header1" style="font-size:1.2em">'
+					+ Ext.String.htmlEncode(me.mys.res('messagePreview.count.tit', selCount))
+					+ '</div>'
+					+ '</div>';
+			} else {
+				html = '<div class="wt-centered">'
+					+ '<div class="wt-theme-text-header1" style="font-size:1.2em">'
+					+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.tit'))
+					+ '</div>'
+					+ '<div class="wt-theme-text-subtitle" style="font-size:0.9em">'
+					+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.txt'))
+					+ '</div>'
+					+ '</div>';
+			}
 			me.emptyEl = Ext.core.DomHelper.insertHtml('beforeEnd', me.tdBody.dom, html);
 		}
 	},
@@ -246,7 +273,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		this.emptyEl = null;
 	},
 	
-	clearBody: function(noEmptyMsg) {
+	clearBody: function(noEmptyMsg, selCount) {
 		var me = this, dom;
 		me.clearEmptyEl();
 		if (me.tdBody !== null) {
@@ -257,7 +284,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				}
 			}
 		}
-		if (noEmptyMsg !== true) me.addEmptyEl();
+		if (noEmptyMsg !== true) me.addEmptyEl(selCount);
 	},
 	
 	showMessage: function(data) {
@@ -437,7 +464,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				tdb=me.tdBody,
 				laf=WT.getVar('laf');
             
-            var htmlDate="<span class='wtmail-mv-hlabeldate'>"+me.mys.res('date')+":&nbsp;</span>"+me.date;
+            var htmlDate=me.date;
             if (me.scheddate) {
                 htmlDate+="&nbsp;&nbsp;-&nbsp;&nbsp;"+WTF.imageTag(me.mys.ID,"mail-schedule_16.svg",16,16,"valign=bottom")+"&nbsp;&nbsp;"+me.scheddate;
             }
@@ -484,7 +511,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				"<table class='wtmail-mv-subject-table'><tr>"+
 				tdPEC+
 				"<td>"+Ext.String.htmlEncode(me.subject)+"</td>"+
-				tdPasSpam+
+				//tdPasSpam+
 				"</tr></table>"
 			);
 			
@@ -559,11 +586,16 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			}
 			
             me.divFromName.update(
-				"<a data-qtip='" + me.fromEmail + "' data-qtitle='" + Sonicle.String.htmlAttributeEncode(me.fromName) + "' href='javascript:Ext.emptyFn()'>" +
-					Ext.String.htmlEncode(me.fromName) + " &lt;" + me.fromEmail + "&gt;" + 
-				"</a>"+
-				divPasSender+
-				divListUnsubscribe
+				"<table class='wtmail-mv-from-table'><tr>"+
+				"<td>"+
+					"<a data-qtip='" + me.fromEmail + "' data-qtitle='" + Sonicle.String.htmlAttributeEncode(me.fromName) + "' href='javascript:Ext.emptyFn()'>" +
+						Ext.String.htmlEncode(me.fromName) + " &lt;" + me.fromEmail + "&gt;" + 
+					"</a>"+
+					divPasSender+
+					divListUnsubscribe+
+				"</td>"+
+				tdPasSpam+
+				"</tr></table>"
 			);
 	
 			if (me.divThroughName) {
@@ -691,6 +723,24 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				tdh.insertFirst(me.divTags);
 			}
 
+			me.tdHeaderInnerTable=document.createElement("table");
+			me.tdHeaderInnerTable.className="wtmail-mv-table";
+			tdh.insertFirst(me.tdHeaderInnerTable);
+			var tdhTr=me.tdHeaderInnerTable.insertRow(-1);
+			var tdhTdAvatar=tdhTr.insertCell(-1);
+			tdhTdAvatar.className="wtmail-mv-header wtmail-mv-header-avatar";
+			var tdhDivAvatar=document.createElement("div");
+			Ext.get(tdhDivAvatar).update(
+				//Reuse Avatar column code to create avatar div with colors and initials.
+				//Passes true instead of rec to force code to call getName function
+				//wich is defined during colAvatar creation.
+				me.colAvatar.buildHtml(me.fromName, true)
+			);
+			tdhDivAvatar.className="so-avatar-wrap so-avatar-initials wtmail-mv-avatar";
+			tdhTdAvatar.appendChild(tdhDivAvatar);
+			
+			var tdhTdData=Ext.get(tdhTr.insertCell(-1));
+			
             if (me.attachments) {
                 var names=null,
 					atts=me.attachments,
@@ -756,7 +806,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     names=me.appendAttachmentName(names,html);
                 }
 				var allhref=WTF.processBinUrl(me.mys.ID,"GetAttachments",allparams);
-                me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+me.mys.res('saveall-desc')+"' data-qtitle='"+me.mys.res('saveall')+"' href='"+allhref.replaceAll("'","%27")+"' filename='*'>"+me.mys.res('attachments')+"&nbsp;("+len+")</a>:&nbsp;</span>"+names);
+                me.divAttach.update("<span class='wtmail-mv-hlabelattach'><a data-qtip='"+me.mys.res('saveall-desc')+"' data-qtitle='"+me.mys.res('saveall')+" ("+len+")' href='"+allhref.replaceAll("'","%27")+"' filename='*'><i class='fas fa-paperclip'></i></a>&nbsp;&nbsp;</span>"+names);
 				
 				if (WT.getApp().getService('com.sonicle.webtop.calendar')) {
 					
@@ -807,7 +857,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
 						if (icalhtml) {
 							me.divICal.update(icalhtml);
-							tdh.insertFirst(me.divICal);
+							tdhTdData.insertFirst(me.divICal);
 
 							var xel=aics[0];
 							Ext.each(me.divICal.query("a[ical]"),function(o) { 
@@ -847,7 +897,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				}
 
 				
-                tdh.insertFirst(me.divAttach);
+                tdhTdData.insertFirst(me.divAttach);
 				
 				
                 Ext.each(me.divAttach.query("a[eml]"),function(o) { 
@@ -899,32 +949,41 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
             }
             if (me.bccNames) {
                 me.divBccs.update("<span class='wtmail-mv-hlabelbcc'>"+me.mys.res('bcc')+":&nbsp;</span>"+me.bccNames);
-                tdh.insertFirst(me.divBccs);
+                tdhTdData.insertFirst(me.divBccs);
                 me._setEmailElements(me.divBccs.first().next(),'bcc');
             }
             if (me.ccNames) {
                 me.divCcs.update("<span class='wtmail-mv-hlabelcc'>"+me.mys.res('cc')+":&nbsp;</span>"+me.ccNames);
-                tdh.insertFirst(me.divCcs);
+                tdhTdData.insertFirst(me.divCcs);
 				//TODO setEmailElements
                 me._setEmailElements(me.divCcs.first().next(),'cc');
             }
             if (me.toNames) {
                 me.divTos.update("<span class='wtmail-mv-hlabelto'>"+me.mys.res('to')+":&nbsp;</span>"+me.toNames);
-                tdh.insertFirst(me.divTos);
+                tdhTdData.insertFirst(me.divTos);
 				//TODO setEmailElements
                 me._setEmailElements(me.divTos.first().next(),'to');
             }
-            tdh.insertFirst(me.divDate);
-			if (me.divThroughName) tdh.insertFirst(me.divThroughName);
-            tdh.insertFirst(me.divFromName);
+
+            tdhTdData.insertFirst(me.divDate);
+			if (me.divThroughName) tdhTdData.insertFirst(me.divThroughName);
+            tdhTdData.insertFirst(me.divFromName);
+			
             tdh.insertFirst(me.divSubject);
             me.divBody.dom.style.width=tdh.dom.scrollWidth-5;//"100%";
             tdb.insertFirst(me.divBody);
-            me._setEmailElement(me.divFromName.first(),'from');
-			if (me.divThroughName) me._setEmailElement(me.divThroughName.first().next(),'from');
+
+			var divFromNameA=Ext.get(me.divFromName.query("a")[0]);
+			var divFromNamePAS=divFromNameA.next();
+            me._setEmailElement(divFromNameA,'from');
+			if (me.divThroughName) {
+				var divThroughNameA=Ext.get(me.divThroughName.query("a")[0]);
+				me._setEmailElement(divThroughNameA,'from');
+			}
+			
 			if (canMarkAsTrusted)
-				me.divFromName.first().next().on('click', function() {
-					me.markEmailAsTrusted(me.divFromName.first().getAttribute('data-qtip'));
+				divFromNamePAS.on('click', function() {
+					me.markEmailAsTrusted(divFromNameA.getAttribute('data-qtip'));
 				});
 
             
@@ -998,9 +1057,9 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
             var h,w;
             //if (!me.dockable) {
-				var ct=me.ownerCt;
-				//was -2, then -26, changed to -38 to keep space for h scrollbar
-                h = ct.getEl().getHeight() - 38;
+				var ct=me.ownerCt, ht=46, qt=ct.query('[cls=wtmail-messageview-toolbar-container]');
+				if (qt && qt.length>0) ht = qt[0].getHeight();
+				h = ct.getEl().getHeight() - ht;
 				if (me.mys.hasAuditUI()) h -= 33;
                 w=ct.getEl().getWidth();
                 me.viewResized(me,w,h,w,h);
@@ -1458,8 +1517,8 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     evalRecord: function(item,index,allItems) {
 		var me=this,
 			iddata=item.get('iddata'),
-			maxtos=me.mys.viewmaxtos||20,
-			maxccs=me.mys.viewmaxccs||20,
+			maxtos=me.mys.viewmaxtos||10,
+			maxccs=me.mys.viewmaxccs||10,
 			maxbccs=me.mys.viewmaxccs;
 	
         //alert("iddata="+iddata);
@@ -1555,7 +1614,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
     viewResized: function(comp,aw,ah,rw,rh) {
 		var me=this,
 			hh=me.tdHeader.getHeight(),
-			newh=ah-hh-5,
+			newh=ah-hh-18,
 			neww=aw-10;
         me.el.setHeight(ah-2);
 		if (!me.divBody || !me.divBody.dom) return;
@@ -1771,7 +1830,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			email=(desc===email)?email:desc+" <"+email+">";
 	
 		me.mys.startNewMessage(me.folder,{
-			recipients: [ { rtype: 'to', email: email } ],
+			torecipients: [ { rtype: 'to', email: email } ],
 			format: me.mys.getVar("format")
 		});
 	},

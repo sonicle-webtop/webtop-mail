@@ -78,7 +78,7 @@ Ext.define('Sonicle.webtop.mail.ImapTree', {
 				proxy: WTF.proxy(cfg.mys.ID,'GetImapTree'),
 				root: {
 					id: '/',
-					text: 'Email Imap Tree',
+					text: WT.getVar("userDisplayName"),
 					folder: WT.getVar("userDisplayName"),
 					unread: 0,
 					iconCls: 'wtmail-icon-mailAccount',

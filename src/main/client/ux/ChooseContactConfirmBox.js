@@ -37,6 +37,8 @@ Ext.define('Sonicle.webtop.mail.ux.ChooseContactConfirmBox', {
 		'Sonicle.webtop.core.ux.field.RecipientSuggestCombo'
 	],
 	
+	emptyText: '',
+	
 	createCustomPrompt: function() {
 		var me = this;
 		return {
@@ -44,6 +46,7 @@ Ext.define('Sonicle.webtop.mail.ux.ChooseContactConfirmBox', {
 			id: me.id + '-wtrecipientsgrid',
 			rftype: 'email',
 			fields: {recipientType: 'rtype', email: 'email'},
+			emptyText: me.emptyText,
 			width: 500
 		};
 	},

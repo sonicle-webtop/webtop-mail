@@ -66,15 +66,15 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 		var me = this;
 		me.callParent([cfg]);
 		
-		me.getViewModel().onRecordCreateWithId = function(record, id) {
-			WTU.applyExtraParams(record.getProxy(), {
-				optionsProfile: me.profileId
-			});
-		};
-		
 		WTU.applyFormulas(me.getVM(), {
 			isReadonly: WTF.checkboxBind('record', 'readOnly')
 		});
+	},
+	
+	returnModelExtraParams: function() {
+		return {
+			optionsProfile: this.profileId
+		};
 	},
 	
 	initComponent: function() {
@@ -201,6 +201,7 @@ Ext.define('Sonicle.webtop.mail.view.ExternalAccount', {
 		me.add({
 			region: 'center',
 			xtype: 'container',
+			scrollable: 'y',
 			layout: {
 				type: 'vbox',
 				align: 'stretch'

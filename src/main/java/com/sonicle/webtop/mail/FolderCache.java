@@ -2143,7 +2143,7 @@ public class FolderCache {
       String msgTo;
       String msgCc;
       Locale locale=profile.getLocale();
-	  String laf=ms.getCoreUserSettings().getLookAndFeel();
+	  String laf=ms.getCoreUserSettings().getUILookAndFeel();
 	  boolean icalhtmlview=false;
           
       //first cycle parts to get a possible default charset

@@ -45,6 +45,24 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	},
 	
 	/**
+	 * @cfg {left|right} [collapseToolPosition=left]
+	 * Position of the expand/collapse tool for dealing with thread grouping.
+	 */
+	collapseToolPosition: 'left',
+	
+	/**
+	 * @cfg {body|head} [flagIconsPosition=body]
+	 * Position of the flag/tag/note icons.
+	 */
+	flagIconsPosition: 'body',
+	
+	/**
+	 * @cfg {Boolean} [showSize=false]
+	 * Controls whether to show or hide size data next to body icons.
+	 */
+	showSize: false,
+	
+	/**
 	 * @cfg {Boolean} [stopSelection=false]
 	 * Prevent grid selection upon click.
 	 * Beware that if you allow for the selection to happen then the selection model will steal focus from
@@ -99,6 +117,12 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	timeShortFormat: 'g:i A',
 	timeLongFormat: 'H:i:s',
 	
+	attachmentIconCls: 'fas fa-paperclip',
+	priorityIconCls: 'fas fa-exclamation',
+	tagIconCls: 'fas fa-tag',
+	noteIconCls: 'fas fa-sticky-note',
+	collapseToolOpenIconCls: 'far fa-plus-square',
+	collapseToolCloseIconCls: 'far fa-minus-square',
 	collapseTooltip: 'Click to expand/collapse discussion threads',
 	noteTooltip: 'Click to view annotation',
 	noSubjectText: '[no subject]',
@@ -119,90 +143,176 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 		special: 'Special'
 	},
 	
-	threadCollapseSelector: '.wtmail-messagecolumn-collapsetool',
 	//headFloatIconSelector: '.wtmail-messagecolumn-head-float-icon',
-	noteIconSelector: '.wtmail-messagecolumn-notetool',
+	threadCollapseSelector: '.wtmail-messagecolumn-collapsetool',
+	noteIconSelector: '.wtmail-messagecolumn-icon-note',
 	
 	tpl: [
-		'<div class="wtmail-grid-cell-messagecolumn">',
-			'<div class="wtmail-messagecolumn-head-float">',
+		/*TODO: deprecate wtmail-grid-cell-messagecolumn*/
+		'<div class="wtmail-grid-cell-messagecolumn wtmail-messagecolumn-grid-cell <tpl if="unread">wtmail-messagecolumn-grid-cell-unread</tpl>">',
+			'<div class="wtmail-messagecolumn-head-float">', // head(float) -->
+				
+				
 				'<tpl if="headFloatIcon">',
 					'<div class="wtmail-messagecolumn-icon wtmail-messagecolumn-head-float-icon {headFloatIcon.iconCls}" style="height:16px;" data-qtip="{headFloatIcon.tooltip}"></div>',
 				'</tpl>',
-				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{date.tooltip}">{date.text}</span>',
+				
+				
+				'<tpl if="highPriority">',
+					'<div class="wtmail-messagecolumn-icon">',
+						'<i class="wtmail-messagecolumn-icon-priority {priorityIconCls}"></i>',
+					'</div>',
+				'</tpl>',
+				'<tpl if="hasAttachment">',
+					'<div class="wtmail-messagecolumn-icon">',
+						'<i class="wtmail-messagecolumn-icon-attachment {attachmentIconCls}"></i>',
+					'</div>',
+				'</tpl>',
+				'<div class="<tpl if="unread"> wtmail-grid-cell-messagecolumn-unread</tpl>">',
+					'<span data-qtip="{date.tooltip}">{date.text}</span>',
+				'</div>',
+			'</div>', // <-- head(float)
+			'<div class="wtmail-messagecolumn-head">', // head -->
+			'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}">',
+			'<tpl if="statusIconCls">',
+				'<div class="wtmail-messagecolumn-icon {statusIconCls}"></div>',
+			'</tpl>',
 			'</div>',
-			'<div class="wtmail-messagecolumn-head">',
-				'<tpl if="threaded">',
+			
+			/*
+			'<tpl if="threaded">',
+				'<tpl if="collapseToolPos == \'left\'">', // collapseTool(left) -->
 					'<tpl if="threadIndent == 0 && threadHasChildren">',
-						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}" data-qtip="{collapseTooltip}">',
-							'<i class="wtmail-messagecolumn-collapsetool far <tpl if="!threadOpen">fa-plus-square<tpl else>fa-minus-square</tpl>">&nbsp;</i>',
+						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}">',
+							'<div class="wtmail-messagecolumn-collapsetool wtmail-messagecolumn-collapsetool-left" data-qtip="{collapseTooltip}">',
+								'<i class="wtmail-messagecolumn-collapsetool-icon <tpl if="!threadOpen">{collapseToolOpenIconCls}<tpl else>{collapseToolCloseIconCls}</tpl>"></i>',
+							'</div>',
 						'</div>',
 					'<tpl else>',
 						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
 					'</tpl>',
 					'<tpl if="!threadOpen && threadUnseenChildren &gt; 0">',
-						'<b>+{threadUnseenChildren}&nbsp;</b>',
+						'<b class="wtmail-messagecolumn-collapsetool">+{threadUnseenChildren}&nbsp;</b>',
 					'</tpl>',
-				'<tpl else>',
-					'<div class="wtmail-messagecolumn-thread"></div>',
-				'</tpl>',
-				'<tpl if="headIconCls">',
-					'<div class="wtmail-messagecolumn-icon {headIconCls}" style="margin-right:4px;height:16px;"></div>',
-				'</tpl>',
-				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{address.tooltip}">{address.text}</span>',
-			'</div>',
-			'<div class="wtmail-messagecolumn-body-float">',
-				'<tpl for="tags">',
-					'<div class="wtmail-messagecolumn-glyph" style="color:{color};" data-qtip="{tooltip}">',
-						'<i class="fas fa-tag"></i>',
-					'</div>',
-				'</tpl>',
-				'<tpl if="flag">',
-					'<div class="wtmail-messagecolumn-glyph {flag.colorCls}" data-qtip="{flag.tooltip}">',
-						'<i class="{flag.glyphCls}"></i>',
-					'</div>',
-				'</tpl>',
-				'<tpl if="star">',
-					'<div class="wtmail-messagecolumn-glyph {star.colorCls}" data-qtip="{star.tooltip}">',
-						'<i class="{star.glyphCls}"></i>',
-					'</div>',
-				'</tpl>',
-				'<tpl if="note">',
-					'<div class="wtmail-messagecolumn-glyph" data-qtip="{note.tooltip}">',
-						'<i class="wtmail-messagecolumn-notetool fas fa-sticky-note"></i>',
-					'</div>',
-				'</tpl>',
+				'<tpl else>', // <-- collapseTool(left):else
+					'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}width:0px"></div>',
+				'</tpl>', // <-- collapseTool(left)
+			'<tpl else>',
+				'<div class="wtmail-messagecolumn-thread" style="width:0px"></div>',
+			'</tpl>',
+			*/
+			
+			/*
+			'<tpl if="headIconCls">',
+				'<div class="wtmail-messagecolumn-icon {headIconCls}" style="margin-right:4px;height:16px;"></div>',
+			'</tpl>',
+			*/
+				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl> data-qtip="{address.tooltip}">{address.text}</span>&nbsp;',
+			'<tpl if="flagIconsPos == \'head\'">', // flagicons(head) -->
+			'<tpl for="tags">',
+				'<span class="wtmail-messagecolumn-icon" style="color:{color};" data-qtip="{tooltip}">',
+					'<i class="wtmail-messagecolumn-icon-tag {parent.tagIconCls}"></i>',
+				'</span>',
+			'</tpl>',
+			'<tpl if="flag">',
+				'<div class="wtmail-messagecolumn-icon {flag.colorCls}" data-qtip="{flag.tooltip}">',
+					'<i class="wtmail-messagecolumn-icon-flag {flag.glyphCls}"></i>',
+				'</div>',
+			'</tpl>',
+			'<tpl if="star">',
+				'<div class="wtmail-messagecolumn-icon {star.colorCls}" data-qtip="{star.tooltip}">',
+					'<i class="wtmail-messagecolumn-icon-star {star.glyphCls}"></i>',
+				'</div>',
+			'</tpl>',
+			'<tpl if="note">',
+				'<div class="wtmail-messagecolumn-icon" data-qtip="{note.tooltip}">',
+					'<i class="wtmail-messagecolumn-icon-note {noteIconCls}"></i>',
+				'</div>',
+			'</tpl>',
+			'</tpl>', // <-- flagicons(head)
+			'</div>', // <-- head
+			'<div class="wtmail-messagecolumn-body-float">', // body(float) -->
+			'<tpl if="flagIconsPos == \'body\'">', // flagicons(body) -->
+			'<tpl for="tags">',
+				'<div class="wtmail-messagecolumn-icon" style="color:{color};" data-qtip="{tooltip}">',
+					'<i class="wtmail-messagecolumn-icon-tag {parent.tagIconCls}"></i>',
+				'</div>',
+			'</tpl>',
+			'<tpl if="flag">',
+				'<div class="wtmail-messagecolumn-icon {flag.colorCls}" data-qtip="{flag.tooltip}">',
+					'<i class="wtmail-messagecolumn-icon-flag {flag.glyphCls}"></i>',
+				'</div>',
+			'</tpl>',
+			'<tpl if="star">',
+				'<div class="wtmail-messagecolumn-icon {star.colorCls}" data-qtip="{star.tooltip}">',
+					'<i class="wtmail-messagecolumn-icon-star {star.glyphCls}"></i>',
+				'</div>',
+			'</tpl>',
+			'<tpl if="note">',
+				'<div class="wtmail-messagecolumn-icon" data-qtip="{note.tooltip}">',
+					'<i class="wtmail-messagecolumn-icon-note {noteIconCls}"></i>',
+				'</div>',
+			'</tpl>',
+			'</tpl>', // <-- flagicons(body)
+			'<tpl if="showSize">',
 				'<span data-qtip="{size.tooltip}">{size.text}</span>',
-			'</div>',
-			'<div class="wtmail-messagecolumn-body">',
-				'<tpl if="threaded">',
-					'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}">',
-				'<tpl else>',
-					'<div class="wtmail-messagecolumn-thread">',
-				'</tpl>',
-					'<tpl if="hasAttachment">',
-						'<div class="wtmail-messagecolumn-glyph">',
-							'<i class="fas fa-paperclip fa-flip-horizontal"></i>',
-						'</div>',
+			'</tpl>',
+			'<tpl if="threaded && collapseToolPos == \'right\'">', // collapseTool(right) -->
+				'<tpl if="threadIndent == 0 && threadHasChildren">',
+					'<div class="wtmail-messagecolumn-collapsetool wtmail-messagecolumn-collapsetool-right" data-qtip="{collapseTooltip}">',
+					'<tpl if="!threadOpen && threadUnseenChildren &gt; 0">',
+						'<span>{threadUnseenChildren}</span>',
 					'</tpl>',
-					'</div>',
-				'<tpl if="highPriority">',
-					'<div class="wtmail-messagecolumn-glyph" style="margin-right:5px;color:#f44336;">',
-						'<i class="fas fa-exclamation"></i>',
+						'<i class="wtmail-messagecolumn-collapsetool-icon <tpl if="!threadOpen">{collapseToolOpenIconCls}<tpl else>{collapseToolCloseIconCls}</tpl>"></i>',
 					'</div>',
 				'</tpl>',
-				'<tpl if="threaded && !threadOpen && threadUnseenChildren &gt; 0">',
-					'<span data-qtip="{subject.tooltip}"><u>{subject.text}</u></span>',
-				'<tpl else>',
-					'<span data-qtip="{subject.tooltip}">{subject.text}</span>',
-				'</tpl>',
-			'</div>'
+			'</tpl>', // <-- collapseTool(right)
+			'</div>', // <-- body(float)
+			'<div class="wtmail-messagecolumn-body">', // body -->
+			'<tpl if="threaded">',
+				'<tpl if="collapseToolPos == \'left\'">', // collapseTool(left) -->
+					'<tpl if="threadIndent == 0 && threadHasChildren">',
+						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}">',
+							'<div class="wtmail-messagecolumn-collapsetool wtmail-messagecolumn-collapsetool-left" data-qtip="{collapseTooltip}">',
+								'<i class="wtmail-messagecolumn-collapsetool-icon <tpl if="!threadOpen">{collapseToolOpenIconCls}<tpl else>{collapseToolCloseIconCls}</tpl>"></i>',
+							'</div>',
+						'</div>',
+					'<tpl else>',
+						'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
+					'</tpl>',
+					'<tpl if="!threadOpen && threadUnseenChildren &gt; 0">',
+						'<b class="wtmail-messagecolumn-collapsetool">+{threadUnseenChildren}&nbsp;</b>',
+					'</tpl>',
+				'<tpl else>', // <-- collapseTool(left):else
+					'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}"></div>',
+				'</tpl>', // <-- collapseTool(left)
+			'<tpl else>',
+				'<div class="wtmail-messagecolumn-thread"></div>',
+			'</tpl>',
+			
+			/*
+			'<tpl if="threaded">',
+				'<div class="wtmail-messagecolumn-thread" style="{threadIndentStyle}<tpl if="collapseToolPos == \'right\'">width:0px</tpl>">',
+			'<tpl else>',
+				'<div class="wtmail-messagecolumn-thread" style="width:0px">',
+			'</tpl>',
+				'</div>',
+			*/
+				'<span <tpl if="unread">class="wtmail-grid-cell-messagecolumn-unread"</tpl>data-qtip="{subject.tooltip}">',
+					'<tpl if="threaded && !threadOpen && threadUnseenChildren &gt; 0">',
+						'<u>{subject.text}</u>',
+					'<tpl else>',
+						'{subject.text}',
+					'</tpl>',
+				'</span>',
+			'</div>' // <-- body
 	],
 	
 	constructor: function(cfg) {
 		var me = this;
 		me.origScope = cfg.scope || me.scope;
 		me.scope = cfg.scope = null;
+		//cfg.collapseToolPosition = 'right';
 		me.callParent([cfg]);
 	},
 	
@@ -249,18 +359,27 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	
 	defaultRenderer: function(val, meta, rec, ridx, cidx, sto) {
 		var me = this,
-				threaded = me.getThreaded(),
-				addr = me.getSentMode() ? rec.get('to') : rec.get('from'),
-				addremail = me.getSentMode() ? rec.get('toemail') : rec.get('fromemail'),
-				data = {};
+			threaded = me.getThreaded(),
+			addr = me.getSentMode() ? rec.get('to') : rec.get('from'),
+			addremail = me.getSentMode() ? rec.get('toemail') : rec.get('fromemail'),
+			data = {};
 		
 		Ext.apply(data, {
+			collapseToolPos: me.collapseToolPosition,
+			collapseToolOpenIconCls: me.collapseToolOpenIconCls,
+			collapseToolCloseIconCls: me.collapseToolCloseIconCls,
+			flagIconsPos: me.flagIconsPosition,
+			attachmentIconCls: me.attachmentIconCls,
+			priorityIconCls: me.priorityIconCls,
+			tagIconCls: me.tagIconCls,
+			noteIconCls: me.noteIconCls,
 			threaded: threaded,
 			threadOpen: threaded ? rec.get('threadOpen') : false,
 			threadHasChildren: threaded ? rec.get('threadHasChildren') : false,
 			threadUnseenChildren: threaded ? rec.get('threadUnseenChildren') : -1,
 			threadIndent: threaded ? rec.get('threadIndent') : -1,
 			threadIndentStyle: threaded ? me.buildThreadIndentStyle(rec.get('threadIndent')) : '',
+			statusIconCls: me.self.buildStatusIcon(rec.get('status')),
 			date: me.buildDate(sto, rec.get('istoday'), rec.get('fmtd'), rec.get('date')),
 			size: me.buildSize(rec.get('size')),
 			address: {text: Ext.String.htmlEncode(addr), tooltip: addremail},
@@ -270,10 +389,10 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			note: rec.get('note') === true ? {tooltip: me.noteTooltip} : null,
 			flag: me.self.buildFlag(rec.get('flag'), {flagsTexts: me.flagsTexts}),
 			star: rec.get('starred') ? me.self.buildFlag('special', {flagsTexts: me.flagsTexts}) : null,
-			//flag: me.buildFlag(rec.get('flag')),
-			//star: rec.get('starred') ? me.buildFlag('special') : null,
 			tags: me.buildTags(rec.get('tags')),
 			unread: rec.get('unread') === true,
+			
+			
 			headIconCls: me.self.buildStatusIcon(rec.get('status')),
 			headFloatIcon: me.self.buildTypeIcon(rec.get('pecstatus')),
 			//headIconCls: me.buildStatusIcon(rec),
@@ -293,7 +412,7 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	
 	buildDate: function(store, today, fmtd, date) {
 		var me = this,
-				textFmt, tipFmt;
+			textFmt, tipFmt;
 		if (!fmtd && (today || (store.getGroupField && store.getGroupField() === 'gdate'))) {
 			textFmt = me.timeShortFormat;
 			tipFmt = me.dateShortFormat + ' ' + me.timeLongFormat;
@@ -327,8 +446,8 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 	
 	buildTags: function(tags) {
 		var sto = this.tagsStore,
-				limit = this.maxTags,
-				arr = [];
+			limit = this.maxTags,
+			arr = [];
 		if (sto) {
 			Ext.iterate(tags, function(itm) {
 				if (arr.length >= limit) return false;
@@ -376,11 +495,11 @@ Ext.define('Sonicle.webtop.mail.ux.grid.column.Message', {
 			if (!Ext.isObject(opts.flagsGlyphs)) opts.flagsGlyphs = this.flagsGlyphs;
 			if (Ext.isEmpty(flag)) return null;
 			var textMap = opts.flagsTexts,
-					colorClsMap = opts.flagsCls,
-					glyphClsMap = opts.flagsGlyphs,
-					key = Sonicle.String.removeEnd(flag, '-complete'),
-					completed = Ext.String.endsWith(flag, '-complete'),
-					colorCls, glyphCls, tip;
+				colorClsMap = opts.flagsCls,
+				glyphClsMap = opts.flagsGlyphs,
+				key = Sonicle.String.removeEnd(flag, '-complete'),
+				completed = Ext.String.endsWith(flag, '-complete'),
+				colorCls, glyphCls, tip;
 
 			if (completed) {
 				glyphCls = glyphClsMap['complete'];

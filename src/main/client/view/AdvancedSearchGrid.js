@@ -142,7 +142,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
         align: 'middle'
     },
 	padding: 10,
-    width: 600,
+    width: 660,
     height: 60,
 
     searchfields: null,
@@ -243,7 +243,7 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
         me.cbField.on('select',me.fieldSelected,me);
         me.cbMethod=Ext.create('Ext.form.ComboBox',{
             forceSelection: true,
-            width: 100,
+            width: 120,
 			margin: 5,
             mode: 'local',
             displayField: 'desc',
@@ -260,13 +260,15 @@ Ext.define('Sonicle.webtop.mail.view.AdvancedSearchEntry',{
 
         me.plusButton=Ext.create('Ext.Button',{ 
 			margin: 5,
-			text:'+', width: 30, handler: function() {
+			ui: '{secondary}',
+			text:'+', width: 50, handler: function() {
 				me.fireEvent('plus',me);
 			}
 		});
         me.minusButton=Ext.create('Ext.Button',{ 
 			margin: 5,
-			text:'-', width: 30, handler: function() {
+			ui: '{secondary}',
+			text:'-', width: 50, handler: function() {
 				me.fireEvent('minus',me);
 			}
 		});

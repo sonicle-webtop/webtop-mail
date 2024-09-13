@@ -148,7 +148,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}*/
 	
 	public int getMessageViewMaxTos() {
-		return getInteger(MESSAGE_VIEW_MAX_TOS,20);
+		return getInteger(MESSAGE_VIEW_MAX_TOS,10);
 	}
 	
 	public void setMessageViewMaxTos(int maxtos) {
@@ -156,7 +156,7 @@ public class MailServiceSettings extends BaseServiceSettings {
 	}
 	
 	public int getMessageViewMaxCcs() {
-		return getInteger(MESSAGE_VIEW_MAX_CCS,20);
+		return getInteger(MESSAGE_VIEW_MAX_CCS,10);
 	}
 	
 	public void setMessageViewMaxCcs(int maxccs) {
@@ -351,12 +351,12 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(TOOLBAR_COMPACT,false);
 	}
 	
-	public List<ExternalProvider> getExternalProviders() {
+	public List<ExternalProvider> getExternalProviders(String laf) {
 		String json=getString(EXTERNAL_ACCOUNT_PROVIDERS, EXTERNAL_ACCOUNT_DEFAULT_PROVIDERS);
 		ExternalProvider.List externalProviders = ExternalProvider.List.fromJson(json);
 		for(ExternalProvider externalProvider: externalProviders) {
 			if (StringUtils.isEmpty(externalProvider.iconUrl)) {
-				externalProvider.iconUrl=WT.getServiceLafUrl(domainId, CoreManifest.ID, "default")+"/emailproviders/"+externalProvider.id+".svg";
+				externalProvider.iconUrl=WT.getServiceLafUrl(domainId, CoreManifest.ID, laf)+"/emailproviders/"+externalProvider.id+".svg";
 			}
 		}
 		return externalProviders;

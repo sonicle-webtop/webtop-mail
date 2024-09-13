@@ -38,6 +38,8 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		'Sonicle.webtop.mail.model.ImapTreeModel'
 	],
 	
+	cls: 'wtmail-imap-tree',
+	
 	//scrollable: true,
 	
 	//Instead of using containerScroll, that would register the view of the tree,
@@ -56,61 +58,82 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		
 	useArrows: true,
 	rootVisible: false,
+	hideEllipsisMenu: false,
+	hideEllipsisMenuDataIndex: null,
 
 	constructor: function(cfg) {
-		var me = this;
+		var me = this,
+			citems = [
+				{
+					xtype: 'treecolumn', //this is so we know which column will show the tree
+					text: cfg.mys.res("column-folder"),
+					dataIndex: 'folder',
+					flex: 3,
+					sortable: false,
+					renderer: function(v,p,r) {
+						v = Ext.String.htmlEncode(v);
+						if(r.get('isReadOnly')) {
+							return "<span style='" + 'color:grey;' + "'>" + v + "</span>";
+						}
+						var unr=r.get('unread'),
+							hunr=r.get('hasUnread'),
+							id=r.get('id');
+						return (unr!==0||hunr?'<span class="wtmail-tree-folder-span-bold" data-qtip="'+id+'">'+v+'</span>':v);
+					},
+					editor: 'textfield'
+				},
+				{
+					header: WTF.headerWithGlyphIcon('far fa-eye'),
+					dataIndex: 'unread',
+					align: 'right',
+					flex: 1,
+					sortable: false,
+					renderer: function(v,md,r) {
+						return (v===0?'':'<span class="wtmail-tree-unread-cell">'+v+'</span>');
+					}
+				},
+				{
+					xtype: 'soiconcolumn',
+					header: WTF.headerWithGlyphIcon('fas fa-share-alt'),
+					dataIndex: 'isSharedToSomeone',
+					flex: 1,
+					sortable: false,
+					hidden: true,
+					getIconCls: function(value,rec) {
+						return value ? 'wtmail-icon-folderStatus-shared' : '';
+					},
+					handler: function(grid, rix, cix, e, rec) {
+						me.mys.showSharingView(rec);
+					},
+					scope: me
+				}
+			];
+			
+		if (!cfg.hideEllipsisMenu) {
+			citems[citems.length]={
+				xtype: 'soactioncolumn',
+				showOnSelection: function(r) { return !r.isRoot(); },
+				showOnOver: function(r) { return !r.isRoot(); },
+				hideDataIndex: me.hideEllipsisMenuDataIndex,
+				items: [
+					{
+						//iconCls: 'fas fa-ellipsis-v',
+						handler: function(v, ridx, cidx, itm, e, rec, row) {
+							me.mys.showTreeContextMenu(v, e, rec, e.target.parentElement, Ext.fly(row).up('.x-grid-item'));
+						},
+						getClass: function(v, md, r, ridx, cidx, s) {
+							return r.isRoot() ? 'wtmail-imaptree-gearmenu' : 'fas fa-ellipsis-v';
+						}
+					}
+				]
+			}
+		}
 		
 		cfg=cfg||{};
 
 		Ext.apply(cfg,{
 			columns: {
-				items: [
-					{
-						xtype: 'treecolumn', //this is so we know which column will show the tree
-						text: cfg.mys.res("column-folder"),
-						dataIndex: 'folder',
-						flex: 3,
-						sortable: false,
-						renderer: function(v,p,r) {
-							var name=Ext.String.htmlEncode(v);
-							if(r.get('isReadOnly')) {
-								return "<span style='" + 'color:grey;' + "'>" + name + "</span>";
-							}
-							var unr=r.get('unread'),
-								hunr=r.get('hasUnread'),
-								id=r.get('id');
-								
-							return (unr!==0||hunr?'<span style="font-weight:bold" data-qtip="'+id+'">'+name+'</span>':name);
-						},
-						editor: 'textfield'
-					},
-					{
-						header: WTF.headerWithGlyphIcon('far fa-eye'),
-						dataIndex: 'unread',
-						align: 'right',
-						flex: 1,
-						sortable: false,
-						renderer: function(v,p,r) {
-							return (v===0?'':'<span style="font-weight:bold">'+v+'</span>');
-						}
-					},
-					{
-						xtype: 'soiconcolumn',
-						header: WTF.headerWithGlyphIcon('fas fa-share-alt'),
-						dataIndex: 'isSharedToSomeone',
-						flex: 1,
-						sortable: false,
-						hidden: true,
-						getIconCls: function(value,rec) {
-							return value ? 'wtmail-icon-folderStatus-shared' : '';
-						},
-						handler: function(grid, rix, cix, e, rec) {
-							me.mys.showSharingView(rec);
-						},
-						scope: me
-					}
-
-			  ]
+				items: citems
 			}
 		});
 		

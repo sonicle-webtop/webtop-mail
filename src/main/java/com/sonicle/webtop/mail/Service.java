@@ -103,6 +103,7 @@ import com.sonicle.webtop.mail.bol.js.JsMailAutosave;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsPortletSearchResult;
 import com.sonicle.webtop.mail.bol.js.JsPreviewMessage;
+import com.sonicle.webtop.mail.bol.js.JsQuickPartModel;
 import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSharing;
 import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
@@ -173,6 +174,7 @@ import com.sonicle.webtop.mail.bol.js.JsOperateFolder;
 import com.sonicle.webtop.mail.bol.js.JsOperateMessage;
 import com.sonicle.webtop.mail.bol.js.JsProActiveSecurity;
 import com.sonicle.webtop.mail.bol.js.JsQuickPart;
+import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.model.FolderShareParameters;
 import com.sonicle.webtop.mail.model.SieveRuleList;
@@ -757,12 +759,20 @@ public class Service extends BaseService {
 					jsmsg.origuid=pl.data.origuid;
 					jsmsg.priority=pl.data.priority;
 					jsmsg.receipt=pl.data.receipt;			
-					jsmsg.recipients=new ArrayList<>();
-					for(int r=0;r<pl.data.recipients.size();++r) {
-						JsRecipient jsr=new JsRecipient();
-						jsr.email=pl.data.recipients.get(r);
-						jsr.rtype=pl.data.rtypes.get(r);
-						jsmsg.recipients.add(jsr);
+					jsmsg.torecipients=new ArrayList<>();
+					jsmsg.ccrecipients=new ArrayList<>();
+					jsmsg.bccrecipients=new ArrayList<>();
+					for(int r=0;r<pl.data.torecipients.size();++r) {
+						String email=pl.data.torecipients.get(r).email;
+						jsmsg.torecipients.add(new JsRecipient(email));
+					}
+					for(int r=0;r<pl.data.ccrecipients.size();++r) {
+						String email=pl.data.ccrecipients.get(r).email;
+						jsmsg.ccrecipients.add(new JsRecipient(email));
+					}
+					for(int r=0;r<pl.data.bccrecipients.size();++r) {
+						String email=pl.data.bccrecipients.get(r).email;
+						jsmsg.bccrecipients.add(new JsRecipient(email));
 					}
 					jsmsg.references=pl.data.references;
 					jsmsg.replyfolder=pl.data.replyfolder;
@@ -4372,7 +4382,9 @@ public class Service extends BaseService {
 		if (preplyall != null && preplyall.equals("1")) {
 			replyAll = true;
 		}
-		ArrayList<JsRecipient> recipients = new ArrayList<>();
+		ArrayList<JsRecipient> torecipients = new ArrayList<>();
+		ArrayList<JsRecipient> ccrecipients = new ArrayList<>();
+		ArrayList<JsRecipient> bccrecipients = new ArrayList<>();
 		ArrayList<JsAttachment> attachments = new ArrayList<>();
 		
 		try {
@@ -4413,11 +4425,11 @@ public class Service extends BaseService {
 			
 			String tos[] = smsg.getTo().split(";");
 			for (String to : tos) {
-				if (!StringUtils.isBlank(to)) recipients.add(new JsRecipient("to", to));
+				if (!StringUtils.isBlank(to)) torecipients.add(new JsRecipient(to));
 			}
 			String ccs[] = smsg.getCc().split(";");
 			for (String cc : ccs) {
-				if (!StringUtils.isBlank(cc)) recipients.add(new JsRecipient("cc", cc));
+				if (!StringUtils.isBlank(cc)) ccrecipients.add(new JsRecipient(cc));
 			}
 			
 			if (isHtml) {
@@ -4454,7 +4466,7 @@ public class Service extends BaseService {
 				content = smsg.getTextContent();
 			}
 			
-			JsMessage message = new JsMessage(subject, content, format, ident.getIdentityId(), attachments, recipients, pfoldername, inreplyto, refs.trim(), Long.parseLong(puidmessage));
+			JsMessage message = new JsMessage(subject, content, format, ident.getIdentityId(), attachments, torecipients, ccrecipients, null, pfoldername, inreplyto, refs.trim(), Long.parseLong(puidmessage));
 			new JsonResult(message).printTo(out, false);
 			
 		} catch (Throwable t) {
@@ -4596,7 +4608,9 @@ public class Service extends BaseService {
 			int priority = 3;
 			boolean recipients = false;
 			boolean toDelete=false;
-			ArrayList<JsRecipient> recipientsList = new ArrayList<>();
+			ArrayList<JsRecipient> torecipientsList = new ArrayList<>();
+			ArrayList<JsRecipient> ccrecipientsList = new ArrayList<>();
+			ArrayList<JsRecipient> bccrecipientsList = new ArrayList<>();
 			ArrayList<JsAttachment> attachmentsList = new ArrayList<>();
 			
 			if (account.isDraftsFolder(pfoldername)) {
@@ -4676,19 +4690,19 @@ public class Service extends BaseService {
 				Address tos[] = m.getRecipients(RecipientType.TO);
 				if (tos != null) {
 					for (Address to : tos) {
-						recipientsList.add(new JsRecipient("to", getDecodedAddress(to)));
+						torecipientsList.add(new JsRecipient(getDecodedAddress(to)));
 					}
 				}
 				Address ccs[] = m.getRecipients(RecipientType.CC);
 				if (ccs != null) {
 					for (Address cc : ccs) {
-						recipientsList.add(new JsRecipient("cc", getDecodedAddress(cc)));
+						ccrecipientsList.add(new JsRecipient(getDecodedAddress(cc)));
 					}
 				}
 				Address bccs[] = m.getRecipients(RecipientType.BCC);
 				if (bccs != null) {
 					for (Address bcc : bccs) {
-						recipientsList.add(new JsRecipient("bcc", getDecodedAddress(bcc)));
+						bccrecipientsList.add(new JsRecipient(getDecodedAddress(bcc)));
 					}
 				}
 			}
@@ -4744,7 +4758,7 @@ public class Service extends BaseService {
 				m.getFolder().expunge();
 			}
 			
-			JsMessage message = new JsMessage(pfoldername, receipt, isPriority, subject, content, EnumUtils.toSerializedName(editFormat), ident.getIdentityId(), attachmentsList, recipientsList, replyfolder, inreplyto, refs.trim(), forwardedfolder, forwardedfrom, Long.parseLong(puidmessage), toDelete); 
+			JsMessage message = new JsMessage(pfoldername, receipt, isPriority, subject, content, EnumUtils.toSerializedName(editFormat), ident.getIdentityId(), attachmentsList, torecipientsList, ccrecipientsList, bccrecipientsList, replyfolder, inreplyto, refs.trim(), forwardedfolder, forwardedfrom, Long.parseLong(puidmessage), toDelete); 
 			new JsonResult(message).printTo(out, false);
 		} catch (Throwable t) {
 			new JsonResult(t).printTo(out);
@@ -4822,17 +4836,18 @@ public class Service extends BaseService {
 				String regex="^"+faxpattern.replace("{number}", "(\\d+)").replace("{username}", "(\\w+)")+"$";
 				Pattern pattern=Pattern.compile(regex);
 				int nemails=0;
-				for(JsRecipient jsr: jsmsg.recipients) {
-					if (StringUtils.isEmpty(jsr.email)) continue;
+				
+				for(JsRecipient jsrcpt: jsmsg.torecipients) {
+					if (StringUtils.isEmpty(jsrcpt.email)) continue;
 					++nemails;
-					if (StringUtils.isNumeric(jsr.email)) continue;
+					if (StringUtils.isNumeric(jsrcpt.email)) continue;
 					boolean matches=false;
 					try {
-						InternetAddress ia=new InternetAddress(jsr.email);
-						String email=ia.getAddress();
-						matches=pattern.matcher(email).matches();
+						InternetAddress ia=new InternetAddress(jsrcpt.email);
+						jsrcpt.email=ia.getAddress();
+						matches=pattern.matcher(jsrcpt.email).matches();
 					} catch(Exception exc) {
-						
+
 					}
 					if (!matches) {
 						throw new Exception(lookupResource(MailLocaleKey.FAX_ADDRESS_ERROR));
@@ -4841,7 +4856,6 @@ public class Service extends BaseService {
 				if (faxmaxtos>0 && nemails>faxmaxtos) {
 					throw new WTException(lookupResource(MailLocaleKey.FAX_MAXADDRESS_ERROR), faxmaxtos);
 				}
-
 			}
 			
 			account.checkStoreConnected();
@@ -4873,18 +4887,25 @@ public class Service extends BaseService {
 				ArrayList<InternetAddress> iaTos = new ArrayList<>();
 				ArrayList<InternetAddress> iaCcs = new ArrayList<>();
 				ArrayList<InternetAddress> iaBccs = new ArrayList<>();
-				for(JsRecipient rcpt: pl.data.recipients) {
-					InternetAddress ia = InternetAddressUtils.toInternetAddress(rcpt.email);
+				for(JsRecipient jsrcpt: pl.data.torecipients) {
+					InternetAddress ia = InternetAddressUtils.toInternetAddress(jsrcpt.email);
 					if (ia != null) {
 						if (!ContactsUtils.isListVirtualRecipient(ia)) coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
-						switch(rcpt.rtype) {
-							case "to": iaTos.add(ia);
-								break;
-							case "cc": iaCcs.add(ia);
-								break;
-							case "bcc": iaBccs.add(ia);
-								break;
-						}
+						iaTos.add(ia);
+					}
+				}
+				for(JsRecipient jsrcpt: pl.data.ccrecipients) {
+					InternetAddress ia = InternetAddressUtils.toInternetAddress(jsrcpt.email);
+					if (ia != null) {
+						if (!ContactsUtils.isListVirtualRecipient(ia)) coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+						iaCcs.add(ia);
+					}
+				}
+				for(JsRecipient jsrcpt: pl.data.bccrecipients) {
+					InternetAddress ia = InternetAddressUtils.toInternetAddress(jsrcpt.email);
+					if (ia != null) {
+						if (!ContactsUtils.isListVirtualRecipient(ia)) coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+						iaBccs.add(ia);
 					}
 				}
 				
@@ -5398,13 +5419,30 @@ public class Service extends BaseService {
 		//expand multiple addresses
 		ArrayList<String> aemails = new ArrayList<>();
 		ArrayList<String> artypes = new ArrayList<>();
-		for (JsRecipient jsrcpt: jsmsg.recipients) {
-            String emails[]=StringUtils.split(jsrcpt.email,';');
-			for(String email: emails) {
-				aemails.add(email);
-				artypes.add(jsrcpt.rtype);
+		if (jsmsg.torecipients!=null)
+			for (JsRecipient jsrcpt: jsmsg.torecipients) {
+				String emails[]=StringUtils.split(jsrcpt.email,';');
+				for(String email: emails) {
+					aemails.add(email);
+					artypes.add("to");
+				}
 			}
-		}
+		if (jsmsg.ccrecipients!=null)
+			for (JsRecipient jsrcpt: jsmsg.ccrecipients) {
+				String emails[]=StringUtils.split(jsrcpt.email,';');
+				for(String email: emails) {
+					aemails.add(email);
+					artypes.add("cc");
+				}
+			}
+		if (jsmsg.bccrecipients!=null)
+			for (JsRecipient jsrcpt: jsmsg.bccrecipients) {
+				String emails[]=StringUtils.split(jsrcpt.email,';');
+				for(String email: emails) {
+					aemails.add(email);
+					artypes.add("bcc");
+				}
+			}
 		String emails[] = new String[aemails.size()];
         emails=(String[]) aemails.toArray(emails);
 		String rtypes[] = new String[artypes.size()];
@@ -6656,19 +6694,21 @@ public class Service extends BaseService {
 							 if (ids==null || ids.length==0) { --i; continue; }
 							 String idmessage=ids[0];*/
 
-							long nuid=mcache.getUID(xm);
+							long nuid = mcache.getUID(xm);
 
-							int tIndent=xm.getThreadIndent();
-							if (tIndent==0) tId=nuid;
-							else if (sgi.threaded) {
-								if (!mcache.isThreadOpen(tId)) {
-									--i;
-									continue;
-								}
-							}
+							int tIndent = 0;
 							boolean tChildren=false;
 							int tUnseenChildren=0;
 							if (sgi.threaded) {
+								tIndent = xm.getThreadIndent();
+								if (tIndent==0) tId=nuid;
+								else {
+									if (!mcache.isThreadOpen(tId)) {
+										--i;
+										continue;
+									}
+								}
+								
 								int cnx=nx+1;
 								while(cnx<xmsgs.length) {
 									SonicleIMAPMessage cxm=(SonicleIMAPMessage)xmsgs[cnx];
@@ -6686,8 +6726,6 @@ public class Service extends BaseService {
 									break;
 								}
 							}
-
-
 
 							Flags flags=xm.getFlags();
 
@@ -7660,7 +7698,7 @@ public class Service extends BaseService {
 				String imgname = null;
 				boolean isCalendar=ctype.equalsIgnoreCase("text/calendar")||ctype.equalsIgnoreCase("text/icalendar");
 				if (isCalendar) {
-					imgname = "resources/" + getManifest().getId() + "/laf/" + cus.getLookAndFeel() + "/ical_16.png";
+					imgname = "resources/" + getManifest().getId() + "/laf/" + cus.getUILookAndFeel() + "/ical_16.png";
 				}
 				
 				String pname = getPartName(p);
@@ -9739,7 +9777,7 @@ public class Service extends BaseService {
 				co.put("faxSubject", getEnv().getCoreServiceSettings().getFaxSubject());
 			}
 			
-			List<MailSettings.ExternalProvider> providers=ss.getExternalProviders();
+			List<MailSettings.ExternalProvider> providers=ss.getExternalProviders(getEnv().getCoreUserSettings().getUILookAndFeel());
 			HashMap<String,String> providerIcons=new HashMap<>();
 			for(MailSettings.ExternalProvider provider: providers) providerIcons.put(provider.id, provider.iconUrl);
 			

@@ -51,5 +51,9 @@ Ext.define('Sonicle.webtop.mail.model.Identity', {
 		WTF.calcField("description","string",["email","displayName"], function(v,r) {
 			return r.get("displayName")+" - "+r.get("email");
 		})
-	]
+	],
+	
+	getMailcardId: function() {
+		return 'identity|'+this.get('identityId');
+	}
 });

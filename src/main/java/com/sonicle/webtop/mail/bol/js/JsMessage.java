@@ -50,7 +50,9 @@ public class JsMessage {
     public String format;
     public int identityId;
     public List<JsAttachment> attachments;
-    public List<JsRecipient> recipients;
+    public List<JsRecipient> torecipients;
+    public List<JsRecipient> ccrecipients;
+    public List<JsRecipient> bccrecipients;
     //Reply data
     public String replyfolder;
     public String inreplyto;
@@ -67,13 +69,15 @@ public class JsMessage {
 	public JsMessage() {
 	}
 	
-	public JsMessage(String subject, String content, String format, int identityId, List<JsAttachment> attachments, List<JsRecipient> recipients, String replyfolder, String inreplyto, String references, long origuid) {
+	public JsMessage(String subject, String content, String format, int identityId, List<JsAttachment> attachments, List<JsRecipient> torecipients, List<JsRecipient> ccrecipients, List<JsRecipient> bccrecipients, String replyfolder, String inreplyto, String references, long origuid) {
 		this.subject = subject;
 		this.content = content;
 		this.format = format;
 		this.identityId = identityId;
 		this.attachments = attachments;
-		this.recipients = recipients;
+		this.torecipients = torecipients;
+		this.ccrecipients = ccrecipients;
+		this.bccrecipients = bccrecipients;
 		this.replyfolder = replyfolder;
 		this.inreplyto = inreplyto;
 		this.references = references;
@@ -93,7 +97,7 @@ public class JsMessage {
 		this.origuid = origuid;
 	}
 
-	public JsMessage(String folder, Boolean receipt, Boolean priority, String subject, String content, String format, int identityId, List<JsAttachment> attachments, List<JsRecipient> recipients, String replyfolder, String inreplyto, String references, String forwardedfolder, String forwardedfrom, long origuid, Boolean deleted) {
+	public JsMessage(String folder, Boolean receipt, Boolean priority, String subject, String content, String format, int identityId, List<JsAttachment> attachments, List<JsRecipient> torecipients, List<JsRecipient> ccrecipients, List<JsRecipient> bccrecipients, String replyfolder, String inreplyto, String references, String forwardedfolder, String forwardedfrom, long origuid, Boolean deleted) {
 		this.folder = folder;
 		this.receipt = receipt;
 		this.priority = priority;
@@ -102,7 +106,9 @@ public class JsMessage {
 		this.format = format;
 		this.identityId = identityId;
 		this.attachments = attachments;
-		this.recipients = recipients;
+		this.torecipients = torecipients;
+		this.ccrecipients = ccrecipients;
+		this.bccrecipients = bccrecipients;
 		this.replyfolder = replyfolder;
 		this.inreplyto = inreplyto;
 		this.references = references;

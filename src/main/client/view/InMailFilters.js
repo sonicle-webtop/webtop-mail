@@ -140,8 +140,8 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 					},
 					fieldLabel: me.res('inMailFilters.fld-activeScript.lbl'),
 					labelAlign: 'right',
-					labelWidth: 140,
-					width: 240,
+					labelWidth: 180,
+					width: 300,
 					listeners: {
 						select: function(s, rec) {
 							if (rec.getId() !== me.self.WT_SCRIPT) {
@@ -246,6 +246,8 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 				xtype: 'wtform',
 				title: me.res('inMailFilters.autoResponder.tit'),
 				modelValidation: true,
+				collapsible: true,
+				collapsed: true,
 				defaults: {
 					labelWidth: 150
 				},

@@ -68,21 +68,59 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
 		WTF.field('meetingScheduleTz', 'string', true, {persist: false})
 	],
 	
-	getRecipients: function() {
+	hasMany: [
+		WTF.hasMany('torecipients', 'Sonicle.webtop.mail.model.MessageRecipientModel'),
+		WTF.hasMany('ccrecipients', 'Sonicle.webtop.mail.model.MessageRecipientModel'),
+		WTF.hasMany('bccrecipients', 'Sonicle.webtop.mail.model.MessageRecipientModel'),
+		WTF.hasMany('attachments', 'Sonicle.webtop.mail.model.AttachmentModel')
+	],
+	
+	getAllRecipients: function() {
+		var me=this,
+			rcpts=[];
+		
+		Ext.each(me.torecipients().getRange(),function(r) {
+			rcpts[rcpts.length]={ type: "to", email: r.get("email") };
+		});
+		Ext.each(me.ccrecipients().getRange(),function(r) {
+			rcpts[rcpts.length]={ type: "cc", email: r.get("email") };
+		});
+		Ext.each(me.bccrecipients().getRange(),function(r) {
+			rcpts[rcpts.length]={ type: "bcc", email: r.get("email") };
+		});
+		return rcpts;
+	},
+	
+	getAllEmails: function() {
+		var me=this,
+			emails=[];
+		
+		Ext.each(me.torecipients().getRange(),function(r) {
+			emails[emails.length]=r.get("email");
+		});
+		Ext.each(me.ccrecipients().getRange(),function(r) {
+			emails[emails.length]=r.get("email");
+		});
+		Ext.each(me.bccrecipients().getRange(),function(r) {
+			emails[emails.length]=r.get("email");
+		});
+		return emails;
+	}
+	
+	
+	/*getRecipients: function() {
 		var arr = [];
 		this.recipients().each(function(rec) {
 			arr.push(rec.get('email'));
 		});
 		return arr;
-	}
+	}*/
+	
 });
 
 Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {
     extend: 'WTA.model.Autosave',
     fields: [
-//        WTF.fkField('string'),
-		{ name: "msgId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'recipients' } },
-		{ name: "rtype", type: 'string' },
 		{ name: "email", type: 'string' }
 	]
 });
@@ -90,8 +128,6 @@ Ext.define('Sonicle.webtop.mail.model.MessageRecipientModel', {
 Ext.define('Sonicle.webtop.mail.model.AttachmentModel', {
     extend: 'WTA.model.Autosave',
     fields: [
-//        WTF.fkField('string'),
-		{ name: "msgId", type: 'int', reference: { parent: 'Sonicle.webtop.mail.model.MessageModel', inverse: 'attachments' } },
 		{ name: "uploadId", type: 'string' },
 		{ name: "fileName", type: 'string' },
 		{ name: "cid", type: 'string' },
