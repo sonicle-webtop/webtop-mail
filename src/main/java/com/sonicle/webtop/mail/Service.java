@@ -4539,7 +4539,8 @@ public class Service extends BaseService {
 						UploadedFile upfile=addAsUploadedFile(pnewmsgid, filename, mime, part.getInputStream());
 						boolean inline = false;
 						if (part.getDisposition() != null) {
-							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
+							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
+									isInlineableMime(mime);
 						}
 						
 						attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
@@ -5628,7 +5629,10 @@ public class Service extends BaseService {
 					ArrayList<JsAttachment> atts = new ArrayList<>();
 					atts.addAll(jsmsg.attachments);
 					for(JsAttachment jsa: atts) {
-						if (!StringUtils.isEmpty(jsa.cid) && htmlcontent.indexOf("src=\"cid:"+jsa.cid)<0)
+						UploadedFile upfile = getUploadedFile(jsa.uploadId);
+						String ctype = upfile.getMediaType();
+						boolean inline = jsa.inline && isInlineableMime(ctype);
+						if (inline && !StringUtils.isEmpty(jsa.cid) && htmlcontent.indexOf("src=\"cid:"+jsa.cid)<0)
 							jsmsg.attachments.remove(jsa);
 					}
 				}
