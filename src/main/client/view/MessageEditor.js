@@ -205,7 +205,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				handler: me.actionSend,
 				scope: me,
 				menu: smenu,
-				ui: 'default'
+				ui: '{primary}'
 			};
 		} else {
 			smenu[sx++]={ text: me.res('editor.send.btn-sendfax.lbl'), iconCls: 'wtmail-icon-faxSend', handler: me.actionSend, scope: me };
@@ -219,7 +219,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				handler: me.actionSend,
 				scope: me,
 				menu: smenu,
-				ui: 'default'
+				ui: '{primary}'
 			};
 		}
 		if (pbTL) {
