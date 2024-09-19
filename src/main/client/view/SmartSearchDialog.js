@@ -208,7 +208,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					},
 					columns: [
 						{ 
-							dataIndex: 'name', flex: 1, tdCls: 'wt-theme-text-hyperlink wtmail-smartsearch-name-column',
+							dataIndex: 'name', flex: 1, tdCls: 'wt-theme-text-color-hyperlink wtmail-smartsearch-name-column',
 							renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 								var t=record.get("type"),
 									v=Ext.String.htmlEncode(value);
@@ -247,7 +247,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					},
 					columns: [
 						{ 
-							dataIndex: 'name', flex: 1, tdCls: 'wt-theme-text-hyperlink wtmail-smartsearch-name-column',
+							dataIndex: 'name', flex: 1, tdCls: 'wt-theme-text-color-hyperlink wtmail-smartsearch-name-column',
 							renderer: function(value,metadata,record,rowIndex,colIndex,store) {
 								var t=record.get("type"),
 									v=Ext.String.htmlEncode(value);
@@ -416,7 +416,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 								]
 							},
 							columns: [
-								{ dataIndex: 'subject', flex: 1, tdCls: 'wt-theme-text-hyperlink wtmail-smartsearch-name-column' },
+								{ dataIndex: 'subject', flex: 1, tdCls: 'wt-theme-text-color-hyperlink wtmail-smartsearch-name-column' },
 								{ dataIndex: 'date', width: 160 }
 							],
 							features: [{
