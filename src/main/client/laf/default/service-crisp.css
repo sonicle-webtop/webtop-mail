@@ -20,6 +20,7 @@
 	border-left: 2px solid #157fcc;
 	bottom: 0px;
 	top: 8px;
+	left: 77px;
 }
 
 .wtmail-x-grid-item-threadchild .x-grid-cell-last:before {
@@ -29,6 +30,7 @@
 	border-left: 2px solid #157fcc;
 	bottom: 8px;
 	top: 0px;
+	left: 77px;
 }
 
 .wtmail-x-grid-item-threadchild.wtmail-x-grid-item-noborderbottom .x-grid-cell-last:before {

@@ -228,6 +228,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//padding: '0 0 20 0',
 			border: false,
 			bodyCls: 'wt-tool-bg',
+			hideRowBackground: true,
 			bodyStyle: {
 				borderTopColor: 'transparent'
 			},
@@ -268,6 +269,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				//padding: '0 0 20 0',
 				border: false,
 				bodyCls: 'wt-tool-bg',
+				hideRowBackground: true,
 				bodyStyle: {
 					borderTopColor: 'transparent'
 				},
@@ -309,6 +311,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			//padding: '0 0 20 0',
 			border: false,
 			bodyCls: 'wt-tool-bg',
+			hideRowBackground: true,
 			bodyStyle: {
 				borderTopColor: 'transparent'
 			},
@@ -413,6 +416,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					//padding: '0 0 20 0',
 					border: false,
 					bodyCls: 'wt-tool-bg',
+					hideRowBackground: true,
 					bodyStyle: {
 						borderTopColor: 'transparent'
 					},
