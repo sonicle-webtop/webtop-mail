@@ -249,16 +249,16 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		if (me.tdBody && !me.emptyEl) {
 			if (selCount) {
 				html = '<div class="wt-centered">'
-					+ '<div class="wt-theme-text-header1" style="font-size:1.2em">'
+					+ '<div class="wt-pane-body-title wt-theme-text-color-title">'
 					+ Ext.String.htmlEncode(me.mys.res('messagePreview.count.tit', selCount))
 					+ '</div>'
 					+ '</div>';
 			} else {
 				html = '<div class="wt-centered">'
-					+ '<div class="wt-theme-text-header1" style="font-size:1.2em">'
+					+ '<div class="wt-pane-body-title wt-theme-text-color-title">'
 					+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.tit'))
 					+ '</div>'
-					+ '<div class="wt-theme-text-subtitle" style="font-size:0.9em">'
+					+ '<div class="wt-pane-body-subtitle wt-theme-text-color-subtitle">'
 					+ Ext.String.htmlEncode(me.mys.res('messagePreview.no.txt'))
 					+ '</div>'
 					+ '</div>';
