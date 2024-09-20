@@ -481,7 +481,8 @@ background-color: #ffffff;
     margin: 0px 0px 0px 0px;
 }
 .wtmail-mv-table { width: 100%; background: white }
-.wtmail-mv-header { padding: 0px 6px 0px 6px; border: none; }
+.wtmail-mv-header { padding: 6px 6px 0px 6px; border: none; }
+.wtmail-mv-header-avatar { vertical-align: top; width: 48px; }
 .wtmail-mv-hsubject { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: bold; }
 .wtmail-mv-hfromname { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: plain; }
 .wtmail-mv-hfromname A {text-decoration: none; color: black; }
