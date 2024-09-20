@@ -3,7 +3,13 @@
 	background-image: -webkit-linear-gradient(top, #e6e6e6, #efefef);
 }
 
-/* --- UX grid.column.Message --- */
+/* ---------- Tree (folders) */
+/* Customize bg color like row selection */
+.wtmail-tree-unread-cell { 
+	background-color: #e0e0e0 !important;
+}
+
+/* ---------- Grid (messages) */
 .wtmail-messagecolumn-head {
     color: #767676;
 }
@@ -16,7 +22,6 @@
     font-weight: bold;
 	color: initial;
 }
-
 .wtmail-x-grid-item-threadfirst .x-grid-cell-last:before {
 	position: absolute;
 	height: 100%;
@@ -26,7 +31,6 @@
 	top: 8px;
 	left: 77px;
 }
-
 .wtmail-x-grid-item-threadchild .x-grid-cell-last:before {
 	position: absolute;
 	height: 88%;
@@ -36,14 +40,12 @@
 	top: 0px;
 	left: 77px;
 }
-
 .wtmail-x-grid-item-threadchild.wtmail-x-grid-item-noborderbottom .x-grid-cell-last:before {
 	position: absolute;
 	height: 100%;
 	content: "";
 	border-left: 2px solid #c5c5c5;
 }
-
 .wtmail-message-grid .x-grid-with-row-lines .x-grid-item.wtmail-x-grid-item-noborderbottom {
 	border-width: 0px 0 0px;
 }
@@ -55,20 +57,19 @@
 	border-width: 0px 0 1px;
 	border-color: #e5e7eb;
 }
-
 .wtmail-message-grid .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-unread TD {
 	background-color: #ffffa0;
 }
-
 .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today { background: #f8f8c8; }
+.wtmail-messagecolumn-collapsetool-icon { font-family: "Font Awesome 6 Free Regular"; }
 
+/* ---------- Sonicle.webtop.mail.MessageViewModel */
 .wtmail-messageview-toolbar-container {
 	padding: 0px;
 }
 
+/* ---------- Sonicle.webtop.mail.view.MessageEditor */
 .wtmail-editor-htmleditor-container * .wt-fieldspanel-body-padding-lr {
     padding-left: 5px;
     padding-right: 5px;
 }
-
-.wtmail-messagecolumn-collapsetool-icon { font-family: "Font Awesome 6 Free Regular"; }

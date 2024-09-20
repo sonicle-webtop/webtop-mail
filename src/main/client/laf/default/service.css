@@ -707,6 +707,15 @@ blockquote {
     padding-left: 10px;
 }
 
+/* ---------- Tree (folders) */
+.wtmail-tree-unread-cell { 
+	font-size: var(--wt-theme-fontsize-sm);
+	font-weight: var(--wt-theme-fontweight-bold);
+	border-radius: 4px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
 /* --- UX grid.column.Message --- */
 .wtmail-messagecolumn-grid-cell .x-grid-group-title {
 	cursor: pointer;
