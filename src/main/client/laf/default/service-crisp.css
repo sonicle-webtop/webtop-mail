@@ -15,7 +15,7 @@
 }
 .wtmail-messagecolumn-grid-cell.wtmail-messagecolumn-grid-cell-unread .wtmail-messagecolumn-head,
 .wtmail-messagecolumn-grid-cell.wtmail-messagecolumn-grid-cell-unread .wtmail-messagecolumn-head-float{
-    font-weight: bold;
+    font-weight: var(--wt-theme-fontweight-bold);
 	color: initial;
 }
 .wtmail-x-grid-item-threadfirst .x-grid-cell-last:before {

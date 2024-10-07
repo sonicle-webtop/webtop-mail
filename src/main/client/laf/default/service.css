@@ -946,3 +946,7 @@ color: black;
 }
 
 .wtmail-unsubscribe-link { color: #157fcc !important; }
+
+.wtmail-row-unread .wtmail-messagegrid-cell {
+	font-weight: var(--wt-theme-fontweight-bold);
+}
