@@ -53,11 +53,9 @@
 	border-width: 0px 0 1px;
 	border-color: #e5e7eb;
 }
-.wtmail-message-grid .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-unread TD {
-	background-color: #ffffa0;
-}
+
 .wtmail-messagecolumn-collapsetool-icon { font-family: "Font Awesome 6 Free Regular"; }
-.x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today { background: #f8f8c8; }
+
 
 /* ---------- Sonicle.webtop.mail.view.MessageEditor */
 .wtmail-editor-htmleditor-container * .wt-fieldspanel-body-padding-lr {

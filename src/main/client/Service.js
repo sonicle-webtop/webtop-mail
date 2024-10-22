@@ -146,20 +146,24 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 	},
 	
+	setTdyColod: function() {
+		
+	},
+	
 	init: function() {
 		var me = this,
 				sue = me.getVar('showUpcomingEvents'),
 				sut = me.getVar('showUpcomingTasks'),
 				todayColor = me.getVar('todayRowColor'),
-				todaySelColor;
+				unreadColor;
 		
 		if (Sonicle.ColorUtils.bestForeColor(todayColor, 'fixed') === '#FFFFFF') {
-			todaySelColor = Ext.util.Color.create(todayColor).createLighter().toHex();
+			unreadColor = Ext.util.Color.create(todayColor).createLighter().toHex();
 		} else {
-			todaySelColor = Ext.util.Color.create(todayColor).createDarker().toHex();
+			unreadColor = Ext.util.Color.create(todayColor).createDarker().toHex();
 		}
-		//Sonicle.CssUtils.addRule('.wtmail-row-today', 'background:' + todayColor);
-		//Sonicle.CssUtils.addRule('table.x-grid-item-selected .wtmail-row-today', 'background:' + todaySelColor);
+		Sonicle.CssUtils.setVariable('--wt-mail-grid-row-today-backgroundcolor', todayColor);
+		Sonicle.CssUtils.setVariable('--wt-mail-grid-row-unread-backgroundcolor', unreadColor);
 
 		me.initActions();
 

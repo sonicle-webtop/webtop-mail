@@ -1,3 +1,9 @@
+:root {
+	
+	--wt-mail-grid-row-today-selected-color: #ffffa0;
+	--wt-mail-grid-row-today-unselected-color: #f8f8c8;
+}
+
 /* Service Icons */
 .wtmail-icon-service,
 .wtmail-icon-service-sm { 
@@ -950,3 +956,10 @@ color: black;
 .wtmail-row-unread .wtmail-messagegrid-cell {
 	font-weight: var(--wt-theme-fontweight-bold);
 }
+
+/* Grid row Unread unselected */
+.wtmail-message-grid .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-unread TD {
+	background-color: var(--wt-mail-grid-row-unread-backgroundcolor);
+}
+/* Grid row Today unselected */
+.x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today { background: var(--wt-mail-grid-row-today-backgroundcolor); }
