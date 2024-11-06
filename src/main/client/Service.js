@@ -1618,6 +1618,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	actionAdvancedSearch: function(s,e) {
 		var me=this,
 			fn=me.getCtxNode(e)||me.imapTree.getSelection()[0]||me.favoritesTree.getSelection()[0],
+			//if root account node, change it into first child node, which is INBOX in most cases
+			fn = fn.data.root ? fn.firstChild : fn,
 			acct= fn ? me.getAccount(fn) : null;
 		
 		if (acct) {
