@@ -2538,7 +2538,58 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				}
 			}
 		});					
-    },	
+    },
+	
+	actionCreateTask: function() {
+		var me = this,
+			r = me.getSelectionModel().getSelection()[0],
+			acct = me.currentAccount,
+			folder = r.get('folder') || me.currentFolder,
+			id = r.get('idmessage');
+		me.doCreateTask(acct, folder, id);
+	},
+	
+	doCreateTask: function(account, folder, messageId) {
+		var me = this,
+			tapi = WT.getServiceApi('com.sonicle.webtop.tasks');
+		if (tapi) {
+			WT.ajaxReq(me.mys.ID, 'GetMessageEnvelope', {
+				params: {
+					account: account,
+					folder: folder,
+					idmessage: messageId,
+					stripmyself: true
+				},
+				callback: function(success, json) {
+					if (success) {
+						var SoD = Sonicle.Date,
+							envlp = json.envelope,
+							nowRounded = SoD.roundTime(new Date(), 30, 'up');
+						tapi.addTask({
+							subject: envlp.subject,
+							due: SoD.add(nowRounded, {weeks: 1}, true),
+							description: me.envelopeToDescription(envlp)
+						}, {
+							dirty: true
+						});
+					}
+					WT.handleError(success, json);
+				}
+			});
+		}
+	},
+	
+	envelopeToDescription: function(envelope) {
+		var me = this, s = '';
+		if (envelope) {
+			s += me.res('column-date')+': '+envelope.date+'\n';
+			s += me.res('column-from')+': '+envelope.from+'\n';
+			if (envelope.to) s += me.res('to')+': '+envelope.to.join(',\n    ')+'\n';
+			if (envelope.cc) s += me.res('cc')+': '+envelope.cc.join(',\n    ')+'\n';
+			if (envelope.bcc) s += me.res('bcc')+': '+envelope.bcc.join(',\n    ')+'\n';
+		}
+		return s;
+	},
 	
 	actionCreateReminder: function() {
 		var me = this;
@@ -2572,10 +2623,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					var tomorrow=Sonicle.Date.add(new Date(),{ days: 1 }),
 						capi=WT.getServiceApi("com.sonicle.webtop.calendar"),
 						env=json.envelope,
-						attendees=null,
-						description=
-							me.res("column-date")+": "+env.date+"\n"+
-							me.res("column-from")+": "+env.from+"\n";
+						attendees=null;
 					if (env.to) {
 						attendees = [];
 						Ext.each(env.to, function(to) {
@@ -2587,18 +2635,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 								"notify": true
 							});
 						});
-						description += me.res("to")+": "+env.to.join(',\n    ')+"\n";
 					}
-					if (env.cc)
-						description += me.res("cc")+": "+env.cc.join(',\n    ')+"\n";
-					if (env.bcc)
-						description += me.res("bcc")+": "+env.bcc.join(',\n     ')+"\n";
 						
 					capi.addEvent({
 						startDate: tomorrow,
 						endDate: Sonicle.Date.add(tomorrow, { minutes: 30 }),
 						title: env.subject,
-						description: description,
+						description: me.envelopeToDescription(env),
 						reminder: 5,
 						attendees: attendees
 					},{

@@ -914,6 +914,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("check",{ handler: function() { me.selectInbox(); }, iconCls: 'wt-icon-refresh' });
         me.addAct("savemail",{ handler: me.gridAction(me,'SaveMail'), iconCls: 'wt-icon-save' });
         me.addAct("createreminder",{ handler: me.gridAction(me,'CreateReminder'), iconCls: 'wtcal-icon-newEvent' });
+		me.addAct("createtask",{ handler: me.gridAction(me,'CreateTask'), iconCls: 'wttasks-icon-newTask' });
         me.addAct("archive",{ handler: me.gridAction(me,'Archive'), iconCls: 'wtmail-icon-archive' });
         me.addAct("resetcolumns",{ handler: me.gridAction(me,'ResetColumns'), iconCls: '' });
         me.addAct("viewheaders",{ handler: me.gridAction(me,'ViewHeaders'), iconCls: '' });
@@ -1026,6 +1027,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 							me.getAct('savemail'),
 							me.getAct('editSubject'),
 							me.getAct('createreminder'),
+							me.getAct('createtask'),
 							me.getAct('resetcolumns')
 						]      
 					}
