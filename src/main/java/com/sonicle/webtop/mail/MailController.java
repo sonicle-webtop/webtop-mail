@@ -74,9 +74,7 @@ public class MailController extends BaseController implements IControllerService
 	
 	@Override
 	public void initProfile(ServiceVersion current, UserProfileId profileId) throws WTException {
-		MailManager manager = new MailManager(true, profileId);
-		manager.addOldBuiltinTags();
-		manager.convertToCoreTags();
+		// NB: do NOT fill tags here...starting from v.5.7.9 tags are managed directly by WebTop platform!
 	}
 	
 	@Override
@@ -88,6 +86,7 @@ public class MailController extends BaseController implements IControllerService
 		
 		if (current.compareTo(V_5_7_9)>=0 && !profileLastSeen.isUndefined() && profileLastSeen.compareTo(V_5_7_9)<0) {
 			MailManager manager = new MailManager(true, profileId);
+			// Starting from v.5.7.9 tags are managed directly by WebTop platform, let's migrate OLD tags data!
 			manager.convertToCoreTags();
 		}
 	}
