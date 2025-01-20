@@ -75,19 +75,20 @@ public class MailController extends BaseController implements IControllerService
 	@Override
 	public void initProfile(ServiceVersion current, UserProfileId profileId) throws WTException {
 		MailManager manager = new MailManager(true, profileId);
-		//manager.addOldBuiltinTags();
+		manager.addOldBuiltinTags();
+		manager.convertToCoreTags();
 	}
 	
 	@Override
 	public void upgradeProfile(ServiceVersion current, UserProfileId profileId, ServiceVersion profileLastSeen) throws WTException {
-		if (current.compareTo(V_5_0_14)>=0 && profileLastSeen.compareTo(V_5_0_14)<0) {
+		if (current.compareTo(V_5_0_14)>=0 && !profileLastSeen.isUndefined() && profileLastSeen.compareTo(V_5_0_14)<0) {
 			MailManager manager = new MailManager(true, profileId);
 			manager.addOldBuiltinTags();
 		}
 		
-		if (current.compareTo(V_5_7_9)>=0 && profileLastSeen.compareTo(V_5_7_9)<0) {
+		if (current.compareTo(V_5_7_9)>=0 && !profileLastSeen.isUndefined() && profileLastSeen.compareTo(V_5_7_9)<0) {
 			MailManager manager = new MailManager(true, profileId);
-			manager.convertToCoreTags(profileId);
+			manager.convertToCoreTags();
 		}
 	}
 	

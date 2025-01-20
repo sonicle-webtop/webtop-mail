@@ -873,8 +873,9 @@ public class MailManager extends BaseManager implements IMailManager {
 		return otag;
 	}	
 	
-	protected void convertToCoreTags(UserProfileId profileId) throws WTException {
+	protected void convertToCoreTags() throws WTException {
 		Connection con = null;
+		UserProfileId profileId = getTargetProfileId();
 		
 		try {
 			con = WT.getConnection(SERVICE_ID);
