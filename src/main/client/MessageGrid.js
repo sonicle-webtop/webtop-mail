@@ -467,7 +467,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							}
 						},
 						{
-							key: Ext.event.Event.INSERT,
+							key: [ Ext.event.Event.INSERT, Ext.event.Event.V ],
 							shift: false,
 							fn: function(key,ev) {
 								me.actionFlag("complete");
