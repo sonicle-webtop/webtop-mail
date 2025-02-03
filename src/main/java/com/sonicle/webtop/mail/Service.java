@@ -73,7 +73,6 @@ import com.sonicle.webtop.contacts.IContactsManager;
 import com.sonicle.webtop.contacts.io.ContactInput;
 import com.sonicle.webtop.contacts.io.VCardInput;
 import com.sonicle.webtop.contacts.model.ContactPictureWithBytes;
-import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.DocEditorManager;
@@ -157,6 +156,7 @@ import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.webtop.contacts.ContactsUtils;
+import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.app.model.Sharing;
@@ -4960,19 +4960,19 @@ public class Service extends BaseService {
 					try {
 						String[] toRecipients = SimpleMessage.breakAddr(msg.getTo());
 						ArrayList<Integer> cats = new ArrayList<>();
-						cats.addAll(contactsManager.listCategoryIds());
+						cats.addAll(contactsManager.listMyCategoryIds());
 						cats.addAll(contactsManager.listIncomingCategoryIds());
 						
 						for (String toRecipient : toRecipients) {
 							InternetAddress ia = getInternetAddress(toRecipient);
 							if (!StringUtils.isBlank(ia.getAddress())) {
 								String email=ia.getAddress();
-								Condition<ContactQuery> predicate = new ContactQuery().email().eq(email);
-								if (!contactsManager.existContact(cats, predicate)) {
+								Condition<ContactQuery> filterQuery = new ContactQuery().anyEmail().like(email);
+								if (!contactsManager.existAnyContact(cats, filterQuery)) {
 									boolean found=false;
 									//check also internal users profile email
 									for (String userId : coreMgr.listUserIds(EnabledCond.ENABLED_ONLY)) {
-										UserProfile.Data userData=WT.getUserData(new UserProfileId(coreMgr.getTargetProfileId().getDomainId(), userId));
+										UserProfile.Data userData=WT.getProfileData(new UserProfileId(coreMgr.getTargetProfileId().getDomainId(), userId));
 										if ((found=StringUtils.equalsIgnoreCase(userData.getPersonalEmailAddress(), email)))
 											break;
 									}
