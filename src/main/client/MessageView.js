@@ -47,7 +47,7 @@ Ext.define('Sonicle.webtop.mail.MessageViewModel', {
 
 
 Ext.define('Sonicle.webtop.mail.MessageView',{
-	extend: 'Ext.container.Container',
+	extend: 'Ext.Component',
 	uses: [
 		'Sonicle.form.field.InitialsAvatar',
 		'Sonicle.grid.column.Avatar'
