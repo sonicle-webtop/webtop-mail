@@ -54,6 +54,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	uses: [
 		'Sonicle.webtop.core.view.Meeting'
 	],
+	mixins: [
+		'WTA.mixin.HiddenFieldsUtil'
+	],
 	
 	statics: {
 		buildMsgId: function() {
@@ -113,10 +116,35 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	
 	htmlStartMailcard: "<div id=\"wt-mailcard\"",
 	
-	lastFocusedRecipientsType: 'to',
-	
 	viewModel: {
-		formulas: {
+		data: {
+			isRecipientsFull: false,
+			hidden: {
+				fldcc: true,
+				fldbcc: true
+			}
+		}
+	},
+	
+	constructor: function(cfg) {
+		var me = this;
+		me.callParent([cfg]);
+		
+		Sonicle.VMUtils.applyFormulas(me.getVM(), {
+			foTOCountChanges: WTF.foAssociationGetFn('record', 'torecipients', function(data, count) {
+				var mo = me.getModel();
+				if (mo) this.set('isRecipientsFull', mo.getRecipientsCount() >= mo.getMaxRecipients());
+			}),
+			foCCCountChanges: WTF.foAssociationGetFn('record', 'ccrecipients', function(data, count) {
+				if (count > 0) me.showHideField('fldcc', false);
+				var mo = me.getModel();
+				if (mo) this.set('isRecipientsFull', mo.getRecipientsCount() >= mo.getMaxRecipients());
+			}),
+			foBCCCountChanges: WTF.foAssociationGetFn('record', 'bccrecipients', function(data, count) {
+				if (count > 0) me.showHideField('fldbcc', false);
+				var mo = me.getModel();
+				if (mo) this.set('isRecipientsFull', mo.getRecipientsCount() >= mo.getMaxRecipients());
+			}),
 			foHasAttachments: {
 				bind: { bindTo: '{record.attachments.data}', deep: true },
 				get: function(data) {
@@ -130,7 +158,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					return ha;
 				}
 			}
-		}
+		});
 	},
 	
 	initComponent: function() {
@@ -272,7 +300,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						text: me.res('act-pasteList.lbl'),
 						tooltip: me.res('act-pasteList.tip'),
 						iconCls: 'wt-icon-clipboard-paste',
-						handler: me.pasteList,
+						handler: function() {
+							me.importRecipientsUI('raw');
+						},
 						scope: me				
 					}
 			];
@@ -280,7 +310,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				mitems[1] = {
 					text: me.res('act-pasteContactsList.lbl'),
 					iconCls: 'wt-icon-clipboard-paste',
-					handler: me.pasteContactsList,
+					handler: function() {
+						me.importRecipientsUI('list');
+					},
 					scope: me				
 				};
 
@@ -288,7 +320,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				xtype: 'splitbutton',
 				tooltip: me.res('act-pasteList.lbl'),
 				iconCls: 'wt-icon-clipboard-paste',
-				handler: me.pasteList,
+				handler: function() {
+					me.importRecipientsUI('raw');
+				},
 				scope: me,
 				menu: mitems
 			};
@@ -613,7 +647,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				me.tos=Ext.create({
 					xtype: 'wtrecipientsfield',
 					bind: {
-						itemsStore: '{record.torecipients}'
+						itemsStore: '{record.torecipients}',
+						addDisabled: '{isRecipientsFull}'
 					},
 					itemsValueField: 'email',
 					itemsDisplayField: 'email',
@@ -629,64 +664,49 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 							}
 						}
 					],
-					listeners: {
-						focusenter: function() {
-							me.lastFocusedRecipientsType = 'to';
-						},
-						focusleave: function(t, e, o) {
-							//keep last focused when clicking on toolbar buttons
-							if (!e.toComponent.ownerCt || e.toComponent.ownerCt.xtype!='toolbar')
-								me.lastFocusedRecipientsType = 'to';
-						}
-					},
 					tabIndex: 2,
 					flex: 1
 				}),
 				{ xtype: 'tbspacer', width: 8 },
 				me.tccs=Ext.create({
 					xtype: 'sotogglebutton',
+					bind: {
+						pressed: '{!hidden.fldcc}'
+					},
 					text: me.res('cc'),
+					publishState: false,
+					toggleHandler: function(s, state) {
+						s.toggle(!me.showHideField('fldcc', !state), true);
+					},
 					width: 70,
 					cls: 'x-btn-default-toolbar-small wtmail-editor-cc-button',
-					tabIndex: 99999,
-					listeners: {
-						beforetoggle: function(b, pressed) {
-							if (b.pressed) {
-							  if (me.getModel().ccrecipients().getCount()==0)
-								me.ccs.setHidden(true);
-							  else return false;
-							} else {
-								me.ccs.setHidden(false);
-							}
-						}
-					}
+					tabIndex: 99999
 				}),
 				{ xtype: 'tbspacer', width: 6 },
 				me.tbccs=Ext.create({
 					xtype: 'sotogglebutton',
+					bind: {
+						pressed: '{!hidden.fldbcc}'
+					},
 					text: me.res('bcc'),
+					publishState: false,
+					toggleHandler: function(s, state) {
+						s.toggle(!me.showHideField('fldbcc', !state), true);
+					},
 					width: 70,
 					cls: 'x-btn-default-toolbar-small wtmail-editor-bcc-button',
-					tabIndex: 99999,
-					listeners: {
-						beforetoggle: function(b, pressed) {
-							if (b.pressed) {
-							  if (me.getModel().bccrecipients().getCount()==0)
-								me.bccs.setHidden(true);
-							  else return false;
-							} else {
-								me.bccs.setHidden(false);
-							}
-						}
-					}
+					tabIndex: 99999
 				})
 			]
 		};
 		
 		hitems[hx++]=me.ccs=Ext.create({
 			xtype: 'wtrecipientsfield',
+			reference: 'fldcc',
 			bind: {
-				itemsStore: '{record.ccrecipients}'
+				itemsStore: '{record.ccrecipients}',
+				hidden: '{hidden.fldcc}',
+				addDisabled: '{isRecipientsFull}'
 			},
 			itemsValueField: 'email',
 			itemsDisplayField: 'email',
@@ -702,16 +722,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					}
 				}
 			],
-			listeners: {
-				focusenter: function() {
-					me.lastFocusedRecipientsType = 'cc';
-				},
-				focusleave: function(t, e, o) {
-					//keep last focused when clicking on toolbar buttons
-					if (!e.toComponent.ownerCt || e.toComponent.ownerCt.xtype!='toolbar')
-						me.lastFocusedRecipientsType = 'to';
-				}
-			},
 			fieldLabel: me.res('cc'),
 			tabIndex: 3,
 			anchor: '100%',
@@ -719,8 +729,11 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		});
 		hitems[hx++]=me.bccs=Ext.create({
 			xtype: 'wtrecipientsfield',
+			reference: 'fldbcc',
 			bind: {
-				itemsStore: '{record.bccrecipients}'
+				itemsStore: '{record.bccrecipients}',
+				hidden: '{hidden.fldbcc}',
+				addDisabled: '{isRecipientsFull}'
 			},
 			itemsValueField: 'email',
 			itemsDisplayField: 'email',
@@ -735,16 +748,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					}
 				}
 			],
-			listeners: {
-				focusenter: function() {
-					me.lastFocusedRecipientsType = 'bcc';
-				},
-				focusleave: function(t, e, o) {
-					//keep last focused when clicking on toolbar buttons
-					if (!e.toComponent.ownerCt || e.toComponent.ownerCt.xtype!='toolbar')
-						me.lastFocusedRecipientsType = 'to';
-				}
-			},
 			fieldLabel: me.res('bcc'),
 			tabIndex: 4,
 			anchor: '100%',
@@ -1107,6 +1110,9 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		} else {
 			me.htmlEditor.focus();
 		}
+		
+		// Not useful at the moment
+		//me.initHiddenFields();
 		
 		if (me.autosave) {
 			me.clearAutosaveDirty();
@@ -1796,62 +1802,55 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		menu.updateLayout();
 	},
 	
-	
-	pasteList: function() {
-		var me=this;
-		
-		WT.prompt('',{
-			title: me.mys.res("act-pasteList.tit"),
-			fn: function(btn,text) {
-				if (btn==='ok') {
-					var lfcrt = me.lastFocusedRecipientsType,
-						rcpts = lfcrt == 'cc' ? me.getModel().ccrecipients() :
-								lfcrt == 'bcc' ? me.getModel().bccrecipients() :
-								me.getModel().torecipients(),
-						emails=text.split("\n");
-					Ext.each(emails, function(email) {
-						rcpts.add({email: email});
-					});
-					me.lastFocusedRecipientsType = 'to';
-				}
-			},
-			scope: me,
-			width: WT.calcViewWidth(400),
-			multiline: WT.calcViewHeight(200),
-			value: ''
-		});
-	},
-	
-	pasteContactsList: function() {
+	importRecipientsUI: function(type) {
 		var me = this;
-		WT.confirm(me.mys.res('confirmBox.listChoose.lbl'), function(bid, value) {
-			if (bid === 'ok') {
-				var conSvc = WT.getServiceApi('com.sonicle.webtop.contacts');
+		if (type === 'raw') {
+			WT.prompt('', {
+				title: me.res('messageEditor.importRecipients.raw.tit'),
+				buttons: Ext.Msg.OKCANCEL + Ext.Msg.YESNO,
+				okText: me.res('bcc'),
+				yesText: me.res('cc'),
+				noText: me.res('to'),
+				instConfig: {
+					buttonPseudoUi: {
+						ok: '{primary}',
+						yes: '{secondary}',
+						no: '{secondary}',
+						cancel: '{tertiary}'
+					}
+				},
+				fn: function(bid, value) {
+					if (bid === 'ok') me.doImportTextAsRecipients('BCC', value);
+					else if (bid === 'yes') me.doImportTextAsRecipients('CC', value);
+					else if (bid === 'no') me.doImportTextAsRecipients('TO', value);
+				},
+				scope: me,
+				multiline: 200,
+				value: '',
+				width: 400
+			});
+			
+		} else if (type === 'list') {
+			WT.confirm(me.res('confirmBox.listChoose.lbl'), function(bid, value) {
+				if (bid === 'ok') {
+					var conSvc = WT.getServiceApi('com.sonicle.webtop.contacts');
 					conSvc.expandRecipientsList({
 							address: value
 						}, {
 							callback: function(success, json) {
 								if (success) {
-									var data = json.data, i;
-									for (i=0; i<data.length; i++) {
-										var rcpts = data[i].type == 'CC' ? me.getModel().ccrecipients() :
-													data[i].type == 'BCC' ? me.getModel().bccrecipients() :
-													me.getModel().torecipients();
-										rcpts.add({email: data[i].email});
-									}
-									if (me.getModel().ccrecipients().getCount()>0) { me.tccs.toggle(true, true); me.ccs.setHidden(false); }
-									if (me.getModel().bccrecipients().getCount()>0) { me.tbccs.toggle(true, true); me.bccs.setHidden(false); }
+									me.doImportRecipients('TO', json.data);
 								}
 							},
 							scope: me
 					});
-				
-			}
-		}, me, {
-			buttons: Ext.Msg.OKCANCEL,
-			title: me.mys.res('act-pasteContactsList.confirm.tit'),
-			instClass: 'Sonicle.webtop.mail.ux.ChooseListConfirmBox'
-		});
+				}
+			}, me, {
+				buttons: Ext.Msg.OKCANCEL,
+				title: me.res('messageEditor.importRecipients.list.tit'),
+				instClass: 'Sonicle.webtop.mail.ux.ChooseListConfirmBox'
+			});
+		}
 	},
 	
     onDiscard: function() {
@@ -1910,10 +1909,6 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		me.htmlEditor.resetHistoryBookmark();
         me.getModel().clearAutosaveDirty();
     },
-	
-	res: function(key) {
-		return this.mys.res(key);
-	},
 	
 	onConfirmView: function() {
 		this.saveMessage();
@@ -1988,6 +1983,71 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	
 	privates: {
+		
+		showHideField: function(vmField, hidden) {
+			var me = this,
+				mo = me.getModel();
+			// Prevent hiding cc field when there are items...
+			if (vmField === 'fldcc' && hidden && mo.ccrecipients().getCount() > 0) hidden = false;
+			// Prevent hiding bcc field when there are items...
+			if (vmField === 'fldbcc' && hidden && mo.bccrecipients().getCount() > 0) hidden = false;
+			return me.mixins.hiddenfieldsutil.showHideField.call(me, vmField, hidden);
+		},
+		
+		doImportTextAsRecipients: function(targetType, text, recordDefaults) {
+			this.doImportRecipients(targetType, text.split(/\r\n|\r|\n|,|;/g), recordDefaults);
+		},
+
+		doImportRecipients: function(defaultTarget, items, recordDefaults, limit) {
+			var me = this,
+				SoS = Sonicle.String,
+				mo = me.getModel(),
+				arrs = {TO: [], CC: [], BCC: []},
+				arrLookupFn = function(type, defaultType) {
+					return arrs[SoS.deflt(type, defaultType || 'TO')];
+				},
+				data, rcpt;
+			
+			if (limit === undefined) limit = mo.getMaxRecipients();
+			if (limit === null || !Ext.isNumber(limit) || limit < 0) limit = Number.MAX_VALUE;
+			
+			if (Ext.isArray(items)) {
+				if (items.length <= limit) {
+					Ext.iterate(items, function(item) {
+						rcpt = Ext.String.trim(Ext.isString(item) ? item : item.email);
+						if (!Ext.isEmpty(rcpt)) {
+							data = Ext.apply({}, recordDefaults);
+							data['email'] = rcpt;
+							arrLookupFn(item.type, defaultTarget).push(data);
+						}
+					});
+					if (arrs['TO'].length > 0) {
+						if ((mo.getRecipientsCount() + arrs['TO'].length) <= limit) {
+							mo.torecipients().add(arrs['TO']);
+						} else {
+							WT.error(me.res('messageEditor.importRecipients.error.limit', limit, SoS.wrap(me.res('to'), '()')));
+						}
+					}
+					if (arrs['CC'].length > 0) {
+						if ((mo.getRecipientsCount() + arrs['CC'].length) <= limit) {
+							mo.ccrecipients().add(arrs['CC']);
+						} else {
+							WT.error(me.res('messageEditor.importRecipients.error.limit', limit, SoS.wrap(me.res('cc'), '()')));
+						}	
+					}
+					if (arrs['BCC'].length > 0) {
+						if ((mo.getRecipientsCount() + arrs['BCC'].length) <= limit) {
+							mo.bccrecipients().add(arrs['BCC']);
+						} else {
+							WT.error(me.res('messageEditor.importRecipients.error.limit', limit, SoS.wrap(me.res('bcc'), '()')));
+						}	
+					}
+				} else {
+					WT.error(me.res('messageEditor.importRecipients.error.limit', limit));
+				}
+			}
+		},
+		
 		doRecipientTagDrop: function(srcField, srcIdx, tgtField, tgtIdx) {
 			var me = this,
 				SoU = Sonicle.Utils,

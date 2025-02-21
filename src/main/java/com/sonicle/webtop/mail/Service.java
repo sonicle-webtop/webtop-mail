@@ -9734,19 +9734,20 @@ public class Service extends BaseService {
 			}
 			
 			if (mainAccount.hasDifferentDefaultFolder()) co.put("inboxFolder",mainAccount.getInboxFolderFullName());
-			co.put("attachmentMaxFileSize", ss.getAttachmentMaxFileSize(true));
 			co.put("folderDrafts", us.getFolderDrafts());
 			co.put("folderSent", us.getFolderSent());
 			co.put("folderSpam", us.getFolderSpam());
 			co.put("folderTrash", us.getFolderTrash());
 			co.put("folderArchive", us.getFolderArchive());
 			co.put("folderSeparator", mainAccount.getFolderSeparator());
+			co.put("autoAddContact", us.isAutoAddContact());
+			co.put("newMessageMaxRecipients", ss.getNewMessageMaxRecipients());
+			co.put("attachmentMaxFileSize", ss.getAttachmentMaxFileSize(true));
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
 			co.put("fontSize", us.getFontSize());
 			co.put("fontColor", us.getFontColor());
 			co.put("receipt", us.isReceipt());
-			co.put("autoAddContact", us.isAutoAddContact());
 			co.put("priority", us.isPriority());
 			co.put("viewMode", EnumUtils.toSerializedName(us.getViewMode()));
 			co.put("noMailcardOnReplyForward", us.isNoMailcardOnReplyForward());

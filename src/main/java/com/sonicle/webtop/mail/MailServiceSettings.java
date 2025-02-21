@@ -137,6 +137,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		}
 	}
 	
+	public int getNewMessageMaxRecipients() {
+		return getInteger(NEWMESSAGE_MAX_RECIPIENTS, (int)1000);
+	}
+	
 	public boolean getMessageReplyAllStripMyIdentities() {
 		return getBoolean(MESSAGE_REPLYALL_STRIPMYIDENTITIES, true);
 	}

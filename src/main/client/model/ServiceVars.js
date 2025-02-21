@@ -38,6 +38,7 @@ Ext.define('Sonicle.webtop.mail.model.ServiceVars', {
 	],
 	
 	fields: [
+		WTF.field('newMessageMaxRecipients', 'int', true),
 		WTF.field('attachmentMaxFileSize', 'int', true),
 		{ name: 'receipt', type: 'boolean' },
 		{ name: 'priority', type: 'boolean' },

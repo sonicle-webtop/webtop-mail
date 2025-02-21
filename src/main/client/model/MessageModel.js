@@ -75,6 +75,15 @@ Ext.define('Sonicle.webtop.mail.model.MessageModel', {
 		WTF.hasMany('attachments', 'Sonicle.webtop.mail.model.AttachmentModel')
 	],
 	
+	getMaxRecipients: function() {
+		return WT.getVar('com.sonicle.webtop.mail', 'newMessageMaxRecipients');
+	},
+	
+	getRecipientsCount: function() {
+		var me = this;
+		return me.torecipients().getCount() + me.ccrecipients().getCount() + me.bccrecipients().getCount();
+	},
+	
 	getAllRecipients: function() {
 		var me=this,
 			rcpts=[];

@@ -51,6 +51,13 @@ public class MailSettings {
 	public static final String ATTACHMENT_MAXFILESIZE = "attachment.maxfilesize";
 	
 	/**
+	 * [domain+system]
+	 * [int]
+	 * Maximum number of recipients during composition. Defaults to `1000`.
+	 */
+	public static final String NEWMESSAGE_MAX_RECIPIENTS = "newmessage.recipients.max";
+	
+	/**
 	 * [system+domain][default]
 	 * [int]
 	 * The sieve management port.
