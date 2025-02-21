@@ -1000,6 +1000,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 							}
 						})
 					},
+					gridWidth: 300,
 					tooltip: {title: me.mys.res('htmleditor.tool.template.quickpart.tip.tit'), text: me.mys.res('htmleditor.tool.template.quickpart.tip.txt')}
 				}
 			},
