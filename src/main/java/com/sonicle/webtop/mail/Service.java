@@ -9741,7 +9741,7 @@ public class Service extends BaseService {
 			co.put("folderArchive", us.getFolderArchive());
 			co.put("folderSeparator", mainAccount.getFolderSeparator());
 			co.put("autoAddContact", us.isAutoAddContact());
-			co.put("newMessageMaxRecipients", ss.getNewMessageMaxRecipients());
+			co.put("newMessageMaxRecipients", Math.max(0, ss.getNewMessageMaxRecipients()));
 			co.put("attachmentMaxFileSize", ss.getAttachmentMaxFileSize(true));
 			co.put("format", us.getFormat());
 			co.put("fontName", us.getFontName());
