@@ -244,14 +244,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				containercontextmenu: function(v, e, eopts) {
 					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { }, {shownBy: Ext.fly(itm)});
 				},
-				rowclick: function(t, r, tr, ix, e, eopts) {
-					//skip click on ellipses
-					if (e.target.role==='button') return;
-					
-					//me.imapTree.setSelection(null);
-					//if (me.archiveTree) me.archiveTree.setSelection(null);
+				select: function(t, r) {
 					me._unselectAllTreesBut(me.favoritesTree);
-					me.folderClicked(r.get("account"), r, tr, ix, e, eopts);
+					me.folderSelected(r.get("account"), r);
 					
 					if(t.getSelection()[0].isRoot()) {
 						var messagePanel = me.messagesPanel;
@@ -285,14 +280,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					containercontextmenu: function(v, e, eopts) {
 						Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { }, {shownBy: Ext.fly(itm)});
 					},
-					rowclick: function(t, r, tr, ix, e, eopts) {
-						//skip click on ellipses
-						if (e.target.role==='button') return;
-						
-						//me.imapTree.setSelection(null);
-						//me.favoritesTree.setSelection(null);
+					select: function(t, r) {
 						me._unselectAllTreesBut(me.archiveTree);
-						me.folderClicked(me.archiveTree.acct, r, tr, ix, e, eopts);
+						me.folderSelected(me.archiveTree.acct, r);
 						
 						if(t.getSelection()[0].isRoot()) {
 							var messagePanel = me.messagesPanel;
@@ -338,14 +328,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				containercontextmenu: function(v, e, eopts) {
 					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
-				rowclick: function(t, r, tr, ix, e, eopts) {
-					//skip click on ellipses
-					if (e.target.role==='button') return;
-					
-					//me.favoritesTree.setSelection(null);
-					//if (me.archiveTree) me.archiveTree.setSelection(null);
+				select: function(t, r) {
 					me._unselectAllTreesBut(me.imapTree);
-					me.folderClicked(me.imapTree.acct, r, tr, ix, e, eopts);
+					me.folderSelected(me.imapTree.acct, r);
 					
 					if(t.getSelection()[0].isRoot()) {
 						var messagePanel = me.messagesPanel;
@@ -443,14 +428,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						containercontextmenu: function(v, e, eopts) {
 							Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 						},
-						rowclick: function(t, r, tr, ix, e, eopts) {
-							//skip click on ellipses
-							if (e.target.role==='button') return;
-							
-							//me.favoritesTree.setSelection(null);
-							//if (me.archiveTree) me.archiveTree.setSelection(null);
+						select: function(t, r) {
 							me._unselectAllTreesBut(tree);
-							me.folderClicked(tree.acct, r, tr, ix, e, eopts);
+							me.folderSelected(tree.acct, r);
 							
 							if(t.getSelection()[0].isRoot()) {
 								var messagePanel = me.messagesPanel;
@@ -1234,15 +1214,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.showFolder(me.imapTree.acct,me.getFolderInbox());
 	},
 
-    /*folderSelected: function(t, r, ix) {
-        var folderid=r.get("id");
-		console.log("folderSelected: "+folderid);
-		this.showFolder(folderid);
-    },*/
-	
-	folderClicked: function(acct, r, tr, ix, e, eopts) {
-		if (e && e.target.classList.contains('x-tree-expander')) return;
-        
+	folderSelected: function(acct, r) {
 		var folderid=r.get("id");
 		this.showFolder(acct,folderid);
 	},
@@ -2415,7 +2387,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					WT.error(json.message);
 				}
 				if (folder===me.currentFolder && acct===me.currentAccount)
-					me.folderClicked(acct,n);
+					me.folderSelected(acct,n);
 			}
 		});					
 	},
@@ -2466,7 +2438,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			Ext.each(nodes,function(newnode) {
 				if (newnode.getId()===childId) {
 					tr.getView().setSelection(newnode);
-					me.folderClicked(acct,newnode);
+					me.folderSelected(acct,newnode);
 				}
 			});
 		});
