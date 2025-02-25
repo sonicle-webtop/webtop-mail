@@ -108,7 +108,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		switch(cfg.action) {
 			case "mailto":
 				var ix=cfg.args.indexOf('?'),
-				    email=ix>0?cfg.args.substring(7,ix):cfg.args.substring(7),
+				    email=decodeURIComponent(ix>0?cfg.args.substring(7,ix):cfg.args.substring(7)),
 					obj=ix>0?Ext.Object.fromQueryString(cfg.args.substring(ix+1)):{};
 				me.startNewMessage(me.getFolderInbox(), { 
 					dockableConfig: {
