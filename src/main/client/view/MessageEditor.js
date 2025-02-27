@@ -885,18 +885,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 							var vw = WT.createView(WT.ID, 'view.DocEditor', {
 								swapReturn: true,
 								viewCfg: {
-									editingId: editingCfg.editingId,
-									editorConfig: {
-										editable: editingCfg.writeSupported,
-										token: editingCfg.token,
-										docType: editingCfg.docType,
-										docExtension: editingCfg.docExtension,
-										docKey: editingCfg.docKey,
-										docTitle: editingCfg.docName,
-										docUrl: editingCfg.docUrl,
-										//autosave: false,
-										callbackUrl: editingCfg.callbackUrl
-									}
+									editingConfig: editingCfg
 								}
 							});
 							vw.showView(function() {

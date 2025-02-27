@@ -8570,9 +8570,9 @@ public class Service extends BaseService {
 				
 				String fileHash=AlgoUtils.md5Hex(new CompositeId("previewattach",uploadId).toString());
 				AttachmentViewerDocumentHandler docHandler = new AttachmentViewerDocumentHandler(false, getEnv().getProfileId(), fileHash, upl.getFile());
-				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, upl.getFilename(), upl.getFile().lastModified());
+				DocEditorManager.EditingResult result = getWts().docEditorPrepareEditing(docHandler, upl.getFilename(), upl.getFile().lastModified());
 				
-				new JsonResult(config).printTo(out);
+				new JsonResult(result).printTo(out);
 				
 				
 			} else {
@@ -8635,9 +8635,9 @@ public class Service extends BaseService {
 				String fileHash=AlgoUtils.md5Hex(new CompositeId(pfoldername,puidmessage,pidattach).toString());
 				long lastModified=m.getReceivedDate().getTime();
 				AttachmentViewerDocumentHandler docHandler = new AttachmentViewerDocumentHandler(false, getEnv().getProfileId(), fileHash, part, lastModified);
-				DocEditorManager.DocumentConfig config = getWts().prepareDocumentEditing(docHandler, name, lastModified);
+				DocEditorManager.EditingResult result = getWts().docEditorPrepareEditing(docHandler, name, lastModified);
 				
-				new JsonResult(config).printTo(out);
+				new JsonResult(result).printTo(out);
 				
 			}			
 		} catch (Exception exc) {
