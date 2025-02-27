@@ -7665,7 +7665,7 @@ public class Service extends BaseService {
 				if (!listBccs.isEmpty()) jsAudit.setBccs(listBccs);
 				if (!listBccsDN.isEmpty()) jsAudit.setBccsDN(listBccsDN);
 				if (StringUtils.isNotEmpty(subject)) jsAudit.setSubject(subject);
-				jsAudit.setFolder(m.getFolder().getFullName());
+				jsAudit.setFolder(morig.getFolder().getFullName());
 				
 				mailManager.auditLogWrite(
 					MailManager.AuditContext.MAIL,
