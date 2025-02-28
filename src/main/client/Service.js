@@ -268,7 +268,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				containercontextmenu: function(v, e, eopts) {
 					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { }, {shownBy: Ext.fly(itm)});
 				},
-				rowmousedown: function(t, r) { me._onFolderRowMouseDown(me.favoritesTree, r); },
+				rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.favoritesTree, r); },
 				select: function(t, r) { me._onFolderSelect(me.favoritesTree, r); }
 			}
 			
@@ -297,7 +297,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					containercontextmenu: function(v, e, eopts) {
 						Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { }, {shownBy: Ext.fly(itm)});
 					},
-					rowmousedown: function(t, r) { me._onFolderRowMouseDown(me.archiveTree, r); },
+					rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.archiveTree, r); },
 					select: function(t, r) { me._onFolderSelect(me.archiveTree, r); }
 				}
 
@@ -337,7 +337,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				containercontextmenu: function(v, e, eopts) {
 					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
-				rowmousedown: function(t, r) { me._onFolderRowMouseDown(me.imapTree, r); },
+				rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.imapTree, r); },
 				select: function(t, r) { me._onFolderSelect(me.imapTree, r); },
 				load: function(t,records,s,o,n) {
 					if (n.id==='/') {
@@ -430,7 +430,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						containercontextmenu: function(v, e, eopts) {
 							Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 						},
-						rowmousedown: function(t, r) { me._onFolderRowMouseDown(tree, r); },
+						rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(tree, r); },
 						select: function(t, r) { me._onFolderSelect(tree, r); },
 						load: function(t,records,s,o,n) {
 							if (n.id==='/') {
