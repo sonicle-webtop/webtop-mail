@@ -2241,6 +2241,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//o.millis=millis;
 			//o.unread--;
 			//me.mys.updateUnreads(me.currentFolder,o,false);
+			
+			me.lastFlagsChangedTS = Date.now();
 		}
 	},
 	
