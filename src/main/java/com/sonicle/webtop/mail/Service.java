@@ -4457,7 +4457,8 @@ public class Service extends BaseService {
 							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
 									isInlineableMime(mime);
 						}
-						attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
+						//in reply includes only cid & inline attachments
+						if (inline || cid!=null) attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
 
 						//TODO: change this weird matching of cids2urls!
 						if (cid!=null) html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
