@@ -82,7 +82,7 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 			
 			targetNode=me.view.getRecord(targetNode); //from el node to record node
 			//Do not drop on root node or same node
-			if (targetNode.id==='/' || targetNode.id===data.records[0].id) return false;
+			if (targetNode.id==='/' || (data.records.length > 0 && targetNode.id===data.records[0].id)) return false;
 			
 			switch(dragZone.ddGroup) {
 				case "mail":
@@ -118,7 +118,7 @@ Ext.define('Sonicle.webtop.mail.plugin.ImapTreeViewDragDrop', {
 				targetNode=me.view.getRecord(node); //from el node to record node
 		
 			//Do not drop on root node or same node
-			if (targetNode.id==='/' || targetNode.id===data.records[0].id)
+			if (targetNode.id==='/' || (data.records.length > 0 && targetNode.id===data.records[0].id))
 				return Ext.dd.DropZone.prototype.dropNotAllowed;
 			
 			var ctrlKey=data.readonly||dragZone.ddGroup==="attachment"?true:e.ctrlKey;
