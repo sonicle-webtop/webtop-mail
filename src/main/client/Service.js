@@ -150,6 +150,30 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 	},
 	
+	_onFolderSelect: function(t, r) {
+		var me=this;
+		me._unselectAllTreesBut(t);
+		if(r.isRoot()) {
+			me.messagesPanel.clearGridSelections();
+		} else {
+			me.folderSelected(r.get("account"), r);			
+		}
+	},
+	
+	/*
+	 * The select event is not sent if the node is already selected,
+	 * but we want to refresh the grid anyway on node click.
+	 * Because the select event is sent before a rowclick event, while
+	 * the select event is sent after a rowmousedown event,
+	 * we use mousedown and check if the currently selected node is the
+	 * same as the clicked one: in this case we know a select event won't be sent
+	 * and force the _onFolderSelect anyway.
+	 */
+	_onFolderRowMouseDown: function(t, r) {
+		var me = this;
+		if (t.getSelection()[0] === r) me._onFolderSelect(t, r); 
+	},
+	
 	init: function() {
 		var me = this,
 				sue = me.getVar('showUpcomingEvents'),
@@ -244,15 +268,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				containercontextmenu: function(v, e, eopts) {
 					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { }, {shownBy: Ext.fly(itm)});
 				},
-				select: function(t, r) {
-					me._unselectAllTreesBut(me.favoritesTree);
-					me.folderSelected(r.get("account"), r);
-					
-					if(t.getSelection()[0].isRoot()) {
-						var messagePanel = me.messagesPanel;
-						messagePanel.clearGridSelections();
-					}
-				}
+				rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.favoritesTree, r); },
+				select: function(t, r) { me._onFolderSelect(me.favoritesTree, r); }
 			}
 			
 		});
@@ -280,16 +297,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					containercontextmenu: function(v, e, eopts) {
 						Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { }, {shownBy: Ext.fly(itm)});
 					},
-					select: function(t, r) {
-						me._unselectAllTreesBut(me.archiveTree);
-						me.folderSelected(me.archiveTree.acct, r);
-						
-						if(t.getSelection()[0].isRoot()) {
-							var messagePanel = me.messagesPanel;
-							messagePanel.clearGridSelections();
-						}
-						
-					}
+					rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.archiveTree, r); },
+					select: function(t, r) { me._onFolderSelect(me.archiveTree, r); }
 				}
 
 			});
@@ -328,15 +337,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				containercontextmenu: function(v, e, eopts) {
 					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
-				select: function(t, r) {
-					me._unselectAllTreesBut(me.imapTree);
-					me.folderSelected(me.imapTree.acct, r);
-					
-					if(t.getSelection()[0].isRoot()) {
-						var messagePanel = me.messagesPanel;
-						messagePanel.clearGridSelections();
-					}
-				},
+				rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.imapTree, r); },
+				select: function(t, r) { me._onFolderSelect(me.imapTree, r); },
 				load: function(t,records,s,o,n) {
 					if (n.id==='/') {
 						//keep enabled loadMask only for root loading
@@ -428,15 +430,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						containercontextmenu: function(v, e, eopts) {
 							Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 						},
-						select: function(t, r) {
-							me._unselectAllTreesBut(tree);
-							me.folderSelected(tree.acct, r);
-							
-							if(t.getSelection()[0].isRoot()) {
-								var messagePanel = me.messagesPanel;
-								messagePanel.clearGridSelections();
-							}
-						},
+						rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(tree, r); },
+						select: function(t, r) { me._onFolderSelect(tree, r); },
 						load: function(t,records,s,o,n) {
 							if (n.id==='/') {
 								//keep enabled loadMask only for root loading

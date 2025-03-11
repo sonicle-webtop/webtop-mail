@@ -4439,24 +4439,30 @@ public class Service extends BaseService {
 				for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
 					try{
 						Part part = maildata.getAttachmentPart(i);
-					        boolean inline = false;
-					        if (part.getDisposition() != null) {
-					        	inline = part.getDisposition().equalsIgnoreCase(Part.INLINE);
-					        }
-						String filename = getPartName(part);
+						String filename = MailUtils.getPartFilename(part, true);
 						String cids[] = part.getHeader("Content-ID");
-					        if (inline && cids!=null && cids[0]!=null && isImageFilename(filename)) {
-							String cid = cids[0];
+						String cid = null;
+						//String cid=filename;
+						if (cids != null && cids[0] != null) {
+							cid = cids[0];
 							if (cid.startsWith("<")) cid=cid.substring(1);
 							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
-							String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
-							UploadedFile upfile=addAsUploadedFile(""+newmsgid, filename, mime, part.getInputStream());
-							
-							attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, true, upfile.getSize(), isFileEditableInDocEditor(filename)));
-							
-							//TODO: change this weird matching of cids2urls!
-							html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 						}
+
+						if (filename == null) filename = cid;
+						String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
+						UploadedFile upfile=addAsUploadedFile(""+newmsgid, filename, mime, part.getInputStream());
+						boolean inline = false;
+						if (part.getDisposition() != null) {
+							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
+									isInlineableMime(mime);
+						}
+						//in reply includes only cid & inline attachments
+						if (inline || cid!=null) attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
+
+						//TODO: change this weird matching of cids2urls!
+						if (cid!=null) html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+
 					} catch (Exception exc) {
 						Service.logger.error("Exception",exc);
 					}
