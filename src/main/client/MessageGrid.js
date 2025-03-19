@@ -1050,7 +1050,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		me.store.reload({ 
 			params: {
 				threadaction: r.get("threadOpen")?'close':'open',
-				threadactionuid: r.get("idmessage"),
+				threadactionuid: r.get("threadId"),
 				timestamp: Date.now()
 			}
 		});

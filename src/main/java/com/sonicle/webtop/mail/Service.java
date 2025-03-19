@@ -6672,67 +6672,124 @@ public class Service extends BaseService {
 						//Fetch others for these messages
 						mcache.fetch(xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max);
 						long tId=0;
+						boolean tIsOpen = false;
+						boolean tChildren = false;
+						int tUnseenChildren = 0;
+						SonicleIMAPMessage threadRootMsg = null;
+						SonicleIMAPMessage mostRecentUnseenMsg = null;
+						SonicleIMAPMessage mostRecentMsg = null;
+
 						for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 							int ix = start + i;
 							int nx = start + ni;
-							if (nx>=xmsgs.length) break;
+							if (nx >= xmsgs.length) break;
 							if (ix >= max) break;
 
-							SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];
+							SonicleIMAPMessage xm = (SonicleIMAPMessage)xmsgs[nx];
 							if (xm.isExpunged()) {
 								--i;
 								continue;
 							}
 
-							/*if (messagesInfo.checkSkipPEC(xm)) {
-								--i; --total;
-								continue;
-							}*/
-
-
-							/*String ids[]=null;
-							 try {
-							 ids=xm.getHeader("Message-ID");
-							 } catch(MessagingException exc) {
-							 --i;
-							 continue;
-							 }
-							 if (ids==null || ids.length==0) { --i; continue; }
-							 String idmessage=ids[0];*/
-
 							long nuid = mcache.getUID(xm);
 
 							int tIndent = 0;
-							boolean tChildren=false;
-							int tUnseenChildren=0;
+
 							if (sgi.threaded) {
 								tIndent = xm.getThreadIndent();
-								if (tIndent==0) tId=nuid;
-								else {
-									if (!mcache.isThreadOpen(tId)) {
-										--i;
-										continue;
-									}
-								}
-								
-								int cnx=nx+1;
-								while(cnx<xmsgs.length) {
-									SonicleIMAPMessage cxm=(SonicleIMAPMessage)xmsgs[cnx];
-									if (cxm.isExpunged()) {
-										cnx++;
-										continue;
-									}
-									while(cxm.getThreadIndent()>0) {
-										tChildren=true;
-										if (!cxm.isExpunged() && !cxm.isSet(Flags.Flag.SEEN)) ++tUnseenChildren;
-										++cnx;
-										if (cnx>=xmsgs.length) break;
-										cxm=(SonicleIMAPMessage)xmsgs[cnx];
-									}
-									break;
-								}
-							}
 
+								if (tIndent == 0) {
+									// This is a thread root
+									tId = nuid;
+									tIsOpen = mcache.isThreadOpen(tId);
+									tChildren = tIsOpen;
+									tUnseenChildren = 0;
+									threadRootMsg = xm;
+									mostRecentUnseenMsg = null;
+									mostRecentMsg = xm; // Start with root as most recent
+
+									// if closed thread, count unseen children
+									if (!tIsOpen) {
+										int cnx = nx + 1;
+										boolean skipThis = false;
+										while(cnx < xmsgs.length) {
+											SonicleIMAPMessage cxm = (SonicleIMAPMessage)xmsgs[cnx];
+											if (cxm.isExpunged()) {
+												cnx++;
+												continue;
+											}
+											//if this is root and next is child skip this node once done
+											if (cxm.getThreadIndent() > 0) skipThis = true;
+											while(cxm.getThreadIndent() > 0) {
+												tChildren = true;
+												if (!cxm.isExpunged() && !cxm.isSet(Flags.Flag.SEEN)) ++tUnseenChildren;
+												++cnx;
+												if (cnx >= xmsgs.length) break;
+												cxm = (SonicleIMAPMessage)xmsgs[cnx];
+											}
+											break;
+										}
+
+										if (skipThis) {
+											--i;
+											continue;
+										}
+									}
+								} else {
+									// This is a child message in a thread
+									if (!tIsOpen) {
+										// If the thread is closed, check if this message should replace the root
+
+										// Update most recent message in thread
+										if (mostRecentMsg == null || 
+											xm.getSentDate().after(mostRecentMsg.getSentDate()) ||
+											(xm.getSentDate().equals(mostRecentMsg.getSentDate()) && nuid > mcache.getUID(mostRecentMsg))) {
+											mostRecentMsg = xm;
+										}
+
+										// Update most recent unseen message in thread
+										if (!xm.isSet(Flags.Flag.SEEN)) {
+											if (mostRecentUnseenMsg == null ||
+												xm.getSentDate().after(mostRecentUnseenMsg.getSentDate()) ||
+												(xm.getSentDate().equals(mostRecentUnseenMsg.getSentDate()) && nuid > mcache.getUID(mostRecentUnseenMsg))) {
+												mostRecentUnseenMsg = xm;
+											}
+										}
+
+										// If we're at the end of this thread or the next message is another thread root
+										boolean isLastMessageInThread = (nx+1 >= xmsgs.length) || 
+																	  ((nx+1 < xmsgs.length) && 
+																	   ((SonicleIMAPMessage)xmsgs[nx+1]).getThreadIndent() == 0);
+
+										if (isLastMessageInThread) {
+											// We've seen all messages in this thread, decide which one to show
+											SonicleIMAPMessage messageToShow = (mostRecentUnseenMsg != null) ? 
+																			  mostRecentUnseenMsg : mostRecentMsg;
+
+											// Skip this message unless it's the one we want to show
+											//if (xm != messageToShow) {
+											//	--i;
+											//	continue;
+											//}
+
+											// This is the message we want to show
+											// Set threadRootMsg flag to indicate this is representing a thread
+											xm = messageToShow;
+											nuid = mcache.getUID(xm);
+											//don't count myself if I'm unseen
+											if (!xm.isSet(Flags.Flag.SEEN)) --tUnseenChildren;
+
+											// We'll need to count all children in the thread for display purposes
+											// This is already handled in existing code
+										} else {
+											// Not the last message in thread and thread is closed, skip for now
+											--i;
+											continue;
+										}
+									}
+								}
+
+							}
 							Flags flags=xm.getFlags();
 
 							//Date
@@ -6799,8 +6856,8 @@ public class Service extends BaseService {
 								}
 							}*/
 
-							boolean hasAttachments=mcache.hasAttachments(xm, null);
-							boolean hasInvitation=mcache.hasInvitation(xm);
+							boolean hasAttachments=false; //mcache.hasAttachments(xm, null);
+							boolean hasInvitation=false; //mcache.hasInvitation(xm);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
@@ -6960,10 +7017,18 @@ public class Service extends BaseService {
 							String fromFolder = null;
 
 							if (sgi.threaded) {
+								threadOpen = mcache.isThreadOpen(tId);
 								if (tIndent == 0) {
-									threadOpen = mcache.isThreadOpen(nuid);
 									threadHasChildren = tChildren;
 									threadUnseenChildren = tUnseenChildren;
+								} else {
+									//if closed thread force indent to 0
+									//so that any child selected will be rendered as 0 indentation
+									if (!threadOpen) {
+										tIndent = 0;
+										threadHasChildren = tChildren;
+										threadUnseenChildren = tUnseenChildren;
+									}
 								}
 								if (xm.hasThreads() && !xm.isMostRecentInThread()) fmtd = true;
 								if (!xmfoldername.equals(folder.getFullName())) fromFolder = xmfoldername;
