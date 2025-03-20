@@ -300,6 +300,8 @@ public class Service extends BaseService {
 	private Pattern pasDomainsWhiteListRegexPattern;
 	private final FoldersNamesInByFileFiltersCache cacheFoldersNamesInByFileFilters = new FoldersNamesInByFileFiltersCache(5, TimeUnit.MINUTES);
 	
+	private boolean attachmentDetectUseBodyStructure = true;
+	
 	@Override
 	public void initialize() {
 		
@@ -341,6 +343,7 @@ public class Service extends BaseService {
 			for(String mtype:vmtypes)
 				inlineableMimes.add(mtype.trim());
 		}
+		attachmentDetectUseBodyStructure = ss.isAttachmentDetectUseBodyStructure();
 		
 		
 		us = new MailUserSettings(profile.getId(),ss);
@@ -2548,6 +2551,10 @@ public class Service extends BaseService {
 	
 	public boolean isInlineableMime(String contenttype) {
 		return inlineableMimes.contains(contenttype.toLowerCase());
+	}
+	
+	public boolean isAttachamentDetectUseBodyStructure() {
+		return attachmentDetectUseBodyStructure;
 	}
 	
 	public synchronized int getNewMessageID() {
@@ -6675,7 +6682,6 @@ public class Service extends BaseService {
 						boolean tIsOpen = false;
 						boolean tChildren = false;
 						int tUnseenChildren = 0;
-						SonicleIMAPMessage threadRootMsg = null;
 						SonicleIMAPMessage mostRecentUnseenMsg = null;
 						SonicleIMAPMessage mostRecentMsg = null;
 
@@ -6704,7 +6710,6 @@ public class Service extends BaseService {
 									tIsOpen = mcache.isThreadOpen(tId);
 									tChildren = tIsOpen;
 									tUnseenChildren = 0;
-									threadRootMsg = xm;
 									mostRecentUnseenMsg = null;
 									mostRecentMsg = xm; // Start with root as most recent
 
@@ -6856,8 +6861,8 @@ public class Service extends BaseService {
 								}
 							}*/
 
-							boolean hasAttachments=false; //mcache.hasAttachments(xm, null);
-							boolean hasInvitation=false; //mcache.hasInvitation(xm);
+							boolean hasAttachments=mcache.hasAttachments(xm, null);
+							boolean hasInvitation=mcache.hasInvitation(xm);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);

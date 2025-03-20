@@ -105,6 +105,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getString(INLINEABLE_MIME_TYPES,null);
 	}
 	
+	public boolean isAttachmentDetectUseBodyStructure() {
+		return getBoolean(ATTACHMENT_DETECT_USE_BODYSTRUCTURE, true);
+	}
+	
 	public String getPasDangerousExtensions() {
 		return getString(PAS_DANGEROUS_EXTENSIONS,"exe,bat,dll,com,cmd,bin,cab,js,jar");
 	}
