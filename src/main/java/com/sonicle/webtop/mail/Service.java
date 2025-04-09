@@ -4458,10 +4458,12 @@ public class Service extends BaseService {
 									isInlineableMime(mime);
 						}
 						//in reply includes only cid & inline attachments
-						if (inline || cid!=null) attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
+						if (inline && cid!=null) {
+							attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
+							//TODO: change this weird matching of cids2urls!
+							html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+						}
 
-						//TODO: change this weird matching of cids2urls!
-						if (cid!=null) html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
 
 					} catch (Exception exc) {
 						Service.logger.error("Exception",exc);
