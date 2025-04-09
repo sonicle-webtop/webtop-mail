@@ -71,6 +71,7 @@ import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.ws.FlagsChangedMessage;
+import com.sun.mail.imap.protocol.BODYSTRUCTURE;
 import jakarta.mail.event.MailEvent;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -635,10 +636,10 @@ public class FolderCache {
     protected void refreshUnreadMessagesCount() throws MessagingException {
         if ((folder.getType() & Folder.HOLDS_MESSAGES)>0) {
             int oldunread=unread;
-            if (folder.isOpen()) {
+            /*if (folder.isOpen()) {
                 Message umsgs[]=folder.search(unseenSearchTerm);
                 unread=umsgs.length;
-            } else unread=folder.getUnreadMessageCount();
+            } else */unread=folder.getUnreadMessageCount();
 			//Service.logger.debug("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
             if (oldunread!=unread) {
 				unreadChanged=true;
@@ -1756,7 +1757,7 @@ public class FolderCache {
 		return rmsgs;
 	}
 	
-	protected boolean isInvitation(Part part) throws MessagingException {
+	private boolean _isInvitation(Part part) throws MessagingException {
 		if (part.isMimeType("text/calendar")) {
 			//String ctype=part.getContentType();
 			//if (ctype!=null && StringUtils.containsIgnoreCase(ctype, "method=REQUEST"))
@@ -1765,7 +1766,7 @@ public class FolderCache {
 		return false;
 	}
 	
-	protected boolean isAttachment(Part part) throws MessagingException {
+	private boolean _isAttachment(Part part) throws MessagingException {
 		String disp = part.getDisposition();
 		String cid=null;
 		//skip cid info in text parts, to avoid wrong detection
@@ -1793,14 +1794,30 @@ public class FolderCache {
 		}
 		return false;
 	}
-    
-    protected boolean hasAttachments(Part p, String namePattern) throws MessagingException, IOException {
+	
+	protected boolean hasAttachments(Message m) throws MessagingException, IOException {
+		return hasAttachments(m, null);
+	}
+	
+	protected boolean hasAttachments(Message m, String lowerCaseNamePattern) throws MessagingException, IOException {
+		if (ms.isAttachamentDetectUseBodyStructure() && m instanceof SonicleIMAPMessage)
+			return ((SonicleIMAPMessage)m).hasAttachments(lowerCaseNamePattern);
+		return _hasAttachments(m, lowerCaseNamePattern);
+	}
+	
+	protected boolean hasInvitation(Message m) throws MessagingException, IOException {
+		if (ms.isAttachamentDetectUseBodyStructure() && m instanceof SonicleIMAPMessage)
+			return ((SonicleIMAPMessage)m).hasInvitation(false);
+		return _hasInvitation(m);
+	}
+	
+    private boolean _hasAttachments(Part p, String lowerCaseNamePattern) throws MessagingException, IOException {
         boolean retval=false;
         
-		if (isAttachment(p)) {
-			if (namePattern!=null) {
+		if (_isAttachment(p)) {
+			if (lowerCaseNamePattern!=null) {
 				String filename = ms.getPartName(p);
-				if (StringUtils.containsIgnoreCase(filename, namePattern))
+				if (filename!=null && filename.toLowerCase().contains(lowerCaseNamePattern))
 					retval=true;
 			}
 			else retval=true;
@@ -1810,7 +1827,7 @@ public class FolderCache {
             int parts=mp.getCount();
             for(int i=0;i<parts;++i) {
                 Part bp=mp.getBodyPart(i);
-                if (hasAttachments(bp, namePattern)) {
+                if (_hasAttachments(bp, lowerCaseNamePattern)) {
                     retval=true;
                     break;
                 }
@@ -1820,10 +1837,10 @@ public class FolderCache {
         return retval;
     }
 
-    protected boolean hasInvitation(Part p) throws MessagingException, IOException {
+    private boolean _hasInvitation(Part p) throws MessagingException, IOException {
         boolean retval=false;
         
-		if (isInvitation(p)) {
+		if (_isInvitation(p)) {
 			retval=true;
 		}
         else if(p.isMimeType("multipart/*")) {
@@ -1831,7 +1848,7 @@ public class FolderCache {
             int parts=mp.getCount();
             for(int i=0;i<parts;++i) {
                 Part bp=mp.getBodyPart(i);
-                if (hasInvitation(bp)) {
+                if (_hasInvitation(bp)) {
                     retval=true;
                     break;
                 }

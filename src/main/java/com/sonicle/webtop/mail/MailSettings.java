@@ -215,6 +215,14 @@ public class MailSettings {
 	
 	/**
 	 * [system+domain]
+	 * [boolean]
+	 * false to use body parts to detect attachment (slower), true to use body structure (faster).
+	 * Defaults to true;
+	 */
+	public static final String ATTACHMENT_DETECT_USE_BODYSTRUCTURE = "attachment.detect.use.bodystucture";
+	
+	/**
+	 * [system+domain]
 	 * [string]
 	 * Pro-active security comma separated list of extensions to be considered dangerous.
 	 * This overwrite any internal default.

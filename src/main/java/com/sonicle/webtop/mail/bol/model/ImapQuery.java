@@ -166,7 +166,7 @@ public class ImapQuery {
 					terms.add(new FlagTerm(MailManager.getFlagNote(), true));
 					if (!"*".equals(value)) notePattern=valueToLikePattern(value);
 				} else if(key.equals(ATTACHMENT_NAME)) {
-					attachmentName=value;
+					attachmentName=value!=null?value.toLowerCase():null;
 				} else if(value.equals(ATTACHMENT)) {
 					hasAttachment=true;
 				} else if(value.equals(UNREAD)) {
