@@ -102,8 +102,6 @@ import com.sonicle.webtop.mail.bol.js.JsMailAutosave;
 import com.sonicle.webtop.mail.bol.js.JsMessage;
 import com.sonicle.webtop.mail.bol.js.JsPortletSearchResult;
 import com.sonicle.webtop.mail.bol.js.JsPreviewMessage;
-import com.sonicle.webtop.mail.bol.js.JsQuickPartModel;
-import com.sonicle.webtop.mail.bol.js.JsRecipient;
 import com.sonicle.webtop.mail.bol.js.JsSharing;
 import com.sonicle.webtop.mail.bol.js.JsSmartSearchTotals;
 import com.sonicle.webtop.mail.bol.js.JsSort;
@@ -155,6 +153,7 @@ import com.sonicle.mail.UniqueValue;
 import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
+import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.app.CoreManifest;
@@ -10052,19 +10051,23 @@ public class Service extends BaseService {
 			
 			List<MailFilter> filters = mailManager.getMailFilters(MailFiltersType.INCOMING, EnabledCond.ANY_STATE);
 			boolean blockFilterFound = false;
+			HashSet<String> addressUsageCache = new HashSet<>();
 			for (MailFilter filter : filters) {
 				if (ManagerUtils.MAILFILTER_SENDERBLACKLIST_BUILTIN.equals(filter.getBuiltIn())) {
 					blockFilterFound = true;
 					ManagerUtils.fillSenderBlacklistMailFilterWithDefaults(filter, spamFolder);
-					filter.getSieveRules().add(SieveRuleList.newRuleMatchFrom(address));
+					final SieveRule fromRule = SieveRuleList.newRuleMatchFrom(address, addressUsageCache);
+					if (fromRule != null) filter.getSieveRules().add(fromRule);
 				}
 			}
 			if (blockFilterFound == false) {
 				MailFilter filter = new MailFilter();
 				ManagerUtils.fillSenderBlacklistMailFilterWithDefaults(filter, spamFolder);
-				filter.getSieveRules().add(SieveRuleList.newRuleMatchFrom(address));
+				final SieveRule fromRule = SieveRuleList.newRuleMatchFrom(address, addressUsageCache);
+				if (fromRule != null) filter.getSieveRules().add(fromRule);
 				filters.add(filter);
 			}
+			addressUsageCache.clear();
 			mailManager.updateMailFilters(MailFiltersType.INCOMING, filters);
 			boolean isWTScript = StringUtils.equals(mailManager.getActiveSieveScriptName(), MailManager.SIEVE_WEBTOP_SCRIPT);
 			mailManager.applySieveScript(isWTScript);
