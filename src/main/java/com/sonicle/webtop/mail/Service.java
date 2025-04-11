@@ -6682,7 +6682,7 @@ public class Service extends BaseService {
 						boolean tIsOpen = false;
 						boolean tChildren = false;
 						int tUnseenChildren = 0;
-						SonicleIMAPMessage mostRecentUnseenMsg = null;
+						SonicleIMAPMessage oldestUnseenMsg = null;
 						SonicleIMAPMessage mostRecentMsg = null;
 
 						for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
@@ -6709,8 +6709,9 @@ public class Service extends BaseService {
 									tId = nuid;
 									tIsOpen = mcache.isThreadOpen(tId);
 									tChildren = tIsOpen;
-									tUnseenChildren = 0;
-									mostRecentUnseenMsg = null;
+									boolean rootUnseen = !xm.isExpunged() && !xm.isSet(Flags.Flag.SEEN);
+									tUnseenChildren = rootUnseen ? 1 : 0;
+									oldestUnseenMsg = rootUnseen ? xm : null;
 									mostRecentMsg = xm; // Start with root as most recent
 
 									// if closed thread, count unseen children
@@ -6754,10 +6755,10 @@ public class Service extends BaseService {
 
 										// Update most recent unseen message in thread
 										if (!xm.isSet(Flags.Flag.SEEN)) {
-											if (mostRecentUnseenMsg == null ||
-												xm.getSentDate().after(mostRecentUnseenMsg.getSentDate()) ||
-												(xm.getSentDate().equals(mostRecentUnseenMsg.getSentDate()) && nuid > mcache.getUID(mostRecentUnseenMsg))) {
-												mostRecentUnseenMsg = xm;
+											if (oldestUnseenMsg == null ||
+												xm.getSentDate().before(oldestUnseenMsg.getSentDate()) ||
+												(xm.getSentDate().equals(oldestUnseenMsg.getSentDate()) && nuid < mcache.getUID(oldestUnseenMsg))) {
+												oldestUnseenMsg = xm;
 											}
 										}
 
@@ -6768,8 +6769,8 @@ public class Service extends BaseService {
 
 										if (isLastMessageInThread) {
 											// We've seen all messages in this thread, decide which one to show
-											SonicleIMAPMessage messageToShow = (mostRecentUnseenMsg != null) ? 
-																			  mostRecentUnseenMsg : mostRecentMsg;
+											SonicleIMAPMessage messageToShow = (oldestUnseenMsg != null) ? 
+																			  oldestUnseenMsg : mostRecentMsg;
 
 											// Skip this message unless it's the one we want to show
 											//if (xm != messageToShow) {
