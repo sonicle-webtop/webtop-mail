@@ -1596,7 +1596,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 
     doAutosave: function() {
 		var me=this,o=me.opts.data,mo=me.getModel();
-        if (me.isAutosaveDirty()) {
+		//Do not save anything if nothing has been edited		
+        if (mo.isDirty() && me.isAutosaveDirty()) {
             var mailparams={
 				folder: o.folder,
 				subject: me.subject.getValue(),
