@@ -7027,7 +7027,7 @@ public class Service extends BaseService {
 								threadOpen = mcache.isThreadOpen(tId);
 								if (tIndent == 0) {
 									threadHasChildren = tChildren;
-									threadUnseenChildren = tUnseenChildren;
+									threadUnseenChildren = tChildren ? tUnseenChildren : 0;
 								} else {
 									//if closed thread force indent to 0
 									//so that any child selected will be rendered as 0 indentation
