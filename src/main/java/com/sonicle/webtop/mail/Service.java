@@ -6611,6 +6611,7 @@ public class Service extends BaseService {
 				}
 
 				ImapQuery iq = new ImapQuery(this.allFlagStrings, queryObj, profile.getTimeZone());
+				if (iq.hasAttachment() || iq.hasAttachmentName() || iq.hasNotePattern()) sgi.threaded = false;
 
 				if(queryObj != null) refresh = true; 
 				MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, timestamp, iq);

@@ -176,11 +176,11 @@ public class FolderCache {
 	private MessagesAddedHandler messagesAddedHandler = new MessagesAddedHandler();
 	private MessageCountHandler messageCountHandler = new MessageCountHandler();
 
+	private static FetchProfile FP_BS = new FetchProfile();
 
-    //static {
-	//	addHashMonths("en",new String[]{"jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"});
-	//	addHashMonths("it",new String[]{"gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"});
-    //}
+    static {
+		FP_BS.add(FetchProfile.Item.CONTENT_INFO);
+    }
 
 	//private static void addHashMonths(String language, String vmonths[]) {
 	//	HashMap<String,Integer> hmonths=new HashMap<>();
@@ -1730,6 +1730,8 @@ public class FolderCache {
 		
 		if (iq.hasAttachment() || iq.hasAttachmentName()) {
 			ArrayList<Message> amsgs=new ArrayList<Message>();
+			//ensure BODYSTRUCTURE has been loaded
+			fetch(msgs, FP_BS);
 			for(Message m: msgs) {
 				if (hasAttachments(m, iq.getAttachmentName())) amsgs.add(m);
 			}
