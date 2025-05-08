@@ -814,6 +814,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			},
 			iconCls: 'wtmail-icon-inMailFilters'
 		});
+        me.addAct('autoResponder', {
+			text: me.res("inMailFilters.autoResponder.tit"),
+			handler: function() {
+				me.editAutoResponder();
+			},
+			iconCls: 'wtmail-icon-autoResponder'
+		});
 		
 		me.addAct("multisearch",{ handler: function() { me.messagesPanel.actionMultiSearch(); } , iconCls: 'wt-icon-search-multi', enableToggle: true });
 		
@@ -1032,7 +1039,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			xtype: 'menu',
 			items: [
                 me.getAct('advsearch'),
-				me.getAct('inMailFilters'),
+				//me.getAct('inMailFilters'),
                 me.getAct('newmainfolder'),
                 me.getAct('refreshtree'),
                 '-',
@@ -2587,6 +2594,23 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					id: 'in'
 				},
 				addMailFilter: opts.addMailFilter
+			});
+		});
+	},
+	
+	editAutoResponder: function(opts) {
+		opts = opts || {};
+		var me = this,
+			vw = WT.createView(me.ID, 'view.AutoResponder', { swapReturn: true });
+		
+		vw.on('viewsave', function(s, success, model) {
+			Ext.callback(opts.callback, opts.scope || me, [success, model]);
+		});
+		vw.showView(function() {
+			vw.begin('edit', {
+				data: {
+					id: 'in'
+				}
 			});
 		});
 	},

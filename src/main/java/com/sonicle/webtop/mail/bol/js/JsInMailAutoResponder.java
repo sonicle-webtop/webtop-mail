@@ -44,25 +44,20 @@ import org.joda.time.DateTimeZone;
  *
  * @author malbinola
  */
-public class JsInMailFilters {
+public class JsInMailAutoResponder {
 	public MailFiltersType id = MailFiltersType.INCOMING;
 	public Integer scriptsCount;
 	public String activeScript;
-	public ArrayList<JsMailFilter> filters = new ArrayList<>();
+	public JsAutoResponder autoResponder;
 	
-	public JsInMailFilters(int scriptsCount, String activeScript, List<MailFilter> mailFilters, DateTimeZone profileTz) {
+	public JsInMailAutoResponder(int scriptsCount, String activeScript, AutoResponder autoResponder, DateTimeZone profileTz) {
 		this.scriptsCount = scriptsCount;
 		this.activeScript = activeScript;
-		for (MailFilter filter : mailFilters) {
-			this.filters.add(new JsMailFilter(filter));
-		}
+		this.autoResponder = new JsAutoResponder(autoResponder, profileTz);
 	}
 	
-	public ArrayList<MailFilter> createMailFiltersForUpdate() {
-		ArrayList<MailFilter> list = new ArrayList<>();
-		for (JsMailFilter filter : filters) {
-			list.add(filter.createMailFilterForUpdate());
-		}
-		return list;
+	public AutoResponder createAutoResponderForUpdate(DateTimeZone profileTz) {
+		return autoResponder.createAutoResponderForUpdate(profileTz);
 	}
+	
 }

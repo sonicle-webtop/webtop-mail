@@ -117,7 +117,6 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 				hideDataIndex: me.hideEllipsisMenuDataIndex,
 				items: [
 					{
-						//iconCls: 'fas fa-ellipsis-v',
 						handler: function(v, ridx, cidx, itm, e, rec, row) {
 							me.mys.showTreeContextMenu(v, e, rec, e.target.parentElement, Ext.fly(row).up('.x-grid-item'));
 						},

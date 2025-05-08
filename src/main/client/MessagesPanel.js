@@ -380,6 +380,20 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			//	scale: WT.getHeaderScale()
 			//},			
 			items:[
+				' ',
+				{
+					xtype: 'button',
+					tooltip: me.res('inMailFilters.tit'),
+					iconCls: 'wtmail-imaptree-rulesmenu',
+					arrowVisible: false,
+					ui: '{secondary}',
+					menu: {
+						items: [
+							me.getAct('inMailFilters'),
+							me.getAct('autoResponder')
+						]
+					}
+				},
 				'->',
 				me.searchComponent,
 				me.keepFilterButton,

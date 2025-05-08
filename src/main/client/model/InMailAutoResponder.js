@@ -31,38 +31,26 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.bol.js;
-
-import com.sonicle.webtop.mail.model.AutoResponder;
-import com.sonicle.webtop.mail.model.MailFilter;
-import com.sonicle.webtop.mail.model.MailFiltersType;
-import java.util.ArrayList;
-import java.util.List;
-import org.joda.time.DateTimeZone;
-
-/**
- *
- * @author malbinola
- */
-public class JsInMailFilters {
-	public MailFiltersType id = MailFiltersType.INCOMING;
-	public Integer scriptsCount;
-	public String activeScript;
-	public ArrayList<JsMailFilter> filters = new ArrayList<>();
-	
-	public JsInMailFilters(int scriptsCount, String activeScript, List<MailFilter> mailFilters, DateTimeZone profileTz) {
-		this.scriptsCount = scriptsCount;
-		this.activeScript = activeScript;
-		for (MailFilter filter : mailFilters) {
-			this.filters.add(new JsMailFilter(filter));
+Ext.define('Sonicle.webtop.mail.model.InMailAutoResponder', {
+	extend: 'WTA.ux.data.BaseModel',
+	requires: [
+		'Sonicle.webtop.mail.model.AutoResponder'
+	],
+	proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'ManageMailAutoResponder', 'data', {
+		writer: {
+			type: 'sojson',
+			writeAssociations: true
 		}
-	}
+	}),
 	
-	public ArrayList<MailFilter> createMailFiltersForUpdate() {
-		ArrayList<MailFilter> list = new ArrayList<>();
-		for (JsMailFilter filter : filters) {
-			list.add(filter.createMailFilterForUpdate());
-		}
-		return list;
-	}
-}
+	identifier: 'negativestring',
+	idProperty: 'id',
+	fields: [
+		WTF.field('id', 'string', false),
+		WTF.roField('scriptsCount', 'int'),
+		WTF.field('activeScript', 'string', false)
+	],
+	hasOne: [
+		WTF.hasOne('autoResponder', 'Sonicle.webtop.mail.model.AutoResponder')
+	]
+});

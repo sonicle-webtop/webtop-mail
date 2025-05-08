@@ -167,6 +167,7 @@ import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.core.util.ICalendarHelper;
 import com.sonicle.webtop.mail.bol.js.JsAdvSearchMessage;
 import com.sonicle.webtop.mail.bol.js.JsEnvelope;
+import com.sonicle.webtop.mail.bol.js.JsInMailAutoResponder;
 import com.sonicle.webtop.mail.bol.js.JsListedMessage;
 import com.sonicle.webtop.mail.bol.js.JsMessageDetails;
 import com.sonicle.webtop.mail.bol.js.JsOperateFolder;
@@ -10009,11 +10010,10 @@ public class Service extends BaseService {
 				}
 				if (StringUtils.isBlank(activeScript)) activeScript = MailManager.SIEVE_WEBTOP_SCRIPT;
 				
-				AutoResponder autoResp = mailManager.getAutoResponder();
 				MailFiltersType type = EnumUtils.forSerializedName(id, MailFiltersType.class);
 				List<MailFilter> filters = mailManager.getMailFilters(type, EnabledCond.ANY_STATE);
 				
-				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, autoResp, filters, profileTz);
+				JsInMailFilters js = new JsInMailFilters(scriptCount, activeScript, filters, profileTz);
 				
 				new JsonResult(js).printTo(out);
 				
@@ -10021,7 +10021,6 @@ public class Service extends BaseService {
 				Payload<MapItem, JsInMailFilters> pl = ServletUtils.getPayload(request, JsInMailFilters.class);
 				
 				if (EnumUtils.equals(pl.data.id, MailFiltersType.INCOMING)) {
-					mailManager.updateAutoResponder(pl.data.createAutoResponderForUpdate(profileTz));
 					mailManager.updateMailFilters(pl.data.id, pl.data.createMailFiltersForUpdate());
 					
 					boolean isWTScript = StringUtils.equals(pl.data.activeScript, MailManager.SIEVE_WEBTOP_SCRIPT);
@@ -10042,6 +10041,59 @@ public class Service extends BaseService {
 			
 		} catch(Exception ex) {
 			logger.error("Error in ManageFilters", ex);
+			new JsonResult(false, ex.getMessage()).printTo(out);
+		}
+	}
+	
+	public void processManageMailAutoResponder(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String crud = ServletUtils.getStringParameter(request, "crud", true);
+			DateTimeZone profileTz = getEnv().getProfile().getTimeZone();
+			
+			if (crud.equals(Crud.READ)) {
+				String id = ServletUtils.getStringParameter(request, "id", true);
+				
+				int scriptCount = -1;
+				String activeScript = null;
+				try {
+					List<com.fluffypeople.managesieve.SieveScript> scripts = mailManager.listSieveScripts();
+					scriptCount = scripts.size();
+					activeScript = ManagerUtils.findActiveScriptName(scripts);
+				} catch(WTException ex1) {
+					logger.warn("Error reading active script", ex1);
+				}
+				if (StringUtils.isBlank(activeScript)) activeScript = MailManager.SIEVE_WEBTOP_SCRIPT;
+				
+				AutoResponder autoResp = mailManager.getAutoResponder();
+				
+				JsInMailAutoResponder js = new JsInMailAutoResponder(scriptCount, activeScript, autoResp, profileTz);
+				
+				new JsonResult(js).printTo(out);
+				
+			} else if (crud.equals(Crud.UPDATE)) {
+				Payload<MapItem, JsInMailAutoResponder> pl = ServletUtils.getPayload(request, JsInMailAutoResponder.class);
+				
+				if (EnumUtils.equals(pl.data.id, MailFiltersType.INCOMING)) {
+					mailManager.updateAutoResponder(pl.data.createAutoResponderForUpdate(profileTz));
+					
+					boolean isWTScript = StringUtils.equals(pl.data.activeScript, MailManager.SIEVE_WEBTOP_SCRIPT);
+					if (!isWTScript && !StringUtils.isBlank(pl.data.activeScript)) {
+						try {
+							mailManager.activateSieveScript(pl.data.activeScript);
+						} catch(WTException ex1) {
+							logger.warn("Error activating chosen script", ex1);
+						}
+					}
+					// Always generate a WT script but activate it 
+					// automatically only if has been selected our script
+					mailManager.applySieveScript(isWTScript);
+				}	
+				
+				new JsonResult().printTo(out);
+			}
+			
+		} catch(Exception ex) {
+			logger.error("Error in ManageAutoResponder", ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
 		}
 	}

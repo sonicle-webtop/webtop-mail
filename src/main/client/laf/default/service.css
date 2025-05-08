@@ -202,6 +202,8 @@ vertical-align: bottom;
 
 .wtmail-icon-forwardeml { background-image: none; background-size: contain; vertical-align: bottom; }
 
+.wtmail-imaptree-rulesmenu { background-image: url('rules_16.svg') !important; background-size: contain; vertical-align: bottom; }
+
 .wtmail-imaptree-gearmenu:before { content: '\f013'; font: var(--fa-font-solid); } .wtmail-imaptree-gearmenu { background-image: none !important; }
 
 .wtmail-smartsearch-name-column { 
@@ -232,6 +234,10 @@ background-size: contain;
 }
 .wtmail-icon-outMailFilters { 
 background-image: url('mailfilter-out_16.svg') !important; 
+background-size: contain; 
+}
+.wtmail-icon-autoResponder { 
+background-image: url('autoresponder_16.svg') !important; 
 background-size: contain; 
 }
 .wtmail-icon-addMailFilter { 

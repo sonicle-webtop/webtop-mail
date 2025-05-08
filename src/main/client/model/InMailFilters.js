@@ -34,7 +34,6 @@
 Ext.define('Sonicle.webtop.mail.model.InMailFilters', {
 	extend: 'WTA.ux.data.BaseModel',
 	requires: [
-		'Sonicle.webtop.mail.model.AutoResponder',
 		'Sonicle.webtop.mail.model.MailFilter'
 	],
 	proxy: WTF.apiProxy('com.sonicle.webtop.mail', 'ManageMailFilters', 'data', {
@@ -50,9 +49,6 @@ Ext.define('Sonicle.webtop.mail.model.InMailFilters', {
 		WTF.field('id', 'string', false),
 		WTF.roField('scriptsCount', 'int'),
 		WTF.field('activeScript', 'string', false)
-	],
-	hasOne: [
-		WTF.hasOne('autoResponder', 'Sonicle.webtop.mail.model.AutoResponder')
 	],
 	hasMany: [
 		WTF.hasMany('filters', 'Sonicle.webtop.mail.model.MailFilter')
