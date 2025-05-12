@@ -42,6 +42,9 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 	],
 	
 	border: false,
+	rowLines: true,
+	columnLines: false,
+	hideHeaders: true,
 	
 	config: {
 		createDisabled: false,
@@ -63,7 +66,6 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 			autoLoad: true
 		});
 		
-		me.columnLines = true;
 		me.selModel = 'rowmodel';
 		me.plugins = me.plugins || [];
 		me.plugins.push(
@@ -95,7 +97,6 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 		}
 		
 		if(!me.columns) {
-			me.hideHeaders = true;
 			me.columns = [
 				{
 					xtype: 'solookupcolumn',

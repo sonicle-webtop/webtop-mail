@@ -71,10 +71,13 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 			region: 'center',
 			layout: 'vbox',
 			items: [{
-				xtype: 'wtform',
+				xtype: 'wtfieldspanel',
+				paddingTop: true,
+				paddingSides: true,
+				scrollable: true,
 				modelValidation: true,
 				defaults: {
-					labelWidth: 150
+					labelWidth: 180
 				},
 				items: [
 					{
@@ -96,11 +99,6 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 						disabled: true,
 						width: 500
 					}, {
-						xtype: 'checkbox',
-						bind: '{foEnabled}',
-						hideEmptyLabel: false,
-						boxLabel: me.mys.res('sieveFilter.fld-enabled.lbl')
-					}, {
 						xtype: 'formseparator'
 					},
 					WTF.lookupCombo('id', 'desc', {
@@ -112,13 +110,17 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 							autoLoad: true
 						}),
 						fieldLabel: me.mys.res('sieveFilter.fld-match.lbl'),
-						width: 500
+						width: 550
 					})
 				],
 				width: '100%'
 			}, {
-				xtype: 'container',
+				xtype: 'wtfieldspanel',
+				paddingTop: true,
+				paddingSides: true,
 				layout: 'vbox',
+				width: '100%',
+				flex: 1,
 				items: [
 					{
 						xtype: 'wtmailsieverulegrid',
@@ -150,14 +152,21 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 						width: '100%',
 						flex: 1
 					}
-				],
-				width: '100%',
-				flex: 1
+				]
 			}]
 		});
 		
 		me.on('viewload', me.onViewLoad);
 		me.on('beforemodelvalidate', me.onBeforeModelValidate);
+	},
+	
+	initTBar: function() {
+		var me = this,
+			SoU = Sonicle.Utils;
+		
+		me.dockedItems = SoU.mergeDockedItems(me.dockedItems, 'top', [
+			me.createTopToolbar1Cfg(me.prepareTopToolbarItems())
+		]);
 	},
 	
 	onViewLoad: function(s, success) {
@@ -185,5 +194,18 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 	
 	dumpStoreData: function(sto) {
 		return Ext.JSON.encode(Ext.pluck(sto.data.items, 'data'));
+	},
+	
+	prepareTopToolbarItems: function() {
+		var me=this;
+		return [
+			{
+				xtype: 'checkbox',
+				bind: '{foEnabled}',
+				hideEmptyLabel: true,
+				boxLabel: me.mys.res('sieveFilter.fld-enabled.lbl')
+			}
+		];
 	}
+	
 });

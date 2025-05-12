@@ -68,54 +68,6 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 	
 	initComponent: function() {
 		var me = this;
-		Ext.apply(me, {
-			tbar: [
-				'-',
-				me.addAct('addMailFilter', {
-					ignoreSize: true,
-					text: null,
-					tooltip: me.res('inMailFilters.addMailFilter.tip'),
-					handler: function() {
-						me.addMailFilterUI();
-					}
-				}),
-				'->',
-				WTF.lookupCombo('id', 'desc', {
-					bind: {
-						value: '{record.activeScript}',
-						visible: '{foActiveScriptVisible}'
-					},
-					store: {
-						autoLoad: true,
-						model: 'WTA.model.Simple',
-						proxy: WTF.proxy(me.mys.ID, 'LookupSieveScripts')
-					},
-					fieldLabel: me.res('inMailFilters.fld-activeScript.lbl'),
-					labelAlign: 'right',
-					labelWidth: 180,
-					width: 300,
-					listeners: {
-						select: function(s, rec) {
-							if (rec.getId() !== me.self.WT_SCRIPT) {
-								WT.warn(me.res('inMailFilters.warn.notwebtop', me.self.WT_SCRIPT));
-							}
-						}
-					}
-				})
-			],
-			bbar: {
-				xtype: 'statusbar',
-				items: [
-					{
-						xtype: 'tbtext',
-						bind: {
-							hidden: '{foSieveAvail}'
-						},
-						text: me.res('inMailFilters.warn.nosieve')
-					}
-				]
-			}
-		});
 		me.callParent(arguments);
 		
 		me.add({
@@ -200,6 +152,18 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 		me.on('viewload', me.onViewLoad);
 	},
 	
+	initTBar: function() {
+		var me = this,
+			SoU = Sonicle.Utils;
+		
+		me.dockedItems = SoU.mergeDockedItems(me.dockedItems, 'top', [
+			me.createTopToolbar1Cfg(me.prepareTopToolbarItems())
+		]);
+		me.dockedItems = SoU.mergeDockedItems(me.dockedItems, 'bottom', [
+			me.createStatusbarCfg()
+		]);
+	},
+			
 	addMailFilter: function(data, opts) {
 		var me = this,
 			vw = WT.createView(me.mys.ID, 'view.SieveFilter', {
@@ -324,7 +288,62 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 				sieveRules: data.rules,
 				sieveActions: data.actions
 			};
+		},
+		
+		prepareTopToolbarItems: function() {
+			var me = this;
+			return [
+				me.addAct('addMailFilter', {
+					ignoreSize: true,
+					text: me.res('inMailFilters.addMailFilter.tip'),
+					//tooltip: me.res('inMailFilters.addMailFilter.tip'),
+					ui: '{secondary|toolbar}',
+					handler: function() {
+						me.addMailFilterUI();
+					}
+				}),
+				'->',
+				WTF.lookupCombo('id', 'desc', {
+					bind: {
+						value: '{record.activeScript}',
+						visible: '{foActiveScriptVisible}'
+					},
+					store: {
+						autoLoad: true,
+						model: 'WTA.model.Simple',
+						proxy: WTF.proxy(me.mys.ID, 'LookupSieveScripts')
+					},
+					fieldLabel: me.res('inMailFilters.fld-activeScript.lbl'),
+					labelAlign: 'right',
+					labelWidth: 180,
+					width: 300,
+					listeners: {
+						select: function(s, rec) {
+							if (rec.getId() !== me.self.WT_SCRIPT) {
+								WT.warn(me.res('inMailFilters.warn.notwebtop', me.self.WT_SCRIPT));
+							}
+						}
+					}
+				})
+			];
+		},
+		
+		createStatusbarCfg: function() {
+			var me = this;
+			return {
+				xtype: 'statusbar',
+				items: [
+					{
+						xtype: 'tbtext',
+						bind: {
+							hidden: '{foSieveAvail}'
+						},
+						text: me.res('inMailFilters.warn.nosieve')
+					}
+				]
+			};
 		}
+		
 	},
 	
 	statics: {

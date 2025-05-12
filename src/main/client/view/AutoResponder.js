@@ -116,45 +116,6 @@ Ext.define('Sonicle.webtop.mail.view.AutoResponder', {
 	
 	initComponent: function() {
 		var me = this;
-		Ext.apply(me, {
-			tbar: [
-				'->',
-				WTF.lookupCombo('id', 'desc', {
-					bind: {
-						value: '{record.activeScript}',
-						visible: '{foActiveScriptVisible}'
-					},
-					store: {
-						autoLoad: true,
-						model: 'WTA.model.Simple',
-						proxy: WTF.proxy(me.mys.ID, 'LookupSieveScripts')
-					},
-					fieldLabel: me.res('inMailFilters.fld-activeScript.lbl'),
-					labelAlign: 'right',
-					labelWidth: 180,
-					width: 300,
-					listeners: {
-						select: function(s, rec) {
-							if (rec.getId() !== me.self.WT_SCRIPT) {
-								WT.warn(me.res('inMailFilters.warn.notwebtop', me.self.WT_SCRIPT));
-							}
-						}
-					}
-				})
-			],
-			bbar: {
-				xtype: 'statusbar',
-				items: [
-					{
-						xtype: 'tbtext',
-						bind: {
-							hidden: '{foSieveAvail}'
-						},
-						text: me.res('inMailFilters.warn.nosieve')
-					}
-				]
-			}
-		});
 		me.callParent(arguments);
 		
 		me.add({
@@ -162,22 +123,17 @@ Ext.define('Sonicle.webtop.mail.view.AutoResponder', {
 			xtype: 'container',
 			layout: 'vbox',
 			items: [{
-				xtype: 'wtform',
+				xtype: 'wtfieldspanel',
 				//title: me.res('inMailFilters.autoResponder.tit'),
+				paddingTop: true,
+				paddingSides: true,
+				scrollable: true,
 				modelValidation: true,
-				collapsible: false,
-				collapsed: false,
 				defaults: {
 					labelWidth: 150
 				},
 				items: [
 					{
-						xtype: 'checkbox',
-						reference: 'fldAutoRespEnabled',
-						bind: '{foAutoRespEnabled}',
-						hideEmptyLabel: false,
-						boxLabel: me.res('sieveFilter.autoResponder.fld-enabled.lbl')
-					}, {
 						xtype: 'textfield',
 						bind: {
 							value: '{record.autoResponder.subject}',
@@ -249,7 +205,7 @@ Ext.define('Sonicle.webtop.mail.view.AutoResponder', {
 								bind: '{foAutoRespStartEnabled}',
 								hideEmptyLabel: true,
 								boxLabel: me.res('sieveFilter.autoResponder.fld-enableOn.lbl'),
-								width: 220
+								width: 240
 							}, {
 								xtype: 'datefield',
 								bind: {
@@ -277,7 +233,7 @@ Ext.define('Sonicle.webtop.mail.view.AutoResponder', {
 								bind: '{foAutoRespEndEnabled}',
 								hideEmptyLabel: true,
 								boxLabel: me.res('sieveFilter.autoResponder.fld-disableOn.lbl'),
-								width: 220
+								width: 240
 							}, {
 								xtype: 'datefield',
 								bind: {
@@ -298,6 +254,18 @@ Ext.define('Sonicle.webtop.mail.view.AutoResponder', {
 		me.on('viewload', me.onViewLoad);
 	},
 	
+	initTBar: function() {
+		var me = this,
+			SoU = Sonicle.Utils;
+		
+		me.dockedItems = SoU.mergeDockedItems(me.dockedItems, 'top', [
+			me.createTopToolbar1Cfg(me.prepareTopToolbarItems())
+		]);
+		me.dockedItems = SoU.mergeDockedItems(me.dockedItems, 'bottom', [
+			me.createStatusbarCfg()
+		]);
+	},
+			
 	privates: {
 		onViewLoad: function(s, success) {
 			if (!success) return;
@@ -309,8 +277,59 @@ Ext.define('Sonicle.webtop.mail.view.AutoResponder', {
 					if (bid === 'yes') mo.set('activeScript', me.self.WT_SCRIPT);
 				}, this);
 			}
-		}
+		},
 		
+		prepareTopToolbarItems: function() {
+			var me = this;
+			return [
+				{
+					xtype: 'checkbox',
+					reference: 'fldAutoRespEnabled',
+					bind: '{foAutoRespEnabled}',
+					hideEmptyLabel: true,
+					boxLabel: me.res('sieveFilter.autoResponder.fld-enabled.lbl')
+				},
+				'->',
+				WTF.lookupCombo('id', 'desc', {
+					bind: {
+						value: '{record.activeScript}',
+						visible: '{foActiveScriptVisible}'
+					},
+					store: {
+						autoLoad: true,
+						model: 'WTA.model.Simple',
+						proxy: WTF.proxy(me.mys.ID, 'LookupSieveScripts')
+					},
+					fieldLabel: me.res('inMailFilters.fld-activeScript.lbl'),
+					labelAlign: 'right',
+					labelWidth: 180,
+					width: 300,
+					listeners: {
+						select: function(s, rec) {
+							if (rec.getId() !== me.self.WT_SCRIPT) {
+								WT.warn(me.res('inMailFilters.warn.notwebtop', me.self.WT_SCRIPT));
+							}
+						}
+					}
+				})
+			];
+		},
+		
+		createStatusbarCfg: function() {
+			var me = this;
+			return {
+				xtype: 'statusbar',
+				items: [
+					{
+						xtype: 'tbtext',
+						bind: {
+							hidden: '{foSieveAvail}'
+						},
+						text: me.res('inMailFilters.warn.nosieve')
+					}
+				]
+			};
+		}
 	},
 	
 	statics: {
