@@ -74,6 +74,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
 			seenOnOpen: WTF.checkboxBind('record', 'seenOnOpen'),
 			favoriteNotifications: WTF.checkboxBind('record', 'favoriteNotifications'),
+			rememberFoldersState: WTF.checkboxBind('record', 'rememberFoldersState'),
 			gridShowPreview: WTF.checkboxBind('record', 'gridShowPreview'),
 			gridAlwaysShowTime: WTF.checkboxBind('record', 'gridAlwaysShowTime'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
@@ -992,7 +993,14 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				fieldLabel: me.res('opts.adv.fld-favoriteFolderNotifications.lbl'),
 				width: 100,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-			},{
+			}, {
+				xtype: 'checkbox',
+				bind:  '{rememberFoldersState}',
+				fieldLabel: me.res('opts.adv.fld-rememberFoldersState.lbl'),
+				width: 100,
+				needReload: true,
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
 				xtype: 'container',
 				layout: {
 					type: 'hbox',

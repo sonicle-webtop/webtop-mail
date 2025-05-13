@@ -101,6 +101,13 @@ public class MailSettings {
 	public static final String FAVORITE_NOTIFICATIONS = "favorite.folders.notifications";
 	
 	/**
+	 * [user][default] (true)
+	 * [boolean]
+	 * Define whether you want to remember folders state at login
+	 */
+	public static final String REMEMBER_FOLDERS_STATE = "remember.folders.state";
+	
+	/**
 	 * [user][default]
 	 * [boolean]
 	 * Activate a view showing all upcoming events.

@@ -9851,6 +9851,7 @@ public class Service extends BaseService {
 			co.put("isArchivingExternal", ss.isArchivingExternal());
 			co.put("todayRowColor", us.getTodayRowColor());
 			co.put("favoriteNotifications", us.isFavoriteNotifications());
+			co.put("rememberFoldersState", us.isRememberFoldersState());
 			co.put("invitationTrashAfterAction", ss.isInvitationTrashAfterAction());
 			co.put("invitationAskEditAfterAction", ss.isInvitationAskEditAfterAction());
 			

@@ -322,7 +322,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			
 			stateEvents : ['collapsenode', 'expandnode'],
 			stateId : 'imaptree-state-id',
-			statefulFolders : true,
+			statefulFolders : me.getVar('rememberFoldersState'),
 			
 			listeners: {
 				itemcontextmenu: function(v, rec, itm, i, e, eopts) {

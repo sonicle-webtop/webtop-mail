@@ -652,6 +652,15 @@ public class MailUserSettings extends BaseUserSettings {
 		return setBoolean(FAVORITE_NOTIFICATIONS, value);
 	}
 	
+	public boolean isRememberFoldersState() {
+		Boolean value = getBoolean(REMEMBER_FOLDERS_STATE, null);
+		return (value != null) ? value : true;
+	}
+	
+	public boolean setRememberFoldersState(boolean value) {
+		return setBoolean(REMEMBER_FOLDERS_STATE, value);
+	}
+	
 	public static class FavoriteFolder {
 		String accountId;
 		String folderId;

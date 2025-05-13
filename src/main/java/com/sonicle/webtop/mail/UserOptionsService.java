@@ -130,6 +130,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.showUpcomingTasks = mus.getShowUpcomingTasks();
 				jso.todayRowColor = mus.getTodayRowColor();
 				jso.favoriteNotifications = mus.isFavoriteNotifications();
+				jso.rememberFoldersState = mus.isRememberFoldersState();
 				
 				// External accounts
 				jso.externalAccountEnabled = mss.isExternalAccountEnabled();
@@ -158,6 +159,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("showUpcomingTasks")) mus.setShowUpcomingTasks(pl.data.showUpcomingTasks);
 				if (pl.map.has("todayRowColor")) mus.setTodayRowColor(pl.data.todayRowColor);
 				if (pl.map.has("favoriteNotifications")) mus.setFavoriteNotifications(pl.data.favoriteNotifications);
+				if (pl.map.has("rememberFoldersState")) mus.setRememberFoldersState(pl.data.rememberFoldersState);
 				// Editing
 				if (pl.map.has("format")) mus.setFormat(pl.data.format);
 				if (pl.map.has("font")) mus.setFontName(pl.data.font);
