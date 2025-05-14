@@ -221,7 +221,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			width: '100%',
 			height: 36,
 			style: 'background-color: var(--wt-theme-color-surface-1)',
-			items: [ me.progressQuota, me.progressQuotaLabel ]
+			items: [ me.progressQuota, me.progressQuotaLabel ],
+			cls: 'wtmail-progress-quota-ct'
 		});
 
 		//create early but set imap store later to avoid early events on Firefox

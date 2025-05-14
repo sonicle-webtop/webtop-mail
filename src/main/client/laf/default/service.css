@@ -986,3 +986,10 @@ color: black;
 }
 /* Grid row Today unselected */
 .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today { background: var(--wt-mail-grid-row-today-backgroundcolor); }
+
+/* Disable quota area text selection */
+.wtmail-progress-quota-ct {
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */	
+}
