@@ -78,11 +78,20 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 						var unr=r.get('unread'),
 							hunr=r.get('hasUnread'),
 							id=r.get('id');
-						return (unr!==0||hunr?'<span class="wtmail-tree-folder-span-bold" data-qtip="'+id+'">'+v+'</span>':v);
+						return (
+							unr!==0 || hunr ?
+								'<span class="wtmail-tree-folder-span-bold" data-qtip="'+id+'">'+v+'</span>'+
+								( unr!==0 ? '<span class="wtmail-tree-unread-cell">'+unr+'</span>' : '' )
+							  : v
+							);
 					},
 					editor: 'textfield'
 				},
-				{
+				/*
+				 * Unseen number is now nested in the folder name column
+				 * to gain spacing
+				 */
+				/*{
 					header: WTF.headerWithGlyphIcon('far fa-eye'),
 					dataIndex: 'unread',
 					align: 'right',
@@ -91,7 +100,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 					renderer: function(v,md,r) {
 						return (v===0?'':'<span class="wtmail-tree-unread-cell">'+v+'</span>');
 					}
-				},
+				},*/
 				{
 					xtype: 'soiconcolumn',
 					header: WTF.headerWithGlyphIcon('fas fa-share-alt'),

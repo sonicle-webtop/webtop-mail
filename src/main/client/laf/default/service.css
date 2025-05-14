@@ -949,8 +949,25 @@ color: black;
 	border-color: transparent !important;
 }
 
+/*
+ * Customize imap tree with unseen number
+ * nested in the folder name column floating to the right
+ * to better use spacings
+ */
+.wtmail-imap-tree .x-grid-cell-first .x-grid-cell-inner {
+	display: flex;
+}
+.wtmail-imap-tree .x-tree-node-text  {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+}
 .wtmail-tree-folder-span-bold {
 	font-weight: bold;
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 .wtmail-imap-tree {
