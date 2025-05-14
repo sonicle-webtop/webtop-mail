@@ -176,19 +176,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	init: function() {
 		var me = this,
-				sue = me.getVar('showUpcomingEvents'),
-				sut = me.getVar('showUpcomingTasks'),
-				todayColor = me.getVar('todayRowColor')/*,
-				unreadColor*/;
+				todayColor = me.getVar('todayRowColor');
 		
-		/*if (Sonicle.ColorUtils.bestForeColor(todayColor, 'fixed') === '#FFFFFF') {
-			unreadColor = Ext.util.Color.create(todayColor).createLighter().toHex();
-		} else {
-			unreadColor = Ext.util.Color.create(todayColor).createDarker().toHex();
-		}*/
 		//no more today unread different than today read
 		Sonicle.CssUtils.setVariable('--wt-mail-grid-row-today-backgroundcolor', todayColor);
-		Sonicle.CssUtils.setVariable('--wt-mail-grid-row-unread-backgroundcolor', todayColor /*unreadColor*/);
+		Sonicle.CssUtils.setVariable('--wt-mail-grid-row-unread-backgroundcolor', todayColor);
 
 		me.initActions();
 
