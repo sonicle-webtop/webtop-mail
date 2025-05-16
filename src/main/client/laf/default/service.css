@@ -993,3 +993,13 @@ color: black;
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */	
 }
+
+.wtmail-icon-p7m-locked {
+	background-image: url('document-padlock-closed.svg') !important; 
+	background-size: contain; 	
+}
+
+.wtmail-icon-p7m-unlocked {
+	background-image: url('document-padlock-open.svg') !important; 
+	background-size: contain; 	
+}

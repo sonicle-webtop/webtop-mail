@@ -154,6 +154,7 @@ import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.mail.sieve.SieveRule;
+import com.sonicle.security.CryptoUtils;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.app.CoreManifest;
@@ -8439,6 +8440,7 @@ public class Service extends BaseService {
 		String purl = request.getParameter("url");
 		String punknown = request.getParameter("unknown");
 		String psaveas = request.getParameter("saveas");
+		String pp7m = request.getParameter("p7m");
 		
 		try {
 			account.checkStoreConnected();
@@ -8481,6 +8483,8 @@ public class Service extends BaseService {
 				} catch(Exception exc) {
 				}
  	            name=name.trim();
+				//if decrypting p7m, strip .p7m from filename
+				if (pp7m!=null) name=name.substring(0,name.length()-4);
 				if (psaveas==null) {
 					int ix=name.lastIndexOf(".");
 					if (ix>0) {
@@ -8495,6 +8499,7 @@ public class Service extends BaseService {
 					if (!folder.isOpen()) folder.open(Folder.READ_ONLY);
 				}				
 				InputStream is = part.getInputStream();
+				if (pp7m!=null) is = CryptoUtils.decryptP7M(is);
 				OutputStream out = response.getOutputStream();
 				fastStreamCopy(is, out);
 				is.close();

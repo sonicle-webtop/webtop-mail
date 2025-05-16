@@ -111,6 +111,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 	
 	emailMenu: null,
 	attachMenu: null,
+	p7mAttachMenu: null,
     
     mys: null,
 	
@@ -674,40 +675,69 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 
 
 			//create attach menu
-			me.attachMenu=new Ext.menu.Menu({
-				items: [
-					new Ext.Action({text: me.mys.res("attachmenu.save"),handler:function() {
-						var el=me.attachMenu.activeElement;
-						if (el.linkSave) window.open(el.linkSave);
-					}, scope:me, iconCls: 'wt-icon-save'}),
-					new Ext.Action({text: me.mys.res("attachmenu.saveall"),handler:function() {
-						var el=me.attachMenu.activeElement;
-						if (el.linkSaveAll) window.open(el.linkSaveAll);
-					}, scope:me, iconCls: 'wt-icon-saveAll'}),
-					new Ext.Action({text: me.mys.res("attachment.savetocloud"),
-						disabled: !WT.getApp().hasDescriptor('com.sonicle.webtop.vfs'),
-						handler: function() {
-							var el = me.attachMenu.activeElement;
-							if (el.linkSave) {
-								var api = WT.getApp().getServiceApi('com.sonicle.webtop.vfs');
-								api.chooseFolder({
-									callback: function(s, file) {
-										if (s === false) return;
-										me.saveInCloud({
-											fileId : file.fileId,
-											path : file.path,
-											storeId : file.storeId,
-											folder : el.attachItem.folder,
-											idAttach : el.attachItem.idAttach,
-											idMessage : el.attachItem.idMessage
-										});
-									}
+			var p7mActions=new Array(), j=0;
+			i=0;
+			actions=new Array();
+			
+			//this only for p7m attachments
+			p7mActions[j++]=new Ext.Action({
+				text: me.mys.res("attachmenu.p7m"),
+				handler: function(mi) {
+					var el=mi.parentMenu.activeElement;
+					if (el.linkSave) me.p7mDecryptAndOpen(el.linkSave);
+				},
+				scope: me,
+				iconCls: 'wtmail-icon-p7m-unlocked'
+			});
+			p7mActions[j++]='-';
+			
+			p7mActions[j++]=actions[i++]=new Ext.Action({
+				text: me.mys.res("attachmenu.save"),
+				handler: function(mi) {
+					var el=mi.parentMenu.activeElement;
+					if (el.linkSave) window.open(el.linkSave);
+				},
+				scope: me,
+				iconCls: 'wt-icon-save'
+			});
+			
+			p7mActions[j++]=actions[i++]=new Ext.Action({
+				text: me.mys.res("attachmenu.saveall"),
+				handler: function(mi) {
+					var el=mi.parentMenu.activeElement;
+					if (el.linkSaveAll) window.open(el.linkSaveAll);
+				},
+				scope: me,
+				iconCls: 'wt-icon-saveAll'
+			});
+			p7mActions[j++]=actions[i++]='-';
+			
+			p7mActions[j++]=actions[i++]=new Ext.Action({text: me.mys.res("attachment.savetocloud"),
+				disabled: !WT.getApp().hasDescriptor('com.sonicle.webtop.vfs'),
+				handler: function(mi) {
+					var el = mi.parentMenu.activeElement;
+					if (el.linkSave) {
+						var api = WT.getApp().getServiceApi('com.sonicle.webtop.vfs');
+						api.chooseFolder({
+							callback: function(s, file) {
+								if (s === false) return;
+								me.saveInCloud({
+									fileId : file.fileId,
+									path : file.path,
+									storeId : file.storeId,
+									folder : el.attachItem.folder,
+									idAttach : el.attachItem.idAttach,
+									idMessage : el.attachItem.idMessage
 								});
 							}
-						},
-					scope:me, iconCls: 'wt-icon-save'})
-				]
+						});
+					}
+				},
+				scope:me, iconCls: 'wt-icon-save'
 			});
+			
+			me.attachMenu=new Ext.menu.Menu({ items: actions });
+			me.p7mAttachMenu=new Ext.menu.Menu({ items: p7mActions });
 			
 	
             tdh.insertFirst(me.divLine);
@@ -789,6 +819,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     ids[ids.length]=att.id;
                     var ssize=Sonicle.String.humanReadableSize(att.size);
 					var doEdit=WT.getVar('docServerEnabled')&&att.editable;
+					var qtip=WT.res("act-open.lbl");
 					//var href=doEdit?WTF.processUrl(me.mys.ID,"EditAttachment",aparams):WTF.processBinUrl(me.mys.ID,"GetAttachment",aparams);
 					var href=WTF.processBinUrl(me.mys.ID,"GetAttachment",aparams);
                     if (Ext.isIE) href+="&saveas=1";
@@ -798,14 +829,22 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     if (name.toLowerCase().endsWith(".ics")) ics=" ics='"+Ext.Object.toQueryString(aparams)+"'";
 					var vcf = null;
 					if(name.toLowerCase().endsWith(".vcf")) vcf = " vcf='" + Ext.Object.toQueryString(aparams)+"'";
+					var p7m = null;
+					if(name.toLowerCase().endsWith(".p7m")) {
+						p7m = " p7m='" + Ext.Object.toQueryString(aparams)+"'";
+						imgclass = 'wtmail-icon-p7m-locked';
+						qtip = me.mys.res("attachment.p7m.tip");
+					}
                     var eml=null;
                     if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
                     var html="<a href='"+href.replaceAll("'","%27")+"' target='_blank'"
 								+" filename='"+Sonicle.String.htmlAttributeEncode(name)+"'"
-								+(ics!=null?ics:"")
-								+(eml!=null?eml:"")
+								+" data-qtip='"+qtip+"'"+
+								+(ics != null ? ics : "")
+								+(eml != null ? eml : "")
 								+(vcf !== null ? vcf : "")
-								+(docedit!=null?docedit:"")+
+								+(p7m !== null ? p7m : "")
+								+(docedit != null ? docedit : "")+
 							"><div class='"+imgclass+"' style='display:inline-block;width:16px;height:16px'></div>&nbsp;<span>"+Ext.String.htmlEncode(name)+"</span>&nbsp;("+ssize+")</a>";
                     names=me.appendAttachmentName(names,html);
                 }
@@ -920,6 +959,16 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
 						var params = Ext.Object.fromQueryString(xel.getAttribute("vcf"));
 						me.confirmImportAttachAsContact(params.folder, params.idmessage, params.idattach);
+						e.stopEvent(); 
+						return false;
+					},me );
+				},me);
+				
+				Ext.each(me.divAttach.query("a[p7m]"),function(o) {
+					Ext.get(o).on("click",function(e,t,o) { 
+						var xel=t; //sometimes returns SPAN or IMG instead of A
+						if (t.tagName==="SPAN"||t.tagName==="IMG") xel=t.parentElement;
+						me.p7mConfirmDecryptAndOpen(xel);
 						e.stopEvent(); 
 						return false;
 					},me );
@@ -1746,6 +1795,18 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 		}
 	},
 	
+	p7mConfirmDecryptAndOpen: function(el) {
+		var me = this;
+		WT.confirm(me.res('act-p7mDecryptAndOpen.lbl'), function(bid) {
+			if (bid === 'yes') me.p7mDecryptAndOpen(el.href);
+		});
+	},
+	
+	p7mDecryptAndOpen: function(href) {
+		var me = this;
+		window.open(href+"&p7m=1");
+	},
+	
     showEml: function(t,urlparams) {
         var params=Ext.Object.fromQueryString(urlparams);
         this.mys.openEml(params.acct, params.folder,params.idmessage,params.idattach);
@@ -1841,11 +1902,14 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
  
     setAttachElement: function(e,linkSave,linkSaveAll, attachItem) {
 		var me=this;
-        if (me.attachMenu) {
-            e.linkSave=linkSave;
-            e.linkSaveAll=linkSaveAll;
-            e.mys=me;
-			e.attachItem = attachItem;
+		e.linkSave=linkSave;
+		e.linkSaveAll=linkSaveAll;
+		e.mys=me;
+		e.attachItem = attachItem;
+		if (e.getFirstChild().getAttribute('p7m') && me.p7mAttachMenu) {
+            me.setElementContextMenu(e,me.p7mAttachMenu);
+		}
+        else if (me.attachMenu) {
             me.setElementContextMenu(e,me.attachMenu);
         }
     },
