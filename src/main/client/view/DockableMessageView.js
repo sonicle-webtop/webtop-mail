@@ -52,6 +52,8 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 	title: null,
 	model: null,
 	fbar: null,
+	
+	buttonSeen: null,
 
 	initComponent: function() {
 		var me = this,
@@ -67,18 +69,6 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 				enableOverflow: true,
 				cls: 'wtmail-messageview-toolbar',
 				items: [
-					me.addAct("print",{
-						handler: function() {
-							mv.print();
-						},
-						iconCls: 'wt-icon-print'
-					}),
-					me.addAct("delete",{
-						handler: function() {
-							me.messageGrid.deleteMessage(me.acct,me.folder,me.idmessage,me);
-						},
-						iconCls: 'wt-icon-trash'
-					}),
 					me.addAct("reply",{
 						handler: function() {
 							me.messageGrid.replyMessageById(me.acct,me.folder,me.idmessage,false);
@@ -96,7 +86,57 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 							me.messageGrid.forwardMessageById(me.acct,me.folder,me.idmessage);
 						},
 						iconCls: 'wtmail-icon-forward'
-					})
+					}),
+					me.addAct("delete",{
+						handler: function() {
+							me.messageGrid.deleteMessage(me.acct,me.folder,me.idmessage,me);
+						},
+						iconCls: 'wt-icon-delete'
+					}),
+					me.addAct("spam",{
+						handler: function() {
+							me.messageGrid.spamMessage(me.acct,me.folder,me.idmessage,me);
+						},
+						iconCls: 'wt-icon-block'
+					}),
+					me.addAct("print",{
+						handler: function() {
+							mv.print();
+						},
+						iconCls: 'wt-icon-print'
+					}),
+					me.buttonSeen=Ext.create({
+						xtype: 'sotogglebutton',
+						onIconCls: 'wtmail-icon-markseen',
+						offIconCls: 'wtmail-icon-markunseen',
+						onText: me.mys.res('stread'),
+						offText: me.mys.res('stunread'),
+						pressed: !me.model.get('unread'),
+						listeners: {
+							toggle: function(b, pressed) {
+								me.setSeenState(pressed);
+							}
+						}
+					}),
+					{
+						text: WT.res('customPanels.gp.tags.lbl'),
+						iconCls: 'wtmail-icon-tag',
+						arrowVisible: false,
+						menu: {
+							xtype: 'wttagmenu',
+							restoreSelectedTags: function(md) {
+								return me.mys.toMutualTags([me.model]);
+							},
+							listeners: {
+								tagclick: function(s, tagId, checked, itm, e) {
+									if (checked) me.messageGrid.tagMessage(me.acct, me.folder, me.idmessage, tagId);
+									else me.messageGrid.untagMessage(me.acct, me.folder, me.idmessage, tagId);
+									me.messageView._clear();
+									me.messageView._showMessage(me.acct, me.folder, me.idmessage, false, me.model)
+								}
+							}
+						}
+					},
 				]
 			},
 			fbar: me.fbar
@@ -118,20 +158,44 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 			mv.on('messageviewed',function() {
 				if (!me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen")) {
 					var r=me.model;
-					if (r.get("unread")) {
+					/*if (r.get("unread")) {
 						r.set("unread",false);
 						var st=r.get("status");
 						if (st==="unread"||st==="new") r.set("status","read");
-						/*var o=s.reader.jsonData;
-						o.millis=millis;
-						o.unread--;
-						this.updateUnreads(this.currentFolder,o,false);*/
-					}
+					}*/
+					if (r.get("unread")) me.setSeenState(true);
 				}
 			});
 		}
 		
 		mv._showMessage(me.acct, me.folder, me.idmessage, !me.mys.getVar("manualSeen")||me.mys.getVar("seenOnOpen"), me.model, me.nopec);
+	},
+	
+	setSeenState: function(seen) {
+		var me = this,
+            data={ 
+                ids: [ me.idmessage ],
+                multifolder: false,
+                cb: function() {  }
+            },
+			r=me.model, st=null;
+		
+		//update model to grid record if same folder 
+		if (me.messageGrid.currentAccount===me.acct && me.messageGrid.currentFolder===me.folder) {
+			var gr=me.messageGrid.getStore().findRecord('idmessage',me.idmessage);
+			if (gr) me.model=gr;
+		}
+		var r=me.model, st=r.get("status");
+		r.set("unread",!seen);
+		if (seen) {
+			if (st==="unread"||st==="new") r.set("status","read");
+		} else {
+			if (st==="read") r.set("status","unread");
+		}
+		//set server side
+		me.messageGrid.markMessagesSeenState(me.acct, me.folder,data,seen)
+		//update toggle button
+		me.buttonSeen.toggle(seen);
 	}
 	
 });

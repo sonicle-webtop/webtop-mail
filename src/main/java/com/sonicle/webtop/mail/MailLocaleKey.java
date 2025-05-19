@@ -85,8 +85,10 @@ public class MailLocaleKey {
 	public static final String ICAL_CANCELED="ical.canceled";
     public static final String ERROR_ATTACHMENT_TYPE_NOT_SUPPORTED="error.attachment.type.not.supported";
 	public static final String PERMISSION_DENIED="permission.denied";
-        public static final String SENT_MESSAGE_NOT_SAVED_MESSAGE="sentMessage.notSaved.message";
-        public static final String SHARED_SENT_MESSAGE_SAVED_ON_MAIN_MESSAGE="sharedSentMessage.savedOnMain.message";
+	public static final String SENT_MESSAGE_NOT_SAVED_MESSAGE="sentMessage.notSaved.message";
+	public static final String SHARED_SENT_MESSAGE_SAVED_ON_MAIN_MESSAGE="sharedSentMessage.savedOnMain.message";
+	public static final String ERROR_MESSAGE_NOT_FOUND="error.messageNotFound";
+	public static final String ERROR_MESSAGE_EXPUNGED="error.messageExpunged";
 
 	public static String TAGS_LABEL(String label) {
 		return "tags."+label;

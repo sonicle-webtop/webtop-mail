@@ -837,7 +837,10 @@ public class FolderCache {
     
     public Message getMessage(long uid) throws MessagingException {
         open();
-		return ((UIDFolder)folder).getMessageByUID(uid);
+		Message m = ((UIDFolder)folder).getMessageByUID(uid);
+		if (m==null) throw new MessagingException(ms.lookupResource(MailLocaleKey.ERROR_MESSAGE_NOT_FOUND));
+		if (m.isExpunged()) throw new MessagingException(ms.lookupResource(MailLocaleKey.ERROR_MESSAGE_EXPUNGED));
+		return m;
     }
 
 //    public Set<String> getIds() {
@@ -1071,10 +1074,17 @@ public class FolderCache {
 		msgs[0]=msg;
 		folder.appendMessages(msgs);
 	}
+	
+	private boolean arrayHasNull(Object a[]) {
+		for(Object o: a)
+			if (o==null) return true;
+		return false;
+	}
     
     public void moveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException {
 		if (canDelete()) {
 			Message mmsgs[]=getMessages(uids,fullthreads);
+			if (mmsgs==null || arrayHasNull(mmsgs)) throw new MessagingException(ms.lookupResource(MailLocaleKey.ERROR_MESSAGE_NOT_FOUND));
 			folder.copyMessages(mmsgs, to.folder);
 			Boolean moveIsTrash = account.isTrashFolder(to.folder.getFullName());
 			

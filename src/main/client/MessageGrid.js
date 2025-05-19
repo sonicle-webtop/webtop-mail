@@ -1928,6 +1928,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				cb: function(result) {
 					if (result) {
 						me.removeRecords(data.ids);
+						if (dview) dview.closeView();
 					}
 				}
 			},
@@ -1938,12 +1939,30 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			WT.confirm(me.res('sureprompt'),function(bid) {
 				if (bid==='yes') {
 					me.deleteMessages(acct,folder,data);
-					dview.closeView();
 				}
 			});
 		} else {
 			me.moveMessages(acct,folder,acct, ftrash, data);
-			dview.closeView();
+		}
+    },	
+	
+    spamMessage: function(acct,folder,idmessage,dview) {
+		var me=this,
+			curfolder=me.currentFolder,
+			data={ 
+				ids: [ idmessage ], 
+				multifolder: false,
+				cb: function(result) {
+					if (result) {
+						me.removeRecords(data.ids);
+						if (dview) dview.closeView();
+					}
+				}
+			},
+			fspam=me.mys.getFolderSpam();
+		
+		if (!me.mys.isSpam(acct,curfolder)) {
+			me.moveMessages(acct,folder,acct, fspam, data);
 		}
     },	
 	
@@ -2246,6 +2265,27 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
 	},
 	
+	_setRecordTag: function(r, tagId) {
+		var tags=r.get("tags"),
+			ix=-1;
+		if (!tags) tags=[];
+		else ix=Ext.Array.indexOf(tags,tagId);
+		if (ix<0) {
+			Ext.Array.insert(tags,0,[tagId]);
+		}
+		r.set("tags",null);
+		r.set("tags",tags);
+	},
+	
+	_unsetRecordTag: function(r, tagId) {
+		var tags=r.get("tags");
+		if (tags) {
+		  Ext.Array.remove(tags,tagId);
+		  r.set("tags",null);
+		  if (tags.length>0) r.set("tags",tags);
+		}
+	},
+	
 	actionTag: function(tagId) {
         var me=this,
 			selection=me.getSelection(),
@@ -2276,22 +2316,74 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 						var ff=(me.multifolder?r.get("folder"):me.currentFolder);
                         if (ff===fl.currentFolder) dorel=true;
                       }
-					  
-					  var tags=r.get("tags"),
-						  ix=-1;
-					  if (!tags) tags=[];
-					  else ix=Ext.Array.indexOf(tags,tagId);
-					  if (ix<0) {
-						  Ext.Array.insert(tags,0,[tagId]);
-					  }
-					  r.set("tags",null);
-					  r.set("tags",tags);
-					  
+					  me._setRecordTag(r,tagId);
 					  me._checkUpdateMessageView(r);
                     }
                   );
                   if (dorel) this.mys.reloadFolderList();
 
+              } else {
+                  WT.error(json.message);
+              }
+			}
+		  });
+		  me.lastFlagsChangedTS=Date.now();
+		}
+		else {
+			WT.error(me.mys.res('mail.permission.denied'));
+		}
+	},
+	
+	tagMessage: function(acct, folder, messageId, tagId) {
+		var me=this;
+		
+		if(!me.readonly) {
+		  var params={
+                tagId: tagId,
+                fromfolder: folder,
+                ids: [ messageId ],
+                multifolder: false
+		  };
+		  WT.ajaxReq(me.mys.ID, 'TagMessages', {
+			params: params,
+			callback: function(success,json) {
+              if (success && folder===me.currentFolder && acct===me.currentAccount) {
+				  var r=me.getStore().findRecord('idmessage',messageId);
+				  if (r) {
+					  me._setRecordTag(r,tagId);
+					  me._checkUpdateMessageView(r);
+				  }
+              } else {
+                  WT.error(json.message);
+              }
+			}
+		  });
+		  me.lastFlagsChangedTS=Date.now();
+		}
+		else {
+			WT.error(me.mys.res('mail.permission.denied'));
+		}
+	},
+	
+	untagMessage: function(acct, folder, messageId, tagId) {
+		var me=this;
+		
+		if(!me.readonly) {
+		  var params={
+                tagId: tagId,
+                fromfolder: folder,
+                ids: [ messageId ],
+                multifolder: false
+		  };
+		  WT.ajaxReq(me.mys.ID, 'UntagMessages', {
+			params: params,
+			callback: function(success,json) {
+              if (success && folder===me.currentFolder && acct===me.currentAccount) {
+				  var r=me.getStore().findRecord('idmessage',messageId);
+				  if (r) {
+					me._unsetRecordTag(r,tagId);
+					me._checkUpdateMessageView(r);
+				  }
               } else {
                   WT.error(json.message);
               }
@@ -2384,12 +2476,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                       }
 					  
 					  var tags=r.get("tags");
-					  if (tags) {
-						Ext.Array.remove(tags,tagId);
-						r.set("tags",null);
-						if (tags.length>0) r.set("tags",tags);
-						me._checkUpdateMessageView(r);
-					  }
+					  me._unsetRecordTag(r,tagId);
+					  if (tags) me._checkUpdateMessageView(r);
                     }
                   );
                   if (dorel) this.mys.reloadFolderList();
@@ -2409,7 +2497,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	_checkUpdateMessageView: function(r) {
 		var me=this,
 			mp=me.mys.messagesPanel,
-			mv=mp.messageView,
+			mv=mp.getMessageView(),
 			ff=(me.multifolder?r.get("folder"):me.currentFolder),
 			acct=me.currentAccount;
 			idmessage=r.get("idmessage");

@@ -2503,6 +2503,12 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		return rfolder?rfolder.get("isTrash"):false;
 	},
 	
+	isSpam: function(acct,folder) {
+		var acctree=this.acctTrees[acct],
+			rfolder=acctree?acctree.getStore().getById(folder):null;
+		return rfolder?rfolder.get("isSpam"):false;
+	},
+	
 	updateCxmGrid: function(r) {
 		var me=this,
 			ro=me.messagesPanel.folderList.readonly;
