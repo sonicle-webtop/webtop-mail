@@ -839,7 +839,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
                     if (att.eml) eml=" eml='"+Ext.Object.toQueryString(aparams)+"'";
                     var html="<a href='"+href.replaceAll("'","%27")+"' target='_blank'"
 								+" filename='"+Sonicle.String.htmlAttributeEncode(name)+"'"
-								+" data-qtip='"+qtip+"'"+
+								+" data-qtip='"+qtip+"'"
 								+(ics != null ? ics : "")
 								+(eml != null ? eml : "")
 								+(vcf !== null ? vcf : "")
