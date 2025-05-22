@@ -733,7 +733,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						});
 					}
 				},
-				scope:me, iconCls: 'wt-icon-save'
+				scope:me, iconCls: 'wt-icon-saveCloud'
 			});
 			
 			me.attachMenu=new Ext.menu.Menu({ items: actions });
