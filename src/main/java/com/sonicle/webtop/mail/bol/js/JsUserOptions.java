@@ -90,6 +90,8 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean favoriteNotifications;
 	public boolean externalAccountEnabled;
 	public boolean rememberFoldersState;
+	public boolean delayedSending;
+	public int delayedSendingSeconds;
 	
 	public JsUserOptions() {}
 	

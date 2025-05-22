@@ -661,6 +661,24 @@ public class MailUserSettings extends BaseUserSettings {
 		return setBoolean(REMEMBER_FOLDERS_STATE, value);
 	}
 	
+	public boolean isDelayedSending() {
+		Boolean value = getBoolean(DELAYED_SENDING, null);
+		return (value != null) ? value : false;
+	}
+	
+	public boolean setDelayedSending(boolean value) {
+		return setBoolean(DELAYED_SENDING, value);
+	}
+	
+	public int getDelayedSendingSeconds() {
+		Integer value = getInteger(DELAYED_SENDING_SECONDS, null);
+		return (value != null) ? value : 10;
+	}
+	
+	public boolean setDelayedSendingSeconds(int value) {
+		return setInteger(DELAYED_SENDING_SECONDS, value);
+	}
+	
 	public static class FavoriteFolder {
 		String accountId;
 		String folderId;

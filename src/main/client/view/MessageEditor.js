@@ -1295,7 +1295,26 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         var me=this;
         me.disableControls(/*false,*/true);
         if (me.fireEvent('beforesend',me)) {
-            me.sendMessage();
+			var countdown = me.mys.getVar('delayedSending') ? me.mys.getVar('delayedSendingSeconds') : 0;
+			if (countdown) {
+				var lm=new Sonicle.CountdownLoadMask({
+					msg: 'Please wait...',
+					target: me,
+					countdown: countdown,
+					countdownInterval: 1000,
+					countdownEndFn: function() {
+						me.sendMessage();
+					},
+					countdownCancelFn: function() {
+						me.enableControls(false,true);
+					},
+					cancelText: WT.res('word.cancel'),
+					secondsRemainingText: WT.res('wait.secondsRemaining'),
+					encodeText: true
+				});
+				lm.start();
+			}
+            else me.sendMessage();
         } else {
             me.enableControls(false,true);
         }

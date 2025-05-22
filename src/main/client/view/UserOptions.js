@@ -60,6 +60,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	editingFontColorWidth: 210,
 	identitiesColumnFaxHidden: false,
 	advancedRegisterMailtoPack: 'center',
+	delayedSendingSecondsWidth: 210,
 	
 	viewModel: {
 		formulas: {
@@ -78,7 +79,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			gridShowPreview: WTF.checkboxBind('record', 'gridShowPreview'),
 			gridAlwaysShowTime: WTF.checkboxBind('record', 'gridAlwaysShowTime'),
 			showUpcomingEvents: WTF.checkboxBind('record', 'showUpcomingEvents'),
-			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks')
+			showUpcomingTasks: WTF.checkboxBind('record', 'showUpcomingTasks'),
+			delayedSending: WTF.checkboxBind('record', 'delayedSending')
 		}
 	},
 		
@@ -1000,6 +1002,29 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				width: 100,
 				needReload: true,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
+				xtype: 'checkbox',
+				bind:  '{delayedSending}',
+				fieldLabel: me.res('opts.adv.fld-delayedSending.lbl'),
+				width: 100,
+				needReload: true,
+				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			}, {
+				xtype: 'numberfield',
+				bind: {
+					value: '{record.delayedSendingSeconds}',
+					disabled: '{!delayedSending}'
+				},
+				fieldLabel: me.res('opts.adv.fld-delayedSendingSeconds.lbl'),
+				minValue: 0,
+				maxValue: 60,
+				padding: '0 0 16 24',
+				width: me.delayedSendingSecondsWidth,
+				hideTrigger: false,
+				keyNavEnabled: false,
+				mouseWheelEnabled: false,
+				needReload: true,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
 				xtype: 'container',
 				layout: {

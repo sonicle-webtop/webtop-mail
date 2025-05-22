@@ -108,6 +108,20 @@ public class MailSettings {
 	public static final String REMEMBER_FOLDERS_STATE = "remember.folders.state";
 	
 	/**
+	 * [user][default] (false)
+	 * [boolean]
+	 * Define whether you want delayed sending
+	 */
+	public static final String DELAYED_SENDING = "delayed.sending";
+	
+	/**
+	 * [user][default] (10)
+	 * [int]
+	 * Seconds for delayed sending
+	 */
+	public static final String DELAYED_SENDING_SECONDS = "delayed.sending.seconds";
+	
+	/**
 	 * [user][default]
 	 * [boolean]
 	 * Activate a view showing all upcoming events.
