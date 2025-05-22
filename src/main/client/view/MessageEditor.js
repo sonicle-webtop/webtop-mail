@@ -1298,7 +1298,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			var countdown = me.mys.getVar('delayedSending') ? me.mys.getVar('delayedSendingSeconds') : 0;
 			if (countdown) {
 				var lm=new Sonicle.CountdownLoadMask({
-					msg: 'Please wait...',
+					msg: me.mys.res('deleyed-sending.msg.pre'),
 					target: me,
 					countdown: countdown,
 					countdownInterval: 1000,
@@ -1309,7 +1309,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						me.enableControls(false,true);
 					},
 					cancelText: WT.res('word.cancel'),
-					secondsRemainingText: WT.res('wait.secondsRemaining'),
+					secondsRemainingText: me.mys.res('deleyed-sending.msg.post'),
 					encodeText: true
 				});
 				lm.start();
