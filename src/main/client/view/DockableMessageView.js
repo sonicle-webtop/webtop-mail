@@ -91,7 +91,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 						handler: function() {
 							me.messageGrid.deleteMessage(me.acct,me.folder,me.idmessage,me);
 						},
-						iconCls: 'wt-icon-delete'
+						iconCls: 'wt-icon-trash'
 					}),
 					me.addAct("spam",{
 						handler: function() {
@@ -105,6 +105,7 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 						},
 						iconCls: 'wt-icon-print'
 					}),
+					'-',
 					me.buttonSeen=Ext.create({
 						xtype: 'sotogglebutton',
 						onIconCls: 'wtmail-icon-markseen',
@@ -137,6 +138,32 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 							}
 						}
 					},
+					me.buttonSpecial=Ext.create({
+						xtype: 'sotogglebutton',
+						onIconCls: 'wtmail-icon-starred',
+						offIconCls: 'wtmail-icon-starred',
+						onText: me.mys.res('act-special.lbl'),
+						offText: me.mys.res('act-special.lbl'),
+						pressed: 'special'===me.model.get('flag'),
+						listeners: {
+							toggle: function(b, pressed) {
+								me.messageGrid.flagMessage(me.acct,me.folder,me.idmessage,pressed?"special":"clear");
+							}
+						}
+					}),
+					me.addAct("archive",{
+						handler: function() {
+							me.messageGrid.archiveMessage(me.acct,me.folder,me.idmessage,me);
+						},
+						iconCls: 'wtmail-icon-archive'
+					}),
+					'-',
+					me.addAct("addnote",{
+						handler: function() {
+							me.messageGrid.editNote(me.acct,me.idmessage,me.folder);
+						},
+						iconCls: 'wtmail-note fas fa-sticky-note'
+					}),
 				]
 			},
 			fbar: me.fbar

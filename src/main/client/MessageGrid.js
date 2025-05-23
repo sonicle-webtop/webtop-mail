@@ -1966,6 +1966,24 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		}
     },	
 	
+    archiveMessage: function(acct,folder,idmessage,dview) {
+		var me=this,
+			curfolder=me.currentFolder,
+			data={ 
+				ids: [ idmessage ], 
+				multifolder: false,
+				cb: function(result) {
+					if (result) {
+						me.removeRecords(data.ids);
+						if (dview) dview.closeView();
+					}
+				}
+			},
+			farchive=me.mys.getFolderArchive();
+		
+		me.moveMessages(acct,folder,acct, farchive, data);
+    },	
+	
     moveSelection: function(acctfrom,from,acctto,to,selection,isdd) {
         var me=this, 
             data=me.sel2ids(selection);
@@ -2514,22 +2532,32 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			acct=me.currentAccount,
 			folder=me.currentFolder,
 			data=me.sel2ids(selection),
-			ids=data.ids,
-			params={
+			ids=data.ids;
+		
+		me.flagMessages(acct, folder, ids, data.multifolder, data.folders, flagstring);
+    },
+	
+    flagMessage: function(acct, folder, id, flagstring) {
+		this.flagMessages(acct, folder, [ id ], false, null, flagstring);
+	},
+	
+    flagMessages: function(acct, folder, ids, multifolder, folders, flagstring) {
+		var me = this;
+		
+		if(!me.readonly) {
+		  var params = {
                 flag: flagstring,
 				account: acct,
                 fromfolder: folder,
                 ids: ids,
-                multifolder: data.multifolder
-			};
-			
-        if (data.folders) params.folders=data.folders;
-		
-		if(!me.readonly) {
+                multifolder: multifolder
+		  };
+		  if (folders) params.folders = folders;
+		  
 		  WT.ajaxReq(me.mys.ID, 'FlagMessages', {
 			params: params,
 			callback: function(success,json) {
-              if (success) {
+              if (success && me.currentFolder===folder) {
                   var dorel=false,
 					  fl=me.mys.messagesPanel.folderList,
 					  fs=flagstring;
@@ -2537,8 +2565,11 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
                   if (fs==='clear') fs="";
                   
                   Ext.each(
-                    selection,
-                    function(r,index,allItems) {
+                    ids,
+                    function(id,index,allItems) {
+					  var r = me.store.findRecord('idmessage',id);
+					  if (!r) return true;
+					  
                       if (me!==fl) {
                         var ff=(me.multifolder?r.get("folder"):me.currentFolder);
                         if (ff===fl.currentFolder) dorel=true;

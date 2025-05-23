@@ -509,30 +509,16 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 							me.getAct("forward"),
 							me.getAct("delete"),
 							me.getAct("spam"),
-							'->',
-							/*me.mys._TB("special",null,'small'),
+							me.getAct("print"),
+							'-',
+							me.getAct("markseen"),
+							me.getAct("markunseen"),
+							me.getAct("special"),
+							me.getAct("archive"),
+							'-',
+							me.getAct("addnote"),
 							{
-								text: null,
-								iconCls: 'wtmail-icon-tag',
-								menu: {
-									xtype: 'wttagmenu',
-									restoreSelectedTags: function(md) {
-										var grid=me.mys.getMenuDataGrid(md);
-										return me.mys.toMutualTags(grid.getSelection());
-									},
-									listeners: {
-										tagclick: function(s, tagId, checked, itm, e) {
-											var grid=me.mys.getCtxGrid(e);
-											if (checked)
-												grid.actionTag(tagId);
-											else
-												grid.actionUntag(tagId);						
-										}
-									}
-								}
-							},
-							{
-								text: null,
+								text: me.mys.res("menu-complete"),
 								iconCls: 'wtmail-icon-bookmark',
 								menu: {
 									items: [
@@ -554,15 +540,44 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 										me.mys.getAct('clear')
 									]
 								}
-							},*/
+							},
+							me.getAct("tags"),
+							'-',
+							me.getAct("open"),
+							me.getAct("opennew"),
+							me.getAct("forwardeml"),
+							me.getAct("forwardredirect"),
+							'-',
 							{
+								text: me.res("menu-operations"),
+								menu: {
+									items: [
+										me.getAct('movetofolder'),
+										me.getAct('savemail'),
+										me.getAct('editSubject'),
+										me.getAct('createreminder'),
+										me.getAct('createtask'),
+										me.getAct('resetcolumns')
+									]      
+								}
+							},
+							{
+								text: me.res("menu-headers"),
+								menu: {
+									items: [	
+										me.getAct('viewheaders'),
+										me.getAct('viewsource')
+									]      
+								}
+							}
+							/*{
 								xtype: 'button',
 								iconCls: 'fas fa-ellipsis-v',
 								arrowVisible: false,
 								handler: function(b,e) {
 									Sonicle.Utils.showContextMenu(e, me.mys.getRef('cxmGrid'), {}, {alignTo: b});
 								}
-							}
+							}*/
 						]
 					}
 				]
