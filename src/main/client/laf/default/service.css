@@ -852,11 +852,11 @@ background-size: contain;
 }
 
 .wtmail-quota-progress-warn .x-progress-bar-default {
-	background-color: #f3930e
+	background-color: #f3930e !important;
 }
 
 .wtmail-quota-progress-over .x-progress-bar-default {
-	background-color: #ff5e28
+	background-color: #ff5e28 !important;
 }
 
 .wtmail-icon-pas-danger { 

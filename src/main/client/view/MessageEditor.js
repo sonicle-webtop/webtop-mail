@@ -531,7 +531,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		if (!pbTR) {
 			me.addDocked(me.toolbar=Ext.create(me.createTopToolbarCfg({
 				dock: 'top',
-				overflowHandler: 'menu',
+				overflowHandler: 'scroller',
 				items: tbitems
 			})));
 		} else {
@@ -549,7 +549,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						me.toolbar=Ext.create(me.createTopToolbarCfg({
 							flex: 1,
 							cls: 'x-docked-noborder-top x-docked-noborder-left x-docked-noborder-right x-docked-noborder-bottom',
-							overflowHandler: 'menu',
+							overflowHandler: 'scroller',
 							items: tbitems
 						})),
 						tbitemsend
