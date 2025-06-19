@@ -7864,19 +7864,23 @@ public class Service extends BaseService {
 						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUID());
 					}
 					
-					UserProfileId pid = getEnv().getProfileId();
-					UserProfile.Data ud = WT.getUserData(pid);
-					
 					if (ev != null) {
-						InternetAddress organizer = InternetAddressUtils.toInternetAddress(ev.getOrganizer());
+						UserProfileId pid = getEnv().getProfileId();
 						boolean iAmOwner = pid.equals(cm.getCalendarOwner(ev.getCalendarId()));
-						boolean iAmOrganizer = (organizer != null) && StringUtils.equalsIgnoreCase(organizer.getAddress(), ud.getEmailAddress());
+						boolean iAmOrganizer = iAmTheOrganizer(ev, pid, false);
 						
 						//TODO: in reply controllo se mail combacia con quella dell'attendee che risponde...
 						//TODO: rimuovere controllo su data? dovrebbe sempre aggiornare?
 						
-						if (iAmOwner || iAmOrganizer) {
-							eid = 0;
+						if (iAmOrganizer && !iAmOwner) {
+							// This allows the organizer to accept a self invitation when it's not the owner
+							// of the calendar in which the event is created. This is a typical situation when
+							// the organizer act on behalf of another user that owns the calendar.
+							// Is useful also to have a reminder of an appointment placed in a shared calendar!
+							eid = -1; // -1 means no event found allowing to import the iCal
+							
+						} else if (iAmOwner || iAmOrganizer) {
+							eid = 0; // 0 means no possible action: "already processed event"
 							//TODO: troviamo un modo per capire se la risposta si riverisce all'ultima versione dell'evento? Nuovo campo timestamp?
 							/*
 							DateTime dtEvt = ev.getRevisionTimestamp().withMillisOfSecond(0).withZone(DateTimeZone.UTC);
@@ -7921,6 +7925,18 @@ public class Service extends BaseService {
 			new JsonResult(t).printTo(out);
 			Service.logger.error("Exception", t);
 		}
+	}
+	
+	private boolean iAmTheOrganizer(final Event event, final UserProfileId myProfileId, final boolean strictEmailCheck) {
+		InternetAddress organizer = InternetAddressUtils.toInternetAddress(event.getOrganizer());
+		if (organizer != null) {
+			UserProfile.Data ud = WT.getProfileData(myProfileId);
+			if (ud != null) {
+				if (StringUtils.equalsIgnoreCase(organizer.getAddress(), ud.getPersonalEmailAddress())) return true;
+				if (!strictEmailCheck && StringUtils.equalsIgnoreCase(organizer.getAddress(), ud.getProfileEmailAddress())) return true;
+			}
+		}
+		return false;
 	}
 	
 	public void processGetMessageEnvelope(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
