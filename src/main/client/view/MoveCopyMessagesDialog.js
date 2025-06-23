@@ -54,6 +54,9 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 
 	loadMask: null,
 	
+	//overridable properties to influence UI
+	buttonWidth: 80,
+	
 	initComponent: function() {
 		var me = this;
 		
@@ -74,7 +77,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		var btnmove=Ext.create("Ext.Button",{
 			text: WT.res("act-move.lbl"),
 			disabled: true,
-			width:80,
+			width: me.buttonWidth,
 			ui: '{secondary}',
 			handler: function() {
 				me.loadMask.show();
@@ -91,7 +94,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		var btncopy=Ext.create("Ext.Button",{
 			text: WT.res("act-copy.lbl"),
 			disabled: true,
-			width:80,
+			width: me.buttonWidth,
 			ui: '{secondary}',
 			handler: function() {
 				me.loadMask.show();
@@ -108,7 +111,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		var btndelete=Ext.create("Ext.Button",{
 			text: WT.res("act-delete.lbl"),
 			disabled: false,
-			width:80,
+			width: me.buttonWidth,
 			ui: '{secondary}',
 			handler: function() {
 				WT.confirm(me.mys.res('suredeletepermanently'),function(bid) {
@@ -130,7 +133,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		var btnarchive=Ext.create("Ext.Button",{
 			text: me.mys.res("act-archive-short.lbl"),
 			disabled: false,
-			width:80,
+			width: me.buttonWidth,
 			ui: '{secondary}',
 			handler: function() {
 				var tofolder=me.mys.getFolderArchive();
@@ -147,7 +150,7 @@ Ext.define('Sonicle.webtop.mail.view.MoveCopyMessagesDialog', {
 		
 		var btncancel=Ext.create("Ext.Button",{
 			text: WT.res("act-cancel.lbl"),
-			width:80,
+			width: me.buttonWidth,
 			ui: '{secondary}',
 			handler: function() {
 				me.closeView(false);
