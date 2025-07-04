@@ -649,8 +649,10 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				me.createRule(ae.recEmail,ae.recType);
 			}, iconCls: 'wtmail-icon-addMailFilter'});
 			actions[i++]=new Ext.Action({text: WT.res("act-copy.lbl"), handler: function() {
-				var ae=me.emailMenu.activeElement;
-				Sonicle.ClipboardMgr.copy(ae.dom.innerText);
+				var ae=me.emailMenu.activeElement,
+					ds=ae.dom.dataset,
+				    text=ds ? ( ds.qtip == ds.qtitle ? ds.qtip : ds.qtitle + ' <' + ds.qtip + '>' ) : ae.dom.innerText;
+				Sonicle.ClipboardMgr.copy(text);
 			}, iconCls: 'wt-icon-copy'});
 			if (canMarkAsTrusted) {
 				actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.marktrusted"), handler: function() {
