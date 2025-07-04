@@ -31,36 +31,44 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-
 Ext.define('Sonicle.webtop.mail.view.Sharing', {
 	extend: 'WTA.sdk.ModelView',
 	requires: [
-		'Sonicle.webtop.core.model.RoleLkp',
+		'Sonicle.Data',
+		'Sonicle.form.field.ComboBox',
+		'WTA.model.AclSubjectLkp',
 		'Sonicle.webtop.mail.model.Sharing'
 	],
-	
-	modelName: 'Sonicle.webtop.mail.model.Sharing',
-	fieldTitle: 'description',
 	
 	dockableConfig: {
 		title: '{sharing.tit@com.sonicle.webtop.core}',
 		width: 800,
 		height: 590
 	},
-	//promptConfirm: false,
-	full: true,
+	modelName: 'Sonicle.webtop.mail.model.Sharing',
+	fieldTitle: 'description',
 	
-	//dirty: false,
-	
-	fullRights: 'lrswipkxtea',
+	viewModel: {
+		data: {
+			data: {
+				preset: null
+			}
+		}
+	},
 
 	constructor: function(cfg) {
 		var me = this;
 		me.methodName = Ext.id(null, 'method-');
 		me.callParent([cfg]);
 		
-		WTU.applyFormulas(me.getVM(), {
-			foMethod: WTF.radioGroupBind('record', 'method', me.methodName)
+		Sonicle.VMUtils.applyFormulas(me.getVM(), {
+			foIsAccount: WTF.foIsEqual('record', 'method', 'all'),
+			foShowApplyTo: WTF.foIsEmpty('record', 'method', true),
+			foApplyTo: WTF.radioGroupBind('record', 'method', me.methodName),
+			foShowRights: WTF.foMultiGetFn(undefined, ['gprights.selection', 'data.preset'], function(v) {
+				if (!v['gprights.selection'] || v['data.preset'] !== 'custom') return false;
+				return true;
+			})
 		});
 	},
 	
@@ -68,291 +76,267 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 		var me = this;
 		me.callParent(arguments);
 		
+		me.aclSubjectStore = Ext.create('Ext.data.Store', {
+			autoLoad: true,
+			model: 'WTA.model.AclSubjectLkp',
+			proxy: WTF.proxy(WT.ID, 'LookupAclSubjects', null, {
+				extraParams: {
+					users: true,
+					groups: false
+				}
+			})
+		});
+		
 		me.add({
 			region: 'center',
-			xtype: 'wtfieldspanel',
-			paddingSides: true,
-			paddingTop: true,
+			xtype: 'container',
 			layout: {
 				type: 'vbox',
 				align: 'stretch'
 			},
 			items: [
 				{
-					xtype: 'label',
-					bind: {
-						text: me.mys.res("column-folder")+': {record.id}'
-					}
-				},
-				WTF.localCombo('id', 'desc', {
-					xtype: 'sosourcecombo',
-					reference: 'fldrole',
-					store: {
-						autoLoad: true,
-						model: 'WTA.model.RoleLkp',
-						proxy: WTF.proxy(WT.ID, 'LookupDomainRoles', 'roles', {
-							extraParams: {
-								groups: false,
-								roles: false
-							}
-						})
-					},
-					sourceField: 'sourceLabel',
-					emptyText: WT.res('sharing.fld-role.lbl'),
-					listeners: {
-						select: function(s, rec) {
-							var model = me.addRights(rec.get('id'),rec.get('desc'));
-							me.lref('gprights').setSelection(model);
-							s.setValue(null);
-						}
-					}
-				}),
-				{
-					xtype: 'gridpanel',
-					reference: 'gprights',
-					flex: 1,
-					plugins: {
-						ptype: 'cellediting',
-						clicksToEdit: 1
-					},
-					bind: {
-						store: '{record.rights}'
-					},
-					border: true,
-					columns: [{
-						dataIndex: 'roleDescription',
-						header: WT.res('sharing.gp-rights.role.lbl'),
-						flex: 2
-					},{
-						xtype: 'checkcolumn',
-						header: me.mys.res('sharing.rights-share-identity.lbl'),
-						dataIndex: 'shareIdentity',
-						flex: 1,
-						listeners: {
-							checkchange: function(c , ri , v) {
-								if (!v) {
-									var grid = me.lref('gprights'),
-										sto = grid.getStore(),
-										r = sto.getAt(ri);
-									r.set("forceMailcard",false);
-									r.set("alwaysCc",false);
-								};
-							}
-						}
-					},{
-						xtype: 'checkcolumn',
-						header: me.mys.res('sharing.rights-force-mailcard.lbl'),
-						dataIndex: 'forceMailcard',
-						flex: 1,
-						listeners: {
-							checkchange: function(c , ri , v) {
-								if (v) {
-									var grid = me.lref('gprights'),
-										sto = grid.getStore(),
-										r = sto.getAt(ri);
-									r.set("shareIdentity",true);
-								}
-							}
-						}
-					},{
-						xtype: 'checkcolumn',
-						header: me.mys.res('sharing.rights-always-cc.lbl'),
-						dataIndex: 'alwaysCc',
-						flex: 1,
-						listeners: {
-							checkchange: function(c , ri , v) {
-								var grid = me.lref('gprights'),
-									sto = grid.getStore(),
-									r = sto.getAt(ri);
-								if (v) {
-									r.set("shareIdentity",true);
-								} else {
-									r.set("alwaysCcEmail","");
-								}
-							}
-						}
-					},{
-						header: me.mys.res('sharing.rights-always-cc-email.lbl'),
-						dataIndex: 'alwaysCcEmail',
-						flex: 1,
-						editor: 'textfield',
-						renderer: function(val, meta, rec) {
-							if (Ext.isEmpty(val) && rec.get("alwaysCc")) {
-								return me.styleAsEmpty(me.mys.getIdentity(0).email);
-							}
-							return val;
-						}
-					}],
-					tbar: [
-						me.addAct('deleteRights', {
-							text: WT.res('act-delete.lbl'),
-							tooltip: null,
-							iconCls: 'wt-icon-delete',
-							handler: function() {
-								var sm = me.lref('gprights').getSelectionModel();
-								me.deleteRights(sm.getSelection());
-							},
-							disabled: true
-						})
-					],
-					listeners: {
-						selectionchange: function(s,recs) {
-							if (recs.length==1) {
-								var rights="",
-									cbo=me.lref('cboRights');
-								for(var i=0;i<me.fullRights.length;++i) {
-									var c=me.fullRights.charAt(i);
-									if (recs[0].get(c)) rights+=c;
-								}
-								if (rights.length>0 && cbo.store.findExact('rights',rights)>=0) cbo.setValue(rights);
-								else cbo.setValue("");
-							}
-							me.getAct('deleteRights').setDisabled(!recs.length);
-							me.lref('permspanel').setDisabled(!recs.length);
-						}
-					}
-				},
-				{
 					xtype: 'wtfieldspanel',
-					reference: 'permspanel',
-					tbar: [
+					paddingTop: true,
+					paddingSides: true,
+					flex: 1,
+					layout: 'fit',
+					items: [
 						{
-							xtype: 'combo',
-							reference: "cboRights",
-							fieldLabel: me.mys.res("sharing.fld-rights.lbl"),
-							store: new Ext.data.SimpleStore({
-								fields: ['rights','desc'],
-								data: [
-									[me.fullRights,me.mys.res("sharing.rights-full")],
-									['lrs',me.mys.res("sharing.rights-ro")],
-									['',me.mys.res("sharing.rights-custom")]
-								]
-							}),
-							editable: false,
-							mode: 'local',
-							width:300,
-							listWidth: 300,
-							displayField: 'desc',
-							triggerAction: 'all',
-							valueField: 'rights',
-							listeners: {
-								select: function(c,r,i) {
-									var id=r.get('rights');
-									if (id.length>0) {
-										var rec = me.lref('gprights').getSelection()[0];
-										for(var i=0;i<me.fullRights.length;++i) {
-											var c=me.fullRights.charAt(i);
-											rec.set(c,id.indexOf(c)>=0);
+							xtype: 'gridpanel',
+							reference: 'gprights',
+							bind: {
+								store: '{record.rights}'
+							},
+							border: true,
+							columns: [
+								{
+									dataIndex: 'subjectDescription',
+									header: me.res('sharing.gp-rights.subjectName.lbl'),
+									flex: 2
+								}, {
+									xtype: 'checkcolumn',
+									dataIndex: 'shareIdentity',
+									text: me.res('sharing.gp-rights.opts.shareIdentity.lbl'),
+									flex: 1,
+									listeners: {
+										checkchange: function(s, ridx, val, rec) {
+											if (!val) {
+												rec.set('forceMailcard', false);
+												rec.set('alwaysCc', false);
+											}
 										}
-									} 
-									//me.dirty=true;
+									}
+								}, {
+									xtype: 'checkcolumn',
+									text: me.res('sharing.gp-rights.opts.forceMailcard.lbl'),
+									dataIndex: 'forceMailcard',
+									flex: 1,
+									listeners: {
+										checkchange: function(s, ridx, val, rec) {
+											if (val) {
+												rec.set('shareIdentity', true);
+											}
+										}
+									}
+								},{
+									xtype: 'checkcolumn',
+									text: me.res('sharing.gp-rights.opts.alwaysCc.lbl'),
+									dataIndex: 'alwaysCc',
+									flex: 1,
+									listeners: {
+										checkchange: function(s, ridx, val, rec) {
+											if (val) {
+												rec.set('shareIdentity', true);
+											} else {
+												rec.set('alwaysCcEmail', '');
+											}
+										}
+									}
+								},{
+									text: me.mys.res('sharing.gp-rights.opts.alwaysCcEmail.lbl'),
+									dataIndex: 'alwaysCcEmail',
+									editor: 'textfield',
+									renderer: function(val, meta, rec) {
+										if (Ext.isEmpty(val) && rec.get('alwaysCc')) {
+											return me.styleAsEmpty(me.mys.getIdentity(0).email);
+										}
+										return val;
+									},
+									flex: 1
+								}, {
+									xtype: 'soactioncolumn',
+									items: [
+										{
+											iconCls: 'wt-glyph-clone',
+											tooltip: WT.res('act-clone.lbl'),
+											handler: function(g, ridx) {
+												var rec = g.getStore().getAt(ridx);
+												me.cloneRightsUI(rec);
+											}
+										}, {
+											iconCls: 'wt-glyph-delete',
+											tooltip: WT.res('act-remove.lbl'),
+											handler: function(g, ridx) {
+												var rec = g.getStore().getAt(ridx);
+												me.deleteRightsUI(rec);
+											}
+										}
+									]
 								}
-							}
-						},'->',{
-							xtype: 'checkbox',
-							boxLabel: me.mys.res('sharing.fld-advanced.lbl'),
-							checked: false,
-							width: 200,
+							],
+							tbar: [
+								{
+									text: WT.res('act-add.lbl'),
+									ui: '{secondary|toolbar}',
+									handler: function() {
+										me.addRightsUI();
+									}
+								}
+							],
 							listeners: {
-								change: {
-									fn: function(c,ov,nv,eopts) {
-										var v=c.getValue(),
-											p=me.lref("elementsperms");
-										p.setHidden(!v);
-										if (v) p.setDisabled(false);
+								selectionchange: function(s, recs) {
+									if (!Ext.isEmpty(recs)) {
+										me.getVM().set('data.preset', recs[0].guessPreset());
 									}
 								}
 							}
 						}
-					],
+					]
+				}, {
+					xtype: 'wtfieldspanel',
+					paddingTop: true,
+					paddingSides: true,
+					defaults: {
+						labelWidth: 140
+					},
 					items: [
 						{
-							xtype: 'wtfieldspanel',
-							reference: 'elementsperms',
-							disabled: true,
-							hidden: true,
+							xtype: 'fieldcontainer',
+							bind: {
+								hidden: '{!foShowRights}'
+								//fieldLabel: '{foItemsRightsLabel}'
+							},
 							layout: {
 								type: 'table',
 								columns: 3
 							},
 							defaults: {
-								listeners: {
-									afterrender: function() {
-										this.getEl().on('click', function() {
-											me.lref('cboRights').setValue('');
-											//me.dirty=true;
-										});
+								xtype: 'checkbox',
+								width: 200
+							},
+							items: [
+								{
+									bind: '{gprights.selection.l}',
+									boxLabel: me.res('sharing.fld-l.lbl')
+								}, {
+									bind: '{gprights.selection.r}',
+									boxLabel: me.res('sharing.fld-r.lbl')
+								}, {
+									bind: '{gprights.selection.s}',
+									boxLabel: me.res('sharing.fld-s.lbl')
+								}, {
+									bind: '{gprights.selection.w}',
+									boxLabel: me.res('sharing.fld-w.lbl')
+								}, {
+									bind: '{gprights.selection.i}',
+									boxLabel: me.res('sharing.fld-i.lbl')
+								}, {
+									bind: '{gprights.selection.p}',
+									boxLabel: me.res('sharing.fld-p.lbl')
+								}, {
+									bind: '{gprights.selection.k}',
+									boxLabel: me.res('sharing.fld-k.lbl')
+								}, {
+									bind: '{gprights.selection.a}',
+									boxLabel: me.res('sharing.fld-a.lbl')
+								}, {
+									bind: '{gprights.selection.x}',
+									boxLabel: me.res('sharing.fld-x.lbl')
+								}, {
+									bind: '{gprights.selection.t}',
+									boxLabel: me.res('sharing.fld-t.lbl')
+								}, /*{
+									bind: '{gprights.selection.n}',
+									boxLabel: me.mys.res('sharing.fld-n.lbl')
+								},*/ {
+									bind: '{gprights.selection.e}',
+									boxLabel: me.res('sharing.fld-e.lbl')
+								}
+							],
+							fieldLabel: me.res('sharing.folderRights.lbl')
+						}
+					]
+				}, {
+					xtype: 'wtfieldspanel',
+					paddingSides: true,
+					defaults: {
+						labelWidth: 140
+					},
+					items: [
+						WTF.lookupCombo('id', 'desc', {
+							reference: 'cbopresets',
+							bind: {
+								value: '{data.preset}',
+								disabled: '{!gprights.selection}'
+							},
+							store: {
+								type: 'array',
+								autoLoad: true,
+								fields: [
+									{name: 'id', type: 'string'},
+									{name: 'desc', type: 'string'},
+									{name: 'info', type: 'string'}
+								],
+								data: [
+									['ro', me.res('sharing.cbo-presets.ro.lbl'), me.res('sharing.cbo-presets.ro.tip')],
+									['full', me.res('sharing.cbo-presets.full.lbl'), me.res('sharing.cbo-presets.full.tip')],
+									['custom', me.res('sharing.cbo-presets.custom.lbl'), me.res('sharing.cbo-presets.custom.tip')]
+								]
+							},
+							matchFieldWidth: false,
+							listConfig: {
+								getInnerTpl: function(displayField) {
+									return '{'+displayField+'}</br>'
+										+ '<span class="wt-text-off wt-theme-text-color-off">{info}</span>';
+								},
+								width: 400
+							},
+							fieldLabel: WT.res('folderSharing.cbo-presets.lbl'),
+							listeners: {
+								select: function(s, rec) {
+									var preset = rec.get('id'), recs;
+									if ('custom' !== preset) {
+										recs = me.lref('gprights').getSelection();
+										if (!Ext.isEmpty(recs)) {
+											recs[0].applyPreset(preset);
+										}
 									}
 								}
 							},
-							items: [{
-								xtype: 'checkbox',
-								bind: '{gprights.selection.l}',
-								boxLabel: me.mys.res('sharing.fld-l.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.r}',
-								boxLabel: me.mys.res('sharing.fld-r.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.s}',
-								boxLabel: me.mys.res('sharing.fld-s.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.w}',
-								boxLabel: me.mys.res('sharing.fld-w.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.i}',
-								boxLabel: me.mys.res('sharing.fld-i.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.p}',
-								boxLabel: me.mys.res('sharing.fld-p.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.k}',
-								boxLabel: me.mys.res('sharing.fld-k.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.a}',
-								boxLabel: me.mys.res('sharing.fld-a.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.x}',
-								boxLabel: me.mys.res('sharing.fld-x.lbl'),
-								width: 200
-							}, {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.t}',
-								boxLabel: me.mys.res('sharing.fld-t.lbl'),
-								width: 200
-							}, /*{
-								xtype: 'checkbox',
-								bind: '{gprights.selection.n}',
-								boxLabel: me.mys.res('sharing.fld-n.lbl'),
-								width: 200
-							},*/ {
-								xtype: 'checkbox',
-								bind: '{gprights.selection.e}',
-								boxLabel: me.mys.res('sharing.fld-e.lbl'),
-								width: 200
-							}]
-						}
+							width: 300
+						})
 					]
 				}
 			]
 		});
-		
 		me.on('viewload', me.onViewLoad);
+	},
+	
+	doDestroy: function() {
+		var me = this;
+		delete me.subjectPicker;
+		delete me.aclSubjectStore;
+		me.callParent();
+	},
+	
+	formatFieldTitle: function(model) {
+		var me = this;
+		if (model && model.getId() === '/') {
+			return Ext.String.format(me.fieldTitleFormat, Sonicle.String.htmlEncode(WT.getVar('userDisplayName') || ''));
+		} else {
+			return me.callParent(arguments);
+		}
 	},
 	
 	initTBar: function() {
@@ -361,77 +345,152 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 		
 		me.dockedItems = SoU.mergeDockedItems(me.dockedItems, 'top', [
 			me.createTopToolbar1Cfg([
-				me.mys.res('sharing.apply-to.lbl')+': ',
+				me.res('sharing.apply-to.lbl')+':',
+				' ',
 				{
 					xtype: 'radiogroup',
 					bind: {
-						value: '{foMethod}'
+						value: '{foApplyTo}',
+						hidden: '{!foShowApplyTo}'
 					},
+					hidden: true,
 					layout: 'hbox',
 					defaults: {
 						name: me.methodName,
-						margin: '0 20 0 0',
-						listeners: {
-							afterrender: function() {
-								this.getEl().on('click', function() {
-									//me.dirty=true;
-								});
-							}
-						}
+						margin: '0 20 0 0'
 					},
 					items: [
 						{
-							boxLabel: me.mys.res('sharing.chk-this.lbl'),
+							boxLabel: me.res('sharing.chk-this.lbl'),
+							bind: {
+								hidden: '{foIsAccount}'
+							},
 							inputValue: 'this'
-						},
-						{
-							boxLabel: me.mys.res('sharing.chk-branch.lbl'),
+						}, {
+							boxLabel: me.res('sharing.chk-branch.lbl'),
+							bind: {
+								hidden: '{foIsAccount}'
+							},
 							inputValue: 'branch'
-						},
-						{
-							boxLabel: me.mys.res('sharing.chk-all.lbl'),
+						}, {
+							boxLabel: me.res('sharing.chk-all.lbl'),
+							bind: {
+								hidden: '{!foIsAccount}'
+							},
 							inputValue: 'all'
 						}
 					]
 				}
-				
 			])
 		]);
-	},	
-	
-	onViewLoad: function(s, success) {
-		if(!success) return;
-		var me = this;
-		me.lref('fldrole').focus(true);
-		me.getModel().getProxy().setTimeout(WT.getVar("ajaxLongTimeout"));
 	},
 	
-	addRights: function(roleUid,roleDescription) {
+	addRightsUI: function() {
+		this.showSubjectPicker();
+	},
+	
+	deleteRightsUI: function(rec) {
 		var me = this,
+			sto = me.lref('gprights').getStore();
+		sto.remove(rec);
+	},
+	
+	cloneRightsUI: function(rec) {
+		var me = this;
+		me.cloneRec = rec;
+		me.showSubjectPicker();
+	},
+	
+	privates: {
+		styleAsEmpty: function(text) {
+			return '<span style="color:gray;font-style:italic;">' + text + '</span>';
+		},
+		
+		onViewLoad: function(s, success) {
+			var me = this,
+				mo = me.getModel();
+			
+			if (success) {
+				mo.getProxy().setTimeout(WT.getVar('ajaxLongTimeout'));
+			}
+		},
+		
+		addRights: function(subjectSid, cloneRec) {
+			var me = this,
 				grid = me.lref('gprights'),
 				sto = grid.getStore(),
-				rec;
+				data, rec, subDesc, subRec;
+			
+			if (sto.indexOfId(subjectSid) !== -1) return null;
+			if (cloneRec) data = Sonicle.Object.remap(cloneRec.getData(), ['shareIdentity', 'forceMailcard', 'alwaysCc', 'l', 'r', 's', 'w', 'i', 'p', 'k', 'a', 'x', 't', 'n', 'e']);
+			
+			subDesc = null;
+			if (me.aclSubjectStore) {
+				subRec = me.aclSubjectStore.getById(subjectSid);
+				if (subRec) subDesc = subRec.get('name') + ' [' + subRec.get('desc') + ']';
+			}
+			rec = sto.add(Ext.apply(data || {}, {
+					subjectSid: subjectSid,
+					subjectDescription: subDesc
+				}, {
+					l: true,
+					r: true,
+					s: true
+			}))[0];
+			return rec;
+		},
 		
-		if(sto.indexOfId(roleUid) !== -1) return null;
-		rec = sto.add({
-			roleUid: roleUid,
-			roleDescription: roleDescription,
-			folderRead: true
-		})[0];
-		return rec;
-	},
-	
-	deleteRights: function(rec) {
-		var me = this,
-				grid = me.lref('gprights');
+		showSubjectPicker: function() {
+			var me = this,
+				usedSubjects = Sonicle.Data.collectValues(me.lref('gprights').getStore());
+			me.subjectPicker = me.createSubjectPicker();
+			me.subjectPicker.getComponent(0).setSkipValues(usedSubjects);
+			me.subjectPicker.show();
+		},
 		
-		grid.getStore().remove(rec);
-	},
-	
-	styleAsEmpty: function(text) {
-		return '<span style="color:gray;font-style:italic;">' + text + '</span>';
+		createSubjectPicker: function() {
+			var me = this;
+			return Ext.create({
+				xtype: 'wtpickerwindow',
+				title: me.res('sharing.subjectPicker.tit'),
+				height: 350,
+				items: [
+					{
+						xtype: 'solistpicker',
+						store: {
+							xclass: 'Ext.data.ChainedStore',
+							source: me.aclSubjectStore
+						},
+						valueField: 'id',
+						displayField: 'name',
+						searchField: 'search',
+						emptyText: WT.res('grid.emp'),
+						searchText: WT.res('textfield.search.emp'),
+						selectedText: WT.res('grid.selected.lbl'),
+						okText: WT.res('act-ok.lbl'),
+						cancelText: WT.res('act-cancel.lbl'),
+						allowMultiSelection: true,
+						listeners: {
+							cancelclick: function() {
+								if (me.subjectPicker) me.subjectPicker.close();
+							}
+						},
+						handler: me.onSubjectPickerPick,
+						scope: me
+					}
+				]
+			});
+		},
+		
+		onSubjectPickerPick: function(s, values, recs, button) {
+			var me = this, lastRec;
+			Ext.iterate(values, function(value) {
+				lastRec = me.addRights(value, me.cloneRec);
+			});
+			delete me.cloneRec;
+			me.subjectPicker.close();
+			me.subjectPicker = null;
+			if (lastRec) me.lref('gprights').setSelection(lastRec);
+		}
 	}
-	
-	
-	
 });

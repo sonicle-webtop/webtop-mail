@@ -1633,34 +1633,34 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	},
 	
 	showSharingView: function(node) {
-		var me=this,
-		vw=WT.createView(me.ID,'view.Sharing',{
-			viewCfg: {
-				mys: me
-			}
-		});
-	
-		vw.getView().on("modelsave",function(v, success,r) {
+		//opts = opts || {};
+		var me = this,
+			vw = WT.createView(me.ID, 'view.Sharing', { swapReturn: true });
+		
+		vw.on('viewsave', function(s, success, model) {
+			//Ext.callback(opts.callback, opts.scope || me, [success, model]);
 			if (success) {
-				var s=me.imapTree.getStore(),
-				n=s.getNodeById(r.get("id")),
-				m=r.get("method"),
-				pn=m==="all"?s.getRootNode():n.parentNode;
+				var sto = me.imapTree.getStore(),
+					method = model.get('method');
 					
-				
-				s.load({
-					node: pn,
+				if (model.get('id') === '/') {
+					node = sto.getRootNode();
+				} else {
+					node = sto.getNodeById(model.get('id'));
+					node = node ? node.parentNode : undefined;
+				}
+				sto.load({
+					node: node,
 					callback: function() {
-						if (m==="branch") s.getNodeById(r.get("id")).expand();
+						if (method === 'branch') sto.getNodeById(model.get('id')).expand();
 					}
 				});
 			}
-		},me,{ single: true });
-	
-		vw.show(false, function() {
-			vw.getView().begin('edit', {
+		});
+		vw.showView(function() {
+			vw.begin('edit', {
 				data: {
-					id: node.get("id")
+					id: node.get('id')
 				}
 			});
 		});

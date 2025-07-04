@@ -54,10 +54,10 @@ public class JsSharing {
 		this.rights = rights;
 	}
 	
-	public boolean hasRoleUid(String roleUid) {
+	public boolean hasRoleUid(String subjectSid) {
 		boolean found=false;
 		for(SharingRights sr: rights) {
-			if (sr.roleUid.equals(roleUid)) {
+			if (sr.subjectSid.equals(subjectSid)) {
 				found=true;
 				break;
 			}
@@ -77,9 +77,8 @@ public class JsSharing {
 	}
 	
 	public static class SharingRights {
-		public String _fk;
-		public String roleUid;
-		public String roleDescription;
+		public String subjectSid;
+		public String subjectDescription;
 		public String imapId;
 		public Boolean shareIdentity;
 		public Boolean forceMailcard;
@@ -100,10 +99,9 @@ public class JsSharing {
 		
 		public SharingRights() {}
 		
-		public SharingRights(String _fk, String ruid, String rdesc, String imapId, boolean shareIdentity, boolean forceMailcard, boolean alwaysCc, String alwaysCcEmail, boolean l, boolean r, boolean s, boolean w, boolean i, boolean p, boolean k, boolean a, boolean x, boolean t, boolean n, boolean e) {
-			this._fk = _fk;
-			roleUid = ruid;
-			roleDescription = rdesc;
+		public SharingRights(String ruid, String rdesc, String imapId, boolean shareIdentity, boolean forceMailcard, boolean alwaysCc, String alwaysCcEmail, boolean l, boolean r, boolean s, boolean w, boolean i, boolean p, boolean k, boolean a, boolean x, boolean t, boolean n, boolean e) {
+			subjectSid = ruid;
+			subjectDescription = rdesc;
 			this.imapId=imapId;
 			this.shareIdentity=shareIdentity;
 			this.forceMailcard=forceMailcard;

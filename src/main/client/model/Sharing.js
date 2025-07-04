@@ -43,9 +43,12 @@ Ext.define('Sonicle.webtop.mail.model.Sharing', {
 		}
 	}),
 	
+	identifier: 'negativestring',
+	idProperty: 'id',
 	field:[
+		WTF.field('id', 'string', false),
 		WTF.roField('description', 'string'),
-		WTF.field('method','string')
+		WTF.field('method', 'string')
 	],
 	hasMany: [
 		WTF.hasMany('rights', 'Sonicle.webtop.mail.model.SharingRights')

@@ -9563,39 +9563,45 @@ public class Service extends BaseService {
 			String description = null;
 			String method = "this";
 			ArrayList<JsSharing.SharingRights> rights = new ArrayList<>();
-
+			
+			String folderId = id;
 			if(id.equals("/")) {
-				id="INBOX";
+				folderId="INBOX";
 				method = "all";
 			}
 			
-			fc = account.getFolderCache(id);
+			fc = account.getFolderCache(folderId);
 			SonicleIMAPFolder folder=(SonicleIMAPFolder)fc.getFolder();
-			description = folder.getName();
+			if (id.equals("/")) {
+				description = "";
+			} else {
+				description = folder.getName();
+			}
+			
 			Map<String, Sharing.SubjectConfiguration> sconfigurations=core.getShareSubjectConfiguration(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, FolderShareParameters.class);
 			for(ACL acl : folder.getACL()) {
 				String aclUserId=acl.getName();
 				UserProfileId pid=aclUserIdToUserId(aclUserId);
 				if (pid==null) continue;
-				String roleUid=null;
+				String userSid=null;
 				try {
-					roleUid=core.lookupUserSid(pid);
+					userSid=core.lookupUserSid(pid);
 				} catch(WTException exc) {
 				}
-				String roleDescription=null;
+				String userDescription=null;
 				FolderShareParameters fsp=null;
-				if (roleUid!=null) {
-					Sharing.SubjectConfiguration sconfiguration=sconfigurations.get(roleUid);
+				if (userSid!=null) {
+					Sharing.SubjectConfiguration sconfiguration=sconfigurations.get(userSid);
 					if (sconfiguration!=null) fsp=sconfiguration.getTypedData(FolderShareParameters.class);
 				}
 				boolean shareIdentity=false;
 				boolean forceMailcard=false;
 				boolean alwaysCc=false;
 				String alwaysCcEmail=null;
-				if (roleUid==null) { 
+				if (userSid==null) { 
 					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
-					roleUid=aclUserId; 
-					roleDescription=roleUid; 
+					userSid=aclUserId; 
+					userDescription=userSid; 
 				} else {
 					if (fsp!=null) {
 						shareIdentity=fsp.shareIdentity;
@@ -9607,14 +9613,13 @@ public class Service extends BaseService {
 					UserProfile.Data pdata=WT.getProfileData(pid);
 					if (pdata!=null) dn=pdata.getDisplayName();
 					else dn="no description available";
-					roleDescription=pid.getUserId()+" ["+dn+"]";
+					userDescription=pid.getUserId()+" ["+dn+"]";
 				}
 
 				Rights ar = acl.getRights();
 				rights.add(new JsSharing.SharingRights(
-						id, 
-						roleUid,
-						roleDescription,
+						userSid,
+						userDescription,
 						aclUserId,
 						shareIdentity,
 						forceMailcard,
@@ -9642,7 +9647,7 @@ public class Service extends BaseService {
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					//try to fill in the imapId where empty
 					if (StringUtils.isEmpty(sr.imapId)) {
-						UserProfileId pid=core.userUidToProfileId(sr.roleUid);
+						UserProfileId pid=core.lookupUserProfileIdBySid(sr.subjectSid);
 						String imapId=null;
 						//look for any custom mail user
 						OUserMap userMap=UserMapDAO.getInstance().selectById(con, pid.getDomainId(), pid.getUserId());
@@ -9664,7 +9669,7 @@ public class Service extends BaseService {
 					}
 				}
 				
-				String foldername=pl.data.method.equals("all")?"":id;
+				String foldername=pl.data.method.equals("all")?"":folderId;
 				boolean recursive=pl.data.method.equals("all")||pl.data.method.equals("branch");
 				
 				//
@@ -9697,7 +9702,7 @@ public class Service extends BaseService {
 						fsp.alwaysCc=sr.alwaysCc;
 						fsp.alwaysCcEmail=sr.alwaysCcEmail;
 
-						setconfigurations.add(new Sharing.SubjectConfiguration(sr.roleUid, LangUtils.asSet("READ"), fsp));
+						setconfigurations.add(new Sharing.SubjectConfiguration(sr.subjectSid, LangUtils.asSet("READ"), fsp));
 					}
 				}
 				
