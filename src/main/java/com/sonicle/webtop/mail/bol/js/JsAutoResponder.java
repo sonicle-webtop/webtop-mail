@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
-import com.sonicle.commons.time.DateTimeUtils;
+import com.sonicle.commons.time.JodaTimeUtils;
 import com.sonicle.webtop.mail.model.AutoResponder;
 import org.joda.time.DateTimeZone;
 
@@ -57,8 +57,8 @@ public class JsAutoResponder {
 		this.subject = autoResponder.getSubject();
 		this.message = autoResponder.getMessage();
 		this.addresses = autoResponder.getAddresses();
-		this.activationStartDate = DateTimeUtils.printYmdHmsWithZone(autoResponder.getActivationStartDate(), profileTz);
-		this.activationEndDate = DateTimeUtils.printYmdHmsWithZone(autoResponder.getActivationEndDate(), profileTz);
+		this.activationStartDate = JodaTimeUtils.printYMDHMS(profileTz, autoResponder.getActivationStartDate());
+		this.activationEndDate = JodaTimeUtils.printYMDHMS(profileTz, autoResponder.getActivationEndDate());
 		this.daysInterval = autoResponder.getDaysInterval();
 	}
 	
@@ -69,8 +69,8 @@ public class JsAutoResponder {
 		item.setMessage(message);
 		item.setAddresses(addresses);
 		item.setDaysInterval(daysInterval);
-		item.setActivationStartDate(DateTimeUtils.withTimeAtStartOfDay(DateTimeUtils.parseYmdHmsWithZone(activationStartDate, profileTz)));
-		item.setActivationEndDate(DateTimeUtils.withTimeAtStartOfDay(DateTimeUtils.parseYmdHmsWithZone(activationEndDate, profileTz)));
+		item.setActivationStartDate(JodaTimeUtils.withTimeAtStartOfDay(JodaTimeUtils.parseDateTimeYMDHMS(profileTz, activationStartDate)));
+		item.setActivationEndDate(JodaTimeUtils.withTimeAtStartOfDay(JodaTimeUtils.parseDateTimeYMDHMS(profileTz, activationEndDate)));
 		return item;
 	}
 }

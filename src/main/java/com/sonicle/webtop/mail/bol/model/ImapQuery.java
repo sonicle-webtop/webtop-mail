@@ -32,19 +32,15 @@
  */
 package com.sonicle.webtop.mail.bol.model;
 
-import com.sonicle.commons.time.DateTimeUtils;
+import com.sonicle.commons.time.JavaTimeUtils;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.Service;
 import com.sonicle.webtop.mail.TagsHelper;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
 import jakarta.mail.Flags;
 import jakarta.mail.Flags.Flag;
 import jakarta.mail.Message;
@@ -255,7 +251,7 @@ public class ImapQuery {
 	
 	private static Date parseDate(String value, DateTimeZone timezone) {
 		String date = StringUtils.replace(value, "/", "-");
-		Instant instant = DateTimeUtils.toInstant(DateTimeUtils.parseLocalDate(date), DateTimeUtils.toZoneId(timezone));
+		Instant instant = JavaTimeUtils.toInstant(JavaTimeUtils.parseLocalDateYMD(date), JavaTimeUtils.toZoneId(timezone));
 		return new Date(instant.toEpochMilli());
 	}
 	

@@ -33,8 +33,7 @@
 package com.sonicle.webtop.mail.bol.js;
 
 import com.sonicle.commons.EnumUtils;
-import com.sonicle.commons.time.DateTimeUtils;
-import com.sonicle.webtop.contacts.model.Contact;
+import com.sonicle.commons.time.JodaTimeUtils;
 import com.sonicle.webtop.contacts.model.ContactBase;
 import com.sonicle.webtop.contacts.model.ContactCompany;
 import org.joda.time.format.DateTimeFormatter;
@@ -96,7 +95,7 @@ public class JsContactData {
 	public JsContactData() {}
 	
 	public JsContactData(ContactBase contact, ContactCompany contactCompany) {
-		DateTimeFormatter ymdFmt = DateTimeUtils.createYmdFormatter();
+		DateTimeFormatter ymdFmt = JodaTimeUtils.createFormatterYMD();
 		
 		displayName = contact.getDisplayName();
 		title = contact.getTitle();

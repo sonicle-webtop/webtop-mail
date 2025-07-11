@@ -49,7 +49,6 @@ import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.cache.AbstractPassiveExpiringBulkSet;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.http.HttpClientUtils;
-import com.sonicle.commons.time.DateTimeUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.DispositionType;
 import com.sonicle.commons.web.ServletUtils;
@@ -143,6 +142,7 @@ import org.apache.http.client.HttpClient;
 import org.apache.commons.vfs2.FileSystemException;
 import org.joda.time.DateTimeZone;
 import com.sonicle.commons.qbuilders.conditions.Condition;
+import com.sonicle.commons.time.JodaTimeUtils;
 import com.sonicle.commons.web.ParameterException;
 import com.sonicle.commons.web.json.PayloadAsList;
 import com.sonicle.commons.web.json.bean.QueryObj;
@@ -3920,7 +3920,7 @@ public class Service extends BaseService {
 				FileObject fo=vfsmanager.getStoreFile(sid,path);
 				if (!fo.exists()) fo.createFolder();
 				
-				String dirname=PathUtils.sanitizeFolderName(DateTimeUtils.createYmdHmsFormatter(environment.getProfile().getTimeZone()).print(DateTimeUtils.now())+" - "+subject);
+				String dirname=PathUtils.sanitizeFolderName(JodaTimeUtils.createFormatterYMDHMS(environment.getProfile().getTimeZone()).print(JodaTimeUtils.now())+" - "+subject);
 
 				FileObject dir=fo.resolveFile(dirname);
 				if (!dir.exists()) dir.createFolder();

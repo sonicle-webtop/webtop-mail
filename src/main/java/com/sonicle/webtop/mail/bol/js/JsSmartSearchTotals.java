@@ -33,14 +33,12 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
-import com.sonicle.commons.time.DateTimeUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormatter;
 
 /**
  *

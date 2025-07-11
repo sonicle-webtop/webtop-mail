@@ -33,7 +33,7 @@
  */
 package com.sonicle.webtop.mail.bol.js;
 
-import com.sonicle.commons.time.DateTimeUtils;
+import com.sonicle.commons.time.JodaTimeUtils;
 import java.util.Date;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormatter;
@@ -53,7 +53,7 @@ public class JsPreviewMessage {
 		String text;
 		
 		public JsPreviewMessage(long uid, String folderid, String foldername, String subject, String from, String to, Date date, String text) {
-			DateTimeFormatter ymdhmsZoneFmt = DateTimeUtils.createYmdHmsFormatter();
+			DateTimeFormatter ymdhmsZoneFmt = JodaTimeUtils.createFormatterYMDHMS();
 			String sdate=ymdhmsZoneFmt.print(new DateTime(date));
 			this.uid=uid;
 			this.folderid=folderid;
