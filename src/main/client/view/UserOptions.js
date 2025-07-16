@@ -567,8 +567,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				}), {
 					xtype: 'checkbox',
 					bind: '{archiveKeepFoldersStructure}',
-					fieldLabel: me.res('opts.arch.fld-keepFoldersStructure.lbl'),
-					width: 100,
+					hideEmptyLabel: false,
+					boxLabel: me.res('opts.arch.fld-keepFoldersStructure.lbl'),
 					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 				},
 				{
@@ -954,8 +954,8 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			items: [{
 				xtype: 'checkbox',
 				bind: '{scanAll}',
-				fieldLabel: me.res('opts.adv.fld-scanAll.lbl'),
-				width: 100,
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-scanAll.lbl'),
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, /*{ Deprecated
 				xtype: 'fieldcontainer',
@@ -992,21 +992,21 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			}, {
 				xtype: 'checkbox',
 				bind:  '{favoriteNotifications}',
-				fieldLabel: me.res('opts.adv.fld-favoriteFolderNotifications.lbl'),
-				width: 100,
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-favoriteFolderNotifications.lbl'),
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, {
 				xtype: 'checkbox',
 				bind:  '{rememberFoldersState}',
-				fieldLabel: me.res('opts.adv.fld-rememberFoldersState.lbl'),
-				width: 100,
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-rememberFoldersState.lbl'),
 				needReload: true,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, {
 				xtype: 'checkbox',
 				bind:  '{delayedSending}',
-				fieldLabel: me.res('opts.adv.fld-delayedSending.lbl'),
-				width: 100,
+				hideEmptyLabel: false,
+				boxLabel: me.res('opts.adv.fld-delayedSending.lbl'),
 				needReload: true,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, {
