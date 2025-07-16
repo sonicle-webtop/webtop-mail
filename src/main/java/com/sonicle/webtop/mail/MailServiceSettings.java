@@ -46,10 +46,11 @@ import static com.sonicle.webtop.mail.MailSettings.*;
 import com.sonicle.webtop.mail.model.ViewMode;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.jooq.tools.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
@@ -409,5 +410,25 @@ public class MailServiceSettings extends BaseServiceSettings {
 	
 	public int getImapEventMessageBufferTTL() {
 		return getInteger(IMAP_EVENT_MESSAGE_BUFFERTTL, 500);
+	}
+	
+	public List<String> getPreviewRemoveHeadStyleDomains() {
+		List<String> domainsList = null;
+		String domains[] = StringUtils.split(getString(PREVIEW_REMOVEHEADSTYLES_DOMAINS, null), ',');
+		if (domains != null) {
+			for(int i=0; i<domains.length; ++i) domains[i] = domains[i].trim().toLowerCase();
+			domainsList = Arrays.asList(domains);
+		}
+		return domainsList;
+	}
+	
+	public List<String> getPreviewRemoveHeadStyleBrowsers() {
+		List<String> browsersList = null;
+		String browsers[] = StringUtils.split(getString(PREVIEW_REMOVEHEADSTYLES_BROWSERS, null), ',');
+		if (browsers != null) {
+			for(int i=0; i<browsers.length; ++i) browsers[i] = browsers[i].trim().toLowerCase();
+			browsersList = Arrays.asList(browsers);
+		}
+		return browsersList;
 	}
 }

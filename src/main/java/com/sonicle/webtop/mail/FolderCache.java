@@ -2150,15 +2150,15 @@ public class FolderCache {
 		}
 	}
     
-    public ArrayList<HTMLPart> getHTMLParts(MimeMessage m, long msguid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
-        return getHTMLParts(m, msguid, null, null, forEdit, balanceTags);
+    public ArrayList<HTMLPart> getHTMLParts(MimeMessage m, long msguid, boolean forEdit, boolean balanceTags, boolean removeHeadStyle) throws MessagingException, IOException {
+        return getHTMLParts(m, msguid, null, null, forEdit, balanceTags, removeHeadStyle);
     }
     
-    public ArrayList<HTMLPart> getHTMLParts(MimeMessage m, String provider, String providerid, boolean balanceTags) throws MessagingException, IOException {
-        return getHTMLParts(m, -1, provider, providerid, false, balanceTags);
+    public ArrayList<HTMLPart> getHTMLParts(MimeMessage m, String provider, String providerid, boolean balanceTags, boolean removeHeadStyle) throws MessagingException, IOException {
+        return getHTMLParts(m, -1, provider, providerid, false, balanceTags, removeHeadStyle);
     }
     
-    private ArrayList<HTMLPart> getHTMLParts(MimeMessage m, long msguid, String provider, String providerid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
+    private ArrayList<HTMLPart> getHTMLParts(MimeMessage m, long msguid, String provider, String providerid, boolean forEdit, boolean balanceTags, boolean removeHeadStyle) throws MessagingException, IOException {
       ArrayList<HTMLPart> htmlparts=new ArrayList<>();
       //WebTopApp webtopapp=environment.getWebTopApp();
       //Session wts=environment.get();
@@ -2227,8 +2227,8 @@ public class FolderCache {
                 Object tlock=new Object();
                 String uri=environment.getSessionRefererUri();
                 HTMLMailParserThread parserThread=null;
-                if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msguid, forEdit, balanceTags);
-                else parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, provider, providerid, balanceTags);
+                if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msguid, forEdit, balanceTags, removeHeadStyle);
+                else parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, provider, providerid, balanceTags, removeHeadStyle);
                 try {
                     java.io.BufferedReader breader=startHTMLMailParser(parserThread,mailData,false);
                     char chars[]=new char[8192];
@@ -2570,28 +2570,31 @@ public class FolderCache {
     SaxHTMLMailParser saxHTMLMailParser=null;
     String appUrl=null;
     boolean balanceTags=true;
+	boolean removeHeadStyle=false;
     
-    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, long msguid, boolean forEdit, boolean balanceTags) {
+    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, long msguid, boolean forEdit, boolean balanceTags, boolean removeHeadStyle) {
         this.threadLock=tlock;
         this.istream=istream;
         this.charset=charset;
         this.appUrl=appUrl;
 		this.balanceTags=balanceTags;
+		this.removeHeadStyle=removeHeadStyle;
         this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),forEdit,msguid);
     }
     
-    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, String provider, String providerid, boolean balanceTags) {
+    HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, String provider, String providerid, boolean balanceTags, boolean removeHeadStyle) {
         this.threadLock=tlock;
         this.istream=istream;
         this.charset=charset;
         this.appUrl=appUrl;
 		this.balanceTags=balanceTags;
+		this.removeHeadStyle=removeHeadStyle;
         this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),provider,providerid);
     }
     
     public void initialize(HTMLMailData mailData, boolean justBody) throws SAXException {
         saxHTMLMailParser.setApplicationURL(appUrl);
-        saxHTMLMailParser.initialize(mailData, justBody);        
+        saxHTMLMailParser.initialize(mailData, justBody,removeHeadStyle);        
     }
 
     public void run() {

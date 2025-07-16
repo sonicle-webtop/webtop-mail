@@ -299,7 +299,20 @@ public class MailSettings {
 	 */
 	public static final String INVITATION_ASK_EDIT_AFTER_ACTION = "invitation.ask.edit.after.action";
 	
+	/**
+	 * [system+domain]
+	 * [string]
+	 * Comma separated list of sender domains that needs removal of head styles in html content (e.g. amazon.com)
+	 */
+	public static final String PREVIEW_REMOVEHEADSTYLES_DOMAINS = "preview.removeheadstyles.domains";
 	
+	/**
+	 * [system+domain]
+	 * [string]
+	 * Comma separated list of browsers that needs removal of head styles in html content (e.g. safari)
+	 */
+	public static final String PREVIEW_REMOVEHEADSTYLES_BROWSERS = "preview.removeheadstyles.browsers";
+
 	public static final String SPECIALFOLDERS_AUTOCREATE = "specialfolders.autocreate";
 	public static final String DMS_ARCHIVE = "archive";
 	public static final String ATTACHMENT_MAXSIZE = "attachment.maxsize";

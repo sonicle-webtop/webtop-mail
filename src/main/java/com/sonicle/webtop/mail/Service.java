@@ -158,6 +158,7 @@ import com.sonicle.security.CryptoUtils;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.app.CoreManifest;
+import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.app.model.Sharing;
 import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
@@ -302,10 +303,12 @@ public class Service extends BaseService {
 	private final FoldersNamesInByFileFiltersCache cacheFoldersNamesInByFileFilters = new FoldersNamesInByFileFiltersCache(5, TimeUnit.MINUTES);
 	
 	private boolean attachmentDetectUseBodyStructure = true;
+	private List<String> previewRemoveHeadStyleDomains = null;
+	private List<String> previewRemoveHeadStyleBrowsers = null;
+	private boolean browserWantsRemoveHeadStyle = false;
 	
 	@Override
 	public void initialize() {
-		
 		ArrayList<String> allFlagsArray=new ArrayList<String>();
 		for(WebtopFlag fs: webtopFlags) {
 			allFlagsArray.add(fs.label);
@@ -345,7 +348,11 @@ public class Service extends BaseService {
 				inlineableMimes.add(mtype.trim());
 		}
 		attachmentDetectUseBodyStructure = ss.isAttachmentDetectUseBodyStructure();
-		
+
+		previewRemoveHeadStyleDomains = ss.getPreviewRemoveHeadStyleDomains();
+		previewRemoveHeadStyleBrowsers = ss.getPreviewRemoveHeadStyleBrowsers();
+		String browserFamily = StringUtils.lowerCase(WebTopApp.getUserAgentInfo(getEnv().getSession().getClientPlainUserAgent()).getFamily().getName());
+		browserWantsRemoveHeadStyle = previewRemoveHeadStyleBrowsers != null && previewRemoveHeadStyleBrowsers.contains(browserFamily);
 		
 		us = new MailUserSettings(profile.getId(),ss);
 		mprofile = new MailUserProfile(mailManager,ss,us,profile);
@@ -4602,6 +4609,11 @@ public class Service extends BaseService {
 		return previewBalanceTags;
 	}
 	
+	private boolean isRemoveHeadStyle(InternetAddress ia) {
+		String domain = StringUtils.lowerCase(StringUtils.trim(StringUtils.substringAfter(ia.getAddress(), '@')));
+		return browserWantsRemoveHeadStyle && previewRemoveHeadStyleDomains != null && previewRemoveHeadStyleDomains.contains(domain);
+	}
+	
 	public void processGetEditMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
@@ -4725,7 +4737,8 @@ public class Service extends BaseService {
 			
 			String html = "";
 			boolean balanceTags=isPreviewBalanceTags(iafrom);
-			ArrayList<FolderCache.HTMLPart> htmlparts = mcache.getHTMLParts((MimeMessage) m, newmsgid, true, balanceTags);
+			boolean removeHeadStyle=isRemoveHeadStyle(iafrom);
+			ArrayList<FolderCache.HTMLPart> htmlparts = mcache.getHTMLParts((MimeMessage) m, newmsgid, true, balanceTags, removeHeadStyle);
 			for (FolderCache.HTMLPart htmlPart : htmlparts) {
 				html += htmlPart.html + "<BR><BR>";
 			}
@@ -7687,10 +7700,11 @@ public class Service extends BaseService {
                 }
 			ArrayList<FolderCache.HTMLPart> htmlparts = null;
 			boolean balanceTags=isPreviewBalanceTags(iafrom);
+			boolean removeHeadStyle=isRemoveHeadStyle(iafrom);
 			if (providername == null) {
-				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false, balanceTags);
+				htmlparts = mcache.getHTMLParts((MimeMessage) m, msguid, false, balanceTags, removeHeadStyle);
 			} else {
-				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid, balanceTags);
+				htmlparts = mcache.getHTMLParts((MimeMessage) m, providername, providerid, balanceTags, removeHeadStyle);
 			}
 			
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);

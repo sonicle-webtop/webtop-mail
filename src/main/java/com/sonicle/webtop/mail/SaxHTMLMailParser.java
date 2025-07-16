@@ -66,6 +66,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
   private boolean forEdit=false;
   private String provider=null;
   private String providerid=null;
+  private boolean removeHeadStyle=false;
 
   private static Vector unenclosedTags=new Vector();
 
@@ -95,7 +96,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
       this.providerid=providerid;
   }
   
-  public void initialize(HTMLMailData mailData, boolean justBody) throws SAXException {
+  public void initialize(HTMLMailData mailData, boolean justBody, boolean removeHeadStyle) throws SAXException {
     //if (writer!=null || reader!=null) throw new SAXException("SaxHTMLMailParser yet not released!");
     release();
 
@@ -110,6 +111,7 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
     pwriter=new PrintWriter(writer);
     breader=new BufferedReader(reader);
     this.justBody=justBody;
+	this.removeHeadStyle=removeHeadStyle;
   }
   
   public void setApplicationURL(String url) {
@@ -323,6 +325,9 @@ public class SaxHTMLMailParser extends DefaultHandler implements LexicalHandler 
     }
 
     if(isstyle) {
+		
+	  if (removeHeadStyle) return;
+	  
       String str="";
       String pre=new String(chars, start, len);
       do {
