@@ -71,18 +71,18 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 					flex: 3,
 					sortable: false,
 					renderer: function(v,p,r) {
-						v = Ext.String.htmlEncode(v);
-						if(r.get('isReadOnly')) {
-							return "<span style='" + 'color:grey;' + "'>" + v + "</span>";
-						}
 						var unr=r.get('unread'),
 							hunr=r.get('hasUnread'),
 							id=r.get('id');
+						v = Ext.String.htmlEncode(v);
 						return (
 							unr!==0 || hunr ?
-								'<span class="wtmail-tree-folder-span-bold" data-qtip="'+id+'">'+v+'</span>'+
+								'<span class="wtmail-tree-folder-span-bold" data-qtip="'+id+'" '+
+									( r.get('isReadOnly') ? 'style="color:grey"' : '' ) +
+								'>'+v+'</span>'+
 								( unr!==0 ? '<span class="wtmail-tree-unread-cell">'+unr+'</span>' : '' )
-							  : v
+							  : 
+								( r.get('isReadOnly') ? '<span style="color:grey">'+v+'</span>' : v )
 							);
 					},
 					editor: 'textfield'
