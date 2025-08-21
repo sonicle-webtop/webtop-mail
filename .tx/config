@@ -1,5 +1,5 @@
 [main]
-host = https://www.transifex.com
+host = https://app.transifex.com
 
 [o:sonicle:p:webtop-mail:r:client_locale]
 file_filter = src/main/client/locale_<lang>.properties
