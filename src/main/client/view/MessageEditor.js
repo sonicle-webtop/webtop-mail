@@ -37,6 +37,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	requires: [
 		'Sonicle.String',
 		'Sonicle.Utils',
+		'Sonicle.CountdownLoadMask',
 		'Sonicle.button.Toggle',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.webtop.core.ux.field.htmleditor.Field',
@@ -1300,22 +1301,20 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
         if (me.fireEvent('beforesend',me)) {
 			var countdown = me.mys.getVar('delayedSending') ? me.mys.getVar('delayedSendingSeconds') : 0;
 			if (countdown) {
-				var lm=new Sonicle.CountdownLoadMask({
-					msg: me.mys.res('deleyed-sending.msg.pre'),
+				var lm = new Sonicle.CountdownLoadMask({
 					target: me,
-					countdown: countdown,
-					countdownInterval: 1000,
-					countdownEndFn: function() {
+					countdownStart: countdown,
+					countdownCancelCallback: function() {
+						me.enableControls(false, true);
+					},
+					countdownEndCallback: function() {
 						me.sendMessage();
 					},
-					countdownCancelFn: function() {
-						me.enableControls(false,true);
-					},
-					cancelText: WT.res('word.cancel'),
-					secondsRemainingText: me.mys.res('deleyed-sending.msg.post'),
-					encodeText: true
+					msg: me.res('messageEditor.delayedSend.txt'),
+					countdownRemainingText: me.res('messageEditor.delayedSend.countdown.txt'),
+					cancelText: WT.res('word.cancel')
 				});
-				lm.start();
+				lm.show();
 			}
             else me.sendMessage();
         } else {
