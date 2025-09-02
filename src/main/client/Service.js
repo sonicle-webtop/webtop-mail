@@ -515,14 +515,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					title: WT.res("com.sonicle.webtop.calendar","portlet.events.tit"),
 					iconCls: 'wtcal-icon-event',
 					collapsible: true,
-					border: false,
-					width: '100%',
-					//flex: 1,
-					margin: "0 8 8 8",
-					height: 150,
+					margin: "0 8 8 8", // Maybe move this to CSS?
 					items: [
 						me.calendarTool=capi.createEventsPortletBody()
-					]
+					],
+					height: 150,
+					width: '100%'
+					//flex: 1,
 				});
 			}
 		}
@@ -543,14 +542,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					title: WT.res("com.sonicle.webtop.tasks","portlet.tasks.tit"),
 					iconCls: 'wttasks-icon-task',
 					collapsible: true,
-					border: false,
-					width: '100%',
-					margin: "0 8 8 8",
-					height: 150,
-					//flex: 1,
+					margin: "0 8 8 8", // Maybe move this to CSS?
 					items: [
 						me.tasksTool=tapi.createTasksPortletBody()
-					]
+					],
+					height: 150,
+					width: '100%'
+					//flex: 1,
 				});
 			}
 		}
