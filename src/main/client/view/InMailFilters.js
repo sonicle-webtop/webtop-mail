@@ -295,8 +295,9 @@ Ext.define('Sonicle.webtop.mail.view.InMailFilters', {
 			return [
 				me.addAct('addMailFilter', {
 					ignoreSize: true,
+					iconCls: 'wt-icon-add',
 					text: me.res('inMailFilters.addMailFilter.tip'),
-					//tooltip: me.res('inMailFilters.addMailFilter.tip'),
+					tooltip: null,
 					ui: '{secondary|toolbar}',
 					handler: function() {
 						me.addMailFilterUI();

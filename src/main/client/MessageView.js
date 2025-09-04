@@ -647,7 +647,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 			actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.createrule"), handler: function() {
 				var ae=me.emailMenu.activeElement;
 				me.createRule(ae.recEmail,ae.recType);
-			}, iconCls: 'wtmail-icon-addMailFilter'});
+			}, iconCls: 'wtmail-icon-mailFilter'});
 			actions[i++]=new Ext.Action({text: WT.res("act-copy.lbl"), handler: function() {
 				var ae=me.emailMenu.activeElement,
 					ds=ae.dom.dataset,

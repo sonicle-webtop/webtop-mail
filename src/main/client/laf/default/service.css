@@ -66,11 +66,10 @@
 .wtmail-icon-redirect { background-image: none; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-forwardeml { background-image: none; background-size: contain; vertical-align: bottom; }
 
+.wtmail-icon-mailFilter { background-image: url('mailfilter_16.svg') !important; background-size: contain; }
 .wtmail-icon-inMailFilters { background-image: url('mailfilter-in_16.svg') !important; background-size: contain; }
 .wtmail-icon-outMailFilters { background-image: url('mailfilter-out_16.svg') !important; background-size: contain; }
 .wtmail-icon-autoResponder { background-image: url('autoresponder_16.svg') !important; background-size: contain; }
-.wtmail-icon-addMailFilter { background-image: url('mailfilter-add_16.svg') !important; background-size: contain; }
-.wtmail-icon-sieveFilter { background-image: url('sievefilter_16.svg') !important; background-size: contain; }
 
 .wtmail-icon-msgAddReminder-on { background-image: url('msg-reminder-on_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgAddReminder-off { background-image: url('msg-reminder-off_16.svg') !important; background-size: contain; }
