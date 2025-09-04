@@ -291,13 +291,7 @@ Ext.define('Sonicle.webtop.mail.view.SmartSearchDialog', {
 					title: me.mys.res('smartsearch-search.tit',me.pattern),
 					tools: [
 						{
-							type: 'graph', handler: function() { me.lref("panelGraph").toggleCollapse(); }
-						},
-						{
-							type: 'empty', handler: function() { me.lref("panelGraph").toggleCollapse(); }
-						},
-						{
-							type: 'empty', handler: function() { me.lref("panelGraph").toggleCollapse(); }
+							iconCls: 'wtmail-icon-smartsearch-graph', handler: function() { me.lref("panelGraph").toggleCollapse(); }
 						}
 					],
 					items: [

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" width="16px" height="16px" viewBox="0 0 16 16" enable-background="new 0 0 16 16" xml:space="preserve">
+  <g id="main">
+    <g id="icon">
+      <path d="M1.5,14.5L7.8,14.5L7.8,9.8L10.95,9.8L8.862,8.138L9.61,7.199L10.2,6.605L10.9,6.166L11.67,5.894L12.5,5.8L12.5,4.557L8.533,0.5L1.5,0.5zz" fill="#FFFFFF"/>
+      <path d="M1,15L7.8,15L7.8,14L2,14L2,1L8,1L8,5L12,5L12,5.856L12.5,5.8L13,5.84L13,4.353L8.744,0L1,0zM11.26,4L9,4L9,1.693zz" fill="#383838"/>
+    </g>
+    <g id="overlay">
+      <path d="M14.5,11.5V9.512C14.5,8.405,13.6,7.5,12.5,7.5l0,0c-0.63,0,-1.194,0.297,-1.561,0.758" fill="none" stroke="#E57428" stroke-width="1" stroke-miterlimit="10"/>
+      <path d="M9.5,11.5h6v4H9.5V11.5zM12.5,13v1" fill="#F7DA8E" stroke="#E57428" stroke-width="1" stroke-miterlimit="10"/>
+    </g>
+  </g>
+</svg>
