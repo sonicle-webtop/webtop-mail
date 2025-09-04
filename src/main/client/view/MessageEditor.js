@@ -488,8 +488,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			ui: 'default-toolbar',
 			offTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.off.tip.txt')},
 			onTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.on.tip.txt')},
-			offIconCls: 'wtmail-icon-msgSetMailcard-grayed',
-			onIconCls: 'wtmail-icon-msgSetMailcard',
+			offIconCls: 'wtmail-icon-msgSetMailcard-off',
+			onIconCls: 'wtmail-icon-msgSetMailcard-on',
 			handler: me.showMailcardAction,
 			pressed: me.showMailcard,
 			scope: me
@@ -500,8 +500,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				ui: 'default-toolbar',
 				offTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.off.tip.txt')},
 				onTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.on.tip.txt')},
-				offIconCls: 'wtmail-icon-msgAddReminder-grayed',
-				onIconCls: 'wtmail-icon-msgAddReminder',
+				offIconCls: 'wtmail-icon-msgAddReminder-off',
+				onIconCls: 'wtmail-icon-msgAddReminder-on',
 				handler: me.actionReminder,
 				scope: me
 			};
@@ -512,8 +512,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				ui: 'default-toolbar',
 				offTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.off.tip.txt')},
 				onTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.on.tip.txt')},
-				offIconCls: 'wtmail-icon-msgSetReceipt-grayed',
-				onIconCls: 'wtmail-icon-msgSetReceipt',
+				offIconCls: 'wtmail-icon-msgSetReceipt-off',
+				onIconCls: 'wtmail-icon-msgSetReceipt-on',
 				handler: me.actionReceipt,
 				scope: me
 			}));
@@ -785,8 +785,8 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				ui: 'default-toolbar',
 				offTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.off.tip.txt')},
 				onTooltip: {title: me.res('editor.btn-priority.tip.tit'), text: me.res('editor.btn-priority.on.tip.txt')},
-				offIconCls: 'wtmail-icon-msgSetPriorityHigh-grayed',
-				onIconCls: 'wtmail-icon-msgSetPriorityHigh',
+				offIconCls: 'wtmail-icon-msgSetPriorityHigh-off',
+				onIconCls: 'wtmail-icon-msgSetPriorityHigh-on',
 				handler: me.actionPriority,
 				scope: me,
 				tabIndex: 99999

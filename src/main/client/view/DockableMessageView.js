@@ -140,8 +140,8 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 					},
 					me.buttonSpecial=Ext.create({
 						xtype: 'sotogglebutton',
-						onIconCls: 'wtmail-icon-starred',
-						offIconCls: 'wtmail-icon-starred',
+						onIconCls: 'wtmail-icon-markspecial',
+						offIconCls: 'wtmail-icon-markspecial',
 						onText: me.mys.res('act-special.lbl'),
 						offText: me.mys.res('act-special.lbl'),
 						pressed: 'special'===me.model.get('flag'),
