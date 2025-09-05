@@ -132,11 +132,6 @@ color: gray;
 font-size: 13px 
 }
 
-.x-tool-graph  { 
-background-image: url('showgraph_50x23.png') !important; 
-width: 50px; 
-height: 24px; 
-}
 .x-tool-empty  { 
 background-image: none !important; 
 background-color: transparent !important; 

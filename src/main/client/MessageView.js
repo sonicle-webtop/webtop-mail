@@ -49,7 +49,7 @@ Ext.define('Sonicle.webtop.mail.MessageViewModel', {
 Ext.define('Sonicle.webtop.mail.MessageView',{
 	extend: 'Ext.Component',
 	uses: [
-		'Sonicle.form.field.InitialsAvatar',
+		'Sonicle.form.field.DisplayAvatar',
 		'Sonicle.grid.column.Avatar'
 	],
 	mixins: [
