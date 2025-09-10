@@ -3185,7 +3185,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					if (pstatus) {
 						return pstatus.iconCls;
 					} else {
-						return value<3 ? 'fas fa-exclamation wt-theme-color-error' : '';
+						return value<3 ? 'fas fa-exclamation wt-color-error' : '';
 					}
 				},
 				scope: me,
@@ -3349,7 +3349,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				sortable: true,
 				menuDisabled: true,
 				getIconCls: function(value,rec) {
-					return value ? 'fas fa-sticky-note wt-theme-color-warn' : '';
+					return value ? 'fas fa-sticky-note wt-color-warn' : '';
 				},
 				scope: me,
 				width: 35
@@ -3767,7 +3767,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 							stateId: 'stid-note',
 							hidden: scol.hidden,
 							getIconCls: function(value,rec) {
-								return value ? 'fas fa-sticky-note wt-theme-color-warn' : '';
+								return value ? 'fas fa-sticky-note wt-color-warn' : '';
 							},
 							iconSize: WTU.imgSizeToPx('xs'),
 							scope: me
@@ -3859,7 +3859,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				if (pstatus) {
 					return pstatus.iconCls;
 				} else {
-					return value<3 ? 'fas fa-exclamation wt-theme-color-error' : '';
+					return value<3 ? 'fas fa-exclamation wt-color-error' : '';
 				}
 				//var pecstatus=rec.get('pecstatus');
 				//if (pecstatus) {
@@ -3878,7 +3878,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				//			return '';
 				//	}
 				//} else {
-				//	return value<3 ? 'fas fa-exclamation wt-theme-color-error' : '';
+				//	return value<3 ? 'fas fa-exclamation wt-color-error' : '';
 				//}
 			},
 			//getCellCls: function(value,rec) {
