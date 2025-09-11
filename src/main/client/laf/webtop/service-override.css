@@ -30,6 +30,10 @@
 */
 
 /* ---------- IMAP Tree */
+/* Apply contrasting BG color to any selected tree items */
+.wtmail-imap-tree .x-grid-item.x-grid-item-selected {
+    background-color: var(--wt-theme-color-surface-l2); 
+}
 /* <-- USEFUL ???
 .wtmail-imap-tree {
 	padding-bottom: 5px;
@@ -37,12 +41,11 @@
 */
 
 /* ---------- Tree */
-/* <-- USEFUL ???
 .wtmail-tree-unread-cell {
     font-size: var(--wt-theme-fontsize-xs, inherit);
     font-weight: var(--wt-theme-fontweight-medium, normal);
     line-height: var(--wt-theme-lineheight-sm, inherit);
-	background-color: var(--wt-theme-color-surface-l3) !important; 
+	background-color: var(--wt-theme-color-surface-l4) !important; 
 	border-radius: 4px;
 	padding-left: 6px;
 	padding-right: 6px;
@@ -50,7 +53,12 @@
 .wtmail-tree-folder-span-bold {
     font-weight: var(--wt-theme-fontweight-bold, 500) !important;
 }
-*/
+
+/* ---------- Main (center) container */
+.wtmail-main {
+    border-top-left-radius: 10px;
+	border-bottom-left-radius: 10px;
+}
 
 /* ---------- Breadcrumb */
 /* <-- USEFUL ???
@@ -91,7 +99,6 @@
 }
 .wtmail-mv-avatar .so-avatar-initials { background-color: var(--wt-theme-color-n2) !important; }
 .wtmail-mv-avatar .so-avatar-initials SPAN { color: var(--wt-theme-color-n1-inv) !important; }
-.wtmail-unsubscribe-link { color: var(--wt-theme-color-1) !important; }
 .wtmail-note { color: #374151; }
 */
 

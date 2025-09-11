@@ -219,6 +219,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 
 		//create early but set imap store later to avoid early events on Firefox
 		var mp=Ext.create('Sonicle.webtop.mail.MessagesPanel', {
+			cls: 'wtmail-main',
 			stateful: WT.plTags.desktop ? true : false,
 			stateId: me.buildStateId('messagespanel'),
 			viewMode: me.getVar('viewMode'),

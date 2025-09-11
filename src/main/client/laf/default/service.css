@@ -668,7 +668,7 @@ color: black;
 	padding-bottom: 10px;
 }
 
-.wtmail-unsubscribe-link { color: #157fcc !important; }
+.wtmail-unsubscribe-link { color: var(--wt-theme-color-hyperlink); }
 
 .wtmail-row-unread .wtmail-messagegrid-cell {
 	font-weight: var(--wt-theme-fontweight-bold);
