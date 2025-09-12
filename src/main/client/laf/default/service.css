@@ -28,6 +28,7 @@
 .wtmail-icon-markseen { background-image: url('mail-markseen_16.svg') !important; background-size: contain; }
 .wtmail-icon-markunseen { background-image: url('mail-markunseen_16.svg') !important; background-size: contain; }
 .wtmail-icon-markspecial { background-image: url('mail-markspecial_16.svg') !important; background-size: contain; }
+.wtmail-icon-note { background-image: url('note_16.svg') !important; background-size: contain; }
 .wtmail-icon-bookmark { background-image: url('bookmark_16.svg') !important; background-size: contain; }
 .wtmail-icon-starred { background-image: url('starred_16.svg') !important; background-size: contain; }
 .wtmail-icon-tag { background-image: url('tag_16.svg') !important; background-size: contain; }
@@ -221,9 +222,6 @@ opacity: 1 !important;
 }
 .wtmail-flag-complete { 
 color: initial;
-}
-.wtmail-note { 
-color: #e7b465; 
 }
 
 .wtmail-row-pec-error { 

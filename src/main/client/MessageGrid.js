@@ -3327,7 +3327,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				xtype: 'soiconcolumn',
 				dataIndex: 'flag',
 				stateId: 'stid-flag',
-				header: WTF.headerWithGlyphIcon('far fa-bookmark'),
+				header: WTF.headerWithGlyphIcon('fas fa-bookmark'),
 				cls: 'wtmail-header-text-clip',
 				iconSize: WTU.imgSizeToPx('xs'),
 				sortable: true,
@@ -3737,7 +3737,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					case 'stid-flag':
 						dcols[n++]=Ext.create({//Flag
 							xtype: 'soiconcolumn',
-							header: WTF.headerWithGlyphIcon('far fa-bookmark'),
+							header: WTF.headerWithGlyphIcon('fas fa-bookmark'),
 							cls: 'wtmail-header-text-clip',
 							width: 30,
 							sortable: true,

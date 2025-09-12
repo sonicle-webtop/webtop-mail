@@ -877,7 +877,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});
 		
 		
-        me.addAct("addnote",{ handler: me.gridAction(me,'AddNote'), iconCls: 'wtmail-note fas fa-sticky-note' });
+        me.addAct("addnote",{ handler: me.gridAction(me,'AddNote'), iconCls: 'wtmail-icon-note' });
 		
         me.addAct("markseen",{ ignoreSize:true, handler: me.gridAction(me,'MarkSeen') });
         me.addAct("markunseen",{ ignoreSize:true, handler: me.gridAction(me,'MarkUnseen') });
@@ -969,8 +969,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				me.getAct('print'),
 				me.getAct('addnote'),
 				{
-					text: me.res("menu-complete"),
-					iconCls: 'fas fa-bookmark',
+					text: me.res('menu-complete'),
+					iconCls: 'wtmail-icon-bookmark',
 					menu: {
 						items: [
 							me.getAct('flagred'),

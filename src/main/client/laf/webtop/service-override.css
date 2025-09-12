@@ -14,7 +14,6 @@
 .wtmail-icon-service-lg { background-image: url('service-on@lg.svg') !important; background-size: contain; }
 .wtmail-icon-service-off-lg { background-image: url('service-off@lg.svg') !important; background-size: contain; }
 
-
 /* <-- USEFUL ???
 .wtmail-trees .x-grid-body {
     border-top: 0px;
@@ -44,7 +43,6 @@
 .wtmail-tree-unread-cell {
     font-size: var(--wt-theme-fontsize-xs, inherit);
     font-weight: var(--wt-theme-fontweight-medium, normal);
-    line-height: var(--wt-theme-lineheight-sm, inherit);
 	background-color: var(--wt-theme-color-surface-l4) !important; 
 	border-radius: 4px;
 	padding-left: 6px;
@@ -99,7 +97,6 @@
 }
 .wtmail-mv-avatar .so-avatar-initials { background-color: var(--wt-theme-color-n2) !important; }
 .wtmail-mv-avatar .so-avatar-initials SPAN { color: var(--wt-theme-color-n1-inv) !important; }
-.wtmail-note { color: #374151; }
 */
 
 /* ---------- MessageGrid */

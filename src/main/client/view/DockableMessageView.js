@@ -162,8 +162,8 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 						handler: function() {
 							me.messageGrid.editNote(me.acct,me.idmessage,me.folder);
 						},
-						iconCls: 'wtmail-note fas fa-sticky-note'
-					}),
+						iconCls: 'wtmail-icon-note'
+					})
 				]
 			},
 			fbar: me.fbar
