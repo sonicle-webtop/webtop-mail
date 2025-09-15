@@ -653,6 +653,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 					ds=ae.dom.dataset,
 				    text=ds ? ( ds.qtip == ds.qtitle ? ds.qtip : ds.qtitle + ' <' + ds.qtip + '>' ) : ae.dom.innerText;
 				Sonicle.ClipboardMgr.copy(text);
+				WT.toast(WT.res('toast.info.copied'));
 			}, iconCls: 'wt-icon-copy'});
 			if (canMarkAsTrusted) {
 				actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.marktrusted"), handler: function() {

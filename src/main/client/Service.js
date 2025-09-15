@@ -929,7 +929,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			me.addAct("auditForwarded",{ text:null, tooltip: me.res("act-auditForwarded.lbl"), iconCls: 'fas fa-share',  handler: me.gridAction(me,'AuditForwarded'), scope: me });
 			me.addAct("auditPrinted",{ text:null, tooltip: me.res("act-auditPrinted.lbl"), iconCls: 'fas fa-print',  handler: me.gridAction(me,'AuditPrinted'), scope: me });
 			me.addAct("auditTagged",{ text:null, tooltip: me.res("act-auditTagged.lbl"), iconCls: 'fas fa-tags',  handler: me.gridAction(me,'AuditTagged'), scope: me });
-			me.addAct("messageAuditLog",{ text:null, tooltip: WT.res('act-auditLog.lbl'), iconCls: 'fas fa-history',  handler: me.gridAction(me,'MessageAuditLog'), scope: me });
+			me.addAct("messageAuditLog",{ text:null, tooltip: WT.res('act-auditLog.lbl'), iconCls: 'wt-icon-audit',  handler: me.gridAction(me,'MessageAuditLog'), scope: me });
 			
 			me.addAct('folderAuditLog', {
 				text: WT.res('act-auditLog.lbl'),

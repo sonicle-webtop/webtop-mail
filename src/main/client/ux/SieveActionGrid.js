@@ -128,7 +128,7 @@ Ext.define('Sonicle.webtop.mail.ux.SieveActionGrid', {
 					xtype: 'soactioncolumn',
 					items: [
 						{
-							iconCls: 'far fa-trash-alt',
+							iconCls: 'wt-icon-trash',
 							tooltip: WT.res('act-remove.lbl'),
 							disabled: me.deleteDisabled,
 							handler: function(g, ridx) {
