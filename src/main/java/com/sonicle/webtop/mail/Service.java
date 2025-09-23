@@ -4407,10 +4407,11 @@ public class Service extends BaseService {
 			boolean isHtml=format.equals("html");
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
-			Message m=mcache.getMessage(Long.parseLong(puidmessage));
+			IMAPMessage m=(IMAPMessage)mcache.getMessage(Long.parseLong(puidmessage));
 			if (m.isExpunged()) {
 				throw new MessagingException("Message " + puidmessage + " expunged");
 			}
+			m.setPeek(us.isManualSeen());
 			int newmsgid=getNewMessageID();
                         HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
 			SimpleMessage smsg = getReplyMsg(
@@ -4488,7 +4489,7 @@ public class Service extends BaseService {
 			} else {
 				content = smsg.getTextContent();
 			}
-			
+			m.setPeek(false);
 			JsMessage message = new JsMessage(subject, content, format, ident.getIdentityId(), attachments, torecipients, ccrecipients, null, pfoldername, inreplyto, refs.trim(), Long.parseLong(puidmessage));
 			new JsonResult(message).printTo(out, false);
 			
@@ -4515,16 +4516,18 @@ public class Service extends BaseService {
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
 			
-			List<Message> messages = new ArrayList<>();
+			List<IMAPMessage> messages = new ArrayList<>();
 			for(String messageId : messagesIds) {
-				Message message = mcache.getMessage(Long.parseLong(messageId)); 
+				IMAPMessage message = (IMAPMessage) mcache.getMessage(Long.parseLong(messageId)); 
 				if (message.isExpunged()) throw new MessagingException("Message expunged");
+				message.setPeek(us.isManualSeen());
 				messages.add(message);
 			}
-            HTMLMailData maildata = mcache.getMailData((MimeMessage) messages.get(0));
+			IMAPMessage msg0 = messages.get(0);
+            HTMLMailData maildata = mcache.getMailData(msg0);
 			
 			SimpleMessage smsg = getForwardMsg(
-					newmsgid, messages.get(0), isHtml,
+					newmsgid, msg0, isHtml,
 					lookupResource(MailLocaleKey.MSG_FROMTITLE),
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
 					lookupResource(MailLocaleKey.MSG_CCTITLE),
@@ -4596,7 +4599,8 @@ public class Service extends BaseService {
 				}
 			}
 			String content = isHtml ? html : text;
-			
+			for (IMAPMessage message: messages) message.setPeek(false);
+
 			JsMessage message = new JsMessage(subject, content, format, ident.getIdentityId(), attachments, pfoldername, forwardedfrom, inreplyto, refs.trim(), Long.parseLong(messagesIds[0]));
 			new JsonResult(message).printTo(out, false);
 		} catch (Throwable t) {
