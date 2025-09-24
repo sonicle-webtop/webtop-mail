@@ -231,6 +231,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			highlightKeywords: ['from', 'to', 'subject', 'message'],
 			listeners: {
 				query: function(s, value, qObj) {
+					me.toggleKeepFilterButton(value);
 					me.queryMails(qObj);
 				},
 				enterkeypress: function(s, e) {
@@ -240,9 +241,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 					}
 				},
 				change: function(s, nv, ov) {
-					var hidden=Ext.isEmpty(nv);
-					if (hidden) me.keepFilterButton.toggle(false);
-					me.keepFilterButton.setHidden(hidden);
+					me.toggleKeepFilterButton(nv);
 				}
 			}
 		});
@@ -627,6 +626,12 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             }
         });
     },
+	
+	toggleKeepFilterButton: function(value) {
+		var me = this, hidden=Ext.isEmpty(value);
+		if (hidden) me.keepFilterButton.toggle(false);
+		me.keepFilterButton.setHidden(hidden);
+	},
 	
 	getMessageView: function() {
 		if (!this.messageViewContainer) return null;
