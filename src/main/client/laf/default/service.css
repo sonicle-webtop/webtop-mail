@@ -257,36 +257,36 @@ background-color: #ffffff;
 .wtmail-mv-header-avatar { vertical-align: top; width: 48px; }
 .wtmail-mv-hsubject { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: bold; }
 .wtmail-mv-hfromname { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 16px; font-weight: plain; }
-.wtmail-mv-hfromname A {text-decoration: none; color: black; }
-.wtmail-mv-hfromname A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hfromname A {text-decoration: none; color: var(--wt-theme-color-n3); }
+.wtmail-mv-hfromname A:hover {text-decoration: none; color: var(--wt-theme-color-n3); background-color: var(--wt-theme-color-surface-l3); }
 .wtmail-mv-hthroughname { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
-.wtmail-mv-hthroughname A {text-decoration: none; color: black; }
-.wtmail-mv-hthroughname A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hthroughname A {text-decoration: none; color: var(--wt-theme-color-n3); }
+.wtmail-mv-hthroughname A:hover {text-decoration: none; color: var(--wt-theme-color-n3); background-color: var(--wt-theme-color-surface-l3); }
 .wtmail-mv-hlabelthrough {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; width: 25px; text-align: left; vertical-align: top; padding-left: 20px;}
 .wtmail-mv-hlabeldate {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelto {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelbcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelattach {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: bold; width: 50px; text-align: left; vertical-align: top;}
-.wtmail-mv-hlabelattach A {text-decoration: none; color: black; }
-.wtmail-mv-hlabelattach A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hlabelattach A {text-decoration: none; color: var(--wt-theme-color-n3); }
+.wtmail-mv-hlabelattach A:hover {text-decoration: none; color: var(--wt-theme-color-n3); background-color: var(--wt-theme-color-surface-l3); }
 .wtmail-mv-hdate { font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
-.wtmail-mv-hdate A {text-decoration: none; color: black; }
-.wtmail-mv-hdate A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hdate A {text-decoration: none; color: var(--wt-theme-color-n3); }
+.wtmail-mv-hdate A:hover {text-decoration: none; color: var(--wt-theme-color-n3); background-color: var(--wt-theme-color-surface-l3); }
 .wtmail-mv-hto {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
-.wtmail-mv-hto SPAN A {text-decoration: none; color: black; }
-.wtmail-mv-hto SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hto SPAN A {text-decoration: none; color: var(--wt-theme-color-n3); }
+.wtmail-mv-hto SPAN A:hover {text-decoration: none; color: var(--wt-theme-color-n3); background-color: var(--wt-theme-color-surface-l3); }
 .wtmail-mv-hcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
-.wtmail-mv-hcc SPAN A {text-decoration: none; color: black; }
-.wtmail-mv-hcc SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
+.wtmail-mv-hcc SPAN A {text-decoration: none; color: var(--wt-theme-color-n3); }
+.wtmail-mv-hcc SPAN A:hover {text-decoration: none; color: var(--wt-theme-color-n3); background-color: var(--wt-theme-color-surface-l3); }
 .wtmail-mv-hbcc {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; }
-.wtmail-mv-hbcc SPAN A {text-decoration: none; color: black; }
-.wtmail-mv-hbcc SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
-.wtmail-mv-hattach {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: black; }
-.wtmail-mv-hattach SPAN A {text-decoration: none; color: black; }
+.wtmail-mv-hbcc SPAN A {text-decoration: none; color: var(--wt-theme-color-n3); }
+.wtmail-mv-hbcc SPAN A:hover {text-decoration: none; color: var(--wt-theme-color-n3); background-color: var(--wt-theme-color-surface-l3); }
+.wtmail-mv-hattach {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: var(--wt-theme-color-n3); }
+.wtmail-mv-hattach SPAN A {text-decoration: none; color: var(--wt-theme-color-n3); }
 .wtmail-mv-hattach SPAN A IMG { border: none; vertical-align: middle; }
-.wtmail-mv-hattach SPAN A:hover {text-decoration: none; color: black; background-color: #D9E8FB; }
-.wtmail-mv-tags {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: black; }
+.wtmail-mv-hattach SPAN A:hover {text-decoration: none; color: var(--wt-theme-color-n3); background-color: var(--wt-theme-color-surface-l3); }
+.wtmail-mv-tags {font-family: Arial,Verdana,Helvetica,sans-serif; font-size: 12px; font-weight: plain; color: var(--wt-theme-color-n3); }
 .wtmail-mv-hicalmessage { 
 	border-top: 1px solid gray; 
 width:100%; 
@@ -297,7 +297,7 @@ font-weight: plain;
 }
 .wtmail-mv-hicalmessage A {
 text-decoration: none; 
-color: black; 
+color: var(--wt-theme-color-n3); 
 }
 .wtmail-mv-hicalmessage A:hover {
 text-decoration: none; 
@@ -361,7 +361,7 @@ border: 1px dotted lightgray !important;
 }
 
 .wtmail-element-toclick-selected {
-    background-color: #D9E8FB;
+    background-color: var(--wt-theme-color-surface-l3);
 }
 
 .wtmail-ical-tabletitle { 
@@ -429,7 +429,7 @@ border: none;
 cursor: pointer 
 }
 .wtmail-table-editor-attachement-over { 
-background-color: #D9E8FB; 
+background-color: var(--wt-theme-color-surface-l3); 
 background-image: none; 
 }
 .wtmail-td-editor-attachment-icon { 
@@ -446,7 +446,7 @@ text-decoration: none;
 font-family: Arial,Verdana,Helvetica,sans-serif; 
 font-size: 12px; 
 font-weight: normal; 
-color: black; 
+color: var(--wt-theme-color-n3); 
 }
 .wtmail-td-editor-attachment-size { 
 white-space: nowrap; 
@@ -596,10 +596,10 @@ blockquote {
 
 
 .wtmail-mv-pas { 
-background-color: gold; 
-border: 1px goldenrod solid; 
+background-color: var(--wt-theme-color-warn-ct); 
+border: 1px var(--wt-theme-color-warn-ct-on) solid; 
 padding: 4px; 
-color: black; 
+color: var(--wt-theme-color-warn-ct-on); 
 }
 
 
