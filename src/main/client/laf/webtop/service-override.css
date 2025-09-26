@@ -14,7 +14,21 @@
 .wtmail-icon-service-lg { background-image: url('service-on@lg.svg') !important; background-size: contain; }
 .wtmail-icon-service-off-lg { background-image: url('service-off@lg.svg') !important; background-size: contain; }
 
+/* Other Icons */
 .x-btn-ui-default .wtmail-icon-mailNew { background-image: url('mail-new-primary_16.svg') !important; background-size: contain; }
+
+.wtmail-icon-msgAddReminder-on { background-image: url('msg-reminder_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgAddReminder-off { background-image: url('msg-reminder_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetReceipt-on { background-image: url('msg-receipt_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetReceipt-off { background-image: url('msg-receipt_16.svg') !important; background-size: contain; }
+/*
+.wtmail-icon-msgSetPriorityHigh-on { background-image: url('msg-priority-high_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetPriorityHigh-off { background-image: url('msg-priority-high_16.svg') !important; background-size: contain; }
+*/
+.wtmail-icon-msgSetPriorityHigh-on:before { content: '\21'; font: var(--fa-font-solid); color: var(--wt-theme-color-error); } .wtmail-icon-msgSetPriorityHigh-on { background-image: none !important; }
+.wtmail-icon-msgSetPriorityHigh-off:before { content: '\21'; font: var(--fa-font-solid); } .wtmail-icon-msgSetPriorityHigh-off { background-image: none !important; }
+.wtmail-icon-msgSetMailcard-on { background-image: url('mailcard_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetMailcard-off { background-image: url('mailcard_16.svg') !important; background-size: contain; }
 
 /* <-- USEFUL ???
 .wtmail-trees .x-grid-body {

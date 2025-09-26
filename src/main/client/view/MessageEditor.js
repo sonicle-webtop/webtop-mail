@@ -483,9 +483,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
             tbitems[tbx++]='-';
         }
 
-		tbitems[tbx++] = me.addRef('showMailcard', Ext.create({
-			xtype: 'sotogglebutton',
-			ui: 'default-toolbar',
+		tbitems[tbx++] = me.addRef('showMailcard', Ext.create(me.createTopToolbarToggleButtonCfg({
 			offTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.off.tip.txt')},
 			onTooltip: {title: me.res('editor.btn-mailcard.tip.tit'), text: me.res('editor.btn-mailcard.on.tip.txt')},
 			offIconCls: 'wtmail-icon-msgSetMailcard-off',
@@ -493,30 +491,26 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			handler: me.showMailcardAction,
 			pressed: me.showMailcard,
 			scope: me
-		}));		
+		})));		
         if (this.showReminder && WT.getServiceApi('com.sonicle.webtop.calendar')) {
-			tbitems[tbx++]={
-				xtype: 'sotogglebutton',
-				ui: 'default-toolbar',
+			tbitems[tbx++] = me.createTopToolbarToggleButtonCfg({
 				offTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.off.tip.txt')},
 				onTooltip: {title: me.res('editor.btn-reminder.tip.tit'), text: me.res('editor.btn-reminder.on.tip.txt')},
 				offIconCls: 'wtmail-icon-msgAddReminder-off',
 				onIconCls: 'wtmail-icon-msgAddReminder-on',
 				handler: me.actionReminder,
 				scope: me
-			};
+			});
         }
         if (me.showReceipt) {
-			tbitems[tbx++]=me.addRef('chkReceipt', Ext.create({
-				xtype: 'sotogglebutton',
-				ui: 'default-toolbar',
+			tbitems[tbx++] = me.addRef('chkReceipt', Ext.create(me.createTopToolbarToggleButtonCfg({
 				offTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.off.tip.txt')},
 				onTooltip: {title: me.res('editor.btn-receipt.tip.tit'), text: me.res('editor.btn-receipt.on.tip.txt')},
 				offIconCls: 'wtmail-icon-msgSetReceipt-off',
 				onIconCls: 'wtmail-icon-msgSetReceipt-on',
 				handler: me.actionReceipt,
 				scope: me
-			}));
+			})));
         }
 		if (me.showMeeting) {
 			tbitems[tbx++] = me.addAct('addMeeting', {
@@ -672,6 +666,34 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					flex: 1
 				}),
 				{ xtype: 'sohspacer' },
+				me.tccs = Ext.create(me.createToButtonCfg({
+					ui: 'default-toolbar',
+					bind: {
+						pressed: '{!hidden.fldcc}'
+					},
+					text: me.res('cc'),
+					publishState: false,
+					toggleHandler: function(s, state) {
+						s.toggle(!me.showHideField('fldcc', !state), true);
+					},
+					width: 50,
+					tabIndex: 99999
+				})),
+				{ xtype: 'sohspacer' },
+				me.tbccs = Ext.create(me.createToButtonCfg({
+					ui: 'default-toolbar',
+					bind: {
+						pressed: '{!hidden.fldbcc}'
+					},
+					text: me.res('bcc'),
+					publishState: false,
+					toggleHandler: function(s, state) {
+						s.toggle(!me.showHideField('fldbcc', !state), true);
+					},
+					width: 50,
+					tabIndex: 99999
+				}))
+				/*
 				me.tccs=Ext.create({
 					xtype: 'sotogglebutton',
 					ui: 'default-toolbar',
@@ -683,7 +705,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					toggleHandler: function(s, state) {
 						s.toggle(!me.showHideField('fldcc', !state), true);
 					},
-					width: 70,
+					width: 50,
 					tabIndex: 99999
 				}),
 				{ xtype: 'sohspacer' },
@@ -698,9 +720,10 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 					toggleHandler: function(s, state) {
 						s.toggle(!me.showHideField('fldbcc', !state), true);
 					},
-					width: 70,
+					width: 50,
 					tabIndex: 99999
 				})
+				*/
 			]
 		};
 		
@@ -1995,6 +2018,19 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 	},
 	
 	privates: {
+		
+		createTopToolbarToggleButtonCfg: function(cfg) {
+			return Ext.apply(cfg || {}, {
+				xtype: 'sotogglebutton',
+				ui: 'default-toolbar'
+			});
+		},
+		
+		createToButtonCfg: function(cfg) {
+			return Ext.apply(cfg || {}, {
+				xtype: 'sotogglebutton'
+			});
+		},
 		
 		showHideField: function(vmField, hidden) {
 			var me = this,

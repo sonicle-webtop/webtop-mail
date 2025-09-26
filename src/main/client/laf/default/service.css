@@ -72,12 +72,16 @@
 .wtmail-icon-outMailFilters { background-image: url('mailfilter-out_16.svg') !important; background-size: contain; }
 .wtmail-icon-autoResponder { background-image: url('autoresponder_16.svg') !important; background-size: contain; }
 
+.wtmail-icon-msgAddReminder { background-image: url('msg-reminder_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgAddReminder-on { background-image: url('msg-reminder-on_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgAddReminder-off { background-image: url('msg-reminder-off_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetReceipt { background-image: url('msg-receipt_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgSetReceipt-on { background-image: url('msg-receipt-on_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgSetReceipt-off { background-image: url('msg-receipt-off_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetPriorityHigh { background-image: url('msg-priority-high_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgSetPriorityHigh-on { background-image: url('msg-priority-high-on_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgSetPriorityHigh-off { background-image: url('msg-priority-high-off_16.svg') !important; background-size: contain; }
+.wtmail-icon-msgSetMailcard { background-image: url('mailcard_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgSetMailcard-on { background-image: url('mailcard-on_16.svg') !important; background-size: contain; }
 .wtmail-icon-msgSetMailcard-off { background-image: url('mailcard-off_16.svg') !important; background-size: contain; }
 
