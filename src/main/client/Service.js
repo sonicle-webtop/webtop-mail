@@ -52,6 +52,9 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	uses: [
 		'Sonicle.ColorUtils'
 	],
+	
+	//theme overridables
+	toolItemHeight: 150,
 
 	favoritesTree: null,
 	archiveTree: null,
@@ -520,7 +523,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					items: [
 						me.calendarTool=capi.createEventsPortletBody()
 					],
-					height: 150,
+					height: me.toolItemHeight,
 					width: '100%'
 					//flex: 1,
 				});
@@ -547,7 +550,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					items: [
 						me.tasksTool=tapi.createTasksPortletBody()
 					],
-					height: 150,
+					height: me.toolItemHeight,
 					width: '100%'
 					//flex: 1,
 				});

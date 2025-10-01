@@ -239,7 +239,7 @@
 }
 .wtmail-messagecolumn-grid-cell.wtmail-messagecolumn-grid-cell-unread .wtmail-messagecolumn-head {
     color: var(--wt-theme-color-n1);
-	font-weight: var(--wt-theme-fontweight-medium);
+	font-weight: var(--wt-theme-fontweight-bold);
 }
 .wtmail-messagecolumn-grid-cell.wtmail-messagecolumn-grid-cell-unread .wtmail-messagecolumn-body {
     color: var(--wt-theme-color-n1);

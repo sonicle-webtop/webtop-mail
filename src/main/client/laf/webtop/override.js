@@ -19,3 +19,9 @@ Ext.define('Sonicle.overrides.webtop.mail.view.MessageEditor', {
 		}
 	}
 });
+
+Ext.define('Sonicle.overrides.webtop.mail.Service', {
+	override: 'Sonicle.webtop.mail.Service',
+	
+	toolItemHeight: 161
+});
