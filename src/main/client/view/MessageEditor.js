@@ -69,7 +69,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 		title: '{message.tit}',
 		iconCls: 'wtmail-icon-mailNew',
 		width: 860,
-		height: 500
+		height: 600
 	},
 	modelName: 'Sonicle.webtop.mail.model.MessageModel',
 	
