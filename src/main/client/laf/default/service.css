@@ -1,9 +1,3 @@
-:root {
-	
-	--wt-mail-grid-row-today-selected-color: #ffffa0;
-	--wt-mail-grid-row-today-unselected-color: #f8f8c8;
-}
-
 /* Service Icons */
 .wtmail-icon-service,
 .wtmail-icon-service-sm { background-image: url('service@sm.svg') !important; background-size: contain; }
@@ -678,10 +672,12 @@ color: var(--wt-theme-color-warn-ct-on);
 
 /* Grid row Unread unselected */
 .wtmail-message-grid .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-unread TD {
-	background-color: var(--wt-mail-grid-row-unread-backgroundcolor);
+    background-color: var(--wtmail-messagegrid-row-unread-bgcolor, inherit);
 }
 /* Grid row Today unselected */
-.x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today { background: var(--wt-mail-grid-row-today-backgroundcolor); }
+.x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today {
+    background: var(--wtmail-messagegrid-row-today-bgcolor, inherit);
+}
 
 /* Disable quota area text selection */
 .wtmail-progress-quota-ct {

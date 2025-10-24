@@ -182,7 +182,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				xtype: 'sopalettefield',
 				bind: '{record.todayRowColor}',
 				hideTrigger: false,
-				colors: WT.getColorPalette('light'),
+				colors: WT.getColorPalette(WT.getUIColorScheme() === 'dark' ? 'dark' : 'light'),
 				tilesPerRow: 11,
 				fieldLabel: me.res('opts.main.fld-todayRowColor.lbl'),
 				width: me.mainTodayRowColorWidth,

@@ -1,9 +1,3 @@
-:root {
-	
-	--wt-mail-grid-row-today-selected-color: #ffffa0;
-	--wt-mail-grid-row-today-unselected-color: #f8f8c8;
-}
-
 /* Service Icons */
 /* ---------- Icons (service) */
 .wtmail-icon-service,
@@ -188,7 +182,6 @@
 	content: "";
 	border-left: 2px solid var(--wt-theme-color-1);
 }
-*/
 
 /* ---------- Editor */
 /* <-- USEFUL ???

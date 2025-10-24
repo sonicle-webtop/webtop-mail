@@ -1,0 +1,11 @@
+/* ---------- MessageGrid */
+.wtmail-grid-toolbar-container,
+.wtmail-grid-toolbar-container .x-toolbar {
+    background-color: var(--wt-theme-color-surface-l2-inv);
+}
+/* ---------- MessageView */
+.wtmail-messageview-toolbar-container,
+.wtmail-messageview-toolbar-container .x-toolbar {
+    background-color: var(--wt-theme-color-surface-l2-inv) !important;
+}
+.wtmail-mv-main, .wtmail-mv-table { background: var(--wt-theme-color-surface-l2-inv) !important; }

@@ -177,13 +177,44 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if (t.getSelection()[0] === r) me._onFolderSelect(t, r); 
 	},
 	
+	bestTodayColor: function(color) {
+		var SoS = Sonicle.String,
+			colorsL = WT.getColorPalette('light'),
+			colorsD = WT.getColorPalette('dark'),
+			colorScheme = WT.getUIColorScheme(),
+			iofL = -1, iofD = -1;
+		
+		color = SoS.lower(SoS.removeStart(color, '#'));
+		iofL = colorsL.indexOf(color);
+		if (iofL === -1) iofD = colorsD.indexOf(color);
+		
+		if (iofL === -1 && iofD === -1) {
+			var iofSimilarColor = function(c, list) {
+					var simColor = Sonicle.ColorUtils.similarColor(c, list, {method: 'ciede2000'});
+					console.log('simColor: ' + simColor);
+					return simColor ? list.indexOf(simColor) : -1;
+				};
+			iofL = iofSimilarColor(color, colorsL);
+			if (iofL === -1) iofD = iofSimilarColor(color, colorsD);
+		}
+		//todayRowColor: "#FFF9C4"
+		if (iofL > -1) {
+			return SoS.prepend((colorScheme === 'light') ? color : colorsD[iofL], '#', true);
+		} else if (iofD > -1) {
+			return SoS.prepend((colorScheme === 'dark') ? color : colorsL[iofD], '#', true);
+		} else {
+			return undefined;
+		}
+	},
+	
 	init: function() {
 		var me = this,
-				todayColor = me.getVar('todayRowColor');
+			todayColor = me.getVar('todayRowColor'),
+			btc = me.bestTodayColor(todayColor);
 		
 		//no more today unread different than today read
-		Sonicle.CssUtils.setVariable('--wt-mail-grid-row-today-backgroundcolor', todayColor);
-		Sonicle.CssUtils.setVariable('--wt-mail-grid-row-unread-backgroundcolor', todayColor);
+		Sonicle.CssUtils.setVariable('--wtmail-messagegrid-row-today-bgcolor', btc);
+		Sonicle.CssUtils.setVariable('--wtmail-messagegrid-row-unread-bgcolor', btc);
 
 		me.initActions();
 
