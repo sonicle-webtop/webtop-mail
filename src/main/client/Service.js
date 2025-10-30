@@ -191,13 +191,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if (iofL === -1 && iofD === -1) {
 			var iofSimilarColor = function(c, list) {
 					var simColor = Sonicle.ColorUtils.similarColor(c, list, {method: 'ciede2000'});
-					console.log('simColor: ' + simColor);
 					return simColor ? list.indexOf(simColor) : -1;
 				};
 			iofL = iofSimilarColor(color, colorsL);
 			if (iofL === -1) iofD = iofSimilarColor(color, colorsD);
 		}
-		//todayRowColor: "#FFF9C4"
 		if (iofL > -1) {
 			return SoS.prepend((colorScheme === 'light') ? color : colorsD[iofL], '#', true);
 		} else if (iofD > -1) {

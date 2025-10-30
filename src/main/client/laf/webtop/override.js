@@ -1,3 +1,15 @@
+Ext.define('Sonicle.overrides.webtop.mail.MessagesPanel', {
+	override: 'Sonicle.webtop.mail.MessagesPanel',
+	
+	privates: {
+		
+		createKeepFilterBtnCfg: function(cfg) {
+			return Ext.apply(this.callParent(arguments), {
+				enableToggleIndicator: true
+			});
+		}
+	}
+});
 Ext.define('Sonicle.overrides.webtop.mail.view.MessageEditor', {
 	override: 'Sonicle.webtop.mail.view.MessageEditor',
 	
@@ -5,7 +17,6 @@ Ext.define('Sonicle.overrides.webtop.mail.view.MessageEditor', {
 		
 		createTopToolbarToggleButtonCfg: function(cfg) {
 			return Ext.apply(this.callParent(arguments), {
-				hidePressedStyle: true,
 				enableToggleIndicator: true
 			});
 		},
@@ -13,7 +24,6 @@ Ext.define('Sonicle.overrides.webtop.mail.view.MessageEditor', {
 		createToButtonCfg: function(cfg) {
 			return Ext.apply(this.callParent(arguments), {
 				ui: '{secondary}',
-				hidePressedStyle: true,
 				enableToggleIndicator: true
 			});
 		}

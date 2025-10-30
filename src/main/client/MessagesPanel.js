@@ -109,152 +109,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			hidden: true
 		});*/
 		
-		me.searchComponent = Ext.create({
-			xtype: 'wtsearchfield',
-			reference: 'fldsearch',
-			suggestionServiceId: me.mys.ID,
-			suggestionContext: 'mainsearch',
-			enableQuerySaving: true,
-			fields: [{
-				name: 'from',
-				type: 'string',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.from.lbl')
-			}, {
-				name: 'to',
-				type: 'string',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.to.lbl')
-			}, {
-				name: 'cc',
-				type: 'string',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.cc.lbl')
-			}, {
-				name: 'bcc',
-				type: 'string',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.bcc.lbl')
-			}, {
-				name: 'subject',
-				type: 'string',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.subject.lbl')
-			}, {
-				name: 'message',
-				type: 'string',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.message.lbl')
-			}, /*{
-				name: 'everywhere',
-				type: 'string',
-				textSink: true,
-				label: me.res('fld-search.field.everywhere.lbl')
-			}, */{
-				name: 'after',
-				type: 'date',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.after.lbl'),
-				hgroup: 'dates'
-			}, {
-				name: 'before',
-				type: 'date',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.before.lbl'),
-				hgroup: 'dates'
-			}, {
-				name: 'attachment',
-				type: 'boolean',
-				boolKeyword: 'has',
-				label: me.res('fld-search.field.attachment.lbl'),
-				hgroup: 'attachment'
-			}, {
-				name: 'attachname',
-				type: 'string',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.attachmentName.lbl'),
-				hgroup: 'attachment'
-			}, {
-				name: 'unread',
-				type: 'boolean',
-				boolKeyword: 'has',
-				label: me.res('fld-search.field.unread.lbl'),
-				hgroup: 'checkboxes'
-			}, {
-				name: 'flagged',
-				type: 'boolean',
-				boolKeyword: 'has',
-				label: me.res('fld-search.field.flagged.lbl'),
-				hgroup: 'checkboxes'
-			}, /*{
-				name: 'tagged',
-				type: 'boolean',
-				boolKeyword: 'has',
-				label: me.res('fld-search.field.tagged.lbl')
-			},*/ {
-				name: 'unanswered',
-				type: 'boolean',
-				boolKeyword: 'has',
-				label: me.res('fld-search.field.unanswered.lbl'),
-				hgroup: 'checkboxes'
-			}, {
-				name: 'priority',
-				type: 'boolean',
-				boolKeyword: 'has',
-				label: me.res('fld-search.field.priority.lbl'),
-				hgroup: 'checkboxes'
-			}, {
-				name: 'notes',
-				type: 'string',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.notes.lbl'),
-				customConfig: {
-					emptyText: me.res('fld-search.field.notes.empty')
-				}
-			}, {
-				name: 'tag',
-				type: 'tag',
-				labelAlign: 'left',
-				label: me.res('fld-search.field.tags.lbl'),
-				customConfig: {
-					store: WT.getTagsStore(), // This is filterable, let's do a separate copy!
-					valueField: 'id',
-					displayField: 'name',
-					colorField: 'color',
-					listConfig: {
-						sourceCls: 'wt-source'
-					}
-				}
-			}],
-			tooltip:  me.res('fld-search.tip'),
-			emptyText:  me.res('fld-search.emp'),
-			highlightKeywords: ['from', 'to', 'subject', 'message'],
-			listeners: {
-				query: function(s, value, qObj) {
-					me.toggleKeepFilterButton(value);
-					me.queryMails(qObj);
-				},
-				enterkeypress: function(s, e) {
-					if(e.ctrlKey) {
-						me.runSmartSearch();
-						return false;
-					}
-				},
-				change: function(s, nv, ov) {
-					me.toggleKeepFilterButton(nv);
-				}
-			}
-		});
+		me.searchComponent = Ext.create(me.createSearchFieldCfg({reference: 'fldsearch'}));
+		me.keepFilterButton = Ext.create(me.createKeepFilterBtnCfg());
 		
-		me.keepFilterButton = Ext.create({
-			xtype: 'soplaintogglebutton',
-			onIconCls: 'wtmail-icon-search-locked',
-			offIconCls: 'wtmail-icon-search-unlocked',
-			onTooltip: {title: me.res('fld-keepFilter.on.tip.tit'), text: me.res('fld-keepFilter.on.tip.txt')},
-			offTooltip: {title: me.res('fld-keepFilter.off.tip.tit'), text: me.res('fld-keepFilter.off.tip.txt')},
-			pressed: false,
-			hidden: true
-		});
         /*me.groupCombo=Ext.create(WTF.localCombo('id', 'desc', {
             width: 120,
 			matchFieldWidth: false,
@@ -378,40 +235,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			//defaults: {
 			//	scale: WT.getHeaderScale()
 			//},			
-			items:[
-				' ',
-				{
-					xtype: 'button',
-					tooltip: me.res('inMailFilters.tit'),
-					iconCls: 'wtmail-imaptree-rulesmenu',
-					arrowVisible: false,
-					ui: '{secondary}',
-					menu: {
-						items: [
-							me.getAct('inMailFilters'),
-							me.getAct('autoResponder')
-						]
-					}
-				},
-				'->',
-				me.searchComponent,
-				me.keepFilterButton,
-				//'-',
-				'->'
-/*				me.res('messages')+":",
-				me.labelMessages,*/
-/*				{
-					xtype: 'gauge',
-					padding: 0,
-					value: 45,
-					minValue: 0,
-					maxValue: 100,
-					trackStart: 90,
-					trackLength: 360,
-					style: 'color: transparent;'
-				},*/
-				//me.progressQuota
-			]
+			items: me.createMainToolbarItems()
 		});
 		
 		var previewCfg = me.computePreviewSettings(me.viewMode, me.previewLocation),
@@ -626,12 +450,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
             }
         });
     },
-	
-	toggleKeepFilterButton: function(value) {
-		var me = this, hidden=Ext.isEmpty(value);
-		if (hidden) me.keepFilterButton.toggle(false);
-		me.keepFilterButton.setHidden(hidden);
-	},
 	
 	getMessageView: function() {
 		if (!this.messageViewContainer) return null;
@@ -1005,6 +823,201 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				width: '60%',
 				height: undefined
 			};
+		}
+	},
+	
+	privates: {
+		
+		createMainToolbarItems: function() {
+			var me = this;
+			return [
+				' ',
+				{
+					xtype: 'button',
+					tooltip: me.res('inMailFilters.tit'),
+					iconCls: 'wtmail-imaptree-rulesmenu',
+					arrowVisible: false,
+					ui: '{secondary}',
+					menu: {
+						items: [
+							me.getAct('inMailFilters'),
+							me.getAct('autoResponder')
+						]
+					}
+				},
+				'->',
+				me.keepFilterButton,
+				me.searchComponent,
+				'->'
+/*				me.res('messages')+":",
+				me.labelMessages,*/
+/*				{
+					xtype: 'gauge',
+					padding: 0,
+					value: 45,
+					minValue: 0,
+					maxValue: 100,
+					trackStart: 90,
+					trackLength: 360,
+					style: 'color: transparent;'
+				},*/
+				//me.progressQuota
+			];
+		},
+		
+		createKeepFilterBtnCfg: function(cfg) {
+			var me = this;
+			return Ext.apply(cfg || {}, {
+				xtype: 'sotogglebutton',
+				ui: '{secondary}',
+				onIconCls: 'wtmail-icon-search-locked',
+				offIconCls: 'wtmail-icon-search-unlocked',
+				onTooltip: {title: me.res('fld-keepFilter.on.tip.tit'), text: me.res('fld-keepFilter.on.tip.txt')},
+				offTooltip: {title: me.res('fld-keepFilter.off.tip.tit'), text: me.res('fld-keepFilter.off.tip.txt')},
+				pressed: false
+				//enableToggleIndicator: true
+			});
+		},
+		
+		createSearchFieldCfg: function(cfg) {
+			var me = this;
+			return Ext.apply(cfg || {}, {
+				xtype: 'wtsearchfield',
+				suggestionServiceId: me.mys.ID,
+				suggestionContext: 'mainsearch',
+				enableQuerySaving: true,
+				fields: [
+					{
+						name: 'from',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.from.lbl')
+					}, {
+						name: 'to',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.to.lbl')
+					}, {
+						name: 'cc',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.cc.lbl')
+					}, {
+						name: 'bcc',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.bcc.lbl')
+					}, {
+						name: 'subject',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.subject.lbl')
+					}, {
+						name: 'message',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.message.lbl')
+					}, /*{
+						name: 'everywhere',
+						type: 'string',
+						textSink: true,
+						label: me.res('fld-search.field.everywhere.lbl')
+					}, */{
+						name: 'after',
+						type: 'date',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.after.lbl'),
+						hgroup: 'dates'
+					}, {
+						name: 'before',
+						type: 'date',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.before.lbl'),
+						hgroup: 'dates'
+					}, {
+						name: 'attachment',
+						type: 'boolean',
+						boolKeyword: 'has',
+						label: me.res('fld-search.field.attachment.lbl'),
+						hgroup: 'attachment'
+					}, {
+						name: 'attachname',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.attachmentName.lbl'),
+						hgroup: 'attachment'
+					}, {
+						name: 'unread',
+						type: 'boolean',
+						boolKeyword: 'has',
+						label: me.res('fld-search.field.unread.lbl'),
+						hgroup: 'checkboxes'
+					}, {
+						name: 'flagged',
+						type: 'boolean',
+						boolKeyword: 'has',
+						label: me.res('fld-search.field.flagged.lbl'),
+						hgroup: 'checkboxes'
+					}, /*{
+						name: 'tagged',
+						type: 'boolean',
+						boolKeyword: 'has',
+						label: me.res('fld-search.field.tagged.lbl')
+					},*/ {
+						name: 'unanswered',
+						type: 'boolean',
+						boolKeyword: 'has',
+						label: me.res('fld-search.field.unanswered.lbl'),
+						hgroup: 'checkboxes'
+					}, {
+						name: 'priority',
+						type: 'boolean',
+						boolKeyword: 'has',
+						label: me.res('fld-search.field.priority.lbl'),
+						hgroup: 'checkboxes'
+					}, {
+						name: 'notes',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.notes.lbl'),
+						customConfig: {
+							emptyText: me.res('fld-search.field.notes.empty')
+						}
+					}, {
+						name: 'tag',
+						type: 'tag',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.tags.lbl'),
+						customConfig: {
+							store: WT.getTagsStore(), // This is filterable, let's do a separate copy!
+							valueField: 'id',
+							displayField: 'name',
+							colorField: 'color',
+							listConfig: {
+								sourceCls: 'wt-source'
+							}
+						}
+					}
+				],
+				tooltip:  me.res('fld-search.tip'),
+				emptyText:  me.res('fld-search.emp'),
+				highlightKeywords: ['from', 'to', 'subject', 'message'],
+				listeners: {
+					query: function(s, value, qObj) {
+						//me.toggleKeepFilterButton(value);
+						me.queryMails(qObj);
+					},
+					enterkeypress: function(s, e) {
+						if(e.ctrlKey) {
+							me.runSmartSearch();
+							return false;
+						}
+					}//,
+					//change: function(s, nv, ov) {
+					//	me.toggleKeepFilterButton(nv);
+					//}
+				}
+			});
 		}
 	}
 });
