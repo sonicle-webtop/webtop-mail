@@ -1,0 +1,8 @@
+/* ---------- MessageGrid */
+/* Set bottom border */
+.wtmail-message-grid .x-grid-with-row-lines .x-grid-item.wtmail-x-grid-item-read:not(.wtmail-x-grid-item-noborderbottom) {
+	border-color: #e5e5e5; /* Neutral/200 */
+}
+.wtmail-message-grid .x-grid-with-row-lines .x-grid-item.wtmail-x-grid-item-unread:not(.wtmail-x-grid-item-noborderbottom) {
+	border-color: var(--wt-theme-color-surface-l0);
+}

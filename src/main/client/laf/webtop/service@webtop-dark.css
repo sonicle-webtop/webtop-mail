@@ -3,6 +3,13 @@
 .wtmail-grid-toolbar-container .x-toolbar {
     background-color: var(--wt-theme-color-surface-l2-inv);
 }
+/* Set bottom border */
+.wtmail-message-grid .x-grid-with-row-lines .x-grid-item.wtmail-x-grid-item-read:not(.wtmail-x-grid-item-noborderbottom) {
+	border-color: #404040; /* Neutral/700 */
+}
+.wtmail-message-grid .x-grid-with-row-lines .x-grid-item.wtmail-x-grid-item-unread:not(.wtmail-x-grid-item-noborderbottom) {
+	border-color: var(--wt-theme-color-surface-l2);
+}
 /* ---------- MessageView */
 .wtmail-messageview-toolbar-container,
 .wtmail-messageview-toolbar-container .x-toolbar {

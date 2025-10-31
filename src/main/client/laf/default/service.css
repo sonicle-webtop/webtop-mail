@@ -85,10 +85,10 @@
 .wtmail-pec-delivered { background-image: url('pec-delivered_16.svg') !important; background-size: contain; }
 .wtmail-pec-error { background-image: url('pec-error_16.svg') !important; background-size: contain; }
 
+.wtmail-icon-pas-attention { background-image: url('pas-attention_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-pas-danger { background-image: url('pas-danger_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-pas-warning { background-image: url('pas-warning_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-pas-ok { background-image: url('pas-ok_16.svg') !important; background-size: contain; vertical-align: bottom; }
-.wtmail-icon-pas-attention { background-image: url('pas-attention_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-pas-spam-green { background-image: url('pas-spam-green_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-pas-spam-yellow { background-image: url('pas-spam-yellow_16.svg') !important; background-size: contain; vertical-align: bottom; }
 .wtmail-icon-pas-spam-red { background-image: url('pas-spam-red_16.svg') !important; background-size: contain; vertical-align: bottom; }
@@ -621,10 +621,11 @@ color: var(--wt-theme-color-warn-ct-on);
 	text-align: center; 
 }
 
+/* ---------- MessageEditor */
+/* Hide borders for attachments field */
 .wtmail-attach-taglist .x-form-trigger-wrap {
 	border: none;
 }
-
 
 .wtmail-editor-cc-button { /*background-color: transparent !important;*/ border-color: transparent !important; }
 .wtmail-editor-cc-button .x-btn-inner { color: lightgray; }
