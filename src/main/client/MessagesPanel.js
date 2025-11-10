@@ -999,8 +999,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						}
 					}
 				],
-				tooltip:  me.res('fld-search.tip'),
-				emptyText:  me.res('fld-search.emp'),
+				tooltip: me.res('fld-search.tip'),
+				emptyText: me.res('fld-search.emp'),
+				listTopButtonText: me.res('fld-search.topbutton.lbl'),
 				highlightKeywords: ['from', 'to', 'subject', 'message'],
 				listeners: {
 					query: function(s, value, qObj) {
