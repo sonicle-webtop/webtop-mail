@@ -86,7 +86,8 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean autoAddContact;
 	public boolean showUpcomingEvents;
 	public boolean showUpcomingTasks;
-	public String todayRowColor;
+	public String todayRowColorLight;
+	public String todayRowColorDark;
 	public boolean favoriteNotifications;
 	public boolean externalAccountEnabled;
 	public boolean rememberFoldersState;

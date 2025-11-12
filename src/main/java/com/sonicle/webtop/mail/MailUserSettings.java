@@ -634,13 +634,22 @@ public class MailUserSettings extends BaseUserSettings {
 		return setObject(FAVORITE_FOLDERS, value, FavoriteFolders.class);
 	}
 	
-	public boolean setTodayRowColor(String value) {
-		return setString(GRID_TODAY_ROW_COLOR, value);
+	public String getTodayRowColorLight() {
+		String value = getString(GRID_TODAY_ROW_COLOR_LIGHT, null);
+		return (value != null) ? value : mss.getDefaultTodayRowColorLight();
 	}
 	
-	public String getTodayRowColor() {
-		String value = getString(GRID_TODAY_ROW_COLOR, null);
-		return (value != null) ? value : mss.getDefaultTodayRowColor();
+	public boolean setTodayRowColorLight(String value) {
+		return setString(GRID_TODAY_ROW_COLOR_LIGHT, value);
+	}
+	
+	public String getTodayRowColorDark() {
+		String value = getString(GRID_TODAY_ROW_COLOR_DARK, null);
+		return (value != null) ? value : mss.getDefaultTodayRowColorDark();
+	}
+	
+	public boolean setTodayRowColorDark(String value) {
+		return setString(GRID_TODAY_ROW_COLOR_DARK, value);
 	}
 	
 	public boolean isFavoriteNotifications() {

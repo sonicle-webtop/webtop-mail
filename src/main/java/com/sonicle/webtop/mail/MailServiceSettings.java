@@ -344,8 +344,12 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getLong(DEFAULT_PREFIX + ATTACHMENT_MAXFILESIZE, (long)10485760); // 10MB
 	}
 	
-	public String getDefaultTodayRowColor() {
-		return getString(DEFAULT_PREFIX + MailSettings.GRID_TODAY_ROW_COLOR, "#F8F8C8");
+	public String getDefaultTodayRowColorLight() {
+		return getString(DEFAULT_PREFIX + MailSettings.GRID_TODAY_ROW_COLOR_LIGHT, null);
+	}
+	
+	public String getDefaultTodayRowColorDark() {
+		return getString(DEFAULT_PREFIX + MailSettings.GRID_TODAY_ROW_COLOR_DARK, null);
 	}
 	
 	public ViewMode getDefaultViewMode() {

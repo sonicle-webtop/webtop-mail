@@ -9893,7 +9893,8 @@ public class Service extends BaseService {
 			co.put("showUpcomingEvents", us.getShowUpcomingEvents());
 			co.put("showUpcomingTasks", us.getShowUpcomingTasks());
 			co.put("isArchivingExternal", ss.isArchivingExternal());
-			co.put("todayRowColor", us.getTodayRowColor());
+			co.put("todayRowColorLight", us.getTodayRowColorLight());
+			co.put("todayRowColorDark", us.getTodayRowColorDark());
 			co.put("favoriteNotifications", us.isFavoriteNotifications());
 			co.put("rememberFoldersState", us.isRememberFoldersState());
 			if (us.isDelayedSending()) {

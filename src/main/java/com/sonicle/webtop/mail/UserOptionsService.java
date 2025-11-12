@@ -128,7 +128,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.noMailcardOnReplyForward = mus.isNoMailcardOnReplyForward();
 				jso.showUpcomingEvents = mus.getShowUpcomingEvents();
 				jso.showUpcomingTasks = mus.getShowUpcomingTasks();
-				jso.todayRowColor = mus.getTodayRowColor();
+				jso.todayRowColorLight = mus.getTodayRowColorLight();
+				jso.todayRowColorDark = mus.getTodayRowColorDark();
 				jso.favoriteNotifications = mus.isFavoriteNotifications();
 				jso.rememberFoldersState = mus.isRememberFoldersState();
 				jso.delayedSending = mus.isDelayedSending();
@@ -159,7 +160,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("sharedSort")) mus.setSharedSort(pl.data.sharedSort);
 				if (pl.map.has("showUpcomingEvents")) mus.setShowUpcomingEvents(pl.data.showUpcomingEvents);
 				if (pl.map.has("showUpcomingTasks")) mus.setShowUpcomingTasks(pl.data.showUpcomingTasks);
-				if (pl.map.has("todayRowColor")) mus.setTodayRowColor(pl.data.todayRowColor);
+				if (pl.map.has("todayRowColorLight")) mus.setTodayRowColorLight(pl.data.todayRowColorLight);
+				if (pl.map.has("todayRowColorDark")) mus.setTodayRowColorDark(pl.data.todayRowColorDark);
 				if (pl.map.has("favoriteNotifications")) mus.setFavoriteNotifications(pl.data.favoriteNotifications);
 				if (pl.map.has("rememberFoldersState")) mus.setRememberFoldersState(pl.data.rememberFoldersState);
 				if (pl.map.has("delayedSending")) mus.setDelayedSending(pl.data.delayedSending);

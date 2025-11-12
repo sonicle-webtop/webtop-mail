@@ -87,11 +87,18 @@ public class MailSettings {
 	public static final String GRID_MESSAGE_TIME_SHOWALWAYS = "grid.message.time.showalways";
 	
 	/**
-	 * [user][default] (#F8F8C8)
+	 * [user][default]
 	 * [string]
-	 * Define the row background color for today messages.
+	 * Define the row background color of today messages for light themes.
 	 */
-	public static final String GRID_TODAY_ROW_COLOR = "grid.today.color";
+	public static final String GRID_TODAY_ROW_COLOR_LIGHT = "grid.today.color.light";
+	
+	/**
+	 * [user][default]
+	 * [string]
+	 * Define the row background color of today messages for dark themes.
+	 */
+	public static final String GRID_TODAY_ROW_COLOR_DARK = "grid.today.color.dark";
 	
 	/**
 	 * [user][default] (false)

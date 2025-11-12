@@ -53,8 +53,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		'Sonicle.webtop.mail.view.MailcardEditor'
 	],
 	
-	//overridable properties to influence UI
-	mainTodayRowColorWidth: 210,
+	//overridable properties to influence UI,
 	mainTodayRowColorHidden: false,
 	editingFontSizeWidth: 210,
 	editingFontColorWidth: 210,
@@ -85,7 +84,10 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	},
 		
 	initComponent: function() {
-		var me = this, vm;
+		var me = this,
+			palette = WT.getColorPalette(WT.evalUIColorScheme('light', 'dark'), true),
+			vm;
+		
 		me.callParent(arguments);
 		
 		vm = me.getViewModel();
@@ -179,16 +181,33 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				needReload: true,
 				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, {
-				xtype: 'sopalettefield',
-				bind: '{record.todayRowColor}',
-				hideTrigger: false,
-				colors: WT.getColorPalette(WT.getUIColorScheme() === 'dark' ? 'dark' : 'light'),
-				tilesPerRow: 11,
+				xtype: 'fieldcontainer',
+				layout: 'hbox',
+				items: [
+					{
+						xtype: 'sopalettefield',
+						reference: 'fldtodayrowcolor',
+						bind: WT.evalUIColorScheme('{record.todayRowColorLight}', '{record.todayRowColorDark}'),
+						hideTrigger: false,
+						colors: palette.colors,
+						tilesPerRow: palette.columns,
+						width: 64,
+						needReload: true,
+						listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+					}, {
+						xtype: 'sohspacer'
+					}, {
+						xtype: 'button',
+						ui: '{toolbar}',
+						iconCls: 'wt-glyph-color-unset',
+						tooltip: WT.res('sopalettefield.clear.tip'),
+						handler: function() {
+							me.lref('fldtodayrowcolor').setValue(null);
+						}
+					}
+				],
 				fieldLabel: me.res('opts.main.fld-todayRowColor.lbl'),
-				width: me.mainTodayRowColorWidth,
-				hidden: me.mainTodayRowColorHidden,
-				needReload: true,
-				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+				hidden: me.mainTodayRowColorHidden
 			}, {
 				xtype: 'checkbox',
 				reference: 'fldmanualSeen',

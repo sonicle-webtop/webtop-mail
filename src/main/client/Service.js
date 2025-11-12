@@ -207,13 +207,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	
 	init: function() {
 		var me = this,
-			todayColor = me.getVar('todayRowColor'),
-			btc = me.bestTodayColor(todayColor);
+			SoCU = Sonicle.ColorUtils,
+			SoCSS = Sonicle.CssUtils,
+			rowColor = me.getVar(WT.evalUIColorScheme('todayRowColorLight', 'todayRowColorDark'));
 		
 		//no more today unread different than today read
-		Sonicle.CssUtils.setVariable('--wtmail-messagegrid-row-today-bgcolor', btc);
-		Sonicle.CssUtils.setVariable('--wtmail-messagegrid-row-unread-bgcolor', btc);
-
+		if (rowColor) {
+			SoCSS.setVariable('--wtmail-messagegrid-row-today-bgcolor', SoCU.hexColor(rowColor));
+			SoCSS.setVariable('--wtmail-messagegrid-row-unread-bgcolor', SoCU.hexColor(rowColor));
+		}
+		
 		me.initActions();
 
 		me.tagsStore = WT.getTagsStore();
