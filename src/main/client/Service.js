@@ -177,34 +177,6 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		if (t.getSelection()[0] === r) me._onFolderSelect(t, r); 
 	},
 	
-	bestTodayColor: function(color) {
-		var SoS = Sonicle.String,
-			colorsL = WT.getColorPalette('light'),
-			colorsD = WT.getColorPalette('dark'),
-			colorScheme = WT.getUIColorScheme(),
-			iofL = -1, iofD = -1;
-		
-		color = SoS.lower(SoS.removeStart(color, '#'));
-		iofL = colorsL.indexOf(color);
-		if (iofL === -1) iofD = colorsD.indexOf(color);
-		
-		if (iofL === -1 && iofD === -1) {
-			var iofSimilarColor = function(c, list) {
-					var simColor = Sonicle.ColorUtils.similarColor(c, list, {method: 'ciede2000'});
-					return simColor ? list.indexOf(simColor) : -1;
-				};
-			iofL = iofSimilarColor(color, colorsL);
-			if (iofL === -1) iofD = iofSimilarColor(color, colorsD);
-		}
-		if (iofL > -1) {
-			return SoS.prepend((colorScheme === 'light') ? color : colorsD[iofL], '#', true);
-		} else if (iofD > -1) {
-			return SoS.prepend((colorScheme === 'dark') ? color : colorsL[iofD], '#', true);
-		} else {
-			return undefined;
-		}
-	},
-	
 	init: function() {
 		var me = this,
 			SoCU = Sonicle.ColorUtils,
