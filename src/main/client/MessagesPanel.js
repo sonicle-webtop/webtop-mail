@@ -38,6 +38,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		'Sonicle.Utils',
 		'Sonicle.resizer.BorderSplitter',
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
+		'Sonicle.webtop.mail.store.MessageFlags',
 		'Sonicle.webtop.mail.MessageView',
 		'Sonicle.webtop.mail.MessageGrid'
 	],
@@ -917,6 +918,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						type: 'string',
 						labelAlign: 'left',
 						label: me.res('fld-search.field.message.lbl')
+					}, {
+						name: 'notes',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.notes.lbl'),
+						customConfig: {
+							emptyText: me.res('fld-search.field.notes.empty')
+						}
 					}, /*{
 						name: 'everywhere',
 						type: 'string',
@@ -953,17 +962,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						label: me.res('fld-search.field.unread.lbl'),
 						hgroup: 'checkboxes'
 					}, {
-						name: 'flagged',
-						type: 'boolean',
-						boolKeyword: 'has',
-						label: me.res('fld-search.field.flagged.lbl'),
-						hgroup: 'checkboxes'
-					}, /*{
-						name: 'tagged',
-						type: 'boolean',
-						boolKeyword: 'has',
-						label: me.res('fld-search.field.tagged.lbl')
-					},*/ {
 						name: 'unanswered',
 						type: 'boolean',
 						boolKeyword: 'has',
@@ -976,14 +974,45 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						label: me.res('fld-search.field.priority.lbl'),
 						hgroup: 'checkboxes'
 					}, {
-						name: 'notes',
-						type: 'string',
-						labelAlign: 'left',
-						label: me.res('fld-search.field.notes.lbl'),
-						customConfig: {
-							emptyText: me.res('fld-search.field.notes.empty')
-						}
+						name: 'flagged',
+						type: 'boolean',
+						boolKeyword: 'is',//has
+						label: me.res('fld-search.field.flagged.lbl'),
+						hgroup: 'flagcheckboxes'
 					}, {
+						name: 'completed',
+						type: 'boolean',
+						boolKeyword: 'is',
+						label: me.res('fld-search.field.completed.lbl'),
+						hgroup: 'flagcheckboxes'
+					}, {
+						name: 'notcompleted',
+						type: 'boolean',
+						boolKeyword: 'is',
+						label: me.res('fld-search.field.notcompleted.lbl'),
+						hgroup: 'flagcheckboxes'
+					}, {
+						name: 'flag',
+						type: 'tag',
+						tagUsagePlaceholder: 'flag',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.flags.lbl'),
+						customConfig: {
+							store: {
+								xclass: 'Sonicle.webtop.mail.store.MessageFlags'
+							},
+							valueField: 'id',
+							displayField: 'name',
+							colorField: 'color'
+						}
+					}, /*{
+						name: 'tagged',
+						type: 'boolean',
+						boolKeyword: 'has',
+						label: me.res('fld-search.field.tagged.lbl'),
+						hgroup: 'flagcheckboxes'
+					},*/
+					{
 						name: 'tag',
 						type: 'tag',
 						labelAlign: 'left',

@@ -310,6 +310,7 @@ public class Service extends BaseService {
 	@Override
 	public void initialize() {
 		ArrayList<String> allFlagsArray=new ArrayList<String>();
+		//TODO: cleanup code here...make use of new MessageFlags enum!
 		for(WebtopFlag fs: webtopFlags) {
 			allFlagsArray.add(fs.label);
 			String oldfs="flag"+fs.label;

@@ -32,11 +32,13 @@
  */
 package com.sonicle.webtop.mail.bol.model;
 
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.time.JavaTimeUtils;
 import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.mail.MailManager;
 import com.sonicle.webtop.mail.TagsHelper;
+import com.sonicle.webtop.mail.model.MessageFlag;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
@@ -78,6 +80,9 @@ public class ImapQuery {
 	private static final String ATTACHMENT_NAME = "attachname";
 	private static final String UNREAD = "unread";
 	private static final String FLAGGED = "flagged";
+	private static final String FLAG = "flag";
+	private static final String COMPLETED = "completed";
+	private static final String NOTCOMPLETED = "notcompleted";
 //	private static final String TAGGED = "tagged";
 	private static final String UNANSWERED = "unanswered";
 	private static final String PRIORITY = "priority";
@@ -144,20 +149,6 @@ public class ImapQuery {
 					terms.add(new ReceivedDateTerm(DateTerm.LE, beforeDate));
 					terms.add(new SentDateTerm(DateTerm.LE, beforeDate));
 
-				} else if(key.equals(TAG)) {
-					try {
-						tagTerms.add(
-							new FlagTerm(
-								new Flags(
-									TagsHelper.tagIdToFlagString(
-											WT.getCoreManager().getTag(value)
-									)
-								),true
-							)
-						);
-					} catch(Exception exc) {
-						
-					}
 				} else if(key.equals(NOTES)) {
 					terms.add(new FlagTerm(MailManager.getFlagNote(), true));
 					if (!"*".equals(value)) notePattern=valueToLikePattern(value);
@@ -166,14 +157,47 @@ public class ImapQuery {
 				} else if(value.equals(ATTACHMENT)) {
 					hasAttachment=true;
 				} else if(value.equals(UNREAD)) {
-					terms.add(new FlagTerm(new Flags(Flag.SEEN), false));
+					terms.add(new FlagTerm(new Flags(Flag.SEEN), !condition.negated));
+					
 				} else if(value.equals(FLAGGED)) {
-					FlagTerm fts[] = new FlagTerm[allFlagStrings.length + 1];
-					fts[0] = new FlagTerm(new Flags(Flag.FLAGGED), true);
-					for(int i = 0;i < allFlagStrings.length; ++i)
-						fts[i+1] = new FlagTerm(new Flags(allFlagStrings[i]), true);
-					terms.add(new OrTerm(fts));
-/*				} else if(value.equals(TAGGED)) {
+					final List<MessageFlag> availFlags = EnumUtils.allTypesOf(MessageFlag.class);
+					final FlagTerm flagTerms[] = new FlagTerm[availFlags.size()*2 +1];
+					flagTerms[0] = new FlagTerm(new Flags(Flag.FLAGGED), !condition.negated);
+					int i = 1;
+					for (MessageFlag flag : availFlags) {
+						flagTerms[i] = new FlagTerm(flag.toImapFlag(), !condition.negated);
+						flagTerms[i+1] = new FlagTerm(flag.toOldImapFlag(), !condition.negated);
+						i += 2;
+					}
+					if (condition.negated) {
+						terms.add(new AndTerm(flagTerms));
+					} else {
+						terms.add(new OrTerm(flagTerms));
+					}
+					
+				} else if (key.equals(FLAG)) {
+					final MessageFlag flag = EnumUtils.forSerializedName(value, MessageFlag.class);
+					if (flag != null) tagTerms.add(new FlagTerm(flag.toImapFlag(), !condition.negated));
+					
+				} else if (value.equals(COMPLETED)) {
+					final FlagTerm ft1 = new FlagTerm(MessageFlag.COMPLETE.toImapFlag(), !condition.negated);
+					final FlagTerm ft2 = new FlagTerm(MessageFlag.COMPLETE.toOldImapFlag(), !condition.negated);
+					if (condition.negated) {
+						terms.add(new AndTerm(ft1, ft2));
+					} else {
+						terms.add(new OrTerm(ft1, ft2));
+					}
+					
+				} else if (value.equals(NOTCOMPLETED)) { // Remove when UI will be able to save negated states!
+					final FlagTerm ft1 = new FlagTerm(MessageFlag.COMPLETE.toImapFlag(), condition.negated);
+					final FlagTerm ft2 = new FlagTerm(MessageFlag.COMPLETE.toOldImapFlag(), condition.negated);
+					if (condition.negated) {
+						terms.add(new OrTerm(ft1, ft2));
+					} else {
+						terms.add(new AndTerm(ft1, ft2));
+					}
+				/*
+				} else if(value.equals(TAGGED)) {
 					try {
 						Collection<Tag> tags=WT.getCoreManager().listTags().values();
 						FlagTerm fts[] = new FlagTerm[tags.size()];
@@ -182,14 +206,25 @@ public class ImapQuery {
 							fts[i++] = new FlagTerm(new Flags(TagsHelper.tagIdToFlagString(tag)), true);
 						}
 						terms.add(new OrTerm(fts));
-					} catch(Exception exc) {
-					}*/
-				} else if(value.equals(UNANSWERED)) {
-					 terms.add(new FlagTerm(new Flags(Flag.ANSWERED), false));
-				} else if(value.equals(PRIORITY)) {
-					 HeaderTerm p1 = new HeaderTerm("X-Priority", "1");
-						HeaderTerm p2 = new HeaderTerm("X-Priority", "2");
-						terms.add(new OrTerm(p1,p2));
+					} catch (Exception ex) { }
+				*/
+				} else if (key.equals(TAG)) {
+					try {
+						final String tagId = TagsHelper.tagIdToFlagString(WT.getCoreManager().getTag(value));
+						tagTerms.add(new FlagTerm(new Flags(tagId), !condition.negated));
+					} catch (Exception ex) { /* Do nothing... */ }
+					
+				} else if (value.equals(UNANSWERED)) {
+					terms.add(new FlagTerm(new Flags(Flag.ANSWERED), condition.negated));
+					 
+				} else if (value.equals(PRIORITY)) {
+					final HeaderTerm ht1 = new HeaderTerm("X-Priority", "1");
+					final HeaderTerm ht2 = new HeaderTerm("X-Priority", "2");
+					if (condition.negated) {
+						terms.add(new AndTerm(ht1, ht2));
+					} else {
+						terms.add(new OrTerm(ht1, ht2));
+					}
 				}
 
 			});

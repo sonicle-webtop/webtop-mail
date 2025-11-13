@@ -185,8 +185,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		//no more today unread different than today read
 		if (rowColor) {
-			SoCSS.setVariable('--wtmail-messagegrid-row-today-bgcolor', SoCU.hexColor(rowColor));
-			SoCSS.setVariable('--wtmail-messagegrid-row-unread-bgcolor', SoCU.hexColor(rowColor));
+			SoCSS.setVariable('--wtmail-messagegrid-row-today-bgcolor', SoCU.ensureHexFormat(rowColor));
+			SoCSS.setVariable('--wtmail-messagegrid-row-unread-bgcolor', SoCU.ensureHexFormat(rowColor));
 		}
 		
 		me.initActions();
