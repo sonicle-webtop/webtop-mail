@@ -902,12 +902,17 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						name: 'cc',
 						type: 'string',
 						labelAlign: 'left',
-						label: me.res('fld-search.field.cc.lbl')
+						label: me.res('fld-search.field.cc.lbl'),
+						hgroup: 'morercpts'
 					}, {
 						name: 'bcc',
 						type: 'string',
 						labelAlign: 'left',
-						label: me.res('fld-search.field.bcc.lbl')
+						label: me.res('fld-search.field.bcc.lbl'),
+						hgroup: 'morercpts',
+						customConfig: {
+							labelTextAlign: 'right'
+						}
 					}, {
 						name: 'subject',
 						type: 'string',
