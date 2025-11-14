@@ -947,7 +947,10 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						type: 'date',
 						labelAlign: 'left',
 						label: me.res('fld-search.field.before.lbl'),
-						hgroup: 'dates'
+						hgroup: 'dates',
+						customConfig: {
+							labelTextAlign: 'right'
+						}
 					}, {
 						name: 'attachment',
 						type: 'boolean',
