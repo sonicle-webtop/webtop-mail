@@ -1003,6 +1003,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 							},
 							valueField: 'id',
 							displayField: 'name',
+							iconField: 'iconCls',
 							colorField: 'color'
 						}
 					}, /*{
