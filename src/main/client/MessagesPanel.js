@@ -1031,6 +1031,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 							valueField: 'id',
 							displayField: 'name',
 							colorField: 'color',
+							sourceField: 'source',
 							listConfig: {
 								sourceCls: 'wt-source'
 							}
