@@ -38,7 +38,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		'Sonicle.webtop.mail.model.ImapTreeModel'
 	],
 	
-	cls: 'wtmail-imap-tree',
+	cls: 'wt-tool-tree wtmail-imap-tree',
 	
 	//scrollable: true,
 	

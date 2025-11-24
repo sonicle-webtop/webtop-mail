@@ -40,9 +40,6 @@
 
 /* ---------- IMAP Tree */
 /* Apply contrasting BG color to any selected tree items */
-.wtmail-imap-tree .x-grid-item.x-grid-item-selected {
-    background-color: var(--wt-theme-color-surface-l2); 
-}
 /* <-- USEFUL ???
 .wtmail-imap-tree {
 	padding-bottom: 5px;
