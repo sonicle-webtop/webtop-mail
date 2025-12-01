@@ -157,7 +157,7 @@ public class ImapQuery {
 				} else if(value.equals(ATTACHMENT)) {
 					hasAttachment=true;
 				} else if(value.equals(UNREAD)) {
-					terms.add(new FlagTerm(new Flags(Flag.SEEN), !condition.negated));
+					terms.add(new FlagTerm(new Flags(Flag.SEEN), condition.negated));
 					
 				} else if(value.equals(FLAGGED)) {
 					final List<MessageFlag> availFlags = EnumUtils.allTypesOf(MessageFlag.class);
