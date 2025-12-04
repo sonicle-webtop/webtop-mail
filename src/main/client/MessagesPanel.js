@@ -192,7 +192,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 				if (val >= 0.9 && val < 1.0) {
 					quotaCmp.addCls(baseCls + '-warn');
 					WT.toast(me.res('quota.warn.msg'), {autoClose: 10000});
-				} else {
+				} else if (val >= 1) {
 					quotaCmp.addCls(baseCls + '-over');
 					WT.toast(me.res('quota.over.msg'), {autoClose: 10000});
 				}
