@@ -918,14 +918,6 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						type: 'string',
 						labelAlign: 'left',
 						label: me.res('fld-search.field.message.lbl')
-					}, {
-						name: 'notes',
-						type: 'string',
-						labelAlign: 'left',
-						label: me.res('fld-search.field.notes.lbl'),
-						customConfig: {
-							emptyText: me.res('fld-search.field.notes.empty')
-						}
 					}, /*{
 						name: 'everywhere',
 						type: 'string',
@@ -1030,6 +1022,14 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 							listConfig: {
 								sourceCls: 'wt-source'
 							}
+						}
+					}, {
+						name: 'notes',
+						type: 'string',
+						labelAlign: 'left',
+						label: me.res('fld-search.field.notes.lbl'),
+						customConfig: {
+							emptyText: me.res('fld-search.field.notes.empty')
 						}
 					}
 				],
