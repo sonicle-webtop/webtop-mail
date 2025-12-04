@@ -166,11 +166,16 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public ArrayList<String> searchNotes(String pattern) throws WTException {
 		ArrayList<String> msgIds=new ArrayList<>();
+		Connection con = null;
 		try {
-			List<ONote> notes=NoteDAO.getInstance().selectByLike(WT.getConnection(SERVICE_ID), getTargetProfileId().getDomainId(), "%"+pattern+"%");
-			for(ONote note: notes) msgIds.add(note.getMessageId());		
-		} catch(SQLException exc) {
-			logger.error("error during query on notes",exc);
+			con = WT.getConnection(SERVICE_ID);
+			List<ONote> notes=NoteDAO.getInstance().selectByLike(con, getTargetProfileId().getDomainId(), "%"+pattern+"%");
+			for(ONote note: notes) msgIds.add(note.getMessageId());
+			
+		} catch (Exception ex) {
+			throw ExceptionUtils.wrapThrowable(ex);
+		} finally {
+			DbUtils.closeQuietly(con);
 		}
 		return msgIds;
 	}
