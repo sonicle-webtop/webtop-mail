@@ -176,30 +176,25 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			if (me.folderList.threaded && realTotal)
 				text+=" ["+realTotal+"]";
 			if (quotaLimit) {
-				var val=quotaUsage/quotaLimit;
+				var quotaCmp = me.progressQuota,
+					baseCls = 'wtmail-quota-progress',
+					val=quotaUsage/quotaLimit;
+				
 				me.progressQuotaCt.setHidden(false);
-				me.progressQuota.setValue(val);
+				quotaCmp.setValue(val);
 				me.progressQuotaLabel.setText(
 						WTU.humanReadableSize(quotaUsage*1024, { decimals: 0 })+" / "+WTU.humanReadableSize(quotaLimit*1024, { decimals: 0 })+" - "+
 						Math.round(100*val)+"%"
 				);
-				if (val<0.9) {
-					me.progressQuota.removeCls("wtmail-quota-progress-warn");
-					me.progressQuota.removeCls("wtmail-quota-progress-over");
-				}
-				else if (val<1.0) {
-					me.progressQuota.addCls("wtmail-quota-progress-warn");
-					me.progressQuota.removeCls("wtmail-quota-progress-over");
+				
+				quotaCmp.removeCls(baseCls + '-warn');
+				quotaCmp.removeCls(baseCls + '-over');
+				if (val >= 0.9 && val < 1.0) {
+					quotaCmp.addCls(baseCls + '-warn');
+					WT.toast(me.res('quota.warn.msg'), {autoClose: 10000});
 				} else {
-					me.progressQuota.removeCls("wtmail-quota-progress-warn");
-					me.progressQuota.addCls("wtmail-quota-progress-over");
-					WT.toast({
-						 html: me.res('quota.over.msg'),
-						 title: me.res('quota.over.title'),
-						 width: 300,
-						 align: 'br',
-						 timeout: 10000
-					});
+					quotaCmp.addCls(baseCls + '-over');
+					WT.toast(me.res('quota.over.msg'), {autoClose: 10000});
 				}
 			}
 			me.labelMessages.setHtml(text);

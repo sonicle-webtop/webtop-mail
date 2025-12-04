@@ -65,6 +65,11 @@
 	border-bottom-left-radius: 10px;
 }
 
+/* ---------- Quota */
+.wtmail-progress-quota .x-progress-bar-default {
+    background-color: var(--wt-theme-color-popup, #262626) !important; /* Neutral/800 */
+}
+
 /* ---------- Breadcrumb */
 /* <-- USEFUL ???
 .wtmail-breadcrumb .x-btn-inner-plain-toolbar-small {

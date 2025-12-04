@@ -200,28 +200,25 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		
 		me.progressQuota=Ext.create({
 			xtype: 'progressbar',
-			region: 'center',
+			cls: 'wtmail-progress-quota',
 			value: 0,
-			text: "",
-			cls: 'wtmail-progress-quota'
+			textTpl: '', /* Hide text! */
+			height: 6,
+			width: '100%'
 		});
 		me.progressQuotaLabel=Ext.create({
 			xtype: 'label',
-			region: 'south',
-			height: 30,
-			text: "",
-			cls: 'wtmail-progress-quota-text'
+			cls: 'wtmail-progress-quota-text',
+			text: '',
+			width: '100%'
 		});
 		me.progressQuotaCt=Ext.create({
 			xtype: 'container',
+			cls: 'x-unselectable wtmail-progress-quota-ct',
+			layout: 'vbox',
+			items: [me.progressQuota, me.progressQuotaLabel],
 			hidden: true,
-			layout: 'border',
-			margin: "4 24 0 24",
-			width: '100%',
-			height: 36,
-			style: 'background-color: var(--wt-theme-color-surface-1)',
-			items: [ me.progressQuota, me.progressQuotaLabel ],
-			cls: 'wtmail-progress-quota-ct'
+			width: '100%'
 		});
 
 		//create early but set imap store later to avoid early events on Firefox

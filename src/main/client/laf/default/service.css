@@ -483,6 +483,22 @@ blockquote {
 	padding-right: 4px;
 }
 
+/* ---------- Quota */
+.wtmail-progress-quota-ct {
+    margin: 4px 8px 8px 8px;
+}
+.wtmail-progress-quota.wtmail-quota-progress-warn .x-progress-bar-default {
+	background-color: var(--wt-theme-color-warn) !important;
+}
+.wtmail-progress-quota.wtmail-quota-progress-over .x-progress-bar-default {
+	background-color: var(--wt-theme-color-error) !important;
+}
+.wtmail-progress-quota-text {
+    padding-top: 4px;
+    font-size: var(--wt-theme-fontsize-xs);
+    line-height: var(--wt-theme-lineheight-xs);
+}
+
 /* --- UX grid.column.Message --- */
 .wtmail-messagecolumn-grid-cell .x-grid-group-title {
 	cursor: pointer;
@@ -580,14 +596,6 @@ blockquote {
     font-weight: bold;
 }
 
-.wtmail-quota-progress-warn .x-progress-bar-default {
-	background-color: #f3930e !important;
-}
-
-.wtmail-quota-progress-over .x-progress-bar-default {
-	background-color: #ff5e28 !important;
-}
-
 
 .wtmail-mv-pas { 
 background-color: var(--wt-theme-color-warn-ct); 
@@ -678,12 +686,5 @@ color: var(--wt-theme-color-warn-ct-on);
 /* Grid row Today unselected */
 .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today {
     background: var(--wtmail-messagegrid-row-today-bgcolor, inherit);
-}
-
-/* Disable quota area text selection */
-.wtmail-progress-quota-ct {
-    -webkit-user-select: none; /* Safari */
-    -ms-user-select: none; /* IE 10 and IE 11 */
-    user-select: none; /* Standard syntax */	
 }
 
