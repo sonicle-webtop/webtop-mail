@@ -6649,7 +6649,7 @@ public class Service extends BaseService {
 					while(np < page && ni < xmsgs.length ) {
 						SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[ni];
 						++ni;
-						if (xm.isExpunged())
+						if (xm==null || xm.isExpunged())
 							continue;
 
 						long nuid=mcache.getUID(xm);
@@ -6714,7 +6714,7 @@ public class Service extends BaseService {
 							if (ix >= max) break;
 
 							SonicleIMAPMessage xm = (SonicleIMAPMessage)xmsgs[nx];
-							if (xm.isExpunged()) {
+							if (xm==null || xm.isExpunged()) {
 								--i;
 								continue;
 							}
@@ -6731,7 +6731,7 @@ public class Service extends BaseService {
 									tId = nuid;
 									tIsOpen = mcache.isThreadOpen(tId);
 									tChildren = tIsOpen;
-									boolean rootUnseen = !xm.isExpunged() && !xm.isSet(Flags.Flag.SEEN);
+									boolean rootUnseen = xm!=null && !xm.isExpunged() && !xm.isSet(Flags.Flag.SEEN);
 									tUnseenChildren = rootUnseen ? 1 : 0;
 									oldestUnseenMsg = rootUnseen ? xm : null;
 									mostRecentMsg = xm; // Start with root as most recent
@@ -6742,7 +6742,7 @@ public class Service extends BaseService {
 										boolean skipThis = false;
 										while(cnx < xmsgs.length) {
 											SonicleIMAPMessage cxm = (SonicleIMAPMessage)xmsgs[cnx];
-											if (cxm.isExpunged()) {
+											if (cxm==null || cxm.isExpunged()) {
 												cnx++;
 												continue;
 											}
@@ -6750,7 +6750,7 @@ public class Service extends BaseService {
 											if (cxm.getThreadIndent() > 0) skipThis = true;
 											while(cxm.getThreadIndent() > 0) {
 												tChildren = true;
-												if (!cxm.isExpunged() && !cxm.isSet(Flags.Flag.SEEN)) ++tUnseenChildren;
+												if (cxm!=null && !cxm.isExpunged() && !cxm.isSet(Flags.Flag.SEEN)) ++tUnseenChildren;
 												++cnx;
 												if (cnx >= xmsgs.length) break;
 												cxm = (SonicleIMAPMessage)xmsgs[cnx];
@@ -7290,7 +7290,7 @@ public class Service extends BaseService {
 					if (nx>=xmsgs.length) break;
 
 					SonicleIMAPMessage xm=(SonicleIMAPMessage)xmsgs[nx];
-					if (xm.isExpunged()) {
+					if (xm==null || xm.isExpunged()) {
 						--i;
 						continue;
 					}
@@ -9149,7 +9149,7 @@ public class Service extends BaseService {
 				
 				for (int i = start; i < msgs.size(); ++i) {
 					Message xm = msgs.get(i);
-					if (xm.isExpunged()) {
+					if (xm==null || xm.isExpunged()) {
 						continue;
 					}
 					IMAPFolder xmfolder=(IMAPFolder)xm.getFolder();
