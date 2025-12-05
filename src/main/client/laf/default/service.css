@@ -122,39 +122,19 @@
 .x-grid-tree-node-expanded .wtmail-icon-sharefolder { background-image: url('folder-share-open_16.svg') !important; background-size: contain; }
 .wtmail-icon-folderStatus-shared { background-image: url('folderstatus-shared_16.svg') !important; background-size: contain; }
 
-.wtmail-smartsearch-name-column { 
-padding-left: 6px; 
-font-size: 13px 
-}
-.wtmail-smartsearch-total-column { 
-color: gray; 
-font-size: 13px 
-}
+.wtmail-smartsearch-name-column { padding-left: 6px; font-size: 13px }
+.wtmail-smartsearch-total-column { color: gray; font-size: 13px }
 
-.x-tool-empty  { 
-background-image: none !important; 
-background-color: transparent !important; 
-}
-.wtmail-header-text-clip div div div div { 
-text-overflow: clip; 
-}
+.x-tool-empty  { background-image: none !important; background-color: transparent !important; }
+.wtmail-header-text-clip div div div div { text-overflow: clip; }
 
-.wtmail-row-hidden { 
-display: none; 
-}
+.wtmail-row-hidden { display: none; }
 /* .wtmail-icon-testaction { background-image: url('mail_16.png') !important; }*/
 
-.wtmail-cell-ico-unseen { 
-background-size: 10px 10px; 
-}
+.wtmail-cell-ico-unseen { background-size: 10px 10px; }
 
-.wtmail-row-body { 
-max-height: 30; 
-color: gray 
-}
-.wtmail-row-body-hidden { 
-display: none; 
-}
+.wtmail-row-body { max-height: 30; color: gray }
+.wtmail-row-body-hidden { display: none; }
 
 .wtmail-row-body .x-grid-rowbody {
 	padding-left: 51px !important;
@@ -166,154 +146,99 @@ display: none;
 	padding-left: 71px !important;
 }
 
-.wtmail-flag-red { 
-color: #f44336; 
-opacity: 1 !important; 
-}
-.wtmail-flag-orange { 
-color: #ff9800; 
-opacity: 1 !important; 
-}
-.wtmail-flag-green { 
-color: #4caf50; 
-opacity: 1 !important; 
-}
-.wtmail-flag-blue { 
-color: #3f51b5; 
-opacity: 1 !important; 
-}
-.wtmail-flag-purple { 
-color: #9c27b0; 
-opacity: 1 !important; 
-}
-.wtmail-flag-yellow { 
-color: #ffc107; 
-opacity: 1 !important; 
-}
-.wtmail-flag-black { 
-color: #000000; 
-opacity: 1 !important; 
-}
-.wtmail-flag-gray { 
-color: #9e9e9e; 
-opacity: 1 !important; 
-}
-.wtmail-flag-white { 
-color: #cccccc; 
-opacity: 1 !important; 
-}
-.wtmail-flag-brown { 
-color: #795548; 
-opacity: 1 !important; 
-}
-.wtmail-flag-azure { 
-color: #03a9f4; 
-opacity: 1 !important; 
-}
-.wtmail-flag-pink { 
-color: #e91e63; 
-opacity: 1 !important; 
-}
-.wtmail-flag-special { 
-color: #ffc107; 
-opacity: 1 !important; 
-}
-.wtmail-flag-complete { 
-color: initial;
-}
+.wtmail-flag-red { color: #f44336; opacity: 1 !important; }
+.wtmail-flag-orange { color: #ff9800; opacity: 1 !important; }
+.wtmail-flag-green { color: #4caf50; opacity: 1 !important; }
+.wtmail-flag-blue { color: #3f51b5; opacity: 1 !important; }
+.wtmail-flag-purple { color: #9c27b0; opacity: 1 !important; }
+.wtmail-flag-yellow { color: #ffc107; opacity: 1 !important; }
+.wtmail-flag-black { color: #000000; opacity: 1 !important; }
+.wtmail-flag-gray { color: #9e9e9e; opacity: 1 !important; }
+.wtmail-flag-white { color: #cccccc; opacity: 1 !important; }
+.wtmail-flag-brown { color: #795548; opacity: 1 !important; }
+.wtmail-flag-azure { color: #03a9f4; opacity: 1 !important; }
+.wtmail-flag-pink { color: #e91e63; opacity: 1 !important; }
+.wtmail-flag-special { color: #ffc107; opacity: 1 !important; }
+.wtmail-flag-complete { color: initial; }
 
-.wtmail-row-pec-error { 
-background: red; 
-}
-.wtmail-row-pec-accepted { 
-background: lightsalmon; 
-}
-.wtmail-row-pec-delivered { 
-background: lightgreen; 
-}
+.wtmail-row-pec-error { background: red; }
+.wtmail-row-pec-accepted { background: lightsalmon; }
+.wtmail-row-pec-delivered { background: lightgreen; }
 
-/* message view classes */
-.wtmail-mv-container { 
-padding: 0px 0px 0px 0px; 
-background-color: #ffffff; 
-}
+/* ---------- MessageView */
+/*TODO: review completely MessageView rendering */
+.wtmail-mv-container { padding: 0px 0px 0px 0px; background-color: #ffffff; }
 .wtmail-mv-main {
-    background-color: white;
-/*    border-top: 0px solid black;
-    border-left: 0px solid black;
-    border-right: 0px solid black;
-    border-bottom: 0px solid black;*/
     padding: 0px 0px 0px 0px;
     margin: 0px 0px 0px 0px;
+    background-color: white;
 }
-.wtmail-mv-table { width: 100%; background: white }
+.wtmail-mv-table { width: 100%; background: #ffffff; }
 .wtmail-mv-header { padding: 6px 6px 0px 6px; border: none; }
 .wtmail-mv-header-avatar { vertical-align: top; width: 48px; }
-.wtmail-mv-hsubject { font-family: var(--wt-theme-fontfamily); font-size: 16px; font-weight: bold; }
-.wtmail-mv-hfromname { font-family: var(--wt-theme-fontfamily); font-size: 16px; font-weight: plain; }
+.wtmail-mv-hsubject { font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-base); font-weight: var(--wt-theme-fontweight-bold); }
+.wtmail-mv-hfromname { font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-base); }
 .wtmail-mv-hfromname A {text-decoration: none; color: var(--wt-theme-color-n2); }
 .wtmail-mv-hfromname A:hover {text-decoration: none; color: var(--wt-theme-color-n2); background-color: var(--wt-theme-color-surface-l3); }
-.wtmail-mv-hthroughname { font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: plain; }
+.wtmail-mv-hthroughname { font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); }
 .wtmail-mv-hthroughname A {text-decoration: none; color: var(--wt-theme-color-n2); }
 .wtmail-mv-hthroughname A:hover {text-decoration: none; color: var(--wt-theme-color-n2); background-color: var(--wt-theme-color-surface-l3); }
-.wtmail-mv-hlabelthrough {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: plain; width: 25px; text-align: left; vertical-align: top; padding-left: 20px;}
-.wtmail-mv-hlabeldate {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
-.wtmail-mv-hlabelto {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
-.wtmail-mv-hlabelcc {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
-.wtmail-mv-hlabelbcc {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
-.wtmail-mv-hlabelattach {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: bold; width: 50px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelthrough {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); width: 25px; text-align: left; vertical-align: top; padding-left: 20px;}
+.wtmail-mv-hlabeldate {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelto {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelcc {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelbcc {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); font-weight: bold; width: 25px; text-align: left; vertical-align: top;}
+.wtmail-mv-hlabelattach {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); font-weight: bold; width: 50px; text-align: left; vertical-align: top;}
 .wtmail-mv-hlabelattach A {text-decoration: none; color: var(--wt-theme-color-n2); }
 .wtmail-mv-hlabelattach A:hover {text-decoration: none; color: var(--wt-theme-color-n2); background-color: var(--wt-theme-color-surface-l3); }
-.wtmail-mv-hdate { font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: plain; }
+.wtmail-mv-hdate { font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); }
 .wtmail-mv-hdate A {text-decoration: none; color: var(--wt-theme-color-n2); }
 .wtmail-mv-hdate A:hover {text-decoration: none; color: var(--wt-theme-color-n2); background-color: var(--wt-theme-color-surface-l3); }
-.wtmail-mv-hto {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: plain; }
+.wtmail-mv-hto {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs);}
 .wtmail-mv-hto SPAN A {text-decoration: none; color: var(--wt-theme-color-n2); }
 .wtmail-mv-hto SPAN A:hover {text-decoration: none; color: var(--wt-theme-color-n2); background-color: var(--wt-theme-color-surface-l3); }
-.wtmail-mv-hcc {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: plain; }
+.wtmail-mv-hcc {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs);}
 .wtmail-mv-hcc SPAN A {text-decoration: none; color: var(--wt-theme-color-n2); }
 .wtmail-mv-hcc SPAN A:hover {text-decoration: none; color: var(--wt-theme-color-n2); background-color: var(--wt-theme-color-surface-l3); }
-.wtmail-mv-hbcc {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: plain; }
+.wtmail-mv-hbcc {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs);}
 .wtmail-mv-hbcc SPAN A {text-decoration: none; color: var(--wt-theme-color-n2); }
 .wtmail-mv-hbcc SPAN A:hover {text-decoration: none; color: var(--wt-theme-color-n2); background-color: var(--wt-theme-color-surface-l3); }
-.wtmail-mv-hattach {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: plain; color: var(--wt-theme-color-n2); }
+.wtmail-mv-hattach {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); color: var(--wt-theme-color-n2); }
 .wtmail-mv-hattach SPAN A {text-decoration: none; color: var(--wt-theme-color-n2); }
 .wtmail-mv-hattach SPAN A IMG { border: none; vertical-align: middle; }
 .wtmail-mv-hattach SPAN A:hover {text-decoration: none; color: var(--wt-theme-color-n2); background-color: var(--wt-theme-color-surface-l3); }
-.wtmail-mv-tags {font-family: var(--wt-theme-fontfamily); font-size: 12px; font-weight: plain; color: var(--wt-theme-color-n2); }
-.wtmail-mv-hicalmessage { 
-	border-top: 1px solid gray; 
-width:100%; 
-background-color: #99ccFF;
-	font-size: 14px; 
-font-weight: plain; 
-	padding-top: 4px;
+.wtmail-mv-tags {font-family: var(--wt-theme-fontfamily); font-size: var(--wt-theme-fontsize-xs); color: var(--wt-theme-color-n2); }
+.wtmail-mv-hicalmessage {
+    font-size: var(--wt-theme-fontsize-sm);
+    background-color: var(--wt-theme-color-info-ct);
+    color: var(--wt-theme-color-info-ct-on);
+	padding: 4px;
+    width: 100%;
 }
 .wtmail-mv-hicalmessage A {
-text-decoration: none; 
-color: var(--wt-theme-color-n2); 
+    text-decoration: none;
+    color: var(--wt-theme-color-info-ct-on);
 }
 .wtmail-mv-hicalmessage A:hover {
-text-decoration: none; 
-color: white; 
-background-color: #5588FF; 
+    text-decoration: none;
+    background-color: var(--wt-theme-color-info-ct-on);
+    color: var(--wt-theme-color-info-ct);
 }
-.wtmail-mv-hline { 
-border-bottom: 1px solid gray; 
-width:100%; 
-height:2px;
+.wtmail-mv-hline {
+    border-bottom: 1px solid var(--wt-theme-color-n3, #737373); /* Neutral/500 */
+    width: 100%;
+    height: 2px;
 }
-.wtmail-mv-bodycell { 
-    padding: 0px 6px 6px 6px; 
-border: none; 
-height: 100%;
+.wtmail-mv-bodycell {
+    padding: 0px 6px 6px 6px;
+    border: none;
+    height: 100%;
 }
-
-.wtmail-mv-bodydiv { 
+.wtmail-mv-bodydiv {
     border: none;
     padding: 0px 0px 0px 0px;
     margin: 0px 0px 0px 0px;
-    width:100%;
+    width: 100%;
     overflow:auto;
 }
 .wtmail-mv-bodyiframe {
@@ -322,26 +247,24 @@ height: 100%;
 .wtmail-mv-tablecontents {
     width: 100%;
 }
-.wtmail-mv-subject-table { 
-width: 100%; 
-border: none; 
-border-collapse: collapse; 
+.wtmail-mv-subject-table {
+    width: 100%;
+    border: none;
+    border-collapse: collapse;
 }
-.wtmail-mv-subject-table TR TD { 
-border: none; 
-padding: 0px; 
+.wtmail-mv-subject-table TR TD {
+    border: none;
+    padding: 0px;
 }
-
-.wtmail-mv-from-table { 
-width: 100%; 
-border: none; 
-border-collapse: collapse; 
+.wtmail-mv-from-table {
+    width: 100%;
+    border: none;
+    border-collapse: collapse;
 }
-.wtmail-mv-from-table TR TD { 
-border: none; 
-padding: 0px; 
+.wtmail-mv-from-table TR TD {
+    border: none;
+    padding: 0px;
 }
-
 .wtmail-mv-no-msg-centered {
 	text-align: center;
 }
