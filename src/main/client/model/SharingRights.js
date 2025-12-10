@@ -62,38 +62,7 @@ Ext.define('Sonicle.webtop.mail.model.SharingRights', {
 	],
 	
 	applyPreset: function(preset) {
-		var set = Ext.bind(this.set, this);
-		if ('ro' === preset) {
-			set({
-				l: true,
-				r: true,
-				s: true,
-				w: false,
-				i: false,
-				p: false,
-				k: false,
-				a: false,
-				x: false,
-				t: false,
-				n: false,
-				e: false
-			});
-		} else if ('full' === preset) {
-			set({
-				l: true,
-				r: true,
-				s: true,
-				w: true,
-				i: true,
-				p: true,
-				k: true,
-				a: true,
-				x: true,
-				t: true,
-				n: false,
-				e: true
-			});
-		}
+		this.set(Sonicle.webtop.mail.model.SharingRights.generatePresetConfig(preset));
 	},
 	
 	guessPreset: function() {
@@ -128,6 +97,44 @@ Ext.define('Sonicle.webtop.mail.model.SharingRights', {
 			
 		} else {
 			return 'custom';
+		}
+	},
+	
+	statics: {
+		generatePresetConfig: function(preset) {
+			if ('ro' === preset) {
+				return {
+					l: true,
+					r: true,
+					s: true,
+					w: false,
+					i: false,
+					p: false,
+					k: false,
+					a: false,
+					x: false,
+					t: false,
+					n: false,
+					e: false
+				};
+			} else if ('full' === preset) {
+				return {
+					l: true,
+					r: true,
+					s: true,
+					w: true,
+					i: true,
+					p: true,
+					k: true,
+					a: true,
+					x: true,
+					t: true,
+					n: false,
+					e: true
+				};
+			} else {
+				return {};
+			}
 		}
 	}
 });

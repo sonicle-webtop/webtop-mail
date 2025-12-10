@@ -37,7 +37,8 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 		'Sonicle.Data',
 		'Sonicle.form.field.ComboBox',
 		'WTA.model.AclSubjectLkp',
-		'Sonicle.webtop.mail.model.Sharing'
+		'Sonicle.webtop.mail.model.Sharing',
+		'Sonicle.webtop.mail.model.SharingRights'
 	],
 	
 	dockableConfig: {
@@ -432,11 +433,8 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 			rec = sto.add(Ext.apply(data || {}, {
 					subjectSid: subjectSid,
 					subjectDescription: subDesc
-				}, {
-					l: true,
-					r: true,
-					s: true
-			}))[0];
+				}, Sonicle.webtop.mail.model.SharingRights.generatePresetConfig('full')
+			))[0];
 			return rec;
 		},
 		
