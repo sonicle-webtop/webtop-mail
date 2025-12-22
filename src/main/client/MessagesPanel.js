@@ -366,6 +366,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 							me.getAct("opennew"),
 							me.getAct("forwardeml"),
 							me.getAct("forwardredirect"),
+							me.getAct("forwardredirectasnew"),
 							'-',
 							{
 								text: me.res("menu-operations"),
