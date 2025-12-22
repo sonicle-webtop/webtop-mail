@@ -10248,6 +10248,7 @@ public class Service extends BaseService {
 			SendException retexc = null;
 			try {
 				Transport.send(dst, new InternetAddress[] { iato });
+				src.setFlags(FolderCache.forwardedFlags, true);
 			} catch (Exception ex) {
 				Service.logger.error("Exception",ex);
 				String exmsg = ex.getMessage();
@@ -10286,6 +10287,7 @@ public class Service extends BaseService {
 			SendException retexc = null;
 			try {
 				Transport.send(dst, new InternetAddress[] { iato });
+				src.setFlags(FolderCache.forwardedFlags, true);
 			} catch (Exception ex) {
 				Service.logger.error("Exception",ex);
 				String exmsg = ex.getMessage();
