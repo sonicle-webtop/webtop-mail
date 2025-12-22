@@ -10225,12 +10225,13 @@ public class Service extends BaseService {
 	}
 
 	public void processForwardRedirect(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		Identity ident = mailManager.getMainIdentity();
-		MailAccount account=getAccount(ident);
 		String pfoldername = request.getParameter("folder");
 		String messageId = request.getParameter("messageId");
 		String to = request.getParameter("to");
+		Identity ident=mprofile.getIdentity(pfoldername);
+		MailAccount account=getAccount(ident);
 		try {
+			InternetAddress iato = new InternetAddress(to);
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
 			MimeMessage src = (MimeMessage) mcache.getMessage(Long.parseLong(messageId)); 
@@ -10246,7 +10247,7 @@ public class Service extends BaseService {
 			
 			SendException retexc = null;
 			try {
-				Transport.send(dst, new InternetAddress[] { new InternetAddress(to) });
+				Transport.send(dst, new InternetAddress[] { iato });
 			} catch (Exception ex) {
 				Service.logger.error("Exception",ex);
 				String exmsg = ex.getMessage();
