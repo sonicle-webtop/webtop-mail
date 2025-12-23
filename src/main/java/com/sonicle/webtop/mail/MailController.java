@@ -46,8 +46,9 @@ import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.auth.LdapWebTopDirectory;
 import com.sonicle.webtop.core.app.auth.WebTopDirectory;
 import com.sonicle.webtop.core.app.events.ResourceUpdateEvent;
+import com.sonicle.webtop.core.app.events.UserSettingUpdateEvent;
 import com.sonicle.webtop.core.app.events.UserUpdateEvent;
-import com.sonicle.webtop.core.app.sdk.WTOperationalException;
+import com.sonicle.webtop.core.app.sdk.WTOperationException;
 import com.sonicle.webtop.core.app.sdk.interfaces.IControllerServiceHooks;
 import com.sonicle.webtop.core.sdk.BaseController;
 import com.sonicle.webtop.core.sdk.ServiceVersion;
@@ -55,10 +56,7 @@ import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.core.sdk.WTRuntimeException;
 import jakarta.mail.Folder;
-import jakarta.mail.MessagingException;
 import jakarta.mail.Store;
-import java.security.GeneralSecurityException;
-import java.util.Collection;
 import java.util.Set;
 import net.engio.mbassy.listener.Handler;
 import org.slf4j.Logger;
@@ -91,12 +89,45 @@ public class MailController extends BaseController implements IControllerService
 		}
 	}
 	
+	private String getMailboxUsername(final String dirScheme, final UserProfileId profileId) {
+		String user = WT.buildDomainInternetAddress(profileId.getDomainId(), profileId.getUserId(), null).getAddress();
+		if (WebTopDirectory.SCHEME.equals(dirScheme)) user = profileId.getUserId();
+		return user;
+	}
+	
+	@Handler
+	public void onUserSettingUpdateEvent(UserSettingUpdateEvent event) {
+		if (event.isService(SERVICE_ID) && event.isKey(MailSettings.SHARED_SEEN)) {
+			try {
+				String dirScheme = getAuthDirectoryScheme(event.getUserProfileId());
+				if (WebTopDirectory.SCHEME.equals(dirScheme) || LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
+					MailServiceSettings mss = createMailServiceSettings(event.getUserProfileId());
+					MailUserSettings mus = new MailUserSettings(event.getUserProfileId(), mss);
+					boolean sharedSeen = mus.isSharedSeen();
+					
+					final String mailboxUser = getMailboxUsername(dirScheme, event.getUserProfileId());
+					final StoreHostParams hostParams = mus.getMailboxHostParams(mailboxUser, null, true);
+					Mailbox mailbox = null;
+					try {
+						mailbox = new Mailbox(hostParams, createMailboxConfig(mus), WT.getMailSessionPropsBuilder(false, true).build());
+						mailbox.setSharedSeen(sharedSeen);
+						
+					} finally {
+						if (mailbox != null) mailbox.disconnect();
+					}
+				}
+				
+			} catch (Exception ex) {
+				throw new WTRuntimeException(ex, "Error applying sharedseen for '{}': \"{}\"", event.getUserProfileId().toString(), ex.getMessage());
+			}
+		}
+	}
+	
 	@Handler
 	public void onUserUpdateEvent(UserUpdateEvent event) {
 		if (UserUpdateEvent.Type.CREATE.equals(event.getType())) {
 			try {
-				CoreManager coreMgr = WT.getCoreManager(true, event.getUserProfileId());
-				String dirScheme = coreMgr.getAuthDirectoryScheme();
+				String dirScheme = getAuthDirectoryScheme(event.getUserProfileId());
 				MailServiceSettings mss = createMailServiceSettings(event.getUserProfileId());
 				BitFlags<MailboxCreateOption> options = BitFlags.noneOf(MailboxCreateOption.class);
 				if (WebTopDirectory.SCHEME.equals(dirScheme) || LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
@@ -105,7 +136,7 @@ public class MailController extends BaseController implements IControllerService
 				}
 				if (mss.isAutocreateSpecialFolders()) options.set(MailboxCreateOption.CREATE_DEFAULT_FOLDERS);
 				
-				createMailbox(coreMgr.getAuthDirectoryScheme(), event.getUserProfileId(), options, mss);
+				createMailbox(dirScheme, event.getUserProfileId(), options, mss);
 
 			} catch (Exception ex) {
 				throw new WTRuntimeException(ex, "Error initializing mailbox for '{}': \"{}\"", event.getUserProfileId().toString(), ex.getMessage());
@@ -151,15 +182,13 @@ public class MailController extends BaseController implements IControllerService
 		}
 	}
 	
-	private void createMailbox(final String dirScheme, final UserProfileId profileId, final BitFlags<MailboxCreateOption> options, final MailServiceSettings mss) throws WTOperationalException, WTException  {
+	private void createMailbox(final String dirScheme, final UserProfileId profileId, final BitFlags<MailboxCreateOption> options, final MailServiceSettings mss) throws WTOperationException, WTException  {
 		MailUserSettings mus = new MailUserSettings(profileId, mss);
-		String user = WT.buildDomainInternetAddress(profileId.getDomainId(), profileId.getUserId(), null).getAddress();
+		final String mailboxUser = getMailboxUsername(dirScheme, profileId);
 		
 		if (options.has(MailboxCreateOption.CREATE_MAILBOX)) {
 			if (WebTopDirectory.SCHEME.equals(dirScheme) || LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
 				try {
-					if (WebTopDirectory.SCHEME.equals(dirScheme)) user = profileId.getUserId();
-
 					final StoreHostParams hostParams = mss.getMailboxHostParamsAsAdmin();
 					String mailboxOwner = profileId.getUserId();
 					if (MailSettings.ACLDomainSuffixPolicy.APPEND.equals(mss.getACLDomainSuffixPolicy(dirScheme))) {
@@ -171,10 +200,10 @@ public class MailController extends BaseController implements IControllerService
 						// Full-rights for the owning user
 						mailboxOwner + ":" + StoreUtils.FOLDER_FULL_RIGHTS
 					);
-					StoreUtils.createMailbox(StoreUtils.createSession(hostParams, 1, WT.getProperties()), hostParams.getProtocol(), "user", user, acls);
+					StoreUtils.createMailbox(StoreUtils.createSession(hostParams, 1, WT.getProperties()), hostParams.getProtocol(), "user", mailboxUser, acls);
 					
 				} catch (Exception ex) {
-					throw new WTOperationalException("MAILBOX", ex, "Error creating mailbox");
+					throw new WTOperationException("MAILBOX", ex, "Error creating mailbox");
 				}
 				
 			} else if (LdapNethDirectory.SCHEME.equals(dirScheme)) {
@@ -184,7 +213,7 @@ public class MailController extends BaseController implements IControllerService
 				try {
 					//final StoreHostParams hostParams = mss.getMailboxHostParamsAsVMail(profileId.getDomainId());
 					//StoreUtils.createMailbox(StoreUtils.createSession(hostParams, 1, WT.getProperties()), hostParams.getProtocol(), null, profileId.getUserId());
-					final StoreHostParams hostParams = mus.getMailboxHostParams(user, null, true);
+					final StoreHostParams hostParams = mus.getMailboxHostParams(mailboxUser, null, true);
 					Mailbox mailbox = null;
 					Folder inbox = null;
 					try {
@@ -198,7 +227,7 @@ public class MailController extends BaseController implements IControllerService
 					}
 				
 				} catch (Exception ex) {
-					throw new WTOperationalException("MAILBOX", ex, "Mailbox seems NOT existing: have you already created it?");
+					throw new WTOperationException("MAILBOX", ex, "Mailbox seems NOT existing: have you already created it?");
 				}
 			}
 		}
@@ -207,7 +236,7 @@ public class MailController extends BaseController implements IControllerService
 			try {
 				final String prefix = mus.getFolderPrefix();
 				if (WebTopDirectory.SCHEME.equals(dirScheme) || LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
-					final StoreHostParams hostParams = mus.getMailboxHostParams(user, null, true);
+					final StoreHostParams hostParams = mus.getMailboxHostParams(mailboxUser, null, true);
 					Store store = null;
 					try {
 						store = StoreUtils.open(StoreUtils.createSession(hostParams, 1, WT.getProperties()), hostParams.getProtocol());
@@ -223,7 +252,7 @@ public class MailController extends BaseController implements IControllerService
 					}
 					
 				} else if (LdapNethDirectory.SCHEME.equals(dirScheme)) {
-					final StoreHostParams hostParams = mus.getMailboxHostParams(user, null, true);
+					final StoreHostParams hostParams = mus.getMailboxHostParams(mailboxUser, null, true);
 					Store store = null;
 					try {
 						store = StoreUtils.open(StoreUtils.createSession(hostParams, 1, WT.getProperties()), hostParams.getProtocol());
@@ -239,7 +268,27 @@ public class MailController extends BaseController implements IControllerService
 				}
 
 			} catch (Exception ex) {
-				throw new WTOperationalException("MAILBOX-DEFAULTFOLDERS", ex, "Error creating mailbox default folders");
+				throw new WTOperationException("MAILBOX-DEFAULTFOLDERS", ex, "Error creating mailbox default folders");
+			}
+		}
+		
+		// If enabled, configure sharedseen
+		if (options.has(MailboxCreateOption.SHAREDSEEN_SET) && mus.isSharedSeen()) {
+			try {
+				if (WebTopDirectory.SCHEME.equals(dirScheme) || LdapWebTopDirectory.SCHEME.equals(dirScheme)) {
+					final StoreHostParams hostParams = mus.getMailboxHostParams(mailboxUser, null, true);
+					Mailbox mailbox = null;
+					try {
+						mailbox = new Mailbox(hostParams, createMailboxConfig(mus), WT.getMailSessionPropsBuilder(false, true).build());
+						mailbox.setSharedSeen(true);
+						
+					} finally {
+						if (mailbox != null) mailbox.disconnect();
+					}
+				}
+				
+			} catch (Exception ex) {
+				throw new WTOperationException("MAILBOX-SHAREDSEEN", ex, "Error applying sharedseen recursively");
 			}
 		}
 		
@@ -247,15 +296,16 @@ public class MailController extends BaseController implements IControllerService
 		if (options.has(MailboxCreateOption.CONFIGURE_SIEVE)) {
 			try {
 				MailManager mailMgr = (MailManager)WT.getServiceManager(SERVICE_ID, true, profileId);
-				mailMgr.setSieveConfiguration(mss.getDefaultHost(), mss.getSievePort(), mss.getAdminUser(), mss.getAdminPassword(), user);
+				mailMgr.setSieveConfiguration(mss.getDefaultHost(), mss.getSievePort(), mss.getAdminUser(), mss.getAdminPassword(), mailboxUser);
 				mailMgr.initDefaultSieveScript();
 
 			} catch (Exception ex) {
-				throw new WTOperationalException("SIEVE", ex, "Error initializing sieve");
+				throw new WTOperationException("SIEVE", ex, "Error initializing sieve");
 			}
 		}
 	}
 	
+	/*
 	private void createMailboxFolders(final StoreHostParams hostParams, final Collection<String> folders, final String folderPrefix) throws GeneralSecurityException, MessagingException {
 		Store store = null;
 		try {
@@ -269,6 +319,7 @@ public class MailController extends BaseController implements IControllerService
 			StoreUtils.closeQuietly(store);
 		}
 	}
+	*/
 	
 	private void deleteMailbox(final UserProfileId profileId) throws WTException  {
 		CoreManager coreMgr = WT.getCoreManager(true, profileId);
@@ -288,6 +339,11 @@ public class MailController extends BaseController implements IControllerService
 		}
 	}
 	
+	private String getAuthDirectoryScheme(UserProfileId profileId) throws WTException {
+		CoreManager coreMgr = WT.getCoreManager(true, profileId);
+		return coreMgr.getAuthDirectoryScheme();
+	}
+	
 	private MailboxConfig createMailboxConfig(MailUserSettings mus) {
 		return new MailboxConfig.Builder()
 			.withUserFoldersPrefix(mus.getFolderPrefix())
@@ -304,7 +360,7 @@ public class MailController extends BaseController implements IControllerService
 	}
 	
 	private static enum MailboxCreateOption implements BitFlagsEnum<MailboxCreateOption> {
-		CREATE_MAILBOX(1 << 1), CREATE_DEFAULT_FOLDERS(1 << 2), CONFIGURE_SIEVE(1 << 4);
+		CREATE_MAILBOX(1 << 1), CREATE_DEFAULT_FOLDERS(1 << 2), SHAREDSEEN_SET(1 << 3), CONFIGURE_SIEVE(1 << 4);
 		
 		private int mask = 0;
 		private MailboxCreateOption(int mask) { this.mask = mask; }

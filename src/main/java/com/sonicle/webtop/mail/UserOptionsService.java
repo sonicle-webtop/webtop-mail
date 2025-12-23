@@ -40,6 +40,7 @@ import com.sonicle.commons.web.ServletUtils;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.Payload;
+import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.RunContext;
@@ -71,6 +72,10 @@ import org.slf4j.Logger;
 public class UserOptionsService extends BaseUserOptionsService {
 
 	public static final Logger logger = WT.getLogger(UserOptionsService.class);
+	
+	private MailManager getMailManager() {
+		return (MailManager)WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
+	}
 
 	@Override
 	public void processUserOptions(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
@@ -81,12 +86,14 @@ public class UserOptionsService extends BaseUserOptionsService {
 			MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
 
 			if (crud.equals(Crud.READ)) {
+				MailManager manager = getMailManager();
 				JsUserOptions jso = new JsUserOptions(getTargetProfileId().toString());
 				jso.permAccountManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "ACCOUNT_SETTINGS", "CHANGE");
 				jso.permExternalAccountManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "EXTERNAL_ACCOUNT_SETTINGS", "CHANGE");
 				jso.permMailcardManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE");
 				jso.permDomainMailcardManage = RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE");
-				
+				jso.imapBackend = manager.getIMAPBackendName();
+					
 				jso.dmsSimpleMailFolder = mus.getSimpleDMSArchivingMailFolder();
 				jso.dmsMethod = mus.getDMSMethod();
 				jso.archiveMode = mus.getArchiveMode();
@@ -94,7 +101,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.archiveExternalUserFolder = mus.getArchiveExternalUserFolder();
 				jso.gridShowPreview = mus.getGridShowMessagePreview();
 				jso.gridAlwaysShowTime = mus.getGridAlwaysShowTime();
-				jso.sharedSeen = mus.isSharedSeen();
+				jso.seenMode = mus.isSharedSeen() ? "shared" : "private";
 				jso.manualSeen = mus.isManualSeen();
 				jso.seenOnOpen = mus.isSeenOnOpen();
 				jso.scanAll = mus.isScanAll();
@@ -155,7 +162,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				if (pl.map.has("gridAlwaysShowTime")) mus.setGridAlwaysShowTime(pl.data.gridAlwaysShowTime);
 				
 				if (pl.map.has("manualSeen")) mus.setManualSeen(pl.data.manualSeen);
-				if (pl.map.has("sharedSeen")) mus.setSharedSeen(pl.data.sharedSeen);
+				if (pl.map.has("seenMode")) mus.setSharedSeen("shared".equals(pl.data.seenMode));
 				if (pl.map.has("seenOnOpen")) mus.setSeenOnOpen(pl.data.seenOnOpen);
 				if (pl.map.has("sharedSort")) mus.setSharedSort(pl.data.sharedSort);
 				if (pl.map.has("showUpcomingEvents")) mus.setShowUpcomingEvents(pl.data.showUpcomingEvents);
@@ -461,5 +468,5 @@ public class UserOptionsService extends BaseUserOptionsService {
 		}
 		return null;
 	}
-
+	
 }

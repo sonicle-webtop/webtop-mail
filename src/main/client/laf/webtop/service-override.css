@@ -195,15 +195,6 @@
 }
 */
 
-/* ---------- Quota */
-/* <-- USEFUL ???
-.wtmail-progress-quota { background-color: var(--wt-theme-color-surface-l4); height: 6px; border-radius: 10px }
-*/
-/* Style progress fill */
-/* <-- USEFUL ???
-.wtmail-progress-quota .x-progress-bar { background-color: var(--wt-theme-color-popup); height: 6px; border-radius: 10px; }
-*/
-
 /* ---------- UX grid.column.Message */
 .wtmail-messagecolumn-head {
     font-size: var(--wt-theme-fontsize-sm);

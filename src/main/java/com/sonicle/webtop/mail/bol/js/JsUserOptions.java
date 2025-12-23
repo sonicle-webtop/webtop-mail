@@ -43,13 +43,14 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean permAccountManage;
 	public boolean permExternalAccountManage;
 	public boolean permMailcardManage;	
-	public boolean permDomainMailcardManage;	
+	public boolean permDomainMailcardManage;
+	public String imapBackend;
 	public String archiveMode;
 	public boolean archiveKeepFoldersStructure;
 	public String archiveExternalUserFolder;
 	public String dmsSimpleMailFolder;
 	public String dmsMethod;
-	public boolean sharedSeen;
+	public String seenMode;
 	public boolean manualSeen;
 	public boolean seenOnOpen;
 	public boolean gridShowPreview;

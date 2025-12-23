@@ -40,6 +40,7 @@ import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.JavaTimeUtils;
+import com.sonicle.security.auth.directory.LdapNethDirectory;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.dal.DAOException;
@@ -134,6 +135,16 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
+	}
+	
+	public String getIMAPBackendName() throws WTException {
+		CoreManager coreMgr = WT.getCoreManager(true, this.getTargetProfileId());
+		final String dirScheme = coreMgr.getAuthDirectoryScheme();
+		if (LdapNethDirectory.SCHEME.equals(dirScheme)) {
+			return "dovecot";
+		} else {
+			return "cyrus";
+		}
 	}
 	
 	public void setSieveConfiguration(String host, int port, String username, String password, String authId) {

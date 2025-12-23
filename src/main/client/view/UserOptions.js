@@ -63,6 +63,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	
 	viewModel: {
 		formulas: {
+			foIsCyrus: WTF.foIsEqual('record', 'imapBackend', 'cyrus'),
 			//NB: use field's name as formula's name otherwise checks after changes will not work!
 			receipt: WTF.checkboxBind('record', 'receipt'),
 			autoAddContact: WTF.checkboxBind('record', 'autoAddContact'),
@@ -70,7 +71,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 			noMailcardOnReplyForward: WTF.checkboxBind('record', 'noMailcardOnReplyForward'),
 			archiveKeepFoldersStructure: WTF.checkboxBind('record', 'archiveKeepFoldersStructure'),
 			scanAll: WTF.checkboxBind('record', 'scanAll'),
-			sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
+			//sharedSeen: WTF.checkboxBind('record', 'sharedSeen'),
 			manualSeen: WTF.checkboxBind('record', 'manualSeen'),
 			seenOnOpen: WTF.checkboxBind('record', 'seenOnOpen'),
 			favoriteNotifications: WTF.checkboxBind('record', 'favoriteNotifications'),
@@ -136,13 +137,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				fieldLabel: me.res('opts.account.fld-readreceiptconfirmation.lbl'),
 				width: 430,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
-			}), {
-				xtype: 'checkbox',
-				bind: '{sharedSeen}',
-				hideEmptyLabel: false,
-				boxLabel: me.res('opts.adv.fld-sharedSeen.lbl'),
-				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
-			},
+			}),
 			WTF.lookupCombo('id', 'desc', {
 				bind: '{record.sharedSort}',
 				store: Ext.create('Sonicle.webtop.mail.store.SharedSort', {
@@ -970,12 +965,65 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 		me.add({
 			xtype: 'wtopttabsection',
 			title: me.res('opts.adv.tit'),
-			items: [{
-				xtype: 'checkbox',
-				bind: '{scanAll}',
-				hideEmptyLabel: false,
-				boxLabel: me.res('opts.adv.fld-scanAll.lbl'),
-				listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
+			items: [
+				WTF.lookupCombo('id', 'desc', {
+					bind: {
+						value: '{record.seenMode}',
+						disabled: '{!foIsCyrus}',
+						hidden: '{!foIsCyrus}'
+					},
+					store: {
+						type: 'array',
+						autoLoad: true,
+						fields: [
+							{name: 'id', type: 'string'},
+							{name: 'desc', type: 'string'},
+							{name: 'info', type: 'string'}
+						],
+						data: [
+							['private', me.res('opts.account.fld-seenMode.private.lbl'), me.res('opts.account.fld-seenMode.private.tip')],
+							['shared', me.res('opts.account.fld-seenMode.shared.lbl'), me.res('opts.account.fld-seenMode.shared.tip')]
+						]
+					},
+					matchFieldWidth: false,
+					listConfig: {
+						getInnerTpl: function(displayField) {
+							return '{'+displayField+'}</br>'
+								+ '<span class="wt-text-off wt-color-off">{info}</span>';
+						},
+						width: 400
+					},
+					fieldLabel: me.res('opts.account.fld-seenMode.lbl'),
+					listeners: {
+						blur: { fn: me.onBlurAutoSave, scope: me },
+						beforeselect: function(s, rec) {
+							var value = rec.get('id');
+							if (!s.ignoreSelect) {
+								s.ignoreSelect = true;
+								WT.confirmOk(me.res('opts.account.fld-seenMode.confirm.'+value), function(bid) {
+									if (bid === 'ok') {
+										s.select(value, false);
+										//Ext.defer(function() { me.onBlurAutoSave(s); }, 200);
+									}
+									delete s.ignoreSelect;
+								}, me, {
+									config: {
+										buttonText: {
+											ok: WT.res('word.continue')
+										}
+									}
+								});
+								return false;
+							}
+						}
+					},
+					width: 250
+				}), {
+					xtype: 'checkbox',
+					bind: '{scanAll}',
+					hideEmptyLabel: false,
+					boxLabel: me.res('opts.adv.fld-scanAll.lbl'),
+					listeners: { change: { fn: function(s) { Ext.defer(function() { me.onBlurAutoSave(s); }, 200); }, scope: me } }
 			}, /*{ Deprecated
 				xtype: 'fieldcontainer',
 				fieldLabel: me.res('opts.adv.fld-scanCycles.lbl'),

@@ -479,10 +479,6 @@ public class Service extends BaseService {
 			//cloud uploads goes here
 			registerUploadListener("UploadCloudFile", new OnUploadCloudFile());
 			
-			if (!profile.getPrincipal().getAuthenticationDomain().getDirUri().getScheme().equals(LdapNethDirectory.SCHEME))
-				setSharedSeen(mainAccount,us.isSharedSeen());
-			
-			
 			//if external archive, initialize account
 			if (ss.isArchivingExternal()) {
 				archiveAccount=createAccount(ARCHIVE_ACCOUNT_ID);

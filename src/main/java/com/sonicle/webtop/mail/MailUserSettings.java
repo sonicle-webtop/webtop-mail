@@ -118,7 +118,10 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public boolean setSharedSeen(boolean b) {
-		return setBoolean(SHARED_SEEN, b);
+		boolean old = isSharedSeen();
+		boolean ret = setBoolean(SHARED_SEEN, b);
+		if (ret && (old != b)) fireUpdateEvent(SHARED_SEEN);
+		return ret;
 	}
 	
 	public boolean isManualSeen() {
