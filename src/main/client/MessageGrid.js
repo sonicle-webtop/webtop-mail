@@ -1532,6 +1532,46 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		});
     },
 	
+    actionForwardRedirectAsNew: function(rowIndex) {
+        var me=this, rec;
+		
+		if (rowIndex>=0) rec = me.getStore().getAt(rowIndex);
+		else {
+			var sel = me.getSelection();
+			if (sel.length!=1) {
+				WT.error(me.mys.res('act-forwardredirect.error.onerecordonly'));
+				return;
+			}
+			rec = sel[0];
+		}
+		
+		WT.confirm(me.mys.res('confirmBox.contactChoose.lbl'), function(bid, value) {
+			if (bid === 'ok') {
+				WT.ajaxReq(me.mys.ID, 'ForwardRedirectAsNew', {
+					params: {
+						account: me.currentAccount,
+						folder: rec.get('folder')||me.currentFolder,
+						messageId: rec.get('idmessage'),
+						to: value
+					},
+					callback: function(success,json) {
+						if (json.success) {
+						} else {
+							WT.error(json.message);
+						}
+					}
+				});			
+			}
+		}, me, {
+			buttons: Ext.Msg.OKCANCEL,
+			title: me.mys.res('act-forwardRedirectAsNew.confirm.tit'),
+			instClass: 'Sonicle.webtop.mail.ux.ChooseContactConfirmBox',
+			instConfig: {
+				emptyText: me.mys.res('confirmBox.contactChoose.emp')
+			}
+		});
+    },
+	
     _actionForward: function(rowIndex,eml) {
         var me=this,
 			recs=(rowIndex>=0)?

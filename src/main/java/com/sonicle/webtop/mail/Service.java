@@ -10221,12 +10221,13 @@ public class Service extends BaseService {
 	}
 
 	public void processForwardRedirect(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		Identity ident = mailManager.getMainIdentity();
-		MailAccount account=getAccount(ident);
 		String pfoldername = request.getParameter("folder");
 		String messageId = request.getParameter("messageId");
 		String to = request.getParameter("to");
+		Identity ident=mprofile.getIdentity(pfoldername);
+		MailAccount account=getAccount(ident);
 		try {
+			InternetAddress iato = new InternetAddress(to);
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
 			MimeMessage src = (MimeMessage) mcache.getMessage(Long.parseLong(messageId)); 
@@ -10242,7 +10243,47 @@ public class Service extends BaseService {
 			
 			SendException retexc = null;
 			try {
-				Transport.send(dst, new InternetAddress[] { new InternetAddress(to) });
+				Transport.send(dst, new InternetAddress[] { iato });
+				src.setFlags(FolderCache.forwardedFlags, true);
+			} catch (Exception ex) {
+				Service.logger.error("Exception",ex);
+				String exmsg = ex.getMessage();
+				if (ex.getCause()!=null) exmsg = ex.getCause().getMessage();
+				retexc = new SendException(exmsg);
+				retexc.setException(ex);
+			}
+
+			retexc = saveSentOrFallbackToMainSent(null, dst, ident, retexc);
+		} catch(Exception ex) {
+			logger.error("Error in ForwardRedirect", ex);
+			new JsonResult(ex).printTo(out);
+		}
+	}
+	
+	public void processForwardRedirectAsNew(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		String pfoldername = request.getParameter("folder");
+		String messageId = request.getParameter("messageId");
+		String to = request.getParameter("to");
+		Identity ident=mprofile.getIdentity(pfoldername);
+		MailAccount account=getAccount(ident);
+		try {
+			InternetAddress iato = new InternetAddress(to);
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
+			MimeMessage src = (MimeMessage) mcache.getMessage(Long.parseLong(messageId)); 
+			if (src.isExpunged()) throw new MessagingException("Message expunged");
+			
+			MimeMessage dst = new MimeMessage(src);
+			
+			dst.addRecipient(RecipientType.TO, iato);
+			dst.setSentDate(new java.util.Date());
+			
+			dst.setHeader("Message-ID", "<"+UniqueValue.getUniqueMessageIDValue(account.getMailSession())+">");
+			
+			SendException retexc = null;
+			try {
+				Transport.send(dst, new InternetAddress[] { iato });
+				src.setFlags(FolderCache.forwardedFlags, true);
 			} catch (Exception ex) {
 				Service.logger.error("Exception",ex);
 				String exmsg = ex.getMessage();
