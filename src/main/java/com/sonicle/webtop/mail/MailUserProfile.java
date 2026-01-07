@@ -34,15 +34,15 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.db.DbUtils;
-import com.sonicle.security.AuthenticationDomain;
+import com.sonicle.security.AuthContext;
 import com.sonicle.security.CredentialAlgorithm;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.DirectoryManager;
-import com.sonicle.security.auth.directory.AbstractDirectory;
-import com.sonicle.security.auth.directory.AbstractLdapDirectory;
+import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.WebTopManager;
 import com.sonicle.webtop.core.util.Encryption;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.UserProfileId;
@@ -87,7 +87,17 @@ public class MailUserProfile {
 	private int numMessageList;
     private MailManager mman;
 	private MailServiceSettings mss;
-
+	
+	public static boolean appendDomainSuffix(final MailServiceSettings ss, final AuthContext context) {
+		return appendDomainSuffix(ss, context.getDirUri().getScheme());
+	}
+	
+	public static boolean appendDomainSuffix(final MailServiceSettings ss, final String authDirectoryScheme) {
+		////return scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
+		//return "ad".equals(directoryScheme) || directoryScheme.startsWith("ldap");
+		return MailSettings.ACLDomainSuffixPolicy.APPEND.equals(ss.getACLDomainSuffixPolicy(authDirectoryScheme));
+	}
+	
     public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, String dirScheme) {
 		this.mman=mman;
 		this.mss = mss;
@@ -134,7 +144,7 @@ public class MailUserProfile {
 				if (mailPort==0) mailPort=mss.getDefaultPort();
 				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=profile.getUserId();
 				//TODO: which domain-name is needed here?
-				if (mailUsername.indexOf('@')<0 && schemeWantsUserWithDomain(dirScheme)) mailUsername+="@"+WT.getPrimaryDomainName(profile.getDomainId());
+				if (mailUsername.indexOf('@')<0 && appendDomainSuffix(mss, dirScheme)) mailUsername+="@"+WT.getPrimaryDomainName(profile.getDomainId());
 				if (principal!=null && (mailPassword==null||mailPassword.trim().length()==0)) mailPassword=new String(principal.getPassword());
 			}
 			
@@ -201,7 +211,7 @@ public class MailUserProfile {
         this.mss = mss;
 		//this.env=env;
 		//UserProfile profile=env.getProfile();
-        
+		CoreManager coreMgr = WT.getCoreManager(true, mman.getTargetProfileId());
 		Connection con=null;
 		try {
 			con = WT.getConnection(mman.SERVICE_ID);
@@ -218,7 +228,7 @@ public class MailUserProfile {
 			mailPassword=mus.getPassword();
 			
 			//Use AD properties if it can provide them
-			AuthenticationDomain ad=principal.getAuthenticationDomain();
+			AuthContext acontext = coreMgr.getAuthenticationContext();
 /*			if (ad!=null && ad.getProperty("mail.protocol",null)!=null) {
 				mailProtocol=ad.getProperty("mail.protocol",null);
 				mailHost=ad.getProperty("mail.host",null);
@@ -238,14 +248,14 @@ public class MailUserProfile {
 			
 
 			//If LDAP overwrite any null value with specific LDAP default values
-			com.sonicle.security.auth.directory.AbstractDirectory dir=DirectoryManager.getManager().getDirectory(ad.getDirUri().getScheme());
-			if (ad!=null && dir!=null && dir instanceof com.sonicle.security.auth.directory.AbstractLdapDirectory) {
+			com.sonicle.security.auth.directory.AbstractDirectory directory = WebTopManager.getAuthDirectory(acontext);
+			if (directory instanceof com.sonicle.security.auth.directory.AbstractLdapDirectory) {
 				//MailServiceSettings mss=ms.getMailServiceSettings();
 				if (mailHost==null) mailHost=mss.getDefaultHost();
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
 				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
-				if (!mss.isAuthUserStripDomain() && mailUsername.indexOf('@')<0 && schemeWantsUserWithDomain(ad)) mailUsername+="@"+ad.getInternetName();
+				if (!mss.isAuthUserStripDomain() && mailUsername.indexOf('@')<0 && appendDomainSuffix(mss, acontext)) mailUsername+="@"+acontext.getInternetName();
 				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
 			}
 			
@@ -305,17 +315,6 @@ public class MailUserProfile {
 			DbUtils.closeQuietly(con);
 		}
     }
-	
-	private boolean schemeWantsUserWithDomain(String directoryScheme) {
-		//return "ad".equals(directoryScheme) || directoryScheme.startsWith("ldap");
-		return MailSettings.ACLDomainSuffixPolicy.APPEND.equals(mss.getACLDomainSuffixPolicy(directoryScheme));
-	}
-    
-	private boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
-		//String scheme=ad.getDirUri().getScheme();
-		//return scheme.equals("ad")||scheme.startsWith("ldap");
-		return MailSettings.ACLDomainSuffixPolicy.APPEND.equals(mss.getACLDomainSuffixPolicy(ad.getDirUri().getScheme()));
-	}
 	
     public String getFolderPrefix() {
         return folderPrefix;

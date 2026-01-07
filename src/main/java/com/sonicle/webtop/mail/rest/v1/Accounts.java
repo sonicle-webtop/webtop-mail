@@ -68,30 +68,21 @@ import org.slf4j.LoggerFactory;
 public class Accounts extends AccountsApi {
 	private static final Logger logger = LoggerFactory.getLogger(Accounts.class);
 	
-	private MailUserProfile getMailUserProfile(CoreManager coreMgr, Map<String, AbstractDirectory> dirCache, UserProfileId pid) {
+	private MailUserProfile getMailUserProfile(CoreManager coreMgr, UserProfileId pid) {
 		logger.debug("getMailUserProfile - Start");
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, pid.getDomainId());
 		MailUserSettings mus = new MailUserSettings(pid, mss);
 		MailManager mailMgr = (MailManager)WT.getServiceManager(SERVICE_ID, pid);
 		
-		AbstractDirectory dir = null;
-		if (dirCache.containsKey(pid.getDomainId())) {
-			dir = dirCache.get(pid.getDomainId());
-			logger.debug("Dir found in cache");
-		} else {
-			logger.debug("Dir NOT found in cache");
-			try {
-				dir = coreMgr.getAuthDirectory(pid.getDomainId());
-				if (dir == null) return null;
-				dirCache.put(pid.getDomainId(), dir);
-				logger.debug("ok, retrieved");
-			} catch(WTException ex) {
-				return null;
-			}	
+		String authDirScheme;
+		try {
+			authDirScheme = coreMgr.getAuthDirectoryScheme();
+		} catch(WTException ex) {
+			return null;
 		}
 		
 		logger.debug("Building profile");
-		MailUserProfile mailProfile = new MailUserProfile(mailMgr, mss, mus, dir.getScheme());
+		MailUserProfile mailProfile = new MailUserProfile(mailMgr, mss, mus, authDirScheme);
 		logger.debug("getMailUserProfile - End");
 		return mailProfile;
 	}
@@ -118,12 +109,11 @@ public class Accounts extends AccountsApi {
 			}
 			logger.debug("Found {} users", users.size());
 			
-			Map<String, AbstractDirectory> dirCache = new HashMap<>();
 			ArrayList<Account> items = new ArrayList<>();
 			for (User user : users) {
 				UserProfileId pid = new UserProfileId(targetPid.getDomainId(), user.getUserId());
 				logger.debug("Checking {}", pid.toString());
-				MailUserProfile mailProfile = getMailUserProfile(coreMgr, dirCache, pid);
+				MailUserProfile mailProfile = getMailUserProfile(coreMgr, pid);
 				if (mailProfile == null) continue;
 				
 				items.add(createAccount(user, mailProfile));

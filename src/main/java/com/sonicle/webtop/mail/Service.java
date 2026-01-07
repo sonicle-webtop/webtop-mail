@@ -62,9 +62,7 @@ import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.sieve.SieveAction;
 import com.sonicle.mail.sieve.SieveActionMethod;
-import com.sonicle.security.AuthenticationDomain;
 import com.sonicle.security.Principal;
-import com.sonicle.security.auth.directory.LdapNethDirectory;
 import com.sonicle.webtop.calendar.model.GetEventScope;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
@@ -154,6 +152,7 @@ import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.mail.sieve.SieveRule;
+import com.sonicle.security.AuthContext;
 import com.sonicle.security.CryptoUtils;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.contacts.model.ContactQuery;
@@ -9523,25 +9522,18 @@ public class Service extends BaseService {
 		SonicleIMAPFolder xfolder = (SonicleIMAPFolder) account.getFolder("INBOX");
 		xfolder.setAnnotation("/vendor/cmu/cyrus-imapd/sharedseen", true, b ? "true" : "false");
 	}
-
-	protected boolean schemeWantsUserWithDomain(AuthenticationDomain ad) {
-		//String scheme=ad.getDirUri().getScheme();
-		////return scheme.equals("ldapneth")?false:scheme.equals("ad")?true:scheme.startsWith("ldap");
-		//return scheme.equals("ad")||scheme.startsWith("ldap");
-		return MailSettings.ACLDomainSuffixPolicy.APPEND.equals(ss.getACLDomainSuffixPolicy(ad.getDirUri().getScheme()));
-	}
 	
 	UserProfileId  aclUserIdToUserId(String aclUserId) {
 		String userId=aclUserId;
 		//imap user includes domain only if ldap or AD, not including nethserver 6
 		//strip domain if needed
 		Principal principal=(Principal)RunContext.getSubject().getPrincipal();
-		AuthenticationDomain ad=principal.getAuthenticationDomain();
-		if (schemeWantsUserWithDomain(ad)) {
+		final AuthContext acontext = WT.getCoreManager().getAuthenticationContext();
+		if (MailUserProfile.appendDomainSuffix(ss, acontext)) {
 			int ix=aclUserId.indexOf("@");
 			if (ix>0) {
 				String domain=aclUserId.substring(ix+1).toLowerCase();
-				if (ad.getInternetName().toLowerCase().equals(domain)) userId=aclUserId.substring(0,ix);
+				if (acontext.getInternetName().toLowerCase().equals(domain)) userId=aclUserId.substring(0,ix);
 				else {
 					//skip if non domain users not permitted
 					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) userId=null;
@@ -9659,6 +9651,7 @@ public class Service extends BaseService {
 			if(crud.equals(Crud.READ)) {
 				new JsonResult(sharing).printTo(out);			
 			} else if(crud.equals(Crud.UPDATE)) {
+				final AuthContext acontext = WT.getCoreManager().getAuthenticationContext();
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					//try to fill in the imapId where empty
 					if (StringUtils.isEmpty(sr.imapId)) {
@@ -9674,10 +9667,8 @@ public class Service extends BaseService {
 							}
 						} else {
 							imapId=pid.getUserId();
-							Principal principal=(Principal)RunContext.getSubject().getPrincipal();
-							AuthenticationDomain ad=principal.getAuthenticationDomain();
-							if (schemeWantsUserWithDomain(ad)) {
-								imapId+="@"+ad.getInternetName();
+							if (MailUserProfile.appendDomainSuffix(ss, acontext)) {
+								imapId+="@"+acontext.getInternetName();
 							}							
 						}
 						sr.imapId=imapId;
