@@ -309,7 +309,7 @@ public class LegacyScheduledSendTask extends BaseBackgroundServiceTask {
 							DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT,locale).format(cal.getTime()),
 							MailUtils.htmlescape(recipients),
 							MailUtils.htmlescape(nmsubject));
-					String email=WT.getUserData(pid).getEmail().toString();
+					String email=WT.getProfileData(pid).getPersonalEmail().toString();
 					WT.sendEmail(session, true, "webtop@"+domain.getInternetName(), email, subject, html);
 				}
 			}

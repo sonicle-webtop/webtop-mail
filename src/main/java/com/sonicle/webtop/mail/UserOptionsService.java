@@ -113,7 +113,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.folderTrash = mus.getFolderTrash();
 				jso.folderSpam = mus.getFolderSpam();
 				jso.folderArchive = mus.getFolderArchive();
-				jso.mainEmail = WT.getUserData(getTargetProfileId()).getEmailAddress();
+				jso.mainEmail = WT.getProfileData(getTargetProfileId()).getPersonalEmailAddress();
 				jso.replyTo = mus.getReplyTo();
 				jso.sharedSort = mus.getSharedSort();
 				jso.viewMode = EnumUtils.toSerializedName(mus.getViewMode());
@@ -380,7 +380,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 			UserProfileId profileId=getTargetProfileId();
 			String domainId=profileId.getDomainId();
 			String userId=profileId.getUserId();
-			String emailAddress=WT.getUserData(profileId).getEmailAddress();
+			String emailAddress=WT.getProfileData(profileId).getPersonalEmailAddress();
 			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, profileId);
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			String mailcardId = ServletUtils.getStringParameter(request, "mailcardId", true);

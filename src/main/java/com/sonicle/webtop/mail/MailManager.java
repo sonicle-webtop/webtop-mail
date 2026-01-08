@@ -335,8 +335,8 @@ public class MailManager extends BaseManager implements IMailManager {
 		try {
 			UserProfileId pid=getTargetProfileId();
 			//first add main identity
-			Data udata=WT.getUserData(pid);
-			Identity id=new Identity(0,null,udata.getDisplayName(),udata.getEmail().getAddress(),null);
+			Data udata=WT.getProfileData(pid);
+			Identity id=new Identity(0,null,udata.getDisplayName(),udata.getPersonalEmail().getAddress(),null);
 			id.setIsMainIdentity(true);
 			idents.add(id);
 			
@@ -547,9 +547,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public Mailcard getMailcard() {
 		UserProfileId pid=getTargetProfileId();
-		Data udata=WT.getUserData(pid);
+		Data udata=WT.getProfileData(pid);
 		String domainId=pid.getDomainId();
-		String emailAddress=udata.getEmail().getAddress();
+		String emailAddress=udata.getPersonalEmail().getAddress();
 		Mailcard mc = readEmailMailcard(domainId,emailAddress);
 		if(mc != null) return mc;
 		mc = readUserMailcard(domainId,pid.getUserId());
@@ -560,9 +560,9 @@ public class MailManager extends BaseManager implements IMailManager {
     }
 	
 	public Mailcard getMailcard(UserProfileId pid) {
-		Data udata=WT.getUserData(pid);
+		Data udata=WT.getProfileData(pid);
 		String domainId=pid.getDomainId();
-		String emailAddress=udata.getEmail().getAddress();
+		String emailAddress=udata.getPersonalEmail().getAddress();
 		Mailcard mc = readEmailMailcard(domainId,emailAddress);
 		if(mc != null) return mc;
 		mc = readUserMailcard(domainId,pid.getUserId());

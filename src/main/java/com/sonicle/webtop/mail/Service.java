@@ -1115,7 +1115,7 @@ public class Service extends BaseService {
 
 	public SendException sendMessage(SimpleMessage msg, List<JsAttachment> attachments) {
 		UserProfile profile = environment.getProfile();
-		String sender = profile.getEmailAddress();
+		String sender = profile.getPersonalEmailAddress();
 		String name = profile.getDisplayName();
 		Identity from = msg.getFrom();
 		String replyto = getAccount(from).getReplyTo();
@@ -1532,7 +1532,7 @@ public class Service extends BaseService {
 	
 	private Message _saveMessage(SimpleMessage msg, List<JsAttachment> attachments, FolderCache fc) throws Exception {
 		UserProfile profile = environment.getProfile();
-		String sender = profile.getEmailAddress();
+		String sender = profile.getPersonalEmailAddress();
 		String name = profile.getDisplayName();
 		Identity from = msg.getFrom();
 		String replyto = getAccount(from).getReplyTo();
@@ -4412,7 +4412,7 @@ public class Service extends BaseService {
                         HTMLMailData maildata = mcache.getMailData((MimeMessage) m);
 			SimpleMessage smsg = getReplyMsg(
 					getNewMessageID(), account, m, replyAll, account.isSentFolder(pfoldername), isHtml,
-					profile.getEmailAddress(), mprofile.isIncludeMessageInReply(),
+					profile.getPersonalEmailAddress(), mprofile.isIncludeMessageInReply(),
 					lookupResource(MailLocaleKey.MSG_FROMTITLE),
 					lookupResource(MailLocaleKey.MSG_TOTITLE),
 					lookupResource(MailLocaleKey.MSG_CCTITLE),
@@ -4894,7 +4894,7 @@ public class Service extends BaseService {
 			//}
 			SimpleMessage msg = prepareMessage(jsmsg,msgId,save,isFax);
 			Identity ifrom = msg.getFrom();
-			String from = environment.getProfile().getEmailAddress();
+			String from = environment.getProfile().getPersonalEmailAddress();
 			if (ifrom != null) {
 				from = ifrom.getEmail();
 			}
@@ -6849,7 +6849,7 @@ public class Service extends BaseService {
 								if (!issent && !isundershared) {
 									for(Address ax: ia) {
 										InternetAddress iax=(InternetAddress)ax;
-										if (iax.getAddress().equals(profile.getEmailAddress())) {
+										if (iax.getAddress().equals(profile.getPersonalEmailAddress())) {
 											iato=iax;
 											break;
 										}
@@ -7995,7 +7995,7 @@ public class Service extends BaseService {
 			Address atos[] = m.getRecipients(RecipientType.TO);
 			String tos[] = null;
 			if (atos != null) {
-				if (stripmyself) atos = removeDestination(atos, environment.getProfile().getEmailAddress());
+				if (stripmyself) atos = removeDestination(atos, environment.getProfile().getPersonalEmailAddress());
 				tos = new String[atos.length];
 				for (int i=0; i<atos.length; ++i) {
 					tos[i] = InternetAddressUtils.toFullAddress((InternetAddress)atos[i]);
@@ -8006,7 +8006,7 @@ public class Service extends BaseService {
 			Address accs[] = m.getRecipients(RecipientType.CC);
 			String ccs[] = null;
 			if (accs != null) {
-				if (stripmyself) accs = removeDestination(accs, environment.getProfile().getEmailAddress());
+				if (stripmyself) accs = removeDestination(accs, environment.getProfile().getPersonalEmailAddress());
 				ccs = new String[accs.length];
 				for (int i=0; i<accs.length; ++i) {
 					ccs[i] = InternetAddressUtils.toFullAddress((InternetAddress)accs[i]);
@@ -8016,7 +8016,7 @@ public class Service extends BaseService {
 			Address abccs[] = m.getRecipients(RecipientType.BCC);
 			String bccs[] = null;
 			if (abccs != null) {
-				if (stripmyself) abccs = removeDestination(abccs, environment.getProfile().getEmailAddress());
+				if (stripmyself) abccs = removeDestination(abccs, environment.getProfile().getPersonalEmailAddress());
 				bccs = new String[abccs.length];
 				for (int i=0; i<abccs.length; ++i) {
 					bccs[i] = InternetAddressUtils.toFullAddress((InternetAddress)abccs[i]);

@@ -200,7 +200,7 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 					DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT,locale).format(cal.getTime()),
 					MailUtils.htmlescape(recipients),
 					MailUtils.htmlescape(nmsubject));
-			String toAddress=WT.getUserData(sendingProfile).getEmail().toString();
+			String toAddress=WT.getProfileData(sendingProfile).getPersonalEmail().toString();
 			
 			EmailMessage email = EmailMessageBuilder.startingBlank()
 				.from("webtop@"+WT.getPrimaryDomainName(sendingProfile.getDomainId()))

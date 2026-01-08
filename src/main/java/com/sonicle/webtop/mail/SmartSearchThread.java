@@ -154,7 +154,7 @@ public class SmartSearchThread extends Thread {
 						boolean isfromme=false;
 						if (afrom instanceof InternetAddress) {
 							iafrom=(InternetAddress) afrom;
-							if (iafrom.getAddress().equals(ms.getEnv().getProfile().getEmailAddress())) isfromme=true;
+							if (iafrom.getAddress().equals(ms.getEnv().getProfile().getPersonalEmailAddress())) isfromme=true;
 						}
 
 						Address[] rcpts=msg.getRecipients(Message.RecipientType.TO);
@@ -166,7 +166,7 @@ public class SmartSearchThread extends Thread {
 								if (ato instanceof InternetAddress) {
 									InternetAddress iato=(InternetAddress) ato;
 									tos.add(iato);
-									if (iato.getAddress().equals(ms.getEnv().getProfile().getEmailAddress())) istome=true;
+									if (iato.getAddress().equals(ms.getEnv().getProfile().getPersonalEmailAddress())) istome=true;
 									else others.add(iato);
 								}
 							}
