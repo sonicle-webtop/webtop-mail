@@ -662,28 +662,28 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	public void setUserMailcard(String html) {
-		ensureProfileDomain(true);
-		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE")) {
-			writeMailcard(getTargetProfileId().getDomainId(), "mailcard_" + getTargetProfileId().getUserId(), html);
+		final UserProfileId targetPid = ensureProfileDomain(RunContext.AdminScope.SYSADMIN);
+		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, targetPid, SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE")) {
+			writeMailcard(targetPid.getDomainId(), "mailcard_" + targetPid.getUserId(), html);
 		} else {
 			throw new AuthException("You have insufficient rights to perform the operation [{}]", "MAILCARD_SETTINGS:CHANGE");
 		}
 	}
 	
 	public void setEmailMailcard(String email, String html) {
-		ensureProfileDomain(true);
-		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE")) {
-			writeMailcard(getTargetProfileId().getDomainId(), "mailcard_" + email, html);
+		final UserProfileId targetPid = ensureProfileDomain(RunContext.AdminScope.SYSADMIN);
+		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, targetPid, SERVICE_ID, "MAILCARD_SETTINGS", "CHANGE")) {
+			writeMailcard(targetPid.getDomainId(), "mailcard_" + email, html);
 		} else {
 			throw new AuthException("You have insufficient rights to perform the operation [{}]", "MAILCARD_SETTINGS:CHANGE");
 		}
 	}
 
 	public void setEmailDomainMailcard(String email, String html) {
-		ensureProfileDomain(true);
-		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, getTargetProfileId(), SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE")) {
+		final UserProfileId targetPid = ensureProfileDomain(RunContext.AdminScope.SYSADMIN);
+		if (RunContext.isWebTopAdmin() || RunContext.isPermitted(true, targetPid, SERVICE_ID, "DOMAIN_MAILCARD_SETTINGS", "CHANGE")) {
 			if (!StringUtils.contains(email, "@")) return;
-			writeMailcard(getTargetProfileId().getDomainId(), "mailcard_" + StringUtils.substringAfterLast(email, "@"), html);
+			writeMailcard(targetPid.getDomainId(), "mailcard_" + StringUtils.substringAfterLast(email, "@"), html);
 		} else {
 			throw new AuthException("You have insufficient rights to perform the operation [{}]", "DOMAIN_MAILCARD_SETTINGS:CHANGE");
 		}
@@ -1063,7 +1063,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	public List<SieveScript> listSieveScripts() throws WTException {
 		ManageSieveClient client = null;
 		
-		ensureUserDomain();
+		ensureProfileDomain(RunContext.AdminScope.DOMAINADMIN);
 		try {
 			client = createSieveClient();
 			return SieveHelper.listScripts(client);
@@ -1075,7 +1075,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	public String getActiveSieveScriptName() throws WTException {
 		ManageSieveClient client = null;
 		
-		ensureUserDomain();
+		ensureProfileDomain(RunContext.AdminScope.DOMAINADMIN);
 		try {
 			client = createSieveClient();
 			return SieveHelper.getActiveScript(client);
@@ -1087,7 +1087,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	public void activateSieveScript(String name) throws WTException {
 		ManageSieveClient client = null;
 		
-		ensureUser();
+		ensureProfileDomain(RunContext.AdminScope.DOMAINADMIN);
 		try {
 			client = createSieveClient();
 			SieveHelper.activateScript(client, name);
@@ -1102,7 +1102,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID,getTargetProfileId().getDomainId());
 		MailUserSettings mus = new MailUserSettings(getTargetProfileId(),mss);
 		
-		ensureUser();
+		ensureProfileDomain(RunContext.AdminScope.DOMAINADMIN);
 		
 		if (!mss.isSieveSpamFilterDisabled()) {
 			ssb.setSpamFilter(mus.getFolderSpam());
