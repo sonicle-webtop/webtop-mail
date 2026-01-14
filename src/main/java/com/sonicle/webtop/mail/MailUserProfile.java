@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.security.AuthContext;
 import com.sonicle.security.CredentialAlgorithm;
+import com.sonicle.security.PasswordUtils;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.DirectoryManager;
 import com.sonicle.webtop.core.CoreManager;
@@ -54,6 +55,7 @@ import com.sonicle.webtop.mail.dal.UserMapDAO;
 import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -101,11 +103,11 @@ public class MailUserProfile {
     public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, String dirScheme) {
 		this.mman=mman;
 		this.mss = mss;
-		UserProfileId profile = mman.getTargetProfileId();
+		final UserProfileId pid = mman.getTargetProfileId();
 		Connection con = null;
 		
 		try {
-			Principal principal = RunContext.getPrincipal();
+			//Principal principal = RunContext.getPrincipal();
 			con = WT.getConnection(mman.SERVICE_ID);
 			
 			//MailUserSettings mus=ms.getMailUserSettings();
@@ -124,7 +126,7 @@ public class MailUserProfile {
 				mailUsername=ad.getProperty("mail.username",null);
 				mailPassword=ad.getProperty("mail.password",null);
 			} else {*/
-				OUserMap omap=UserMapDAO.getInstance().selectById(con, profile.getDomainId(), profile.getUserId());
+				OUserMap omap=UserMapDAO.getInstance().selectById(con, pid.getDomainId(), pid.getUserId());
 				if (omap!=null) {
 					mailProtocol=omap.getMailProtocol();
 					mailHost=omap.getMailHost();
@@ -142,10 +144,11 @@ public class MailUserProfile {
 				if (mailHost==null) mailHost=mss.getDefaultHost();
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
-				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=profile.getUserId();
+				if (StringUtils.isBlank(mailUsername)) mailUsername = pid.getUserId();
 				//TODO: which domain-name is needed here?
-				if (mailUsername.indexOf('@')<0 && appendDomainSuffix(mss, dirScheme)) mailUsername+="@"+WT.getPrimaryDomainName(profile.getDomainId());
-				if (principal!=null && (mailPassword==null||mailPassword.trim().length()==0)) mailPassword=new String(principal.getPassword());
+				if (mailUsername.indexOf('@')<0 && appendDomainSuffix(mss, dirScheme)) mailUsername+="@"+WT.getPrimaryDomainName(pid.getDomainId());
+				if (StringUtils.isBlank(mailPassword)) mailPassword = PasswordUtils.asString(WT.lookupSecretStoreValue(pid, WebTopManager.PSVKEY_PPW));
+				//if (principal!=null && (mailPassword==null||mailPassword.trim().length()==0)) mailPassword=new String(principal.getPassword());
 			}
 			
 			//If still something is invalid, provides defaults
@@ -167,9 +170,9 @@ public class MailUserProfile {
 			//CredentialAlgorithm encpasswordType=principal.getCredentialAlgorithm();
 			//String encpassword=principal.getCredential();
 			//if (encpasswordType==null) encpassword=new String(principal.getPassword());
-
-			if (mailUsername==null||mailUsername.trim().length()==0 && principal!=null) mailUsername=profile.getUserId();
-			if (principal!=null && (mailPassword==null||mailPassword.trim().length()==0)) mailPassword=new String(principal.getPassword());
+			
+			if (StringUtils.isBlank(mailUsername)) mailUsername = pid.getUserId();
+			if (StringUtils.isBlank(mailPassword)) mailPassword = PasswordUtils.asString(WT.lookupSecretStoreValue(pid, WebTopManager.PSVKEY_PPW));
 			//else {
 			//	if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
 			//		mailPassword=Encryption.decipher(mailPassword,encpassword);
@@ -211,14 +214,13 @@ public class MailUserProfile {
         this.mss = mss;
 		//this.env=env;
 		//UserProfile profile=env.getProfile();
+		final UserProfileId pid = profile.getId();
 		CoreManager coreMgr = WT.getCoreManager(true, mman.getTargetProfileId());
 		Connection con=null;
 		try {
 			con = WT.getConnection(mman.SERVICE_ID);
             //mman=(MailManager)WT.getServiceManager(ms.SERVICE_ID);
 			this.mman=mman;
-			
-			Principal principal=profile.getPrincipal();
 			
 			//MailUserSettings mus=ms.getMailUserSettings();
 			mailProtocol=mus.getProtocol();
@@ -254,9 +256,9 @@ public class MailUserProfile {
 				if (mailHost==null) mailHost=mss.getDefaultHost();
 				if (mailProtocol==null) mailProtocol=mss.getDefaultProtocol();
 				if (mailPort==0) mailPort=mss.getDefaultPort();
-				if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
+				if (StringUtils.isBlank(mailUsername)) mailUsername = pid.getUserId();
 				if (!mss.isAuthUserStripDomain() && mailUsername.indexOf('@')<0 && appendDomainSuffix(mss, acontext)) mailUsername+="@"+acontext.getInternetName();
-				if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
+				if (StringUtils.isBlank(mailPassword)) mailPassword = PasswordUtils.asString(WT.lookupSecretStoreValue(pid, WebTopManager.PSVKEY_PPW));
 			}
 			
 			//If still something is invalid, provides defaults
@@ -279,8 +281,8 @@ public class MailUserProfile {
 			//String encpassword=principal.getCredential();
 			//if (encpasswordType==null) encpassword=new String(principal.getPassword());
 
-			if (mailUsername==null||mailUsername.trim().length()==0) mailUsername=principal.getUserId();
-			if (mailPassword==null||mailPassword.trim().length()==0) mailPassword=new String(principal.getPassword());
+			if (StringUtils.isBlank(mailUsername)) mailUsername = pid.getUserId();
+			if (StringUtils.isBlank(mailPassword)) mailPassword = PasswordUtils.asString(WT.lookupSecretStoreValue(pid, WebTopManager.PSVKEY_PPW));
 			//else {
 			//	if (encpasswordType!=null && !encpasswordType.equals(CredentialAlgorithm.PLAIN))
 			//		mailPassword=Encryption.decipher(mailPassword,encpassword);
