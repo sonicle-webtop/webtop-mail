@@ -479,6 +479,24 @@ public class MailUserSettings extends BaseUserSettings {
 		return setString(DEFAULT_FOLDER,name);
 	}
 	
+	public String getAlwaysCc() {
+		return getString(ALWAYS_CC,null);
+	}
+	
+	public boolean setAlwaysCc(String cc) {
+		if (cc!=null && cc.trim().length()==0) cc=null;
+		return setString(ALWAYS_CC,cc);
+	}
+	
+	public String getAlwaysBcc() {
+		return getString(ALWAYS_BCC,null);
+	}
+	
+	public boolean setAlwaysBcc(String bcc) {
+		if (bcc!=null && bcc.trim().length()==0) bcc=null;
+		return setString(ALWAYS_BCC,bcc);
+	}
+	
 	public HashMap<String,Integer> getColumnSizes() {
 		return getIntegers(COLUMN_SIZE_PREFIX);
 	}

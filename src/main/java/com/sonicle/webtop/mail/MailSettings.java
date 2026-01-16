@@ -359,6 +359,8 @@ public class MailSettings {
 	public static final String FOLDER_ARCHIVE = "folder.archive";
 	public static final String FOLDER_SPAM = "folder.spam";
 	public static final String DEFAULT_FOLDER = "defaultfolder";
+	public static final String ALWAYS_CC = "always.cc";
+	public static final String ALWAYS_BCC = "always.bcc";
 	
 	/**
 	 * @deprecated
