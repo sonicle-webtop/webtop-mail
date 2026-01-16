@@ -94,6 +94,8 @@ public class JsUserOptions extends JsUserOptionsBase {
 	public boolean rememberFoldersState;
 	public boolean delayedSending;
 	public int delayedSendingSeconds;
+	public String alwaysCc;
+	public String alwaysBcc;
 	
 	public JsUserOptions() {}
 	

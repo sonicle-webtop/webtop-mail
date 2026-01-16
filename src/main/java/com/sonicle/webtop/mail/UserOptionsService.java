@@ -141,6 +141,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				jso.rememberFoldersState = mus.isRememberFoldersState();
 				jso.delayedSending = mus.isDelayedSending();
 				jso.delayedSendingSeconds = mus.getDelayedSendingSeconds();
+				jso.alwaysCc = mus.getAlwaysCc();
+				jso.alwaysBcc = mus.getAlwaysBcc();
 				
 				// External accounts
 				jso.externalAccountEnabled = mss.isExternalAccountEnabled();
@@ -209,6 +211,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 				//if (pl.map.has("scanSeconds")) mus.setScanSeconds(pl.data.scanSeconds); Deprecated
 				//if (pl.map.has("scanCycles")) mus.setScanCycles(pl.data.scanCycles); Deprecated
 				if (pl.map.has("defaultFolder")) mus.setDefaultFolder(pl.data.defaultFolder);
+				if (pl.map.has("alwaysCc")) mus.setAlwaysCc(pl.data.alwaysCc);
+				if (pl.map.has("alwaysBcc")) mus.setAlwaysBcc(pl.data.alwaysBcc);
 
 				new JsonResult().printTo(out);
 			}

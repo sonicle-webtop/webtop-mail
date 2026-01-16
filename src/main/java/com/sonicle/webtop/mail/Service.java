@@ -4902,6 +4902,18 @@ public class Service extends BaseService {
 				msg.addCc(new String[] { ifrom.hasAlwaysCcEmail()?ifrom.getAlwaysCcEmail():ifrom.getEmail() });
 			}
 			
+			if (ifrom.isMainIdentity()) {
+				String alwaysCc = us.getAlwaysCc();
+				if (alwaysCc!=null) {
+					msg.addCc(new String[] { alwaysCc });
+				}
+
+				String alwaysBcc = us.getAlwaysBcc();
+				if (alwaysBcc!=null) {
+					msg.addBcc(new String[] { alwaysBcc });
+				}
+			}
+			
 			account.checkStoreConnected();
 			SendException sendExc = sendMessage(msg, jsmsg.attachments);
                         String foundfolder = null;

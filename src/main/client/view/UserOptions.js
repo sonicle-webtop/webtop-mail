@@ -1093,6 +1093,18 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 				needReload: true,
 				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
 			}, {
+				xtype: 'textfield',
+				bind: '{record.alwaysCc}',
+				fieldLabel: me.res('opts.adv.fld-alwaysCc.lbl'),
+				width: 400,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
+				xtype: 'textfield',
+				bind: '{record.alwaysBcc}',
+				fieldLabel: me.res('opts.adv.fld-alwaysBcc.lbl'),
+				width: 400,
+				listeners: { blur: { fn: me.onBlurAutoSave, scope: me } }
+			}, {
 				xtype: 'container',
 				layout: {
 					type: 'hbox',
