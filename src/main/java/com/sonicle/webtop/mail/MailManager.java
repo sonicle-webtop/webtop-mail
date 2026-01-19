@@ -153,6 +153,13 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	@Override
+	public String getFolderSent() {
+		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetProfileId().getDomainId());
+		MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
+		return mus.getFolderSent();
+	}
+	
+	@Override
 	public boolean sendMessage(InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) throws WTException {
 		com.sonicle.webtop.mail.Service mail = findMailService();
 		return mail.sendMsg(from, to, cc, bcc, subject, part);
