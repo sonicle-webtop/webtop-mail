@@ -6901,7 +6901,7 @@ public class Service extends BaseService {
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
-							if (queryObj != null && unread) ++funread;
+							if (/*queryObj != null &&*/ unread) ++funread;
 							//Priority
 							int priority=getPriority(xm);
 							//Status
@@ -7097,12 +7097,12 @@ public class Service extends BaseService {
 					 } else {
 					 funread=mcache.getUnreadMessagesCount();
 					 }*/
-					if (mcache.isScanForcedOrEnabled()) {
+					//if (mcache.isScanForcedOrEnabled()) {
 						//Send message only if first page
 						if (start==0) mcache.refreshUnreads();
 						funread=mcache.getUnreadMessagesCount();
-					}
-					else funread=0;
+					//}
+					//else if (funread==0) funread=mcache.getUnreadMessagesCount();
 
 					long qlimit=-1;
 					long qusage=-1;
