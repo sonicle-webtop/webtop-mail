@@ -3,6 +3,7 @@
   "info": {
     "version": "v1",
     "title": "WebTop Mail",
+    "description": "https://github.com/OpenAPITools/openapi-generator/issues/10010\nhttps://github.com/stoplightio/prism/discussions/523\nhttps://github.com/OpenAPITools/openapi-generator/issues/3172",
     "contact": {
       "email": "dev-team@sonicle.com"
     }
@@ -10,6 +11,9 @@
   "security": [
     {
       "Basic authentication": []
+    },
+    {
+      "auth-bearer": []
     }
   ],
   "paths": {
@@ -64,10 +68,139 @@
             "description": "Success",
             "schema": {
               "$ref": "#/definitions/Account"
-            }
+            },
+            "examples": {}
           }
         }
       }
+    },
+    "/folders": {
+      "get": {
+        "summary": "Lists folders",
+        "operationId": "getRootFolders",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Folder"
+              }
+            }
+          }
+        },
+        "tags": [
+          "folders"
+        ],
+        "description": ""
+      },
+      "parameters": []
+    },
+    "/folders/{id}": {
+      "get": {
+        "summary": "Lists folders",
+        "operationId": "getFolders",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Folder"
+              }
+            }
+          }
+        },
+        "tags": [
+          "folders"
+        ],
+        "description": ""
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/folder/{id}/messages": {
+      "get": {
+        "summary": "Lists messages envelops of folder",
+        "operationId": "getMessages",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Message"
+              }
+            }
+          }
+        },
+        "description": "",
+        "tags": [
+          "messages"
+        ]
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "name": "id",
+          "in": "path",
+          "required": true
+        }
+      ]
+    },
+    "/folder/{id}/message/{uid}": {
+      "get": {
+        "summary": "Get full message of folder by uid",
+        "operationId": "getMessage",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "schema": {
+              "$ref": "#/definitions/Message"
+            }
+          }
+        },
+        "description": "",
+        "tags": [
+          "message"
+        ]
+      },
+      "parameters": [
+        {
+          "type": "string",
+          "name": "id",
+          "in": "path",
+          "required": true
+        },
+        {
+          "type": "string",
+          "name": "uid",
+          "in": "path",
+          "required": true
+        }
+      ]
     }
   },
   "securityDefinitions": {
@@ -93,7 +226,10 @@
         }
       },
       "description": "This general detailed error structure is used throughout this API.",
-      "example": "{\n  \"code\": 400,\n  \"description\": \"Bad query parameter [$size]: Invalid integer value [abc]\"\n}"
+      "example": {
+        "code": 400,
+        "description": "Bad query parameter [$size]: Invalid integer value [abc]"
+      }
     },
     "ExternalArchivingSettings": {
       "type": "object",
@@ -154,6 +290,110 @@
         },
         "mailUsername": {
           "type": "string"
+        }
+      }
+    },
+    "Contact": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        }
+      }
+    },
+    "Attachment": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "fileSize": {
+          "type": "integer"
+        },
+        "mimeType": {
+          "type": "string"
+        },
+        "downloadUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "Folder": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "unreadCount": {
+          "type": "integer"
+        },
+        "totalCount": {
+          "type": "integer"
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Folder"
+          }
+        }
+      }
+    },
+    "Message": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "integer"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "body": {
+          "type": "string"
+        },
+        "sender": {
+          "$ref": "#/definitions/Contact"
+        },
+        "recipients": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Contact"
+          }
+        },
+        "cc": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Contact"
+          }
+        },
+        "bcc": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Contact"
+          }
+        },
+        "date": {
+          "type": "string"
+        },
+        "isRead": {
+          "type": "boolean"
+        },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Attachment"
+          }
         }
       }
     }

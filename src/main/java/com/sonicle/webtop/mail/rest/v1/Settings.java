@@ -37,8 +37,8 @@ import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.MailServiceSettings;
 import com.sonicle.webtop.mail.swagger.v1.api.SettingsApi;
-import com.sonicle.webtop.mail.swagger.v1.model.ApiError;
-import com.sonicle.webtop.mail.swagger.v1.model.ExternalArchivingSettings;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiExternalArchivingSettings;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +61,7 @@ public class Settings extends SettingsApi {
 			if (targetPid == null) return respErrorBadRequest("Missing parameter [targetProfileId]");
 			MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, targetPid.getDomainId());
 			
-			ExternalArchivingSettings item = createExternalArchivingSettings(mss);
+			ApiExternalArchivingSettings item = createExternalArchivingSettings(mss);
 			return respOk(item);
 			
 		} catch(Exception ex) {
@@ -70,8 +70,8 @@ public class Settings extends SettingsApi {
 		}
 	}
 	
-	private ExternalArchivingSettings createExternalArchivingSettings(MailServiceSettings mss) {
-		return new ExternalArchivingSettings()
+	private ApiExternalArchivingSettings createExternalArchivingSettings(MailServiceSettings mss) {
+		return new ApiExternalArchivingSettings()
 				.enabled(mss.isArchivingExternal())
 				.type(mss.getArchivingExternalType())
 				.host(mss.getArchivingExternalHost())
@@ -85,7 +85,7 @@ public class Settings extends SettingsApi {
 	
 	@Override
 	protected Object createErrorEntity(Response.Status status, String message) {
-		return new ApiError()
+		return new ApiApiError()
 				.code(status.getStatusCode())
 				.description(message);
 	}
