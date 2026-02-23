@@ -360,7 +360,7 @@ public class Service extends BaseService {
 		String mailPassword = mprofile.getMailPassword();
 		boolean isImpersonated=profile.getPrincipal().isImpersonated();
 		String vmailSecret=ss.getNethTopVmailSecret();
-		if (isImpersonated) {
+		if (isImpersonated || StringUtils.isBlank(mailPassword)) {
 			//use sasl rfc impersonate if no vmailSecret
 			if (vmailSecret==null) {
 				//TODO: implement sasl rfc authorization id if possible

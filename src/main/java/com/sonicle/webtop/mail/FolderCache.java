@@ -2225,7 +2225,7 @@ public class FolderCache {
             StringBuffer xhtml=new StringBuffer();
             if (dispPart.isMimeType("text/html")) {
                 Object tlock=new Object();
-                String uri=environment.getSessionRefererUri();
+                String uri=environment.getSession().getRefererUri();
                 HTMLMailParserThread parserThread=null;
                 if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msguid, forEdit, balanceTags, removeHeadStyle);
                 else parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, provider, providerid, balanceTags, removeHeadStyle);
