@@ -1,23 +1,30 @@
 package com.sonicle.webtop.mail.swagger.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.*;
 import javax.validation.Valid;
-
 
 import io.swagger.annotations.*;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
-public class Account   {
-  
-  private @Valid String userId = null;
-  private @Valid String displayName = null;
-  private @Valid String mailUsername = null;
+
+@JsonTypeName("Account")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2024-10-03T16:31:33.680+02:00[Europe/Berlin]")
+public class ApiAccount   {
+  private @Valid String userId;
+  private @Valid String displayName;
+  private @Valid String mailUsername;
 
   /**
    **/
-  public Account userId(String userId) {
+  public ApiAccount userId(String userId) {
     this.userId = userId;
     return this;
   }
@@ -28,13 +35,15 @@ public class Account   {
   public String getUserId() {
     return userId;
   }
+
+  @JsonProperty("userId")
   public void setUserId(String userId) {
     this.userId = userId;
   }
 
   /**
    **/
-  public Account displayName(String displayName) {
+  public ApiAccount displayName(String displayName) {
     this.displayName = displayName;
     return this;
   }
@@ -45,13 +54,15 @@ public class Account   {
   public String getDisplayName() {
     return displayName;
   }
+
+  @JsonProperty("displayName")
   public void setDisplayName(String displayName) {
     this.displayName = displayName;
   }
 
   /**
    **/
-  public Account mailUsername(String mailUsername) {
+  public ApiAccount mailUsername(String mailUsername) {
     this.mailUsername = mailUsername;
     return this;
   }
@@ -62,23 +73,25 @@ public class Account   {
   public String getMailUsername() {
     return mailUsername;
   }
+
+  @JsonProperty("mailUsername")
   public void setMailUsername(String mailUsername) {
     this.mailUsername = mailUsername;
   }
 
 
   @Override
-  public boolean equals(java.lang.Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    Account account = (Account) o;
-    return Objects.equals(userId, account.userId) &&
-        Objects.equals(displayName, account.displayName) &&
-        Objects.equals(mailUsername, account.mailUsername);
+    ApiAccount account = (ApiAccount) o;
+    return Objects.equals(this.userId, account.userId) &&
+        Objects.equals(this.displayName, account.displayName) &&
+        Objects.equals(this.mailUsername, account.mailUsername);
   }
 
   @Override
@@ -89,7 +102,7 @@ public class Account   {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class Account {\n");
+    sb.append("class ApiAccount {\n");
     
     sb.append("    userId: ").append(toIndentedString(userId)).append("\n");
     sb.append("    displayName: ").append(toIndentedString(displayName)).append("\n");
@@ -102,11 +115,13 @@ public class Account   {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(java.lang.Object o) {
+  private String toIndentedString(Object o) {
     if (o == null) {
       return "null";
     }
     return o.toString().replace("\n", "\n    ");
   }
+
+
 }
 

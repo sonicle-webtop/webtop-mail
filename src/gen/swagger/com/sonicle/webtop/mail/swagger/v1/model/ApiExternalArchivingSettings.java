@@ -1,30 +1,37 @@
 package com.sonicle.webtop.mail.swagger.v1.model;
 
+import com.fasterxml.jackson.annotation.JsonTypeName;
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 import javax.validation.constraints.*;
 import javax.validation.Valid;
-
 
 import io.swagger.annotations.*;
 import java.util.Objects;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
-public class ExternalArchivingSettings   {
-  
-  private @Valid Boolean enabled = null;
-  private @Valid String type = null;
-  private @Valid String host = null;
-  private @Valid Integer port = null;
-  private @Valid String protocol = null;
-  private @Valid String username = null;
-  private @Valid String password = null;
-  private @Valid String folderPrefix = null;
-  private @Valid Integer minage = null;
+
+@JsonTypeName("ExternalArchivingSettings")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2024-10-03T16:31:33.680+02:00[Europe/Berlin]")
+public class ApiExternalArchivingSettings   {
+  private @Valid Boolean enabled;
+  private @Valid String type;
+  private @Valid String host;
+  private @Valid Integer port;
+  private @Valid String protocol;
+  private @Valid String username;
+  private @Valid String password;
+  private @Valid String folderPrefix;
+  private @Valid Integer minage;
 
   /**
    * Enabled status
    **/
-  public ExternalArchivingSettings enabled(Boolean enabled) {
+  public ApiExternalArchivingSettings enabled(Boolean enabled) {
     this.enabled = enabled;
     return this;
   }
@@ -33,9 +40,11 @@ public class ExternalArchivingSettings   {
   @ApiModelProperty(required = true, value = "Enabled status")
   @JsonProperty("enabled")
   @NotNull
-  public Boolean isEnabled() {
+  public Boolean getEnabled() {
     return enabled;
   }
+
+  @JsonProperty("enabled")
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
   }
@@ -43,7 +52,7 @@ public class ExternalArchivingSettings   {
   /**
    * Archiving type
    **/
-  public ExternalArchivingSettings type(String type) {
+  public ApiExternalArchivingSettings type(String type) {
     this.type = type;
     return this;
   }
@@ -55,6 +64,8 @@ public class ExternalArchivingSettings   {
   public String getType() {
     return type;
   }
+
+  @JsonProperty("type")
   public void setType(String type) {
     this.type = type;
   }
@@ -62,7 +73,7 @@ public class ExternalArchivingSettings   {
   /**
    * IMAP server host
    **/
-  public ExternalArchivingSettings host(String host) {
+  public ApiExternalArchivingSettings host(String host) {
     this.host = host;
     return this;
   }
@@ -74,6 +85,8 @@ public class ExternalArchivingSettings   {
   public String getHost() {
     return host;
   }
+
+  @JsonProperty("host")
   public void setHost(String host) {
     this.host = host;
   }
@@ -81,7 +94,7 @@ public class ExternalArchivingSettings   {
   /**
    * IMAP server port
    **/
-  public ExternalArchivingSettings port(Integer port) {
+  public ApiExternalArchivingSettings port(Integer port) {
     this.port = port;
     return this;
   }
@@ -93,6 +106,8 @@ public class ExternalArchivingSettings   {
   public Integer getPort() {
     return port;
   }
+
+  @JsonProperty("port")
   public void setPort(Integer port) {
     this.port = port;
   }
@@ -100,7 +115,7 @@ public class ExternalArchivingSettings   {
   /**
    * IMAP server protocol
    **/
-  public ExternalArchivingSettings protocol(String protocol) {
+  public ApiExternalArchivingSettings protocol(String protocol) {
     this.protocol = protocol;
     return this;
   }
@@ -112,6 +127,8 @@ public class ExternalArchivingSettings   {
   public String getProtocol() {
     return protocol;
   }
+
+  @JsonProperty("protocol")
   public void setProtocol(String protocol) {
     this.protocol = protocol;
   }
@@ -119,7 +136,7 @@ public class ExternalArchivingSettings   {
   /**
    * Account username
    **/
-  public ExternalArchivingSettings username(String username) {
+  public ApiExternalArchivingSettings username(String username) {
     this.username = username;
     return this;
   }
@@ -130,6 +147,8 @@ public class ExternalArchivingSettings   {
   public String getUsername() {
     return username;
   }
+
+  @JsonProperty("username")
   public void setUsername(String username) {
     this.username = username;
   }
@@ -137,7 +156,7 @@ public class ExternalArchivingSettings   {
   /**
    * Account password
    **/
-  public ExternalArchivingSettings password(String password) {
+  public ApiExternalArchivingSettings password(String password) {
     this.password = password;
     return this;
   }
@@ -148,6 +167,8 @@ public class ExternalArchivingSettings   {
   public String getPassword() {
     return password;
   }
+
+  @JsonProperty("password")
   public void setPassword(String password) {
     this.password = password;
   }
@@ -155,7 +176,7 @@ public class ExternalArchivingSettings   {
   /**
    * IMAP folder prefix
    **/
-  public ExternalArchivingSettings folderPrefix(String folderPrefix) {
+  public ApiExternalArchivingSettings folderPrefix(String folderPrefix) {
     this.folderPrefix = folderPrefix;
     return this;
   }
@@ -166,6 +187,8 @@ public class ExternalArchivingSettings   {
   public String getFolderPrefix() {
     return folderPrefix;
   }
+
+  @JsonProperty("folderPrefix")
   public void setFolderPrefix(String folderPrefix) {
     this.folderPrefix = folderPrefix;
   }
@@ -173,7 +196,7 @@ public class ExternalArchivingSettings   {
   /**
    * Archive messages older than days
    **/
-  public ExternalArchivingSettings minage(Integer minage) {
+  public ApiExternalArchivingSettings minage(Integer minage) {
     this.minage = minage;
     return this;
   }
@@ -184,29 +207,31 @@ public class ExternalArchivingSettings   {
   public Integer getMinage() {
     return minage;
   }
+
+  @JsonProperty("minage")
   public void setMinage(Integer minage) {
     this.minage = minage;
   }
 
 
   @Override
-  public boolean equals(java.lang.Object o) {
+  public boolean equals(Object o) {
     if (this == o) {
       return true;
     }
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ExternalArchivingSettings externalArchivingSettings = (ExternalArchivingSettings) o;
-    return Objects.equals(enabled, externalArchivingSettings.enabled) &&
-        Objects.equals(type, externalArchivingSettings.type) &&
-        Objects.equals(host, externalArchivingSettings.host) &&
-        Objects.equals(port, externalArchivingSettings.port) &&
-        Objects.equals(protocol, externalArchivingSettings.protocol) &&
-        Objects.equals(username, externalArchivingSettings.username) &&
-        Objects.equals(password, externalArchivingSettings.password) &&
-        Objects.equals(folderPrefix, externalArchivingSettings.folderPrefix) &&
-        Objects.equals(minage, externalArchivingSettings.minage);
+    ApiExternalArchivingSettings externalArchivingSettings = (ApiExternalArchivingSettings) o;
+    return Objects.equals(this.enabled, externalArchivingSettings.enabled) &&
+        Objects.equals(this.type, externalArchivingSettings.type) &&
+        Objects.equals(this.host, externalArchivingSettings.host) &&
+        Objects.equals(this.port, externalArchivingSettings.port) &&
+        Objects.equals(this.protocol, externalArchivingSettings.protocol) &&
+        Objects.equals(this.username, externalArchivingSettings.username) &&
+        Objects.equals(this.password, externalArchivingSettings.password) &&
+        Objects.equals(this.folderPrefix, externalArchivingSettings.folderPrefix) &&
+        Objects.equals(this.minage, externalArchivingSettings.minage);
   }
 
   @Override
@@ -217,7 +242,7 @@ public class ExternalArchivingSettings   {
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ExternalArchivingSettings {\n");
+    sb.append("class ApiExternalArchivingSettings {\n");
     
     sb.append("    enabled: ").append(toIndentedString(enabled)).append("\n");
     sb.append("    type: ").append(toIndentedString(type)).append("\n");
@@ -236,11 +261,13 @@ public class ExternalArchivingSettings   {
    * Convert the given object to string with each line indented by 4 spaces
    * (except the first line).
    */
-  private String toIndentedString(java.lang.Object o) {
+  private String toIndentedString(Object o) {
     if (o == null) {
       return "null";
     }
     return o.toString().replace("\n", "\n    ");
   }
+
+
 }
 

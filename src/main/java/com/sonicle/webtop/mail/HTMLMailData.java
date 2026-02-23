@@ -64,6 +64,13 @@ public class HTMLMailData {
 		this.parsed = MimeMessageParser.parseMimeMessage(message, isPec);
   }
   
+  public HTMLMailData(MimeMessage msg) throws MessagingException {
+		this.message=msg;
+		this.folder=msg.getFolder();
+		if (msg instanceof SonicleIMAPMessage) this.nuid=((SonicleIMAPMessage)msg).getUID();
+		this.parsed = MimeMessageParser.parseMimeMessage(message, isPec);
+  }
+  
   public ParsedMimeMessageComponents getParsedMimeMessageComponents() {
 	  return parsed;
   }

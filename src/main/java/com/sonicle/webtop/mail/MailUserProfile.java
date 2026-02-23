@@ -211,6 +211,10 @@ public class MailUserProfile {
 	
 	
     public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile) {
+		this(mman, mss, mus, profile, true);
+	}
+	
+    public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile, boolean loadIdentities) {
         this.mss = mss;
 		//this.env=env;
 		//UserProfile profile=env.getProfile();
@@ -309,7 +313,7 @@ public class MailUserProfile {
             //    Identity ident=new Identity(oid.getIdentityId(),oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
 			//	identities[i++]=ident;
 			//}
-			identities=mman.listIdentities();
+			if (loadIdentities) identities=mman.listIdentities();
 			
 		} catch(Exception exc) {
 			logger.error("Error mapping mail user",exc);

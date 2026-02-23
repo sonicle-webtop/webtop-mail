@@ -37,9 +37,15 @@ import com.sonicle.mail.sieve.SieveScriptBuilder;
 import com.fluffypeople.managesieve.ManageSieveClient;
 import com.fluffypeople.managesieve.SieveScript;
 import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.PathUtils;
+import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.time.JavaTimeUtils;
+import com.sonicle.mail.imap.DateSortTerm;
+import com.sonicle.mail.imap.SonicleIMAPFolder;
+import com.sonicle.mail.imap.SonicleIMAPMessage;
+import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
@@ -77,6 +83,9 @@ import com.sonicle.webtop.mail.dal.TagDAO;
 import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.FolderShareParameters;
 import com.sonicle.webtop.mail.model.Tag;
+import com.sun.mail.imap.IMAPFolder;
+import jakarta.mail.Address;
+import jakarta.mail.FetchProfile;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -90,18 +99,40 @@ import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
 import jakarta.mail.Flags;
+import jakarta.mail.Folder;
+import jakarta.mail.Message;
+import jakarta.mail.MessagingException;
+import jakarta.mail.Part;
+import jakarta.mail.Provider;
+import jakarta.mail.Session;
+import jakarta.mail.Store;
+import jakarta.mail.UIDFolder;
 import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.UnsupportedCharsetException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import net.fortuna.ical4j.data.ParserException;
+import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jooq.exception.DataAccessException;
 import org.slf4j.Logger;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  *
@@ -133,8 +164,451 @@ public class MailManager extends BaseManager implements IMailManager {
 	HashMap<String, Identity> identHash = new HashMap<>();
 	HashMap<String, List<Identity>> allPersonalIdentitiesDomains = new HashMap<>();
 	
+	static final private FetchProfile FP = new FetchProfile();
+	
+	static {
+		FP.add(FetchProfile.Item.ENVELOPE);
+		FP.add(FetchProfile.Item.FLAGS);
+		FP.add(FetchProfile.Item.CONTENT_INFO);
+		FP.add(UIDFolder.FetchProfileItem.UID);
+		FP.add("Message-ID");
+		FP.add("X-Priority");
+	}
+	
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
+	}
+	
+	private Store connect() {
+		Store store = null;
+		try {
+			UserProfileId upid = getTargetProfileId();
+			MailServiceSettings ss = new MailServiceSettings(SERVICE_ID, upid.getDomainId());
+			MailUserSettings us = new MailUserSettings(upid, ss);
+			Principal principal = RunContext.getPrincipal();
+			UserProfile up = new UserProfile(WT.getCoreManager(), principal);
+			MailUserProfile mup = new MailUserProfile(this, ss, us, up, false);
+
+			Session session = WT.getCoreManager().getMailSession();
+			session.setProvider(new Provider(Provider.Type.STORE,"imap","com.sonicle.mail.imap.SonicleIMAPStore","Sonicle","1.0"));
+			session.setProvider(new Provider(Provider.Type.STORE,"imaps","com.sonicle.mail.imap.SonicleIMAPSSLStore","Sonicle","1.0"));
+			store=session.getStore(mup.getMailProtocol());
+			int port = mup.getMailPort();
+			if (port > 0) {
+				store.connect(mup.getMailHost(), port, mup.getMailUsername(), mup.getMailPassword());
+			} else {
+				store.connect(mup.getMailHost(), mup.getMailUsername(), mup.getMailPassword());
+			}
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+		}
+		
+		return store;
+		
+	}
+	
+	public ArrayList<Folder> getRootFolders() {
+		Store store = null;
+		ArrayList<Folder> folders = new ArrayList<>();
+		try {
+			store = connect();
+			if (store != null) {
+				Folder root = store.getDefaultFolder();
+				Folder flist[] = root.list();
+				for(Folder folder: flist) folders.add(folder);
+			}
+		} catch(MessagingException exc) {
+			logger.error("Error listing folders", exc);
+		} finally {
+			try { if (store != null) store.close(); } catch(MessagingException mexc) {}
+		}
+		return folders;
+	}
+	
+	public ArrayList<Folder> getFolders(String id) {
+		Store store = null;
+		ArrayList<Folder> folders = new ArrayList<>();
+		try {
+			store = connect();
+			if (store != null) {
+				Folder parent = store.getFolder(id);
+				Folder flist[] = parent.list();
+				for(Folder folder: flist) folders.add(folder);
+			}
+		} catch(MessagingException exc) {
+			logger.error("Error listing folders", exc);
+		} finally {
+			try { if (store != null) store.close(); } catch(MessagingException mexc) {}
+		}
+		return folders;
+	}
+	
+	public void consumeMessages(String folderId, MessagesConsumer mc) {
+		Store store = null;
+		Folder folder = null;
+		try {
+			store = connect();
+			if (store != null) {
+				folder = store.getFolder(folderId);
+				folder.open(Folder.READ_ONLY);
+				Message fmsgs[] = ((SonicleIMAPFolder)folder).sort(new DateSortTerm(true), null);
+				((SonicleIMAPFolder)folder).uid_fetch(fmsgs, FP);
+				for(Message msg: fmsgs) {
+					mc.consume(msg, ((UIDFolder)folder).getUID(msg));
+				}
+			}
+		} catch(Exception exc) {
+			logger.error("Error listing folders", exc);
+		} finally {
+			try { if (folder != null) folder.close(); } catch(MessagingException mexc) {}
+			try { if (store != null) store.close(); } catch(MessagingException mexc) {}
+		}
+	}	
+	
+	public void consumeMessage(String folderId, long uid, MessageConsumer mc) {
+		Store store = null;
+		IMAPFolder folder = null;
+		try {
+			store = connect();
+			if (store != null) {
+				folder = (IMAPFolder) store.getFolder(folderId);
+				folder.open(Folder.READ_ONLY);
+				MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+				ArrayList<HTMLPart> htmlparts = getHTMLParts(mmsg, 1, false, false);
+				String html = "<html><body></body><html>";
+				if (htmlparts.size()>0) html = htmlparts.get(0).html;
+				mc.consume(mmsg, ((UIDFolder)folder).getUID(mmsg), html);
+			}
+		} catch(Exception exc) {
+			logger.error("Error listing folders", exc);
+		} finally {
+			try { if (folder != null) folder.close(); } catch(MessagingException mexc) {}
+			try { if (store != null) store.close(); } catch(MessagingException mexc) {}
+		}
+	}	
+	
+	public interface MessagesConsumer {
+		public void consume(Message m, long uid) throws MessagingException;
+	}
+	
+	public interface MessageConsumer {
+		public void consume(Message m, long uid, String html) throws MessagingException;
+	}
+	
+    private ArrayList<HTMLPart> getHTMLParts(MimeMessage m, int msguid, boolean forEdit, boolean balanceTags) throws MessagingException, IOException {
+		ArrayList<HTMLPart> htmlparts=new ArrayList<>();
+		UserProfileId upid = getTargetProfileId();
+		MailServiceSettings ss = new MailServiceSettings(SERVICE_ID, upid.getDomainId());
+		MailUserSettings us = new MailUserSettings(upid, ss);
+		Principal principal = RunContext.getPrincipal();
+		UserProfile profile = new UserProfile(WT.getCoreManager(), principal);
+		
+		HTMLMailData mailData=getMailData(m);
+		int objid=0;
+		Part msgPart=null;
+		String msgSubject;
+		String msgFrom;
+		String msgDate;
+		String msgTo;
+		String msgCc;
+		Locale locale=profile.getLocale();
+		boolean icalhtmlview=false;
+
+		//first cycle parts to get a possible default charset
+		String defaultCharset=null;
+		for(int i=0;defaultCharset==null && i<mailData.getDisplayPartCount();++i) {
+		  Part dispPart=mailData.getDisplayPart(i);
+
+		  //Use workaround for NethServer installation:
+		  defaultCharset=MailUtils.getCharsetOrNull(dispPart);
+		}
+
+		for(int i=0;i<mailData.getDisplayPartCount();++i) {
+		  Part dispPart=mailData.getDisplayPart(i);
+		  java.io.InputStream istream=null;
+		  String charset=null;
+		  if (defaultCharset==null)
+			  //Use workaround for NethServer installation:
+			  charset=MailUtils.getCharsetOrDefault(dispPart);
+		  else {
+			  //Use workaround for NethServer installation:
+			  charset=MailUtils.getCharsetOrNull(dispPart);
+			  if (charset==null) charset=defaultCharset;
+		  }
+	//        boolean ischarset=false;
+	//        try { ischarset=java.nio.charset.Charset.isSupported(charset); } catch(Exception exc) {}
+	//        if (!ischarset) charset="UTF-8";
+		  if (dispPart.isMimeType("text/plain")||dispPart.isMimeType("text/html")||dispPart.isMimeType("message/delivery-status")||dispPart.isMimeType("message/disposition-notification")||dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
+			  try {
+				if (dispPart instanceof jakarta.mail.internet.MimeMessage) {
+				  jakarta.mail.internet.MimeMessage mm=(jakarta.mail.internet.MimeMessage)dispPart;
+				  istream=mm.getInputStream();
+				} else if (dispPart instanceof jakarta.mail.internet.MimeBodyPart) {
+				  jakarta.mail.internet.MimeBodyPart mm=(jakarta.mail.internet.MimeBodyPart)dispPart;
+				  istream=mm.getInputStream();
+				}
+			  } catch(Exception exc) { //unhandled format, get Raw data
+				if (dispPart instanceof jakarta.mail.internet.MimeMessage) {
+				  jakarta.mail.internet.MimeMessage mm=(jakarta.mail.internet.MimeMessage)dispPart;
+				  istream=mm.getRawInputStream();
+				} else if (dispPart instanceof jakarta.mail.internet.MimeBodyPart) {
+				  jakarta.mail.internet.MimeBodyPart mm=(jakarta.mail.internet.MimeBodyPart)dispPart;
+				  istream=mm.getRawInputStream();
+				}
+			  }
+
+
+			  if (istream==null) throw new IOException("Unknown message class "+dispPart.getClass().getName());
+
+
+			  StringBuffer xhtml=new StringBuffer();
+			  if (dispPart.isMimeType("text/html")) {
+				  Object tlock=new Object();
+				  String uri="";
+				  HTMLMailParserThread parserThread=null;
+				  parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msguid, forEdit, balanceTags);
+				  try {
+					  java.io.BufferedReader breader=startHTMLMailParser(parserThread,mailData,false);
+					  char chars[]=new char[8192];
+					  int n=0;
+					  while((n=breader.read(chars))>=0) {
+					   if (n>0) xhtml.append(chars,0,n);
+					  }
+				  } catch(Exception exc) {
+					  Service.logger.error("Exception",exc);
+					  parserThread.notifyParserEndOfRead();
+					  //            return exc.getMessage();
+				  }
+				  parserThread.notifyParserEndOfRead();
+
+				  htmlparts.add(new HTMLPart(xhtml.toString(),parserThread.getHrefs()));
+				  //String key="htmlpart"+objid;
+				  //controller.putTempData(key,html);
+			  } else if (dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
+				  if (dispPart.getContentType().contains("method=")) {
+					  try {
+						  ICalendarRequest ir=new ICalendarRequest(istream);
+						  mailData.setICalRequest(ir);
+						  if (!icalhtmlview) {
+							  String irhtml=ir.getHtmlView(locale,"5.23.0","default",java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
+							  htmlparts.add(0,new HTMLPart(irhtml));
+							  icalhtmlview=true;
+						  }
+						  if (!mailData.hasICalAttachment()) mailData.addAttachmentPart(dispPart,0);
+					  } catch(ParserException exc) {
+						  mailData.addAttachmentPart(dispPart,0);
+						  //MailService.logger.error("Error parsing calendar part",exc);
+					  }
+				  } else {
+					  mailData.addAttachmentPart(dispPart,0);
+				  }
+			  } else {
+				  xhtml.append("<html><head><meta content='text/html; charset="+charset+"' http-equiv='Content-Type'></head><body><pre>");
+
+				  String content;
+				  try {
+					  Charset xcharset=Charsets.toCharset(charset);
+					  content=IOUtils.toString(istream,xcharset);
+				  } catch(UnsupportedCharsetException | IllegalCharsetNameException exc) {
+					  content=IOUtils.toString(istream,Charsets.ISO_8859_1);
+				  }
+				  //avoid possible XSS
+				  content = LangUtils.encodeForHTML(content);
+
+				  String replacement = "$1";
+				  String sparams="\"" + replacement + "\"";
+				  String onEmailClick = "parent.WT.handleMailAddress(" + sparams + "); return false;";
+
+				  content = content.replaceAll("(" + RegexUtils.MATCH_EMAIL_ADDRESS + ")", "<a target=_blank href=$1 onClick ='"+onEmailClick+"'>$1</a>");
+				  content = content.replaceAll("(" + RegexUtils.MATCH_URL + ")", "<a target= _blank href=$1>$1</a>");
+				  content = content.replaceAll("(" + RegexUtils.MATCH_WWW_URL + ")", "$2<a target=_blank href='http://$3'>$3</a>$4");
+
+				  xhtml.append(content);	
+				  xhtml.append("<BR>");
+				  xhtml.append("</pre><HR></body></html>");
+				  //TODO : check converted urls above for external links
+				  htmlparts.add(new HTMLPart(xhtml.toString()));
+			  }
+		  } else if (dispPart.isMimeType("message/*")) {
+			StringBuffer xhtml=new StringBuffer();
+			msgPart=dispPart;
+			Message xmsg=(Message)dispPart.getContent();
+			msgSubject=xmsg.getSubject();
+			if (msgSubject==null) msgSubject="";
+			msgSubject=MailUtils.htmlescape(msgSubject);
+			Address ad[]=xmsg.getFrom();
+			if (ad!=null) msgFrom=getHTMLDecodedAddress(ad[0]);
+			else msgFrom="";
+			java.util.Date dt=xmsg.getSentDate();
+			if (dt!=null) msgDate=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.LONG,java.text.DateFormat.LONG, locale).format(dt);
+			else msgDate="";
+			ad=xmsg.getRecipients(Message.RecipientType.TO);
+			msgTo=null;
+			if (ad!=null) {
+			  msgTo="";
+			  for(int j=0;j<ad.length;++j) msgTo+=getHTMLDecodedAddress(ad[j])+" ";
+			}
+			ad=xmsg.getRecipients(Message.RecipientType.CC);
+			msgCc=null;
+			if (ad!=null) {
+			  msgCc="";
+			  for(int j=0;j<ad.length;++j) msgCc+=getHTMLDecodedAddress(ad[j])+" ";
+			}
+
+			xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body>");
+			xhtml.append("<font face='Arial, Helvetica, sans-serif' size=2><BR>");
+			xhtml.append("<B>"+lookupResource(locale, MailLocaleKey.MSG_FROMTITLE)+":</B> "+msgFrom+"<BR>");
+			if (msgTo!=null) xhtml.append("<B>"+lookupResource(locale, MailLocaleKey.MSG_TOTITLE)+":</B> "+msgTo+"<BR>");
+			if (msgCc!=null) xhtml.append("<B>"+lookupResource(locale, MailLocaleKey.MSG_CCTITLE)+":</B> "+msgCc+"<BR>");
+			xhtml.append("<B>"+lookupResource(locale, MailLocaleKey.MSG_DATETITLE)+":</B> "+msgDate+"<BR>");
+			xhtml.append("<B>"+lookupResource(locale, MailLocaleKey.MSG_SUBJECTTITLE)+":</B> "+msgSubject+"<BR>");
+			xhtml.append("</font><br></body></html>");
+			htmlparts.add(new HTMLPart(xhtml.toString()));
+		  }
+
+		}
+		return htmlparts;
+	}
+	
+	public String getDecodedAddress(Address a) {
+		String ret = "";
+		try {
+			InternetAddress ia = (InternetAddress) a;
+			String personal = ia.getPersonal();
+			String email = ia.getAddress();
+			if (personal == null || personal.equals(email)) {
+				ret = email;
+			} else {
+				ret = personal + " <" + email + ">";
+			}
+		} catch (RuntimeException exc) {
+			ret = a.toString();
+		}
+		return ret;
+	}
+	
+	public String getHTMLDecodedAddress(Address a) {
+		String s = getDecodedAddress(a);
+		return MailUtils.htmlescape(s);
+	}
+	
+    public HTMLMailData getMailData(MimeMessage m) throws MessagingException, IOException {
+        HTMLMailData mailData=null;
+        synchronized(this) {
+			long muid=-1;
+			if (m instanceof SonicleIMAPMessage) {
+				muid=((SonicleIMAPMessage)m).getUID();
+			}
+			mailData=prepareHTMLMailData(m);
+        }
+        return mailData;
+    }
+	
+	public synchronized HTMLMailData prepareHTMLMailData(MimeMessage msg) throws MessagingException, IOException {
+		return new HTMLMailData(msg);
+	}
+
+	class HTMLPart {
+		
+		String html;
+		ArrayList<String> hrefs;
+		
+		HTMLPart(String html) {
+			this(html, new ArrayList<String>());
+		}
+		HTMLPart(String html, ArrayList<String> hrefs) {
+			this.html=html;
+			this.hrefs=hrefs;
+		}
+	}
+    
+	class HTMLMailParserThread implements Runnable {
+
+	  InputStream istream=null;
+	  String charset=null;
+	  Object threadLock=null;
+	  SaxHTMLMailParser saxHTMLMailParser=null;
+	  String appUrl=null;
+	  boolean balanceTags=true;
+
+	  HTMLMailParserThread(Object tlock, InputStream istream, String charset, String appUrl, int msguid, boolean forEdit, boolean balanceTags) {
+		  this.threadLock=tlock;
+		  this.istream=istream;
+		  this.charset=charset;
+		  this.appUrl=appUrl;
+		  this.balanceTags=balanceTags;
+		  this.saxHTMLMailParser=new SaxHTMLMailParser("",forEdit,msguid);
+	  }
+
+	  HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, String provider, String providerid, boolean balanceTags) {
+		  this.threadLock=tlock;
+		  this.istream=istream;
+		  this.charset=charset;
+		  this.appUrl=appUrl;
+		  this.balanceTags=balanceTags;
+		  this.saxHTMLMailParser=new SaxHTMLMailParser("",provider,providerid);
+	  }
+
+	  public void initialize(HTMLMailData mailData, boolean justBody) throws SAXException {
+		  saxHTMLMailParser.setApplicationURL(appUrl);
+		  saxHTMLMailParser.initialize(mailData, justBody, true);        
+	  }
+
+	  public void run() {
+		try {
+		  doHTMLMailParse(saxHTMLMailParser,istream,charset,balanceTags);
+		  synchronized(threadLock) {
+			threadLock.wait(60000); //give up after one minute
+		  }
+		} catch(Exception exc) {
+		  Service.logger.error("Exception",exc);
+		}
+	  }
+
+	  public BufferedReader getParsedHTML() {
+		  return saxHTMLMailParser.getParsedHTML();        
+	  }
+
+	  private void notifyParserEndOfRead() {
+		  synchronized(threadLock) {
+			threadLock.notifyAll();
+		  }
+		  saxHTMLMailParser.release();
+	  }
+
+	  public ArrayList<String> getHrefs() {
+		  return saxHTMLMailParser.getHrefs();
+	  }
+
+	}
+
+	private void doHTMLMailParse(SaxHTMLMailParser saxHTMLMailParser, InputStream istream, String charset, boolean balanceTags) throws SAXException, IOException {
+	  HTMLInputStream hstream=new HTMLInputStream(istream);
+	  XMLReader xmlparser=XMLReaderFactory.createXMLReader("org.cyberneko.html.parsers.SAXParser");
+	  //XMLReader xmlparser=XMLReaderFactory.createXMLReader("net.sourceforge.htmlunit.cyberneko.parsers.SAXParser");
+	  xmlparser.setProperty("http://xml.org/sax/properties/lexical-handler", saxHTMLMailParser);
+	  xmlparser.setFeature("http://apache.org/xml/features/scanner/notify-char-refs", true);
+	  //xmlparser.setFeature("http://cyberneko.org/html/features/balance-tags", balanceTags);
+	  xmlparser.setContentHandler(saxHTMLMailParser);
+	  xmlparser.setErrorHandler(saxHTMLMailParser);
+	  while(!hstream.isRealEof()) {
+		hstream.newDocument();
+		InputStreamReader isr=null;
+		try {
+			isr=charset!=null?new InputStreamReader(hstream,charset):new InputStreamReader(hstream);
+		} catch(java.io.UnsupportedEncodingException exc) {
+			isr=new InputStreamReader(hstream);	
+		}
+		xmlparser.parse(new InputSource(isr));
+	  }
+	  saxHTMLMailParser.endOfFile();
+	}
+
+	private BufferedReader startHTMLMailParser(HTMLMailParserThread parserThread, HTMLMailData mailData, boolean justBody) throws SAXException {
+	  Thread engine=new Thread(parserThread);
+	  parserThread.initialize(mailData, justBody);
+	  engine.start();
+	  return parserThread.getParsedHTML();
 	}
 	
 	public String getIMAPBackendName() throws WTException {

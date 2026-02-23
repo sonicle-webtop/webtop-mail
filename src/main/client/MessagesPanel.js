@@ -159,12 +159,13 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		me.folderList.on('deleting',me.clearMessageView,me);
 		me.folderList.on('moving',me.clearMessageView,me);
 
-		//trick to reset unreads on empty folders' nodes
+		//trick to reset unreads on folder list
 		me.folderList.on('load',function(g,foldername,data) {
-			if (data && data.total && data.total===0) {
+			if (data && data.total /*&& data.total===0*/) {
 				me.mys.unreadChanged({
+					accountid: me.folderList.currentAccount,
 					foldername: foldername,
-					unread: 0
+					unread: data.unread||0
 				},true);
 			}
 			

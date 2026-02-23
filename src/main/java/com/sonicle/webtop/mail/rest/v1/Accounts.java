@@ -49,8 +49,8 @@ import com.sonicle.webtop.mail.MailServiceSettings;
 import com.sonicle.webtop.mail.MailUserProfile;
 import com.sonicle.webtop.mail.MailUserSettings;
 import com.sonicle.webtop.mail.swagger.v1.api.AccountsApi;
-import com.sonicle.webtop.mail.swagger.v1.model.Account;
-import com.sonicle.webtop.mail.swagger.v1.model.ApiError;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiAccount;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -109,7 +109,7 @@ public class Accounts extends AccountsApi {
 			}
 			logger.debug("Found {} users", users.size());
 			
-			ArrayList<Account> items = new ArrayList<>();
+			ArrayList<ApiAccount> items = new ArrayList<>();
 			for (User user : users) {
 				UserProfileId pid = new UserProfileId(targetPid.getDomainId(), user.getUserId());
 				logger.debug("Checking {}", pid.toString());
@@ -126,8 +126,8 @@ public class Accounts extends AccountsApi {
 		}
 	}
 	
-	private Account createAccount(User user, MailUserProfile mailProfile) {
-		return new Account()
+	private ApiAccount createAccount(User user, MailUserProfile mailProfile) {
+		return new ApiAccount()
 				.userId(user.getUserId())
 				.displayName(user.getDisplayName())
 				.mailUsername(mailProfile.getMailUsername());
@@ -135,7 +135,7 @@ public class Accounts extends AccountsApi {
 	
 	@Override
 	protected Object createErrorEntity(Response.Status status, String message) {
-		return new ApiError()
+		return new ApiApiError()
 				.code(status.getStatusCode())
 				.description(message);
 	}
