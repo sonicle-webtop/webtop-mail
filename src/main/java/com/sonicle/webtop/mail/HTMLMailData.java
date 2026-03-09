@@ -61,14 +61,14 @@ public class HTMLMailData {
 		this.folder=fc.getFolder();
 		if (msg instanceof SonicleIMAPMessage) this.nuid=((SonicleIMAPMessage)msg).getUID();
 		if (fc.isPEC()) isPec = PECUtils.isPECEnvelope(msg);
-		this.parsed = MimeMessageParser.parseMimeMessage(message, isPec);
+		this.parsed = new MimeMessageParser().parse(message, isPec);
   }
   
   public HTMLMailData(MimeMessage msg) throws MessagingException {
 		this.message=msg;
 		this.folder=msg.getFolder();
 		if (msg instanceof SonicleIMAPMessage) this.nuid=((SonicleIMAPMessage)msg).getUID();
-		this.parsed = MimeMessageParser.parseMimeMessage(message, isPec);
+		this.parsed = new MimeMessageParser().parse(message, isPec);
   }
   
   public ParsedMimeMessageComponents getParsedMimeMessageComponents() {

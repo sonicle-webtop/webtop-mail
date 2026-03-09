@@ -373,7 +373,7 @@ public class ResourcesAutoresponderManager {
 				// Analyze message parsing its structure
 				final MimeMessageParser.ParsedMimeMessageComponents parsed;
 				try {
-					parsed = MimeMessageParser.parseMimeMessage(omessage, false);
+					parsed = new MimeMessageParser().parse(omessage, false);
 				} catch (MimeMessageParseException ex) {
 					LOGGER.trace("[{}][{}] Unable to parse structure, message ignored.", resourceProfile, messageId, ex);
 					continue;
