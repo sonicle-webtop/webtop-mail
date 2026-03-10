@@ -1823,7 +1823,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
         me.folder=folder;
         me.idattach=idattach;
 		me.proxy.abort();
-		WTU.applyExtraParams(me.proxy,{ account: acct, folder: folder, idmessage: idmessage, idattach: idattach });
+		WTU.applyExtraParams(me.proxy,{ account: acct, folder: folder, idmessage: idmessage, idattach: idattach, setseen: !me.mys.getVar("manualSeen") });
 		me.proxy.doRequest(
 			me.proxy.createOperation('read',{
 				url: WTF.requestBaseUrl(),
