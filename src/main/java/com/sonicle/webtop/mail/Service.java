@@ -5535,7 +5535,7 @@ public class Service extends BaseService {
 			} else {
 				String dom = StringUtils.substringAfterLast(iaEmail.getAddress(), "@");
 				if (environment.getSession().isServiceAllowed(dom)) {
-					List<Recipient> rcpts = core.expandVirtualProviderRecipient(iaEmail.getAddress());
+					List<Recipient> rcpts = core.expandVirtualRecipient(iaEmail.getAddress());
 					if (rcpts.isEmpty() && ContactsUtils.isListVirtualRecipient(iaEmail)) {
 						throw new MessagingException("List '" + iaEmail.getPersonal() + "' doesn't exist or is empty");
 					}
@@ -5548,11 +5548,11 @@ public class Service extends BaseService {
 						}
 						
 						if ("to".equals(rtypes[i])) {
-							if (Recipient.Type.TO.equals(rcpt.getType())) {
+							if (Recipient.RecipientType.TO.equals(rcpt.getRcptType())) {
 								to.add(toSimpleMessageRecipient(iaRcpt));
-							} else if (Recipient.Type.CC.equals(rcpt.getType())) {
+							} else if (Recipient.RecipientType.CC.equals(rcpt.getRcptType())) {
 								cc.add(toSimpleMessageRecipient(iaRcpt));
-							} else if (Recipient.Type.BCC.equals(rcpt.getType())) {
+							} else if (Recipient.RecipientType.BCC.equals(rcpt.getRcptType())) {
 								bcc.add(toSimpleMessageRecipient(iaRcpt));
 							}
 						} else if ("cc".equals(rtypes[i])) {
@@ -8161,20 +8161,16 @@ public class Service extends BaseService {
 
 				//check against frequent contacts
 				if (!senderTrusted && pasRules.hasFrequentContactCheck()) {
-					final ArrayList<String> ids = new ArrayList<>();
-					ids.add(CoreManager.RECIPIENT_PROVIDER_AUTO_SOURCE_ID);
 					CoreManager core = WT.getCoreManager();
 					jsPas.setIsSenderFrequent(
-						senderTrusted=core.listProviderRecipients(RecipientFieldType.EMAIL, ids, fromAddress, 1).size()>0
+						senderTrusted=core.listRecipients(Arrays.asList(CoreManager.RECIPIENT_PROVIDER_BUILTIN_AUTO), RecipientFieldType.EMAIL, fromAddress, 1).size()>0
 					);
 				}
 
 				//check against any contacts
 				if (!senderTrusted && pasRules.hasAnyContactsCheck()) {
-					final ArrayList<String> ids = new ArrayList<>();
 					CoreManager core = WT.getCoreManager();
-					ids.addAll(core.listRecipientProviderSourceIds());
-					List<Recipient> rcpnts=core.listProviderRecipients(RecipientFieldType.EMAIL, ids, fromAddress, Integer.MAX_VALUE);
+					List<Recipient> rcpnts=core.listRecipients(core.listRecipientsProviderIDs(), RecipientFieldType.EMAIL, fromAddress, Integer.MAX_VALUE);
 					if (rcpnts.size()>0) {
 						//prepare sender dn tokens upper case
 						ArrayList<String> fromTokens=new ArrayList<>();
