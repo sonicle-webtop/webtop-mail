@@ -394,6 +394,30 @@
           "items": {
             "$ref": "#/definitions/Attachment"
           }
+        },
+        "status": {
+          "type": "string",
+          "x-stoplight": {
+            "id": "s3pguy6et03lw"
+          }
+        },
+        "flag": {
+          "type": "string",
+          "x-stoplight": {
+            "id": "3tq642e0emea7"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "x-stoplight": {
+            "id": "tgbqx7kpwn7j6"
+          },
+          "items": {
+            "x-stoplight": {
+              "id": "pjs3i8tb2oamz"
+            },
+            "type": "string"
+          }
         }
       }
     }

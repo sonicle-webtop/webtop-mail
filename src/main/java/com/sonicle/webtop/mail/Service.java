@@ -158,6 +158,7 @@ import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.WebTopApp;
+import com.sonicle.webtop.core.app.WebTopProps;
 import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.app.model.Sharing;
 import com.sonicle.webtop.core.app.sdk.msg.MessageBoxSM;
@@ -199,32 +200,7 @@ public class Service extends BaseService {
 		"X-Rspamd-Flag-Threshold",
 		"X-Spam-Threshold"
 	};
-	
-	class WebtopFlag {
-		String label;
 		
-		WebtopFlag(String label) {
-			this.label=label;
-		}
-		
-	}
-	
-    public WebtopFlag[] webtopFlags={
-        new WebtopFlag("red"),
-        new WebtopFlag("blue"),
-        new WebtopFlag("yellow"),
-        new WebtopFlag("green"),
-        new WebtopFlag("orange"),
-        new WebtopFlag("purple"),
-        new WebtopFlag("black"),
-        new WebtopFlag("gray"),
-        new WebtopFlag("white"),
-        new WebtopFlag("brown"),
-        new WebtopFlag("azure"),
-        new WebtopFlag("pink"),
-        new WebtopFlag("complete")
-	};
-	
 	public String allFlagStrings[];
 	
 	public static Flags flagsAll = new Flags();
@@ -306,11 +282,16 @@ public class Service extends BaseService {
 	private List<String> previewRemoveHeadStyleBrowsers = null;
 	private boolean browserWantsRemoveHeadStyle = false;
 	
+	private boolean devmode = false;
+	
 	@Override
 	public void initialize() {
+		
+		devmode = WebTopProps.getDevMode(WebTopApp.getInstanceProperties());
+		
 		ArrayList<String> allFlagsArray=new ArrayList<String>();
 		//TODO: cleanup code here...make use of new MessageFlags enum!
-		for(WebtopFlag fs: webtopFlags) {
+		for(MailManager.WebtopFlag fs: MailManager.webtopFlags) {
 			allFlagsArray.add(fs.label);
 			String oldfs="flag"+fs.label;
 			flagsAll.add(fs.label);
@@ -322,7 +303,7 @@ public class Service extends BaseService {
 			flags.add(oldfs);
 			oldFlagsHash.put(fs.label, flags);
 		}
-		for(WebtopFlag fs: webtopFlags) {
+		for(MailManager.WebtopFlag fs: MailManager.webtopFlags) {
 			allFlagsArray.add("flag"+fs.label);
 		}	  
 		allFlagStrings=new String[allFlagsArray.size()];
@@ -6891,8 +6872,8 @@ public class Service extends BaseService {
 								}
 							}*/
 
-							boolean hasAttachments=mcache.hasAttachments(xm, null);
-							boolean hasInvitation=mcache.hasInvitation(xm);
+							boolean hasAttachments = devmode ? false : mcache.hasAttachments(xm, null);
+							boolean hasInvitation = devmode ? false : mcache.hasInvitation(xm);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
@@ -6929,53 +6910,17 @@ public class Service extends BaseService {
 									}							}
 							}
 
-							String status="read";
-							if (hasInvitation) {
-								status="invitation";
-							}
-							else if (flags!=null) {
-								if (flags.contains(Flags.Flag.ANSWERED)) {
-									if (flags.contains("$Forwarded")) status = "repfwd";
-									else status = "replied";
-								} else if (flags.contains("$Forwarded")) {
-									status="forwarded";
-								} else if (flags.contains(Flags.Flag.SEEN)) {
-									status="read";
-								} else if (isToday) {
-									status="new";
-								} else {
-									status="unread";
-								}
-			//                    if (flags.contains(Flags.Flag.USER)) flagImage=webtopapp.getUri()+"/images/themes/"+profile.getTheme()+"/mail/flag.gif";
-							}
+							String status=mailManager.getStatusString(flags, hasInvitation, isToday);
+							
 							//Size
 							int msgsize=0;
 							msgsize=(xm.getSize()*3)/4;// /1024 + 1;
+							
 							//User flags
-							String cflag="";
-							for (WebtopFlag webtopFlag: webtopFlags) {
-								String flagstring=webtopFlag.label;
-								//String tbflagstring=webtopFlag.tbLabel;
-								if (!flagstring.equals("complete")) {
-									String oldflagstring="flag"+flagstring;
-									if (flags.contains(flagstring)
-											||flags.contains(oldflagstring)
-											/*|| (tbflagstring!=null && flags.contains(tbflagstring))*/
-									) {
-										cflag=flagstring;
-									}
-								}
-							}
-							boolean flagComplete=flags.contains("complete");
-							if (flagComplete) {
-								if (cflag.length()>0) cflag+="-complete";
-								else cflag="complete";
-							}
+							String cflag = mailManager.getFlagString(flags);
 
-							if (cflag.length()==0 && flags.contains(Flags.Flag.FLAGGED)) cflag="special";
-
-							boolean hasNote=flags.contains(MailManager.getFlagNoteString());
-							ArrayList<String> svtags = flagsToTagsIds(flags,tagsMap);
+							boolean hasNote = mailManager.hasNote(flags);
+							ArrayList<String> svtags = mailManager.flagsToTagsIds(flags,tagsMap);
 							boolean autoedit=false;
 							boolean issched=false;
 							int syyyy=0;
@@ -7462,31 +7407,6 @@ public class Service extends BaseService {
 		
 	}
 	
-	private ArrayList<String> flagsToTagsIds(Flags flags, Map<String, Tag> map) {
-		ArrayList<String> tags=null;
-		if (flags!=null) {
-			for(Tag tag: map.values()) {
-				if (flags.contains(TagsHelper.tagIdToFlagString(tag))) {
-					if (tags==null) tags=new ArrayList<>();
-					tags.add(tag.getTagId());
-				}
-			}
-		}
-		if (tags==null) tags=new ArrayList<>();
-		return tags;
-	}
-	
-	protected ArrayList<String> flagsToTagsIds(Flags flags) {
-		ArrayList<String> tags=null;
-		try {
-			tags=flagsToTagsIds(flags,WT.getCoreManager().listTags());
-		} catch(WTException exc) {
-			logger.error("Error converting flags to tags",exc);
-		}
-		if (tags==null) tags=new ArrayList<>();
-		return tags;
-	}
-	
 	/*private String getJSTagsArray(Flags flags) {
 		ArrayList<Tag> tags=null;
 		String svtags=null;
@@ -7931,7 +7851,7 @@ public class Service extends BaseService {
 				mcache.refreshUnreads();
 			}
 			long millis = System.currentTimeMillis();
-			ArrayList<String> svtags = flagsToTagsIds(m.getFlags());
+			ArrayList<String> svtags = mailManager.flagsToTagsIds(m.getFlags());
 			JsProActiveSecurity jsPas=null;
 			if (!mcache.isPEC()) jsPas=setupProActiveSecurity(fromName, fromEmail, htmlparts, attnames, m);
 			
@@ -9232,47 +9152,12 @@ public class Service extends BaseService {
 					}
 					
 					Flags flags = m.getFlags();
-					String status = "read";
-					if (flags != null) {
-						if (flags.contains(Flags.Flag.ANSWERED)) {
-							if (flags.contains("$Forwarded")) {
-								status = "repfwd";
-							} else {
-								status = "replied";
-							}
-						} else if (flags.contains("$Forwarded")) {
-							status = "forwarded";
-						} else if (flags.contains(Flags.Flag.SEEN)) {
-							status = "read";
-						} else if (isToday) {
-							status = "new";
-						} else {
-							status = "unread";
-						}
-						//                    if (flags.contains(Flags.Flag.USER)) flagImage=webtopapp.getUri()+"/images/themes/"+profile.getTheme()+"/mail/flag.gif";
-					}
+					String status = mailManager.getStatusString(flags, wasopen, isToday);
 					//Size
 					int msgsize = 0;
 					msgsize = (m.getSize() * 3) / 4;// /1024 + 1;
 					//User flags
-					String cflag="";
-					for (WebtopFlag webtopFlag: webtopFlags) {
-						String flagstring=webtopFlag.label;
-						//String tbflagstring=webtopFlag.tbLabel;
-						if (!flagstring.equals("complete")) {
-							String oldflagstring="flag"+flagstring;
-							if (flags.contains(flagstring)
-									||flags.contains(oldflagstring)
-									/*|| (tbflagstring!=null && flags.contains(tbflagstring))*/
-							) {
-								cflag=flagstring;
-							}
-						}
-					}
-					boolean flagComplete = flags.contains("complete");
-					if (flagComplete) {
-						cflag += "-complete";
-					}
+					String cflag=mailManager.getFlagString(flags);
 
                     //idmessage=idmessage.replaceAll("\\\\", "\\\\");
 					//idmessage=OldUtils.jsEscape(idmessage);
@@ -9284,7 +9169,7 @@ public class Service extends BaseService {
 						}
 					}
 					
-					boolean hasNote=flags.contains(MailManager.getFlagNoteString());
+					boolean hasNote=mailManager.hasNote(flags);
 
 					boolean hasAttachments=fc.hasAttachments(xm, null);
 					

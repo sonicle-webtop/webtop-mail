@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("Message")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2024-10-03T16:31:33.680+02:00[Europe/Berlin]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-13T15:40:34.652+01:00[Europe/Rome]")
 public class ApiMessage   {
   private @Valid String id;
   private @Valid Integer uid;
@@ -33,6 +33,9 @@ public class ApiMessage   {
   private @Valid String date;
   private @Valid Boolean isRead;
   private @Valid List<ApiAttachment> attachments = null;
+  private @Valid String status;
+  private @Valid String flag;
+  private @Valid List<String> tags = null;
 
   /**
    **/
@@ -307,6 +310,79 @@ public class ApiMessage   {
 
     return this;
   }
+  /**
+   **/
+  public ApiMessage status(String status) {
+    this.status = status;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("status")
+  public String getStatus() {
+    return status;
+  }
+
+  @JsonProperty("status")
+  public void setStatus(String status) {
+    this.status = status;
+  }
+
+  /**
+   **/
+  public ApiMessage flag(String flag) {
+    this.flag = flag;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("flag")
+  public String getFlag() {
+    return flag;
+  }
+
+  @JsonProperty("flag")
+  public void setFlag(String flag) {
+    this.flag = flag;
+  }
+
+  /**
+   **/
+  public ApiMessage tags(List<String> tags) {
+    this.tags = tags;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("tags")
+  public List<String> getTags() {
+    return tags;
+  }
+
+  @JsonProperty("tags")
+  public void setTags(List<String> tags) {
+    this.tags = tags;
+  }
+
+  public ApiMessage addTagsItem(String tagsItem) {
+    if (this.tags == null) {
+      this.tags = new ArrayList<>();
+    }
+
+    this.tags.add(tagsItem);
+    return this;
+  }
+
+  public ApiMessage removeTagsItem(String tagsItem) {
+    if (tagsItem != null && this.tags != null) {
+      this.tags.remove(tagsItem);
+    }
+
+    return this;
+  }
 
   @Override
   public boolean equals(Object o) {
@@ -327,12 +403,15 @@ public class ApiMessage   {
         Objects.equals(this.bcc, message.bcc) &&
         Objects.equals(this.date, message.date) &&
         Objects.equals(this.isRead, message.isRead) &&
-        Objects.equals(this.attachments, message.attachments);
+        Objects.equals(this.attachments, message.attachments) &&
+        Objects.equals(this.status, message.status) &&
+        Objects.equals(this.flag, message.flag) &&
+        Objects.equals(this.tags, message.tags);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, uid, subject, body, sender, recipients, cc, bcc, date, isRead, attachments);
+    return Objects.hash(id, uid, subject, body, sender, recipients, cc, bcc, date, isRead, attachments, status, flag, tags);
   }
 
   @Override
@@ -351,6 +430,9 @@ public class ApiMessage   {
     sb.append("    date: ").append(toIndentedString(date)).append("\n");
     sb.append("    isRead: ").append(toIndentedString(isRead)).append("\n");
     sb.append("    attachments: ").append(toIndentedString(attachments)).append("\n");
+    sb.append("    status: ").append(toIndentedString(status)).append("\n");
+    sb.append("    flag: ").append(toIndentedString(flag)).append("\n");
+    sb.append("    tags: ").append(toIndentedString(tags)).append("\n");
     sb.append("}");
     return sb.toString();
   }

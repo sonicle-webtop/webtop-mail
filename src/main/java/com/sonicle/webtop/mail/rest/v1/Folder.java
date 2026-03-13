@@ -34,18 +34,19 @@
 package com.sonicle.webtop.mail.rest.v1;
 
 import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.core.sdk.UserProfileId;
+import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.MailServiceSettings;
 import com.sonicle.webtop.mail.swagger.v1.api.FolderApi;
-import com.sonicle.webtop.mail.swagger.v1.api.FoldersApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachment;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiContact;
-import com.sonicle.webtop.mail.swagger.v1.model.ApiFolder;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
 import com.sun.mail.imap.IMAPMessage;
 import jakarta.mail.Address;
+import jakarta.mail.Flags;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
@@ -53,7 +54,7 @@ import jakarta.mail.internet.MimeMessage;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.List;
+import java.util.Map;
 import javax.ws.rs.core.Response;
 import org.jooq.tools.StringUtils;
 import org.slf4j.Logger;
@@ -71,7 +72,8 @@ public class Folder extends FolderApi {
 		try {
 			ArrayList<ApiMessage> items = new ArrayList<>();
 			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = new MailManager(true, targetPid);
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			mmgr.consumeMessages(id.replace("|", "/"), new MailManager.MessagesConsumer() {
 				@Override
 				public void consume(Message msg, long uid) throws MessagingException {
@@ -142,7 +144,12 @@ public class Folder extends FolderApi {
 								StringUtils.leftPad(""+(cal.get(Calendar.MONTH)+1), 2, '0')+"-"+
 								StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0'));
 
-						am.setIsRead(true);
+						am.setIsRead(mmsg.isSet(Flags.Flag.SEEN));
+						
+						Flags flags = mmsg.getFlags();
+						am.setFlag(mmgr.getFlagString(flags));
+						am.setStatus(mmgr.getStatusString(flags, false, false));
+						am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
 
 						am.setAttachments(new ArrayList<ApiAttachment>());
 					}
@@ -162,7 +169,8 @@ public class Folder extends FolderApi {
 		try {
 			ApiMessage am = new ApiMessage();
 			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = new MailManager(true, targetPid);
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			long uid = Long.parseLong(suid);
 			mmgr.consumeMessage(id.replace("|", "/"), uid, new MailManager.MessageConsumer() {
 				@Override
@@ -233,7 +241,12 @@ public class Folder extends FolderApi {
 								StringUtils.leftPad(""+(cal.get(Calendar.MONTH)+1), 2, '0')+"-"+
 								StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0'));
 
-						am.setIsRead(true);
+						am.setIsRead(mmsg.isSet(Flags.Flag.SEEN));
+
+						Flags flags = mmsg.getFlags();
+						am.setFlag(mmgr.getFlagString(flags));
+						am.setStatus(mmgr.getStatusString(flags, false, false));
+						am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
 
 						am.setAttachments(new ArrayList<ApiAttachment>());
 					}

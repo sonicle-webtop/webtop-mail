@@ -1460,7 +1460,7 @@ public class FolderCache {
 			
 			for (Message fmsg : mmsgs) {
 				List<String> msgNewFlags = null;
-				List<String> msgOldFlags = ms.flagsToTagsIds(fmsg.getFlags());
+				List<String> msgOldFlags = mailManager.flagsToTagsIds(fmsg.getFlags());
 
 				if (tagIds != null) msgNewFlags = new ArrayList<>(Arrays.asList(tagIds));
 				else msgNewFlags=new ArrayList<>();

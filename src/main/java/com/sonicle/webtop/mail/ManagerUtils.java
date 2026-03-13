@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.mail.MailboxConfig;
+import com.sonicle.mail.StoreProtocol;
 import com.sonicle.mail.sieve.SieveMatch;
 import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.mail.sieve.SieveRuleField;
@@ -47,6 +48,7 @@ import com.sonicle.webtop.mail.model.MailFilterBase;
 import com.sonicle.webtop.mail.model.SieveActionList;
 import com.sonicle.webtop.mail.model.SieveRuleList;
 import java.util.List;
+import java.util.Properties;
 import org.apache.commons.lang.StringUtils;
 
 /**
@@ -74,6 +76,13 @@ public class ManagerUtils {
 			.withTrashFolderName(mus.getFolderTrash())
 			.withSpamFolderName(mus.getFolderSpam())
 			.withArchiveFolderName(mus.getFolderArchive())
+			.build();
+	}
+	
+	public static Properties createMailboxProperties(StoreProtocol protocol) {
+		return WT.getMailSessionPropsBuilder(false, true)
+			.withEnableIMAPEvents()
+			.withProperty(protocol, "usesocketchannels", "true")
 			.build();
 	}
 	

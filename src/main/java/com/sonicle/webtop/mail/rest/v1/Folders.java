@@ -36,23 +36,12 @@ package com.sonicle.webtop.mail.rest.v1;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.MailServiceSettings;
 import com.sonicle.webtop.mail.swagger.v1.api.FoldersApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
-import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachment;
-import com.sonicle.webtop.mail.swagger.v1.model.ApiContact;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiFolder;
-import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
-import jakarta.mail.Address;
 import jakarta.mail.Folder;
-import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
-import jakarta.mail.internet.InternetAddress;
-import jakarta.mail.internet.MimeMessage;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,50 +55,52 @@ public class Folders extends FoldersApi {
 	
 	@Override
 	public Response getRootFolders() {
-		
+		UserProfileId targetPid = RunContext.getRunProfileId();
 		try {
-			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = new MailManager(true, targetPid);
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			ArrayList<Folder> folders = mmgr.getRootFolders();
 			ArrayList<ApiFolder> items = new ArrayList<>();
 			for(Folder folder: folders) {
 				ApiFolder af = new ApiFolder();
 				af.setId(folder.getFullName());
 				af.setName(folder.getName());
-				af.setUnreadCount(0);
-				af.setTotalCount(0);
+				try {
+					af.setUnreadCount(folder.getUnreadMessageCount());
+					af.setTotalCount(folder.getMessageCount());
+				} catch(MessagingException exc) {}
 				af.setChildren(new ArrayList<>());
 				items.add(af);
 			}
 			return respOk(items);
 			
 		} catch(Exception ex) {
-			logger.error("[{}] getExternalArchivingConfiguration()", RunContext.getRunProfileId(), ex);
+			logger.error("[{}] getRootFolders()", targetPid, ex);
 			return respError(ex);
 		}
 	}
 	
 	@Override
 	public Response getFolders(String id) {
-		
+		UserProfileId targetPid = RunContext.getRunProfileId();
 		try {
-			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = new MailManager(true, targetPid);
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			ArrayList<Folder> folders = mmgr.getFolders(id.replace("|", "/"));
 			ArrayList<ApiFolder> items = new ArrayList<>();
 			for(Folder folder: folders) {
 				ApiFolder af = new ApiFolder();
 				af.setId(folder.getFullName().replace("/", "|"));
 				af.setName(folder.getName());
-				af.setUnreadCount(0);
-				af.setTotalCount(0);
+				try {
+					af.setUnreadCount(folder.getUnreadMessageCount());
+					af.setTotalCount(folder.getMessageCount());
+				} catch(MessagingException exc) {}
 				af.setChildren(new ArrayList<>());
 				items.add(af);
 			}
 			return respOk(items);
 			
 		} catch(Exception ex) {
-			logger.error("[{}] getExternalArchivingConfiguration()", RunContext.getRunProfileId(), ex);
+			logger.error("[{}] getFolders()", targetPid, id, ex);
 			return respError(ex);
 		}
 	}
@@ -136,5 +127,4 @@ public class Folders extends FoldersApi {
 				.description(message);
 	}
 
-	
 }
