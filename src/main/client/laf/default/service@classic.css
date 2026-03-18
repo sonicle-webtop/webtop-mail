@@ -3,7 +3,7 @@
 	background-image: -webkit-linear-gradient(top, #dfe9f5, #d3e1f1);
 }
 
-/* ---------- Tree (folders) */
+/* ---------- Tree (imap) */
 /* Customize bg color like row selection */
 .wtmail-tree-unread-cell { 
 	background-color: #dfe8f6 !important;
@@ -58,7 +58,27 @@
 	border-color: #e5e7eb;
 }
 
+/* ---------- Sonicle.webtop.mail.ux.grid.column.Message */
 .wtmail-messagecolumn-collapsetool-icon { font-family: "Font Awesome 6 Free Regular"; }
+
+/* ---------- Sonicle.webtop.mail.MessageView */
+/* Tweak MV font-sizes */
+.wtmail-mv-hsubject { font-size: var(--wt-theme-fontsize-xl); }
+.wtmail-mv-hfromname { font-size: var(--wt-theme-fontsize-xl); }
+.wtmail-mv-hthroughname { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hlabelthrough { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hlabeldate { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hlabelto { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hlabelcc { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hlabelbcc { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hlabelattach { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hdate {  font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hto { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hcc { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hbcc { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hattach { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-tags { font-size: var(--wt-theme-fontsize-base); }
+.wtmail-mv-hicalmessage { font-size: var(--wt-theme-fontsize-lg); }
 
 /* ---------- Sonicle.webtop.mail.MessageViewModel */
 .wtmail-messageview-toolbar-container {

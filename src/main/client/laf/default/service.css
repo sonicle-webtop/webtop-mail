@@ -165,7 +165,152 @@
 .wtmail-row-pec-accepted { background: lightsalmon; }
 .wtmail-row-pec-delivered { background: lightgreen; }
 
-/* ---------- MessageView */
+/* ---------- Tree (imap) */
+.wtmail-imap-tree {
+	padding-bottom: 10px;
+}
+/*
+ * Customize imap tree with unseen number
+ * nested in the folder name column floating to the right
+ * to better use spacings
+ */
+.wtmail-imap-tree .x-grid-cell-first .x-grid-cell-inner {
+	display: flex;
+}
+.wtmail-imap-tree .x-tree-node-text  {
+	display: flex;
+	min-width: 0;
+	flex: 1;
+}
+.wtmail-tree-folder-span-bold {
+	font-weight: bold;
+	flex: 1;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+.wtmail-tree-unread-cell { 
+	font-size: var(--wt-theme-fontsize-sm);
+	font-weight: var(--wt-theme-fontweight-bold);
+	border-radius: 4px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+/* ---------- Quota */
+.wtmail-progress-quota-ct {
+    margin: 4px 8px 8px 8px;
+}
+.wtmail-progress-quota.wtmail-quota-progress-warn .x-progress-bar-default {
+	background-color: var(--wt-theme-color-warn) !important;
+}
+.wtmail-progress-quota.wtmail-quota-progress-over .x-progress-bar-default {
+	background-color: var(--wt-theme-color-error) !important;
+}
+.wtmail-progress-quota-text {
+    padding-top: 4px;
+    font-size: var(--wt-theme-fontsize-xs);
+    line-height: var(--wt-theme-lineheight-xs);
+}
+
+/* ---------- Grid (messages) */
+/* Grid row Unread unselected */
+.wtmail-message-grid .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-unread TD {
+    background-color: var(--wtmail-messagegrid-row-unread-bgcolor, inherit);
+}
+/* Grid row Today unselected */
+.x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today {
+    background: var(--wtmail-messagegrid-row-today-bgcolor, inherit);
+}
+
+.wtmail-row-unread .wtmail-messagegrid-cell {
+	font-weight: var(--wt-theme-fontweight-bold);
+}
+
+/* ---------- Sonicle.webtop.mail.ux.grid.column.Message */
+.wtmail-messagecolumn-grid-cell .x-grid-group-title {
+	cursor: pointer;
+}
+.wtmail-messagecolumn-head {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	height: 20px;
+}
+.wtmail-messagecolumn-head-float {
+	display: inline-block;
+	float: right;
+	height: 20px;
+}
+.wtmail-messagecolumn-head-float > div:not(.wtmail-messagecolumn-icon) {
+    display: inline-block;
+    margin-left: 5px;
+    vertical-align: top;
+}
+.wtmail-messagecolumn-head-float > span {
+	vertical-align: top;
+    color: #767676;
+}
+.wtmail-messagecolumn-body {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	margin-top: 5px;
+}
+.wtmail-messagecolumn-body-float {
+	display: inline-block;
+	float: right;
+	margin-top: 5px;
+}
+.wtmail-messagecolumn-body-float > span {
+	padding-left: 5px;
+}
+.wtmail-messagecolumn-thread {
+	display: inline-block;
+	width: 20px;
+}
+.wtmail-messagecolumn-icon {
+	display: inline-block;
+	width: 16px;
+    height: 16px;
+	text-align: center;
+}
+.wtmail-messagecolumn-collapsetool {
+    display: inline-block;
+    cursor: pointer;
+}
+.wtmail-messagecolumn-collapsetool.wtmail-messagecolumn-collapsetool-right {
+    margin-left: 5px;
+}
+.wtmail-messagecolumn-collapsetool.wtmail-messagecolumn-collapsetool-right > span {
+    margin-right: 4px;
+}
+.wtmail-messagecolumn-icon-priority {
+    color: #f44336;
+}
+.wtmail-messagecolumn-icon-note {
+    cursor: pointer;
+	color: #e7b465;
+}
+/* make label boxes, actually not used!
+.wtmail-messagecolumn-label {
+	line-height: 16px;
+	padding: 0 4px;
+	margin: 0 0 0 4px;
+	display: inline-block;
+	overflow: visible;
+	text-align: center;
+	font-weight: 400;
+	border-radius: 3px;
+}
+*/
+.wtmail-messagecolumn-preview {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* ---------- Sonicle.webtop.mail.MessageView */
 /*TODO: review completely MessageView rendering */
 .wtmail-mv-container { padding: 0px 0px 0px 0px; background-color: #ffffff; }
 .wtmail-mv-main {
@@ -268,6 +413,31 @@
 .wtmail-mv-no-msg-centered {
 	text-align: center;
 }
+.wtmail-mv-pas { 
+    background-color: var(--wt-theme-color-warn-ct); 
+    border: 1px var(--wt-theme-color-warn-ct-on) solid; 
+    padding: 4px; 
+    color: var(--wt-theme-color-warn-ct-on); 
+}
+.wtmail-mv-avatar { 
+	width:32px;
+	height:32px;
+	line-height:32px;
+	border-radius:50%;
+	text-align: center; 
+}
+
+.wtmail-ical-tabletitle { font-family: 'Arial'; border-collapse:collapse; table-layout:fixed; width: 800px; border: 2px solid black; border-bottom: none }
+.wtmail-ical-tabledata { font-family: 'Arial'; border-collapse:collapse; table-layout:fixed; width: 800px; border: 2px solid black }
+.wtmail-ical-title { background-color: #77AAFF; color: white; text-align: center; font-weight: bold }
+.wtmail-ical-label { background-color: #cccccc; width: 150px; vertical-align: top }
+.wtmail-ical-data { word-wrap: break-word }
+.wtmail-ical-accepted { display: inline-block; width:16px; height:16px; background-image:url('ical-accepted_16.png') !important; }
+.wtmail-ical-declined { display: inline-block; width:16px; height:16px; background-image:url('ical-declined_16.png') !important; }
+.wtmail-ical-needaction { display: inline-block; width:16px; height:16px; background-image:url('ical-needaction_16.png') !important; }
+.wtmail-ical-tentative { display: inline-block; width:16px; height:16px; background-image:url('ical-tentative_16.png') !important; }
+
+
 
 div#wtmail-editor-mailcard { 
 border: 1px dotted lightgray !important; 
@@ -281,60 +451,72 @@ border: 1px dotted lightgray !important;
     background-color: var(--wt-theme-color-surface-l3);
 }
 
-.wtmail-ical-tabletitle { 
-font-family: 'Arial'; 
-border-collapse:collapse; 
-table-layout:fixed; 
-width: 800px; 
-border: 2px solid black; 
-border-bottom: none 
+.wtmail-no-message-tit-font { 
+font-size:1.2em; 
 }
-.wtmail-ical-tabledata { 
-font-family: 'Arial'; 
-border-collapse:collapse; 
-table-layout:fixed; 
-width: 800px; 
-border: 2px solid black 
-}
-.wtmail-ical-title { 
-background-color: #77AAFF; 
-color: white; 
-text-align: center; 
-font-weight: bold 
-}
-.wtmail-ical-label { 
-background-color: #cccccc; 
-width: 150px; 
-vertical-align: top 
-}
-.wtmail-ical-data { 
-word-wrap: break-word 
-}
-.wtmail-ical-accepted { 
-display: inline-block; 
-width:16px; 
-height:16px; 
-background-image:url('ical-accepted_16.png') !important; 
-}
-.wtmail-ical-declined { 
-display: inline-block; 
-width:16px; 
-height:16px; 
-background-image:url('ical-declined_16.png') !important; 
-}
-.wtmail-ical-needaction { 
-display: inline-block; 
-width:16px; 
-height:16px; 
-background-image:url('ical-needaction_16.png') !important; 
-}
-.wtmail-ical-tentative { 
-display: inline-block; 
-width:16px; 
-height:16px; 
-background-image:url('ical-tentative_16.png') !important; 
+.wtmail-no-message-subtit-font { 
+font-size:0.9em; 
 }
 
+/* moved to core
+.wtmail-providers-menu .x-menu-item-icon { 
+background-size: contain; 
+}*/
+
+blockquote { 
+    display: block;
+    margin-left: 5px;
+    border-left: solid 2px blue;
+    padding-left: 10px;
+}
+
+.wtmail-menu-title {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    font-weight: bold;
+}
+
+.wtmail-grid-toolbar-container {
+	padding: 4px;
+	border: none;
+	background-color: white;
+}
+
+.wtmail-messageview-toolbar-container {
+	padding: 4px;
+	border: none;
+}
+
+.wtmail-label-messages {
+	padding-left: 15px;
+	font-size: 12px;
+}
+
+/* ---------- MessageEditor */
+/* Hide borders for attachments field */
+.wtmail-attach-taglist .x-form-trigger-wrap {
+	border: none;
+}
+
+.wtmail-editor-cc-button { /*background-color: transparent !important;*/ border-color: transparent !important; }
+.wtmail-editor-cc-button .x-btn-inner { color: lightgray; }
+.wtmail-editor-cc-button.x-btn-pressed .x-btn-inner { color: black; }
+
+.wtmail-editor-bcc-button {	/*background-color: transparent !important;*/ border-color: transparent !important; }
+.wtmail-editor-bcc-button .x-btn-inner { color: lightgray; }
+.wtmail-editor-bcc-button.x-btn-pressed .x-btn-inner { color: black; }
+
+.wtmail-editor-priority-button {
+	/*background-color: transparent !important;*/
+	border-color: transparent !important;
+}
+
+.wtmail-unsubscribe-link { color: var(--wt-theme-color-hyperlink); }
+
+/* Is this really deprecated? Seems NOT referenced anymore! */
+/* ---------- Deprecated table-editor-attachement BEGIN */
 .wtmail-table-editor-attachment-container { 
 border: none; 
 }
@@ -377,237 +559,4 @@ width:16px
 width: 16px; 
 height: 16px; 
 }
-
-.wtmail-no-message-tit-font { 
-font-size:1.2em; 
-}
-.wtmail-no-message-subtit-font { 
-font-size:0.9em; 
-}
-
-/* moved to core
-.wtmail-providers-menu .x-menu-item-icon { 
-background-size: contain; 
-}*/
-
-blockquote { 
-    display: block;
-    margin-left: 5px;
-    border-left: solid 2px blue;
-    padding-left: 10px;
-}
-
-/* ---------- Tree (folders) */
-.wtmail-tree-unread-cell { 
-	font-size: var(--wt-theme-fontsize-sm);
-	font-weight: var(--wt-theme-fontweight-bold);
-	border-radius: 4px;
-	padding-left: 4px;
-	padding-right: 4px;
-}
-
-/* ---------- Quota */
-.wtmail-progress-quota-ct {
-    margin: 4px 8px 8px 8px;
-}
-.wtmail-progress-quota.wtmail-quota-progress-warn .x-progress-bar-default {
-	background-color: var(--wt-theme-color-warn) !important;
-}
-.wtmail-progress-quota.wtmail-quota-progress-over .x-progress-bar-default {
-	background-color: var(--wt-theme-color-error) !important;
-}
-.wtmail-progress-quota-text {
-    padding-top: 4px;
-    font-size: var(--wt-theme-fontsize-xs);
-    line-height: var(--wt-theme-lineheight-xs);
-}
-
-/* --- UX grid.column.Message --- */
-.wtmail-messagecolumn-grid-cell .x-grid-group-title {
-	cursor: pointer;
-}
-.wtmail-messagecolumn-head {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	height: 20px;
-}
-.wtmail-messagecolumn-head-float {
-	display: inline-block;
-	float: right;
-	height: 20px;
-}
-.wtmail-messagecolumn-head-float > div:not(.wtmail-messagecolumn-icon) {
-    display: inline-block;
-    margin-left: 5px;
-    vertical-align: top;
-}
-.wtmail-messagecolumn-head-float > span {
-	vertical-align: top;
-    color: #767676;
-}
-.wtmail-messagecolumn-body {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	margin-top: 5px;
-}
-.wtmail-messagecolumn-body-float {
-	display: inline-block;
-	float: right;
-	margin-top: 5px;
-}
-.wtmail-messagecolumn-body-float > span {
-	padding-left: 5px;
-}
-.wtmail-messagecolumn-thread {
-	display: inline-block;
-	width: 20px;
-}
-.wtmail-messagecolumn-icon {
-	display: inline-block;
-	width: 16px;
-    height: 16px;
-	text-align: center;
-}
-.wtmail-messagecolumn-collapsetool {
-    display: inline-block;
-    cursor: pointer;
-}
-.wtmail-messagecolumn-collapsetool.wtmail-messagecolumn-collapsetool-right {
-    margin-left: 5px;
-}
-.wtmail-messagecolumn-collapsetool.wtmail-messagecolumn-collapsetool-right > span {
-    margin-right: 4px;
-}
-.wtmail-messagecolumn-icon-priority {
-    color: #f44336;
-}
-.wtmail-messagecolumn-icon-note {
-    cursor: pointer;
-	color: #e7b465;
-}
-/* make label boxes, actually not used!
-.wtmail-messagecolumn-label {
-	line-height: 16px;
-	padding: 0 4px;
-	margin: 0 0 0 4px;
-	display: inline-block;
-	overflow: visible;
-	text-align: center;
-	font-weight: 400;
-	border-radius: 3px;
-}
-*/
-
-
-
-
-.wtmail-messagecolumn-preview {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-/* ------------------------------ */
-
-
-.wtmail-menu-title {
-    padding-top: 10px;
-    padding-bottom: 10px;
-    padding-left: 10px;
-    padding-right: 10px;
-    font-weight: bold;
-}
-
-
-.wtmail-mv-pas { 
-background-color: var(--wt-theme-color-warn-ct); 
-border: 1px var(--wt-theme-color-warn-ct-on) solid; 
-padding: 4px; 
-color: var(--wt-theme-color-warn-ct-on); 
-}
-
-
-.wtmail-grid-toolbar-container {
-	padding: 4px;
-	border: none;
-	background-color: white;
-}
-
-.wtmail-messageview-toolbar-container {
-	padding: 4px;
-	border: none;
-}
-
-.wtmail-label-messages {
-	padding-left: 15px;
-	font-size: 12px;
-}
-
-.wtmail-mv-avatar { 
-	width:32px;
-	height:32px;
-	line-height:32px;
-	border-radius:50%;
-	text-align: center; 
-}
-
-/* ---------- MessageEditor */
-/* Hide borders for attachments field */
-.wtmail-attach-taglist .x-form-trigger-wrap {
-	border: none;
-}
-
-.wtmail-editor-cc-button { /*background-color: transparent !important;*/ border-color: transparent !important; }
-.wtmail-editor-cc-button .x-btn-inner { color: lightgray; }
-.wtmail-editor-cc-button.x-btn-pressed .x-btn-inner { color: black; }
-
-.wtmail-editor-bcc-button {	/*background-color: transparent !important;*/ border-color: transparent !important; }
-.wtmail-editor-bcc-button .x-btn-inner { color: lightgray; }
-.wtmail-editor-bcc-button.x-btn-pressed .x-btn-inner { color: black; }
-
-.wtmail-editor-priority-button {
-	/*background-color: transparent !important;*/
-	border-color: transparent !important;
-}
-
-/*
- * Customize imap tree with unseen number
- * nested in the folder name column floating to the right
- * to better use spacings
- */
-.wtmail-imap-tree .x-grid-cell-first .x-grid-cell-inner {
-	display: flex;
-}
-.wtmail-imap-tree .x-tree-node-text  {
-	display: flex;
-	min-width: 0;
-	flex: 1;
-}
-.wtmail-tree-folder-span-bold {
-	font-weight: bold;
-	flex: 1;
-	min-width: 0;
-	overflow: hidden;
-	text-overflow: ellipsis;
-}
-
-.wtmail-imap-tree {
-	padding-bottom: 10px;
-}
-
-.wtmail-unsubscribe-link { color: var(--wt-theme-color-hyperlink); }
-
-.wtmail-row-unread .wtmail-messagegrid-cell {
-	font-weight: var(--wt-theme-fontweight-bold);
-}
-
-/* Grid row Unread unselected */
-.wtmail-message-grid .x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-unread TD {
-    background-color: var(--wtmail-messagegrid-row-unread-bgcolor, inherit);
-}
-/* Grid row Today unselected */
-.x-grid-item:not([class*="x-grid-item-selected"]) .wtmail-row-today {
-    background: var(--wtmail-messagegrid-row-today-bgcolor, inherit);
-}
-
+/* ---------- Deprecated table-editor-attachement END */
