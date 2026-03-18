@@ -63,8 +63,8 @@ Ext.define('Sonicle.webtop.mail.view.Sharing', {
 		me.callParent([cfg]);
 		
 		Sonicle.VMUtils.applyFormulas(me.getVM(), {
-			foIsAccount: WTF.foIsEqual('record', 'method', 'all'),
-			foShowApplyTo: WTF.foIsEmpty('record', 'method', true),
+			foIsAccount: WTF.foFieldIsEqual('method', 'all'),
+			foShowApplyTo: WTF.foFieldIsEmpty('method', true),
 			foApplyTo: WTF.radioGroupBind('record', 'method', me.methodName),
 			foShowRights: WTF.foMultiGetFn(undefined, ['gprights.selection', 'data.preset'], function(v) {
 				if (!v['gprights.selection'] || v['data.preset'] !== 'custom') return false;

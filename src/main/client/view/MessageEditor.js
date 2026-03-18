@@ -197,7 +197,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			}
 		]);
 		WTU.applyFormulas(vm, {
-			foHasMeeting: WTF.foIsEmpty('record', 'meetingUrl', true),
+			foHasMeeting: WTF.foFieldIsEmpty('meetingUrl', true),
 			foMeetingDisabled: {
 				bind: {bindTo: '{record.meetingUrl}'},
 				get: function(val) {

@@ -56,9 +56,9 @@ Ext.define('Sonicle.webtop.mail.view.SieveFilter', {
 		me.callParent([cfg]);
 		
 		WTU.applyFormulas(me.getVM(), {
-			foIsBuiltIn: WTF.foIsEqual('record', 'builtIn', 0, true),
+			foIsBuiltIn: WTF.foFieldIsEqual('builtIn', 0, true),
 			foEnabled: WTF.checkboxBind('record', 'enabled'),
-			foMatchUnconditionally: WTF.foIsEqual('record', 'match', 'allmsg')
+			foMatchUnconditionally: WTF.foFieldIsEqual('match', 'allmsg')
 		});
 	},
 	

@@ -63,7 +63,7 @@ Ext.define('Sonicle.webtop.mail.view.UserOptions', {
 	
 	viewModel: {
 		formulas: {
-			foIsCyrus: WTF.foIsEqual('record', 'imapBackend', 'cyrus'),
+			foIsCyrus: WTF.foFieldIsEqual('imapBackend', 'cyrus'),
 			//NB: use field's name as formula's name otherwise checks after changes will not work!
 			receipt: WTF.checkboxBind('record', 'receipt'),
 			autoAddContact: WTF.checkboxBind('record', 'autoAddContact'),
