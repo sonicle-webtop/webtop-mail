@@ -479,4 +479,11 @@ public class MailSettings {
 		}
 		
 	}
+	
+	/**
+	 * [domain+system]
+	 * [boolean]
+	 * Activates or not new reply logic. Default to false.
+	 */
+	public static final String TEST_NEWREPLY = "test.newreply";
 }

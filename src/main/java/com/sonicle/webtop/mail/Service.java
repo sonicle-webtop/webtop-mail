@@ -150,6 +150,7 @@ import com.sonicle.commons.web.json.extjs.SortMeta;
 import com.sonicle.mail.UniqueValue;
 import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
+import com.sonicle.mail.email.Recipients;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.security.AuthContext;
@@ -1776,6 +1777,9 @@ public class Service extends BaseService {
   }	
 
 	//Clone of MimeMessage that was private and used by my custom reply
+    /**
+	 * @deprecated Delete when testNewReply will be completely removed!
+	 */
 	private Address[] eliminateDuplicates(Vector v, Address[] addrs) {
 		if (addrs == null) {
 			return null;
@@ -1818,6 +1822,9 @@ public class Service extends BaseService {
 	}
 
 	//CLONE OF ImapMessage.reply() that does not set the ANSWERED Flag
+	/**
+	 * @deprecated Delete when testNewReply will be completely removed!
+	 */
     public Message reply(MailAccount account, MimeMessage orig, boolean replyToAll, boolean fromSent) throws MessagingException {
 		MimeMessage reply = new MimeMessage(account.getMailSession());
 		/*
@@ -1901,6 +1908,9 @@ public class Service extends BaseService {
 		return reply;
 	}
 	
+	/**
+	 * @deprecated Delete when testNewReply will be completely removed!
+	 */
 	private void setInReplyToAndReferences(String msgId, MimeMessage orig, MimeMessage dest) throws MessagingException {
 		if (msgId != null) {
 			dest.setHeader("In-Reply-To", msgId);
@@ -1939,39 +1949,78 @@ public class Service extends BaseService {
 	}
 
 	// used above in reply()
+	/**
+	 * @deprecated Delete when testNewReply will be completely removed!
+	 */
 	private static final Flags answeredFlag = new Flags(Flags.Flag.ANSWERED);
 	
 	private SimpleMessage getReplyMsg(int id, MailAccount account, Message msg, boolean replyAll, boolean fromSent, boolean richContent, String myemail, boolean includeOriginal, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, boolean attachMessageParts) {	
 		try {
-			Message reply=reply(account,(MimeMessage)msg,replyAll,fromSent);
+			Message reply = null;
 			
-			removeDestination(reply, myemail);
-			if (ss.getMessageReplyAllStripMyIdentities()) {
-				for (Identity ident : mprofile.getIdentities()) {
-					removeDestination(reply, ident.getEmail());
+			boolean testNewReply = ss.getTestNewReply();
+			if (testNewReply) {
+				reply = ((SonicleIMAPMessage)msg).reply(replyAll, false, fromSent);
+				
+				InternetAddress myEmail = InternetAddressUtils.toInternetAddress(myemail);
+				Set<InternetAddress> myAddresses = new LinkedHashSet<>();
+				myAddresses.add(myEmail);
+				if (ss.getMessageReplyAllStripMyIdentities()) {
+					for (Identity ident : mprofile.getIdentities()) {
+						myAddresses.add(InternetAddressUtils.toInternetAddress(ident.getEmail()));
+					}
 				}
-			}
+				if (!myAddresses.isEmpty()) Recipients.removeAnyFrom(reply, myAddresses);
+				
+				Address[] origTos = msg.getReplyTo();
+				Address[] newRcpts = reply.getAllRecipients();
+				boolean emptyRcpts = (newRcpts == null || newRcpts.length == 0);
+				if (emptyRcpts && (origTos != null)) {
+					InternetAddress newTo = null;
+					if (origTos.length == 1) {
+						newTo = (InternetAddress)origTos[0];
+					} else if (origTos.length > 1) {
+						if (myEmail.equals((InternetAddress)origTos[0])) {
+							newTo = (InternetAddress)origTos[1];
+						} else {
+							newTo = (InternetAddress)origTos[0];
+						}
+					}
+					if (newTo != null) {
+						reply.addRecipient(RecipientType.TO, newTo);
+					}
+				}
+				
+			} else {
+				reply=reply(account,(MimeMessage)msg,replyAll,fromSent);
+				
+				removeDestination(reply, myemail);
+				if (ss.getMessageReplyAllStripMyIdentities()) {
+					for (Identity ident : mprofile.getIdentities()) {
+						removeDestination(reply, ident.getEmail());
+					}
+				}
 
-			
-			//if result is no destination, I may be the only destination
-			Address[] origTos=msg.getRecipients(RecipientType.TO);
-			Address[] newRcpts=reply.getAllRecipients();
-			if ((newRcpts==null || newRcpts.length==0) && origTos!=null) {
-				InternetAddress ia0=(InternetAddress) origTos[0];
-				InternetAddress newTo=null;
-				//If I was the only one keep myself as destination
-				if (origTos.length==1) {
-					newTo=ia0;
-				} else if (origTos.length>1) {
-					//if first was me, add second, or keep myself
-					if (ia0.getAddress().toLowerCase().equals(myemail)) newTo=(InternetAddress) origTos[1];
-					else newTo=ia0;
-				}
-				if (newTo!=null) {
-					reply.addRecipient(RecipientType.TO, newTo);
+
+				//if result is no destination, I may be the only destination
+				Address[] origTos=msg.getRecipients(RecipientType.TO);
+				Address[] newRcpts=reply.getAllRecipients();
+				if ((newRcpts==null || newRcpts.length==0) && origTos!=null) {
+					InternetAddress ia0=(InternetAddress) origTos[0];
+					InternetAddress newTo=null;
+					//If I was the only one keep myself as destination
+					if (origTos.length==1) {
+						newTo=ia0;
+					} else if (origTos.length>1) {
+						//if first was me, add second, or keep myself
+						if (ia0.getAddress().toLowerCase().equals(myemail)) newTo=(InternetAddress) origTos[1];
+						else newTo=ia0;
+					}
+					if (newTo!=null) {
+						reply.addRecipient(RecipientType.TO, newTo);
+					}
 				}
 			}
-			
 			
       // Setup the message body
 			//
