@@ -425,7 +425,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 							mman.setEmailMailcard(emailAddress, null);
 						}
 						mc = mman.getMailcard(profileId);
-						ppi = WT.getUserPersonalInfo(profileId);
+						ppi = WT.getProfilePersonalInfo(profileId);
 					} else {
 						Identity ide = mman.findIdentity(identityId);
 						mman.setIdentityMailcard(ide, html);
@@ -448,7 +448,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 						mman.setEmailMailcard(emailAddress, null);
 						mman.setUserMailcard(null);
 						mc = mman.getMailcard(profileId);
-						ppi = WT.getUserPersonalInfo(profileId);
+						ppi = WT.getProfilePersonalInfo(profileId);
 					} else {
 						Identity ide = mman.findIdentity(identId);
 						mman.setIdentityMailcard(ide, null);
@@ -468,7 +468,7 @@ public class UserOptionsService extends BaseUserOptionsService {
 	private PersonalInfo getPersonalInfo(Identity identity) {
 		UserProfileId pid=identity.getOriginPid();
 		if (pid!=null) {
-			return WT.getUserPersonalInfo(pid);
+			return WT.getProfilePersonalInfo(pid);
 		}
 		return null;
 	}
