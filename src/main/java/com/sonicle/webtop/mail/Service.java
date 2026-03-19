@@ -9709,8 +9709,8 @@ public class Service extends BaseService {
 			} else {
 				String email=mailUserId;
 				if (email.indexOf("@")<0) email+="@"+WT.getPrimaryDomainName(domainId);
-				UserProfile.Data udata=WT.guessUserData(email);
-				if (udata!=null) desc=LangUtils.value(udata.getDisplayName(),"");
+				UserProfile.Data pdata=WT.guessProfileDataByPersonalAddress(email);
+				if (pdata!=null) desc=LangUtils.value(pdata.getDisplayName(),"");
 			}
 			
 			if (desc!=null) {

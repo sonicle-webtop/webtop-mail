@@ -2665,7 +2665,7 @@ public class FolderCache {
 				else profileId=null;
 			}
 			if (profileId!=null)
-				isPec=RunContext.hasRole(profileId, WT.getGroupUidForPecAccounts(profileId.getDomainId()));
+				isPec=RunContext.hasRole(profileId, WT.getGroupSidOfPecAccounts(profileId.getDomainId()));
 			
 		} catch(Throwable t) {
 			
