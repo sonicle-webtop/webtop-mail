@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail.rest.v1;
 
+import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.model.Tag;
@@ -49,8 +50,10 @@ import jakarta.mail.Address;
 import jakarta.mail.Flags;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Part;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -76,7 +79,7 @@ public class Folder extends FolderApi {
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			mmgr.consumeMessages(id.replace("|", "/"), new MailManager.MessagesConsumer() {
 				@Override
-				public void consume(Message msg, long uid) throws MessagingException {
+				public void consume(Message msg, long uid) throws MessagingException, IOException {
 					MimeMessage mmsg = (MimeMessage) msg;
 					ApiMessage am = new ApiMessage();
 					String hmid[] = mmsg.getHeader("Message-ID");
@@ -151,7 +154,9 @@ public class Folder extends FolderApi {
 						am.setStatus(mmgr.getStatusString(flags, false, false));
 						am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
 
-						am.setAttachments(new ArrayList<ApiAttachment>());
+						ArrayList<ApiAttachment> attachments = new ArrayList<>();
+						if (mmgr.hasAttachments(msg)) attachments.add(new ApiAttachment());
+						am.setAttachments(attachments);
 					}
 					items.add(am);
 				}
@@ -159,7 +164,7 @@ public class Folder extends FolderApi {
 			return respOk(items);
 			
 		} catch(Exception ex) {
-			logger.error("[{}] getExternalArchivingConfiguration()", RunContext.getRunProfileId(), ex);
+			logger.error("[{}] getMessages()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
 		}
 	}
@@ -174,16 +179,20 @@ public class Folder extends FolderApi {
 			long uid = Long.parseLong(suid);
 			mmgr.consumeMessage(id.replace("|", "/"), uid, new MailManager.MessageConsumer() {
 				@Override
-				public void consume(Message msg, long uid, String html) throws MessagingException {
+				public void consume(Message msg, long uid, MimeMessageParser.ParsedMimeMessageComponents parsed) throws MessagingException, IOException {
 					IMAPMessage mmsg = (IMAPMessage) msg;
 					String hmid[] = mmsg.getHeader("Message-ID");
 					if (hmid!=null && hmid.length>0) {
 						am.setId(hmid[0]);
 						am.setUid((int)uid);
 						am.setSubject(mmsg.getSubject());
+						
+						ArrayList<MimeMessageParser.ParsedMimeMessageComponents.HTMLPart> htmlparts = parsed.getProcessedHTMLParts();
+						String html = "<html><body></body><html>";
+						if (htmlparts.size()>0) html = htmlparts.get(0).html;
 						am.setBody(html);
 
-	//sender
+						//sender
 						Address addrs[] = mmsg.getFrom();
 						ApiContact ac = new ApiContact();
 						if (addrs!=null & addrs.length>0) {
@@ -248,7 +257,21 @@ public class Folder extends FolderApi {
 						am.setStatus(mmgr.getStatusString(flags, false, false));
 						am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
 
-						am.setAttachments(new ArrayList<ApiAttachment>());
+						ArrayList<Part> parts = parsed.getAttachmentParts();
+						ArrayList<ApiAttachment> attachments = new ArrayList<ApiAttachment>();
+						int ix=0;
+						for(Part part: parts) {
+							ApiAttachment attachment = new ApiAttachment();
+							attachment.setFileName(mmgr.getPartName(part));
+							attachment.setId(""+ix);
+							attachment.setMimeType(part.getContentType());
+							int size = part.getSize();
+							int lines = (size / 76);
+							int rsize = size - (lines * 2);//(p.getSize()/4)*3;
+							attachment.setFileSize(rsize);
+							attachments.add(attachment);
+						}
+						am.setAttachments(attachments);
 					}
 				}
 			});

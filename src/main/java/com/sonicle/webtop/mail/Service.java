@@ -257,8 +257,6 @@ public class Service extends BaseService {
 	
 	private FolderCache fcProvided = null;
 	
-	private ArrayList<String> inlineableMimes = new ArrayList<String>();
-	
 	private HashMap<Long, ArrayList<CloudAttachment>> msgcloudattach = new HashMap<Long, ArrayList<CloudAttachment>>();
 	private ArrayList<CloudAttachment> emptyAttachments = new ArrayList<CloudAttachment>();
 	
@@ -278,7 +276,6 @@ public class Service extends BaseService {
 	private Pattern pasDomainsWhiteListRegexPattern;
 	private final FoldersNamesInByFileFiltersCache cacheFoldersNamesInByFileFilters = new FoldersNamesInByFileFiltersCache(5, TimeUnit.MINUTES);
 	
-	private boolean attachmentDetectUseBodyStructure = true;
 	private List<String> previewRemoveHeadStyleDomains = null;
 	private List<String> previewRemoveHeadStyleBrowsers = null;
 	private boolean browserWantsRemoveHeadStyle = false;
@@ -317,19 +314,6 @@ public class Service extends BaseService {
 
 		UserProfile profile = getEnv().getProfile();
 		ss = new MailServiceSettings(SERVICE_ID,getEnv().getProfile().getDomainId());
-		String mtypes=ss.getInlineableMimeTypes();
-		if (StringUtils.isBlank(mtypes)) {
-			inlineableMimes.add("image/gif");
-			inlineableMimes.add("image/jpeg");
-			inlineableMimes.add("image/png");
-			inlineableMimes.add("text/plain");
-			inlineableMimes.add("text/html");
-		} else {
-			String vmtypes[]=StringUtils.split(mtypes, ",");
-			for(String mtype:vmtypes)
-				inlineableMimes.add(mtype.trim());
-		}
-		attachmentDetectUseBodyStructure = ss.isAttachmentDetectUseBodyStructure();
 
 		previewRemoveHeadStyleDomains = ss.getPreviewRemoveHeadStyleDomains();
 		previewRemoveHeadStyleBrowsers = ss.getPreviewRemoveHeadStyleBrowsers();
@@ -2585,14 +2569,6 @@ public class Service extends BaseService {
 		return priority;
 	}
 	
-	public boolean isInlineableMime(String contenttype) {
-		return inlineableMimes.contains(contenttype.toLowerCase());
-	}
-	
-	public boolean isAttachamentDetectUseBodyStructure() {
-		return attachmentDetectUseBodyStructure;
-	}
-	
 	public synchronized int getNewMessageID() {
 		return ++newMessageID;
 	}
@@ -3910,43 +3886,6 @@ public class Service extends BaseService {
 		}
 	}
 	
-	public String getPartName(Part p) throws MessagingException {
-		String pname = p.getFileName();
-		// TODO: Remove code below if already included in JavaMail impl.
-		if (pname == null) {
-			String hctypes[] = p.getHeader("Content-Type");
-			if (hctypes == null || hctypes.length == 0) {
-				return null;
-			}
-			String hctype = hctypes[0];
-			int ix = hctype.indexOf("name=");
-			if (ix >= 0) {
-				int sx = ix + 5;
-				int ex = hctype.indexOf(";", sx);
-				if (ex >= 0) {
-					pname = hctype.substring(sx, ex);
-				} else {
-					pname = hctype.substring(sx);
-				}
-				pname = pname.trim();
-				int xx = pname.length() - 1;
-				if (pname.charAt(0) == '"' && pname.charAt(xx) == '"') {
-					pname = pname.substring(1, xx);
-				}
-			}
-			if (pname == null) {
-				return null;
-			}
-			logger.warn("Code in getPartName is still used. Please review it!");
-			try {
-				pname = MimeUtility.decodeText(pname);
-			} catch(UnsupportedEncodingException ex) {
-				Service.logger.error("Exception", ex);
-			}
-		}
-		return pname;
-	}
-	
     public void processRequestCloudFile(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 			try {
 				String subject=ServletUtils.getStringParameter(request, "subject", true);
@@ -4499,7 +4438,7 @@ public class Service extends BaseService {
 						boolean inline = false;
 						if (part.getDisposition() != null) {
 							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
-									isInlineableMime(mime);
+									mailManager.isInlineableMime(mime);
 						}
 						//in reply includes only cid & inline attachments
 						if (inline && cid!=null) {
@@ -4606,7 +4545,7 @@ public class Service extends BaseService {
 						boolean inline = false;
 						if (part.getDisposition() != null) {
 							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
-									isInlineableMime(mime);
+									mailManager.isInlineableMime(mime);
 						}
 						
 						attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
@@ -4783,7 +4722,7 @@ public class Service extends BaseService {
 			
             for (int i = 0; i < maildata.getAttachmentPartCount(); ++i) {
                 Part part = maildata.getAttachmentPart(i);
-                String filename = getPartName(part);
+                String filename = mailManager.getPartName(part);
                 
                     String cids[] = part.getHeader("Content-ID");
                     String cid = null;
@@ -5742,7 +5681,7 @@ public class Service extends BaseService {
 					for(JsAttachment jsa: atts) {
 						UploadedFile upfile = getUploadedFile(jsa.uploadId);
 						String ctype = upfile.getMediaType();
-						boolean inline = jsa.inline && isInlineableMime(ctype);
+						boolean inline = jsa.inline && mailManager.isInlineableMime(ctype);
 						if (inline && !StringUtils.isEmpty(jsa.cid) && htmlcontent.indexOf("src=\"cid:"+jsa.cid)<0)
 							jsmsg.attachments.remove(jsa);
 					}
@@ -6923,8 +6862,8 @@ public class Service extends BaseService {
 								}
 							}*/
 
-							boolean hasAttachments = devmode ? false : mcache.hasAttachments(xm, null);
-							boolean hasInvitation = devmode ? false : mcache.hasInvitation(xm);
+							boolean hasAttachments = devmode ? false : mailManager.hasAttachments(xm, null);
+							boolean hasInvitation = devmode ? false : mailManager.hasInvitation(xm);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
@@ -7766,7 +7705,7 @@ public class Service extends BaseService {
 				String cidnames[]=p.getHeader("Content-ID");
 				String cidname=null;
 				if (cidnames!=null && cidnames.length>0) cidname=mcache.normalizeCidFileName(cidnames[0]);
-				boolean isInlineable = isInlineableMime(ctype);
+				boolean isInlineable = mailManager.isInlineableMime(ctype);
 				boolean inline=((p.getHeader("Content-Location")!=null)||(cidname!=null))&&isInlineable;
 				if (inline && cidname!=null) inline=mailData.isReferencedCid(cidname);
 				if (p.getDisposition() != null && p.getDisposition().equalsIgnoreCase(Part.INLINE) && inline) {
@@ -7779,7 +7718,7 @@ public class Service extends BaseService {
 					imgname = "resources/" + getManifest().getId() + "/laf/" + cus.getUILookAndFeel() + "/ical_16.png";
 				}
 				
-				String pname = getPartName(p);
+				String pname = mailManager.getPartName(p);
 				try { pname=MailUtils.decodeQString(pname); } catch(Exception exc) {}
 				if (pname == null) {
 					ix = ctype.indexOf("/");
@@ -9222,7 +9161,7 @@ public class Service extends BaseService {
 					
 					boolean hasNote=mailManager.hasNote(flags);
 
-					boolean hasAttachments=fc.hasAttachments(xm, null);
+					boolean hasAttachments=mailManager.hasAttachments(xm, null);
 					
 					String fullfolderdesc=fc.getDescription();
 					FolderCache xfc=fc;

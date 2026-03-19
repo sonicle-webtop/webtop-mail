@@ -116,7 +116,7 @@ public class HTMLMailData {
   }
 
   public void addAttachmentPart(Part part, int depth) {
-    if (!parsed.geAttachmentParts().contains(part)) {
+    if (!parsed.getAttachmentParts().contains(part)) {
 		boolean addPart = true;
 		try {
 			if (MimeUtils.isMimeType(part, "application/ics") || MimeUtils.isMimeType(part, "text/calendar")) {
@@ -144,7 +144,7 @@ public class HTMLMailData {
   }
 
   public int getAttachmentPartCount() {
-    return parsed.geAttachmentParts().size();
+    return parsed.getAttachmentParts().size();
   }
 
   public int getCidPartCount() {
@@ -169,11 +169,11 @@ public class HTMLMailData {
   }
 
   public Part getAttachmentPart(int index) {
-    return parsed.geAttachmentParts().get(index);
+    return parsed.getAttachmentParts().get(index);
   }
 
   public int getAttachmentIndex(Part p) {
-    return parsed.geAttachmentParts().indexOf(p);
+    return parsed.getAttachmentParts().indexOf(p);
   }
 
   public Part getCidPart(String name) {
@@ -201,7 +201,7 @@ public class HTMLMailData {
   }
 
   public void removeAttachmentPart(Part part) {
-    parsed.geAttachmentParts().remove(part);
+    parsed.getAttachmentParts().remove(part);
   }
   
   public int getRealPartSize(Part part) throws MessagingException, IOException {

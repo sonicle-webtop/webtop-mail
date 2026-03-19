@@ -1743,7 +1743,7 @@ public class FolderCache {
 			//ensure BODYSTRUCTURE has been loaded
 			fetch(msgs, FP_BS);
 			for(Message m: msgs) {
-				if (hasAttachments(m, iq.getAttachmentName())) amsgs.add(m);
+				if (mailManager.hasAttachments(m, iq.getAttachmentName())) amsgs.add(m);
 			}
 			rmsgs=new SonicleIMAPMessage[amsgs.size()];
 			amsgs.toArray(rmsgs);
@@ -1769,107 +1769,6 @@ public class FolderCache {
 		return rmsgs;
 	}
 	
-	private boolean _isInvitation(Part part) throws MessagingException {
-		if (part.isMimeType("text/calendar")) {
-			//String ctype=part.getContentType();
-			//if (ctype!=null && StringUtils.containsIgnoreCase(ctype, "method=REQUEST"))
-				return true;
-		}
-		return false;
-	}
-	
-	private boolean _isAttachment(Part part) throws MessagingException {
-		String disp = part.getDisposition();
-		String cid=null;
-		//skip cid info in text parts, to avoid wrong detection
-		if (!part.isMimeType("text/*")) {
-			String hdrs[]=part.getHeader("Content-ID");
-			cid=hdrs!=null?hdrs[0]:null;
-		}
-		if (Part.ATTACHMENT.equalsIgnoreCase(disp)) {
-			// Disposition is explicitly set to attachment
-			return true;
-			
-		} else if (cid!=null || Part.INLINE.equalsIgnoreCase(disp)) {
-			// Disposition is excplicitly inline, or has a Content-ID
-			String ctype = part.getContentType();
-			int index = ctype.indexOf(';');
-			if (index > 0) {
-				ctype = ctype.substring(0, index);
-			}
-			boolean isInline = ms.isInlineableMime(ctype);
-			return !isInline;
-		
-		} else if (disp == null && !StringUtils.isBlank(part.getFileName())) {
-			// Disposition is missing but we have a valid attachment filename
-			return true;
-		}
-		return false;
-	}
-	
-	protected boolean hasAttachments(Message m) throws MessagingException, IOException {
-		return hasAttachments(m, null);
-	}
-	
-	protected boolean hasAttachments(Message m, String lowerCaseNamePattern) throws MessagingException, IOException {
-		if (ms.isAttachamentDetectUseBodyStructure() && m instanceof SonicleIMAPMessage)
-			return ((SonicleIMAPMessage)m).hasAttachments(lowerCaseNamePattern);
-		return _hasAttachments(m, lowerCaseNamePattern);
-	}
-	
-	protected boolean hasInvitation(Message m) throws MessagingException, IOException {
-		if (ms.isAttachamentDetectUseBodyStructure() && m instanceof SonicleIMAPMessage)
-			return ((SonicleIMAPMessage)m).hasInvitation(false);
-		return _hasInvitation(m);
-	}
-	
-    private boolean _hasAttachments(Part p, String lowerCaseNamePattern) throws MessagingException, IOException {
-        boolean retval=false;
-        
-		if (_isAttachment(p)) {
-			if (lowerCaseNamePattern!=null) {
-				String filename = ms.getPartName(p);
-				if (filename!=null && filename.toLowerCase().contains(lowerCaseNamePattern))
-					retval=true;
-			}
-			else retval=true;
-		}
-        else if(p.isMimeType("multipart/*")) {
-            Multipart mp=(Multipart)p.getContent();
-            int parts=mp.getCount();
-            for(int i=0;i<parts;++i) {
-                Part bp=mp.getBodyPart(i);
-                if (_hasAttachments(bp, lowerCaseNamePattern)) {
-                    retval=true;
-                    break;
-                }
-            }
-        }
-        
-        return retval;
-    }
-
-    private boolean _hasInvitation(Part p) throws MessagingException, IOException {
-        boolean retval=false;
-        
-		if (_isInvitation(p)) {
-			retval=true;
-		}
-        else if(p.isMimeType("multipart/*")) {
-            Multipart mp=(Multipart)p.getContent();
-            int parts=mp.getCount();
-            for(int i=0;i<parts;++i) {
-                Part bp=mp.getBodyPart(i);
-                if (_hasInvitation(bp)) {
-                    retval=true;
-                    break;
-                }
-            }
-        }
-        
-        return retval;
-    }
-
 	public Message[] getMessagesByMessageId(String id) throws MessagingException {
 		boolean wasOpen=folder.isOpen();
 		if (!wasOpen) folder.open(Folder.READ_WRITE);

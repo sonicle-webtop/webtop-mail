@@ -47,6 +47,7 @@ import com.sonicle.mail.StoreHostParams;
 import com.sonicle.mail.StoreUtils;
 import com.sonicle.mail.imap.DateSortTerm;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
+import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.security.PasswordUtils;
 import com.sonicle.security.Principal;
@@ -107,11 +108,14 @@ import jakarta.mail.Flags;
 import jakarta.mail.Folder;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
+import jakarta.mail.Multipart;
 import jakarta.mail.Part;
 import jakarta.mail.UIDFolder;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
+import jakarta.mail.internet.MimeUtility;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
@@ -205,12 +209,30 @@ public class MailManager extends BaseManager implements IMailManager {
 	public static String STATUS_REPLIED_FORWARDED = "repfwd";
 	public static String STATUS_NEW = "new";
 	public static String STATUS_INVITATION = "invitation";
+	
+	private boolean attachmentDetectUseBodyStructure = true;
+	private ArrayList<String> inlineableMimes = new ArrayList<String>();
+	
 
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
 		
 		if (!fastInit) {
 			MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, targetProfileId.getDomainId());
+			attachmentDetectUseBodyStructure = mss.isAttachmentDetectUseBodyStructure();
+			String mtypes=mss.getInlineableMimeTypes();
+			if (StringUtils.isBlank(mtypes)) {
+				inlineableMimes.add("image/gif");
+				inlineableMimes.add("image/jpeg");
+				inlineableMimes.add("image/png");
+				inlineableMimes.add("text/plain");
+				inlineableMimes.add("text/html");
+			} else {
+				String vmtypes[]=StringUtils.split(mtypes, ",");
+				for(String mtype:vmtypes)
+					inlineableMimes.add(mtype.trim());
+			}
+			
 			MailUserSettings mus = new MailUserSettings(targetProfileId, mss);
 			String user = WT.buildDomainInternetAddress(targetProfileId.getDomainId(), targetProfileId.getUserId(), null).getAddress();
 			final StoreHostParams hostParams = mus.getMailboxHostParams(user, PasswordUtils.asString(WT.lookupSecretStoreValue(targetProfileId, WebTopManager.PSVKEY_PPW)), false);
@@ -377,11 +399,7 @@ public class MailManager extends BaseManager implements IMailManager {
 
 			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse(mmsg, false);
 			
-			ArrayList<MimeMessageParser.ParsedMimeMessageComponents.HTMLPart> htmlparts = parsed.getProcessedHTMLParts();
-			
-			String html = "<html><body></body><html>";
-			if (htmlparts.size()>0) html = htmlparts.get(0).html;
-			mc.consume(mmsg, ((UIDFolder)folder).getUID(mmsg), html);
+			mc.consume(mmsg, ((UIDFolder)folder).getUID(mmsg), parsed);
 			
 		} catch(Exception exc) {
 			logger.error("Error listing folders", exc);
@@ -392,11 +410,11 @@ public class MailManager extends BaseManager implements IMailManager {
 	}	
 	
 	public interface MessagesConsumer {
-		public void consume(Message m, long uid) throws MessagingException;
+		public void consume(Message m, long uid) throws MessagingException, IOException;
 	}
 	
 	public interface MessageConsumer {
-		public void consume(Message m, long uid, String html) throws MessagingException;
+		public void consume(Message m, long uid, MimeMessageParser.ParsedMimeMessageComponents parsed) throws MessagingException, IOException;
 	}
 	
 	public String getHTMLDecodedAddress(Address a) {
@@ -507,6 +525,152 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 	
+	public String getPartName(Part p) throws MessagingException {
+		String pname = p.getFileName();
+		// TODO: Remove code below if already included in JavaMail impl.
+		if (pname == null) {
+			String hctypes[] = p.getHeader("Content-Type");
+			if (hctypes == null || hctypes.length == 0) {
+				return null;
+			}
+			String hctype = hctypes[0];
+			int ix = hctype.indexOf("name=");
+			if (ix >= 0) {
+				int sx = ix + 5;
+				int ex = hctype.indexOf(";", sx);
+				if (ex >= 0) {
+					pname = hctype.substring(sx, ex);
+				} else {
+					pname = hctype.substring(sx);
+				}
+				pname = pname.trim();
+				int xx = pname.length() - 1;
+				if (pname.charAt(0) == '"' && pname.charAt(xx) == '"') {
+					pname = pname.substring(1, xx);
+				}
+			}
+			if (pname == null) {
+				return null;
+			}
+			logger.warn("Code in getPartName is still used. Please review it!");
+			try {
+				pname = MimeUtility.decodeText(pname);
+			} catch(UnsupportedEncodingException ex) {
+				logger.error("Exception", ex);
+			}
+		}
+		return pname;
+	}
+	
+	public boolean isAttachamentDetectUseBodyStructure() {
+		return attachmentDetectUseBodyStructure;
+	}
+	
+	public boolean isInlineableMime(String contenttype) {
+		return inlineableMimes.contains(contenttype.toLowerCase());
+	}
+	
+	private boolean _isInvitation(Part part) throws MessagingException {
+		if (part.isMimeType("text/calendar")) {
+			//String ctype=part.getContentType();
+			//if (ctype!=null && StringUtils.containsIgnoreCase(ctype, "method=REQUEST"))
+				return true;
+		}
+		return false;
+	}
+	
+	private boolean _isAttachment(Part part) throws MessagingException {
+		String disp = part.getDisposition();
+		String cid=null;
+		//skip cid info in text parts, to avoid wrong detection
+		if (!part.isMimeType("text/*")) {
+			String hdrs[]=part.getHeader("Content-ID");
+			cid=hdrs!=null?hdrs[0]:null;
+		}
+		if (Part.ATTACHMENT.equalsIgnoreCase(disp)) {
+			// Disposition is explicitly set to attachment
+			return true;
+			
+		} else if (cid!=null || Part.INLINE.equalsIgnoreCase(disp)) {
+			// Disposition is excplicitly inline, or has a Content-ID
+			String ctype = part.getContentType();
+			int index = ctype.indexOf(';');
+			if (index > 0) {
+				ctype = ctype.substring(0, index);
+			}
+			boolean isInline = isInlineableMime(ctype);
+			return !isInline;
+		
+		} else if (disp == null && !StringUtils.isBlank(part.getFileName())) {
+			// Disposition is missing but we have a valid attachment filename
+			return true;
+		}
+		return false;
+	}
+	
+	public boolean hasAttachments(Message m) throws MessagingException, IOException {
+		return hasAttachments(m, null);
+	}
+	
+	public boolean hasAttachments(Message m, String lowerCaseNamePattern) throws MessagingException, IOException {
+		if (isAttachamentDetectUseBodyStructure() && m instanceof SonicleIMAPMessage)
+			return ((SonicleIMAPMessage)m).hasAttachments(lowerCaseNamePattern);
+		return _hasAttachments(m, lowerCaseNamePattern);
+	}
+	
+	public boolean hasInvitation(Message m) throws MessagingException, IOException {
+		if (isAttachamentDetectUseBodyStructure() && m instanceof SonicleIMAPMessage)
+			return ((SonicleIMAPMessage)m).hasInvitation(false);
+		return _hasInvitation(m);
+	}
+	
+    private boolean _hasAttachments(Part p, String lowerCaseNamePattern) throws MessagingException, IOException {
+        boolean retval=false;
+        
+		if (_isAttachment(p)) {
+			if (lowerCaseNamePattern!=null) {
+				String filename = getPartName(p);
+				if (filename!=null && filename.toLowerCase().contains(lowerCaseNamePattern))
+					retval=true;
+			}
+			else retval=true;
+		}
+        else if(p.isMimeType("multipart/*")) {
+            Multipart mp=(Multipart)p.getContent();
+            int parts=mp.getCount();
+            for(int i=0;i<parts;++i) {
+                Part bp=mp.getBodyPart(i);
+                if (_hasAttachments(bp, lowerCaseNamePattern)) {
+                    retval=true;
+                    break;
+                }
+            }
+        }
+        
+        return retval;
+    }
+
+    private boolean _hasInvitation(Part p) throws MessagingException, IOException {
+        boolean retval=false;
+        
+		if (_isInvitation(p)) {
+			retval=true;
+		}
+        else if(p.isMimeType("multipart/*")) {
+            Multipart mp=(Multipart)p.getContent();
+            int parts=mp.getCount();
+            for(int i=0;i<parts;++i) {
+                Part bp=mp.getBodyPart(i);
+                if (_hasInvitation(bp)) {
+                    retval=true;
+                    break;
+                }
+            }
+        }
+        
+        return retval;
+    }
+
 	public void setSieveConfiguration(String host, int port, String username, String password, String authId) {
 		//TODO: portare i parametri (host,port,user,pass) nel manager
 		this.sieveConfig = new SieveConfig(host, port, username, password, authId);
