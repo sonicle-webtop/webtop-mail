@@ -1960,6 +1960,7 @@ public class Service extends BaseService {
 			
 			boolean testNewReply = ss.getTestNewReply();
 			if (testNewReply) {
+				logger.debug("TEST: using newReply...");
 				reply = ((SonicleIMAPMessage)msg).reply(replyAll, false, fromSent);
 				
 				InternetAddress myEmail = InternetAddressUtils.toInternetAddress(myemail);
@@ -1992,6 +1993,7 @@ public class Service extends BaseService {
 				}
 				
 			} else {
+				logger.debug("TEST: using legacy reply...");
 				reply=reply(account,(MimeMessage)msg,replyAll,fromSent);
 				
 				removeDestination(reply, myemail);
