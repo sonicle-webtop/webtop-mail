@@ -1464,7 +1464,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	public void applySieveScript(boolean activate) throws WTException {
-		UserProfile.Data ud = WT.getUserData(getTargetProfileId());
+		UserProfile.Data pdata = WT.getProfileData(getTargetProfileId());
 		SieveScriptBuilder ssb = new SieveScriptBuilder();
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID,getTargetProfileId().getDomainId());
 		MailUserSettings mus = new MailUserSettings(getTargetProfileId(),mss);
@@ -1478,8 +1478,8 @@ public class MailManager extends BaseManager implements IMailManager {
 		logger.debug("Working on autoresponder...");
 		AutoResponder autoResp = getAutoResponder();
 		if (autoResp.getEnabled()) {
-			String profileEmail = StringUtils.lowerCase(ud.getProfileEmailAddress());
-			String personalEmail = StringUtils.lowerCase(ud.getPersonalEmailAddress());
+			String profileEmail = StringUtils.lowerCase(pdata.getProfileEmailAddress());
+			String personalEmail = StringUtils.lowerCase(pdata.getPersonalEmailAddress());
 			String tokens[] = StringUtils.splitByWholeSeparator(StringUtils.lowerCase(StringUtils.replace(autoResp.getAddresses(), " ", "")), ",");
 			Set<String> addresses = Collections.<String>emptySet();
 			if (tokens != null) {
@@ -1490,7 +1490,7 @@ public class MailManager extends BaseManager implements IMailManager {
 				autoResp.setAddresses(LangUtils.joinStrings(",", autoResp.getAddresses(), personalEmail));
 			}
 			
-			ssb.setVacation(autoResp.toSieveVacation(ud.getPersonalEmail(), ud.getTimeZone()));
+			ssb.setVacation(autoResp.toSieveVacation(pdata.getPersonalEmail(), pdata.getTimeZone()));
 		}
 		
 		logger.debug("Working on incoming filters...");

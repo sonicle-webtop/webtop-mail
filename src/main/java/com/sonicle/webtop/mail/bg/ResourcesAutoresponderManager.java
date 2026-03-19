@@ -603,12 +603,12 @@ public class ResourcesAutoresponderManager {
 	}
 	
 	private Locale getProfileLocale(UserProfileId profileId) {
-		UserProfile.Data pdata = WT.getUserData(profileId);
+		UserProfile.Data pdata = WT.getProfileData(profileId);
 		return (pdata == null) ? LangUtils.languageTagToLocale("en_EN") : pdata.getLocale();
 	}
 	
 	private InternetAddress getProfilePersonalEmail(UserProfileId profileId) {
-		UserProfile.Data pdata = WT.getUserData(profileId);
+		UserProfile.Data pdata = WT.getProfileData(profileId);
 		return (pdata == null) ? null : pdata.getPersonalEmail();
 	}
 	

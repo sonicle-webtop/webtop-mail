@@ -8755,7 +8755,7 @@ public class Service extends BaseService {
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
-		UserProfile.Data pdata = WT.getUserData(environment.getProfileId());
+		UserProfile.Data pdata = WT.getProfileData(environment.getProfileId());
 		
 		try {
 			account.checkStoreConnected();
@@ -8882,7 +8882,7 @@ public class Service extends BaseService {
         String pfoldername=request.getParameter("folder");
         String puidmessage=request.getParameter("idmessage");
         String pidattach=request.getParameter("idattach");
-		UserProfile.Data pdata = WT.getUserData(environment.getProfileId());
+		UserProfile.Data pdata = WT.getProfileData(environment.getProfileId());
 		
         try {
             account.checkStoreConnected();

@@ -190,7 +190,7 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 				recipients+=ia.toString();
 			}
 			
-			Locale locale = WT.getUserData(sendingProfile).getLocale();
+			Locale locale = WT.getProfileData(sendingProfile).getLocale();
 			String nmto=message.getRecipients(Message.RecipientType.TO)[0].toString();
 			String nmsubject=message.getSubject();
 			String fmtsubject=taskContext.getBackgroundService().lookupResource(locale, MailLocaleKey.SCHEDULED_SENT_SUBJECT);

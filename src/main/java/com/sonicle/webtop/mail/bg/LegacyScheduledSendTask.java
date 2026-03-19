@@ -125,7 +125,7 @@ public class LegacyScheduledSendTask extends BaseBackgroundServiceTask {
 						Folder outgoings[]=getOutgoingFolders(store, domain, pid, vmailSecret, mus);
 						Folder folderSent=getSentFolder(store, pid, domain, vmailSecret, mus);
 						if (shouldStop()) break; // Speed-up shutdown process!
-						sendScheduledMails(session,pid,domain,outgoings,folderSent,WT.getUserData(pid).getLocale());
+						sendScheduledMails(session,pid,domain,outgoings,folderSent,WT.getProfileData(pid).getLocale());
 						store.close();
 						store=null;
 					} catch(Exception exc) {
