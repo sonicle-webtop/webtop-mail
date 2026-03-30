@@ -20,22 +20,22 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("Message")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-13T15:40:34.652+01:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-30T11:45:22.192+02:00[Europe/Rome]")
 public class ApiMessage   {
   private @Valid String id;
   private @Valid Integer uid;
   private @Valid String subject;
   private @Valid String body;
   private @Valid ApiContact sender;
-  private @Valid List<ApiContact> recipients = null;
-  private @Valid List<ApiContact> cc = null;
-  private @Valid List<ApiContact> bcc = null;
+  private @Valid List<ApiContact> recipients;
+  private @Valid List<ApiContact> cc;
+  private @Valid List<ApiContact> bcc;
   private @Valid String date;
   private @Valid Boolean isRead;
-  private @Valid List<ApiAttachment> attachments = null;
+  private @Valid List<ApiAttachment> attachments;
   private @Valid String status;
   private @Valid String flag;
-  private @Valid List<String> tags = null;
+  private @Valid List<String> tags;
 
   /**
    **/

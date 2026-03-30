@@ -54,11 +54,14 @@ import jakarta.mail.Part;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Map;
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
 import org.jooq.tools.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -278,11 +281,57 @@ public class Folder extends FolderApi {
 			return respOk(am);
 			
 		} catch(Exception ex) {
-			logger.error("[{}] getExternalArchivingConfiguration()", RunContext.getRunProfileId(), ex);
+			logger.error("[{}] getMessage()", RunContext.getRunProfileId(), ex);
+			return respError(ex);
+		}
+	}
+
+	@Override
+	public Response getMessageAttachmentBytes(String id, String suid, String sindex) {
+		try {
+			ApiMessage am = new ApiMessage();
+			UserProfileId targetPid = RunContext.getRunProfileId();
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+			String folderId = id.replace("|", "/");
+			long uid = Long.parseLong(suid);
+			int index = Integer.parseInt(sindex);
+			StreamingOutput stream = new StreamingOutput() {
+				@Override
+				public void write(OutputStream os) throws IOException, WebApplicationException {
+					mmgr.streamMessageAttachmentData(folderId, uid, index, os);
+				}
+			};
+
+			return respOk(stream);
+			
+		} catch(Exception ex) {
+			logger.error("[{}] getMessageAttachmentBytes()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
 		}
 	}
 	
+	@Override
+	public Response getMessageCidBytes(String id, String suid, String cidName) {
+		try {
+			ApiMessage am = new ApiMessage();
+			UserProfileId targetPid = RunContext.getRunProfileId();
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+			String folderId = id.replace("|", "/");
+			long uid = Long.parseLong(suid);
+			StreamingOutput stream = new StreamingOutput() {
+				@Override
+				public void write(OutputStream os) throws IOException, WebApplicationException {
+					mmgr.streamMessageCidData(folderId, uid, cidName, os);
+				}
+			};
+
+			return respOk(stream);
+			
+		} catch(Exception ex) {
+			logger.error("[{}] getMessageAttachmentBytes()", RunContext.getRunProfileId(), ex);
+			return respError(ex);
+		}
+	}
 	
 	@Override
 	protected Object createErrorEntity(Response.Status status, String message) {

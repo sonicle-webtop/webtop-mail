@@ -15,14 +15,16 @@ import javax.validation.Valid;
 
 @Path("/accounts")
 @Api(description = "the accounts API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-13T15:40:34.652+01:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-30T11:45:22.192+02:00[Europe/Rome]")
 public abstract class AccountsApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
     @Produces({ "application/json" })
     @ApiOperation(value = "Lists accounts", notes = "", response = ApiAccount.class, authorizations = {
         
-        @Authorization(value = "Basic authentication")
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
          }, tags={ "accounts" })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiAccount.class)

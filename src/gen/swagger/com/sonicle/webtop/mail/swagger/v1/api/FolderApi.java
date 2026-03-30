@@ -15,7 +15,7 @@ import javax.validation.Valid;
 
 @Path("/folder/{id}")
 @Api(description = "the folder API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-13T15:40:34.652+01:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-30T11:45:22.192+02:00[Europe/Rome]")
 public abstract class FolderApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
@@ -23,7 +23,9 @@ public abstract class FolderApi extends com.sonicle.webtop.core.sdk.BaseRestApiR
     @Produces({ "application/json" })
     @ApiOperation(value = "Get full message of folder by uid", notes = "", response = ApiMessage.class, authorizations = {
         
-        @Authorization(value = "Basic authentication")
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
          }, tags={ "message" })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiMessage.class)
@@ -33,11 +35,45 @@ public abstract class FolderApi extends com.sonicle.webtop.core.sdk.BaseRestApiR
     }
 
     @GET
+    @Path("/message/{uid}/attachment/{index}/$value")
+    @Produces({ "application/octet-stream" })
+    @ApiOperation(value = "Get attachment bytes from message of folder by uid / index", notes = "", response = Object.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "message" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Success", response = Object.class)
+    })
+    public Response getMessageAttachmentBytes(@PathParam("id") String id,@PathParam("uid") String uid,@PathParam("index") String index) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @GET
+    @Path("/message/{uid}/cid/{name}/$value")
+    @Produces({ "application/octet-stream" })
+    @ApiOperation(value = "Get Cid bytes from message of folder by uid / cidName", notes = "", response = Object.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "message" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Success", response = Object.class)
+    })
+    public Response getMessageCidBytes(@PathParam("id") String id,@PathParam("uid") String uid,@PathParam("name") String name) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @GET
     @Path("/messages")
     @Produces({ "application/json" })
     @ApiOperation(value = "Lists messages envelops of folder", notes = "", response = ApiMessage.class, responseContainer = "List", authorizations = {
         
-        @Authorization(value = "Basic authentication")
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
          }, tags={ "messages" })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiMessage.class, responseContainer = "List")

@@ -1,5 +1,5 @@
 {
-  "swagger": "2.0",
+  "openapi": "3.0.1",
   "info": {
     "version": "v1",
     "title": "WebTop Mail",
@@ -10,10 +10,10 @@
   },
   "security": [
     {
-      "Basic authentication": []
+      "basicAuth": []
     },
     {
-      "auth-bearer": []
+      "bearerAuth": []
     }
   ],
   "paths": {
@@ -24,22 +24,25 @@
         ],
         "summary": "Get configuration data",
         "operationId": "getExternalArchivingConfiguration",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "name": "targetProfileId",
             "in": "query",
             "required": false,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Success",
-            "schema": {
-              "$ref": "#/definitions/ExternalArchivingSettings"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalArchivingSettings"
+                }
+              }
             }
           }
         }
@@ -52,371 +55,473 @@
         ],
         "summary": "Lists accounts",
         "operationId": "getAccounts",
-        "produces": [
-          "application/json"
-        ],
         "parameters": [
           {
             "name": "targetProfileId",
             "in": "query",
             "required": false,
-            "type": "string"
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
           "200": {
             "description": "Success",
-            "schema": {
-              "$ref": "#/definitions/Account"
-            },
-            "examples": {}
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            }
           }
         }
       }
     },
     "/folders": {
       "get": {
+        "tags": [
+          "folders"
+        ],
         "summary": "Lists folders",
         "operationId": "getRootFolders",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [],
+        "description": "",
         "responses": {
           "200": {
             "description": "Success",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Folder"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Folder"
+                  }
+                }
               }
             }
           }
-        },
-        "tags": [
-          "folders"
-        ],
-        "description": ""
-      },
-      "parameters": []
+        }
+      }
     },
     "/folders/{id}": {
-      "get": {
-        "summary": "Lists folders",
-        "operationId": "getFolders",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Success",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Folder"
-              }
-            }
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
           }
-        },
+        }
+      ],
+      "get": {
         "tags": [
           "folders"
         ],
-        "description": ""
-      },
-      "parameters": [
-        {
-          "type": "string",
-          "name": "id",
-          "in": "path",
-          "required": true
-        }
-      ]
-    },
-    "/folder/{id}/messages": {
-      "get": {
-        "summary": "Lists messages envelops of folder",
-        "operationId": "getMessages",
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [],
+        "summary": "Lists folders",
+        "operationId": "getFolders",
+        "description": "",
         "responses": {
           "200": {
             "description": "Success",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/Message"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Folder"
+                  }
+                }
               }
             }
           }
-        },
-        "description": "",
-        "tags": [
-          "messages"
-        ]
-      },
+        }
+      }
+    },
+    "/folder/{id}/messages": {
       "parameters": [
         {
-          "type": "string",
           "name": "id",
           "in": "path",
-          "required": true
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
         }
-      ]
-    },
-    "/folder/{id}/message/{uid}": {
+      ],
       "get": {
-        "summary": "Get full message of folder by uid",
-        "operationId": "getMessage",
-        "produces": [
-          "application/json"
+        "tags": [
+          "messages"
         ],
-        "parameters": [],
+        "summary": "Lists messages envelops of folder",
+        "operationId": "getMessages",
+        "description": "",
         "responses": {
           "200": {
             "description": "Success",
-            "schema": {
-              "$ref": "#/definitions/Message"
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Message"
+                  }
+                }
+              }
             }
           }
-        },
-        "description": "",
-        "tags": [
-          "message"
-        ]
-      },
+        }
+      }
+    },
+    "/folder/{id}/message/{uid}": {
       "parameters": [
         {
-          "type": "string",
           "name": "id",
           "in": "path",
-          "required": true
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
         },
         {
-          "type": "string",
           "name": "uid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Get full message of folder by uid",
+        "operationId": "getMessage",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Message"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/folder/{id}/message/{uid}/attachment/{index}/$value": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "uid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "index",
           "in": "path",
           "required": true
         }
-      ]
-    }
-  },
-  "securityDefinitions": {
-    "Basic authentication": {
-      "type": "basic"
-    }
-  },
-  "definitions": {
-    "ApiError": {
-      "type": "object",
-      "required": [
-        "code"
       ],
-      "properties": {
-        "code": {
-          "type": "integer",
-          "minimum": 400,
-          "maximum": 599
+      "get": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Get attachment bytes from message of folder by uid / index",
+        "operationId": "getMessageAttachmentBytes",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/folder/{id}/message/{uid}/cid/{name}/$value": {
+      "parameters": [
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
         },
-        "description": {
-          "type": "string",
-          "example": "Bad query parameter [$size]: Invalid integer value [abc]"
+        {
+          "name": "uid",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "schema": {
+            "type": "string"
+          },
+          "name": "name",
+          "in": "path",
+          "required": true
+        }
+      ],
+      "get": {
+        "tags": [
+          "message"
+        ],
+        "summary": "Get Cid bytes from message of folder by uid / cidName",
+        "operationId": "getMessageCidBytes",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "object",
+                  "properties": {}
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "basicAuth": {
+        "type": "http",
+        "scheme": "basic"
+      },
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "ApiError": {
+        "type": "object",
+        "description": "This general detailed error structure is used throughout this API.",
+        "required": [
+          "code"
+        ],
+        "properties": {
+          "code": {
+            "type": "integer",
+            "minimum": 400,
+            "maximum": 599
+          },
+          "description": {
+            "type": "string",
+            "example": "Bad query parameter [$size]: Invalid integer value [abc]"
+          }
+        },
+        "example": {
+          "code": 400,
+          "description": "Bad query parameter [$size]: Invalid integer value [abc]"
         }
       },
-      "description": "This general detailed error structure is used throughout this API.",
-      "example": {
-        "code": 400,
-        "description": "Bad query parameter [$size]: Invalid integer value [abc]"
-      }
-    },
-    "ExternalArchivingSettings": {
-      "type": "object",
-      "required": [
-        "enabled",
-        "host",
-        "port",
-        "protocol",
-        "type"
-      ],
-      "properties": {
-        "enabled": {
-          "type": "boolean",
-          "description": "Enabled status"
-        },
-        "type": {
-          "type": "string",
-          "description": "Archiving type"
-        },
-        "host": {
-          "type": "string",
-          "description": "IMAP server host"
-        },
-        "port": {
-          "type": "integer",
-          "description": "IMAP server port"
-        },
-        "protocol": {
-          "type": "string",
-          "description": "IMAP server protocol"
-        },
-        "username": {
-          "type": "string",
-          "description": "Account username"
-        },
-        "password": {
-          "type": "string",
-          "description": "Account password"
-        },
-        "folderPrefix": {
-          "type": "string",
-          "description": "IMAP folder prefix"
-        },
-        "minage": {
-          "type": "integer",
-          "description": "Archive messages older than days"
-        }
-      }
-    },
-    "Account": {
-      "type": "object",
-      "properties": {
-        "userId": {
-          "type": "string"
-        },
-        "displayName": {
-          "type": "string"
-        },
-        "mailUsername": {
-          "type": "string"
-        }
-      }
-    },
-    "Contact": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        }
-      }
-    },
-    "Attachment": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "fileName": {
-          "type": "string"
-        },
-        "fileSize": {
-          "type": "integer"
-        },
-        "mimeType": {
-          "type": "string"
-        },
-        "downloadUrl": {
-          "type": "string"
-        }
-      }
-    },
-    "Folder": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string"
-        },
-        "unreadCount": {
-          "type": "integer"
-        },
-        "totalCount": {
-          "type": "integer"
-        },
-        "children": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Folder"
-          }
-        }
-      }
-    },
-    "Message": {
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string"
-        },
-        "uid": {
-          "type": "integer"
-        },
-        "subject": {
-          "type": "string"
-        },
-        "body": {
-          "type": "string"
-        },
-        "sender": {
-          "$ref": "#/definitions/Contact"
-        },
-        "recipients": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Contact"
-          }
-        },
-        "cc": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Contact"
-          }
-        },
-        "bcc": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Contact"
-          }
-        },
-        "date": {
-          "type": "string"
-        },
-        "isRead": {
-          "type": "boolean"
-        },
-        "attachments": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/Attachment"
-          }
-        },
-        "status": {
-          "type": "string",
-          "x-stoplight": {
-            "id": "s3pguy6et03lw"
-          }
-        },
-        "flag": {
-          "type": "string",
-          "x-stoplight": {
-            "id": "3tq642e0emea7"
-          }
-        },
-        "tags": {
-          "type": "array",
-          "x-stoplight": {
-            "id": "tgbqx7kpwn7j6"
+      "ExternalArchivingSettings": {
+        "type": "object",
+        "required": [
+          "enabled",
+          "host",
+          "port",
+          "protocol",
+          "type"
+        ],
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "description": "Enabled status"
           },
-          "items": {
-            "x-stoplight": {
-              "id": "pjs3i8tb2oamz"
-            },
+          "type": {
+            "type": "string",
+            "description": "Archiving type"
+          },
+          "host": {
+            "type": "string",
+            "description": "IMAP server host"
+          },
+          "port": {
+            "type": "integer",
+            "description": "IMAP server port"
+          },
+          "protocol": {
+            "type": "string",
+            "description": "IMAP server protocol"
+          },
+          "username": {
+            "type": "string",
+            "description": "Account username"
+          },
+          "password": {
+            "type": "string",
+            "description": "Account password"
+          },
+          "folderPrefix": {
+            "type": "string",
+            "description": "IMAP folder prefix"
+          },
+          "minage": {
+            "type": "integer",
+            "description": "Archive messages older than days"
+          }
+        }
+      },
+      "Account": {
+        "type": "object",
+        "properties": {
+          "userId": {
             "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "mailUsername": {
+            "type": "string"
+          }
+        }
+      },
+      "Contact": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          }
+        }
+      },
+      "Attachment": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "fileName": {
+            "type": "string"
+          },
+          "fileSize": {
+            "type": "integer"
+          },
+          "mimeType": {
+            "type": "string"
+          },
+          "downloadUrl": {
+            "type": "string"
+          }
+        }
+      },
+      "Folder": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unreadCount": {
+            "type": "integer"
+          },
+          "totalCount": {
+            "type": "integer"
+          },
+          "children": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Folder"
+            }
+          }
+        }
+      },
+      "Message": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "uid": {
+            "type": "integer"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "body": {
+            "type": "string"
+          },
+          "sender": {
+            "$ref": "#/components/schemas/Contact"
+          },
+          "recipients": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            }
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            }
+          },
+          "bcc": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contact"
+            }
+          },
+          "date": {
+            "type": "string"
+          },
+          "isRead": {
+            "type": "boolean"
+          },
+          "attachments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Attachment"
+            }
+          },
+          "status": {
+            "type": "string"
+          },
+          "flag": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       }

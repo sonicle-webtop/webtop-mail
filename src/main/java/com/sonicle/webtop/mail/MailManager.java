@@ -115,6 +115,8 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeUtility;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -401,6 +403,65 @@ public class MailManager extends BaseManager implements IMailManager {
 			
 			mc.consume(mmsg, ((UIDFolder)folder).getUID(mmsg), parsed);
 			
+		} catch(Exception exc) {
+			logger.error("Error listing folders", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+	
+	public String getMessageAttachmentContentType(String folderId, long uid, int index) {
+		IMAPFolder folder = null;
+		String contentType="binary/octet-stream";
+		try {
+			Mailbox mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser mmp = new MimeMessageParser();
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse(mmsg, false);
+			Part part = parsed.getAttachmentParts().get(index);
+			contentType = part.getContentType();
+		} catch(Exception exc) {
+			logger.error("Error listing folders", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return contentType;
+	}	
+	
+	public void streamMessageAttachmentData(String folderId, long uid, int index, OutputStream os) {
+		IMAPFolder folder = null;
+		try {
+			Mailbox mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser mmp = new MimeMessageParser();
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse(mmsg, false);
+			Part part = parsed.getAttachmentParts().get(index);
+			IOUtils.copy(part.getInputStream(), os);
+		} catch(Exception exc) {
+			logger.error("Error listing folders", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+	
+	public void streamMessageCidData(String folderId, long uid, String cidName, OutputStream os) {
+		IMAPFolder folder = null;
+		try {
+			Mailbox mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser mmp = new MimeMessageParser();
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse(mmsg, false);
+			Part part = parsed.getCidParts().get(cidName);
+			IOUtils.copy(part.getInputStream(), os);
 		} catch(Exception exc) {
 			logger.error("Error listing folders", exc);
 		} finally {

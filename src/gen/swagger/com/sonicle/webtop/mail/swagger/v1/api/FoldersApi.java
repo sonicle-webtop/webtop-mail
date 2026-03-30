@@ -15,7 +15,7 @@ import javax.validation.Valid;
 
 @Path("/folders")
 @Api(description = "the folders API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-13T15:40:34.652+01:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-30T11:45:22.192+02:00[Europe/Rome]")
 public abstract class FoldersApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
@@ -23,7 +23,9 @@ public abstract class FoldersApi extends com.sonicle.webtop.core.sdk.BaseRestApi
     @Produces({ "application/json" })
     @ApiOperation(value = "Lists folders", notes = "", response = ApiFolder.class, responseContainer = "List", authorizations = {
         
-        @Authorization(value = "Basic authentication")
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
          }, tags={ "folders" })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiFolder.class, responseContainer = "List")
@@ -36,7 +38,9 @@ public abstract class FoldersApi extends com.sonicle.webtop.core.sdk.BaseRestApi
     @Produces({ "application/json" })
     @ApiOperation(value = "Lists folders", notes = "", response = ApiFolder.class, responseContainer = "List", authorizations = {
         
-        @Authorization(value = "Basic authentication")
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
          }, tags={ "folders" })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiFolder.class, responseContainer = "List")

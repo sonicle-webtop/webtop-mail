@@ -15,14 +15,16 @@ import javax.validation.Valid;
 
 @Path("/settings/external-archiving")
 @Api(description = "the settings API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-13T15:40:34.652+01:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-30T11:45:22.192+02:00[Europe/Rome]")
 public abstract class SettingsApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
     @Produces({ "application/json" })
     @ApiOperation(value = "Get configuration data", notes = "", response = ApiExternalArchivingSettings.class, authorizations = {
         
-        @Authorization(value = "Basic authentication")
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
          }, tags={ "settings" })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiExternalArchivingSettings.class)
