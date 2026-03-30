@@ -295,14 +295,16 @@ public class Folder extends FolderApi {
 			String folderId = id.replace("|", "/");
 			long uid = Long.parseLong(suid);
 			int index = Integer.parseInt(sindex);
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmgr.getParsedMimeMessageComponents(folderId, uid);
+			String contentType = parsed.getContentType(index);
 			StreamingOutput stream = new StreamingOutput() {
 				@Override
 				public void write(OutputStream os) throws IOException, WebApplicationException {
-					mmgr.streamMessageAttachmentData(folderId, uid, index, os);
+					mmgr.streamMessageAttachmentData(parsed, index, os);
 				}
 			};
 
-			return respOk(stream);
+			return respOk(stream, contentType);
 			
 		} catch(Exception ex) {
 			logger.error("[{}] getMessageAttachmentBytes()", RunContext.getRunProfileId(), ex);
@@ -318,14 +320,16 @@ public class Folder extends FolderApi {
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			String folderId = id.replace("|", "/");
 			long uid = Long.parseLong(suid);
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmgr.getParsedMimeMessageComponents(folderId, uid);
+			String contentType = parsed.getContentType(cidName);
 			StreamingOutput stream = new StreamingOutput() {
 				@Override
 				public void write(OutputStream os) throws IOException, WebApplicationException {
-					mmgr.streamMessageCidData(folderId, uid, cidName, os);
+					mmgr.streamMessageCidData(parsed, cidName, os);
 				}
 			};
 
-			return respOk(stream);
+			return respOk(stream, contentType);
 			
 		} catch(Exception ex) {
 			logger.error("[{}] getMessageAttachmentBytes()", RunContext.getRunProfileId(), ex);

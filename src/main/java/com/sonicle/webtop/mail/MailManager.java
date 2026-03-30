@@ -254,8 +254,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public ArrayList<Folder> getRootFolders() {
 		ArrayList<Folder> folders = new ArrayList<>();
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			Folder root = mailbox.getRootFolder();
 			Folder flist[] = root.list();
 			for(Folder folder: flist) folders.add(folder);
@@ -269,8 +270,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public ArrayList<Folder> getFolders(String id) {
 		ArrayList<Folder> folders = new ArrayList<>();
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			Folder parent = mailbox.getFolder(id);
 			Folder flist[] = parent.list();
 			for(Folder folder: flist) folders.add(folder);
@@ -284,8 +286,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public void consumeMessages(String folderId, MessagesConsumer mc) {
 		Folder folder = null;
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			folder = mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
 			Message fmsgs[] = ((SonicleIMAPFolder)folder).sort(new DateSortTerm(true), null);
@@ -303,8 +306,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public void consumeMessage(String folderId, long uid, MessageConsumer mc) {
 		IMAPFolder folder = null;
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
 			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
@@ -414,8 +418,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	public String getMessageAttachmentContentType(String folderId, long uid, int index) {
 		IMAPFolder folder = null;
 		String contentType="binary/octet-stream";
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
 			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
@@ -424,7 +429,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			Part part = parsed.getAttachmentParts().get(index);
 			contentType = part.getContentType();
 		} catch(Exception exc) {
-			logger.error("Error listing folders", exc);
+			logger.error("Error in getMessageAttachmentContentType", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			mailbox.disconnect();
@@ -432,10 +437,31 @@ public class MailManager extends BaseManager implements IMailManager {
 		return contentType;
 	}	
 	
+	public MimeMessageParser.ParsedMimeMessageComponents getParsedMimeMessageComponents(String folderId, long uid) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		MimeMessageParser.ParsedMimeMessageComponents parsed=null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser mmp = new MimeMessageParser();
+			parsed = mmp.parse(mmsg, false);
+		} catch(Exception exc) {
+			logger.error("Error on getParsedMimeMessageComponents", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return parsed;
+	}	
+	
 	public void streamMessageAttachmentData(String folderId, long uid, int index, OutputStream os) {
 		IMAPFolder folder = null;
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
 			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
@@ -444,7 +470,25 @@ public class MailManager extends BaseManager implements IMailManager {
 			Part part = parsed.getAttachmentParts().get(index);
 			IOUtils.copy(part.getInputStream(), os);
 		} catch(Exception exc) {
-			logger.error("Error listing folders", exc);
+			logger.error("Error in streamMessageAttachmentData", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+	
+	public void streamMessageAttachmentData(MimeMessageParser.ParsedMimeMessageComponents parsed, int index, OutputStream os) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			MimeMessage msg = parsed.getOriginalMessage();
+			folder = (IMAPFolder) msg.getFolder();
+			folder.open(Folder.READ_ONLY);
+			Part part = parsed.getAttachmentParts().get(index);
+			IOUtils.copy(part.getInputStream(), os);
+		} catch(Exception exc) {
+			logger.error("Error in streamMessageAttachmentData", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			mailbox.disconnect();
@@ -453,8 +497,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public void streamMessageCidData(String folderId, long uid, String cidName, OutputStream os) {
 		IMAPFolder folder = null;
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
 			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
@@ -463,7 +508,25 @@ public class MailManager extends BaseManager implements IMailManager {
 			Part part = parsed.getCidParts().get(cidName);
 			IOUtils.copy(part.getInputStream(), os);
 		} catch(Exception exc) {
-			logger.error("Error listing folders", exc);
+			logger.error("Error in streamMessageCidData", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+	
+	public void streamMessageCidData(MimeMessageParser.ParsedMimeMessageComponents parsed, String cidName, OutputStream os) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			MimeMessage msg = parsed.getOriginalMessage();
+			folder = (IMAPFolder) msg.getFolder();
+			folder.open(Folder.READ_ONLY);
+			Part part = parsed.getCidParts().get(cidName);
+			IOUtils.copy(part.getInputStream(), os);
+		} catch(Exception exc) {
+			logger.error("Error in streamMessageCidData", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			mailbox.disconnect();
