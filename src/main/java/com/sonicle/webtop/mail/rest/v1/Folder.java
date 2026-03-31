@@ -74,13 +74,15 @@ public class Folder extends FolderApi {
 	private static final Logger logger = LoggerFactory.getLogger(Folder.class);
 	
 	@Override
-	public Response getMessages(String id) {
+	public Response getMessages(String id, Integer pageNo, Integer pageSize) {
 		try {
 			ArrayList<ApiMessage> items = new ArrayList<>();
 			UserProfileId targetPid = RunContext.getRunProfileId();
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
-			mmgr.consumeMessages(id.replace("|", "/"), new MailManager.MessagesConsumer() {
+			int ipageNo = pageNo!=null ? pageNo.intValue() : -1;
+			int ipageSize = pageSize!=null ? pageSize.intValue() : 50;
+			mmgr.consumeMessages(id.replace("|", "/"), ipageNo, ipageSize, new MailManager.MessagesConsumer() {
 				@Override
 				public void consume(Message msg, long uid) throws MessagingException, IOException {
 					MimeMessage mmsg = (MimeMessage) msg;
@@ -148,8 +150,11 @@ public class Folder extends FolderApi {
 						am.setDate(
 								cal.get(Calendar.YEAR)+"-"+
 								StringUtils.leftPad(""+(cal.get(Calendar.MONTH)+1), 2, '0')+"-"+
-								StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0'));
+								StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0')+" "+
+								StringUtils.leftPad(""+cal.get(Calendar.HOUR_OF_DAY), 2, '0')+":"+
+								StringUtils.leftPad(""+cal.get(Calendar.MINUTE), 2, '0'));
 
+						
 						am.setIsRead(mmsg.isSet(Flags.Flag.SEEN));
 						
 						Flags flags = mmsg.getFlags();
@@ -251,7 +256,9 @@ public class Folder extends FolderApi {
 						am.setDate(
 								cal.get(Calendar.YEAR)+"-"+
 								StringUtils.leftPad(""+(cal.get(Calendar.MONTH)+1), 2, '0')+"-"+
-								StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0'));
+								StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0')+" "+
+								StringUtils.leftPad(""+cal.get(Calendar.HOUR_OF_DAY), 2, '0')+":"+
+								StringUtils.leftPad(""+cal.get(Calendar.MINUTE), 2, '0'));
 
 						am.setIsRead(mmsg.isSet(Flags.Flag.SEEN));
 
@@ -266,6 +273,7 @@ public class Folder extends FolderApi {
 						for(Part part: parts) {
 							ApiAttachment attachment = new ApiAttachment();
 							attachment.setFileName(mmgr.getPartName(part));
+							attachment.setCidName(mmgr.getCidName(part));
 							attachment.setId(""+ix);
 							attachment.setMimeType(part.getContentType());
 							int size = part.getSize();
@@ -273,6 +281,7 @@ public class Folder extends FolderApi {
 							int rsize = size - (lines * 2);//(p.getSize()/4)*3;
 							attachment.setFileSize(rsize);
 							attachments.add(attachment);
+							++ix;
 						}
 						am.setAttachments(attachments);
 					}

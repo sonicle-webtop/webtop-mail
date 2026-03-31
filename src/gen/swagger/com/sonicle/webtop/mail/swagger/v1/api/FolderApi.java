@@ -15,7 +15,7 @@ import javax.validation.Valid;
 
 @Path("/folder/{id}")
 @Api(description = "the folder API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-30T11:45:22.192+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-31T11:12:12.602+02:00[Europe/Rome]")
 public abstract class FolderApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
@@ -78,7 +78,7 @@ public abstract class FolderApi extends com.sonicle.webtop.core.sdk.BaseRestApiR
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiMessage.class, responseContainer = "List")
     })
-    public Response getMessages(@PathParam("id") String id) {
+    public Response getMessages(@PathParam("id") String id,@QueryParam("_page_no")  @ApiParam("The page number to return, providing a value actually activates pagination. Optional.")  Integer pageNo,@QueryParam("_page_size")  @ApiParam("How many items to return when paginating. Defaults to 50.")  Integer pageSize) {
         return Response.ok().entity("magic!").build();
     }
 }

@@ -171,7 +171,25 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "_page_no",
+            "description": "The page number to return, providing a value actually activates pagination. Optional."
+          },
+          {
+            "schema": {
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "_page_size",
+            "description": "How many items to return when paginating. Defaults to 50."
+          }
+        ]
       }
     },
     "/folder/{id}/message/{uid}": {
@@ -437,6 +455,12 @@
           },
           "downloadUrl": {
             "type": "string"
+          },
+          "cidName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "mwlkh6sy2m9na"
+            }
           }
         }
       },

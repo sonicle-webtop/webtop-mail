@@ -7704,7 +7704,7 @@ public class Service extends BaseService {
 				}
 				String cidnames[]=p.getHeader("Content-ID");
 				String cidname=null;
-				if (cidnames!=null && cidnames.length>0) cidname=mcache.normalizeCidFileName(cidnames[0]);
+				if (cidnames!=null && cidnames.length>0) cidname=mailManager.normalizeCidFileName(cidnames[0]);
 				boolean isInlineable = mailManager.isInlineableMime(ctype);
 				boolean inline=((p.getHeader("Content-Location")!=null)||(cidname!=null))&&isInlineable;
 				if (inline && cidname!=null) inline=mailData.isReferencedCid(cidname);

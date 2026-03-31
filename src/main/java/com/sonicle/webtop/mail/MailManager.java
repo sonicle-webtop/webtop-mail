@@ -284,7 +284,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		return folders;
 	}
 	
-	public void consumeMessages(String folderId, MessagesConsumer mc) {
+	public void consumeMessages(String folderId, int pageNo, int pageSize, MessagesConsumer mc) {
 		Folder folder = null;
 		Mailbox mailbox = null;
 		try {
@@ -292,9 +292,24 @@ public class MailManager extends BaseManager implements IMailManager {
 			folder = mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
 			Message fmsgs[] = ((SonicleIMAPFolder)folder).sort(new DateSortTerm(true), null);
-			((SonicleIMAPFolder)folder).uid_fetch(fmsgs, FP);
-			for(Message msg: fmsgs) {
-				mc.consume(msg, ((UIDFolder)folder).getUID(msg));
+			if (pageNo<0) {
+				((SonicleIMAPFolder)folder).uid_fetch(fmsgs, FP);
+				for(Message msg: fmsgs) {
+					mc.consume(msg, ((UIDFolder)folder).getUID(msg));
+				}
+			} else {
+				int start = pageNo*pageSize;
+				int end = start + pageSize;
+				if (end>fmsgs.length) end = fmsgs.length;
+				Message xmsgs[] = new Message[end-start];
+				for(int ix=start; ix<end; ++ix) {
+					xmsgs[ix-start] = fmsgs[ix];
+				}
+				((SonicleIMAPFolder)folder).uid_fetch(xmsgs, FP);
+				
+				for(Message msg: xmsgs) {
+					mc.consume(msg, ((UIDFolder)folder).getUID(msg));
+				}
 			}
 		} catch(Exception exc) {
 			logger.error("Error listing folders", exc);
@@ -684,6 +699,31 @@ public class MailManager extends BaseManager implements IMailManager {
 			}
 		}
 		return pname;
+	}
+	
+	public String normalizeCidFileName(String filename) {
+		if(filename.startsWith("<")) {
+		  filename=filename.substring(1);
+		}
+		if(filename.endsWith(">")) {
+		  filename=filename.substring(0, filename.length()-1);
+		}
+		try {
+			filename=MailUtils.decodeQString(filename);
+		} catch(Exception exc) {
+
+		}
+		return filename;
+	}
+	
+	public String getCidName(Part p) {
+		String cidname=null;
+		try {
+			String cidnames[]=p.getHeader("Content-ID");
+			if (cidnames!=null && cidnames.length>0) cidname=normalizeCidFileName(cidnames[0]);
+		} catch(MessagingException exc) {
+		}
+		return cidname;
 	}
 	
 	public boolean isAttachamentDetectUseBodyStructure() {

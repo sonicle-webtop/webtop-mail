@@ -2401,20 +2401,6 @@ public class FolderCache {
   }
   */
 
-  protected String normalizeCidFileName(String filename) {
-	if(filename.startsWith("<")) {
-	  filename=filename.substring(1);
-	}
-	if(filename.endsWith(">")) {
-	  filename=filename.substring(0, filename.length()-1);
-	}
-	try {
-		filename=MailUtils.decodeQString(filename);
-	} catch(Exception exc) {
-
-	}
-	return filename;
-  }
   /*
   class PrepareStatus {
     boolean htmlfound=false;
