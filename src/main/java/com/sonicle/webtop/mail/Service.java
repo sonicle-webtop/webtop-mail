@@ -5988,7 +5988,7 @@ public class Service extends BaseService {
 				FolderCache fc=account.getFolderCache(folderId);
 				ImapQuery iq = new ImapQuery(new FlagTerm(new Flags(Flags.Flag.SEEN), false),false);
 				Message msgs[]=fc.getMessages(FolderCache.SORT_BY_DATE,false,true,-1,true,false, iq);
-				if (msgs!=null) fc.fetch(msgs, getMessageFetchProfile(),0,50);
+				if (msgs!=null) mailManager.fetch(fc.getFolder(), msgs, getMessageFetchProfile(),0,50);
 				else msgs=new Message[0];
 				
 				int n=0;
@@ -6677,7 +6677,7 @@ public class Service extends BaseService {
 						Folder fsent=account.getFolder(account.getFolderSent());
 						boolean openedsent=false;
 						//Fetch others for these messages
-						mcache.fetch(xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max);
+						mailManager.fetch(mcache.getFolder(),xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max);
 						long tId=0;
 						boolean tIsOpen = false;
 						boolean tChildren = false;

@@ -104,6 +104,58 @@
         }
       }
     },
+    "/identities": {
+      "get": {
+        "tags": [
+          "folders"
+        ],
+        "summary": "Lists identities",
+        "operationId": "getIdentities",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Identity"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": []
+    },
+    "/favorites": {
+      "get": {
+        "tags": [
+          "folders"
+        ],
+        "summary": "Lists favorites folders",
+        "operationId": "getFavorites",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Folder"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "parameters": []
+    },
     "/folders/{id}": {
       "parameters": [
         {
@@ -435,6 +487,80 @@
           },
           "email": {
             "type": "string"
+          }
+        }
+      },
+      "Identity": {
+        "type": "object",
+        "x-stoplight": {
+          "id": "h8kihyff2avhn"
+        },
+        "properties": {
+          "id": {
+            "type": "integer",
+            "x-stoplight": {
+              "id": "l7i7qua5n17dt"
+            }
+          },
+          "uid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "u7gjavx1u4tjw"
+            }
+          },
+          "type": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "u40saovg2jzkl"
+            }
+          },
+          "email": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "yi5z4sj4fjx23"
+            }
+          },
+          "displayName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ahtfdmdovlqse"
+            }
+          },
+          "mainFolder": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "rx0kvcn1t1ezv"
+            }
+          },
+          "mailcard": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ggglbbzvpcpv9"
+            }
+          },
+          "fax": {
+            "type": "boolean",
+            "x-stoplight": {
+              "id": "xhmuujo7tmsil"
+            }
+          },
+          "forceMailcard": {
+            "type": "boolean",
+            "x-stoplight": {
+              "id": "42grbervx5e1v"
+            }
+          },
+          "lockMailcard": {
+            "type": "boolean",
+            "x-stoplight": {
+              "id": "xcalje2d414np"
+            }
+          },
+          "isMain": {
+            "type": "boolean",
+            "x-stoplight": {
+              "id": "e6dnb3qhkvfka"
+            }
           }
         }
       },

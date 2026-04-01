@@ -710,9 +710,9 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public static class FavoriteFolder {
-		String accountId;
-		String folderId;
-		String description;
+		public String accountId;
+		public String folderId;
+		public String description;
 		
 		public FavoriteFolder(String accountId, String folderId, String description) {
 			this.accountId=accountId;

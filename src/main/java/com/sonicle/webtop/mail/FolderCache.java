@@ -861,15 +861,6 @@ public class FolderCache {
         ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
     }*/
 	
-    public void fetch(Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
-        int n=fmsgs.length;
-        if (length>(n-start)) length=n-start;
-        Message xmsgs[]=new Message[length];
-        System.arraycopy(fmsgs, start, xmsgs, 0, length);
-        open();
-        ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
-    }
-	
 	public Message[] getMessages(int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, ImapQuery iq) throws MessagingException, IOException {
         boolean rebuilt=false;
         boolean sortchanged=false;

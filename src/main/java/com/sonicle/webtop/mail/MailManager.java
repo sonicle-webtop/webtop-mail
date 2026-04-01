@@ -80,12 +80,16 @@ import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
+import com.sonicle.webtop.mail.MailUserSettings.FavoriteFolder;
+import com.sonicle.webtop.mail.MailUserSettings.FavoriteFolders;
 import com.sonicle.webtop.mail.bol.OExternalAccount;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OTag;
+import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.dal.ExternalAccountDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.TagDAO;
+import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.FolderShareParameters;
 import com.sonicle.webtop.mail.model.Tag;
@@ -252,6 +256,34 @@ public class MailManager extends BaseManager implements IMailManager {
 		return mailbox;
 	}
 	
+	public class Favorite {
+		public String id;
+		public String name;
+		public Folder folder;
+	}
+	public ArrayList<Favorite> getFavorites() {
+		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetProfileId().getDomainId());
+		MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
+		FavoriteFolders ffs = mus.getFavoriteFolders();
+		ArrayList<Favorite> favorites = new ArrayList<>();
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			for(FavoriteFolder ff: ffs) {
+				Favorite f = new Favorite();
+				f.id = ff.folderId;
+				f.name = ff.description;
+				f.folder = mailbox.getFolder(f.id);
+				favorites.add(f);
+			}
+		} catch(MessagingException|WTException exc) {
+			logger.error("Error listing favorites", exc);
+		} finally {
+			mailbox.disconnect();
+		}
+		return favorites;
+	}
+	
 	public ArrayList<Folder> getRootFolders() {
 		ArrayList<Folder> folders = new ArrayList<>();
 		Mailbox mailbox = null;
@@ -284,6 +316,15 @@ public class MailManager extends BaseManager implements IMailManager {
 		return folders;
 	}
 	
+    public Message[] fetch(Folder folder, Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
+        int n=fmsgs.length;
+        if (length>(n-start)) length=n-start;
+        Message xmsgs[]=new Message[length];
+        System.arraycopy(fmsgs, start, xmsgs, 0, length);
+        ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
+		return xmsgs;
+    }
+	
 	public void consumeMessages(String folderId, int pageNo, int pageSize, MessagesConsumer mc) {
 		Folder folder = null;
 		Mailbox mailbox = null;
@@ -294,22 +335,24 @@ public class MailManager extends BaseManager implements IMailManager {
 			Message fmsgs[] = ((SonicleIMAPFolder)folder).sort(new DateSortTerm(true), null);
 			if (pageNo<0) {
 				((SonicleIMAPFolder)folder).uid_fetch(fmsgs, FP);
-				for(Message msg: fmsgs) {
-					mc.consume(msg, ((UIDFolder)folder).getUID(msg));
-				}
 			} else {
 				int start = pageNo*pageSize;
-				int end = start + pageSize;
+				/*int end = start + pageSize;
 				if (end>fmsgs.length) end = fmsgs.length;
 				Message xmsgs[] = new Message[end-start];
 				for(int ix=start; ix<end; ++ix) {
 					xmsgs[ix-start] = fmsgs[ix];
 				}
-				((SonicleIMAPFolder)folder).uid_fetch(xmsgs, FP);
+				((SonicleIMAPFolder)folder).uid_fetch(xmsgs, FP);*/
 				
-				for(Message msg: xmsgs) {
+				fmsgs = fetch(folder, fmsgs, FP, start, pageSize);
+				
+				/*for(Message msg: xmsgs) {
 					mc.consume(msg, ((UIDFolder)folder).getUID(msg));
-				}
+				}*/
+			}
+			for(Message msg: fmsgs) {
+				mc.consume(msg, ((UIDFolder)folder).getUID(msg));
 			}
 		} catch(Exception exc) {
 			logger.error("Error listing folders", exc);
@@ -1077,6 +1120,86 @@ public class MailManager extends BaseManager implements IMailManager {
 			DbUtils.closeQuietly(con);
 		}
 		return idents;
+	}
+	
+	private String getMailUsername(UserProfileId userProfileId) {
+		Connection con=null;
+		String username=null;
+		try {
+			con=WT.getConnection(SERVICE_ID);
+			OUserMap omap=UserMapDAO.getInstance().selectById(con, userProfileId.getDomainId(), userProfileId.getUserId());
+			if (omap!=null) username=omap.getMailUser();
+			if (username==null || username.isEmpty()) username=userProfileId.getUserId();
+		} catch(Exception exc) {
+			logger.error("Error mapping mail user",exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+		return username+"@"+WT.getPrimaryDomainName(userProfileId.getDomainId());
+	}
+	
+	public void loadIdentityMailcard(Identity i) {
+		if (i.isMainIdentity()) _loadMainIdentityMailcard(i);
+		else _loadIdentityMailcard(i);
+	}
+	
+	private void _loadMainIdentityMailcard(Identity id) {
+		Mailcard mc = getMailcard();
+		try {
+			UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(getTargetProfileId());
+			mc.substitutePlaceholders(upi);			
+		} catch(WTException exc) {
+			logger.error("cannot load user personal info",exc);
+		}
+		//mc.html=LangUtils.stripLineBreaks(mc.html);
+		id.setMailcard(mc);
+	}
+	
+	private void _loadIdentityMailcard(Identity id) {
+		Mailcard mc = getMailcard(id);
+		if (mc!=null) {
+			if(id.isType(Identity.TYPE_AUTO)) {
+				UserProfileId opid=id.getOriginPid();
+				// In case of auto identities we need to build real mainfolder
+				try {
+					String mailUser = getMailUsername(opid);
+					Mailbox mailbox = getMailbox();
+					String mainfolder = mailbox.getSharedFolderName(mailUser);
+					id.setMainFolder(mainfolder);
+					if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, id.getMainFolder()));
+				} catch (Exception ex) {
+					logger.error("Unable to get auto identity foldername [{}]", id.getEmail(), ex);
+				}
+
+				/*
+				// Avoids default mailcard display for automatic identities
+				if(mc.source.equals(Mailcard.TYPE_DEFAULT) && !StringUtils.isEmpty(id.getMainFolder())) {
+					mc = getMailcard();
+				}*/
+				
+				if (!id.isForceMailcard()) {
+					mc=getMailcard();
+					opid=getTargetProfileId();
+				}
+
+				try {
+					UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(opid);
+					mc.substitutePlaceholders(upi);
+				} catch (Exception ex) {
+					logger.error("Unable to get auto identity personal info [{}]", id.getEmail(), ex);
+				}
+			}
+			else if(id.isType(Identity.TYPE_USER)) {
+				try {
+						UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(getTargetProfileId());
+						mc.substitutePlaceholders(upi);			
+				} catch(WTException exc) {
+						logger.error("cannot load user personal info",exc);
+				}
+			}
+		}
+		//mc.html=LangUtils.stripLineBreaks(mc.html);
+		id.setMailcard(mc);
 	}
 	
 	public List<ExternalAccount> listExternalAccounts() throws WTException {

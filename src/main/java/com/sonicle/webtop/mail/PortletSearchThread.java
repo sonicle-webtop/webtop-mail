@@ -117,7 +117,7 @@ public class PortletSearchThread extends Thread {
 				}
                 
                 if (msgs!=null && msgs.length>0) {
-					fc.fetch(msgs, ms.getMessageFetchProfile(),0,50);
+					ms.getManager().fetch(fc.getFolder(), msgs, ms.getMessageFetchProfile(),0,50);
 					int totmsgs=0;
 					for(Message xmsg: msgs) {
 						SonicleIMAPMessage msg=(SonicleIMAPMessage)xmsg;
