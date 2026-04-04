@@ -33,22 +33,34 @@
  */
 package com.sonicle.webtop.mail.rest.v1;
 
+import com.sonicle.commons.InternetAddressUtils;
+import com.sonicle.mail.email.AttachmentResource;
+import com.sonicle.mail.email.EmailMessage;
+import com.sonicle.mail.email.EmailMessageBuilder;
+import com.sonicle.mail.email.EmailPopulatingBuilder;
+import com.sonicle.mail.email.Recipient;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.sdk.WTEmailSendException;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.swagger.v1.api.FolderApi;
+import com.sonicle.webtop.mail.bol.model.Identity;
+import com.sonicle.webtop.mail.swagger.v1.api.MeMessagesApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachment;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachmentNew;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiContact;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiMessageNew;
 import com.sun.mail.imap.IMAPMessage;
+import jakarta.activation.DataSource;
 import jakarta.mail.Address;
 import jakarta.mail.Flags;
 import jakarta.mail.Message;
+import jakarta.mail.Message.RecipientType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Part;
 import jakarta.mail.internet.InternetAddress;
@@ -58,6 +70,7 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -70,11 +83,12 @@ import org.slf4j.LoggerFactory;
  *
  * @author gbulfon
  */
-public class Folder extends FolderApi {
-	private static final Logger logger = LoggerFactory.getLogger(Folder.class);
+public class MeMessages extends MeMessagesApi {
+	private static final Logger logger = LoggerFactory.getLogger(MeMessages.class);
+	
 	
 	@Override
-	public Response getMessages(String id, Integer pageNo, Integer pageSize) {
+	public Response listMessages(String folderId, Integer pageNo, Integer pageSize) {
 		try {
 			ArrayList<ApiMessage> items = new ArrayList<>();
 			UserProfileId targetPid = RunContext.getRunProfileId();
@@ -82,7 +96,7 @@ public class Folder extends FolderApi {
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			int ipageNo = pageNo!=null ? pageNo.intValue() : -1;
 			int ipageSize = pageSize!=null ? pageSize.intValue() : 50;
-			mmgr.consumeMessages(id.replace("|", "/"), ipageNo, ipageSize, new MailManager.MessagesConsumer() {
+			mmgr.consumeMessages(folderId, ipageNo, ipageSize, new MailManager.MessagesConsumer() {
 				@Override
 				public void consume(Message msg, long uid) throws MessagingException, IOException {
 					MimeMessage mmsg = (MimeMessage) msg;
@@ -178,14 +192,14 @@ public class Folder extends FolderApi {
 	}
 
 	@Override
-	public Response getMessage(String id, String suid) {
+	public Response getMessage(String folderId, String suid) {
 		try {
 			ApiMessage am = new ApiMessage();
 			UserProfileId targetPid = RunContext.getRunProfileId();
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			long uid = Long.parseLong(suid);
-			mmgr.consumeMessage(id.replace("|", "/"), uid, new MailManager.MessageConsumer() {
+			mmgr.consumeMessage(folderId, uid, new MailManager.MessageConsumer() {
 				@Override
 				public void consume(Message msg, long uid, MimeMessageParser.ParsedMimeMessageComponents parsed) throws MessagingException, IOException {
 					IMAPMessage mmsg = (IMAPMessage) msg;
@@ -296,12 +310,11 @@ public class Folder extends FolderApi {
 	}
 
 	@Override
-	public Response getMessageAttachmentBytes(String id, String suid, String sindex) {
+	public Response getMessageAttachmentBytes(String folderId, String suid, String sindex) {
 		try {
 			ApiMessage am = new ApiMessage();
 			UserProfileId targetPid = RunContext.getRunProfileId();
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
-			String folderId = id.replace("|", "/");
 			long uid = Long.parseLong(suid);
 			int index = Integer.parseInt(sindex);
 			MimeMessageParser.ParsedMimeMessageComponents parsed = mmgr.getParsedMimeMessageComponents(folderId, uid);
@@ -322,12 +335,11 @@ public class Folder extends FolderApi {
 	}
 	
 	@Override
-	public Response getMessageCidBytes(String id, String suid, String cidName) {
+	public Response getMessageCidBytes(String folderId, String suid, String cidName) {
 		try {
 			ApiMessage am = new ApiMessage();
 			UserProfileId targetPid = RunContext.getRunProfileId();
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
-			String folderId = id.replace("|", "/");
 			long uid = Long.parseLong(suid);
 			MimeMessageParser.ParsedMimeMessageComponents parsed = mmgr.getParsedMimeMessageComponents(folderId, uid);
 			String contentType = parsed.getContentType(cidName);
@@ -344,6 +356,105 @@ public class Folder extends FolderApi {
 			logger.error("[{}] getMessageAttachmentBytes()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
 		}
+	}
+
+	@Override
+	public Response sendMessage(ApiMessageNew amn) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		
+		ApiContact sender = amn.getSender();
+		
+		//from
+		EmailPopulatingBuilder epb = EmailMessageBuilder.startingBlank()
+				.from(sender.getName(), sender.getEmail());
+		
+		//tos
+		List<ApiContact> rcpts = amn.getRecipients();
+		if (rcpts != null)
+			for (ApiContact rcpt: rcpts)
+				epb.to(rcpt.getName(), rcpt.getEmail());
+		
+		//ccs
+		rcpts = amn.getCc();
+		if (rcpts != null)
+			for (ApiContact rcpt: rcpts)
+				epb.cc(rcpt.getName(), rcpt.getEmail());
+
+		//bccs
+		rcpts = amn.getBcc();
+		if (rcpts != null)
+			for (ApiContact rcpt: rcpts)
+				epb.bcc(rcpt.getName(), rcpt.getEmail());
+		
+		epb.withSubject(amn.getSubject());
+		
+		if (amn.getFormat().equals("html")) epb.withHTMLText(amn.getBody());
+		else epb.withPlainText(amn.getBody());
+		
+		List<ApiAttachmentNew> atts = amn.getAttachmentsNew();
+		if (atts!=null) {
+			for(ApiAttachmentNew att: atts) {
+				epb.withAttachment(java.util.Base64.getDecoder().decode(att.getBase64()), att.getMimeType(), att.getFileName());
+			}
+		}
+
+		try {
+			mmgr.sendMessage(targetPid, epb, mmgr.findIdentity(amn.getIdentityId()));
+			return respOk();
+		} catch(Exception exc) {
+			logger.error("Error during sendMessage", exc);
+			return respError(exc);
+		}
+	}
+
+	@Override
+	public Response getReplyMessage(String folderId, String suid, Boolean replyAll, Boolean includeAttachments) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		long uid = Long.parseLong(suid);
+		try {
+			EmailMessage msg = mmgr.getReplyMessage(folderId, uid, replyAll, false, true, true, true);
+			ArrayList<ApiContact> tos = new ArrayList<>();
+			ArrayList<ApiContact> ccs = new ArrayList<>();
+			ArrayList<ApiContact> bccs = new ArrayList<>();
+			for(Recipient rcpt: msg.getRecipients()) {
+				InternetAddress ia = InternetAddressUtils.toInternetAddress(rcpt.toString());
+				ApiContact ac = new ApiContact();
+				ac.setName(rcpt.getName());
+				ac.setEmail(rcpt.getAddress());
+				if (rcpt.getType().equals(RecipientType.TO)) tos.add(ac);
+				else if (rcpt.getType().equals(RecipientType.CC)) ccs.add(ac);
+				else if (rcpt.getType().equals(RecipientType.BCC)) bccs.add(ac);
+			}
+			ApiMessageNew am = new ApiMessageNew();
+			am.setRecipients(tos);
+			am.setCc(ccs);
+			am.setBcc(bccs);
+			am.setSubject(msg.getSubject());
+			am.setBody(msg.getHTMLText());
+			
+			List<AttachmentResource> atts = msg.getAttachments();
+			if (atts != null)
+				for (AttachmentResource att: atts) {
+					DataSource ds = att.getDataSource();
+					ApiAttachmentNew aatt = new ApiAttachmentNew();
+					aatt.setBase64(java.util.Base64.getEncoder().encodeToString(att.readAllBytes()));
+					aatt.setCidName(att.getCidName());
+					aatt.setFileName(ds.getName());
+					aatt.setMimeType(ds.getContentType());
+					am.addAttachmentsNewItem(aatt);
+				}
+			return respOk(am);
+		} catch(Exception exc) {
+			logger.error("Error during sendMessage", exc);
+			return respError(exc);
+		}
+	}
+
+	@Override
+	public Response getForwardMessage(String folderId, String uid, Boolean includeAttachments) {
+		return super.getForwardMessage(folderId, uid, includeAttachments); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
 	}
 	
 	@Override

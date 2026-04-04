@@ -13,39 +13,39 @@ import java.util.List;
 import javax.validation.constraints.*;
 import javax.validation.Valid;
 
-@Path("/folders")
-@Api(description = "the folders API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-01T08:34:42.710+02:00[Europe/Rome]")
-public abstract class FoldersApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
+@Path("/me/folders")
+@Api(description = "the MeFolders API")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-04T15:51:18.892+02:00[Europe/Rome]")
+public abstract class MeFoldersApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
-    @Path("/{id}")
+    @Path("/children")
     @Produces({ "application/json" })
-    @ApiOperation(value = "Lists folders", notes = "", response = ApiFolder.class, responseContainer = "List", authorizations = {
+    @ApiOperation(value = "Lists children folders", notes = "", response = ApiFolder.class, responseContainer = "List", authorizations = {
         
         @Authorization(value = "basicAuth"),
         
         @Authorization(value = "bearerAuth")
-         }, tags={ "folders" })
+         }, tags={ "me_folders" })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiFolder.class, responseContainer = "List")
     })
-    public Response getFolders(@PathParam("id") String id) {
+    public Response listChildrenFolders(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId) {
         return Response.ok().entity("magic!").build();
     }
 
     @GET
     @Produces({ "application/json" })
-    @ApiOperation(value = "Lists folders", notes = "", response = ApiFolder.class, responseContainer = "List", authorizations = {
+    @ApiOperation(value = "Lists root folders", notes = "", response = ApiFolder.class, responseContainer = "List", authorizations = {
         
         @Authorization(value = "basicAuth"),
         
         @Authorization(value = "bearerAuth")
-         }, tags={ "folders" })
+         }, tags={ "me_folders" })
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiFolder.class, responseContainer = "List")
     })
-    public Response getRootFolders() {
+    public Response listRootFolders() {
         return Response.ok().entity("magic!").build();
     }
 }

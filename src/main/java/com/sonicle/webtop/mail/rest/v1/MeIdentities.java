@@ -36,11 +36,13 @@ package com.sonicle.webtop.mail.rest.v1;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.swagger.v1.api.FavoritesApi;
+import com.sonicle.webtop.mail.Mailcard;
+import com.sonicle.webtop.mail.bol.model.Identity;
+import com.sonicle.webtop.mail.swagger.v1.api.MeIdentitiesApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
-import com.sonicle.webtop.mail.swagger.v1.model.ApiFolder;
-import jakarta.mail.MessagingException;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiIdentity;
 import java.util.ArrayList;
+import java.util.List;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,25 +51,33 @@ import org.slf4j.LoggerFactory;
  *
  * @author gbulfon
  */
-public class Favorites extends FavoritesApi {
-	private static final Logger logger = LoggerFactory.getLogger(Favorites.class);
+public class MeIdentities extends MeIdentitiesApi {
+	private static final Logger logger = LoggerFactory.getLogger(MeIdentities.class);
 	
 	@Override
-	public Response getFavorites() {
+	public Response listIdentities() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		try {
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
-			ArrayList<MailManager.Favorite> ff = mmgr.getFavorites();
-			ArrayList<ApiFolder> items = new ArrayList<>();
-			for(MailManager.Favorite favorite: ff) {
-				ApiFolder af = new ApiFolder();
-				af.setId(favorite.id.replace("/", "|"));
-				af.setName(favorite.name);
-				try {
-					af.setUnreadCount(favorite.folder.getUnreadMessageCount());
-					af.setTotalCount(favorite.folder.getMessageCount());
-				} catch(MessagingException exc) {}
-				items.add(af);
+			List<Identity> identities = mmgr.listIdentities();
+			ArrayList<ApiIdentity> items = new ArrayList<>();
+			for(Identity i: identities) {
+				ApiIdentity ai = new ApiIdentity();
+				ai.setId(i.getIdentityId());
+				ai.setUid(i.getIdentityUid());
+				ai.setType(i.getType());
+				ai.setEmail(i.getEmail());
+				ai.setDisplayName(i.getDisplayName());
+				mmgr.loadIdentityMailcard(i);
+				Mailcard mc = i.getMailcard();
+				if (mc != null) ai.setMailcard(mc.html);
+				String mainFolder = i.getMainFolder();
+				if (mainFolder != null) ai.setMainFolder(mainFolder);
+				ai.setFax(i.isFax());
+				ai.setForceMailcard(i.isForceMailcard());
+				ai.setLockMailcard(i.isLockMailcard());
+				ai.setIsMain(i.isMainIdentity());
+				items.add(ai);
 			}
 			return respOk(items);
 			

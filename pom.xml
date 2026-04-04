@@ -105,6 +105,9 @@
 				<version>${openapi-generator-maven-plugin.version}</version>
 				<configuration>
 					<openapiNormalizer>REF_AS_PARENT_IN_ALLOF=true</openapiNormalizer><!-- Force using Java inheritance for AllOf notation -->
+					<configOptions>
+					  <useTags>true</useTags>
+					</configOptions>
 				</configuration>
 			</plugin>
 		</plugins>

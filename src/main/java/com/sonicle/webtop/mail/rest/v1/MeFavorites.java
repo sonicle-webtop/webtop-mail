@@ -36,10 +36,9 @@ package com.sonicle.webtop.mail.rest.v1;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.swagger.v1.api.FoldersApi;
+import com.sonicle.webtop.mail.swagger.v1.api.MeFavoritesApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiFolder;
-import jakarta.mail.Folder;
 import jakarta.mail.MessagingException;
 import java.util.ArrayList;
 import javax.ws.rs.core.Response;
@@ -50,75 +49,33 @@ import org.slf4j.LoggerFactory;
  *
  * @author gbulfon
  */
-public class Folders extends FoldersApi {
-	private static final Logger logger = LoggerFactory.getLogger(Folders.class);
+public class MeFavorites extends MeFavoritesApi {
+	private static final Logger logger = LoggerFactory.getLogger(MeFavorites.class);
 	
 	@Override
-	public Response getRootFolders() {
+	public Response listFavorites() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		try {
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
-			ArrayList<Folder> folders = mmgr.getRootFolders();
+			ArrayList<MailManager.Favorite> ff = mmgr.getFavorites();
 			ArrayList<ApiFolder> items = new ArrayList<>();
-			for(Folder folder: folders) {
+			for(MailManager.Favorite favorite: ff) {
 				ApiFolder af = new ApiFolder();
-				af.setId(folder.getFullName());
-				af.setName(folder.getName());
+				af.setId(favorite.id);
+				af.setName(favorite.name);
 				try {
-					af.setUnreadCount(folder.getUnreadMessageCount());
-					af.setTotalCount(folder.getMessageCount());
+					af.setUnreadCount(favorite.folder.getUnreadMessageCount());
+					af.setTotalCount(favorite.folder.getMessageCount());
 				} catch(MessagingException exc) {}
-				af.setChildren(new ArrayList<>());
 				items.add(af);
 			}
 			return respOk(items);
 			
 		} catch(Exception ex) {
-			logger.error("[{}] getRootFolders()", targetPid, ex);
+			logger.error("[{}] getFavorites()", targetPid, ex);
 			return respError(ex);
 		}
 	}
-	
-	@Override
-	public Response getFolders(String id) {
-		UserProfileId targetPid = RunContext.getRunProfileId();
-		try {
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
-			ArrayList<Folder> folders = mmgr.getFolders(id.replace("|", "/"));
-			ArrayList<ApiFolder> items = new ArrayList<>();
-			for(Folder folder: folders) {
-				ApiFolder af = new ApiFolder();
-				af.setId(folder.getFullName().replace("/", "|"));
-				af.setName(folder.getName());
-				try {
-					af.setUnreadCount(folder.getUnreadMessageCount());
-					af.setTotalCount(folder.getMessageCount());
-				} catch(MessagingException exc) {}
-				af.setChildren(new ArrayList<>());
-				items.add(af);
-			}
-			return respOk(items);
-			
-		} catch(Exception ex) {
-			logger.error("[{}] getFolders()", targetPid, id, ex);
-			return respError(ex);
-		}
-	}
-	
-/*	public ArrayList<ApiFolder> loadChildren(Folder folders[]) throws MessagingException {
-		for(Folder folder: folders) {
-			ApiFolder af = new ApiFolder();
-			af.setId(folder.getFullName());
-			af.setName(folder.getName());
-			af.setUnreadCount(0);
-			af.setTotalCount(0);
-			ArrayList<Folder> children = new ArrayList<>();
-			for(Folder child: folder.list()) children.add(child);
-			af.setChildren(loadItems(children, new ArrayList<ApiFolder>()));
-			apiFolders.add(af);
-		}
-		return apiFolders;
-	}*/
 	
 	@Override
 	protected Object createErrorEntity(Response.Status status, String message) {

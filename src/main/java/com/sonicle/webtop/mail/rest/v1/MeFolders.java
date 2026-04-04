@@ -36,14 +36,12 @@ package com.sonicle.webtop.mail.rest.v1;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.Mailcard;
-import com.sonicle.webtop.mail.bol.model.Identity;
-import com.sonicle.webtop.mail.swagger.v1.api.IdentitiesApi;
+import com.sonicle.webtop.mail.swagger.v1.api.MeFoldersApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
-import com.sonicle.webtop.mail.swagger.v1.model.ApiIdentity;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiFolder;
+import jakarta.mail.Folder;
 import jakarta.mail.MessagingException;
 import java.util.ArrayList;
-import java.util.List;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,38 +50,57 @@ import org.slf4j.LoggerFactory;
  *
  * @author gbulfon
  */
-public class Identities extends IdentitiesApi {
-	private static final Logger logger = LoggerFactory.getLogger(Identities.class);
+public class MeFolders extends MeFoldersApi {
+	private static final Logger logger = LoggerFactory.getLogger(MeFolders.class);
 	
 	@Override
-	public Response getIdentities() {
+	public Response listRootFolders() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		try {
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
-			List<Identity> identities = mmgr.listIdentities();
-			ArrayList<ApiIdentity> items = new ArrayList<>();
-			for(Identity i: identities) {
-				ApiIdentity ai = new ApiIdentity();
-				ai.setId(i.getIdentityId());
-				ai.setUid(i.getIdentityUid());
-				ai.setType(i.getType());
-				ai.setEmail(i.getEmail());
-				ai.setDisplayName(i.getDisplayName());
-				mmgr.loadIdentityMailcard(i);
-				Mailcard mc = mmgr.getMailcard(i);
-				if (mc != null) ai.setMailcard(mc.html);
-				String mainFolder = i.getMainFolder();
-				if (mainFolder != null) ai.setMainFolder(mainFolder.replace("/", "|"));
-				ai.setFax(i.isFax());
-				ai.setForceMailcard(i.isForceMailcard());
-				ai.setLockMailcard(i.isLockMailcard());
-				ai.setIsMain(i.isMainIdentity());
-				items.add(ai);
+			ArrayList<Folder> folders = mmgr.getRootFolders();
+			ArrayList<ApiFolder> items = new ArrayList<>();
+			for(Folder folder: folders) {
+				ApiFolder af = new ApiFolder();
+				af.setId(folder.getFullName());
+				af.setName(folder.getName());
+				try {
+					af.setUnreadCount(folder.getUnreadMessageCount());
+					af.setTotalCount(folder.getMessageCount());
+				} catch(MessagingException exc) {}
+				af.setChildren(new ArrayList<>());
+				items.add(af);
 			}
 			return respOk(items);
 			
 		} catch(Exception ex) {
-			logger.error("[{}] getFavorites()", targetPid, ex);
+			logger.error("[{}] getRootFolders()", targetPid, ex);
+			return respError(ex);
+		}
+	}
+	
+	@Override
+	public Response listChildrenFolders(String folderId) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		try {
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+			ArrayList<Folder> folders = mmgr.getFolders(folderId);
+			ArrayList<ApiFolder> items = new ArrayList<>();
+			for(Folder folder: folders) {
+				ApiFolder af = new ApiFolder();
+				af.setId(folder.getFullName());
+				af.setName(folder.getName());
+				try {
+					af.setUnreadCount(folder.getUnreadMessageCount());
+					af.setTotalCount(folder.getMessageCount());
+				} catch(MessagingException exc) {}
+				af.setChildren(new ArrayList<>());
+				items.add(af);
+			}
+			return respOk(items);
+			
+		} catch(Exception ex) {
+			logger.error("[{}] getFolders()", targetPid, folderId, ex);
 			return respError(ex);
 		}
 	}

@@ -8,6 +8,24 @@
       "email": "dev-team@sonicle.com"
     }
   },
+  "tags": [
+    {
+      "name": "me_favorites",
+      "description": "Favorites operations"
+    },
+    {
+      "name": "me_identities",
+      "description": "Identities operations"
+    },
+    {
+      "name": "me_folders",
+      "description": "Folders operations"
+    },
+    {
+      "name": "me_messages",
+      "description": "Messages operations"
+    }
+  ],
   "security": [
     {
       "basicAuth": []
@@ -79,38 +97,10 @@
         }
       }
     },
-    "/folders": {
+    "/me/identities": {
       "get": {
-        "tags": [
-          "folders"
-        ],
-        "summary": "Lists folders",
-        "operationId": "getRootFolders",
-        "description": "",
-        "responses": {
-          "200": {
-            "description": "Success",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/Folder"
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/identities": {
-      "get": {
-        "tags": [
-          "folders"
-        ],
         "summary": "Lists identities",
-        "operationId": "getIdentities",
+        "operationId": "listIdentities",
         "description": "",
         "responses": {
           "200": {
@@ -126,17 +116,17 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "me_identities"
+        ]
       },
       "parameters": []
     },
-    "/favorites": {
+    "/me/favorites": {
       "get": {
-        "tags": [
-          "folders"
-        ],
         "summary": "Lists favorites folders",
-        "operationId": "getFavorites",
+        "operationId": "listFavorites",
         "description": "",
         "responses": {
           "200": {
@@ -152,27 +142,17 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "me_favorites"
+        ]
       },
       "parameters": []
     },
-    "/folders/{id}": {
-      "parameters": [
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+    "/me/folders": {
       "get": {
-        "tags": [
-          "folders"
-        ],
-        "summary": "Lists folders",
-        "operationId": "getFolders",
+        "summary": "Lists root folders",
+        "operationId": "listRootFolders",
         "description": "",
         "responses": {
           "200": {
@@ -188,26 +168,49 @@
               }
             }
           }
-        }
+        },
+        "tags": [
+          "me_folders"
+        ]
+      },
+      "parameters": []
+    },
+    "/me/folders/children": {
+      "parameters": [],
+      "get": {
+        "summary": "Lists children folders",
+        "operationId": "listChildrenFolders",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Folder"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          }
+        ],
+        "tags": [
+          "me_folders"
+        ]
       }
     },
-    "/folder/{id}/messages": {
-      "parameters": [
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+    "/me/messages/list": {
+      "parameters": [],
       "get": {
-        "tags": [
-          "messages"
-        ],
         "summary": "Lists messages envelops of folder",
-        "operationId": "getMessages",
+        "operationId": "listMessages",
         "description": "",
         "responses": {
           "200": {
@@ -226,47 +229,48 @@
         },
         "parameters": [
           {
-            "schema": {
-              "type": "integer"
-            },
-            "in": "query",
-            "name": "_page_no",
-            "description": "The page number to return, providing a value actually activates pagination. Optional."
+            "$ref": "#/components/parameters/folderId"
           },
           {
-            "schema": {
-              "type": "integer"
-            },
-            "in": "query",
-            "name": "_page_size",
-            "description": "How many items to return when paginating. Defaults to 50."
+            "$ref": "#/components/parameters/pageNo"
+          },
+          {
+            "$ref": "#/components/parameters/pageSize"
           }
+        ],
+        "tags": [
+          "me_messages"
         ]
       }
     },
-    "/folder/{id}/message/{uid}": {
-      "parameters": [
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
+    "/me/messages/send": {
+      "parameters": [],
+      "post": {
+        "summary": "Send new message",
+        "operationId": "sendMessage",
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         },
-        {
-          "name": "uid",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MessageNew"
+              }
+            }
           }
-        }
-      ],
-      "get": {
+        },
         "tags": [
-          "message"
+          "me_messages"
         ],
+        "description": ""
+      }
+    },
+    "/me/messages/get": {
+      "parameters": [],
+      "get": {
         "summary": "Get full message of folder by uid",
         "operationId": "getMessage",
         "description": "",
@@ -281,40 +285,106 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
       }
     },
-    "/folder/{id}/message/{uid}/attachment/{index}/$value": {
-      "parameters": [
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "uid",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "schema": {
-            "type": "string"
-          },
-          "name": "index",
-          "in": "path",
-          "required": true
-        }
-      ],
+    "/me/messages/reply": {
+      "parameters": [],
       "get": {
-        "tags": [
-          "message"
+        "summary": "Get reply message of folder by uid",
+        "operationId": "getReplyMessage",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageNew"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "replyAll"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "includeAttachments"
+          }
         ],
+        "tags": [
+          "me_messages"
+        ]
+      }
+    },
+    "/me/messages/forward": {
+      "parameters": [],
+      "get": {
+        "summary": "Get forward message of folder by uid",
+        "operationId": "getForwardMessage",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageNew"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "includeAttachments"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
+      }
+    },
+    "/me/messages/attachments/$value": {
+      "parameters": [],
+      "get": {
         "summary": "Get attachment bytes from message of folder by uid / index",
         "operationId": "getMessageAttachmentBytes",
         "description": "",
@@ -330,40 +400,31 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "index",
+            "description": "The index of the attachment as received during get"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
       }
     },
-    "/folder/{id}/message/{uid}/cid/{name}/$value": {
-      "parameters": [
-        {
-          "name": "id",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "uid",
-          "in": "path",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "schema": {
-            "type": "string"
-          },
-          "name": "name",
-          "in": "path",
-          "required": true
-        }
-      ],
+    "/me/messages/cids/$value": {
+      "parameters": [],
       "get": {
-        "tags": [
-          "message"
-        ],
         "summary": "Get Cid bytes from message of folder by uid / cidName",
         "operationId": "getMessageCidBytes",
         "description": "",
@@ -379,7 +440,21 @@
               }
             }
           }
-        }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          },
+          {
+            "$ref": "#/components/parameters/cidName"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
       }
     }
   },
@@ -590,6 +665,62 @@
           }
         }
       },
+      "AttachmentNew": {
+        "type": "object",
+        "x-stoplight": {
+          "id": "86bfzpt6kotyz"
+        },
+        "properties": {
+          "fileName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "hjhduat779r47"
+            }
+          },
+          "mimeType": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ovsz9je8hwvj0"
+            }
+          },
+          "cidName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "o94mlm3w43dg1"
+            }
+          },
+          "base64": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "qlm3oguxfo3of"
+            }
+          },
+          "referenceFolder": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "425qirwt7dbfs"
+            }
+          },
+          "referenceUid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "uutbj5g48zq91"
+            }
+          },
+          "referenceIndex": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "6dzt95zs2pxn5"
+            }
+          },
+          "referenceCidName": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "ruchglhi3veiu"
+            }
+          }
+        }
+      },
       "Folder": {
         "type": "object",
         "properties": {
@@ -674,6 +805,168 @@
             }
           }
         }
+      },
+      "MessageNew": {
+        "title": "MessageNew",
+        "x-stoplight": {
+          "id": "k64q0kh7leo70"
+        },
+        "allOf": [
+          {
+            "type": "object",
+            "properties": {
+              "folderId": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "gdbwkrnrlnk24"
+                }
+              },
+              "receipt": {
+                "type": "boolean",
+                "x-stoplight": {
+                  "id": "cp6zel5qq7if4"
+                }
+              },
+              "priority": {
+                "type": "boolean",
+                "x-stoplight": {
+                  "id": "pbdealht1hfak"
+                }
+              },
+              "format": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "6zeb5z86f37dh"
+                }
+              },
+              "identityId": {
+                "type": "integer",
+                "x-stoplight": {
+                  "id": "bzvn8n5pmi3br"
+                }
+              },
+              "identityMainFolder": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "nl0qpx4z9hsc5"
+                }
+              },
+              "replyFolder": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "i4boz6bwxmfrb"
+                }
+              },
+              "inReplyTo": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "2ii4ez6m0kwsl"
+                }
+              },
+              "references": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "hgq0dc06nozlw"
+                }
+              },
+              "forwardedFolder": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "qb6xy3yth5vb9"
+                }
+              },
+              "forwardedFrom": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "fzu7sxhd0ld7o"
+                }
+              },
+              "origuUd": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "d29hav9f84bwp"
+                }
+              },
+              "draftUid": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "mhn5wymvnepfv"
+                }
+              },
+              "draftFolder": {
+                "type": "string",
+                "x-stoplight": {
+                  "id": "e3kctjinnj2w6"
+                }
+              },
+              "deleted": {
+                "type": "boolean",
+                "x-stoplight": {
+                  "id": "nwmy7dbiii675"
+                }
+              },
+              "attachmentsNew": {
+                "x-stoplight": {
+                  "id": "we8zqttbsau39"
+                },
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AttachmentNew"
+                }
+              }
+            }
+          },
+          {
+            "$ref": "#/components/schemas/Message"
+          }
+        ]
+      }
+    },
+    "parameters": {
+      "folderId": {
+        "name": "folder_id",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "The full folder name"
+      },
+      "pageNo": {
+        "name": "page_no",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer"
+        },
+        "description": "The page number to return, providing a value actually activates pagination. Optional."
+      },
+      "pageSize": {
+        "name": "page_size",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "integer"
+        },
+        "description": "How many items to return when paginating. Defaults to 50."
+      },
+      "uid": {
+        "name": "uid",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "The message UID in a folder"
+      },
+      "cidName": {
+        "name": "cid_name",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "The Content-ID name of an inline attachment"
       }
     }
   }
