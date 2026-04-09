@@ -1486,8 +1486,8 @@ public class MailManager extends BaseManager implements IMailManager {
 			StringBuffer textsb = new StringBuffer();
 			ArrayList<String> attnames = new ArrayList<String>();
 			if (includeOriginal) {
-                                String defaultCharset=null;
-                                if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
+                String defaultCharset=null;
+                if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
 				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, attnames, attachMessageParts);
 				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
 				String text = null;
@@ -1512,6 +1512,8 @@ public class MailManager extends BaseManager implements IMailManager {
 					newHtml=MailUtils.sanitizeDownlevelRevealedComments(newHtml);
 
 				epb.withHTMLText(newHtml);
+				
+				setReferences(epb, (MimeMessage)msg);
 				
 				//consider cid inline attachments
 				MimeMessageParser mmp = new MimeMessageParser();
@@ -1557,6 +1559,255 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	
+	public EmailMessage getForwardMessage(String folderId, long uid, boolean richContent, boolean attachMessageParts) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		EmailMessage emsg = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);
+			emsg = getForwardMessage(msg, richContent, attachMessageParts);
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return emsg;
+	}
+	
+	public EmailMessage getForwardMessage(Message msg, boolean richContent, boolean attachMessageParts) {
+		try {
+			UserProfile profile = getUserProfile();
+			EmailPopulatingBuilder epb = EmailMessageBuilder.startingBlank();
+
+			StringBuffer htmlsb = new StringBuffer();
+			StringBuffer textsb = new StringBuffer();
+			String defaultCharset=null;
+			if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
+			boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, null, attachMessageParts);
+			String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
+
+			Locale locale = profile.getLocale();
+			String fromtitle = lookupResource(locale, MailLocaleKey.MSG_FROMTITLE);
+			String totitle = lookupResource(locale, MailLocaleKey.MSG_TOTITLE);
+			String cctitle = lookupResource(locale, MailLocaleKey.MSG_CCTITLE);
+			String datetitle = lookupResource(locale, MailLocaleKey.MSG_DATETITLE);
+			String subjecttitle = lookupResource(locale, MailLocaleKey.MSG_SUBJECTTITLE);
+
+			String newHtml = "";
+			if (!richContent) {
+				//use the original unchanged text content
+				newHtml = getForwardBody(msg, textsb.toString(), SimpleMessage.FORMAT_TEXT, false, fromtitle, totitle, cctitle, datetitle, subjecttitle);
+			} else if (!isHtml) {
+				//use html content, which is text content with possible html encoded characters
+				newHtml = getForwardBody(msg, htmlsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, true, fromtitle, totitle, cctitle, datetitle, subjecttitle);
+			} else {
+				newHtml=MailUtils.removeMSWordShit(
+					getForwardBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle)
+				);
+				if (mss.isReFwSanitizeDownlevelRevealedComments())
+					newHtml=MailUtils.sanitizeDownlevelRevealedComments(newHtml);
+
+									//take care of possible html shit
+			}
+			epb.withHTMLText(newHtml);
+			
+			setReferences(epb, (MimeMessage)msg);
+
+			String subject = msg.getSubject();
+			String newSubject = "";
+			if (subject == null) {
+				subject = "";
+			}
+			if (!subject.toLowerCase().startsWith("fwd: ")) {
+				newSubject = "Fwd: " + subject;
+			} else {
+				newSubject = msg.getSubject();
+			}
+			epb.withSubject(newSubject);
+			
+			//consider cid inline attachments
+			MimeMessageParser mmp = new MimeMessageParser();
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse((MimeMessage)msg, false);
+			for (Part part: parsed.getAttachmentParts()) {
+				try{
+					String filename = MailUtils.getPartFilename(part, true);
+					String cids[] = part.getHeader("Content-ID");
+					String cid = null;
+					//String cid=filename;
+					if (cids != null && cids[0] != null) {
+						cid = cids[0];
+						if (cid.startsWith("<")) cid=cid.substring(1);
+						if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
+					}
+
+					if (filename == null) filename = cid;
+					String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
+					boolean inline = false;
+					if (part.getDisposition() != null) {
+						inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
+								isInlineableMime(mime);
+					}
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					IOUtils.copy(part.getInputStream(), baos);
+					epb.withAttachment(baos.toByteArray(), mime, filename, cid);
+				} catch (Exception exc) {
+					Service.logger.error("Exception",exc);
+				}
+			}
+
+
+			return epb.build();
+		} catch (MessagingException|IOException e) {
+			Service.logger.error("Exception",e);
+			return null;
+		}
+	}
+	
+	private void setReferences(EmailPopulatingBuilder epb, MimeMessage msg) throws MessagingException {
+		String msgid = null;
+		String vh[] = msg.getHeader("Message-ID");
+		if (vh != null) {
+			msgid = vh[0];
+		}
+		if (msgid != null) {
+			epb.withForwardedFrom(msgid);
+			epb.withInReplyTo(msgid);
+		}
+
+		String refs = msg.getHeader("References", " ");
+		if (refs == null) {
+			// XXX - should only use if it contains a single message identifier
+			refs = msg.getHeader("In-Reply-To", " ");
+		}
+		if (msgid != null) {
+			if (refs != null) {
+				refs = MimeUtility.unfold(refs) + " " + msgid;
+			} else {
+				refs = msgid;
+			}
+		}
+		if (refs != null) {
+			epb.withReferences(MimeUtility.fold(12, refs));
+		}
+	}
+	
+	private String getForwardBody(Message msg, String body, int format, boolean isHtml, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle) throws MessagingException {
+		UserProfile profile = getUserProfile();
+		Locale locale = profile.getLocale();
+		String msgSubject = msg.getSubject();
+		if (msgSubject == null) {
+			msgSubject = "";
+		}
+		msgSubject = MailUtils.htmlescape(msgSubject);
+		Address ad[] = msg.getFrom();
+		String msgFrom = "";
+		if (ad != null) {
+			msgFrom = isHtml?getHTMLDecodedAddress(ad[0]):getDecodedAddress(ad[0]);
+		}
+		java.util.Date dt = msg.getSentDate();
+		String msgDate = "";
+		if (dt != null) {
+			msgDate = DateFormat.getDateTimeInstance(java.text.DateFormat.LONG, java.text.DateFormat.LONG, locale).format(dt);
+		}
+		ad = msg.getRecipients(Message.RecipientType.TO);
+		String msgTo = null;
+		if (ad != null) {
+			msgTo = "";
+			for (int j = 0; j < ad.length; ++j) {
+				msgTo += isHtml?getHTMLDecodedAddress(ad[j]):getDecodedAddress(ad[j]) + " ";
+			}
+		}
+		ad = msg.getRecipients(Message.RecipientType.CC);
+		String msgCc = null;
+		if (ad != null) {
+			msgCc = "";
+			for (int j = 0; j < ad.length; ++j) {
+				msgCc += isHtml?getHTMLDecodedAddress(ad[j]):getDecodedAddress(ad[j]) + " ";
+			}
+		}
+		
+		StringBuffer sb = new StringBuffer();
+		String cr = "\n";
+		if (format != SimpleMessage.FORMAT_TEXT) {
+			cr = "<BR>";
+		}
+		if (format != SimpleMessage.FORMAT_HTML) {
+			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+				sb.append("<PRE>");
+			}
+			sb.append(cr + cr + cr + "----------------------------------------------------------------------------------" + cr + cr);
+			sb.append(fromtitle + ": " + msgFrom + cr);
+			if (msgTo != null) {
+				sb.append(totitle + ": " + msgTo + cr);
+			}
+			if (msgCc != null) {
+				sb.append(cctitle + ": " + msgCc + cr);
+			}
+			sb.append(datetitle + ": " + msgDate + cr);
+			sb.append(subjecttitle + ": " + msgSubject + cr + cr);
+			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+				sb.append("</PRE>");
+			}
+		} else {
+			sb.append(cr + "<HR>" + cr + cr);
+			sb.append("<font face='Arial, Helvetica, sans-serif' size=2>");
+			sb.append("<B>" + fromtitle + ":</B> " + msgFrom + "<BR>");
+			if (msgTo != null) {
+				sb.append("<B>" + totitle + ":</B> " + msgTo + "<BR>");
+			}
+			if (msgCc != null) {
+				sb.append("<B>" + cctitle + ":</B> " + msgCc + "<BR>");
+			}
+			sb.append("<B>" + datetitle + ":</B> " + msgDate + "<BR>");
+			sb.append("<B>" + subjecttitle + ":</B> " + msgSubject + "<BR>");
+			sb.append("</font><br>" + cr);
+		}
+
+    // Prepend "> " for each line in the body
+		//
+		if (body != null) {
+			if (format == SimpleMessage.FORMAT_HTML) {
+//        sb.append("<TABLE border=0 width='100%'><TR><td width=2 bgcolor=#000088></td><td width=2></td><td>");
+//        sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
+			}
+			if (!isHtml) {
+				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+//          sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
+					sb.append("<pre>");
+				}
+				StringTokenizer st = new StringTokenizer(body, "\n", true);
+				while (st.hasMoreTokens()) {
+					String token = st.nextToken();
+					if (token.equals("\n")) {
+						sb.append(cr);
+					} else {
+						if (format == SimpleMessage.FORMAT_TEXT) {
+							sb.append("> ");
+						}
+						//sb.append(MailUtils.htmlescape(token));
+						sb.append(token);
+					}
+				}
+				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+					sb.append("</pre>");
+//          sb.append("</BLOCKQUOTE>");
+				}
+			} else {
+				//sb.append(getBodyInnerHtml(body));
+				sb.append(body);
+			}
+			if (format == SimpleMessage.FORMAT_HTML) {
+//        sb.append("</td></tr></table>");
+//        sb.append("</BLOCKQUOTE>");
+			}
+		}
+		return sb.toString();
+	}
+
 	public String getLastFolderName(String fullname, char separator) {
 		String lasttname = fullname;
 		if (lasttname.indexOf(separator) >= 0) {

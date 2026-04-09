@@ -433,6 +433,9 @@ public class MeMessages extends MeMessagesApi {
 			am.setBcc(bccs);
 			am.setSubject(msg.getSubject());
 			am.setBody(msg.getHTMLText());
+			am.setInReplyTo(msg.getInReplyTo());
+			am.setReplyFolder(folderId);
+			am.setReferences(msg.getReferences());
 			
 			List<AttachmentResource> atts = msg.getAttachments();
 			if (atts != null)
@@ -447,14 +450,44 @@ public class MeMessages extends MeMessagesApi {
 				}
 			return respOk(am);
 		} catch(Exception exc) {
-			logger.error("Error during sendMessage", exc);
+			logger.error("Error during getReplyMessage", exc);
 			return respError(exc);
 		}
 	}
 
 	@Override
-	public Response getForwardMessage(String folderId, String uid, Boolean includeAttachments) {
-		return super.getForwardMessage(folderId, uid, includeAttachments); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+	public Response getForwardMessage(String folderId, String suid, Boolean includeAttachments) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		long uid = Long.parseLong(suid);
+		try {
+			EmailMessage msg = mmgr.getForwardMessage(folderId, uid, true, true);
+			ApiMessageNew am = new ApiMessageNew();
+			am.setSubject(msg.getSubject());
+			am.setBody(msg.getHTMLText());
+			am.setForwardedFrom(msg.getForwardedFrom());
+			am.setInReplyTo(msg.getInReplyTo());
+			am.setForwardedFolder(folderId);
+			am.setReferences(msg.getReferences());
+			
+			if (includeAttachments) {
+				List<AttachmentResource> atts = msg.getAttachments();
+				if (atts != null)
+					for (AttachmentResource att: atts) {
+						DataSource ds = att.getDataSource();
+						ApiAttachmentNew aatt = new ApiAttachmentNew();
+						aatt.setBase64(java.util.Base64.getEncoder().encodeToString(att.readAllBytes()));
+						aatt.setCidName(att.getCidName());
+						aatt.setFileName(ds.getName());
+						aatt.setMimeType(ds.getContentType());
+						am.addAttachmentsNewItem(aatt);
+					}
+			}
+			return respOk(am);
+		} catch(Exception exc) {
+			logger.error("Error during getForwardMessage", exc);
+			return respError(exc);
+		}
 	}
 	
 	@Override
