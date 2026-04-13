@@ -22,7 +22,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("MessageNew")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-04T15:51:18.892+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-13T16:11:50.819+02:00[Europe/Rome]")
 public class ApiMessageNew extends ApiMessage  {
   private @Valid String folderId;
   private @Valid Boolean receipt;

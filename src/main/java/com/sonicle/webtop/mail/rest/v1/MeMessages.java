@@ -55,6 +55,7 @@ import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachmentNew;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiContact;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessageNew;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiNote;
 import com.sun.mail.imap.IMAPMessage;
 import jakarta.activation.DataSource;
 import jakarta.mail.Address;
@@ -174,6 +175,7 @@ public class MeMessages extends MeMessagesApi {
 						Flags flags = mmsg.getFlags();
 						am.setFlag(mmgr.getFlagString(flags));
 						am.setStatus(mmgr.getStatusString(flags, false, false));
+						am.setHasNote(mmgr.hasNote(flags));
 						am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
 
 						ArrayList<ApiAttachment> attachments = new ArrayList<>();
@@ -309,6 +311,39 @@ public class MeMessages extends MeMessagesApi {
 		}
 	}
 
+	@Override
+	public Response getMessageNote(String folderId, String suid) {
+		try {
+			ApiNote an = new ApiNote();
+			UserProfileId targetPid = RunContext.getRunProfileId();
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+			long uid = Long.parseLong(suid);
+			String text = mmgr.getMessageNote(folderId, uid);
+			an.setFolderId(folderId);
+			an.setUid(suid);
+			an.setText(text);
+			return respOk(an);
+			
+		} catch(Exception ex) {
+			logger.error("[{}] getMessageNote()", RunContext.getRunProfileId(), ex);
+			return respError(ex);
+		}
+	}
+
+	@Override
+	public Response setMessageNote(ApiNote an) {
+		try {
+			UserProfileId targetPid = RunContext.getRunProfileId();
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+			mmgr.setMessageNote(an.getFolderId(), Long.parseLong(an.getUid()), an.getText());
+			return respOk();
+			
+		} catch(Exception ex) {
+			logger.error("[{}] setMessageNote()", RunContext.getRunProfileId(), ex);
+			return respError(ex);
+		}
+	}
+	
 	@Override
 	public Response getMessageAttachmentBytes(String folderId, String suid, String sindex) {
 		try {

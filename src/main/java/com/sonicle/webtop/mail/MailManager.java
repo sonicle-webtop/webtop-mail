@@ -510,6 +510,71 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}	
 	
+	protected String getMessageID(Message m) throws MessagingException {
+		String ids[] = m.getHeader("Message-ID");
+		if (ids == null) {
+			return null;
+		}
+		return ids[0];
+	}
+	
+	public String getMessageNote(String folderId, long uid) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		Connection con = null;
+		String mid = null;
+		String text = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			mid = getMessageID(mmsg);
+			con = WT.getConnection(SERVICE_ID);
+			ONote onote=NoteDAO.getInstance().selectById(con, getUserProfile().getDomainId(), mid);
+			if (onote!=null) {
+				text = onote.getText();
+			}
+			
+		} catch(Exception exc) {
+			logger.error("Error in getMessageNote", exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return text;
+	}	
+
+	public void setMessageNote(String folderId, long uid, String text) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		Connection con = null;
+		try {
+			UserProfile profile = getUserProfile();
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			String mid = getMessageID(mmsg);
+			con = WT.getConnection(SERVICE_ID);
+			NoteDAO.getInstance().deleteById(con, profile.getDomainId(), mid);
+			if (!StringUtils.isBlank(text)) {
+				ONote onote = new ONote(profile.getDomainId(), mid, text);
+				NoteDAO.getInstance().insert(con, onote);
+				mmsg.setFlags(MailManager.getFlagNote(), true);
+			} else {
+				mmsg.setFlags(MailManager.getFlagNote(), false);
+			}
+		} catch(Exception exc) {
+			logger.error("Error in getMessageNote", exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+
 	public String getMessageAttachmentContentType(String folderId, long uid, int index) {
 		IMAPFolder folder = null;
 		String contentType="binary/octet-stream";

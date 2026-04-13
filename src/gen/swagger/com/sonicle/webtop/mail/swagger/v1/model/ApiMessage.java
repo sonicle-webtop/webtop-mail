@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("Message")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-04T15:51:18.892+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-13T16:11:50.819+02:00[Europe/Rome]")
 public class ApiMessage   {
   private @Valid String id;
   private @Valid Integer uid;
@@ -36,6 +36,7 @@ public class ApiMessage   {
   private @Valid String status;
   private @Valid String flag;
   private @Valid List<String> tags;
+  private @Valid Boolean hasNote;
 
   /**
    **/
@@ -383,6 +384,25 @@ public class ApiMessage   {
 
     return this;
   }
+  /**
+   **/
+  public ApiMessage hasNote(Boolean hasNote) {
+    this.hasNote = hasNote;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("hasNote")
+  public Boolean getHasNote() {
+    return hasNote;
+  }
+
+  @JsonProperty("hasNote")
+  public void setHasNote(Boolean hasNote) {
+    this.hasNote = hasNote;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -406,12 +426,13 @@ public class ApiMessage   {
         Objects.equals(this.attachments, message.attachments) &&
         Objects.equals(this.status, message.status) &&
         Objects.equals(this.flag, message.flag) &&
-        Objects.equals(this.tags, message.tags);
+        Objects.equals(this.tags, message.tags) &&
+        Objects.equals(this.hasNote, message.hasNote);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, uid, subject, body, sender, recipients, cc, bcc, date, isRead, attachments, status, flag, tags);
+    return Objects.hash(id, uid, subject, body, sender, recipients, cc, bcc, date, isRead, attachments, status, flag, tags, hasNote);
   }
 
   @Override
@@ -433,6 +454,7 @@ public class ApiMessage   {
     sb.append("    status: ").append(toIndentedString(status)).append("\n");
     sb.append("    flag: ").append(toIndentedString(flag)).append("\n");
     sb.append("    tags: ").append(toIndentedString(tags)).append("\n");
+    sb.append("    hasNote: ").append(toIndentedString(hasNote)).append("\n");
     sb.append("}");
     return sb.toString();
   }

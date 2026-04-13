@@ -456,6 +456,59 @@
           "me_messages"
         ]
       }
+    },
+    "/me/messages/notes": {
+      "parameters": [],
+      "get": {
+        "summary": "Get Note from message of folder by uid / cidName",
+        "operationId": "getMessageNote",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
+      },
+      "post": {
+        "summary": "Set Message Note Text",
+        "operationId": "setMessageNote",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "me_messages"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Note"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -803,6 +856,12 @@
             "items": {
               "type": "string"
             }
+          },
+          "hasNote": {
+            "type": "boolean",
+            "x-stoplight": {
+              "id": "ehuxy7g25h8t9"
+            }
           }
         }
       },
@@ -920,6 +979,33 @@
             "$ref": "#/components/schemas/Message"
           }
         ]
+      },
+      "Note": {
+        "title": "Note",
+        "x-stoplight": {
+          "id": "v3oj0ynwjbgfd"
+        },
+        "type": "object",
+        "properties": {
+          "folderId": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "zcqr7jma4jpbk"
+            }
+          },
+          "uid": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "xzpt2db6cr60e"
+            }
+          },
+          "text": {
+            "type": "string",
+            "x-stoplight": {
+              "id": "865pgib7iy9tj"
+            }
+          }
+        }
       }
     },
     "parameters": {

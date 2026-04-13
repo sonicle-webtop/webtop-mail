@@ -2,6 +2,7 @@ package com.sonicle.webtop.mail.swagger.v1.api;
 
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessageNew;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiNote;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -16,7 +17,7 @@ import javax.validation.Valid;
 
 @Path("/me/messages")
 @Api(description = "the MeMessages API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-04T15:51:18.892+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-13T16:11:50.819+02:00[Europe/Rome]")
 public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
@@ -84,6 +85,22 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
     }
 
     @GET
+    @Path("/notes")
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Get Note from message of folder by uid / cidName", notes = "", response = ApiNote.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Success", response = ApiNote.class)
+    })
+    public Response getMessageNote(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @GET
     @Path("/reply")
     @Produces({ "application/json" })
     @ApiOperation(value = "Get reply message of folder by uid", notes = "", response = ApiMessageNew.class, authorizations = {
@@ -128,6 +145,22 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
         @ApiResponse(code = 200, message = "OK", response = Void.class)
     })
     public Response sendMessage(@Valid ApiMessageNew apiMessageNew) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @POST
+    @Path("/notes")
+    @Consumes({ "application/json" })
+    @ApiOperation(value = "Set Message Note Text", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response setMessageNote(@Valid ApiNote apiNote) {
         return Response.ok().entity("magic!").build();
     }
 }

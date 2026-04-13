@@ -15,7 +15,7 @@ import javax.validation.Valid;
 
 @Path("/me/favorites")
 @Api(description = "the MeFavorites API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-04T15:51:18.892+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-13T16:11:50.819+02:00[Europe/Rome]")
 public abstract class MeFavoritesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
