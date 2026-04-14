@@ -175,6 +175,38 @@
       },
       "parameters": []
     },
+    "/me/folders/info": {
+      "get": {
+        "summary": "Get folder info",
+        "operationId": "getFolderInfo",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FolderInfo"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "me_folders"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "folder_id"
+          }
+        ]
+      },
+      "parameters": []
+    },
     "/me/folders/children": {
       "parameters": [],
       "get": {
@@ -292,6 +324,14 @@
           },
           {
             "$ref": "#/components/parameters/uid"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "set_seen",
+            "description": "Set message as seen"
           }
         ],
         "tags": [
@@ -794,6 +834,26 @@
             "items": {
               "$ref": "#/components/schemas/Folder"
             }
+          }
+        }
+      },
+      "FolderInfo": {
+        "type": "object",
+        "x-stoplight": {
+          "id": "fi7n9qe8f5toe"
+        },
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "unreadCount": {
+            "type": "integer"
+          },
+          "totalCount": {
+            "type": "integer"
           }
         }
       },

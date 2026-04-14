@@ -336,7 +336,21 @@ public class MailManager extends BaseManager implements IMailManager {
 		return folders;
 	}
 	
-    public Message[] fetch(Folder folder, Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
+	public Folder getFolder(String id) {
+		Folder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = mailbox.getFolder(id);
+		} catch(MessagingException|WTException exc) {
+			logger.error("Error getting folder", exc);
+		} finally {
+			mailbox.disconnect();
+		}
+		return folder;
+	}
+
+	public Message[] fetch(Folder folder, Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
         int n=fmsgs.length;
         if (length>(n-start)) length=n-start;
         Message xmsgs[]=new Message[length];
@@ -382,7 +396,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}	
 	
-	public MimeMessage getMessage(String folderId, long uid) {
+/*	public MimeMessage getMessage(String folderId, long uid) {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		MimeMessage msg = null;
@@ -398,15 +412,15 @@ public class MailManager extends BaseManager implements IMailManager {
 			mailbox.disconnect();
 		}
 		return msg;
-	}
+	}*/
 	
-	public void consumeMessage(String folderId, long uid, MessageConsumer mc) {
+	public void consumeMessage(String folderId, long uid, boolean setSeen, MessageConsumer mc) {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		try {
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
-			folder.open(Folder.READ_ONLY);
+			folder.open(setSeen ? Folder.READ_WRITE : Folder.READ_ONLY);
 			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
 			MimeMessageParser mmp = new MimeMessageParser().withProcessDisplayParts(false, new MimeMessageParser.DisplayPartEvaluator() {
 				

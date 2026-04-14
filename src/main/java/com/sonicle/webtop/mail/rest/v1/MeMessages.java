@@ -194,14 +194,15 @@ public class MeMessages extends MeMessagesApi {
 	}
 
 	@Override
-	public Response getMessage(String folderId, String suid) {
+	public Response getMessage(String folderId, String suid, Boolean setSeen) {
 		try {
 			ApiMessage am = new ApiMessage();
 			UserProfileId targetPid = RunContext.getRunProfileId();
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			long uid = Long.parseLong(suid);
-			mmgr.consumeMessage(folderId, uid, new MailManager.MessageConsumer() {
+			boolean setseen = setSeen != null ? setSeen : false;
+			mmgr.consumeMessage(folderId, uid, setseen, new MailManager.MessageConsumer() {
 				@Override
 				public void consume(Message msg, long uid, MimeMessageParser.ParsedMimeMessageComponents parsed) throws MessagingException, IOException {
 					IMAPMessage mmsg = (IMAPMessage) msg;

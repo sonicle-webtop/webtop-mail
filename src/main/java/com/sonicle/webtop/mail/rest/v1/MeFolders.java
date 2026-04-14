@@ -39,6 +39,7 @@ import com.sonicle.webtop.mail.MailManager;
 import com.sonicle.webtop.mail.swagger.v1.api.MeFoldersApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiFolder;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiFolderInfo;
 import jakarta.mail.Folder;
 import jakarta.mail.MessagingException;
 import java.util.ArrayList;
@@ -104,6 +105,29 @@ public class MeFolders extends MeFoldersApi {
 			return respError(ex);
 		}
 	}
+
+	@Override
+	public Response getFolderInfo(String folderId) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		try {
+			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+			Folder folder = mmgr.getFolder(folderId);
+			ApiFolderInfo afi = new ApiFolderInfo();
+			afi.setId(folder.getFullName());
+			afi.setName(folder.getName());
+			try {
+				afi.setUnreadCount(folder.getUnreadMessageCount());
+				afi.setTotalCount(folder.getMessageCount());
+			} catch(MessagingException exc) {}
+			return respOk(afi);
+			
+		} catch(Exception ex) {
+			logger.error("[{}] getFolderInfo()", targetPid, folderId, ex);
+			return respError(ex);
+		}
+	}
+	
+	
 	
 	@Override
 	protected Object createErrorEntity(Response.Status status, String message) {
