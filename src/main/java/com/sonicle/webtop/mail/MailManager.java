@@ -1171,6 +1171,11 @@ public class MailManager extends BaseManager implements IMailManager {
 		return mus.getFolderSent();
 	}
 	
+	@Override
+	public String getFolderTrash() {
+		return mus.getFolderTrash();
+	}
+	
 	public String getFolderSent(Identity ident) {
 		String mainFolder = null;
 		if (ident != null ) {
@@ -1180,6 +1185,15 @@ public class MailManager extends BaseManager implements IMailManager {
 		return getFolderSent(mainFolder);
 	}
 	
+	public String getFolderTrash(Identity ident) {
+		String mainFolder = null;
+		if (ident != null ) {
+			mainFolder=ident.getMainFolder();
+		}
+
+		return getFolderTrash(mainFolder);
+	}
+
 	public String getFolderSent(String mainFolder) {
 		UserProfile profile = getUserProfile();
 		String sentFolder = getFolderSent();
@@ -1202,6 +1216,29 @@ public class MailManager extends BaseManager implements IMailManager {
 		return sentFolder;
 	}
 	
+	public String getFolderTrash(String mainFolder) {
+		UserProfile profile = getUserProfile();
+		String trashFolder = getFolderTrash();
+		if (mainFolder != null && mainFolder.trim().length() > 0) {
+			Mailbox mailbox = null;
+			try {
+				mailbox = getMailbox();
+				
+				char sep = mailbox.getFolderSeparator();
+				String newTrashFolder = mainFolder + sep + getLastFolderName(trashFolder, sep);
+				Folder folder = mailbox.getFolder(newTrashFolder);
+				if (folder.exists()) {
+					trashFolder = newTrashFolder;
+				}
+			} catch (Exception exc) {
+				logger.error("Error detectomg trash folder on main folder {}/{}", profile.getUserId(), mainFolder, exc);
+			} finally {
+				mailbox.disconnect();
+			}
+		}
+		return trashFolder;
+	}
+
 	private String getDefaultCharset(Multipart mp) throws MessagingException, IOException {
 		String defaultCharset=null;
 		//cycle parts to get a possible default charset
@@ -1885,6 +1922,75 @@ public class MailManager extends BaseManager implements IMailManager {
 			}
 		}
 		return sb.toString();
+	}
+
+	public boolean getMessageSeenState(String folderId, long uid) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		boolean seen = true;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);
+			seen = msg.isSet(Flags.Flag.SEEN);
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return seen;
+	}
+	
+	public void setMessageSeenState(String folderId, long uid, boolean seen) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);
+			msg.setFlag(Flags.Flag.SEEN, seen);
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}
+	
+	public void trashMessage(String folderId, long uid) {	
+		IMAPFolder fromFolder = null;
+		IMAPFolder toFolder = null;
+		Mailbox mailbox = null;
+		try {
+			String folderTrashId = getFolderTrash();
+			mailbox = getMailbox();
+			if (mailbox.isUnderSharedFolder(folderId)) {
+				String mainfolder=mailbox.getMainSharedFolder(folderId);
+				if (mainfolder!=null) {
+					char sep = mailbox.getFolderSeparator();
+					folderTrashId = mainfolder + sep + getLastFolderName(folderTrashId, sep);
+				}
+			}
+			fromFolder = (IMAPFolder) mailbox.getFolder(folderId);
+			toFolder = (IMAPFolder) mailbox.getFolder(folderTrashId);
+			
+			fromFolder.open(Folder.READ_WRITE);
+			toFolder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) fromFolder.getMessageByUID(uid);
+			Message amsg[] = new Message[] { msg };
+			fromFolder.copyMessages(amsg, toFolder);
+			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
+			fromFolder.expunge();
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(fromFolder, false);
+			StoreUtils.closeQuietly(toFolder, false);
+			mailbox.disconnect();
+		}
 	}
 
 	public String getLastFolderName(String fullname, char separator) {

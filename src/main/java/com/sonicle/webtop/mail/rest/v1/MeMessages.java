@@ -434,6 +434,9 @@ public class MeMessages extends MeMessagesApi {
 				epb.withAttachment(java.util.Base64.getDecoder().decode(att.getBase64()), att.getMimeType(), att.getFileName());
 			}
 		}
+		
+		epb.withInReplyTo(amn.getInReplyTo());
+		epb.withReferences(amn.getReferences());
 
 		try {
 			mmgr.sendMessage(targetPid, epb, mmgr.findIdentity(amn.getIdentityId()));
@@ -522,6 +525,48 @@ public class MeMessages extends MeMessagesApi {
 			return respOk(am);
 		} catch(Exception exc) {
 			logger.error("Error during getForwardMessage", exc);
+			return respError(exc);
+		}
+	}
+
+	@Override
+	public Response getMessageSeenState(String folderId, String suid) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		long uid = Long.parseLong(suid);
+		try {
+			boolean seen = mmgr.getMessageSeenState(folderId, uid);
+			return respOk(seen);
+		} catch(Exception exc) {
+			logger.error("Error during getMessageSeenState", exc);
+			return respError(exc);
+		}
+	}
+
+	@Override
+	public Response setMessageSeenState(String folderId, String suid, Boolean seen) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		long uid = Long.parseLong(suid);
+		try {
+			mmgr.setMessageSeenState(folderId, uid, seen);
+			return respOk();
+		} catch(Exception exc) {
+			logger.error("Error during getMessageSeenState", exc);
+			return respError(exc);
+		}
+	}
+
+	@Override
+	public Response trashMessage(String folderId, String suid) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		long uid = Long.parseLong(suid);
+		try {
+			mmgr.trashMessage(folderId, uid);
+			return respOk();
+		} catch(Exception exc) {
+			logger.error("Error during getMessageSeenState", exc);
 			return respError(exc);
 		}
 	}

@@ -17,7 +17,7 @@ import javax.validation.Valid;
 
 @Path("/me/messages")
 @Api(description = "the MeMessages API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-14T18:08:52.975+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T10:50:05.077+02:00[Europe/Rome]")
 public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
@@ -37,7 +37,6 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
     }
 
     @GET
-    @Path("/get")
     @Produces({ "application/json" })
     @ApiOperation(value = "Get full message of folder by uid", notes = "", response = ApiMessage.class, authorizations = {
         
@@ -87,7 +86,7 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
     @GET
     @Path("/notes")
     @Produces({ "application/json" })
-    @ApiOperation(value = "Get Note from message of folder by uid / cidName", notes = "", response = ApiNote.class, authorizations = {
+    @ApiOperation(value = "Get Note from message", notes = "", response = ApiNote.class, authorizations = {
         
         @Authorization(value = "basicAuth"),
         
@@ -97,6 +96,22 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
         @ApiResponse(code = 200, message = "Success", response = ApiNote.class)
     })
     public Response getMessageNote(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @GET
+    @Path("/seen")
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Get message seen state by folder and uid", notes = "", response = Boolean.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Success", response = Boolean.class)
+    })
+    public Response getMessageSeenState(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid) {
         return Response.ok().entity("magic!").build();
     }
 
@@ -161,6 +176,36 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
         @ApiResponse(code = 200, message = "OK", response = Void.class)
     })
     public Response setMessageNote(@Valid ApiNote apiNote) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @POST
+    @Path("/seen")
+    @Consumes({ "application/json" })
+    @ApiOperation(value = "Set Message Seen State", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response setMessageSeenState(@QueryParam("folder_id")   String folderId,@QueryParam("uid")   String uid,@Valid Boolean body) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @DELETE
+    @ApiOperation(value = "Trash message by folder and uid", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response trashMessage(@QueryParam("folder_id")   String folderId,@QueryParam("uid")   String uid) {
         return Response.ok().entity("magic!").build();
     }
 }

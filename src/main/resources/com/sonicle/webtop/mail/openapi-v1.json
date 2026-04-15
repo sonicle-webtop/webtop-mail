@@ -300,7 +300,7 @@
         "description": ""
       }
     },
-    "/me/messages/get": {
+    "/me/messages": {
       "parameters": [],
       "get": {
         "summary": "Get full message of folder by uid",
@@ -332,6 +332,35 @@
             "in": "query",
             "name": "set_seen",
             "description": "Set message as seen"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
+      },
+      "delete": {
+        "summary": "Trash message by folder and uid",
+        "operationId": "trashMessage",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "description": "",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "folder_id"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "uid"
           }
         ],
         "tags": [
@@ -500,7 +529,7 @@
     "/me/messages/notes": {
       "parameters": [],
       "get": {
-        "summary": "Get Note from message of folder by uid / cidName",
+        "summary": "Get Note from message",
         "operationId": "getMessageNote",
         "description": "",
         "responses": {
@@ -544,6 +573,74 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/Note"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/me/messages/seen": {
+      "parameters": [],
+      "get": {
+        "summary": "Get message seen state by folder and uid",
+        "operationId": "getMessageSeenState",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
+      },
+      "post": {
+        "summary": "Set Message Seen State",
+        "operationId": "setMessageSeenState",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "me_messages"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "folder_id"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "uid"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "boolean"
               }
             }
           }
