@@ -570,6 +570,44 @@ public class MeMessages extends MeMessagesApi {
 			return respError(exc);
 		}
 	}
+
+	@Override
+	public Response getMessageFlag(String folderId, String uid) {
+		return super.getMessageFlag(folderId, uid); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+	}
+
+	@Override
+	public Response setMessageFlag(String folderId, String suid, String flag) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		long uid = Long.parseLong(suid);
+		try {
+			mmgr.setMessageFlag(folderId, uid, flag);
+			return respOk();
+		} catch(Exception exc) {
+			logger.error("Error during setMessageFlag", exc);
+			return respError(exc);
+		}
+	}
+
+	@Override
+	public Response getMessageTags(String folderId, String uid) {
+		return super.getMessageTags(folderId, uid); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
+	}
+
+	@Override
+	public Response setMessageTags(String folderId, String suid, List<String> tags) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		long uid = Long.parseLong(suid);
+		try {
+			mmgr.setMessageTags(folderId, uid, tags);
+			return respOk();
+		} catch(Exception exc) {
+			logger.error("Error during setMessageTags", exc);
+			return respError(exc);
+		}
+	}
 	
 	@Override
 	protected Object createErrorEntity(Response.Status status, String message) {

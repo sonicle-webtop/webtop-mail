@@ -222,6 +222,12 @@ public class MailManager extends BaseManager implements IMailManager {
         new WebtopFlag("pink"),
         new WebtopFlag("complete")
 	};
+	public String allFlagStrings[];
+	
+	public static Flags flagsAll = new Flags();
+	public static Flags oldFlagsAll = new Flags();
+	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
+	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
 
 	public static String STATUS_READ = "read";
 	public static String STATUS_UNREAD = "unead";
@@ -256,6 +262,26 @@ public class MailManager extends BaseManager implements IMailManager {
 					inlineableMimes.add(mtype.trim());
 			}
 			
+			ArrayList<String> allFlagsArray=new ArrayList<String>();
+			//TODO: cleanup code here...make use of new MessageFlags enum!
+			for(WebtopFlag fs: webtopFlags) {
+				allFlagsArray.add(fs.label);
+				String oldfs="flag"+fs.label;
+				flagsAll.add(fs.label);
+				oldFlagsAll.add(oldfs);
+				Flags flags=new Flags();
+				flags.add(fs.label);
+				flagsHash.put(fs.label, flags);
+				flags=new Flags();
+				flags.add(oldfs);
+				oldFlagsHash.put(fs.label, flags);
+			}
+			for(MailManager.WebtopFlag fs: MailManager.webtopFlags) {
+				allFlagsArray.add("flag"+fs.label);
+			}	  
+			allFlagStrings=new String[allFlagsArray.size()];
+			allFlagsArray.toArray(allFlagStrings);
+		
 			mus = new MailUserSettings(targetProfileId, mss);
 			String user = WT.buildDomainInternetAddress(targetProfileId.getDomainId(), targetProfileId.getUserId(), null).getAddress();
 			final StoreHostParams hostParams = mus.getMailboxHostParams(user, PasswordUtils.asString(WT.lookupSecretStoreValue(targetProfileId, WebTopManager.PSVKEY_PPW)), false);
@@ -1954,6 +1980,59 @@ public class MailManager extends BaseManager implements IMailManager {
 			msg.setFlag(Flags.Flag.SEEN, seen);
 		} catch(Exception exc) {
 			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}
+	
+	public void setMessageFlag(String folderId, long uid, String flag) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);			
+			
+			if (flag.equals("special")) {
+				boolean wasspecial=msg.getFlags().contains(getFlagFlagged());
+				msg.setFlags(getFlagFlagged(),!wasspecial);
+			}
+			else {
+				if (!flag.equals("complete")) {
+					msg.setFlags(flagsAll, false);
+					msg.setFlags(oldFlagsAll, false);
+				}
+				msg.setFlags(flagsHash.get(flag), true);
+			}
+			
+		} catch(Exception exc) {
+			logger.error("Error on setMessageFlag", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}
+	
+	public void setMessageTags(String folderId, long uid, List<String> tags) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);			
+
+			Flags flags = new Flags();
+			for(String tagId: tags) {
+				String flag = TagsHelper.tagIdToFlagString(WT.getCoreManager().getTag(tagId));
+				flags.add(flag);
+			}
+			msg.setFlags(flags, true);
+			
+		} catch(Exception exc) {
+			logger.error("Error on setMessageFlag", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			mailbox.disconnect();

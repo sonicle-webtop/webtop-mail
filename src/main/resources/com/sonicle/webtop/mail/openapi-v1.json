@@ -646,6 +646,156 @@
           }
         }
       }
+    },
+    "/me/messages/tags": {
+      "parameters": [],
+      "get": {
+        "summary": "Get message tags by folder and uid",
+        "operationId": "getMessageTags",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "x-stoplight": {
+                      "id": "hab9osygdik2w"
+                    },
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
+      },
+      "post": {
+        "summary": "Set Message Tags",
+        "operationId": "setMessageTags",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "me_messages"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "folder_id"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "uid"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "x-stoplight": {
+                    "id": "olb4u46ieeg4z"
+                  },
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": ""
+      }
+    },
+    "/me/messages/flags": {
+      "parameters": [],
+      "get": {
+        "summary": "Get message flag by folder and uid",
+        "operationId": "getMessageFlag",
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
+      },
+      "post": {
+        "summary": "Set Message Flag",
+        "operationId": "setMessageFlag",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "me_messages"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "folder_id"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "uid"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "description": ""
+      }
     }
   },
   "components": {

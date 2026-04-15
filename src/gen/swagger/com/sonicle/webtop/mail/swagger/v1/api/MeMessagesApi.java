@@ -3,6 +3,7 @@ package com.sonicle.webtop.mail.swagger.v1.api;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessageNew;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiNote;
+import java.util.List;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
@@ -17,7 +18,7 @@ import javax.validation.Valid;
 
 @Path("/me/messages")
 @Api(description = "the MeMessages API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T10:50:05.077+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T14:28:08.246+02:00[Europe/Rome]")
 public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
@@ -84,6 +85,22 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
     }
 
     @GET
+    @Path("/flags")
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Get message flag by folder and uid", notes = "", response = String.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Success", response = String.class)
+    })
+    public Response getMessageFlag(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @GET
     @Path("/notes")
     @Produces({ "application/json" })
     @ApiOperation(value = "Get Note from message", notes = "", response = ApiNote.class, authorizations = {
@@ -112,6 +129,22 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
         @ApiResponse(code = 200, message = "Success", response = Boolean.class)
     })
     public Response getMessageSeenState(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @GET
+    @Path("/tags")
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Get message tags by folder and uid", notes = "", response = String.class, responseContainer = "List", authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Success", response = String.class, responseContainer = "List")
+    })
+    public Response getMessageTags(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid) {
         return Response.ok().entity("magic!").build();
     }
 
@@ -164,6 +197,22 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
     }
 
     @POST
+    @Path("/flags")
+    @Consumes({ "application/json" })
+    @ApiOperation(value = "Set Message Flag", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response setMessageFlag(@QueryParam("folder_id")   String folderId,@QueryParam("uid")   String uid,@Valid String body) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @POST
     @Path("/notes")
     @Consumes({ "application/json" })
     @ApiOperation(value = "Set Message Note Text", notes = "", response = Void.class, authorizations = {
@@ -192,6 +241,22 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
         @ApiResponse(code = 200, message = "OK", response = Void.class)
     })
     public Response setMessageSeenState(@QueryParam("folder_id")   String folderId,@QueryParam("uid")   String uid,@Valid Boolean body) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @POST
+    @Path("/tags")
+    @Consumes({ "application/json" })
+    @ApiOperation(value = "Set Message Tags", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response setMessageTags(@QueryParam("folder_id")   String folderId,@QueryParam("uid")   String uid,@Valid List<String> requestBody) {
         return Response.ok().entity("magic!").build();
     }
 

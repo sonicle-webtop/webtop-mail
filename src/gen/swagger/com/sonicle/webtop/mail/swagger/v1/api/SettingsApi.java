@@ -15,7 +15,7 @@ import javax.validation.Valid;
 
 @Path("/settings/external-archiving")
 @Api(description = "the Settings API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T10:50:05.077+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T14:28:08.246+02:00[Europe/Rome]")
 public abstract class SettingsApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
