@@ -832,7 +832,11 @@ public class FolderCache {
      }
 	
 	public long getUID(Message m) throws MessagingException {
-		return ((UIDFolder)folder).getUID(m);
+		boolean wasOpen=folder.isOpen();
+		if (!wasOpen) folder.open(Folder.READ_ONLY);
+		long uid = ((UIDFolder)folder).getUID(m);
+		if (!wasOpen) folder.close(false);
+		return uid;
 	}
     
     public Message getMessage(long uid) throws MessagingException {
@@ -860,15 +864,6 @@ public class FolderCache {
         open();
         ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
     }*/
-	
-    public void fetch(Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
-        int n=fmsgs.length;
-        if (length>(n-start)) length=n-start;
-        Message xmsgs[]=new Message[length];
-        System.arraycopy(fmsgs, start, xmsgs, 0, length);
-        open();
-        ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
-    }
 	
 	public Message[] getMessages(int sort_by, boolean ascending, boolean refresh, int sort_group, boolean groupascending, boolean threaded, ImapQuery iq) throws MessagingException, IOException {
         boolean rebuilt=false;
@@ -963,6 +958,7 @@ public class FolderCache {
     protected void cleanup(boolean endOfSession) {
 		if (endOfSession) {
 			goidle=false;
+			try {  folder.close(false); } catch(Exception exc) {}
 			this.ms=null;
 			//this.comparator=null;
 		}
@@ -1777,6 +1773,14 @@ public class FolderCache {
 		return msgs;
 	}
 
+	public Message getMessageByMessageId(String id) throws MessagingException {
+		boolean wasOpen=folder.isOpen();
+		if (!wasOpen) folder.open(Folder.READ_WRITE);
+		Message msgs[]=folder.search(new HeaderTerm("Message-ID", id));
+		if (!wasOpen) folder.close(false);
+		return msgs.length > 0 ? msgs[0] : null;
+	}
+	
   protected Message[] advancedSearchMessages(AdvancedSearchEntry entries[], boolean and, int sort_by, boolean ascending) throws MessagingException {
 
     Locale locale=profile.getLocale();
@@ -2401,20 +2405,6 @@ public class FolderCache {
   }
   */
 
-  protected String normalizeCidFileName(String filename) {
-	if(filename.startsWith("<")) {
-	  filename=filename.substring(1);
-	}
-	if(filename.endsWith(">")) {
-	  filename=filename.substring(0, filename.length()-1);
-	}
-	try {
-		filename=MailUtils.decodeQString(filename);
-	} catch(Exception exc) {
-
-	}
-	return filename;
-  }
   /*
   class PrepareStatus {
     boolean htmlfound=false;

@@ -93,6 +93,7 @@ Ext.define('Sonicle.webtop.mail.view.MailcardEditor', {
 			enableSymbols: true,
 			enableLink: true,
 			enableImage: true,
+			loadMaskTarget: me,
 			imageConfig: {
 				insertImageFile: false
 			},

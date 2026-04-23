@@ -36,25 +36,40 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.concurrent.ThreadFactoryBuilder;
 import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.mail.StoreUtils;
 import com.sonicle.mail.imap.SonicleIMAPStore;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
+import com.sonicle.mail.imap.SonicleIMAPSocketFactory;
+import com.sonicle.mail.imap.SonicleIMAPSSLSocketFactory;
+import com.sonicle.mail.imap.SonicleIMAPSocketTracker;
+import com.sonicle.security.PasswordUtils;
+import com.sonicle.security.Principal;
+import com.sonicle.webtop.core.CoreServiceSettings;
+import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.PrivateEnvironment;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopApp;
+import com.sonicle.webtop.core.app.WebTopManager;
 import com.sonicle.webtop.core.sdk.ServiceMessage;
+import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sun.mail.imap.ACL;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.IMAPStore;
 import com.sun.mail.imap.Rights;
+import jakarta.mail.Authenticator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import jakarta.mail.Flags;
 import jakarta.mail.Folder;
 import jakarta.mail.Message;
 import jakarta.mail.MessagingException;
 import jakarta.mail.NoSuchProviderException;
+import jakarta.mail.PasswordAuthentication;
 import jakarta.mail.Provider;
 import jakarta.mail.Quota;
 import jakarta.mail.Session;
@@ -64,6 +79,7 @@ import jakarta.mail.search.HeaderTerm;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.shiro.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +88,7 @@ import org.slf4j.LoggerFactory;
  * @author gabriele.bulfon
  */
 public class MailAccount {
-	private final static Logger LOGGER = (Logger) LoggerFactory.getLogger(MailAccount.class);
+	private final static Logger logger = (Logger) LoggerFactory.getLogger(MailAccount.class);
 	private String id;
 	private Service ms;
 	private PrivateEnvironment environment;
@@ -90,6 +106,7 @@ public class MailAccount {
 	private Session session;
 	private Store store;
 	private String storeProtocol;
+	SonicleIMAPSocketTracker socketTracker;
 	private boolean disconnecting = false;
 	private String sharedPrefixes[] = null;
 	private char folderSeparator = 0;
@@ -127,16 +144,64 @@ public class MailAccount {
 		this.mailEventQueue = new IdleMailEventQueue(tf, ttl, TimeUnit.MILLISECONDS, (items) -> {
 			for (IdleMailEventQueue.Entry item : items) {
 				try {
-					if (LOGGER.isTraceEnabled()) LOGGER.trace("[{}] handling '{}'", environment.getProfileId()+":"+id, item.getKey());
+					if (logger.isTraceEnabled()) logger.trace("[{}] handling '{}'", environment.getProfileId()+":"+id, item.getKey());
 					item.getHandler().handle(item.getMailEvent());
 				} catch (Exception ex) { /* Do nothing... */ }
 			}
 		});
+		
+		prepareMailSession();
+	}
+	
+	private void prepareMailSession() {
+		WebTopApp wta = WebTopApp.getInstance();
+		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, environment.getProfile().getDomainId());
+		String smtphost=css.getSMTPHost();
+		int smtpport=css.getSMTPPort();
+		boolean starttls=css.isSMTPStartTLS();
+		boolean auth=css.isSMTPAuthentication();
+		Properties props = new Properties(wta.getProperties());
+		props.setProperty("mail.smtp.host", smtphost);
+		props.setProperty("mail.smtp.port", ""+smtpport);
+		if (starttls) {
+			props.put("mail.smtp.starttls.enable","true");
+			props.put("mail.smtp.ssl.trust","*");
+			props.put("mail.smtp.ssl.checkserveridentity", "false");
+		}
+		props.setProperty("mail.imaps.ssl.trust", "*");
+		StoreUtils.useExtendedFolderClasses(props);
+		props.setProperty("mail.imap.enableimapevents", "true"); // Support idle events
+		Authenticator authenticator=null;
+		if (auth) {
+			props.setProperty("mail.smtp.auth", "true");
+			authenticator=new Authenticator() {
+				@Override
+				protected PasswordAuthentication getPasswordAuthentication() {
+					final Principal principal = (Principal)SecurityUtils.getSubject().getPrincipal();
+					final String login = principal.toFullyQualifiedUsername(WT.getAuthDomainName(principal.getDomainId()));
+					//logger.info("getPasswordAuthentication: "+login+" / *****");
+					return new PasswordAuthentication(login, PasswordUtils.asString(wta.getWebTopManager().lookupSecretValue(UserProfileId.from(principal), WebTopManager.PSVKEY_PPW)));
+				}
+
+			};
+		}
+
+		//track sockets to force close before imap store close
+		StoreUtils.useSonicleIMAPSocketFactories(props, socketTracker = new SonicleIMAPSocketTracker());
+
+		session = jakarta.mail.Session.getInstance(props, authenticator);
+		try {
+			session.setProvider(new Provider(Provider.Type.STORE,"imap","com.sonicle.mail.imap.SonicleIMAPStore","Sonicle","1.0"));
+			session.setProvider(new Provider(Provider.Type.STORE,"imaps","com.sonicle.mail.imap.SonicleIMAPSSLStore","Sonicle","1.0"));
+		} catch (NoSuchProviderException exc) {
+			logger.error("Error setting imap providers to Sonicle providers", exc);
+		}
+				
 	}
 	
 	public void queueFolderMailEvent(String eventId, MailEvent event, IdleMailEventHandler handler) {
 		this.mailEventQueue.push(eventId, event, handler);
-		if (LOGGER.isTraceEnabled()) LOGGER.trace("[{}] queued '{}'", environment.getProfileId()+":"+id, eventId);
+		if (logger.isTraceEnabled()) logger.trace("[{}] queued '{}'", environment.getProfileId()+":"+id, eventId);
 	}
 
 	public String getId() {
@@ -203,17 +268,6 @@ public class MailAccount {
 	
 	public boolean hasDifferentDefaultFolder() {
 		return hasDifferentDefaultFolder;
-	}
-	
-	public void setMailSession(Session session) {
-		this.session=session;
-		try {
-			session.setProvider(new Provider(Provider.Type.STORE,"imap","com.sonicle.mail.imap.SonicleIMAPStore","Sonicle","1.0"));
-			session.setProvider(new Provider(Provider.Type.STORE,"imaps","com.sonicle.mail.imap.SonicleIMAPSSLStore","Sonicle","1.0"));
-		} catch (NoSuchProviderException exc) {
-			Service.logger.error("Cannot create mail session", exc);
-		}
-		
 	}
 	
 	public Session getMailSession() {
@@ -381,22 +435,21 @@ public class MailAccount {
 	private boolean connect() {
 		try {
 			if (store!=null && store.isConnected()) {
-				disconnecting = true;
-				store.close();
+				disconnect();
 			}
 			
 			store=session.getStore(storeProtocol);
 		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
+			logger.error("Exception",exc);
 		}
 		boolean sucess = true;
 		disconnecting = false;
 		try {
 			
 			//warning: trace mode shows credentials
-			Service.logger.trace("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
+			logger.trace("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
 			if (isImpersonated)
-				Service.logger.info(" impersonating "+authorizationId);
+				logger.info(" impersonating "+authorizationId);
 			
 			if (port > 0) {
 				store.connect(mailHost, port, mailUsername, mailPassword);
@@ -426,7 +479,7 @@ public class MailAccount {
 			}
 					
 		} catch (MessagingException exc) {
-			Service.logger.error("Error connecting to the mail server "+mailHost, exc);
+			logger.error("Error connecting to the mail server "+mailHost, exc);
 			sucess = false;
 		}
 		
@@ -442,19 +495,24 @@ public class MailAccount {
 	}
 	
 	public boolean disconnect() {
-		
+
 		try {
 			if (store!=null) {
 				disconnecting = true;
+				// hard-kill underlying sockets so any thread stuck in idle()/read/write
+				// unwinds immediately and store.close() can't hang on a broken VPN socket
+				if (socketTracker != null) {
+					try { socketTracker.closeAll(); } catch (Exception ignore) {}
+				}
 				store.close();
 			}
-			
+
 		} catch (MessagingException ex) {
-			Service.logger.error("Exception",ex);
+			logger.error("Exception",ex);
 		}
-		
+
 		return true;
-		
+
 	}
 
 	/**
@@ -493,7 +551,6 @@ public class MailAccount {
 	}
 	
 	protected FolderCache addFoldersCache(FolderCache parent, Folder child) throws MessagingException {
-		//Service.logger.trace("adding {} to {}",child.getName(),parent.getFolderName());
 		FolderCache fcChild = addSingleFoldersCache(parent, child);
 		boolean leaf = fcChild.isStartupLeaf();
 		if (!leaf) {
@@ -571,7 +628,7 @@ public class MailAccount {
 									_loadFoldersCache(fc);
 								}
 							} catch (MessagingException exc) {
-								Service.logger.error("Exception",exc);
+								logger.error("Exception",exc);
 							}
 						}
 					}
@@ -581,7 +638,7 @@ public class MailAccount {
 		try {
 			if (waitLoad) cacheLoadThread.join();
 		} catch(InterruptedException exc) {
-			Service.logger.error("Error waiting folder cache load",exc);
+			logger.error("Error waiting folder cache load",exc);
 		}
 	}
 	
@@ -818,7 +875,7 @@ public class MailAccount {
 				try {
 					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
 				} catch (Throwable t) {
-					Service.logger.error("Error getting folder", t);
+					logger.error("Error getting folder", t);
 				}
 			}
 			if (fullname.equals(folderSent)) return true;
@@ -838,7 +895,7 @@ public class MailAccount {
 				try {
 					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
 				} catch (Throwable t) {
-					Service.logger.error("Error getting folder", t);
+					logger.error("Error getting folder", t);
 				}
 			}
 			if (fullname.equals(folderTrash)) return true;
@@ -858,7 +915,7 @@ public class MailAccount {
 				try {
 					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
 				} catch (Throwable t) {
-					Service.logger.error("Error getting folder", t);
+					logger.error("Error getting folder", t);
 				}
 			}
 			if (fullname.equals(folderDrafts)) return true;
@@ -879,7 +936,7 @@ public class MailAccount {
 					try {
 						if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
 					} catch (Throwable t) {
-						Service.logger.error("Error getting folder", t);
+						logger.error("Error getting folder", t);
 					}
 				}
 				if (fullname.equals(folderArchive)) return true;
@@ -902,7 +959,7 @@ public class MailAccount {
 				try {
 					if (mailManager.folderHasIdentity(getFolder(fullname).getParent().getFullName()) != null) return true;
 				} catch (Throwable t) {
-					Service.logger.error("Error getting folder", t);
+					logger.error("Error getting folder", t);
 				}
 			}
 			if (fullname.equals(folderSpam)) return true;
@@ -942,7 +999,7 @@ public class MailAccount {
 		try {
 			df=getDefaultFolder();
 		} catch(MessagingException exc) {
-			Service.logger.error("Error getting default folder",exc);
+			logger.error("Error getting default folder",exc);
 		}
 		if (df!=null) return df.getFullName().equals(foldername);
 		return false;
@@ -1135,9 +1192,9 @@ public class MailAccount {
 	}
 	
 	public void cleanup() {
-		Service.logger.trace("clean up mailEventQueue "+id);
+		logger.trace("clean up mailEventQueue "+id);
 		mailEventQueue.stop();
-		Service.logger.trace("clean up account "+id);
+		logger.trace("clean up account "+id);
 		if (fcRoot != null) {
 			fcRoot.cleanup(true);
 		}
@@ -1148,11 +1205,11 @@ public class MailAccount {
 		foldersCache.clear();
 		foldersCache=null;
 		try {
-			Service.logger.trace("-disconnecting imap");
+			logger.trace("-disconnecting imap");
 			disconnect();
-			Service.logger.trace("-done");
+			logger.trace("-done");
 		} catch (Exception e) {
-			Service.logger.error("Exception",e);
+			logger.error("Exception",e);
 		}
 		this.ms=null;
 		validated = false;
@@ -1195,7 +1252,7 @@ public class MailAccount {
 		try {
 			folder.removeACL(acluser);
 		} catch(MessagingException exc) {
-			Service.logger.error("Error removing acl on folder "+folder.getFullName(),exc);
+			logger.error("Error removing acl on folder "+folder.getFullName(),exc);
 		}
 		
 	}
@@ -1225,7 +1282,7 @@ public class MailAccount {
 			folder.removeACL(acluser);
 			folder.addACL(new ACL(acluser,new Rights(rights)));
 		} catch(MessagingException exc) {
-			Service.logger.error("Error setting acl on folder "+folder.getFullName(),exc);
+			logger.error("Error setting acl on folder "+folder.getFullName(),exc);
 		}
 	}
 	
@@ -1240,7 +1297,7 @@ public class MailAccount {
 				String u2 = fc2.getWebTopUser();
 				ret = u1.compareTo(u2);
 			} catch (MessagingException exc) {
-				Service.logger.error("Exception",exc);
+				logger.error("Exception",exc);
 			}
 			return ret;
 		}
@@ -1261,7 +1318,7 @@ public class MailAccount {
 				String desc2 = fc2.getDescription();
 				ret = desc1.compareTo(desc2);
 			} catch (MessagingException exc) {
-				Service.logger.error("Exception",exc);
+				logger.error("Exception",exc);
 			}
 			return ret;
 		}

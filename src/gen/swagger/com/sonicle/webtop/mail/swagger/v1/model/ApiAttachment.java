@@ -16,13 +16,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("Attachment")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-13T15:40:34.652+01:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T14:28:08.246+02:00[Europe/Rome]")
 public class ApiAttachment   {
   private @Valid String id;
   private @Valid String fileName;
   private @Valid Integer fileSize;
   private @Valid String mimeType;
   private @Valid String downloadUrl;
+  private @Valid String cidName;
 
   /**
    **/
@@ -119,6 +120,25 @@ public class ApiAttachment   {
     this.downloadUrl = downloadUrl;
   }
 
+  /**
+   **/
+  public ApiAttachment cidName(String cidName) {
+    this.cidName = cidName;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("cidName")
+  public String getCidName() {
+    return cidName;
+  }
+
+  @JsonProperty("cidName")
+  public void setCidName(String cidName) {
+    this.cidName = cidName;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -133,12 +153,13 @@ public class ApiAttachment   {
         Objects.equals(this.fileName, attachment.fileName) &&
         Objects.equals(this.fileSize, attachment.fileSize) &&
         Objects.equals(this.mimeType, attachment.mimeType) &&
-        Objects.equals(this.downloadUrl, attachment.downloadUrl);
+        Objects.equals(this.downloadUrl, attachment.downloadUrl) &&
+        Objects.equals(this.cidName, attachment.cidName);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, fileName, fileSize, mimeType, downloadUrl);
+    return Objects.hash(id, fileName, fileSize, mimeType, downloadUrl, cidName);
   }
 
   @Override
@@ -151,6 +172,7 @@ public class ApiAttachment   {
     sb.append("    fileSize: ").append(toIndentedString(fileSize)).append("\n");
     sb.append("    mimeType: ").append(toIndentedString(mimeType)).append("\n");
     sb.append("    downloadUrl: ").append(toIndentedString(downloadUrl)).append("\n");
+    sb.append("    cidName: ").append(toIndentedString(cidName)).append("\n");
     sb.append("}");
     return sb.toString();
   }

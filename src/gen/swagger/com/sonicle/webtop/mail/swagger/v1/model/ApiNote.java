@@ -15,48 +15,68 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 
-@JsonTypeName("Contact")
+@JsonTypeName("Note")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T14:28:08.246+02:00[Europe/Rome]")
-public class ApiContact   {
-  private @Valid String name;
-  private @Valid String email;
+public class ApiNote   {
+  private @Valid String folderId;
+  private @Valid String uid;
+  private @Valid String text;
 
   /**
    **/
-  public ApiContact name(String name) {
-    this.name = name;
+  public ApiNote folderId(String folderId) {
+    this.folderId = folderId;
     return this;
   }
 
   
   @ApiModelProperty(value = "")
-  @JsonProperty("name")
-  public String getName() {
-    return name;
+  @JsonProperty("folderId")
+  public String getFolderId() {
+    return folderId;
   }
 
-  @JsonProperty("name")
-  public void setName(String name) {
-    this.name = name;
+  @JsonProperty("folderId")
+  public void setFolderId(String folderId) {
+    this.folderId = folderId;
   }
 
   /**
    **/
-  public ApiContact email(String email) {
-    this.email = email;
+  public ApiNote uid(String uid) {
+    this.uid = uid;
     return this;
   }
 
   
   @ApiModelProperty(value = "")
-  @JsonProperty("email")
-  public String getEmail() {
-    return email;
+  @JsonProperty("uid")
+  public String getUid() {
+    return uid;
   }
 
-  @JsonProperty("email")
-  public void setEmail(String email) {
-    this.email = email;
+  @JsonProperty("uid")
+  public void setUid(String uid) {
+    this.uid = uid;
+  }
+
+  /**
+   **/
+  public ApiNote text(String text) {
+    this.text = text;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("text")
+  public String getText() {
+    return text;
+  }
+
+  @JsonProperty("text")
+  public void setText(String text) {
+    this.text = text;
   }
 
 
@@ -68,23 +88,25 @@ public class ApiContact   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ApiContact contact = (ApiContact) o;
-    return Objects.equals(this.name, contact.name) &&
-        Objects.equals(this.email, contact.email);
+    ApiNote note = (ApiNote) o;
+    return Objects.equals(this.folderId, note.folderId) &&
+        Objects.equals(this.uid, note.uid) &&
+        Objects.equals(this.text, note.text);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(name, email);
+    return Objects.hash(folderId, uid, text);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ApiContact {\n");
+    sb.append("class ApiNote {\n");
     
-    sb.append("    name: ").append(toIndentedString(name)).append("\n");
-    sb.append("    email: ").append(toIndentedString(email)).append("\n");
+    sb.append("    folderId: ").append(toIndentedString(folderId)).append("\n");
+    sb.append("    uid: ").append(toIndentedString(uid)).append("\n");
+    sb.append("    text: ").append(toIndentedString(text)).append("\n");
     sb.append("}");
     return sb.toString();
   }

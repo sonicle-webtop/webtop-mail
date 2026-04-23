@@ -1452,7 +1452,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
         me.replyMessageById(me.currentAccount,r.get('folder')||me.currentFolder,r.get("idmessage"),all);
 	},
 	
-	replyMessageById: function(acct,idfolder,idmessage,all) {
+	replyMessageById: function(acct,idfolder,idmessage,all, answer) {
         var me=this;
         
 		WT.ajaxReq(me.mys.ID, 'GetReplyMessage', {
@@ -1465,11 +1465,13 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			callback: function(success,json) {
 				if (json.success) {
 					var data = json.data;
+					if (answer) data.content = answer + "<br><br>"+data.content;
 					me.mys.startNewMessage(idfolder,{
 						subject: data.subject,
 						torecipients: data.torecipients,
 						ccrecipients: data.ccrecipients,
 						content: data.content,
+						contentReady: ( answer ? true : false),
 						attachments: data.attachments,
                         format: data.format,
 						replyfolder: data.replyfolder,

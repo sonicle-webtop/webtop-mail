@@ -20,22 +20,23 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("Message")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-03-13T15:40:34.652+01:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T14:28:08.246+02:00[Europe/Rome]")
 public class ApiMessage   {
   private @Valid String id;
   private @Valid Integer uid;
   private @Valid String subject;
   private @Valid String body;
   private @Valid ApiContact sender;
-  private @Valid List<ApiContact> recipients = null;
-  private @Valid List<ApiContact> cc = null;
-  private @Valid List<ApiContact> bcc = null;
+  private @Valid List<ApiContact> recipients;
+  private @Valid List<ApiContact> cc;
+  private @Valid List<ApiContact> bcc;
   private @Valid String date;
   private @Valid Boolean isRead;
-  private @Valid List<ApiAttachment> attachments = null;
+  private @Valid List<ApiAttachment> attachments;
   private @Valid String status;
   private @Valid String flag;
-  private @Valid List<String> tags = null;
+  private @Valid List<String> tags;
+  private @Valid Boolean hasNote;
 
   /**
    **/
@@ -383,6 +384,25 @@ public class ApiMessage   {
 
     return this;
   }
+  /**
+   **/
+  public ApiMessage hasNote(Boolean hasNote) {
+    this.hasNote = hasNote;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "")
+  @JsonProperty("hasNote")
+  public Boolean getHasNote() {
+    return hasNote;
+  }
+
+  @JsonProperty("hasNote")
+  public void setHasNote(Boolean hasNote) {
+    this.hasNote = hasNote;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -406,12 +426,13 @@ public class ApiMessage   {
         Objects.equals(this.attachments, message.attachments) &&
         Objects.equals(this.status, message.status) &&
         Objects.equals(this.flag, message.flag) &&
-        Objects.equals(this.tags, message.tags);
+        Objects.equals(this.tags, message.tags) &&
+        Objects.equals(this.hasNote, message.hasNote);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, uid, subject, body, sender, recipients, cc, bcc, date, isRead, attachments, status, flag, tags);
+    return Objects.hash(id, uid, subject, body, sender, recipients, cc, bcc, date, isRead, attachments, status, flag, tags, hasNote);
   }
 
   @Override
@@ -433,6 +454,7 @@ public class ApiMessage   {
     sb.append("    status: ").append(toIndentedString(status)).append("\n");
     sb.append("    flag: ").append(toIndentedString(flag)).append("\n");
     sb.append("    tags: ").append(toIndentedString(tags)).append("\n");
+    sb.append("    hasNote: ").append(toIndentedString(hasNote)).append("\n");
     sb.append("}");
     return sb.toString();
   }

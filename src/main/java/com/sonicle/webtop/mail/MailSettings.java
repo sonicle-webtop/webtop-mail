@@ -486,4 +486,12 @@ public class MailSettings {
 	 * Activates or not new reply logic. Default to false.
 	 */
 	public static final String TEST_NEWREPLY = "test.newreply";
+
+	/**
+	 * [domain+system]
+	 * [integer]
+	 * Maximum number of characters accepted as user input in an AI menu
+	 * action before truncation (prevents oversized/abusive prompts).
+	 */
+	public static final String AI_MENU_USER_INPUT_MAX_CHARS = "ai.menu.user_input.max_chars";
 }

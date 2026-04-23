@@ -3,8 +3,6 @@ package com.sonicle.webtop.mail.swagger.v1.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
-import java.util.ArrayList;
-import java.util.List;
 import javax.validation.constraints.*;
 import javax.validation.Valid;
 
@@ -17,18 +15,17 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 
-@JsonTypeName("Folder")
+@JsonTypeName("FolderInfo")
 @javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T14:28:08.246+02:00[Europe/Rome]")
-public class ApiFolder   {
+public class ApiFolderInfo   {
   private @Valid String id;
   private @Valid String name;
   private @Valid Integer unreadCount;
   private @Valid Integer totalCount;
-  private @Valid List<ApiFolder> children;
 
   /**
    **/
-  public ApiFolder id(String id) {
+  public ApiFolderInfo id(String id) {
     this.id = id;
     return this;
   }
@@ -47,7 +44,7 @@ public class ApiFolder   {
 
   /**
    **/
-  public ApiFolder name(String name) {
+  public ApiFolderInfo name(String name) {
     this.name = name;
     return this;
   }
@@ -66,7 +63,7 @@ public class ApiFolder   {
 
   /**
    **/
-  public ApiFolder unreadCount(Integer unreadCount) {
+  public ApiFolderInfo unreadCount(Integer unreadCount) {
     this.unreadCount = unreadCount;
     return this;
   }
@@ -85,7 +82,7 @@ public class ApiFolder   {
 
   /**
    **/
-  public ApiFolder totalCount(Integer totalCount) {
+  public ApiFolderInfo totalCount(Integer totalCount) {
     this.totalCount = totalCount;
     return this;
   }
@@ -102,41 +99,6 @@ public class ApiFolder   {
     this.totalCount = totalCount;
   }
 
-  /**
-   **/
-  public ApiFolder children(List<ApiFolder> children) {
-    this.children = children;
-    return this;
-  }
-
-  
-  @ApiModelProperty(value = "")
-  @JsonProperty("children")
-  public List<ApiFolder> getChildren() {
-    return children;
-  }
-
-  @JsonProperty("children")
-  public void setChildren(List<ApiFolder> children) {
-    this.children = children;
-  }
-
-  public ApiFolder addChildrenItem(ApiFolder childrenItem) {
-    if (this.children == null) {
-      this.children = new ArrayList<>();
-    }
-
-    this.children.add(childrenItem);
-    return this;
-  }
-
-  public ApiFolder removeChildrenItem(ApiFolder childrenItem) {
-    if (childrenItem != null && this.children != null) {
-      this.children.remove(childrenItem);
-    }
-
-    return this;
-  }
 
   @Override
   public boolean equals(Object o) {
@@ -146,29 +108,27 @@ public class ApiFolder   {
     if (o == null || getClass() != o.getClass()) {
       return false;
     }
-    ApiFolder folder = (ApiFolder) o;
-    return Objects.equals(this.id, folder.id) &&
-        Objects.equals(this.name, folder.name) &&
-        Objects.equals(this.unreadCount, folder.unreadCount) &&
-        Objects.equals(this.totalCount, folder.totalCount) &&
-        Objects.equals(this.children, folder.children);
+    ApiFolderInfo folderInfo = (ApiFolderInfo) o;
+    return Objects.equals(this.id, folderInfo.id) &&
+        Objects.equals(this.name, folderInfo.name) &&
+        Objects.equals(this.unreadCount, folderInfo.unreadCount) &&
+        Objects.equals(this.totalCount, folderInfo.totalCount);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, name, unreadCount, totalCount, children);
+    return Objects.hash(id, name, unreadCount, totalCount);
   }
 
   @Override
   public String toString() {
     StringBuilder sb = new StringBuilder();
-    sb.append("class ApiFolder {\n");
+    sb.append("class ApiFolderInfo {\n");
     
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    unreadCount: ").append(toIndentedString(unreadCount)).append("\n");
     sb.append("    totalCount: ").append(toIndentedString(totalCount)).append("\n");
-    sb.append("    children: ").append(toIndentedString(children)).append("\n");
     sb.append("}");
     return sb.toString();
   }

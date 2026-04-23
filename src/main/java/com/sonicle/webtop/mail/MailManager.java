@@ -36,6 +36,7 @@ package com.sonicle.webtop.mail;
 import com.sonicle.mail.sieve.SieveScriptBuilder;
 import com.fluffypeople.managesieve.ManageSieveClient;
 import com.fluffypeople.managesieve.SieveScript;
+import com.sonicle.commons.InternetAddressUtils;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.PathUtils;
@@ -45,6 +46,11 @@ import com.sonicle.commons.time.JavaTimeUtils;
 import com.sonicle.mail.Mailbox;
 import com.sonicle.mail.StoreHostParams;
 import com.sonicle.mail.StoreUtils;
+import com.sonicle.mail.email.EmailMessage;
+import com.sonicle.mail.email.EmailMessageBuilder;
+import com.sonicle.mail.email.EmailPopulatingBuilder;
+import com.sonicle.mail.email.Recipient;
+import com.sonicle.mail.email.Recipients;
 import com.sonicle.mail.imap.DateSortTerm;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
@@ -52,6 +58,7 @@ import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.security.PasswordUtils;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
+import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.dal.DAOException;
@@ -76,16 +83,21 @@ import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.app.model.ShareOrigin;
 import com.sonicle.webtop.core.app.model.Sharing;
+import com.sonicle.webtop.core.app.sdk.WTEmailSendException;
 import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.IdentifierUtils;
+import com.sonicle.webtop.mail.MailUserSettings.FavoriteFolder;
+import com.sonicle.webtop.mail.MailUserSettings.FavoriteFolders;
 import com.sonicle.webtop.mail.bol.OExternalAccount;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OTag;
+import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.dal.ExternalAccountDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.TagDAO;
+import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.FolderShareParameters;
 import com.sonicle.webtop.mail.model.Tag;
@@ -107,6 +119,7 @@ import java.util.function.Function;
 import jakarta.mail.Flags;
 import jakarta.mail.Folder;
 import jakarta.mail.Message;
+import jakarta.mail.Message.RecipientType;
 import jakarta.mail.MessagingException;
 import jakarta.mail.Multipart;
 import jakarta.mail.Part;
@@ -115,18 +128,23 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeUtility;
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.security.GeneralSecurityException;
+import java.text.DateFormat;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.StringTokenizer;
 import net.fortuna.ical4j.data.ParserException;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
@@ -147,6 +165,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	public static final String SIEVE_OLD_WEBTOP_SCRIPT = "webtop";
 	public static final String SIEVE_WEBTOP_SCRIPT = "webtop5";
 	public static final int MAX_EXT_ACCOUNTS = 3; // Update this fixed limit also in UserOptions.js
+
+	private static String START_PRE = "<PRE>";
+	private static String END_PRE = "</PRE>";
 
 	private static final String S_FLAG_NOTE="mailnote";
 	private static final String S_FLAG_DMS_ARCHIVED="$Archived";
@@ -201,6 +222,12 @@ public class MailManager extends BaseManager implements IMailManager {
         new WebtopFlag("pink"),
         new WebtopFlag("complete")
 	};
+	public String allFlagStrings[];
+	
+	public static Flags flagsAll = new Flags();
+	public static Flags oldFlagsAll = new Flags();
+	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
+	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
 
 	public static String STATUS_READ = "read";
 	public static String STATUS_UNREAD = "unead";
@@ -213,12 +240,14 @@ public class MailManager extends BaseManager implements IMailManager {
 	private boolean attachmentDetectUseBodyStructure = true;
 	private ArrayList<String> inlineableMimes = new ArrayList<String>();
 	
+	private MailUserSettings mus = null;
+	private MailServiceSettings mss = null;
 
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
 		
 		if (!fastInit) {
-			MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, targetProfileId.getDomainId());
+			mss = new MailServiceSettings(SERVICE_ID, targetProfileId.getDomainId());
 			attachmentDetectUseBodyStructure = mss.isAttachmentDetectUseBodyStructure();
 			String mtypes=mss.getInlineableMimeTypes();
 			if (StringUtils.isBlank(mtypes)) {
@@ -233,7 +262,27 @@ public class MailManager extends BaseManager implements IMailManager {
 					inlineableMimes.add(mtype.trim());
 			}
 			
-			MailUserSettings mus = new MailUserSettings(targetProfileId, mss);
+			ArrayList<String> allFlagsArray=new ArrayList<String>();
+			//TODO: cleanup code here...make use of new MessageFlags enum!
+			for(WebtopFlag fs: webtopFlags) {
+				allFlagsArray.add(fs.label);
+				String oldfs="flag"+fs.label;
+				flagsAll.add(fs.label);
+				oldFlagsAll.add(oldfs);
+				Flags flags=new Flags();
+				flags.add(fs.label);
+				flagsHash.put(fs.label, flags);
+				flags=new Flags();
+				flags.add(oldfs);
+				oldFlagsHash.put(fs.label, flags);
+			}
+			for(MailManager.WebtopFlag fs: MailManager.webtopFlags) {
+				allFlagsArray.add("flag"+fs.label);
+			}	  
+			allFlagStrings=new String[allFlagsArray.size()];
+			allFlagsArray.toArray(allFlagStrings);
+		
+			mus = new MailUserSettings(targetProfileId, mss);
 			String user = WT.buildDomainInternetAddress(targetProfileId.getDomainId(), targetProfileId.getUserId(), null).getAddress();
 			final StoreHostParams hostParams = mus.getMailboxHostParams(user, PasswordUtils.asString(WT.lookupSecretStoreValue(targetProfileId, WebTopManager.PSVKEY_PPW)), false);
 			try {
@@ -244,16 +293,48 @@ public class MailManager extends BaseManager implements IMailManager {
 		}		
 	}
 	
+	private UserProfile getUserProfile() {
+		Principal principal = RunContext.getPrincipal();
+		return new UserProfile(WT.getCoreManager(), principal);
+	}
+	
 	private Mailbox getMailbox() throws WTException {
 		if (mailbox == null) throw new WTException("No Mailbox Object");
 		mailbox.connect();
 		return mailbox;
 	}
 	
+	public class Favorite {
+		public String id;
+		public String name;
+		public Folder folder;
+	}
+	public ArrayList<Favorite> getFavorites() {
+		FavoriteFolders ffs = mus.getFavoriteFolders();
+		ArrayList<Favorite> favorites = new ArrayList<>();
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			for(FavoriteFolder ff: ffs) {
+				Favorite f = new Favorite();
+				f.id = ff.folderId;
+				f.name = ff.description;
+				f.folder = mailbox.getFolder(f.id);
+				favorites.add(f);
+			}
+		} catch(MessagingException|WTException exc) {
+			logger.error("Error listing favorites", exc);
+		} finally {
+			mailbox.disconnect();
+		}
+		return favorites;
+	}
+	
 	public ArrayList<Folder> getRootFolders() {
 		ArrayList<Folder> folders = new ArrayList<>();
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			Folder root = mailbox.getRootFolder();
 			Folder flist[] = root.list();
 			for(Folder folder: flist) folders.add(folder);
@@ -267,8 +348,9 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public ArrayList<Folder> getFolders(String id) {
 		ArrayList<Folder> folders = new ArrayList<>();
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			Folder parent = mailbox.getFolder(id);
 			Folder flist[] = parent.list();
 			for(Folder folder: flist) folders.add(folder);
@@ -280,14 +362,55 @@ public class MailManager extends BaseManager implements IMailManager {
 		return folders;
 	}
 	
-	public void consumeMessages(String folderId, MessagesConsumer mc) {
+	public Folder getFolder(String id) {
 		Folder folder = null;
+		Mailbox mailbox = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
+			folder = mailbox.getFolder(id);
+		} catch(MessagingException|WTException exc) {
+			logger.error("Error getting folder", exc);
+		} finally {
+			mailbox.disconnect();
+		}
+		return folder;
+	}
+
+	public Message[] fetch(Folder folder, Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
+        int n=fmsgs.length;
+        if (length>(n-start)) length=n-start;
+        Message xmsgs[]=new Message[length];
+        System.arraycopy(fmsgs, start, xmsgs, 0, length);
+        ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
+		return xmsgs;
+    }
+	
+	public void consumeMessages(String folderId, int pageNo, int pageSize, MessagesConsumer mc) {
+		Folder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
 			folder = mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
 			Message fmsgs[] = ((SonicleIMAPFolder)folder).sort(new DateSortTerm(true), null);
-			((SonicleIMAPFolder)folder).uid_fetch(fmsgs, FP);
+			if (pageNo<0) {
+				((SonicleIMAPFolder)folder).uid_fetch(fmsgs, FP);
+			} else {
+				int start = pageNo*pageSize;
+				/*int end = start + pageSize;
+				if (end>fmsgs.length) end = fmsgs.length;
+				Message xmsgs[] = new Message[end-start];
+				for(int ix=start; ix<end; ++ix) {
+					xmsgs[ix-start] = fmsgs[ix];
+				}
+				((SonicleIMAPFolder)folder).uid_fetch(xmsgs, FP);*/
+				
+				fmsgs = fetch(folder, fmsgs, FP, start, pageSize);
+				
+				/*for(Message msg: xmsgs) {
+					mc.consume(msg, ((UIDFolder)folder).getUID(msg));
+				}*/
+			}
 			for(Message msg: fmsgs) {
 				mc.consume(msg, ((UIDFolder)folder).getUID(msg));
 			}
@@ -299,12 +422,31 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}	
 	
-	public void consumeMessage(String folderId, long uid, MessageConsumer mc) {
+/*	public MimeMessage getMessage(String folderId, long uid) {
 		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		MimeMessage msg = null;
 		try {
-			Mailbox mailbox = getMailbox();
+			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
+			msg = (MimeMessage) folder.getMessageByUID(uid);
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return msg;
+	}*/
+	
+	public void consumeMessage(String folderId, long uid, boolean setSeen, MessageConsumer mc) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(setSeen ? Folder.READ_WRITE : Folder.READ_ONLY);
 			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
 			MimeMessageParser mmp = new MimeMessageParser().withProcessDisplayParts(false, new MimeMessageParser.DisplayPartEvaluator() {
 				
@@ -315,8 +457,7 @@ public class MailManager extends BaseManager implements IMailManager {
 						ICalendarRequest ir=new ICalendarRequest(istream);
 						//mailData.setICalRequest(ir);
 						if (!icalhtmlview) {
-							Principal principal = RunContext.getPrincipal();
-							UserProfile profile = new UserProfile(WT.getCoreManager(), principal);
+							UserProfile profile = getUserProfile();
 							Locale locale = profile.getLocale();
 							String irhtml=ir.getHtmlView(locale, "5.23.0", "default", java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
 							parsed.appendProcessedHTMLPart(0, irhtml);
@@ -403,6 +544,189 @@ public class MailManager extends BaseManager implements IMailManager {
 			
 		} catch(Exception exc) {
 			logger.error("Error listing folders", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+	
+	protected String getMessageID(Message m) throws MessagingException {
+		String ids[] = m.getHeader("Message-ID");
+		if (ids == null) {
+			return null;
+		}
+		return ids[0];
+	}
+	
+	public String getMessageNote(String folderId, long uid) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		Connection con = null;
+		String mid = null;
+		String text = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			mid = getMessageID(mmsg);
+			con = WT.getConnection(SERVICE_ID);
+			ONote onote=NoteDAO.getInstance().selectById(con, getUserProfile().getDomainId(), mid);
+			if (onote!=null) {
+				text = onote.getText();
+			}
+			
+		} catch(Exception exc) {
+			logger.error("Error in getMessageNote", exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return text;
+	}	
+
+	public void setMessageNote(String folderId, long uid, String text) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		Connection con = null;
+		try {
+			UserProfile profile = getUserProfile();
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			String mid = getMessageID(mmsg);
+			con = WT.getConnection(SERVICE_ID);
+			NoteDAO.getInstance().deleteById(con, profile.getDomainId(), mid);
+			if (!StringUtils.isBlank(text)) {
+				ONote onote = new ONote(profile.getDomainId(), mid, text);
+				NoteDAO.getInstance().insert(con, onote);
+				mmsg.setFlags(MailManager.getFlagNote(), true);
+			} else {
+				mmsg.setFlags(MailManager.getFlagNote(), false);
+			}
+		} catch(Exception exc) {
+			logger.error("Error in getMessageNote", exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+
+	public String getMessageAttachmentContentType(String folderId, long uid, int index) {
+		IMAPFolder folder = null;
+		String contentType="binary/octet-stream";
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser mmp = new MimeMessageParser();
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse(mmsg, false);
+			Part part = parsed.getAttachmentParts().get(index);
+			contentType = part.getContentType();
+		} catch(Exception exc) {
+			logger.error("Error in getMessageAttachmentContentType", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return contentType;
+	}	
+	
+	public MimeMessageParser.ParsedMimeMessageComponents getParsedMimeMessageComponents(String folderId, long uid) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		MimeMessageParser.ParsedMimeMessageComponents parsed=null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser mmp = new MimeMessageParser();
+			parsed = mmp.parse(mmsg, false);
+		} catch(Exception exc) {
+			logger.error("Error on getParsedMimeMessageComponents", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return parsed;
+	}	
+	
+	public void streamMessageAttachmentData(String folderId, long uid, int index, OutputStream os) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser mmp = new MimeMessageParser();
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse(mmsg, false);
+			Part part = parsed.getAttachmentParts().get(index);
+			IOUtils.copy(part.getInputStream(), os);
+		} catch(Exception exc) {
+			logger.error("Error in streamMessageAttachmentData", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+	
+	public void streamMessageAttachmentData(MimeMessageParser.ParsedMimeMessageComponents parsed, int index, OutputStream os) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			MimeMessage msg = parsed.getOriginalMessage();
+			folder = (IMAPFolder) msg.getFolder();
+			folder.open(Folder.READ_ONLY);
+			Part part = parsed.getAttachmentParts().get(index);
+			IOUtils.copy(part.getInputStream(), os);
+		} catch(Exception exc) {
+			logger.error("Error in streamMessageAttachmentData", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+	
+	public void streamMessageCidData(String folderId, long uid, String cidName, OutputStream os) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser mmp = new MimeMessageParser();
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse(mmsg, false);
+			Part part = parsed.getCidParts().get(cidName);
+			IOUtils.copy(part.getInputStream(), os);
+		} catch(Exception exc) {
+			logger.error("Error in streamMessageCidData", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}	
+	
+	public void streamMessageCidData(MimeMessageParser.ParsedMimeMessageComponents parsed, String cidName, OutputStream os) {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			MimeMessage msg = parsed.getOriginalMessage();
+			folder = (IMAPFolder) msg.getFolder();
+			folder.open(Folder.READ_ONLY);
+			Part part = parsed.getCidParts().get(cidName);
+			IOUtils.copy(part.getInputStream(), os);
+		} catch(Exception exc) {
+			logger.error("Error in streamMessageCidData", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			mailbox.disconnect();
@@ -562,6 +886,31 @@ public class MailManager extends BaseManager implements IMailManager {
 		return pname;
 	}
 	
+	public String normalizeCidFileName(String filename) {
+		if(filename.startsWith("<")) {
+		  filename=filename.substring(1);
+		}
+		if(filename.endsWith(">")) {
+		  filename=filename.substring(0, filename.length()-1);
+		}
+		try {
+			filename=MailUtils.decodeQString(filename);
+		} catch(Exception exc) {
+
+		}
+		return filename;
+	}
+	
+	public String getCidName(Part p) {
+		String cidname=null;
+		try {
+			String cidnames[]=p.getHeader("Content-ID");
+			if (cidnames!=null && cidnames.length>0) cidname=normalizeCidFileName(cidnames[0]);
+		} catch(MessagingException exc) {
+		}
+		return cidname;
+	}
+	
 	public boolean isAttachamentDetectUseBodyStructure() {
 		return attachmentDetectUseBodyStructure;
 	}
@@ -670,6 +1019,173 @@ public class MailManager extends BaseManager implements IMailManager {
         
         return retval;
     }
+	
+	/*public void sendMessage() {
+		SimpleMessage msg = prepareMessage(jsmsg,msgId,save,isFax);
+		Identity ifrom = msg.getFrom();
+		String from = getUserProfile().getPersonalEmailAddress();
+		if (ifrom != null) {
+			from = ifrom.getEmail();
+		}
+		if (ifrom.isAlwaysCc()) {
+			msg.addCc(new String[] { ifrom.hasAlwaysCcEmail()?ifrom.getAlwaysCcEmail():ifrom.getEmail() });
+		}
+
+		if (ifrom.isMainIdentity()) {
+			String alwaysCc = mus.getAlwaysCc();
+			if (alwaysCc!=null) {
+				msg.addCc(new String[] { alwaysCc });
+			}
+
+			String alwaysBcc = mus.getAlwaysBcc();
+			if (alwaysBcc!=null) {
+				msg.addBcc(new String[] { alwaysBcc });
+			}
+		}
+
+		SendException sendExc = sendMessage(msg, jsmsg.attachments);
+					String foundfolder = null;
+		if (sendExc == null || sendExc.messageSent) {
+			//if is draft, check for deletion
+			if (jsmsg.draftuid>0 && jsmsg.draftfolder!=null && mss.isDefaultFolderDraftsDeleteMsgOnSend()) {
+				FolderCache fc=account.getFolderCache(jsmsg.draftfolder);
+				fc.deleteMessages(new long[] { jsmsg.draftuid }, false);
+			}
+
+			//Save used recipients
+			ArrayList<InternetAddress> iaTos = new ArrayList<>();
+			ArrayList<InternetAddress> iaCcs = new ArrayList<>();
+			ArrayList<InternetAddress> iaBccs = new ArrayList<>();
+			for(JsRecipient jsrcpt: pl.data.torecipients) {
+				InternetAddress ia = InternetAddressUtils.toInternetAddress(jsrcpt.email);
+				if (ia != null) {
+					if (!ContactsUtils.isListVirtualRecipient(ia)) coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+					iaTos.add(ia);
+				}
+			}
+			for(JsRecipient jsrcpt: pl.data.ccrecipients) {
+				InternetAddress ia = InternetAddressUtils.toInternetAddress(jsrcpt.email);
+				if (ia != null) {
+					if (!ContactsUtils.isListVirtualRecipient(ia)) coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+					iaCcs.add(ia);
+				}
+			}
+			for(JsRecipient jsrcpt: pl.data.bccrecipients) {
+				InternetAddress ia = InternetAddressUtils.toInternetAddress(jsrcpt.email);
+				if (ia != null) {
+					if (!ContactsUtils.isListVirtualRecipient(ia)) coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+					iaBccs.add(ia);
+				}
+			}
+
+			//Save subject for suggestions
+			if (jsmsg.subject!=null && jsmsg.subject.trim().length()>0)
+				WT.getCoreManager().addServiceStoreEntry(SERVICE_ID, "subject", jsmsg.subject.toUpperCase(),jsmsg.subject);
+
+			coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+
+			deleteAutosavedDraft(account,msgId);
+			// TODO: Cloud integration!!! Destination emails added to share
+//                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
+//			 for(String hash: hashlinks) {
+//			 Service.logger.debug("Adding emails to hash "+hash);
+//			 vfs.setAuthEmails(hash, from, emails);
+//			 }
+//
+//			 }
+			FolderCache fc = account.getFolderCache(account.getFolderSent());
+			fc.setForceRefresh();
+			//check for in-reply-to and set the answered flags
+			//String inreplyto = request.getParameter("inreplyto");
+			//String replyfolder = request.getParameter("replyfolder");
+			//String forwardedfrom = request.getParameter("forwardedfrom");
+			//String forwardedfolder = request.getParameter("forwardedfolder");
+			//String soriguid=request.getParameter("origuid");
+			//long origuid=0;
+			//try { origuid=Long.parseLong(soriguid); } catch(RuntimeException rexc) {}
+
+			if (jsmsg.forwardedfrom != null && jsmsg.forwardedfrom.trim().length() > 0) {
+				JsAuditMessageInfo jsAudit = iaRecipientsToAuditInfo(iaTos, iaCcs, iaBccs);
+				if (StringUtils.isNotEmpty(from)) jsAudit.setFrom(from);
+				if (ifrom != null && StringUtils.isNotEmpty(ifrom.getDisplayName())) jsAudit.setFromDN(ifrom.getDisplayName());
+				if (StringUtils.isNotEmpty(jsmsg.subject)) jsAudit.setSubject(jsmsg.subject);
+				jsAudit.setFolder(jsmsg.folder);
+				if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(jsmsg.forwardedfrom)) {
+					mailManager.auditLogWrite(
+						MailManager.AuditContext.MAIL,
+						MailManager.AuditAction.FORWARD, 
+						jsmsg.forwardedfrom, 
+						JsonResult.gson(false).toJson(jsAudit)
+					);
+				}
+
+				try {
+					foundfolder = foundfolder=flagForwardedMessage(account,jsmsg.forwardedfolder,jsmsg.forwardedfrom,jsmsg.origuid);
+				} catch (Exception xexc) {
+					Service.logger.error("Exception",xexc);
+				}
+			}
+			else if((jsmsg.inreplyto != null && jsmsg.inreplyto.trim().length()>0)||(jsmsg.replyfolder!=null&&jsmsg.replyfolder.trim().length()>0&&jsmsg.origuid>0)) {
+				try {
+					String[] toRecipients = SimpleMessage.breakAddr(msg.getTo());
+					ArrayList<Integer> cats = new ArrayList<>();
+					cats.addAll(contactsManager.listMyCategoryIds());
+					cats.addAll(contactsManager.listIncomingCategoryIds());
+
+					for (String toRecipient : toRecipients) {
+						InternetAddress ia = getInternetAddress(toRecipient);
+						if (!StringUtils.isBlank(ia.getAddress())) {
+							String email=ia.getAddress();
+							Condition<ContactQuery> filterQuery = new ContactQuery().anyEmail().like(email);
+							if (!contactsManager.existAnyContact(cats, filterQuery)) {
+								boolean found=false;
+								//check also internal users profile email
+								for (String userId : coreMgr.listUserIds(EnabledCond.ENABLED_ONLY)) {
+									UserProfile.Data userData=WT.getProfileData(new UserProfileId(coreMgr.getTargetProfileId().getDomainId(), userId));
+									if ((found=StringUtils.equalsIgnoreCase(userData.getPersonalEmailAddress(), email)))
+										break;
+								}
+								if (!found) {
+									//check also internal users identities
+									List<Identity> idents=mailManager.listAllPersonalIdentities(coreMgr.getTargetProfileId().getDomainId());
+									for(Identity ident: idents) {
+										if ((found=StringUtils.equalsIgnoreCase(ident.getEmail(), email)))
+											break;
+									}
+								}
+
+								if (!found) sendAddContactMessage(ia.getAddress(), ia.getPersonal());
+								break;
+							}
+						}
+					}
+
+				} catch (Exception xexc) {
+					Service.logger.error("Exception",xexc);
+				} finally {
+					JsAuditMessageInfo jsAudit = iaRecipientsToAuditInfo(iaTos, iaCcs, iaBccs);
+					if (StringUtils.isNotEmpty(from)) jsAudit.setFrom(from);
+					if (ifrom != null && StringUtils.isNotEmpty(ifrom.getDisplayName())) jsAudit.setFromDN(ifrom.getDisplayName());
+					if (StringUtils.isNotEmpty(jsmsg.subject)) jsAudit.setSubject(jsmsg.subject);
+					jsAudit.setFolder(jsmsg.folder);
+					if (mailManager.isAuditEnabled() && StringUtils.isNotEmpty(jsmsg.inreplyto)) {
+						mailManager.auditLogWrite(
+							MailManager.AuditContext.MAIL,
+							MailManager.AuditAction.REPLY, 
+							jsmsg.inreplyto, 
+							JsonResult.gson(false).toJson(jsAudit)
+						);
+					}
+
+					try {
+						foundfolder=flagAnsweredMessage(account,jsmsg.replyfolder,jsmsg.inreplyto,jsmsg.origuid);
+					} catch (Exception xexc) {
+						Service.logger.error("Exception",xexc);
+					}
+				}
+			}
+		}
+	}*/
 
 	public void setSieveConfiguration(String host, int port, String username, String password, String authId) {
 		//TODO: portare i parametri (host,port,user,pass) nel manager
@@ -678,9 +1194,935 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	@Override
 	public String getFolderSent() {
-		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetProfileId().getDomainId());
-		MailUserSettings mus = new MailUserSettings(getTargetProfileId(), mss);
 		return mus.getFolderSent();
+	}
+	
+	@Override
+	public String getFolderTrash() {
+		return mus.getFolderTrash();
+	}
+	
+	public String getFolderSent(Identity ident) {
+		String mainFolder = null;
+		if (ident != null ) {
+			mainFolder=ident.getMainFolder();
+		}
+
+		return getFolderSent(mainFolder);
+	}
+	
+	public String getFolderTrash(Identity ident) {
+		String mainFolder = null;
+		if (ident != null ) {
+			mainFolder=ident.getMainFolder();
+		}
+
+		return getFolderTrash(mainFolder);
+	}
+
+	public String getFolderSent(String mainFolder) {
+		UserProfile profile = getUserProfile();
+		String sentFolder = getFolderSent();
+		if (mainFolder != null && mainFolder.trim().length() > 0) {
+			Mailbox mailbox = null;
+			try {
+				mailbox = getMailbox();
+				char sep = mailbox.getFolderSeparator();
+				String newSentFolder = mainFolder + sep + getLastFolderName(sentFolder, sep);
+				Folder folder = mailbox.getFolder(newSentFolder);
+				if (folder.exists()) {
+					sentFolder = newSentFolder;
+				}
+			} catch (Exception exc) {
+				logger.error("Error detectomg sent folder on main folder {}/{}", profile.getUserId(), mainFolder, exc);
+			} finally {
+				mailbox.disconnect();
+			}
+		}
+		return sentFolder;
+	}
+	
+	public String getFolderTrash(String mainFolder) {
+		UserProfile profile = getUserProfile();
+		String trashFolder = getFolderTrash();
+		if (mainFolder != null && mainFolder.trim().length() > 0) {
+			Mailbox mailbox = null;
+			try {
+				mailbox = getMailbox();
+				
+				char sep = mailbox.getFolderSeparator();
+				String newTrashFolder = mainFolder + sep + getLastFolderName(trashFolder, sep);
+				Folder folder = mailbox.getFolder(newTrashFolder);
+				if (folder.exists()) {
+					trashFolder = newTrashFolder;
+				}
+			} catch (Exception exc) {
+				logger.error("Error detectomg trash folder on main folder {}/{}", profile.getUserId(), mainFolder, exc);
+			} finally {
+				mailbox.disconnect();
+			}
+		}
+		return trashFolder;
+	}
+
+	private String getDefaultCharset(Multipart mp) throws MessagingException, IOException {
+		String defaultCharset=null;
+		//cycle parts to get a possible default charset
+		for(int i=0;defaultCharset==null && i<mp.getCount();++i) {
+			Part bp=mp.getBodyPart(i);
+			if (bp.isMimeType("text/*")) {
+				//Use workaround for NethServer installation:
+				defaultCharset=MailUtils.getCharsetOrNull(bp);
+			}
+			else if (bp.isMimeType("multipart/*")) {
+				defaultCharset=getDefaultCharset((Multipart)bp.getContent());
+			}
+		}
+		return defaultCharset;
+	}
+
+	private String getTextContentAsString(Part p, String defaultCharset) throws IOException, MessagingException {
+                String charset=null;
+                if (defaultCharset==null)
+                    //Use workaround for NethServer installation:
+                    charset=MailUtils.getCharsetOrDefault(p);
+                else {
+                    //Use workaround for NethServer installation:
+                    charset=MailUtils.getCharsetOrNull(p);
+                    if (charset==null) charset=defaultCharset;
+                }            
+            
+		java.io.InputStream istream = null;
+		if (!java.nio.charset.Charset.isSupported(charset)) {
+			charset = "ISO-8859-1";
+		}
+		try {
+			if (p instanceof jakarta.mail.internet.MimeMessage) {
+				jakarta.mail.internet.MimeMessage mm = (jakarta.mail.internet.MimeMessage) p;
+				istream = mm.getInputStream();
+			} else if (p instanceof jakarta.mail.internet.MimeBodyPart) {
+				jakarta.mail.internet.MimeBodyPart mm = (jakarta.mail.internet.MimeBodyPart) p;
+				istream = mm.getInputStream();
+			}
+		} catch (Exception exc) { //unhandled format, get Raw data
+			if (p instanceof jakarta.mail.internet.MimeMessage) {
+				jakarta.mail.internet.MimeMessage mm = (jakarta.mail.internet.MimeMessage) p;
+				istream = mm.getRawInputStream();
+			} else if (p instanceof jakarta.mail.internet.MimeBodyPart) {
+				jakarta.mail.internet.MimeBodyPart mm = (jakarta.mail.internet.MimeBodyPart) p;
+				istream = mm.getRawInputStream();
+			}
+		}
+		
+		if (istream == null) {
+			throw new IOException("Unknown message class " + p.getClass().getName());
+		}
+		
+		java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(istream, charset));
+		String line = null;
+		StringBuffer sb = new StringBuffer();
+		while ((line = br.readLine()) != null) {
+			sb.append(line);
+			sb.append("\n");
+		}
+		br.close();
+		return sb.toString();
+	}
+
+	private boolean appendReplyParts(Part p, String defaultCharset, StringBuffer htmlsb, StringBuffer textsb, ArrayList<String> attnames, boolean attachMessageParts) throws MessagingException,
+			IOException {
+            
+		boolean isHtml = false;
+		String disp = p.getDisposition();
+		if (disp!=null && disp.equalsIgnoreCase(Part.ATTACHMENT) && !p.isMimeType("multipart/*") && !p.isMimeType("message/*")) {
+			if (attnames != null) {
+				String id[] = p.getHeader("Content-ID");
+				if (id==null || id[0]==null) {
+					String filename = p.getFileName();
+					if (filename != null) {
+						if (filename.startsWith("<")) {
+							filename = filename.substring(1);
+						}
+						if (filename.endsWith(">")) {
+							filename = filename.substring(0, filename.length() - 1);
+						}
+					}
+					if (filename != null) {
+						attnames.add(filename);
+					}
+				}
+			}
+			return false;
+		}
+		if (p.isMimeType("text/html")) {
+			//String htmlcontent=(String)p.getContent();
+			String htmlcontent = getTextContentAsString(p,defaultCharset);
+			textsb.append(MailUtils.htmlToText(MailUtils.htmlunescapesource(htmlcontent)));
+			htmlsb.append(MailUtils.htmlescapefixsource(/*getBodyInnerHtml(*/htmlcontent/*)*/));
+			isHtml = true;
+		} else if (p.isMimeType("text/plain")) {
+			String content = getTextContentAsString(p,defaultCharset);
+			textsb.append(content);
+			htmlsb.append(START_PRE + MailUtils.htmlescape(content) + END_PRE);
+			isHtml = false;
+		} else if (p.isMimeType("message/delivery-status") || p.isMimeType("message/disposition-notification")) {
+			InputStream is = (InputStream) p.getContent();
+			char cbuf[] = new char[8000];
+			byte bbuf[] = new byte[8000];
+			int n = 0;
+			htmlsb.append(START_PRE);
+			while ((n = is.read(bbuf)) >= 0) {
+				if (n > 0) {
+					for (int i = 0; i < n; ++i) {
+						cbuf[i] = (char) bbuf[i];
+					}
+					textsb.append(cbuf);
+					htmlsb.append(MailUtils.htmlescape(new String(cbuf)));
+				}
+			}
+			htmlsb.append(END_PRE);
+			is.close();
+			isHtml = false;
+		} else if (p.isMimeType("multipart/alternative")) {
+			Multipart mp = (Multipart) p.getContent();
+			Part bestPart = null;
+			for (int i = 0; i < mp.getCount(); ++i) {
+				Part part = mp.getBodyPart(i);
+				if (part.isMimeType("multipart/*")) {
+					isHtml = appendReplyParts(part, defaultCharset, htmlsb, textsb, attnames, attachMessageParts);
+					if (isHtml) {
+						bestPart = null;
+						break;
+					}
+				} else if (part.isMimeType("text/html")) {
+					bestPart = part;
+					break;
+				} else if (bestPart == null && part.isMimeType("text/plain")) {
+					bestPart = part;
+				} else if (bestPart == null && part.isMimeType("message/*")) {
+					bestPart = part;
+				}
+			}
+			if (bestPart != null) {
+				isHtml = appendReplyParts(bestPart, defaultCharset, htmlsb, textsb, attnames, attachMessageParts);
+			}
+		} else if (p.isMimeType("multipart/*")) {
+			Multipart mp = (Multipart) p.getContent();
+			for (int i = 0; i < mp.getCount(); ++i) {
+				if (appendReplyParts(mp.getBodyPart(i), defaultCharset, htmlsb, textsb, attnames, attachMessageParts)) {
+					isHtml = true;
+				}
+			}
+		} else if (p.isMimeType("message/*") && !attachMessageParts) {
+			Object content = p.getContent();
+			if (appendReplyParts((MimeMessage) content, defaultCharset, htmlsb, textsb, attnames, attachMessageParts)) {
+				isHtml = true;
+			}
+		} else {
+		}
+		textsb.append('\n');
+		textsb.append('\n');
+		
+		return isHtml;
+	}
+
+	private void htmlAppendAttachmentNames(StringBuffer sb, ArrayList<String> attnames) {
+		if (attnames.size() > 0) {
+			sb.append("<br><br>");
+			for (String name : attnames) {
+				sb.append("&lt;&lt;" + name + "&gt;&gt;<br>");
+			}
+		}
+	}
+		
+	@SuppressWarnings("StringConcatenationInsideStringBufferAppend")
+	private String getReplyBody(Message msg, String body, int format, boolean isHtml, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle, ArrayList<String> attnames) throws MessagingException {
+		UserProfile profile = getUserProfile();
+		Locale locale = profile.getLocale();
+		String msgSubject = msg.getSubject();
+		if (msgSubject == null) {
+			msgSubject = "";
+		}
+		msgSubject = MailUtils.htmlescape(msgSubject);
+		Address ad[] = msg.getFrom();
+		String msgFrom = "";
+		if (ad != null) {
+			msgFrom = isHtml?getHTMLDecodedAddress(ad[0]):getDecodedAddress(ad[0]);
+		}
+		java.util.Date dt = msg.getSentDate();
+		String msgDate = "";
+		if (dt != null) {
+			msgDate = DateFormat.getDateTimeInstance(java.text.DateFormat.LONG, java.text.DateFormat.LONG, locale).format(dt);
+		}
+		ad = msg.getRecipients(Message.RecipientType.TO);
+		String msgTo = null;
+		if (ad != null) {
+			msgTo = "";
+			for (int j = 0; j < ad.length; ++j) {
+				msgTo += isHtml?getHTMLDecodedAddress(ad[j]):getDecodedAddress(ad[j]) + " ";
+			}
+		}
+		ad = msg.getRecipients(Message.RecipientType.CC);
+		String msgCc = null;
+		if (ad != null) {
+			msgCc = "";
+			for (int j = 0; j < ad.length; ++j) {
+				msgCc += isHtml?getHTMLDecodedAddress(ad[j]):getDecodedAddress(ad[j]) + " ";
+			}
+		}
+
+		StringBuffer sb = new StringBuffer();
+		String cr = "\n";
+		if (format != SimpleMessage.FORMAT_TEXT) {
+			cr = "<BR>";
+		}
+		if (format != SimpleMessage.FORMAT_HTML) {
+			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+				sb.append("<PRE>");
+			}
+			sb.append(cr + cr + cr + "----------------------------------------------------------------------------------" + cr + cr);
+			sb.append(fromtitle + ": " + msgFrom + cr);
+			if (msgTo != null) {
+				sb.append(totitle + ": " + msgTo + cr);
+			}
+			if (msgCc != null) {
+				sb.append(cctitle + ": " + msgCc + cr);
+			}
+			sb.append(datetitle + ": " + msgDate + cr);
+			sb.append(subjecttitle + ": " + msgSubject + cr + cr);
+			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+				sb.append("</PRE>");
+			}
+		} else {
+			sb.append(cr + "<HR>" + cr + cr);
+			sb.append("<font face='Arial, Helvetica, sans-serif' size=2>");
+			sb.append("<B>" + fromtitle + ":</B> " + msgFrom + "<BR>");
+			if (msgTo != null) {
+				sb.append("<B>" + totitle + ":</B> " + msgTo + "<BR>");
+			}
+			if (msgCc != null) {
+				sb.append("<B>" + cctitle + ":</B> " + msgCc + "<BR>");
+			}
+			sb.append("<B>" + datetitle + ":</B> " + msgDate + "<BR>");
+			sb.append("<B>" + subjecttitle + ":</B> " + msgSubject + "<BR>");
+			sb.append("</font><br>" + cr);
+		}
+
+    // Prepend "> " for each line in the body
+		//
+		if (body != null) {
+			if (format == SimpleMessage.FORMAT_HTML) {
+//        sb.append("<TABLE border=0 width='100%'><TR><td width=2 bgcolor=#000088></td><td width=2></td><td>");
+				sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
+			}
+			if (!isHtml) {
+				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+					//sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
+					sb.append("<pre>");
+				}
+				StringTokenizer st = new StringTokenizer(body, "\n", true);
+				while (st.hasMoreTokens()) {
+					String token = st.nextToken();
+					if (token.equals("\n")) {
+						sb.append(cr);
+					} else {
+						if (format == SimpleMessage.FORMAT_TEXT) {
+							sb.append("> ");
+						}
+						//sb.append(MailUtils.htmlescape(token));
+						sb.append(token);
+					}
+				}
+				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+					sb.append("</pre>");
+					//sb.append("</BLOCKQUOTE>");
+				}
+			} else {
+				
+				sb.append(body);
+			}
+			htmlAppendAttachmentNames(sb, attnames);
+			if (format == SimpleMessage.FORMAT_HTML) {
+//        sb.append("</td></tr></table>");
+				sb.append("</BLOCKQUOTE>");
+			}
+		}
+		return sb.toString();
+	}
+	
+	public EmailMessage getReplyMessage(String folderId, long uid, boolean replyAll, boolean fromSent, boolean richContent, boolean includeOriginal, boolean attachMessageParts) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		EmailMessage emsg = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);
+			emsg = getReplyMessage(msg, replyAll, fromSent, richContent, includeOriginal, attachMessageParts);
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return emsg;
+	}
+	
+	public EmailMessage getReplyMessage(Message msg, boolean replyAll, boolean fromSent, boolean richContent, boolean includeOriginal, boolean attachMessageParts) {	
+		try {
+			UserProfile profile = getUserProfile();
+			Message reply = ((SonicleIMAPMessage)msg).reply(replyAll, false, fromSent);
+
+			InternetAddress myEmail = InternetAddressUtils.toInternetAddress(getUserProfile().getPersonalEmailAddress());
+			Set<InternetAddress> myAddresses = new LinkedHashSet<>();
+			myAddresses.add(myEmail);
+			if (mss.getMessageReplyAllStripMyIdentities()) {
+				for (Identity ident : listIdentities()) {
+					myAddresses.add(InternetAddressUtils.toInternetAddress(ident.getEmail()));
+				}
+			}
+			if (!myAddresses.isEmpty()) Recipients.removeAnyFrom(reply, myAddresses);
+
+			Address[] origTos = msg.getReplyTo();
+			Address[] newRcpts = reply.getAllRecipients();
+			boolean emptyRcpts = (newRcpts == null || newRcpts.length == 0);
+			if (emptyRcpts && (origTos != null)) {
+				InternetAddress newTo = null;
+				if (origTos.length == 1) {
+					newTo = (InternetAddress)origTos[0];
+				} else if (origTos.length > 1) {
+					if (myEmail.equals((InternetAddress)origTos[0])) {
+						newTo = (InternetAddress)origTos[1];
+					} else {
+						newTo = (InternetAddress)origTos[0];
+					}
+				}
+				if (newTo != null) {
+					reply.addRecipient(RecipientType.TO, newTo);
+				}
+			}
+			
+			EmailPopulatingBuilder epb = EmailMessageBuilder.startingBlank();
+			Address[] rcpts = reply.getRecipients(Message.RecipientType.TO);
+			if (rcpts != null)
+				for(Address rcpt: rcpts) {
+					epb.to(InternetAddressUtils.toInternetAddress(rcpt.toString()));
+				}
+			rcpts = reply.getRecipients(Message.RecipientType.CC);
+			if (rcpts != null)
+				for(Address rcpt: rcpts) {
+					epb.cc(InternetAddressUtils.toInternetAddress(rcpt.toString()));
+				}
+			rcpts = reply.getRecipients(Message.RecipientType.BCC);
+			if (rcpts != null)
+				for(Address rcpt: rcpts) {
+					epb.bcc(InternetAddressUtils.toInternetAddress(rcpt.toString()));
+				}
+			
+			epb.withSubject(reply.getSubject());
+			
+			// Setup the message body
+			//
+			StringBuffer htmlsb = new StringBuffer();
+			StringBuffer textsb = new StringBuffer();
+			ArrayList<String> attnames = new ArrayList<String>();
+			if (includeOriginal) {
+                String defaultCharset=null;
+                if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
+				boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, attnames, attachMessageParts);
+				String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
+				String text = null;
+				
+				Locale locale = profile.getLocale();
+				String fromtitle = lookupResource(locale, MailLocaleKey.MSG_FROMTITLE);
+				String totitle = lookupResource(locale, MailLocaleKey.MSG_TOTITLE);
+				String cctitle = lookupResource(locale, MailLocaleKey.MSG_CCTITLE);
+				String datetitle = lookupResource(locale, MailLocaleKey.MSG_DATETITLE);
+				String subjecttitle = lookupResource(locale, MailLocaleKey.MSG_SUBJECTTITLE);
+				
+				if (!richContent) {
+					text = getReplyBody(msg, textsb.toString(), SimpleMessage.FORMAT_TEXT, false, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
+				} else if (!isHtml) {
+					text = getReplyBody(msg, htmlsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, true, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
+				} else {
+					text = getReplyBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle, attnames);
+				}
+				String newHtml=MailUtils.removeMSWordShit(text);
+				
+				if (mss.isReFwSanitizeDownlevelRevealedComments())
+					newHtml=MailUtils.sanitizeDownlevelRevealedComments(newHtml);
+
+				epb.withHTMLText(newHtml);
+				
+				setReferences(epb, (MimeMessage)msg);
+				
+				//consider cid inline attachments
+				MimeMessageParser mmp = new MimeMessageParser();
+				MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse((MimeMessage)msg, false);
+				for (Part part: parsed.getCidParts().values()) {
+					try{
+						String filename = MailUtils.getPartFilename(part, true);
+						String cids[] = part.getHeader("Content-ID");
+						String cid = null;
+						//String cid=filename;
+						if (cids != null && cids[0] != null) {
+							cid = cids[0];
+							if (cid.startsWith("<")) cid=cid.substring(1);
+							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
+						}
+
+						if (filename == null) filename = cid;
+						String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
+						boolean inline = false;
+						if (part.getDisposition() != null) {
+							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
+									isInlineableMime(mime);
+						}
+						//in reply includes only cid & inline attachments
+						if (inline && cid!=null) {
+							ByteArrayOutputStream baos = new ByteArrayOutputStream();
+							IOUtils.copy(part.getInputStream(), baos);
+							epb.withAttachment(baos.toByteArray(), mime, filename, cid);
+						}
+					} catch (Exception exc) {
+						Service.logger.error("Exception",exc);
+					}
+				}
+				
+			} else {
+				epb.withHTMLText("");
+			}
+			return epb.build();
+		} catch (MessagingException|WTException|IOException e) {
+			Service.logger.error("Exception",e);
+			return null;
+		}
+	}
+	
+	
+	public EmailMessage getForwardMessage(String folderId, long uid, boolean richContent, boolean attachMessageParts) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		EmailMessage emsg = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);
+			emsg = getForwardMessage(msg, richContent, attachMessageParts);
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return emsg;
+	}
+	
+	public EmailMessage getForwardMessage(Message msg, boolean richContent, boolean attachMessageParts) {
+		try {
+			UserProfile profile = getUserProfile();
+			EmailPopulatingBuilder epb = EmailMessageBuilder.startingBlank();
+
+			StringBuffer htmlsb = new StringBuffer();
+			StringBuffer textsb = new StringBuffer();
+			String defaultCharset=null;
+			if (msg.isMimeType("multipart/*")) defaultCharset=getDefaultCharset((Multipart)msg.getContent());
+			boolean isHtml = appendReplyParts(msg, defaultCharset, htmlsb, textsb, null, attachMessageParts);
+			String html = "<HTML><BODY>" + htmlsb.toString() + "</BODY></HTML>";
+
+			Locale locale = profile.getLocale();
+			String fromtitle = lookupResource(locale, MailLocaleKey.MSG_FROMTITLE);
+			String totitle = lookupResource(locale, MailLocaleKey.MSG_TOTITLE);
+			String cctitle = lookupResource(locale, MailLocaleKey.MSG_CCTITLE);
+			String datetitle = lookupResource(locale, MailLocaleKey.MSG_DATETITLE);
+			String subjecttitle = lookupResource(locale, MailLocaleKey.MSG_SUBJECTTITLE);
+
+			String newHtml = "";
+			if (!richContent) {
+				//use the original unchanged text content
+				newHtml = getForwardBody(msg, textsb.toString(), SimpleMessage.FORMAT_TEXT, false, fromtitle, totitle, cctitle, datetitle, subjecttitle);
+			} else if (!isHtml) {
+				//use html content, which is text content with possible html encoded characters
+				newHtml = getForwardBody(msg, htmlsb.toString(), SimpleMessage.FORMAT_PREFORMATTED, true, fromtitle, totitle, cctitle, datetitle, subjecttitle);
+			} else {
+				newHtml=MailUtils.removeMSWordShit(
+					getForwardBody(msg, html, SimpleMessage.FORMAT_HTML, true, fromtitle, totitle, cctitle, datetitle, subjecttitle)
+				);
+				if (mss.isReFwSanitizeDownlevelRevealedComments())
+					newHtml=MailUtils.sanitizeDownlevelRevealedComments(newHtml);
+
+									//take care of possible html shit
+			}
+			epb.withHTMLText(newHtml);
+			
+			setReferences(epb, (MimeMessage)msg);
+
+			String subject = msg.getSubject();
+			String newSubject = "";
+			if (subject == null) {
+				subject = "";
+			}
+			if (!subject.toLowerCase().startsWith("fwd: ")) {
+				newSubject = "Fwd: " + subject;
+			} else {
+				newSubject = msg.getSubject();
+			}
+			epb.withSubject(newSubject);
+			
+			//consider cid inline attachments
+			MimeMessageParser mmp = new MimeMessageParser();
+			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse((MimeMessage)msg, false);
+			for (Part part: parsed.getAttachmentParts()) {
+				try{
+					String filename = MailUtils.getPartFilename(part, true);
+					String cids[] = part.getHeader("Content-ID");
+					String cid = null;
+					//String cid=filename;
+					if (cids != null && cids[0] != null) {
+						cid = cids[0];
+						if (cid.startsWith("<")) cid=cid.substring(1);
+						if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
+					}
+
+					if (filename == null) filename = cid;
+					String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
+					boolean inline = false;
+					if (part.getDisposition() != null) {
+						inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
+								isInlineableMime(mime);
+					}
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					IOUtils.copy(part.getInputStream(), baos);
+					epb.withAttachment(baos.toByteArray(), mime, filename, cid);
+				} catch (Exception exc) {
+					Service.logger.error("Exception",exc);
+				}
+			}
+
+
+			return epb.build();
+		} catch (MessagingException|IOException e) {
+			Service.logger.error("Exception",e);
+			return null;
+		}
+	}
+	
+	private void setReferences(EmailPopulatingBuilder epb, MimeMessage msg) throws MessagingException {
+		String msgid = null;
+		String vh[] = msg.getHeader("Message-ID");
+		if (vh != null) {
+			msgid = vh[0];
+		}
+		if (msgid != null) {
+			epb.withForwardedFrom(msgid);
+			epb.withInReplyTo(msgid);
+		}
+
+		String refs = msg.getHeader("References", " ");
+		if (refs == null) {
+			// XXX - should only use if it contains a single message identifier
+			refs = msg.getHeader("In-Reply-To", " ");
+		}
+		if (msgid != null) {
+			if (refs != null) {
+				refs = MimeUtility.unfold(refs) + " " + msgid;
+			} else {
+				refs = msgid;
+			}
+		}
+		if (refs != null) {
+			epb.withReferences(MimeUtility.fold(12, refs));
+		}
+	}
+	
+	private String getForwardBody(Message msg, String body, int format, boolean isHtml, String fromtitle, String totitle, String cctitle, String datetitle, String subjecttitle) throws MessagingException {
+		UserProfile profile = getUserProfile();
+		Locale locale = profile.getLocale();
+		String msgSubject = msg.getSubject();
+		if (msgSubject == null) {
+			msgSubject = "";
+		}
+		msgSubject = MailUtils.htmlescape(msgSubject);
+		Address ad[] = msg.getFrom();
+		String msgFrom = "";
+		if (ad != null) {
+			msgFrom = isHtml?getHTMLDecodedAddress(ad[0]):getDecodedAddress(ad[0]);
+		}
+		java.util.Date dt = msg.getSentDate();
+		String msgDate = "";
+		if (dt != null) {
+			msgDate = DateFormat.getDateTimeInstance(java.text.DateFormat.LONG, java.text.DateFormat.LONG, locale).format(dt);
+		}
+		ad = msg.getRecipients(Message.RecipientType.TO);
+		String msgTo = null;
+		if (ad != null) {
+			msgTo = "";
+			for (int j = 0; j < ad.length; ++j) {
+				msgTo += isHtml?getHTMLDecodedAddress(ad[j]):getDecodedAddress(ad[j]) + " ";
+			}
+		}
+		ad = msg.getRecipients(Message.RecipientType.CC);
+		String msgCc = null;
+		if (ad != null) {
+			msgCc = "";
+			for (int j = 0; j < ad.length; ++j) {
+				msgCc += isHtml?getHTMLDecodedAddress(ad[j]):getDecodedAddress(ad[j]) + " ";
+			}
+		}
+		
+		StringBuffer sb = new StringBuffer();
+		String cr = "\n";
+		if (format != SimpleMessage.FORMAT_TEXT) {
+			cr = "<BR>";
+		}
+		if (format != SimpleMessage.FORMAT_HTML) {
+			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+				sb.append("<PRE>");
+			}
+			sb.append(cr + cr + cr + "----------------------------------------------------------------------------------" + cr + cr);
+			sb.append(fromtitle + ": " + msgFrom + cr);
+			if (msgTo != null) {
+				sb.append(totitle + ": " + msgTo + cr);
+			}
+			if (msgCc != null) {
+				sb.append(cctitle + ": " + msgCc + cr);
+			}
+			sb.append(datetitle + ": " + msgDate + cr);
+			sb.append(subjecttitle + ": " + msgSubject + cr + cr);
+			if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+				sb.append("</PRE>");
+			}
+		} else {
+			sb.append(cr + "<HR>" + cr + cr);
+			sb.append("<font face='Arial, Helvetica, sans-serif' size=2>");
+			sb.append("<B>" + fromtitle + ":</B> " + msgFrom + "<BR>");
+			if (msgTo != null) {
+				sb.append("<B>" + totitle + ":</B> " + msgTo + "<BR>");
+			}
+			if (msgCc != null) {
+				sb.append("<B>" + cctitle + ":</B> " + msgCc + "<BR>");
+			}
+			sb.append("<B>" + datetitle + ":</B> " + msgDate + "<BR>");
+			sb.append("<B>" + subjecttitle + ":</B> " + msgSubject + "<BR>");
+			sb.append("</font><br>" + cr);
+		}
+
+    // Prepend "> " for each line in the body
+		//
+		if (body != null) {
+			if (format == SimpleMessage.FORMAT_HTML) {
+//        sb.append("<TABLE border=0 width='100%'><TR><td width=2 bgcolor=#000088></td><td width=2></td><td>");
+//        sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
+			}
+			if (!isHtml) {
+				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+//          sb.append("<BLOCKQUOTE style='BORDER-LEFT: #000080 2px solid; MARGIN-LEFT: 5px; PADDING-LEFT: 5px'>");
+					sb.append("<pre>");
+				}
+				StringTokenizer st = new StringTokenizer(body, "\n", true);
+				while (st.hasMoreTokens()) {
+					String token = st.nextToken();
+					if (token.equals("\n")) {
+						sb.append(cr);
+					} else {
+						if (format == SimpleMessage.FORMAT_TEXT) {
+							sb.append("> ");
+						}
+						//sb.append(MailUtils.htmlescape(token));
+						sb.append(token);
+					}
+				}
+				if (format == SimpleMessage.FORMAT_PREFORMATTED) {
+					sb.append("</pre>");
+//          sb.append("</BLOCKQUOTE>");
+				}
+			} else {
+				//sb.append(getBodyInnerHtml(body));
+				sb.append(body);
+			}
+			if (format == SimpleMessage.FORMAT_HTML) {
+//        sb.append("</td></tr></table>");
+//        sb.append("</BLOCKQUOTE>");
+			}
+		}
+		return sb.toString();
+	}
+
+	public boolean getMessageSeenState(String folderId, long uid) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		boolean seen = true;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);
+			seen = msg.isSet(Flags.Flag.SEEN);
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+		return seen;
+	}
+	
+	public void setMessageSeenState(String folderId, long uid, boolean seen) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);
+			msg.setFlag(Flags.Flag.SEEN, seen);
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}
+	
+	public void setMessageFlag(String folderId, long uid, String flag) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);			
+			
+			if (flag.equals("special")) {
+				boolean wasspecial=msg.getFlags().contains(getFlagFlagged());
+				msg.setFlags(getFlagFlagged(),!wasspecial);
+			}
+			else {
+				if (!flag.equals("complete")) {
+					msg.setFlags(flagsAll, false);
+					msg.setFlags(oldFlagsAll, false);
+				}
+				msg.setFlags(flagsHash.get(flag), true);
+			}
+			
+		} catch(Exception exc) {
+			logger.error("Error on setMessageFlag", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}
+	
+	public void setMessageTags(String folderId, long uid, List<String> tags) {	
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) folder.getMessageByUID(uid);			
+
+			Flags flags = new Flags();
+			for(String tagId: tags) {
+				String flag = TagsHelper.tagIdToFlagString(WT.getCoreManager().getTag(tagId));
+				flags.add(flag);
+			}
+			msg.setFlags(flags, true);
+			
+		} catch(Exception exc) {
+			logger.error("Error on setMessageFlag", exc);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			mailbox.disconnect();
+		}
+	}
+	
+	public void trashMessage(String folderId, long uid) {	
+		IMAPFolder fromFolder = null;
+		IMAPFolder toFolder = null;
+		Mailbox mailbox = null;
+		try {
+			String folderTrashId = getFolderTrash();
+			mailbox = getMailbox();
+			if (mailbox.isUnderSharedFolder(folderId)) {
+				String mainfolder=mailbox.getMainSharedFolder(folderId);
+				if (mainfolder!=null) {
+					char sep = mailbox.getFolderSeparator();
+					folderTrashId = mainfolder + sep + getLastFolderName(folderTrashId, sep);
+				}
+			}
+			fromFolder = (IMAPFolder) mailbox.getFolder(folderId);
+			toFolder = (IMAPFolder) mailbox.getFolder(folderTrashId);
+			
+			fromFolder.open(Folder.READ_WRITE);
+			toFolder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) fromFolder.getMessageByUID(uid);
+			Message amsg[] = new Message[] { msg };
+			fromFolder.copyMessages(amsg, toFolder);
+			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
+			fromFolder.expunge();
+		} catch(Exception exc) {
+			logger.error("Error getting message", exc);
+		} finally {
+			StoreUtils.closeQuietly(fromFolder, false);
+			StoreUtils.closeQuietly(toFolder, false);
+			mailbox.disconnect();
+		}
+	}
+
+	public String getLastFolderName(String fullname, char separator) {
+		String lasttname = fullname;
+		if (lasttname.indexOf(separator) >= 0) {
+			lasttname = lasttname.substring(lasttname.lastIndexOf(separator) + 1);
+		}
+		return lasttname;
+	}
+	
+	public void sendMessage(final UserProfileId sendingProfileId, final EmailPopulatingBuilder epb, int identityId) throws WTEmailSendException, WTException {
+		List<Identity> identities = listIdentities();
+		Identity identity = identities.get(identityId);
+		sendMessage(sendingProfileId, epb, identity);
+	}
+	
+	public void sendMessage(final UserProfileId sendingProfileId, final EmailPopulatingBuilder epb, final Identity ifrom) throws WTEmailSendException, WTException {
+		if (ifrom.isAlwaysCc()) {
+			epb.cc(ifrom.getDisplayName(), ifrom.getEmail());
+		}
+
+		if (ifrom.isMainIdentity()) {
+			String alwaysCc = mus.getAlwaysCc();
+			if (alwaysCc!=null) {
+				epb.cc(alwaysCc);
+			}
+
+			String alwaysBcc = mus.getAlwaysBcc();
+			if (alwaysBcc!=null) {
+				epb.bcc(alwaysBcc);
+			}
+		}
+		EmailMessage emsg = epb.build();
+		WT.sendEmailMessage(sendingProfileId, emsg, getFolderSent(ifrom));
+
+		CoreManager coreMgr = WT.getCoreManager();
+		
+		//Save used recipients
+		ArrayList<InternetAddress> iaTos = new ArrayList<>();
+		ArrayList<InternetAddress> iaCcs = new ArrayList<>();
+		ArrayList<InternetAddress> iaBccs = new ArrayList<>();
+		for(Recipient rcpt: emsg.getRecipients()) {
+			InternetAddress ia = rcpt.asInternetAddress();
+			if (!ContactsUtils.isListVirtualRecipient(ia)) coreMgr.autoLearnInternetRecipient(InternetAddressUtils.toFullAddress(ia));
+			RecipientType rcptType = rcpt.getType();
+			if (rcptType.equals(RecipientType.TO)) iaTos.add(ia);
+			else if (rcptType.equals(RecipientType.CC)) iaCcs.add(ia);
+			else if (rcptType.equals(RecipientType.BCC)) iaBccs.add(ia);
+		}
+		//Save subject for suggestions
+		String subject = emsg.getSubject();
+		if (!StringUtils.isBlank(subject))
+			WT.getCoreManager().saveMetaEntry(SERVICE_ID, "subject", subject, subject, true);
 	}
 	
 	@Override
@@ -913,6 +2355,89 @@ public class MailManager extends BaseManager implements IMailManager {
 			DbUtils.closeQuietly(con);
 		}
 		return idents;
+	}
+	
+	private String getMailUsername(UserProfileId userProfileId) {
+		Connection con=null;
+		String username=null;
+		try {
+			con=WT.getConnection(SERVICE_ID);
+			OUserMap omap=UserMapDAO.getInstance().selectById(con, userProfileId.getDomainId(), userProfileId.getUserId());
+			if (omap!=null) username=omap.getMailUser();
+			if (username==null || username.isEmpty()) username=userProfileId.getUserId();
+		} catch(Exception exc) {
+			logger.error("Error mapping mail user",exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+		return username+"@"+WT.getPrimaryDomainName(userProfileId.getDomainId());
+	}
+	
+	public void loadIdentityMailcard(Identity i) {
+		if (i.isMainIdentity()) _loadMainIdentityMailcard(i);
+		else _loadIdentityMailcard(i);
+	}
+	
+	private void _loadMainIdentityMailcard(Identity id) {
+		Mailcard mc = getMailcard();
+		try {
+			UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(getTargetProfileId());
+			mc.substitutePlaceholders(upi);			
+		} catch(WTException exc) {
+			logger.error("cannot load user personal info",exc);
+		}
+		//mc.html=LangUtils.stripLineBreaks(mc.html);
+		id.setMailcard(mc);
+	}
+	
+	private void _loadIdentityMailcard(Identity id) {
+		Mailcard mc = getMailcard(id);
+		if (mc!=null) {
+			if(id.isType(Identity.TYPE_AUTO)) {
+				UserProfileId opid=id.getOriginPid();
+				Mailbox mailbox = null;
+				// In case of auto identities we need to build real mainfolder
+				try {
+					String mailUser = getMailUsername(opid);
+					mailbox = getMailbox();
+					String mainfolder = mailbox.getSharedFolderName(mailUser);
+					id.setMainFolder(mainfolder);
+					if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, id.getMainFolder()));
+				} catch (Exception ex) {
+					logger.error("Unable to get auto identity foldername [{}]", id.getEmail(), ex);
+				} finally {
+					mailbox.disconnect();
+				}
+
+				/*
+				// Avoids default mailcard display for automatic identities
+				if(mc.source.equals(Mailcard.TYPE_DEFAULT) && !StringUtils.isEmpty(id.getMainFolder())) {
+					mc = getMailcard();
+				}*/
+				
+				if (!id.isForceMailcard()) {
+					mc=getMailcard();
+					opid=getTargetProfileId();
+				}
+
+				try {
+					UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(opid);
+					mc.substitutePlaceholders(upi);
+				} catch (Exception ex) {
+					logger.error("Unable to get auto identity personal info [{}]", id.getEmail(), ex);
+				}
+			}
+			else if(id.isType(Identity.TYPE_USER)) {
+				try {
+						UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(getTargetProfileId());
+						mc.substitutePlaceholders(upi);			
+				} catch(WTException exc) {
+						logger.error("cannot load user personal info",exc);
+				}
+			}
+		}
+		//mc.html=LangUtils.stripLineBreaks(mc.html);
+		id.setMailcard(mc);
 	}
 	
 	public List<ExternalAccount> listExternalAccounts() throws WTException {
@@ -1631,7 +3156,6 @@ public class MailManager extends BaseManager implements IMailManager {
 		UserProfile.Data pdata = WT.getProfileData(getTargetProfileId());
 		SieveScriptBuilder ssb = new SieveScriptBuilder();
 		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID,getTargetProfileId().getDomainId());
-		MailUserSettings mus = new MailUserSettings(getTargetProfileId(),mss);
 		
 		ensureProfileDomain(RunContext.AdminScope.DOMAINADMIN);
 		
