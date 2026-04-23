@@ -53,6 +53,7 @@ import com.sonicle.mail.email.EmailMessage;
 import com.sonicle.mail.parser.MimeMessageParseException;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.webtop.calendar.ICalendarManager;
+import com.sonicle.webtop.calendar.ICalendarManager.EventNotifyOption;
 import com.sonicle.webtop.calendar.ICalendarManager.HandleICalInviationOption;
 import com.sonicle.webtop.calendar.model.Event;
 import com.sonicle.webtop.core.CoreManager;
@@ -506,7 +507,8 @@ public class ResourcesAutoresponderManager {
 					
 				} catch (WTConstraintException ex1) {
 					try {
-						calMgr.deleteEvent(uid, calendarId, false);
+						BitFlags<EventNotifyOption> notifyOpts = EventNotifyOption.withoutAnyAttendeesNotifications();
+						calMgr.deleteEvent(calendarId, uid, notifyOpts);
 					} catch (Exception ex2) {
 						LOGGER.warn("[{}][{}] Error deleting previous reservation", resourceProfileId, messageId, ex2);
 					}

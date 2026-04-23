@@ -48,6 +48,7 @@ import com.sonicle.commons.ResourceUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.cache.AbstractPassiveExpiringBulkSet;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.flags.BitFlags;
 import com.sonicle.commons.http.HttpClientUtils;
 import com.sonicle.commons.web.Crud;
 import com.sonicle.commons.web.DispositionType;
@@ -155,6 +156,7 @@ import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.mail.sieve.SieveRule;
 import com.sonicle.security.AuthContext;
 import com.sonicle.security.CryptoUtils;
+import com.sonicle.webtop.calendar.model.EventInstanceId;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.app.CoreManifest;
@@ -8745,8 +8747,13 @@ public class Service extends BaseService {
 			}
 
 			if (pcalaction.equals("accept")) {
-				Event ev = cm.addEventFromICal(calendarId, iCal);
-				String ekey = cm.getEventInstanceKey(ev.getEventId());
+				final BitFlags<ICalendarManager.HandleICalInviationOption> options = BitFlags.with(
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS
+				);
+				Event ev = cm.handleInvitationFromICal(iCal, calendarId, options);
+				EventInstanceId instanceId = EventInstanceId.buildMaster(ev.getEventId());
 
 				final List<InternetAddress> tos = MimeMessageParser.parseToAddresses((MimeMessage)m, true);
 				// in case mail was sent as ccn we don't have any recipient, so we don't send any reply
@@ -8757,15 +8764,23 @@ public class Service extends BaseService {
 					final String sentFolder = getSentFolder(tos.get(0));
 					WT.sendEmailMessage(environment.getProfileId(), email, sentFolder);
 				}
-				new JsonResult(ekey).printTo(out);
+				new JsonResult(instanceId).printTo(out);
 
 			} else if (pcalaction.equals("import")) {
-				Event ev = cm.addEventFromICal(calendarId, iCal);
-				String ekey = cm.getEventInstanceKey(ev.getEventId());
-				new JsonResult(ekey).printTo(out);
+				cm.addEventObject(calendarId, null, iCal);
+				Event ev = cm.addEvent(calendarId, iCal);
+				
+				EventInstanceId iid = EventInstanceId.buildMaster(ev.getEventId());
+				//String ekey = cm.getEventInstanceKey(ev.getEventId());
+				new JsonResult(iid).printTo(out);
 
 			} else if (pcalaction.equals("cancel") || pcalaction.equals("update")) {
-				cm.updateEventFromICal(iCal);
+				final BitFlags<ICalendarManager.HandleICalInviationOption> options = BitFlags.with(
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS
+				);
+				Event ev = cm.handleInvitationFromICal(iCal, calendarId, options);
 				new JsonResult().printTo(out);
 
 			} else {
