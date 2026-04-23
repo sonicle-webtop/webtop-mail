@@ -373,12 +373,14 @@ public class Service extends BaseService {
 		FP.add(UIDFolder.FetchProfileItem.UID);
 		FP.add("Message-ID");
 		FP.add("X-Priority");
+		FP.add("Resent-Date");
 		draftsFP.add(FetchProfile.Item.ENVELOPE);
 		draftsFP.add(FetchProfile.Item.FLAGS);
 		draftsFP.add(FetchProfile.Item.CONTENT_INFO);
 		draftsFP.add(UIDFolder.FetchProfileItem.UID);
 		draftsFP.add("Message-ID");
 		draftsFP.add("X-Priority");
+		draftsFP.add("Resent-Date");
 		draftsFP.add(HEADER_SONICLE_FROM_DRAFTER);
 		if (hasDmsDocumentArchiving()) {
 			FP.add("X-WT-Archived");
@@ -390,6 +392,7 @@ public class Service extends BaseService {
 		pecFP.add(UIDFolder.FetchProfileItem.UID);
 		pecFP.add("Message-ID");
 		pecFP.add("X-Priority");
+		pecFP.add("Resent-Date");
 		pecFP.add(HDR_PEC_PROTOCOLLO);
 		pecFP.add(HDR_PEC_RIFERIMENTO_MESSAGE_ID);
 		pecFP.add(HDR_PEC_TRASPORTO);
