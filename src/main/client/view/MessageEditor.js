@@ -955,6 +955,7 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 			enableSymbols: true,
 			enableLink: true,
 			enableImage: true,
+			loadMaskTarget: me,
 			imageConfig: {
 				useEditorProgress: false,
 				uploaderConfig: WTF.uploader(me.mys.ID, 'UploadCid',{

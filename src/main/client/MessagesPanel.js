@@ -40,7 +40,9 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 		'Sonicle.webtop.core.ux.field.SuggestCombo',
 		'Sonicle.webtop.mail.store.MessageFlags',
 		'Sonicle.webtop.mail.MessageView',
-		'Sonicle.webtop.mail.MessageGrid'
+        'Sonicle.webtop.mail.MessageGrid',
+        'Sonicle.webtop.mail.ux.AIMessageMenu'//,
+        //'Sonicle.webtop.mail.ux.AIMailRAGMenu'	
 	],
 	uses: [
 		'Sonicle.button.PlainToggle'
@@ -324,6 +326,15 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 						enableOverflow: true,
 						border: false,
 						items: [
+							{
+									iconCls: 'wt-icon-ai',
+									arrowVisible: false,
+									menu: {
+											xtype: 'soaimessagemenu',
+											mp: me,
+											mys: me.mys
+									}
+							},
 							me.getAct("reply"),
 							me.getAct("replyall"),
 							me.getAct("forward"),
@@ -830,6 +841,17 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 			var me = this;
 			return [
 				' ',
+/*				{
+						xtype: 'button',
+						tooltip: '',
+						iconCls: 'wt-icon-ai',
+						arrowVisible: false,
+						ui: '{secondary}',
+						menu: {
+								xtype: 'soaimailragmenu',
+								mys: me.mys
+						}
+				},*/
 				{
 					xtype: 'button',
 					tooltip: me.res('inMailFilters.tit'),

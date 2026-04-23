@@ -79,6 +79,10 @@ public class PortletSearchThread extends Thread {
 
     @Override
     public void run() {
+		
+	}
+	
+    public void _run() {
         cancel=false;
         finished=false;
         morethanmax=false;

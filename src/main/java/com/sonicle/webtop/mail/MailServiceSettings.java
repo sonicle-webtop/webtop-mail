@@ -439,4 +439,8 @@ public class MailServiceSettings extends BaseServiceSettings {
 		}
 		return browsersList;
 	}
+
+	public int getAIMenuUserInputMaxChars() {
+		return getInteger(AI_MENU_USER_INPUT_MAX_CHARS, 2000);
+	}
 }

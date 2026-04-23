@@ -832,7 +832,11 @@ public class FolderCache {
      }
 	
 	public long getUID(Message m) throws MessagingException {
-		return ((UIDFolder)folder).getUID(m);
+		boolean wasOpen=folder.isOpen();
+		if (!wasOpen) folder.open(Folder.READ_ONLY);
+		long uid = ((UIDFolder)folder).getUID(m);
+		if (!wasOpen) folder.close(false);
+		return uid;
 	}
     
     public Message getMessage(long uid) throws MessagingException {
@@ -954,6 +958,7 @@ public class FolderCache {
     protected void cleanup(boolean endOfSession) {
 		if (endOfSession) {
 			goidle=false;
+			try {  folder.close(false); } catch(Exception exc) {}
 			this.ms=null;
 			//this.comparator=null;
 		}
@@ -1768,6 +1773,14 @@ public class FolderCache {
 		return msgs;
 	}
 
+	public Message getMessageByMessageId(String id) throws MessagingException {
+		boolean wasOpen=folder.isOpen();
+		if (!wasOpen) folder.open(Folder.READ_WRITE);
+		Message msgs[]=folder.search(new HeaderTerm("Message-ID", id));
+		if (!wasOpen) folder.close(false);
+		return msgs.length > 0 ? msgs[0] : null;
+	}
+	
   protected Message[] advancedSearchMessages(AdvancedSearchEntry entries[], boolean and, int sort_by, boolean ascending) throws MessagingException {
 
     Locale locale=profile.getLocale();

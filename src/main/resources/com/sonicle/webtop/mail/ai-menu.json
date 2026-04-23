@@ -1,0 +1,98 @@
+{
+  "items": [
+    {
+      "id": "summarize",
+      "labelKey": "ai.menu.summarize.label",
+      "mode": "show",
+      "source": false,
+      "promptKey": "ai.menu.summarize.prompt"
+    },
+    {
+      "id": "help-reply",
+      "labelKey": "ai.menu.help-reply.label",
+      "mode": "reply",
+      "source": false,
+      "promptKey": "ai.menu.help-reply.prompt",
+      "input": {
+        "titleKey": "ai.menu.dialog.title",
+        "questionKey": "ai.menu.help-reply.question",
+        "multiline": true,
+        "required": true
+      }
+    },
+    {
+      "id": "analyze-tone",
+      "labelKey": "ai.menu.analyze-tone.label",
+      "mode": "show",
+      "source": false,
+      "promptKey": "ai.menu.analyze-tone.prompt"
+    },
+    {
+      "id": "classify-urgency",
+      "labelKey": "ai.menu.classify-urgency.label",
+      "mode": "show",
+      "source": false,
+      "promptKey": "ai.menu.classify-urgency.prompt"
+    },
+    {
+      "id": "suggest-disposition",
+      "labelKey": "ai.menu.suggest-disposition.label",
+      "mode": "show",
+      "source": true,
+      "promptKey": "ai.menu.suggest-disposition.prompt"
+    },
+    {
+      "id": "extract-dates",
+      "labelKey": "ai.menu.extract-dates.label",
+      "mode": "show",
+      "source": false,
+      "promptKey": "ai.menu.extract-dates.prompt"
+    },
+    {
+      "id": "trust",
+      "labelKey": "ai.menu.trust.label",
+      "children": [
+        {
+          "id": "trust-simple",
+          "labelKey": "ai.menu.trust-simple.label",
+          "mode": "show",
+          "source": false,
+          "promptKey": "ai.menu.trust-simple.prompt"
+        },
+        {
+          "id": "trust-technical",
+          "labelKey": "ai.menu.trust-technical.label",
+          "mode": "show",
+          "source": true,
+          "promptKey": "ai.menu.trust-technical.prompt"
+        }
+      ]
+    },
+    {
+      "id": "translate",
+      "labelKey": "ai.menu.translate.label",
+      "mode": "show",
+      "source": false,
+      "promptKey": "ai.menu.translate.prompt",
+      "input": {
+        "titleKey": "ai.menu.dialog.title",
+        "questionKey": "ai.menu.translate.question",
+        "multiline": false,
+        "required": true
+      }
+    },
+    {
+      "id": "free-question",
+      "labelKey": "ai.menu.free-question.label",
+      "mode": "show",
+      "source": false,
+      "promptKey": "ai.menu.free-question.prompt",
+      "input": {
+        "titleKey": "ai.menu.dialog.title",
+        "questionKey": "ai.menu.free-question.question",
+        "multiline": false,
+        "required": true
+      }
+    }
+  ]
+}

@@ -33,6 +33,10 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import com.sonicle.commons.AlgoUtils;
 import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.InternetAddressUtils;
@@ -157,6 +161,14 @@ import com.sonicle.security.AuthContext;
 import com.sonicle.security.CryptoUtils;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.contacts.model.ContactQuery;
+import com.sonicle.webtop.core.ai.AIManager;
+import com.sonicle.webtop.core.ai.AIMailContentReducer;
+import com.sonicle.webtop.core.ai.AIPromptBuilder;
+import com.sonicle.webtop.core.ai.AIRequestConfig;
+import com.sonicle.webtop.mail.ai.AIMenuConfig;
+import com.sonicle.webtop.mail.ai.AIMenuInputSpec;
+import com.sonicle.webtop.mail.ai.AIMenuItem;
+import com.sonicle.webtop.mail.ai.AIMenuMode;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopProps;
@@ -281,7 +293,9 @@ public class Service extends BaseService {
 	private boolean browserWantsRemoveHeadStyle = false;
 	
 	private boolean devmode = false;
-	
+
+	private AIMenuConfig aiMenuConfig = null;
+
 	@Override
 	public void initialize() {
 		
@@ -386,8 +400,6 @@ public class Service extends BaseService {
 		
 		mainAccount.setDifferentDefaultFolder(us.getDefaultFolder());
 		
-		mainAccount.setMailSession(environment.getSession().getMailSession());
-
 		mainAccount.setPort(mprofile.getMailPort());
 		mainAccount.setHost(mprofile.getMailHost());
 		mainAccount.setUsername(mprofile.getMailUsername());
@@ -458,8 +470,6 @@ public class Service extends BaseService {
 				archiveAccount.setFolderPrefix(ss.getArchivingExternalFolderPrefix());
 				archiveAccount.setProtocol(ss.getArchivingExternalProtocol());
 
-				archiveAccount.setMailSession(environment.getSession().getMailSession());
-
 				archiveAccount.setPort(ss.getArchivingExternalPort());
 				archiveAccount.setHost(ss.getArchivingExternalHost());
 				archiveAccount.setUsername(ss.getArchivingExternalUsername());
@@ -480,8 +490,6 @@ public class Service extends BaseService {
 				MailAccount acct=createAccount(id);
 				acct.setFolderPrefix(extacc.getFolderPrefix());
 				acct.setProtocol(extacc.getProtocol());
-
-				acct.setMailSession(environment.getSession().getMailSession());
 
 				acct.setPort(extacc.getPort());
 				acct.setHost(extacc.getHost());
@@ -563,8 +571,22 @@ public class Service extends BaseService {
 			regex+=".*"+RegexUtils.escapeRegexSpecialChars(dom)+"$";
 		}
 		if (regex!=null) pasDomainsWhiteListRegexPattern = Pattern.compile(regex);
+
+		try {
+			URL aiMenuUrl = ResourceUtils.getResource("com/sonicle/webtop/mail/ai-menu.json");
+			if (aiMenuUrl != null) {
+				try (InputStream in = aiMenuUrl.openStream()) {
+					aiMenuConfig = AIMenuConfig.load(in);
+				}
+			} else {
+				Service.logger.warn("ai-menu.json resource not found; AI message menu will be empty");
+			}
+		} catch (Throwable t) {
+			Service.logger.error("Failed to load ai-menu.json; AI message menu will be empty", t);
+			aiMenuConfig = null;
+		}
 	}
-	
+
 	private MailAccount createAccount(String id) {
 		MailAccount account=new MailAccount(id,this,environment);
 		accounts.put(id, account);
@@ -4766,6 +4788,239 @@ public class Service extends BaseService {
 		}
 	}
 
+	
+	public void processAIPrompt(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String actionId = ServletUtils.getStringParameter(request, "menuaction", true);
+			String rawInput = ServletUtils.getStringParameter(request, "userInput", "");
+			String format = ServletUtils.getStringParameter(request, "format", "text");
+
+			if (aiMenuConfig == null) {
+				new JsonResult(false, "AI menu not configured").printTo(out);
+				return;
+			}
+			AIMenuItem item = aiMenuConfig.findById(actionId);
+			if (item == null || item.getPromptKey() == null) {
+				new JsonResult(false, "Unknown AI action").printTo(out);
+				return;
+			}
+			AIMenuInputSpec inSpec = item.getInput();
+			if (inSpec != null && inSpec.isRequired() && StringUtils.isBlank(rawInput)) {
+				new JsonResult(false, "Required input missing").printTo(out);
+				return;
+			}
+			if (inSpec == null) rawInput = "";
+
+			String template = lookupResource(item.getPromptKey());
+			if (template == null) {
+				Service.logger.error("AI prompt resource key '{}' not found", item.getPromptKey());
+				new JsonResult(false, "AI prompt not found").printTo(out);
+				return;
+			}
+			String renderedTask = AIPromptBuilder.renderUserInputTemplate(
+					template, rawInput, ss.getAIMenuUserInputMaxChars());
+			if ("html".equalsIgnoreCase(format)) {
+				String hintKey = (item.getMode() == AIMenuMode.REPLY)
+						? "ai.menu.format.html.reply.hint"
+						: "ai.menu.format.html.hint";
+				String hint = lookupResource(hintKey);
+				if (!StringUtils.isBlank(hint)) renderedTask = renderedTask + "\n\n" + hint;
+			}
+
+			MailAccount account = getAccount(request);
+			String pfoldername = request.getParameter("folder");
+			String puidmessage = request.getParameter("idmessage");
+
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
+			IMAPMessage m = (IMAPMessage)mcache.getMessage(Long.parseLong(puidmessage));
+			m.setPeek(true);
+			String content;
+			try {
+				content = item.isSource()
+						? MailTextExtractor.buildReadable(m)
+						: buildReducedMailContent(mcache, m);
+			} finally {
+				m.setPeek(false);
+			}
+
+			String prompt = AIPromptBuilder.buildEmailAnalysisPrompt(renderedTask, content);
+
+			AIManager aim = getWts().getAIManager();
+			AIRequestConfig cfg = AIRequestConfig.builder().outputFormat(format).build();
+			String answer = aim.prompt(prompt, cfg);
+			new JsonResult(answer).printTo(out, false);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
+		}
+	}
+
+	private String buildReducedMailContent(FolderCache mcache, IMAPMessage m) throws Exception {
+		String subject = m.getSubject();
+		java.util.Date date = m.getSentDate();
+		Address from[] = m.getFrom();
+		InternetAddress iafrom = null;
+		if (from != null && from.length > 0) iafrom = (InternetAddress) from[0];
+
+		String html = "";
+		boolean balanceTags = isPreviewBalanceTags(iafrom);
+		boolean removeHeadStyle = isRemoveHeadStyle(iafrom);
+		ArrayList<FolderCache.HTMLPart> htmlparts = mcache.getHTMLParts((MimeMessage) m, -1, true, balanceTags, removeHeadStyle);
+		for (FolderCache.HTMLPart htmlPart : htmlparts) {
+			html += htmlPart.html + "<BR><BR>";
+		}
+		String reducedHtml = AIMailContentReducer.reduce(html);
+
+		StringBuilder content = new StringBuilder();
+		if (iafrom != null) content.append("From: ").append(iafrom.toString()).append("\n");
+		if (date != null) content.append("Date: ").append(DateFormat.getDateTimeInstance().format(date)).append("\n");
+		if (subject != null) content.append("Subject: ").append(subject).append("\n");
+		content.append("\nMessage:\n").append(reducedHtml);
+		return content.toString();
+	}
+
+	public void processAIRAG(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
+		String question = ServletUtils.getStringParameter(request, "question", "");
+		String instructions = ServletUtils.getStringParameter(request, "instructions", null);
+		String format=ServletUtils.getStringParameter(request, "format", "json");
+		String when=ServletUtils.getStringParameter(request, "when", null);
+		//String iso_datestart=ServletUtils.getStringParameter(request, "datestart", null);
+		//String iso_dateend=ServletUtils.getStringParameter(request, "dateend", null);
+		
+		if (instructions == null && format.equalsIgnoreCase("json")) {
+			instructions = "return the json object with a single emails member as an array of objects sorted by date descending, with "+
+					" date as date field,"+
+					" from as from field,"+
+					" to as to field,"+
+					" subject as subject field,"+
+					" folder as folder field,"+
+					" message-id as messageId field"+
+					" and a short briefing of the mail contents as briefing field.";
+		}
+		try {
+			String iso_datestart=null;
+			String iso_dateend=null;
+			List<String> relevantFolders = null;
+			
+			AIManager aim = getWts().getAIManager();
+			boolean extractDates = when!=null && StringUtils.isNoneEmpty(when);
+			Set<String> folderCacheKeys = account.getFolderCacheKeys();
+			boolean extractFolders = folderCacheKeys.size()>8;
+			StringBuffer sbPrompt=new StringBuffer();
+			
+			//extract dates when is not null
+			if (extractDates) {
+				sbPrompt.append(
+					"Analyze the following text and extract the desired starting and ending date,"+
+					"returning in the json object two members \"datestart\" and \"dateend\" (lowercase) in iso format."+
+					" Null is not an option, guess dates.\n\n"+
+					when+
+					"\n\n"
+				);
+			}
+			
+			//extract relevant folders if more than 8
+			if (extractFolders) {
+				StringBuffer sb = new StringBuffer();
+				for(String name: account.getFolderCacheKeys()) {
+					if (name.startsWith("Other Users") || name.endsWith("Trash") || name.endsWith("Spam")) continue;
+					sb.append(name+"\n");
+				}
+				sb.append("\n\n");
+				String folders=sb.toString();
+				sbPrompt.append(
+					"Then consider this user question: \n\n"+
+					question+
+					"\n\nand consider these email folders: \n\n"+
+					folders+
+					"\n\nAdd in the json which folders are most relevant to the question as a vector of strings in a third member named folders,\n"+
+					"but always include INBOX and Sent.\n"
+				);
+			}
+			//extract 50 most used contacts
+			/*CoreManager coreMgr=WT.getCoreManager();
+			final ArrayList<String> ids = new ArrayList<>();
+			ids.add(RECIPIENT_PROVIDER_AUTO_SOURCE_ID);
+			List<Recipient> rcptsBest50 = coreMgr.listProviderRecipients(RecipientFieldType.EMAIL, ids, "", 50);
+			if (rcptsBest50.size()>30) {
+				StringBuffer sb = new StringBuffer();
+				for(Recipient rcpt: rcptsBest50) {
+					sb.append(rcpt.getPersonal()+" - "+rcpt.getAddress()+"\n");
+				}
+				sb.append("\n\n");
+				String recipients=sb.toString();
+				sbPrompt.append(
+					"\n\nand also consider this list of recipients (name - email): \n\n"+
+					recipients+
+					"\n\nAdd in the json which recpients are most relevant to the question as a vector of email strings in a third member named emails.\n\n"
+				);
+			}*/
+
+			//run LLM prompt to extract useful data
+			if (extractDates || extractFolders) {
+				AIRequestConfig extractCfg = AIRequestConfig.builder()
+					.outputFormat("json")
+					.temperature(0f)
+					.build();
+				String json = aim.prompt(sbPrompt.toString(), extractCfg);
+				json = unwrapJson(json);
+				System.out.println("===JSON===");
+				System.out.println(json);
+				System.out.println("===END====");
+				JsonParser parser = new JsonParser();
+				JsonObject obj = parser.parse(json).getAsJsonObject();
+				if (obj!=null) {
+					if (obj.has("datestart") && obj.has("dateend")) {
+						iso_datestart = obj.get("datestart").getAsString();
+						iso_dateend = obj.get("dateend").getAsString();
+					}
+					if (obj.has("folders")) {
+						relevantFolders = new ArrayList<>();
+						JsonArray array = obj.getAsJsonArray("folders");
+						for (JsonElement el : array) {
+							relevantFolders.add(el.getAsString());
+						}						
+					}
+				}
+			}
+			System.out.println("datestart = "+iso_datestart);
+			System.out.println("dateend = "+iso_dateend);
+			
+			
+			AIRequestConfig ragCfg = AIRequestConfig.builder()
+				.outputFormat(format)
+				.temperature(0f)
+				.ragProperty("user_id", account.getUsername())
+				.ragProperty("document", "emails")
+				.ragProperty("host", "192.168.222.221")
+				.ragProperty("port", "6333")
+				.build();
+			String answer = aim.askRAG(question, instructions, iso_datestart, iso_dateend, relevantFolders, ragCfg);
+			//check for json delimiters and unwrap
+			if (format.equalsIgnoreCase("json"))
+				answer = unwrapJson(answer);
+			System.out.println("===ANSWER===");
+			System.out.println(answer);
+			System.out.println("===END====");
+			new JsonResult(answer).printTo(out, false);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
+		}
+	}
+	
+	private String unwrapJson(String json) {
+		if (json.startsWith("```json")) {
+			json = json.substring(7);
+			if (json.endsWith("```"))
+				json = json.substring(0,json.length()-3);
+		}
+		return json;
+	}
+	
+
 	public void processManageMessage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		try {
 			String sendAction=ServletUtils.getStringParameter(request, "sendAction", "save");
@@ -6469,7 +6724,7 @@ public class Service extends BaseService {
 		String ptimestamp = request.getParameter("timestamp");
 		String pthreadaction=request.getParameter("threadaction");
 		String pthreadactionuid=request.getParameter("threadactionuid");
-		
+
 		boolean showMessagePreviewOnRow=us.getGridShowMessagePreview();
 		
 		try {
@@ -6600,7 +6855,7 @@ public class Service extends BaseService {
 			ArrayList<JsListedMessage> items = new ArrayList<>();
 			
 			if(!pfoldername.equals("/")) {
-				
+
 				FolderCache mcache = account.getFolderCache(key);
 				if (mcache.toBeRefreshed()) refresh=true;
 				//Message msgs[]=mcache.getMessages(ppattern,psearchfield,sortby,ascending,refresh);
@@ -6611,7 +6866,7 @@ public class Service extends BaseService {
 				ImapQuery iq = new ImapQuery(this.allFlagStrings, queryObj, profile.getTimeZone());
 				if (iq.hasAttachment() || iq.hasAttachmentName() || iq.hasNotePattern()) sgi.threaded = false;
 
-				if(queryObj != null) refresh = true; 
+				if(queryObj != null) refresh = true;
 				MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, timestamp, iq);
 				Message xmsgs[] = messagesInfo.messages;
 
@@ -6796,6 +7051,7 @@ public class Service extends BaseService {
 								}
 
 							}
+
 							Flags flags=xm.getFlags();
 
 							//Date
@@ -6821,7 +7077,7 @@ public class Service extends BaseService {
 								if (from==null) from=iafrom.getAddress();
 								fromemail=iafrom.getAddress();
 							}
-							
+
 							//To
 							String to="";
 							String toemail="";
@@ -6849,7 +7105,7 @@ public class Service extends BaseService {
 								try {
 									subject=MailUtils.decodeQString(subject);
 								} catch(Exception exc) {
-									
+
 								}
 							}
 							else subject="";
@@ -6901,11 +7157,11 @@ public class Service extends BaseService {
 							}
 
 							String status=mailManager.getStatusString(flags, hasInvitation, isToday);
-							
+
 							//Size
 							int msgsize=0;
 							msgsize=(xm.getSize()*3)/4;// /1024 + 1;
-							
+
 							//User flags
 							String cflag = mailManager.getFlagString(flags);
 
@@ -6919,7 +7175,7 @@ public class Service extends BaseService {
 							int shhh=0;
 							int smmm=0;
 							int ssss=0;
-							
+
 							if (isdrafts) {
 								String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
 								if (h!=null && h.equals("true")) {
@@ -6978,7 +7234,7 @@ public class Service extends BaseService {
 										pecstatus=hdrs[0];
 								}
 							}
-							
+
 							String schedDate = issched ? formatCalendarDate(syyyy, smm, sdd, shhh, smmm, ssss) : null;
 							Boolean threadOpen = false;
 							Boolean threadHasChildren = false;
@@ -7145,7 +7401,7 @@ public class Service extends BaseService {
 			Service.logger.error("Exception", t);
 		}
 	}
-	
+
 	public void processGetMessagePage(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
@@ -7348,7 +7604,7 @@ public class Service extends BaseService {
 				try {
 					this.millis = System.currentTimeMillis();
 					msgs = fc.getMessages(sortby, ascending, refresh, sort_group, groupascending, threaded, imapQuery);
-					
+
 					/*
 					UserProfileId profileId=getEnv().getProfileId();
 					String domainId=profileId.getDomainId();
@@ -8377,6 +8633,36 @@ public class Service extends BaseService {
 		}
 	}
 
+	public void processGetMessageUID(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
+		String pfoldername = request.getParameter("folder");
+		String pmessageid = request.getParameter("messageid");
+		if (!pmessageid.startsWith("<")) pmessageid = "<"+pmessageid;
+		if (!pmessageid.endsWith(">")) pmessageid = pmessageid+">";
+		Connection con = null;
+		long uid = -1;
+		String text = null;
+		boolean result = false;
+		try {
+			account.checkStoreConnected();
+			FolderCache mcache = account.getFolderCache(pfoldername);
+			SonicleIMAPMessage msg = (SonicleIMAPMessage)mcache.getMessageByMessageId(pmessageid);
+			uid = msg != null ? mcache.getUID(msg) : -1;
+			if (uid > 0) {
+				result = true;
+				text = "" + uid;
+			} else {
+				text = "Message-ID "+pmessageid+" not found";
+			}
+		} catch (Exception exc) {
+			Service.logger.error("Exception",exc);
+			text = exc.getMessage();
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+		new JsonResult(result, text).printTo(out);
+	}
+	
 	public void processGetAttachment(HttpServletRequest request, HttpServletResponse response) {
 		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
@@ -9710,6 +9996,37 @@ public class Service extends BaseService {
 	}
 	
 	
+	private Map<String, Object> buildClientAIMenu(AIMenuConfig cfg) {
+		Map<String, Object> root = new LinkedHashMap<>();
+		List<Map<String, Object>> items = new ArrayList<>();
+		for (AIMenuItem it : cfg.getItems()) items.add(buildClientAIMenuItem(it));
+		root.put("items", items);
+		return root;
+	}
+
+	private Map<String, Object> buildClientAIMenuItem(AIMenuItem it) {
+		Map<String, Object> o = new LinkedHashMap<>();
+		o.put("id", it.getId());
+		o.put("label", lookupResource(it.getLabelKey()));
+		if (it.isGroup()) {
+			List<Map<String, Object>> kids = new ArrayList<>();
+			for (AIMenuItem c : it.getChildren()) kids.add(buildClientAIMenuItem(c));
+			o.put("children", kids);
+		} else {
+			o.put("mode", it.getMode() == AIMenuMode.REPLY ? "reply" : "show");
+			AIMenuInputSpec in = it.getInput();
+			if (in != null) {
+				Map<String, Object> ino = new LinkedHashMap<>();
+				if (in.getTitleKey() != null) ino.put("title", lookupResource(in.getTitleKey()));
+				if (in.getQuestionKey() != null) ino.put("question", lookupResource(in.getQuestionKey()));
+				ino.put("multiline", in.isMultiline());
+				ino.put("required", in.isRequired());
+				o.put("input", ino);
+			}
+		}
+		return o;
+	}
+
 	@Override
 	public ServiceVars returnServiceVars() {
 		ServiceVars co = new ServiceVars();
@@ -9803,9 +10120,13 @@ public class Service extends BaseService {
 			
 			
 			co.put("hasAudit",mailManager.isAuditEnabled()&&(RunContext.isImpersonated()||RunContext.isPermitted(true, CoreManifest.ID, "AUDIT")));
-			
+
+			if (aiMenuConfig != null && getWts().isAIConfigured()) {
+				co.put("aiMenu", buildClientAIMenu(aiMenuConfig));
+			}
+
 		} catch(Exception ex) {
-			logger.error("Error getting client options", ex);	
+			logger.error("Error getting client options", ex);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
