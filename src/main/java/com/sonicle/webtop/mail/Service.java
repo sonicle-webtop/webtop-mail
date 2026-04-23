@@ -6935,7 +6935,7 @@ public class Service extends BaseService {
 						Folder fsent=account.getFolder(account.getFolderSent());
 						boolean openedsent=false;
 						//Fetch others for these messages
-						mailManager.fetch(mcache.getFolder(),xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max);
+						mailManager.fetch(mcache.getFolder(),xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max - start);
 						long tId=0;
 						boolean tIsOpen = false;
 						boolean tChildren = false;

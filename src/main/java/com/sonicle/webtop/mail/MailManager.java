@@ -381,7 +381,7 @@ public class MailManager extends BaseManager implements IMailManager {
         if (length>(n-start)) length=n-start;
         Message xmsgs[]=new Message[length];
         System.arraycopy(fmsgs, start, xmsgs, 0, length);
-        ((SonicleIMAPFolder)folder).uid_fetch(xmsgs, fp);
+        folder.fetch(xmsgs, fp);
 		return xmsgs;
     }
 	
