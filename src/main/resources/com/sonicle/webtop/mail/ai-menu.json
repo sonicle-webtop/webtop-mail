@@ -1,95 +1,240 @@
 {
+  "defaultLanguage": "en",
+  "dialogTitle": {
+    "en": "Ask A.I.",
+    "it": "Chiedi alla A.I."
+  },
+  "formatHints": {
+    "html": {
+      "en": "Use semantic HTML for readability (paragraphs, headings, lists, bold, italic, tables) as appropriate to the actual substance of the answer. Do not include any hyperlinks or <a> tags. Do not add any meta heading, label, title, caption, or preamble that describes or classifies what you are producing (for example \"Email Summary\", \"Reply Draft\", \"Bozza di Risposta\", \"Translation\", \"Tone Analysis\", \"Trustworthiness Check\"); output only the actual content itself. If a heading is genuinely useful, it must describe the subject matter of the content, not the task or output type.",
+      "it": "Usa HTML semantico per la leggibilità (paragrafi, intestazioni, elenchi, grassetto, corsivo, tabelle) in modo adeguato al contenuto effettivo della risposta. Non includere alcun link o tag <a>. Non aggiungere alcuna intestazione, etichetta, titolo, didascalia o preambolo che descriva o classifichi ciò che stai producendo (per esempio \"Riassunto Email\", \"Bozza di Risposta\", \"Traduzione\", \"Analisi del Tono\", \"Verifica Affidabilità\"); produci solo il contenuto effettivo. Se un'intestazione è davvero utile, deve descrivere l'argomento del contenuto, non l'azione o il tipo di output."
+    },
+    "htmlReply": {
+      "en": "Your output is going to be inserted directly into the reply composer and sent as the email body, so produce only the message body itself, in HTML. Do not include any hyperlinks or <a> tags. Do not add any heading, title, label, preamble, sign-off annotation, or meta description such as \"Reply\", \"Draft\", \"Bozza di Risposta\". Start with the greeting (or the first line of the actual message if no greeting is appropriate) and end with the closing line the sender would actually send. Do not wrap the result in quotes or code blocks.",
+      "it": "Il tuo output verrà inserito direttamente nel compositore di risposta ed inviato come corpo della mail, quindi produci solo il corpo del messaggio in HTML. Non includere alcun link o tag <a>. Non aggiungere alcuna intestazione, titolo, etichetta, preambolo, annotazione di firma o meta-descrizione come \"Risposta\", \"Bozza\", \"Bozza di Risposta\". Inizia con il saluto (o con la prima riga del messaggio effettivo se il saluto non è opportuno) e chiudi con la riga finale che il mittente invierebbe realmente. Non racchiudere il risultato tra virgolette o in blocchi di codice."
+    }
+  },
   "items": [
     {
       "id": "summarize",
-      "labelKey": "ai.menu.summarize.label",
+      "label": {
+        "en": "Summarize content",
+        "it": "Riassumi il contenuto"
+      },
       "mode": "show",
       "source": false,
-      "promptKey": "ai.menu.summarize.prompt"
+      "prompt": {
+        "en": "Summarize the content of this email",
+        "it": "Riassumi il contenuto di questa email"
+      }
     },
     {
       "id": "help-reply",
-      "labelKey": "ai.menu.help-reply.label",
+      "label": {
+        "en": "Help me reply",
+        "it": "Aiutami a rispondere"
+      },
       "mode": "reply",
       "source": false,
-      "promptKey": "ai.menu.help-reply.prompt",
+      "prompt": {
+        "en": "Help me reply to this email, taking into account the original message and these ideas of what I would like to say:\n\n{0}\n\n",
+        "it": "Aiutami a rispondere a questa email, prendendo in considerazione la mail originale e queste idee di cosa vorrei dire:\n\n{0}\n\n"
+      },
       "input": {
-        "titleKey": "ai.menu.dialog.title",
-        "questionKey": "ai.menu.help-reply.question",
+        "question": {
+          "en": "Briefly, what would you like to say?",
+          "it": "Brevemente cosa vorresti dire?"
+        },
         "multiline": true,
         "required": true
       }
     },
     {
+      "id": "quick-reply",
+      "label": {
+        "en": "Quick reply",
+        "it": "Risposta veloce"
+      },
+      "children": [
+        {
+          "id": "quick-reply-acknowledge",
+          "label": {
+            "en": "Acknowledge",
+            "it": "Conferma ricezione"
+          },
+          "mode": "reply",
+          "source": false,
+          "prompt": {
+            "en": "Write a brief reply (1-3 sentences) acknowledging this email. Match the language and tone of the original message. Limit yourself to confirming receipt or thanking the sender as appropriate; do not restate their content and do not commit to anything that was not already established.",
+            "it": "Scrivi una risposta breve (1-3 frasi) che confermi la ricezione di questa email. Mantieni la lingua e il tono del messaggio originale. Limitati a confermare la ricezione o a ringraziare in modo appropriato; non ripetere il contenuto del mittente e non prendere impegni non già stabiliti."
+          }
+        },
+        {
+          "id": "quick-reply-accept",
+          "label": {
+            "en": "Agree",
+            "it": "Accetta"
+          },
+          "mode": "reply",
+          "source": false,
+          "prompt": {
+            "en": "Write a brief reply (1-3 sentences) agreeing to what is proposed or requested in this email. Match the language and tone of the original message. Be concise and positive; do not invent specifics (times, places, commitments) that the sender did not mention.",
+            "it": "Scrivi una risposta breve (1-3 frasi) che accetti quanto proposto o richiesto in questa email. Mantieni la lingua e il tono del messaggio originale. Sii conciso e positivo; non inventare dettagli (orari, luoghi, impegni) che il mittente non ha menzionato."
+          }
+        },
+        {
+          "id": "quick-reply-decline",
+          "label": {
+            "en": "Decline",
+            "it": "Rifiuta"
+          },
+          "mode": "reply",
+          "source": false,
+          "prompt": {
+            "en": "Write a brief reply (1-3 sentences) politely declining what is proposed or requested in this email. Match the language and tone of the original message. Be concise and respectful; do not fabricate a reason — keep the decline general unless the original message itself suggests one.",
+            "it": "Scrivi una risposta breve (1-3 frasi) che rifiuti educatamente quanto proposto o richiesto in questa email. Mantieni la lingua e il tono del messaggio originale. Sii conciso e rispettoso; non inventare motivazioni — mantieni il rifiuto generico a meno che il messaggio originale stesso non ne suggerisca una."
+          }
+        },
+        {
+          "id": "quick-reply-defer",
+          "label": {
+            "en": "Need more time",
+            "it": "Serve tempo"
+          },
+          "mode": "reply",
+          "source": false,
+          "prompt": {
+            "en": "Write a brief reply (1-3 sentences) indicating that you need time to review or check, and that you will get back to the sender. Match the language and tone of the original message. Do not promise a specific deadline unless the original message gave one to work with.",
+            "it": "Scrivi una risposta breve (1-3 frasi) indicando che hai bisogno di tempo per valutare o verificare e che ricontatterai il mittente. Mantieni la lingua e il tono del messaggio originale. Non promettere una scadenza specifica a meno che il messaggio originale non ne abbia fornita una di riferimento."
+          }
+        }
+      ]
+    },
+    {
       "id": "analyze-tone",
-      "labelKey": "ai.menu.analyze-tone.label",
+      "label": {
+        "en": "Analyze tone",
+        "it": "Analizza il tono"
+      },
       "mode": "show",
       "source": false,
-      "promptKey": "ai.menu.analyze-tone.prompt"
+      "prompt": {
+        "en": "Analyze the tone of this email",
+        "it": "Analizza il tono di questa email"
+      }
     },
     {
       "id": "classify-urgency",
-      "labelKey": "ai.menu.classify-urgency.label",
+      "label": {
+        "en": "Classify urgency",
+        "it": "Classifica l'urgenza"
+      },
       "mode": "show",
       "source": false,
-      "promptKey": "ai.menu.classify-urgency.prompt"
+      "prompt": {
+        "en": "Classify the urgency of this email as exactly one of these categories: Urgent, Time-sensitive, Important, Informational, Promotional. State the chosen category first, then provide a brief justification (max 2 sentences) citing concrete signals from the email such as explicit deadlines, time references, sender role, and requested actions.",
+        "it": "Classifica l'urgenza di questa email scegliendo esattamente una tra queste categorie: Urgente, Tempo-dipendente, Importante, Informativa, Promozionale. Indica prima la categoria scelta, poi fornisci una breve motivazione (massimo 2 frasi) citando segnali concreti presenti nella email, come scadenze esplicite, riferimenti temporali, ruolo del mittente e azioni richieste."
+      }
     },
     {
       "id": "suggest-disposition",
-      "labelKey": "ai.menu.suggest-disposition.label",
+      "label": {
+        "en": "Suggest disposition",
+        "it": "Suggerisci un'azione"
+      },
       "mode": "show",
       "source": true,
-      "promptKey": "ai.menu.suggest-disposition.prompt"
+      "prompt": {
+        "en": "Suggest the best disposition for this email as exactly one of these categories: Reply, Follow-up, Delegate, Archive, Delete, Unsubscribe, Spam/Phishing. State the chosen category first, then provide a brief justification (max 2 sentences) citing concrete signals such as sender identity, authentication headers, explicit asks, deadlines, commercial or list-management markers, and any suspicious or deceptive indicators. Choose Spam/Phishing only when you have clear evidence of unsolicited bulk mail or an attempt to deceive the recipient.",
+        "it": "Suggerisci la migliore azione da intraprendere su questa email scegliendo esattamente una tra queste categorie: Rispondi, Da seguire, Delega, Archivia, Elimina, Disiscrivi, Spam/Phishing. Indica prima la categoria scelta, poi fornisci una breve motivazione (massimo 2 frasi) citando segnali concreti come l'identità del mittente, gli header di autenticazione, le richieste esplicite, le scadenze, i marcatori commerciali o di gestione liste, ed eventuali indicatori sospetti o ingannevoli. Scegli Spam/Phishing solo in presenza di evidenze chiare di posta massiva non richiesta o di tentativo di inganno verso il destinatario."
+      }
     },
     {
       "id": "extract-dates",
-      "labelKey": "ai.menu.extract-dates.label",
+      "label": {
+        "en": "Extract dates",
+        "it": "Estrai date"
+      },
       "mode": "show",
       "source": false,
-      "promptKey": "ai.menu.extract-dates.prompt"
+      "prompt": {
+        "en": "Extract a list of dates for any appointments or other events, indicating what they refer to",
+        "it": "Estrai un elenco di date di eventuali appuntamenti o altro, indicando a cosa si riferiscono"
+      }
     },
     {
       "id": "trust",
-      "labelKey": "ai.menu.trust.label",
+      "label": {
+        "en": "Verify trustworthiness",
+        "it": "Verifica affidabilità"
+      },
       "children": [
         {
           "id": "trust-simple",
-          "labelKey": "ai.menu.trust-simple.label",
+          "label": {
+            "en": "Simple",
+            "it": "Semplice"
+          },
           "mode": "show",
           "source": false,
-          "promptKey": "ai.menu.trust-simple.prompt"
+          "prompt": {
+            "en": "Verify the trustworthiness of this email",
+            "it": "Verifica la affidabilità di questa email"
+          }
         },
         {
           "id": "trust-technical",
-          "labelKey": "ai.menu.trust-technical.label",
+          "label": {
+            "en": "Technical",
+            "it": "Tecnica"
+          },
           "mode": "show",
           "source": true,
-          "promptKey": "ai.menu.trust-technical.prompt"
+          "prompt": {
+            "en": "Verify the trustworthiness of this email source by carefully analyzing the headers, the structure of its parts, textual content and attachments",
+            "it": "Verifica la affidabilità di questo sorgente email analizzando bene gli header, la struttura delle parti, contenuto testuale ed allegati"
+          }
         }
       ]
     },
     {
       "id": "translate",
-      "labelKey": "ai.menu.translate.label",
+      "label": {
+        "en": "Translate into another language",
+        "it": "Traduci in un'altra lingua"
+      },
       "mode": "show",
       "source": false,
-      "promptKey": "ai.menu.translate.prompt",
+      "prompt": {
+        "en": "Translate into {0}",
+        "it": "Traduci in {0}"
+      },
       "input": {
-        "titleKey": "ai.menu.dialog.title",
-        "questionKey": "ai.menu.translate.question",
+        "question": {
+          "en": "Specify which language you want me to translate into",
+          "it": "Specifica in quale lingua desideri che traduca"
+        },
         "multiline": false,
         "required": true
       }
     },
     {
       "id": "free-question",
-      "labelKey": "ai.menu.free-question.label",
+      "label": {
+        "en": "Answer my question",
+        "it": "Rispondi ad una mia domanda"
+      },
       "mode": "show",
       "source": false,
-      "promptKey": "ai.menu.free-question.prompt",
+      "prompt": {
+        "en": "Answer the following user question about this email:\n\n{0}",
+        "it": "Rispondi alla seguente domanda dell'utente su questa email:\n\n{0}"
+      },
       "input": {
-        "titleKey": "ai.menu.dialog.title",
-        "questionKey": "ai.menu.free-question.question",
+        "question": {
+          "en": "Write your question",
+          "it": "Scrivi la tua domanda"
+        },
         "multiline": false,
         "required": true
       }

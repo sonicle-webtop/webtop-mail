@@ -45,33 +45,72 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Immutable AI menu configuration parsed from the bundled ai-menu.json.
+ * Immutable AI menu configuration parsed from ai-menu.json.
+ *
+ * All user-visible strings (labels, prompts, input questions, dialog title,
+ * format hints) are carried inline as ISO-639 language maps; resolution
+ * against the user's locale happens via {@link #resolve(Map, String)}.
  *
  * Responsibilities:
  *  - Parse the JSON tree into AIMenuItem/AIMenuInputSpec instances.
  *  - Build a flat id→item index for O(1) lookup during AIPrompt dispatch.
- *  - Refuse duplicate ids; refuse leaves without a prompt key.
+ *  - Refuse duplicate ids; refuse leaves without a prompt map.
  */
 public final class AIMenuConfig {
 
+	public static final String DEFAULT_LANGUAGE_FALLBACK = "en";
+
+	private final String defaultLanguage;
+	private final Map<String, String> dialogTitle;
+	private final Map<String, String> htmlFormatHint;
+	private final Map<String, String> htmlReplyFormatHint;
 	private final List<AIMenuItem> items;
 	private final Map<String, AIMenuItem> index;
 
-	private AIMenuConfig(List<AIMenuItem> items, Map<String, AIMenuItem> index) {
+	private AIMenuConfig(
+			String defaultLanguage,
+			Map<String, String> dialogTitle,
+			Map<String, String> htmlFormatHint,
+			Map<String, String> htmlReplyFormatHint,
+			List<AIMenuItem> items,
+			Map<String, AIMenuItem> index) {
+		this.defaultLanguage = defaultLanguage;
+		this.dialogTitle = Collections.unmodifiableMap(dialogTitle);
+		this.htmlFormatHint = Collections.unmodifiableMap(htmlFormatHint);
+		this.htmlReplyFormatHint = Collections.unmodifiableMap(htmlReplyFormatHint);
 		this.items = Collections.unmodifiableList(items);
 		this.index = Collections.unmodifiableMap(index);
 	}
 
-	public List<AIMenuItem> getItems() {
-		return items;
-	}
+	public String getDefaultLanguage() { return defaultLanguage; }
+	public Map<String, String> getDialogTitle() { return dialogTitle; }
+	public Map<String, String> getHtmlFormatHint() { return htmlFormatHint; }
+	public Map<String, String> getHtmlReplyFormatHint() { return htmlReplyFormatHint; }
+	public List<AIMenuItem> getItems() { return items; }
 
 	public AIMenuItem findById(String id) {
 		return id == null ? null : index.get(id);
+	}
+
+	/**
+	 * Pick the entry for {@code lang}; fall back to the configured default
+	 * language; fall back to any available entry. Returns null only if the
+	 * map is null or empty.
+	 */
+	public String resolve(Map<String, String> map, String lang) {
+		if (map == null || map.isEmpty()) return null;
+		if (lang != null) {
+			String v = map.get(lang);
+			if (v != null) return v;
+		}
+		String v = map.get(defaultLanguage);
+		if (v != null) return v;
+		return map.values().iterator().next();
 	}
 
 	public static AIMenuConfig load(InputStream in) throws IOException {
@@ -84,6 +123,17 @@ public final class AIMenuConfig {
 			throw new IOException("ai-menu.json: expected an object at root");
 		}
 		JsonObject rootObj = root.getAsJsonObject();
+
+		String defaultLanguage = getString(rootObj, "defaultLanguage", DEFAULT_LANGUAGE_FALLBACK);
+		Map<String, String> dialogTitle = parseLangMap(rootObj, "dialogTitle", false, null);
+		Map<String, String> htmlHint = new LinkedHashMap<>();
+		Map<String, String> htmlReplyHint = new LinkedHashMap<>();
+		if (rootObj.has("formatHints") && rootObj.get("formatHints").isJsonObject()) {
+			JsonObject fh = rootObj.getAsJsonObject("formatHints");
+			htmlHint = parseLangMap(fh, "html", false, null);
+			htmlReplyHint = parseLangMap(fh, "htmlReply", false, null);
+		}
+
 		JsonElement itemsEl = rootObj.get("items");
 		if (itemsEl == null || !itemsEl.isJsonArray()) {
 			throw new IOException("ai-menu.json: missing 'items' array");
@@ -93,7 +143,7 @@ public final class AIMenuConfig {
 		for (JsonElement el : itemsEl.getAsJsonArray()) {
 			parsed.add(parseItem(el, idx));
 		}
-		return new AIMenuConfig(parsed, idx);
+		return new AIMenuConfig(defaultLanguage, dialogTitle, htmlHint, htmlReplyHint, parsed, idx);
 	}
 
 	private static AIMenuItem parseItem(JsonElement el, Map<String, AIMenuItem> idx) throws IOException {
@@ -102,9 +152,8 @@ public final class AIMenuConfig {
 		}
 		JsonObject o = el.getAsJsonObject();
 		String id = getString(o, "id", null);
-		String labelKey = getString(o, "labelKey", null);
 		if (id == null || id.isEmpty()) throw new IOException("ai-menu.json: item missing 'id'");
-		if (labelKey == null || labelKey.isEmpty()) throw new IOException("ai-menu.json: item '" + id + "' missing 'labelKey'");
+		Map<String, String> label = parseLangMap(o, "label", true, "item '" + id + "'");
 
 		List<AIMenuItem> children = new ArrayList<>();
 		if (o.has("children") && o.get("children").isJsonArray()) {
@@ -114,31 +163,49 @@ public final class AIMenuConfig {
 
 		AIMenuMode mode = null;
 		boolean source = false;
-		String promptKey = null;
+		Map<String, String> prompt = null;
 		AIMenuInputSpec input = null;
 
 		if (children.isEmpty()) {
 			mode = AIMenuMode.parse(getString(o, "mode", null), AIMenuMode.SHOW);
 			source = getBoolean(o, "source", false);
-			promptKey = getString(o, "promptKey", null);
-			if (promptKey == null || promptKey.isEmpty()) {
-				throw new IOException("ai-menu.json: leaf '" + id + "' missing 'promptKey'");
-			}
+			prompt = parseLangMap(o, "prompt", true, "leaf '" + id + "'");
 			if (o.has("input") && o.get("input").isJsonObject()) {
 				JsonObject ino = o.getAsJsonObject("input");
-				String titleKey = getString(ino, "titleKey", null);
-				String questionKey = getString(ino, "questionKey", null);
+				Map<String, String> question = parseLangMap(ino, "question", true, "input of '" + id + "'");
 				boolean multiline = getBoolean(ino, "multiline", false);
 				boolean required = getBoolean(ino, "required", true);
-				input = new AIMenuInputSpec(titleKey, questionKey, multiline, required);
+				input = new AIMenuInputSpec(question, multiline, required);
 			}
 		}
 
-		AIMenuItem item = new AIMenuItem(id, labelKey, mode, source, promptKey, input, children);
+		AIMenuItem item = new AIMenuItem(id, label, mode, source, prompt, input, children);
 		if (idx.put(id, item) != null) {
 			throw new IOException("ai-menu.json: duplicate id '" + id + "'");
 		}
 		return item;
+	}
+
+	private static Map<String, String> parseLangMap(JsonObject parent, String field, boolean required, String ownerDesc) throws IOException {
+		JsonElement el = parent.get(field);
+		if (el == null || el.isJsonNull()) {
+			if (required) throw new IOException("ai-menu.json: " + ownerDesc + " missing '" + field + "' map");
+			return new LinkedHashMap<>();
+		}
+		if (!el.isJsonObject()) {
+			throw new IOException("ai-menu.json: '" + field + "' must be a {lang: string} object"
+					+ (ownerDesc == null ? "" : " (" + ownerDesc + ")"));
+		}
+		Map<String, String> out = new LinkedHashMap<>();
+		for (Map.Entry<String, JsonElement> e : el.getAsJsonObject().entrySet()) {
+			JsonElement v = e.getValue();
+			if (v == null || v.isJsonNull()) continue;
+			out.put(e.getKey(), v.getAsString());
+		}
+		if (required && out.isEmpty()) {
+			throw new IOException("ai-menu.json: " + ownerDesc + " has empty '" + field + "' map");
+		}
+		return out;
 	}
 
 	private static String getString(JsonObject o, String key, String def) {

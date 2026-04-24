@@ -35,37 +35,43 @@ package com.sonicle.webtop.mail.ai;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
- * A single AI menu entry. Leaves carry an action (mode + promptKey and
+ * A single AI menu entry. Leaves carry an action (mode + prompt map and
  * optionally an input spec); parents carry a non-empty children list.
  *
- * Prompts and labels are referenced by locale keys and resolved at
- * service-vars build time.
+ * Labels, prompts and input questions are inline language maps
+ * (ISO-639 code → localized string) resolved against the user's locale
+ * at service-vars build time and at AIPrompt dispatch time.
  */
 public final class AIMenuItem {
 
 	private final String id;
-	private final String labelKey;
+	private final Map<String, String> label;
 	private final AIMenuMode mode;
 	private final boolean source;
-	private final String promptKey;
+	private final Map<String, String> prompt;
 	private final AIMenuInputSpec input;
 	private final List<AIMenuItem> children;
 
 	public AIMenuItem(
 			String id,
-			String labelKey,
+			Map<String, String> label,
 			AIMenuMode mode,
 			boolean source,
-			String promptKey,
+			Map<String, String> prompt,
 			AIMenuInputSpec input,
 			List<AIMenuItem> children) {
 		this.id = id;
-		this.labelKey = labelKey;
+		this.label = label == null
+				? Collections.<String, String>emptyMap()
+				: Collections.unmodifiableMap(label);
 		this.mode = mode;
 		this.source = source;
-		this.promptKey = promptKey;
+		this.prompt = prompt == null
+				? Collections.<String, String>emptyMap()
+				: Collections.unmodifiableMap(prompt);
 		this.input = input;
 		this.children = children == null
 				? Collections.<AIMenuItem>emptyList()
@@ -73,10 +79,10 @@ public final class AIMenuItem {
 	}
 
 	public String getId() { return id; }
-	public String getLabelKey() { return labelKey; }
+	public Map<String, String> getLabel() { return label; }
 	public AIMenuMode getMode() { return mode; }
 	public boolean isSource() { return source; }
-	public String getPromptKey() { return promptKey; }
+	public Map<String, String> getPrompt() { return prompt; }
 	public AIMenuInputSpec getInput() { return input; }
 	public List<AIMenuItem> getChildren() { return children; }
 

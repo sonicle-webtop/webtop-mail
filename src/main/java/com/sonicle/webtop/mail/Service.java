@@ -4805,7 +4805,7 @@ public class Service extends BaseService {
 				return;
 			}
 			AIMenuItem item = aiMenuConfig.findById(actionId);
-			if (item == null || item.getPromptKey() == null) {
+			if (item == null || item.getPrompt() == null || item.getPrompt().isEmpty()) {
 				new JsonResult(false, "Unknown AI action").printTo(out);
 				return;
 			}
@@ -4816,19 +4816,20 @@ public class Service extends BaseService {
 			}
 			if (inSpec == null) rawInput = "";
 
-			String template = lookupResource(item.getPromptKey());
+			String userLang = environment.getProfile().getLocale().getLanguage();
+			String template = aiMenuConfig.resolve(item.getPrompt(), userLang);
 			if (template == null) {
-				Service.logger.error("AI prompt resource key '{}' not found", item.getPromptKey());
+				Service.logger.error("AI prompt for action '{}' has no entry for language '{}' or default", item.getId(), userLang);
 				new JsonResult(false, "AI prompt not found").printTo(out);
 				return;
 			}
 			String renderedTask = AIPromptBuilder.renderUserInputTemplate(
 					template, rawInput, ss.getAIMenuUserInputMaxChars());
 			if ("html".equalsIgnoreCase(format)) {
-				String hintKey = (item.getMode() == AIMenuMode.REPLY)
-						? "ai.menu.format.html.reply.hint"
-						: "ai.menu.format.html.hint";
-				String hint = lookupResource(hintKey);
+				Map<String, String> hintMap = (item.getMode() == AIMenuMode.REPLY)
+						? aiMenuConfig.getHtmlReplyFormatHint()
+						: aiMenuConfig.getHtmlFormatHint();
+				String hint = aiMenuConfig.resolve(hintMap, userLang);
 				if (!StringUtils.isBlank(hint)) renderedTask = renderedTask + "\n\n" + hint;
 			}
 
@@ -10015,28 +10016,32 @@ public class Service extends BaseService {
 	
 	
 	private Map<String, Object> buildClientAIMenu(AIMenuConfig cfg) {
+		String userLang = environment.getProfile().getLocale().getLanguage();
+		String dialogTitle = cfg.resolve(cfg.getDialogTitle(), userLang);
 		Map<String, Object> root = new LinkedHashMap<>();
 		List<Map<String, Object>> items = new ArrayList<>();
-		for (AIMenuItem it : cfg.getItems()) items.add(buildClientAIMenuItem(it));
+		for (AIMenuItem it : cfg.getItems()) items.add(buildClientAIMenuItem(cfg, userLang, dialogTitle, it));
 		root.put("items", items);
 		return root;
 	}
 
-	private Map<String, Object> buildClientAIMenuItem(AIMenuItem it) {
+	private Map<String, Object> buildClientAIMenuItem(AIMenuConfig cfg, String userLang, String dialogTitle, AIMenuItem it) {
 		Map<String, Object> o = new LinkedHashMap<>();
 		o.put("id", it.getId());
-		o.put("label", lookupResource(it.getLabelKey()));
+		String label = cfg.resolve(it.getLabel(), userLang);
+		o.put("label", label != null ? label : it.getId());
 		if (it.isGroup()) {
 			List<Map<String, Object>> kids = new ArrayList<>();
-			for (AIMenuItem c : it.getChildren()) kids.add(buildClientAIMenuItem(c));
+			for (AIMenuItem c : it.getChildren()) kids.add(buildClientAIMenuItem(cfg, userLang, dialogTitle, c));
 			o.put("children", kids);
 		} else {
 			o.put("mode", it.getMode() == AIMenuMode.REPLY ? "reply" : "show");
 			AIMenuInputSpec in = it.getInput();
 			if (in != null) {
 				Map<String, Object> ino = new LinkedHashMap<>();
-				if (in.getTitleKey() != null) ino.put("title", lookupResource(in.getTitleKey()));
-				if (in.getQuestionKey() != null) ino.put("question", lookupResource(in.getQuestionKey()));
+				if (dialogTitle != null) ino.put("title", dialogTitle);
+				String question = cfg.resolve(in.getQuestion(), userLang);
+				if (question != null) ino.put("question", question);
 				ino.put("multiline", in.isMultiline());
 				ino.put("required", in.isRequired());
 				o.put("input", ino);

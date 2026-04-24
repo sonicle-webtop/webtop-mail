@@ -33,22 +33,24 @@
  */
 package com.sonicle.webtop.mail.ai;
 
+import java.util.Collections;
+import java.util.Map;
+
 public final class AIMenuInputSpec {
 
-	private final String titleKey;
-	private final String questionKey;
+	private final Map<String, String> question;
 	private final boolean multiline;
 	private final boolean required;
 
-	public AIMenuInputSpec(String titleKey, String questionKey, boolean multiline, boolean required) {
-		this.titleKey = titleKey;
-		this.questionKey = questionKey;
+	public AIMenuInputSpec(Map<String, String> question, boolean multiline, boolean required) {
+		this.question = question == null
+				? Collections.<String, String>emptyMap()
+				: Collections.unmodifiableMap(question);
 		this.multiline = multiline;
 		this.required = required;
 	}
 
-	public String getTitleKey() { return titleKey; }
-	public String getQuestionKey() { return questionKey; }
+	public Map<String, String> getQuestion() { return question; }
 	public boolean isMultiline() { return multiline; }
 	public boolean isRequired() { return required; }
 }
