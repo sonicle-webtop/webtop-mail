@@ -79,6 +79,7 @@ import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.CoreUserSettings;
 import com.sonicle.webtop.core.app.DocEditorManager;
 import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.AIUsageManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopSession;
 import com.sonicle.webtop.core.app.WebTopSession.UploadedFile;
@@ -126,6 +127,7 @@ import java.net.URI;
 import java.sql.*;
 import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.text.NumberFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -166,6 +168,7 @@ import com.sonicle.webtop.contacts.model.ContactQuery;
 import com.sonicle.webtop.core.ai.AIManager;
 import com.sonicle.webtop.core.ai.AIMailContentReducer;
 import com.sonicle.webtop.core.ai.AIPromptBuilder;
+import com.sonicle.webtop.core.ai.AIQuotaExceededException;
 import com.sonicle.webtop.core.ai.AIRequestConfig;
 import com.sonicle.webtop.mail.ai.AIMenuConfig;
 import com.sonicle.webtop.mail.ai.AIMenuInputSpec;
@@ -4853,12 +4856,39 @@ public class Service extends BaseService {
 			String prompt = AIPromptBuilder.buildEmailAnalysisPrompt(renderedTask, content);
 
 			AIManager aim = getWts().getAIManager();
-			AIRequestConfig cfg = AIRequestConfig.builder().outputFormat(format).build();
+			AIRequestConfig cfg = AIRequestConfig.builder()
+					.outputFormat(format)
+					.serviceId(SERVICE_ID)
+					.operation(item.getId())
+					.build();
+			AIUsageManager usageMgr = WT.getAIUsageManager();
+			if (usageMgr != null) usageMgr.enforceQuota(getEnv().getProfile().getId());
 			String answer = aim.prompt(prompt, cfg);
 			new JsonResult(answer).printTo(out, false);
+		} catch (AIQuotaExceededException qex) {
+			new JsonResult(false, localizeQuotaMessage(qex)).printTo(out);
 		} catch (Throwable t) {
 			new JsonResult(t).printTo(out);
 			Service.logger.error("Exception", t);
+		}
+	}
+
+	/**
+	 * Renders {@link AIQuotaExceededException} via the core locale bundle
+	 * using the active user's locale, with token counts formatted in that
+	 * locale (grouping separators etc.). Falls back to the exception's
+	 * built-in English message if the resource lookup fails for any reason.
+	 */
+	private String localizeQuotaMessage(AIQuotaExceededException qex) {
+		try {
+			Locale loc = getEnv().getProfile().getLocale();
+			NumberFormat nf = NumberFormat.getIntegerInstance(loc);
+			return WT.lookupFormattedResource(CoreManifest.ID, loc,
+					AIQuotaExceededException.I18N_KEY,
+					nf.format(qex.getUsedTokens()),
+					nf.format(qex.getMaxTokens()));
+		} catch (Throwable t) {
+			return qex.getMessage();
 		}
 	}
 

@@ -128,7 +128,7 @@ Ext.define('Sonicle.webtop.mail.ux.AIMessageMenu', {
 			params: params,
 			callback: function(success, json) {
 				if (!success) {
-					cb(false, 'Request error', params);
+					cb(false, json.message, params);
 					return;
 				}
 				if (json.success) cb(true, json.data, params);
