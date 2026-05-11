@@ -163,12 +163,14 @@ public final class AIMenuConfig {
 
 		AIMenuMode mode = null;
 		boolean source = false;
+		int upcomingEventsDays = 0;
 		Map<String, String> prompt = null;
 		AIMenuInputSpec input = null;
 
 		if (children.isEmpty()) {
 			mode = AIMenuMode.parse(getString(o, "mode", null), AIMenuMode.SHOW);
 			source = getBoolean(o, "source", false);
+			upcomingEventsDays = Math.max(0, getInt(o, "upcomingEventsDays", 0));
 			prompt = parseLangMap(o, "prompt", true, "leaf '" + id + "'");
 			if (o.has("input") && o.get("input").isJsonObject()) {
 				JsonObject ino = o.getAsJsonObject("input");
@@ -179,7 +181,7 @@ public final class AIMenuConfig {
 			}
 		}
 
-		AIMenuItem item = new AIMenuItem(id, label, mode, source, prompt, input, children);
+		AIMenuItem item = new AIMenuItem(id, label, mode, source, upcomingEventsDays, prompt, input, children);
 		if (idx.put(id, item) != null) {
 			throw new IOException("ai-menu.json: duplicate id '" + id + "'");
 		}
@@ -218,5 +220,11 @@ public final class AIMenuConfig {
 		JsonElement e = o.get(key);
 		if (e == null || e.isJsonNull()) return def;
 		return e.getAsBoolean();
+	}
+
+	private static int getInt(JsonObject o, String key, int def) {
+		JsonElement e = o.get(key);
+		if (e == null || e.isJsonNull()) return def;
+		return e.getAsInt();
 	}
 }

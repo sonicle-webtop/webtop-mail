@@ -71,6 +71,11 @@ import com.sonicle.security.Principal;
 import com.sonicle.webtop.calendar.model.GetEventScope;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
+import com.sonicle.webtop.calendar.model.EventLookupInstance;
+import com.sonicle.commons.time.DateTimeWindow;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import com.sonicle.webtop.contacts.IContactsManager;
 import com.sonicle.webtop.contacts.io.ContactInput;
 import com.sonicle.webtop.contacts.io.VCardInput;
@@ -4853,6 +4858,11 @@ public class Service extends BaseService {
 				m.setPeek(false);
 			}
 
+			if (item.getUpcomingEventsDays() > 0) {
+				String eventsBlock = buildUpcomingEventsBlock(item.getUpcomingEventsDays());
+				if (!StringUtils.isBlank(eventsBlock)) content = content + "\n\n" + eventsBlock;
+			}
+
 			String prompt = AIPromptBuilder.buildEmailAnalysisPrompt(renderedTask, content);
 
 			AIManager aim = getWts().getAIManager();
@@ -4889,6 +4899,61 @@ public class Service extends BaseService {
 					nf.format(qex.getMaxTokens()));
 		} catch (Throwable t) {
 			return qex.getMessage();
+		}
+	}
+
+	private String buildUpcomingEventsBlock(int days) {
+		try {
+			ICalendarManager cm = (ICalendarManager) WT.getServiceManager(
+					"com.sonicle.webtop.calendar", true, environment.getProfileId());
+			if (cm == null) return "";
+			Set<Integer> calIds = cm.listMyCalendarIds();
+			if (calIds == null || calIds.isEmpty()) return "";
+			DateTimeZone tz = environment.getProfile().getTimeZone();
+			Locale loc = environment.getProfile().getLocale();
+			DateTime now = DateTime.now(tz);
+			DateTime to = now.plusDays(days);
+			DateTimeWindow window = DateTimeWindow.builder().with(now, to).build();
+			List<EventLookupInstance> instances = cm.listEventInstances(calIds, window, (String) null, true, tz);
+
+			DateTimeFormatter dtf = DateTimeFormat.forPattern("EEEE dd/MM/yy HH:mm").withLocale(loc).withZone(tz);
+			DateTimeFormatter df = DateTimeFormat.forPattern("EEEE dd/MM/yy").withLocale(loc).withZone(tz);
+
+			StringBuilder sb = new StringBuilder();
+			sb.append("Now is ").append(dtf.print(now)).append(" (timezone ").append(tz.getID()).append(").\n");
+			sb.append("Day labels for the upcoming ").append(days).append(" days (authoritative — every date you mention MUST use the weekday printed here, never recompute):\n");
+			DateTime cursor = now.withTimeAtStartOfDay();
+			for (int i = 0; i <= days; i++) {
+				sb.append("- ").append(df.print(cursor));
+				if (i == 0) sb.append(" (today)");
+				sb.append("\n");
+				cursor = cursor.plusDays(1);
+			}
+			sb.append("Upcoming calendar events in this window:\n");
+			if (instances == null || instances.isEmpty()) {
+				sb.append("(none)");
+				return sb.toString();
+			}
+			for (EventLookupInstance ev : instances) {
+				DateTime s = ev.getStart();
+				DateTime e = ev.getEnd();
+				boolean allDay = Boolean.TRUE.equals(ev.getAllDay());
+				sb.append("- ");
+				if (s != null) sb.append(allDay ? df.print(s) : dtf.print(s));
+				if (e != null) {
+					sb.append(" → ");
+					sb.append(allDay ? df.print(e) : dtf.print(e));
+				}
+				String title = StringUtils.defaultString(ev.getTitle());
+				sb.append(" — ").append(title);
+				String location = ev.getLocation();
+				if (!StringUtils.isBlank(location)) sb.append(" @ ").append(location);
+				sb.append("\n");
+			}
+			return sb.toString();
+		} catch (Throwable t) {
+			Service.logger.warn("Failed to fetch upcoming calendar events for AI prompt", t);
+			return "";
 		}
 	}
 

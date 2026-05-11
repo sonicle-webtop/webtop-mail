@@ -6,8 +6,8 @@
   },
   "formatHints": {
     "html": {
-      "en": "Use semantic HTML for readability (paragraphs, headings, lists, bold, italic, tables) as appropriate to the actual substance of the answer. Do not include any hyperlinks or <a> tags. Do not add any meta heading, label, title, caption, or preamble that describes or classifies what you are producing (for example \"Email Summary\", \"Reply Draft\", \"Bozza di Risposta\", \"Translation\", \"Tone Analysis\", \"Trustworthiness Check\"); output only the actual content itself. If a heading is genuinely useful, it must describe the subject matter of the content, not the task or output type.",
-      "it": "Usa HTML semantico per la leggibilità (paragrafi, intestazioni, elenchi, grassetto, corsivo, tabelle) in modo adeguato al contenuto effettivo della risposta. Non includere alcun link o tag <a>. Non aggiungere alcuna intestazione, etichetta, titolo, didascalia o preambolo che descriva o classifichi ciò che stai producendo (per esempio \"Riassunto Email\", \"Bozza di Risposta\", \"Traduzione\", \"Analisi del Tono\", \"Verifica Affidabilità\"); produci solo il contenuto effettivo. Se un'intestazione è davvero utile, deve descrivere l'argomento del contenuto, non l'azione o il tipo di output."
+      "en": "Output only raw HTML — never wrap the result in code fences (```html, ```, or any other fenced block) and never wrap it in quotes. The very first character of your output MUST be the opening angle bracket of the first content element (for example <p>, <h2>, <ul>, <table>); never start with plain text, a phrase, a sentence, a title, or any framing line before the first HTML tag. Do not produce ANY introductory line that names, summarizes, classifies, or announces what you are about to output, regardless of how short or innocuous it looks (forbidden examples — non-exhaustive: \"Email Summary\", \"Email Analysis\", \"Analysis of the email thread\", \"Thread Status\", \"Reply Draft\", \"Translation\", \"Tone Analysis\", \"Trustworthiness Check\", \"Here is …\", \"The following is …\"). Begin immediately with the substantive content. Use semantic HTML for readability (paragraphs, headings, lists, bold, italic, tables) as appropriate to the actual substance of the answer. Do not include any hyperlinks or <a> tags. If a heading is genuinely useful inside the answer, it must describe the subject matter of the content, not the task or output type.",
+      "it": "Produci solo HTML grezzo — non racchiudere mai il risultato in blocchi di codice (```html, ```, o qualunque altro blocco delimitato) e non racchiuderlo tra virgolette. Il primissimo carattere del tuo output DEVE essere la parentesi angolare di apertura del primo elemento di contenuto (per esempio <p>, <h2>, <ul>, <table>); non iniziare mai con testo libero, una frase, un titolo o una qualunque riga introduttiva prima del primo tag HTML. Non produrre ALCUNA riga introduttiva che nomini, riassuma, classifichi o annunci ciò che stai per produrre, indipendentemente da quanto breve o innocua sembri (esempi proibiti — non esaustivi: \"Riassunto Email\", \"Analisi Email\", \"Analisi discussione email\", \"Stato della discussione\", \"Bozza di Risposta\", \"Traduzione\", \"Analisi del Tono\", \"Verifica Affidabilità\", \"Ecco …\", \"Di seguito …\"). Inizia immediatamente con il contenuto effettivo. Usa HTML semantico per la leggibilità (paragrafi, intestazioni, elenchi, grassetto, corsivo, tabelle) in modo adeguato al contenuto effettivo della risposta. Non includere alcun link o tag <a>. Se un'intestazione è davvero utile all'interno della risposta, deve descrivere l'argomento del contenuto, non l'azione o il tipo di output."
     },
     "htmlReply": {
       "en": "Your output is going to be inserted directly into the reply composer and sent as the email body, so produce only the message body itself, in HTML. Do not include any hyperlinks or <a> tags. Do not add any heading, title, label, preamble, sign-off annotation, or meta description such as \"Reply\", \"Draft\", \"Bozza di Risposta\". Start with the greeting (or the first line of the actual message if no greeting is appropriate) and end with the closing line the sender would actually send. Do not wrap the result in quotes or code blocks.",
@@ -16,46 +16,208 @@
   },
   "items": [
     {
-      "id": "summarize",
+      "id": "analyze",
       "label": {
-        "en": "Summarize content",
-        "it": "Riassumi il contenuto"
-      },
-      "mode": "show",
-      "source": false,
-      "prompt": {
-        "en": "Summarize the content of this email",
-        "it": "Riassumi il contenuto di questa email"
-      }
-    },
-    {
-      "id": "help-reply",
-      "label": {
-        "en": "Help me reply",
-        "it": "Aiutami a rispondere"
-      },
-      "mode": "reply",
-      "source": false,
-      "prompt": {
-        "en": "Help me reply to this email, taking into account the original message and these ideas of what I would like to say:\n\n{0}\n\n",
-        "it": "Aiutami a rispondere a questa email, prendendo in considerazione la mail originale e queste idee di cosa vorrei dire:\n\n{0}\n\n"
-      },
-      "input": {
-        "question": {
-          "en": "Briefly, what would you like to say?",
-          "it": "Brevemente cosa vorresti dire?"
-        },
-        "multiline": true,
-        "required": true
-      }
-    },
-    {
-      "id": "quick-reply",
-      "label": {
-        "en": "Quick reply",
-        "it": "Risposta veloce"
+        "en": "Analyze",
+        "it": "Analizza"
       },
       "children": [
+        {
+          "id": "summarize",
+          "label": {
+            "en": "Summarize content",
+            "it": "Riassumi il contenuto"
+          },
+          "mode": "show",
+          "source": false,
+          "prompt": {
+            "en": "Summarize the content of this email",
+            "it": "Riassumi il contenuto di questa email"
+          }
+        },
+        {
+          "id": "thread-status",
+          "label": {
+            "en": "Thread status",
+            "it": "Stato della discussione"
+          },
+          "mode": "show",
+          "source": true,
+          "upcomingEventsDays": 14,
+          "prompt": {
+            "en": "Summarize the current status of this email thread under three distinct sections:\n\n1) Agreed: points, decisions, or actions that have been clearly accepted or confirmed by the participants involved.\n2) Open: questions, requests, proposals, or decisions that have been raised but not yet resolved or answered.\n3) My commitments: things that I (the recipient of this mailbox, identifiable from the To/Cc headers and from how I am addressed in the body) have personally agreed to do, deliver, or follow up on.\n\nAfter the three sections, add a final \"Conflicts\" line comparing my commitments against the upcoming calendar events provided after the email content. A conflict exists ONLY when the commitment's time range actually overlaps a calendar event's time range — that is, the commitment starts before the event ends AND the commitment ends after the event starts. Same day with non-overlapping times is NOT a conflict. If the commitment has no specific time (only a date or no date at all), it is NOT a conflict regardless of what is on the calendar that day. Be direct, no commentary:\n- If no commitment time-range overlaps any event: \"Conflicts: none\".\n- If at least one overlap exists: \"⚠ Conflicts:\" followed by one short bullet per overlap in the form \"<thread commitment with its time> ↔ <calendar event title> (<event date and time range>)\". Show the ⚠ icon only when at least one real time-range overlap exists; never show it otherwise.\n\nFor each item in the three sections, cite a concrete cue from the message (for example: who said what, in which reply) so the status is verifiable. If a section has no items, write \"None\" rather than inventing content. Do not speculate beyond what the messages and the calendar events actually say.",
+            "it": "Riassumi lo stato attuale di questa discussione email in tre sezioni distinte:\n\n1) Concordato: punti, decisioni o azioni che sono stati chiaramente accettati o confermati dai partecipanti coinvolti.\n2) Aperto: domande, richieste, proposte o decisioni che sono state sollevate ma non ancora risolte o ricevuto risposta.\n3) Miei impegni: cose che io (il destinatario di questa casella, identificabile dagli header To/Cc e dal modo in cui vengo interpellato nel corpo) ho personalmente accettato di fare, consegnare o seguire.\n\nDopo le tre sezioni, aggiungi una riga finale \"Conflitti\" confrontando i miei impegni con i prossimi eventi del calendario forniti dopo il contenuto della email. Esiste un conflitto SOLO quando l'intervallo orario dell'impegno si sovrappone effettivamente all'intervallo orario di un evento di calendario — cioè l'impegno inizia prima che l'evento finisca E l'impegno finisce dopo che l'evento inizia. Lo stesso giorno con orari non sovrapposti NON è un conflitto. Se l'impegno non ha un orario specifico (solo una data o nessuna data), NON è un conflitto, indipendentemente da ciò che è in calendario quel giorno. Sii diretto, senza commenti:\n- Se nessun intervallo orario di impegno si sovrappone ad alcun evento: \"Conflitti: nessuno\".\n- Se esiste almeno una sovrapposizione: \"⚠ Conflitti:\" seguito da un breve elenco puntato con una voce per ogni sovrapposizione nel formato \"<impegno nella discussione con il suo orario> ↔ <titolo evento calendario> (<data e fascia oraria evento>)\". Mostra l'icona ⚠ solo quando esiste almeno una sovrapposizione oraria reale; non mostrarla in caso contrario.\n\nPer ogni voce delle tre sezioni cita un riferimento concreto al messaggio (per esempio: chi ha detto cosa, in quale risposta) in modo che lo stato sia verificabile. Se una sezione non ha voci, scrivi \"Nessuno\" invece di inventare contenuti. Non fare ipotesi oltre quanto realmente affermato nei messaggi e negli eventi di calendario."
+          }
+        },
+        {
+          "id": "check-availability",
+          "label": {
+            "en": "Check my availability",
+            "it": "Verifica la mia disponibilità"
+          },
+          "mode": "show",
+          "source": false,
+          "upcomingEventsDays": 14,
+          "prompt": {
+            "en": "Cross-check what this email is asking for, time-wise, against my upcoming calendar (provided after the email content) and propose up to 3 free slots when I would actually be available.\n\nDetermine the slot duration in this priority order:\n1) If the user-provided duration below is non-empty, use it (parse expressions like \"30 min\", \"45'\", \"1h\", \"1 hour 30\", etc.).\n2) Otherwise, infer the duration from the email itself (e.g. \"30-minute call\", \"hour-long meeting\").\n3) If neither is available, default to 30 minutes.\n\nUser-provided duration (may be blank): {0}\n\nFreeness rule: a slot is FREE only if its time range does NOT overlap any upcoming calendar event. Strict overlap rule: slot.start < event.end AND slot.end > event.start. Same day, non-overlapping times are fine.\n\nWindow rules:\n- Restrict slots to typical working hours: Mon–Fri, 09:00–18:00, in my timezone (the timezone shown in the upcoming events block). Avoid lunch 12:30–14:00.\n- All slots must start strictly in the future (after \"Now is …\" shown at the top of the upcoming events block) and end within the calendar window provided.\n- Prefer 3 different days when possible; order slots chronologically.\n- If the email proposes specific candidate times, prefer slots close to those candidates that are actually free.\n\nWeekday names: the upcoming events block contains a \"Day labels\" section listing every date in the window with its authoritative weekday. EVERY date you propose must come from that list. NEVER recompute, guess, or shift weekday names yourself — copy the weekday and date verbatim from the day-labels list.\n\nOutput shape (HTML, in the language of the email):\n1) ONE short <p> as the very first element, summarizing what was requested and the resolved slot duration, then introducing the list — for example: \"For your <briefly-rephrased request, e.g. 'half-hour call to discuss the proposal'> (duration: <X>), here are possible free slots in my calendar:\". If the email did not propose a specific meeting, phrase the intro neutrally (\"For a meeting of duration X, here are …\"). Do NOT add a title or heading; the <p> is the only intro.\n2) Immediately after, ONE <ul> with up to 3 <li> items (fewer only if the window genuinely doesn't contain 3 fitting slots), each containing: weekday name (matching the day-labels list exactly), full date, and time range — ready to paste into a reply.\n3) Nothing after the list — no closing line, no alternatives, no commentary.",
+            "it": "Confronta ciò che questa email sta chiedendo, dal punto di vista temporale, con il mio calendario dei prossimi giorni (fornito dopo il contenuto della email) e proponi fino a 3 fasce libere in cui sarei effettivamente disponibile.\n\nDetermina la durata della fascia in questo ordine di priorità:\n1) Se la durata indicata dall'utente qui sotto non è vuota, usala (interpreta espressioni come \"30 min\", \"45'\", \"1h\", \"1 ora e 30\", ecc.).\n2) Altrimenti deducila dalla email stessa (per esempio \"chiamata di 30 minuti\", \"riunione di un'ora\").\n3) Se nessuna delle due è disponibile, usa 30 minuti come default.\n\nDurata indicata dall'utente (può essere vuota): {0}\n\nRegola di libertà: una fascia è LIBERA solo se il suo intervallo orario NON si sovrappone ad alcun evento di calendario tra quelli forniti. Regola di sovrapposizione stretta: fascia.inizio < evento.fine E fascia.fine > evento.inizio. Lo stesso giorno con orari non sovrapposti va bene.\n\nRegole sulla finestra:\n- Limita le fasce a orari di lavoro tipici: lun–ven, 09:00–18:00, nel mio fuso orario (quello indicato nel blocco dei prossimi eventi). Evita la pausa pranzo 12:30–14:00.\n- Tutte le fasce devono iniziare strettamente nel futuro (dopo l'orario \"Now is …\" indicato in cima al blocco dei prossimi eventi) e terminare entro la finestra di calendario fornita.\n- Quando possibile preferisci 3 giorni diversi; ordina le fasce cronologicamente.\n- Se la email propone orari candidati specifici, preferisci fasce vicine a quei candidati che siano effettivamente libere.\n\nNomi dei giorni della settimana: il blocco dei prossimi eventi contiene una sezione \"Day labels\" che elenca ogni data della finestra con il rispettivo giorno della settimana autoritativo. OGNI data che proponi deve provenire da quell'elenco. NON ricalcolare, indovinare o spostare i nomi dei giorni — copia giorno della settimana e data alla lettera dall'elenco \"Day labels\".\n\nForma dell'output (HTML, nella lingua della email):\n1) UN breve <p> come primissimo elemento, che riassuma cosa è stato richiesto e la durata risolta della fascia, e introduca l'elenco — per esempio: \"Per la tua richiesta <riformulata brevemente, es. 'chiamata di mezz'ora per discutere la proposta'> (durata: <X>), ecco le possibili fasce libere nel mio calendario:\". Se la email non propone una riunione specifica, formula l'introduzione in modo neutrale (\"Per una riunione di durata X, ecco …\"). NON aggiungere titoli o intestazioni; il <p> è l'unica introduzione.\n2) Subito dopo, UNA <ul> con fino a 3 <li> (meno solo se la finestra non ne contiene davvero 3 adatte), ciascuno contenente: nome del giorno della settimana (esattamente come nell'elenco \"Day labels\"), data completa e intervallo orario — pronti da incollare in una risposta.\n3) Nulla dopo l'elenco — nessuna riga di chiusura, nessuna alternativa, nessun commento."
+          },
+          "input": {
+            "question": {
+              "en": "Optional meeting duration (e.g. 30 min, 1 hour). Leave blank to use what the sender proposes.",
+              "it": "Durata opzionale dell'incontro (es. 30 min, 1 ora). Lascia vuoto per usare quanto propone il mittente."
+            },
+            "multiline": false,
+            "required": false
+          }
+        },
+        {
+          "id": "analyze-tone",
+          "label": {
+            "en": "Analyze tone",
+            "it": "Analizza il tono"
+          },
+          "mode": "show",
+          "source": false,
+          "prompt": {
+            "en": "Analyze the tone of this email",
+            "it": "Analizza il tono di questa email"
+          }
+        },
+        {
+          "id": "classify-urgency",
+          "label": {
+            "en": "Classify urgency",
+            "it": "Classifica l'urgenza"
+          },
+          "mode": "show",
+          "source": false,
+          "prompt": {
+            "en": "Classify the urgency of this email as exactly one of these categories: Urgent, Time-sensitive, Important, Informational, Promotional. State the chosen category first, then provide a brief justification (max 2 sentences) citing concrete signals from the email such as explicit deadlines, time references, sender role, and requested actions.",
+            "it": "Classifica l'urgenza di questa email scegliendo esattamente una tra queste categorie: Urgente, Tempo-dipendente, Importante, Informativa, Promozionale. Indica prima la categoria scelta, poi fornisci una breve motivazione (massimo 2 frasi) citando segnali concreti presenti nella email, come scadenze esplicite, riferimenti temporali, ruolo del mittente e azioni richieste."
+          }
+        },
+        {
+          "id": "suggest-disposition",
+          "label": {
+            "en": "Suggest disposition",
+            "it": "Suggerisci un'azione"
+          },
+          "mode": "show",
+          "source": true,
+          "prompt": {
+            "en": "Suggest the best disposition for this email as exactly one of these categories: Reply, Follow-up, Delegate, Archive, Delete, Unsubscribe, Spam/Phishing. State the chosen category first, then provide a brief justification (max 2 sentences) citing concrete signals such as sender identity, authentication headers, explicit asks, deadlines, commercial or list-management markers, and any suspicious or deceptive indicators. Choose Spam/Phishing only when you have clear evidence of unsolicited bulk mail or an attempt to deceive the recipient.",
+            "it": "Suggerisci la migliore azione da intraprendere su questa email scegliendo esattamente una tra queste categorie: Rispondi, Da seguire, Delega, Archivia, Elimina, Disiscrivi, Spam/Phishing. Indica prima la categoria scelta, poi fornisci una breve motivazione (massimo 2 frasi) citando segnali concreti come l'identità del mittente, gli header di autenticazione, le richieste esplicite, le scadenze, i marcatori commerciali o di gestione liste, ed eventuali indicatori sospetti o ingannevoli. Scegli Spam/Phishing solo in presenza di evidenze chiare di posta massiva non richiesta o di tentativo di inganno verso il destinatario."
+          }
+        }
+      ]
+    },
+    {
+      "id": "explain-simplify",
+      "label": {
+        "en": "Explain / Simplify",
+        "it": "Spiega / Semplifica"
+      },
+      "children": [
+        {
+          "id": "explain-plain",
+          "label": {
+            "en": "Explain in plain language",
+            "it": "Spiega in linguaggio semplice"
+          },
+          "mode": "show",
+          "source": false,
+          "prompt": {
+            "en": "Explain the content of this email in plain, accessible language, as if I were not familiar with the domain or jargon involved.\n\nDomain or jargon I want demystified (may be blank for general plain-language treatment): {0}\n\nDefine or rephrase every technical, domain-specific, or insider term the moment it appears. Use short, clear sentences. Preserve every factual element (numbers, dates, names, amounts, deadlines, party names) accurately — do not drop substance for the sake of simplicity. Where the email itself omits context that a non-expert would need, briefly add the missing context only when it can be inferred safely from the email; otherwise flag it as missing rather than guessing. Stay in the same language as the email.",
+            "it": "Spiega il contenuto di questa email in un linguaggio piano e accessibile, come se non avessi familiarità con il dominio o il gergo coinvolto.\n\nDominio o gergo da chiarire (può essere vuoto per un trattamento di linguaggio piano generale): {0}\n\nDefinisci o riformula ogni termine tecnico, di dominio o da insider non appena appare. Usa frasi brevi e chiare. Preserva con precisione ogni elemento fattuale (numeri, date, nomi, importi, scadenze, nomi delle parti) — non eliminare sostanza in nome della semplicità. Quando la email omette un contesto che un non esperto avrebbe bisogno, aggiungi brevemente il contesto mancante solo se può essere dedotto in sicurezza dalla email stessa; altrimenti segnalalo come mancante invece di indovinare. Resta nella stessa lingua della email."
+          },
+          "input": {
+            "question": {
+              "en": "Domain or jargon you want demystified (e.g. finance, law, software). Leave blank for general plain-language.",
+              "it": "Dominio o gergo da chiarire (es. finanza, legale, informatica). Lascia vuoto per un linguaggio piano generale."
+            },
+            "multiline": false,
+            "required": false
+          }
+        },
+        {
+          "id": "define-jargon",
+          "label": {
+            "en": "Define jargon / acronyms",
+            "it": "Definisci gergo / acronimi"
+          },
+          "mode": "show",
+          "source": false,
+          "prompt": {
+            "en": "List every piece of jargon, acronym, abbreviation, technical term, or domain-specific expression found in this email, with a concise definition for each. For each entry include:\n- the term as it appears in the email\n- for acronyms and abbreviations, the full expansion\n- a brief plain-language definition (1–2 sentences)\n- if relevant, the field or domain the term comes from (e.g. finance, legal, software, medical, marketing)\n\nOutput as a single unordered HTML list, one <li> per term. Cover only terms a non-specialist reader would plausibly not know — skip everyday vocabulary, common idioms, and ordinary business words. If a term is genuinely ambiguous (multiple plausible expansions, or the domain is not clear from the email's context), say so explicitly rather than guessing a single meaning. If the email contains no jargon worth defining, state that in one short sentence and produce no list. Stay in the same language as the email.",
+            "it": "Elenca ogni termine gergale, acronimo, abbreviazione, termine tecnico o espressione di dominio presente in questa email, con una definizione concisa per ognuno. Per ogni voce includi:\n- il termine così come compare nella email\n- per gli acronimi e le abbreviazioni, lo scioglimento completo\n- una breve definizione in linguaggio piano (1–2 frasi)\n- se rilevante, l'ambito o il dominio da cui proviene il termine (es. finanza, legale, informatica, medico, marketing)\n\nProduci una sola lista HTML puntata, un <li> per termine. Tratta solo termini che un lettore non specialista plausibilmente non conoscerebbe — salta il vocabolario quotidiano, i modi di dire comuni e le parole ordinarie del mondo del lavoro. Se un termine è genuinamente ambiguo (più scioglimenti plausibili, o il dominio non è chiaro dal contesto della email), dichiaralo esplicitamente invece di indovinare un significato. Se la email non contiene gergo che valga la pena definire, dichiaralo in una breve frase e non produrre alcuna lista. Resta nella stessa lingua della email."
+          }
+        },
+        {
+          "id": "real-ask",
+          "label": {
+            "en": "What is this really asking?",
+            "it": "Cosa sta davvero chiedendo?"
+          },
+          "mode": "show",
+          "source": false,
+          "prompt": {
+            "en": "Identify what this email is really asking — the actual underlying intent or request, beyond the literal phrasing, pleasantries, or framing. State it concisely (1–3 sentences) at the top, then briefly justify (max 2 sentences) by citing concrete signals from the email: explicit asks, implicit asks (questions, deadlines, framing), social or hierarchical pressure, what is left unsaid, and what the sender plausibly expects me to do or decide. If the email contains multiple distinct asks, list each one separately with its own justification. If there is genuinely no ask (purely informational, FYI, automated notification, marketing), state that explicitly. Do not soften, restate, or quote the literal text — name the underlying intent. Stay in the same language as the email.",
+            "it": "Identifica cosa sta veramente chiedendo questa email — l'intenzione o richiesta reale sottostante, al di là delle formulazioni letterali, dei convenevoli o dell'impostazione. Dichiarala in modo conciso (1–3 frasi) all'inizio, poi giustifica brevemente (massimo 2 frasi) citando segnali concreti dalla email: richieste esplicite, richieste implicite (domande, scadenze, impostazione), pressione sociale o gerarchica, ciò che non viene detto, e ciò che il mittente verosimilmente si aspetta che io faccia o decida. Se la email contiene più richieste distinte, elencale separatamente, ognuna con la propria motivazione. Se non c'è davvero alcuna richiesta (puramente informativa, FYI, notifica automatica, marketing), dichiaralo esplicitamente. Non addolcire, non ripetere e non citare il testo letterale — nomina l'intenzione sottostante. Resta nella stessa lingua della email."
+          }
+        }
+      ]
+    },
+    {
+      "id": "reply",
+      "label": {
+        "en": "Reply",
+        "it": "Rispondi"
+      },
+      "children": [
+        {
+          "id": "help-reply",
+          "label": {
+            "en": "Help me reply",
+            "it": "Aiutami a rispondere"
+          },
+          "mode": "reply",
+          "source": false,
+          "prompt": {
+            "en": "Help me reply to this email, taking into account the original message and these ideas of what I would like to say:\n\n{0}\n\n",
+            "it": "Aiutami a rispondere a questa email, prendendo in considerazione la mail originale e queste idee di cosa vorrei dire:\n\n{0}\n\n"
+          },
+          "input": {
+            "question": {
+              "en": "Briefly, what would you like to say?",
+              "it": "Brevemente cosa vorresti dire?"
+            },
+            "multiline": true,
+            "required": true
+          }
+        },
+        {
+          "id": "draft-decline-or-postpone",
+          "label": {
+            "en": "Decline or postpone with alternatives",
+            "it": "Rifiuta o rinvia con alternative"
+          },
+          "mode": "reply",
+          "source": false,
+          "upcomingEventsDays": 14,
+          "prompt": {
+            "en": "Draft a polite reply to this invitation that declines or postpones the originally proposed meeting and offers 2 or 3 alternative time slots that are actually free on my calendar.\n\nUse the upcoming calendar events provided after the email content to pick alternatives. A slot is FREE only if its time range does NOT overlap any upcoming event (strict rule: slot.start < event.end AND slot.end > event.start). Same day with non-overlapping times is fine.\n\nMeeting duration — pick in this priority order: 1) the user-provided duration below if non-empty (parse expressions like \"30 min\", \"1h\", \"1 hour 30\"); 2) the duration implied by the originally proposed time in the email (start–end), or stated explicitly (\"30-minute call\", \"hour-long meeting\"); 3) 30 minutes as a final default.\n\nAlternative slots: restrict to typical working hours (Mon–Fri, 09:00–18:00) in my timezone (shown in the upcoming events block); avoid lunch 12:30–14:00; all slots must start strictly in the future (after now) and end within the calendar window provided; prefer different days; order chronologically. If fewer than 2 fitting slots exist, propose only the ones that exist and acknowledge that briefly in the body.\n\nUser-provided reason or note (may be blank): {0}\n\nWrite the body in the language and tone of the original message. Keep it concise, polite, and natural — not formulaic. The body should: (a) acknowledge the invitation; (b) briefly state that the originally proposed time does not work — if the user-provided reason above is non-empty, weave it in naturally; if it is blank, keep the decline general and do NOT invent a specific excuse, illness, or whereabouts; (c) propose 2 or 3 alternatives clearly formatted (for example as a short bulleted list with weekday, date, and time range, ready to be confirmed); (d) end with a brief closing line the sender would naturally use.",
+            "it": "Componi una risposta cortese a questo invito che rifiuti o rinvii la riunione originariamente proposta e offra 2 o 3 fasce orarie alternative effettivamente libere sul mio calendario.\n\nUsa i prossimi eventi del calendario forniti dopo il contenuto della email per scegliere le alternative. Una fascia è LIBERA solo se il suo intervallo orario NON si sovrappone ad alcun evento (regola stretta: fascia.inizio < evento.fine E fascia.fine > evento.inizio). Lo stesso giorno con orari non sovrapposti va bene.\n\nDurata della riunione — scegli in questo ordine di priorità: 1) la durata indicata dall'utente qui sotto se non vuota (interpreta espressioni come \"30 min\", \"1h\", \"1 ora e 30\"); 2) la durata implicita nell'orario originariamente proposto nella email (inizio–fine), o dichiarata esplicitamente (\"chiamata di 30 minuti\", \"riunione di un'ora\"); 3) 30 minuti come default finale.\n\nFasce alternative: limitate a orari di lavoro tipici (lun–ven, 09:00–18:00) nel mio fuso orario (quello indicato nel blocco dei prossimi eventi); evita la pausa pranzo 12:30–14:00; tutte le fasce devono iniziare strettamente nel futuro (dopo adesso) e terminare entro la finestra di calendario fornita; preferisci giorni diversi; ordina cronologicamente. Se la finestra non contiene 2 fasce adatte, proponi solo quelle disponibili e accennalo brevemente nel corpo.\n\nMotivazione o nota fornita dall'utente (può essere vuota): {0}\n\nScrivi il corpo nella lingua e nel tono del messaggio originale. Sii conciso, cortese e naturale — non formulaico. Il corpo deve: (a) riconoscere l'invito; (b) dichiarare brevemente che l'orario originariamente proposto non funziona — se la motivazione qui sopra non è vuota, integrala in modo naturale; se è vuota, mantieni il rifiuto generico e NON inventare scuse specifiche, malattie o spostamenti; (c) proporre 2 o 3 alternative chiaramente formattate (per esempio come breve elenco puntato con giorno della settimana, data e fascia oraria, pronte da confermare); (d) chiudere con una breve riga finale che il mittente userebbe naturalmente."
+          },
+          "input": {
+            "question": {
+              "en": "Optional reason or note (e.g. \"travelling that week\"). Leave blank to keep the decline general.",
+              "it": "Motivazione o nota opzionale (es. \"in viaggio quella settimana\"). Lascia vuoto per mantenere il rifiuto generico."
+            },
+            "multiline": false,
+            "required": false
+          }
+        },
         {
           "id": "quick-reply-acknowledge",
           "label": {
@@ -111,56 +273,39 @@
       ]
     },
     {
-      "id": "analyze-tone",
+      "id": "extract",
       "label": {
-        "en": "Analyze tone",
-        "it": "Analizza il tono"
+        "en": "Extract",
+        "it": "Estrai"
       },
-      "mode": "show",
-      "source": false,
-      "prompt": {
-        "en": "Analyze the tone of this email",
-        "it": "Analizza il tono di questa email"
-      }
-    },
-    {
-      "id": "classify-urgency",
-      "label": {
-        "en": "Classify urgency",
-        "it": "Classifica l'urgenza"
-      },
-      "mode": "show",
-      "source": false,
-      "prompt": {
-        "en": "Classify the urgency of this email as exactly one of these categories: Urgent, Time-sensitive, Important, Informational, Promotional. State the chosen category first, then provide a brief justification (max 2 sentences) citing concrete signals from the email such as explicit deadlines, time references, sender role, and requested actions.",
-        "it": "Classifica l'urgenza di questa email scegliendo esattamente una tra queste categorie: Urgente, Tempo-dipendente, Importante, Informativa, Promozionale. Indica prima la categoria scelta, poi fornisci una breve motivazione (massimo 2 frasi) citando segnali concreti presenti nella email, come scadenze esplicite, riferimenti temporali, ruolo del mittente e azioni richieste."
-      }
-    },
-    {
-      "id": "suggest-disposition",
-      "label": {
-        "en": "Suggest disposition",
-        "it": "Suggerisci un'azione"
-      },
-      "mode": "show",
-      "source": true,
-      "prompt": {
-        "en": "Suggest the best disposition for this email as exactly one of these categories: Reply, Follow-up, Delegate, Archive, Delete, Unsubscribe, Spam/Phishing. State the chosen category first, then provide a brief justification (max 2 sentences) citing concrete signals such as sender identity, authentication headers, explicit asks, deadlines, commercial or list-management markers, and any suspicious or deceptive indicators. Choose Spam/Phishing only when you have clear evidence of unsolicited bulk mail or an attempt to deceive the recipient.",
-        "it": "Suggerisci la migliore azione da intraprendere su questa email scegliendo esattamente una tra queste categorie: Rispondi, Da seguire, Delega, Archivia, Elimina, Disiscrivi, Spam/Phishing. Indica prima la categoria scelta, poi fornisci una breve motivazione (massimo 2 frasi) citando segnali concreti come l'identità del mittente, gli header di autenticazione, le richieste esplicite, le scadenze, i marcatori commerciali o di gestione liste, ed eventuali indicatori sospetti o ingannevoli. Scegli Spam/Phishing solo in presenza di evidenze chiare di posta massiva non richiesta o di tentativo di inganno verso il destinatario."
-      }
-    },
-    {
-      "id": "extract-dates",
-      "label": {
-        "en": "Extract dates",
-        "it": "Estrai date"
-      },
-      "mode": "show",
-      "source": false,
-      "prompt": {
-        "en": "Extract a list of dates for any appointments or other events, indicating what they refer to",
-        "it": "Estrai un elenco di date di eventuali appuntamenti o altro, indicando a cosa si riferiscono"
-      }
+      "children": [
+        {
+          "id": "extract-dates",
+          "label": {
+            "en": "Extract dates",
+            "it": "Estrai date"
+          },
+          "mode": "show",
+          "source": false,
+          "prompt": {
+            "en": "Extract a list of dates for any appointments or other events, indicating what they refer to",
+            "it": "Estrai un elenco di date di eventuali appuntamenti o altro, indicando a cosa si riferiscono"
+          }
+        },
+        {
+          "id": "list-participants",
+          "label": {
+            "en": "List participants and possible roles",
+            "it": "Elenca i partecipanti e i possibili ruoli"
+          },
+          "mode": "show",
+          "source": true,
+          "prompt": {
+            "en": "List the participants of this email conversation, considering both the message headers (From, To, Cc, Reply-To) and any people clearly mentioned or addressed in the body. For each participant, report their name (if available) and email address, then guess their likely role in the conversation (for example: sender, primary recipient, informed party, decision-maker, requester, approver, customer, vendor, colleague, manager, external contact). Base each role guess on concrete signals such as their position in the headers, how they are addressed in the body, the requests made of them, and any signature, title, or organizational hint present in the message. If the role cannot be reasonably inferred, state \"role unclear\" rather than guessing without evidence.",
+            "it": "Elenca i partecipanti di questa conversazione email, considerando sia gli header del messaggio (From, To, Cc, Reply-To) sia le persone chiaramente menzionate o interpellate nel corpo. Per ciascun partecipante riporta nome (se disponibile) e indirizzo email, quindi ipotizza il ruolo probabile nella conversazione (per esempio: mittente, destinatario principale, parte informata, decisore, richiedente, approvatore, cliente, fornitore, collega, responsabile, contatto esterno). Basa ogni ipotesi di ruolo su segnali concreti, come la posizione negli header, il modo in cui la persona è interpellata nel corpo, le richieste rivolte ad essa ed eventuali firme, titoli o indizi organizzativi presenti nel messaggio. Se il ruolo non è ragionevolmente deducibile, indica \"ruolo non chiaro\" invece di ipotizzare senza evidenze."
+          }
+        }
+      ]
     },
     {
       "id": "trust",

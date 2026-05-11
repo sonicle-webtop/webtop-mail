@@ -51,6 +51,7 @@ public final class AIMenuItem {
 	private final Map<String, String> label;
 	private final AIMenuMode mode;
 	private final boolean source;
+	private final int upcomingEventsDays;
 	private final Map<String, String> prompt;
 	private final AIMenuInputSpec input;
 	private final List<AIMenuItem> children;
@@ -60,6 +61,7 @@ public final class AIMenuItem {
 			Map<String, String> label,
 			AIMenuMode mode,
 			boolean source,
+			int upcomingEventsDays,
 			Map<String, String> prompt,
 			AIMenuInputSpec input,
 			List<AIMenuItem> children) {
@@ -69,6 +71,7 @@ public final class AIMenuItem {
 				: Collections.unmodifiableMap(label);
 		this.mode = mode;
 		this.source = source;
+		this.upcomingEventsDays = upcomingEventsDays;
 		this.prompt = prompt == null
 				? Collections.<String, String>emptyMap()
 				: Collections.unmodifiableMap(prompt);
@@ -82,6 +85,7 @@ public final class AIMenuItem {
 	public Map<String, String> getLabel() { return label; }
 	public AIMenuMode getMode() { return mode; }
 	public boolean isSource() { return source; }
+	public int getUpcomingEventsDays() { return upcomingEventsDays; }
 	public Map<String, String> getPrompt() { return prompt; }
 	public AIMenuInputSpec getInput() { return input; }
 	public List<AIMenuItem> getChildren() { return children; }

@@ -329,6 +329,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 							{
 									iconCls: 'wt-icon-ai',
 									arrowVisible: false,
+									hidden: !WT.getVar('hasAI'),
 									menu: {
 											xtype: 'soaimessagemenu',
 											mp: me,
