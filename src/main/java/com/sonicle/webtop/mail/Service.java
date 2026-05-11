@@ -4467,19 +4467,16 @@ public class Service extends BaseService {
 							if (cid.endsWith(">")) cid=cid.substring(0,cid.length()-1);
 						}
 
-						if (filename == null) filename = cid;
-						String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
-						UploadedFile upfile=addAsUploadedFile(""+newmsgid, filename, mime, part.getInputStream());
-						boolean inline = false;
-						if (part.getDisposition() != null) {
-							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
-									mailManager.isInlineableMime(mime);
-						}
-						//in reply includes only cid & inline attachments
-						if (inline && cid!=null) {
-							attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
-							//TODO: change this weird matching of cids2urls!
-							html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+						//in reply includes only referenced cids attachments with inlineable mime
+						if (cid !=null && html.contains("cid:" + cid)) {
+							String mime = MailUtils.getMediaTypeFromHeader(part.getContentType());
+							if (mailManager.isInlineableMime(mime)); {
+								if (filename == null) filename = cid;
+								UploadedFile upfile=addAsUploadedFile(""+newmsgid, filename, mime, part.getInputStream());
+								attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, true, upfile.getSize(), isFileEditableInDocEditor(filename)));
+								//TODO: change this weird matching of cids2urls!
+								html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
+							}
 						}
 
 
