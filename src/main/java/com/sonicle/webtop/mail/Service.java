@@ -4434,7 +4434,6 @@ public class Service extends BaseService {
 
 						if (filename == null) filename = cid;
 						String mime=MailUtils.getMediaTypeFromHeader(part.getContentType());
-						UploadedFile upfile=addAsUploadedFile(""+newmsgid, filename, mime, part.getInputStream());
 						boolean inline = false;
 						if (part.getDisposition() != null) {
 							inline = part.getDisposition().equalsIgnoreCase(Part.INLINE) &&
@@ -4442,6 +4441,7 @@ public class Service extends BaseService {
 						}
 						//in reply includes only cid & inline attachments
 						if (inline && cid!=null) {
+							UploadedFile upfile=addAsUploadedFile(""+newmsgid, filename, mime, part.getInputStream());
 							attachments.add(new JsAttachment(upfile.getUploadId(), filename, cid, inline, upfile.getSize(), isFileEditableInDocEditor(filename)));
 							//TODO: change this weird matching of cids2urls!
 							html = StringUtils.replace(html, "cid:" + cid, "service-request?csrf="+getEnv().getCSRFToken()+"&service="+SERVICE_ID+"&action=PreviewAttachment&nowriter=true&uploadId=" + upfile.getUploadId() + "&cid="+cid);
