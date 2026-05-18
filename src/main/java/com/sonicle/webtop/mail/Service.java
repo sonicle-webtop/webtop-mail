@@ -586,13 +586,15 @@ public class Service extends BaseService {
 		if (regex!=null) pasDomainsWhiteListRegexPattern = Pattern.compile(regex);
 
 		try {
-			URL aiMenuUrl = ResourceUtils.getResource("com/sonicle/webtop/mail/ai-menu.json");
-			if (aiMenuUrl != null) {
-				try (InputStream in = aiMenuUrl.openStream()) {
-					aiMenuConfig = AIMenuConfig.load(in);
+			if (getWts().isAIConfigured() && RunContext.isPermitted(true, CoreManifest.ID, "AI_ACTIONS", "ACCESS") && WT.isLicensed(WT.getCoreManager().AI_PRODUCT, getEnv().getProfile().getUserId()) > 0) {
+				URL aiMenuUrl = ResourceUtils.getResource("com/sonicle/webtop/mail/ai-menu.json");
+				if (aiMenuUrl != null) {
+					try (InputStream in = aiMenuUrl.openStream()) {
+						aiMenuConfig = AIMenuConfig.load(in);
+					}
+				} else {
+					Service.logger.warn("ai-menu.json resource not found; AI message menu will be empty");
 				}
-			} else {
-				Service.logger.warn("ai-menu.json resource not found; AI message menu will be empty");
 			}
 		} catch (Throwable t) {
 			Service.logger.error("Failed to load ai-menu.json; AI message menu will be empty", t);
@@ -10236,7 +10238,7 @@ public class Service extends BaseService {
 			
 			co.put("hasAudit",mailManager.isAuditEnabled()&&(RunContext.isImpersonated()||RunContext.isPermitted(true, CoreManifest.ID, "AUDIT")));
 
-			if (aiMenuConfig != null && getWts().isAIConfigured()) {
+			if (aiMenuConfig != null) {
 				co.put("aiMenu", buildClientAIMenu(aiMenuConfig));
 			}
 
