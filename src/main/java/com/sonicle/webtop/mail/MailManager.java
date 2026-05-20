@@ -246,8 +246,10 @@ public class MailManager extends BaseManager implements IMailManager {
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
 		
+		mss = new MailServiceSettings(SERVICE_ID, targetProfileId.getDomainId());
+		mus = new MailUserSettings(targetProfileId, mss);
+		
 		if (!fastInit) {
-			mss = new MailServiceSettings(SERVICE_ID, targetProfileId.getDomainId());
 			attachmentDetectUseBodyStructure = mss.isAttachmentDetectUseBodyStructure();
 			String mtypes=mss.getInlineableMimeTypes();
 			if (StringUtils.isBlank(mtypes)) {
@@ -282,7 +284,6 @@ public class MailManager extends BaseManager implements IMailManager {
 			allFlagStrings=new String[allFlagsArray.size()];
 			allFlagsArray.toArray(allFlagStrings);
 		
-			mus = new MailUserSettings(targetProfileId, mss);
 			String user = WT.buildDomainInternetAddress(targetProfileId.getDomainId(), targetProfileId.getUserId(), null).getAddress();
 			final StoreHostParams hostParams = mus.getMailboxHostParams(user, PasswordUtils.asString(WT.lookupSecretStoreValue(targetProfileId, WebTopManager.PSVKEY_PPW)), false);
 			try {
