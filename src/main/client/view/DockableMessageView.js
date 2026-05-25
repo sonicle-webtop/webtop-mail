@@ -69,6 +69,16 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 				enableOverflow: true,
 				cls: 'wtmail-messageview-toolbar',
 				items: [
+					{
+							iconCls: 'wt-icon-ai',
+							arrowVisible: false,
+							hidden: !WT.getVar('hasAI'),
+							menu: {
+									xtype: 'soaimessagemenu',
+									mv: mv,
+									mys: me.mys
+							}
+					},
 					me.addAct("reply",{
 						handler: function() {
 							me.messageGrid.replyMessageById(me.acct,me.folder,me.idmessage,false);

@@ -112,8 +112,9 @@ Ext.define('Sonicle.webtop.mail.ux.AIMessageMenu', {
 			}
 			if (def.mode === 'reply') {
 				v.close();
-				if (me.mp) me.mp.folderList.replyMessageById(params.account, params.folder, params.idmessage, true, answer);
-				else view.setAnswer(answer, params.format);
+				me.mys.messagesPanel.folderList.replyMessageById(params.account, params.folder, params.idmessage, true, answer);
+				//if (me.mp) me.mp.folderList.replyMessageById(params.account, params.folder, params.idmessage, true, answer);
+				//else view.setAnswer(answer, params.format);
 			} else {
 				view.setAnswer(answer, params.format);
 			}
@@ -146,7 +147,7 @@ Ext.define('Sonicle.webtop.mail.ux.AIMessageMenu', {
 
 	prepareParams: function(def, userInput) {
 		var me = this;
-		if (me.mp) me.mv = me.mp.getMessageView();
+		if (!me.mv && me.mp) me.mv = me.mp.getMessageView();
 		return {
 			account: me.mv.acct,
 			folder: me.mv.folder,
