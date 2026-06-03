@@ -67,6 +67,7 @@ public final class AIMenuConfig {
 
 	private final String defaultLanguage;
 	private final Map<String, String> dialogTitle;
+	private final Map<String, String> buttonOk;
 	private final Map<String, String> htmlFormatHint;
 	private final Map<String, String> htmlReplyFormatHint;
 	private final List<AIMenuItem> items;
@@ -75,12 +76,14 @@ public final class AIMenuConfig {
 	private AIMenuConfig(
 			String defaultLanguage,
 			Map<String, String> dialogTitle,
+			Map<String, String> buttonOk,
 			Map<String, String> htmlFormatHint,
 			Map<String, String> htmlReplyFormatHint,
 			List<AIMenuItem> items,
 			Map<String, AIMenuItem> index) {
 		this.defaultLanguage = defaultLanguage;
 		this.dialogTitle = Collections.unmodifiableMap(dialogTitle);
+		this.buttonOk = Collections.unmodifiableMap(buttonOk);
 		this.htmlFormatHint = Collections.unmodifiableMap(htmlFormatHint);
 		this.htmlReplyFormatHint = Collections.unmodifiableMap(htmlReplyFormatHint);
 		this.items = Collections.unmodifiableList(items);
@@ -89,6 +92,7 @@ public final class AIMenuConfig {
 
 	public String getDefaultLanguage() { return defaultLanguage; }
 	public Map<String, String> getDialogTitle() { return dialogTitle; }
+	public Map<String, String> getButtonOk() { return buttonOk; }
 	public Map<String, String> getHtmlFormatHint() { return htmlFormatHint; }
 	public Map<String, String> getHtmlReplyFormatHint() { return htmlReplyFormatHint; }
 	public List<AIMenuItem> getItems() { return items; }
@@ -126,6 +130,7 @@ public final class AIMenuConfig {
 
 		String defaultLanguage = getString(rootObj, "defaultLanguage", DEFAULT_LANGUAGE_FALLBACK);
 		Map<String, String> dialogTitle = parseLangMap(rootObj, "dialogTitle", false, null);
+		Map<String, String> buttonOk = parseLangMap(rootObj, "buttonOk", false, null);
 		Map<String, String> htmlHint = new LinkedHashMap<>();
 		Map<String, String> htmlReplyHint = new LinkedHashMap<>();
 		if (rootObj.has("formatHints") && rootObj.get("formatHints").isJsonObject()) {
@@ -143,7 +148,7 @@ public final class AIMenuConfig {
 		for (JsonElement el : itemsEl.getAsJsonArray()) {
 			parsed.add(parseItem(el, idx));
 		}
-		return new AIMenuConfig(defaultLanguage, dialogTitle, htmlHint, htmlReplyHint, parsed, idx);
+		return new AIMenuConfig(defaultLanguage, dialogTitle, buttonOk, htmlHint, htmlReplyHint, parsed, idx);
 	}
 
 	private static AIMenuItem parseItem(JsonElement el, Map<String, AIMenuItem> idx) throws IOException {

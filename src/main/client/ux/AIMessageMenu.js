@@ -41,6 +41,8 @@ Ext.define('Sonicle.webtop.mail.ux.AIMessageMenu', {
 	mys: null,
 	mp: null,
 	mv: null,
+	
+	buttonOk: 'Ok',
 
 	initComponent: function() {
 		var me = this;
@@ -55,6 +57,7 @@ Ext.define('Sonicle.webtop.mail.ux.AIMessageMenu', {
 			});
 			return;
 		}
+		me.buttonOk = cfg.buttonOk || 'Ok'; 
 		var items = cfg.items;
 		for (var i = 0; i < items.length; i++) {
 			me.add(me.buildMenuItem(items[i]));
@@ -84,9 +87,10 @@ Ext.define('Sonicle.webtop.mail.ux.AIMessageMenu', {
 	runAction: function(def) {
 		var me = this;
 		if (def.input) {
-			WT.prompt(def.input.question, {
-				title: def.input.title,
+			WT.prompt(def.input.question+"<br><br>", {
+				title: def.label,
 				multiline: !!def.input.multiline,
+				okText: me.buttonOk,
 				fn: function(btn, value) {
 					if (btn !== 'ok') return;
 					if (def.input.required && (!value || value === '')) return;

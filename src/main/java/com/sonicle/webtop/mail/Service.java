@@ -10112,9 +10112,11 @@ public class Service extends BaseService {
 	private Map<String, Object> buildClientAIMenu(AIMenuConfig cfg) {
 		String userLang = environment.getProfile().getLocale().getLanguage();
 		String dialogTitle = cfg.resolve(cfg.getDialogTitle(), userLang);
+		String buttonOk = cfg.resolve(cfg.getButtonOk(), userLang);
 		Map<String, Object> root = new LinkedHashMap<>();
 		List<Map<String, Object>> items = new ArrayList<>();
 		for (AIMenuItem it : cfg.getItems()) items.add(buildClientAIMenuItem(cfg, userLang, dialogTitle, it));
+		root.put("buttonOk", buttonOk);
 		root.put("items", items);
 		return root;
 	}

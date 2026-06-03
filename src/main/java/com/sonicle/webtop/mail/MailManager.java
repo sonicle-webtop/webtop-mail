@@ -284,14 +284,18 @@ public class MailManager extends BaseManager implements IMailManager {
 			allFlagStrings=new String[allFlagsArray.size()];
 			allFlagsArray.toArray(allFlagStrings);
 		
-			String user = WT.buildDomainInternetAddress(targetProfileId.getDomainId(), targetProfileId.getUserId(), null).getAddress();
-			final StoreHostParams hostParams = mus.getMailboxHostParams(user, PasswordUtils.asString(WT.lookupSecretStoreValue(targetProfileId, WebTopManager.PSVKEY_PPW)), false);
 			try {
-				mailbox = new Mailbox(hostParams, ManagerUtils.createMailboxConfig(mus), ManagerUtils.createMailboxProperties(hostParams.getProtocol()));
+				createMailboxObject();
 			} catch(GeneralSecurityException exc) {
 				logger.error("Error creating Mailbox object", exc);
 			}
-		}		
+		}
+	}
+	
+	private void createMailboxObject() throws GeneralSecurityException {
+		String user = WT.buildDomainInternetAddress(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), null).getAddress();
+		final StoreHostParams hostParams = mus.getMailboxHostParams(user, PasswordUtils.asString(WT.lookupSecretStoreValue(getTargetProfileId(), WebTopManager.PSVKEY_PPW)), false);
+		mailbox = new Mailbox(hostParams, ManagerUtils.createMailboxConfig(mus), ManagerUtils.createMailboxProperties(hostParams.getProtocol()));
 	}
 	
 	private UserProfile getUserProfile() {
@@ -300,7 +304,13 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	private Mailbox getMailbox() throws WTException {
-		if (mailbox == null) throw new WTException("No Mailbox Object");
+		if (mailbox == null) {
+			try {
+				createMailboxObject();
+			} catch(GeneralSecurityException exc) {
+				throw new WTException("Error creating Mailbox object", exc);
+			}
+		}
 		mailbox.connect();
 		return mailbox;
 	}
@@ -2306,12 +2316,15 @@ public class MailManager extends BaseManager implements IMailManager {
 	private List<Identity> buildIdentities() throws WTException {
 		Connection con=null;
 		List<Identity> idents=new ArrayList();
+		Mailbox mailbox = null;
 		try {
+			mailbox = getMailbox();
 			UserProfileId pid=getTargetProfileId();
 			//first add main identity
 			Data udata=WT.getProfileData(pid);
 			Identity id=new Identity(0,null,udata.getDisplayName(),udata.getPersonalEmail().getAddress(),null);
 			id.setIsMainIdentity(true);
+			loadMainIdentityMailcard(id);
 			idents.add(id);
 			
 			//add configured additional identities
@@ -2320,6 +2333,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			List<OIdentity> items=idao.selectByDomainUser(con, pid.getDomainId(),pid.getUserId());
 			for(OIdentity oi: items) {
 				Identity ident=new Identity(oi);
+				loadIdentityMailcard(mailbox, ident);
 				idents.add(ident);
 				identHash.put(ident.getMainFolder(), ident);
 			}
@@ -2346,13 +2360,15 @@ public class MailManager extends BaseManager implements IMailManager {
 							fsp.forceMailcard,
 							fsp.alwaysCc,
 							fsp.alwaysCcEmail);
-					id.setOriginPid(opid);
+					id.setOriginPid(opid);					
+					loadIdentityMailcard(mailbox, id);
 					idents.add(id);
 				}
 			}
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
+			if (mailbox!=null) mailbox.disconnect();
 			DbUtils.closeQuietly(con);
 		}
 		return idents;
@@ -2374,12 +2390,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		return username+"@"+WT.getPrimaryDomainName(userProfileId.getDomainId());
 	}
 	
-	public void loadIdentityMailcard(Identity i) {
-		if (i.isMainIdentity()) _loadMainIdentityMailcard(i);
-		else _loadIdentityMailcard(i);
-	}
-	
-	private void _loadMainIdentityMailcard(Identity id) {
+	private void loadMainIdentityMailcard(Identity id) {
 		Mailcard mc = getMailcard();
 		try {
 			UserProfile.PersonalInfo upi = WT.getCoreManager().getUserPersonalInfo(getTargetProfileId());
@@ -2391,23 +2402,19 @@ public class MailManager extends BaseManager implements IMailManager {
 		id.setMailcard(mc);
 	}
 	
-	private void _loadIdentityMailcard(Identity id) {
+	private void loadIdentityMailcard(Mailbox mailbox, Identity id) {
 		Mailcard mc = getMailcard(id);
 		if (mc!=null) {
 			if(id.isType(Identity.TYPE_AUTO)) {
 				UserProfileId opid=id.getOriginPid();
-				Mailbox mailbox = null;
 				// In case of auto identities we need to build real mainfolder
 				try {
 					String mailUser = getMailUsername(opid);
-					mailbox = getMailbox();
 					String mainfolder = mailbox.getSharedFolderName(mailUser);
 					id.setMainFolder(mainfolder);
 					if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, id.getMainFolder()));
 				} catch (Exception ex) {
 					logger.error("Unable to get auto identity foldername [{}]", id.getEmail(), ex);
-				} finally {
-					mailbox.disconnect();
 				}
 
 				/*

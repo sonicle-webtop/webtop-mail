@@ -4,6 +4,10 @@
     "en": "Ask A.I.",
     "it": "Chiedi alla A.I."
   },
+  "buttonOk": {
+    "en": "Generate",
+    "it": "Genera"
+  },
   "formatHints": {
     "html": {
       "en": "Output only raw HTML — never wrap the result in code fences (```html, ```, or any other fenced block) and never wrap it in quotes. The very first character of your output MUST be the opening angle bracket of the first content element (for example <p>, <h2>, <ul>, <table>); never start with plain text, a phrase, a sentence, a title, or any framing line before the first HTML tag. Do not produce ANY introductory line that names, summarizes, classifies, or announces what you are about to output, regardless of how short or innocuous it looks (forbidden examples — non-exhaustive: \"Email Summary\", \"Email Analysis\", \"Analysis of the email thread\", \"Thread Status\", \"Reply Draft\", \"Translation\", \"Tone Analysis\", \"Trustworthiness Check\", \"Here is …\", \"The following is …\"). Begin immediately with the substantive content. Use semantic HTML for readability (paragraphs, headings, lists, bold, italic, tables) as appropriate to the actual substance of the answer. Do not include any hyperlinks or <a> tags. If a heading is genuinely useful inside the answer, it must describe the subject matter of the content, not the task or output type.",
@@ -107,7 +111,7 @@
           "source": true,
           "prompt": {
             "en": "Suggest the best disposition for this email as exactly one of these categories: Reply, Follow-up, Delegate, Archive, Delete, Unsubscribe, Spam/Phishing. State the chosen category first, then provide a brief justification (max 2 sentences) citing concrete signals such as sender identity, authentication headers, explicit asks, deadlines, commercial or list-management markers, and any suspicious or deceptive indicators. Choose Spam/Phishing only when you have clear evidence of unsolicited bulk mail or an attempt to deceive the recipient.",
-            "it": "Suggerisci la migliore azione da intraprendere su questa email scegliendo esattamente una tra queste categorie: Rispondi, Da seguire, Delega, Archivia, Elimina, Disiscrivi, Spam/Phishing. Indica prima la categoria scelta, poi fornisci una breve motivazione (massimo 2 frasi) citando segnali concreti come l'identità del mittente, gli header di autenticazione, le richieste esplicite, le scadenze, i marcatori commerciali o di gestione liste, ed eventuali indicatori sospetti o ingannevoli. Scegli Spam/Phishing solo in presenza di evidenze chiare di posta massiva non richiesta o di tentativo di inganno verso il destinatario."
+            "it": "Suggerisci la migliore azione da intraprendere su questa email scegliendo esattamente una tra queste categorie: Rispondi, Da seguire, Delega, Archivia, Elimina, Annula iscrizione, Spam/Phishing. Indica prima la categoria scelta, poi fornisci una breve motivazione (massimo 2 frasi) citando segnali concreti come l'identità del mittente, gli header di autenticazione, le richieste esplicite, le scadenze, i marcatori commerciali o di gestione liste, ed eventuali indicatori sospetti o ingannevoli. Scegli Spam/Phishing solo in presenza di evidenze chiare di posta massiva non richiesta o di tentativo di inganno verso il destinatario."
           }
         }
       ]

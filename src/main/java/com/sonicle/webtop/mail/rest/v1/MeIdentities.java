@@ -68,7 +68,7 @@ public class MeIdentities extends MeIdentitiesApi {
 				ai.setType(i.getType());
 				ai.setEmail(i.getEmail());
 				ai.setDisplayName(i.getDisplayName());
-				mmgr.loadIdentityMailcard(i);
+				//mmgr.loadIdentityMailcard(i);
 				Mailcard mc = i.getMailcard();
 				if (mc != null) ai.setMailcard(mc.html);
 				String mainFolder = i.getMainFolder();
