@@ -37,7 +37,7 @@ import com.sonicle.commons.MailUtils;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.codehaus.plexus.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  *
