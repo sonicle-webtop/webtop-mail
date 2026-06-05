@@ -9134,7 +9134,8 @@ public class Service extends BaseService {
 				final BitFlags<ICalendarManager.HandleICalInviationOption> options = BitFlags.with(
 					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
 					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS,
+					ICalendarManager.HandleICalInviationOption.EVENT_LOOKUP_SCOPE_STRICT
 				);
 				Event ev = cm.handleInvitationFromICal(iCal, calendarId, options);
 				EventInstanceId instanceId = EventInstanceId.buildMaster(ev.getEventId());
@@ -9162,7 +9163,8 @@ public class Service extends BaseService {
 				final BitFlags<ICalendarManager.HandleICalInviationOption> options = BitFlags.with(
 					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
 					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS,
+					ICalendarManager.HandleICalInviationOption.EVENT_LOOKUP_SCOPE_STRICT
 				);
 				Event ev = cm.handleInvitationFromICal(iCal, calendarId, options);
 				new JsonResult().printTo(out);
