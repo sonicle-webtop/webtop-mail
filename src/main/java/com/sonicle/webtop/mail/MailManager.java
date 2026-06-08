@@ -316,7 +316,12 @@ public class MailManager extends BaseManager implements IMailManager {
 				throw new WTException("Error creating Mailbox object", exc);
 			}
 		}
-		mailbox.connect();
+		
+		try {
+			mailbox.ensureConnected();
+		} catch(MessagingException exc) {
+			throw new WTException("Error while ensuring imap connection", exc);
+		}
 		return mailbox;
 	}
 	
