@@ -104,7 +104,12 @@ public class MailAccount {
 	private boolean readonly=false;
 
 	private Session session;
-	private Store store;
+	//volatile: read by checkStoreConnected()'s lock-free fast path; reassigned by connect()
+	private volatile Store store;
+	//Dedicated reconnect lock: serializes connect()/reconnect WITHOUT holding the account
+	//'this' monitor, so the multi-round-trip connect() no longer blocks createFolderCache /
+	//addSingleFoldersCache or any other synchronized(this) work on the account.
+	private final Object connectLock = new Object();
 	private String storeProtocol;
 	SonicleIMAPSocketTracker socketTracker;
 	private boolean disconnecting = false;
@@ -171,6 +176,14 @@ public class MailAccount {
 		props.setProperty("mail.imaps.ssl.trust", "*");
 		StoreUtils.useExtendedFolderClasses(props);
 		props.setProperty("mail.imap.enableimapevents", "true"); // Support idle events
+		//Connection pool: JavaMail defaults to a single store connection, which serializes
+		//the periodic MailFoldersThread STATUS/SEARCH sweep against interactive message-list
+		//requests on the same store. Give the pool a few connections (honour any override
+		//inherited from the global properties).
+		if (props.getProperty("mail.imap.connectionpoolsize") == null)
+			props.setProperty("mail.imap.connectionpoolsize", "5");
+		if (props.getProperty("mail.imaps.connectionpoolsize") == null)
+			props.setProperty("mail.imaps.connectionpoolsize", "5");
 		Authenticator authenticator=null;
 		if (auth) {
 			props.setProperty("mail.smtp.auth", "true");
@@ -424,11 +437,19 @@ public class MailAccount {
 		if (environment == null) {
 			return false;
 		}
-		synchronized (this) {
-			if (!isConnected()) {
-				return validateUser();
-			}
+		//Fast path: already connected -> no locking, so a concurrent reconnect can't
+		//block callers that just need to verify the connection.
+		if (isConnected()) {
 			return true;
+		}
+		//Reconnect needed: serialize on the dedicated connectLock (NOT the 'this' monitor).
+		//Double-checked so only the first thread reconnects; the rest wait here and then
+		//observe the freshly-connected store.
+		synchronized (connectLock) {
+			if (isConnected()) {
+				return true;
+			}
+			return validateUser();
 		}
 	}
 	

@@ -168,7 +168,13 @@ public class FolderCache {
     static final FlagTerm forwardedSearchTerm=new FlagTerm(forwardedFlags,true);
 	
 	private MailAccount account=null;
-    
+
+	//Serializes mutation/read of this folder's cache state (msgs, dhash, sort fields,
+	//unread/recent counts) so the interactive message-list path and the periodic
+	//MailFoldersThread check can't interleave on the same FolderCache. Reentrant via
+	//the object monitor: getMessages -> refresh -> cleanup all re-acquire this lock.
+	private final Object cacheLock=new Object();
+
     //private static final HashMap<String,HashMap<String,Integer>> months=new HashMap<>();
 
     private HashMap<String,MessageEntry> providedMessages=new HashMap<>();
@@ -290,6 +296,12 @@ public class FolderCache {
     }
 	
 	boolean goidle=true;
+	//True once this folder is maintained by an IDLE thread (INBOX, idle-enabled shared
+	//inboxes/favorites). The periodic MailFoldersThread sweep skips these: their unread/
+	//recent state is kept current by idle events, so re-running STATUS/SEARCH here would
+	//only contend with the interactive message-list on the same IMAPFolder.
+	private volatile boolean idling=false;
+	protected boolean isIdling() { return idling; }
 	class IdleThread extends Thread {
 		@Override
 		public void run() {
@@ -310,6 +322,7 @@ public class FolderCache {
 	}
 	
 	public void startIdle() {
+		idling=true;
 		folder.addMessageChangedListener(
 			new MessageChangedListener() {
 
@@ -702,10 +715,11 @@ public class FolderCache {
 			if (mft.isAborted()) break;
             if (fcchild.isScanForcedOff()) continue;
             boolean hasUnread=false;
-            if (all || fcchild.scanNeverDone || fcchild.isScanForcedOn() || fcchild.isScanEnabled()) {
+            if (!fcchild.isIdling() && (all || fcchild.scanNeverDone || fcchild.isScanForcedOn() || fcchild.isScanEnabled())) {
                 fcchild.scanNeverDone=false;
                 hasUnread=fcchild.checkFolder();
             } else {
+				//idle-managed folders are kept current by idle events: read cached counts
 				hasUnread=fcchild.getUnreadMessagesCount()>0||fcchild.hasUnreadChildren;
 			}
             if (fcchild.children!=null) {
@@ -718,17 +732,19 @@ public class FolderCache {
     }
     
     protected boolean checkFolder() {
-        try {
-            if (checkUnreads || scanForcedOn || scanEnabled) refreshUnreadMessagesCount();
-        } catch(MessagingException exc) {
-            Service.logger.debug("Exception on folder "+foldername,exc);
+        synchronized(cacheLock) {
+            try {
+                if (checkUnreads || scanForcedOn || scanEnabled) refreshUnreadMessagesCount();
+            } catch(MessagingException exc) {
+                Service.logger.debug("Exception on folder "+foldername,exc);
+            }
+            try {
+                if (checkRecents /*|| scanForcedOn || scanEnabled*/) refreshRecentMessagesCount();
+            } catch(MessagingException exc) {
+                Service.logger.debug("Exception on folder "+foldername,exc);
+            }
+            return (unread>0);
         }
-        try {
-            if (checkRecents /*|| scanForcedOn || scanEnabled*/) refreshRecentMessagesCount();
-        } catch(MessagingException exc) {
-            Service.logger.debug("Exception on folder "+foldername,exc);
-        }
-        return (unread>0);
     }
 
     protected void updateUnreads() {
@@ -764,20 +780,22 @@ public class FolderCache {
     }
     
     public void refresh(ImapQuery iq) throws MessagingException, IOException {
-        cleanup(false);
-		if (!threaded)
-			msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending, iq);
-		else
-			msgs=_getThreadedMessages("", "", iq);
-		
-		if (iq.hasNotePattern()) {
-			
-		}
-		
-        open();
-        //add(msgs);
-        modified=false;
-        forceRefresh=false;
+        synchronized(cacheLock) {
+            cleanup(false);
+            if (!threaded)
+                msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending, iq);
+            else
+                msgs=_getThreadedMessages("", "", iq);
+
+            if (iq.hasNotePattern()) {
+
+            }
+
+            open();
+            //add(msgs);
+            modified=false;
+            forceRefresh=false;
+        }
     }
     
 /*    public void add(MimeMessage m) throws MessagingException {
@@ -872,7 +890,8 @@ public class FolderCache {
         Message xmsgs[]=null;
         MessageSearchResult msr=null;
         //MessageComparator mcomp=null;
-        
+
+        synchronized(cacheLock) {
 			if (this.sort_by!=sort_by || this.ascending!=ascending || this.sort_group!=sort_group || this.groupascending!=groupascending || this.threaded!=threaded) {
                 this.sort_by=sort_by;
                 this.ascending=ascending;
@@ -892,7 +911,8 @@ public class FolderCache {
 //            }
             xmsgs=msgs;
             //mcomp=this.comparator;
-        
+        }
+
 /*        if (rebuilt || sortchanged) {
             mcomp.setSortBy(sort_by);
             if(ascending) mcomp.setAscending();
@@ -956,18 +976,20 @@ public class FolderCache {
     }*/
 	
     protected void cleanup(boolean endOfSession) {
-		if (endOfSession) {
-			goidle=false;
-			try {  folder.close(false); } catch(Exception exc) {}
-			this.ms=null;
-			//this.comparator=null;
+		synchronized(cacheLock) {
+			if (endOfSession) {
+				goidle=false;
+				try {  folder.close(false); } catch(Exception exc) {}
+				this.ms=null;
+				//this.comparator=null;
+			}
+			dhash.clear();
+//			hash.clear();
+//			list.clear();
+			//unread=0;
+			//recent=0;
+			msgs=null;
 		}
-        dhash.clear();
-//        hash.clear();
-//        list.clear();
-        //unread=0;
-        //recent=0;
-        msgs=null;
     }
 
     public void close() {

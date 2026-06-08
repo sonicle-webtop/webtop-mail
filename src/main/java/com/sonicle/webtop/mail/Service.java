@@ -461,7 +461,7 @@ public class Service extends BaseService {
 				mainAccount.getFolderTrash(),
 			});
 			
-			mainAccount.loadFoldersCache(mft,false);
+			mainAccount.loadFoldersCache(mft.getCacheLoadLock(),false);
 			//if (!mainAccount.getMailSession().getDebug())
 			mft.start();
 			
@@ -523,7 +523,7 @@ public class Service extends BaseService {
 				
 				acct.setFoldersThread(xmft);
 				acct.checkStoreConnected();
-				acct.loadFoldersCache(xmft,false);
+				acct.loadFoldersCache(xmft.getCacheLoadLock(),false);
 				
 				//MFT start postponed to first processGetFavoritesTree
 			}

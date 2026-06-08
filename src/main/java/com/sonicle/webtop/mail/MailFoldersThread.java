@@ -55,7 +55,14 @@ public class MailFoldersThread extends Thread {
     int sleepCount=0;
     boolean checkAll=false;
 	boolean inboxOnly=false;
-    
+
+	//Handshake lock with MailAccount.loadFoldersCache(): the cache-load thread holds this
+	//while building the initial folder cache, and run() blocks on it once so the periodic
+	//sweep only starts after the load completes. A dedicated object (NOT 'this'): a Thread
+	//instance must never be used as a monitor, since Thread.join()/termination notify on it.
+	private final Object cacheLoadLock=new Object();
+	public Object getCacheLoadLock() { return cacheLoadLock; }
+
     public MailFoldersThread(Service ms, PrivateEnvironment env, MailAccount account) {
         super();
         this.setName("MFT"+(threadCountMailFolders++)+"-"+env.getProfile().getUserId()+"-"+account);
@@ -107,7 +114,7 @@ public class MailFoldersThread extends Thread {
                 //Service.logger.debug("MFT Synchronizing");
 
 				//ensures to start only when the cache load is finished
-				synchronized(this) {
+				synchronized(cacheLoadLock) {
 				}
                         account.checkStoreConnected();                      
 						if (sleepCount>0) {
@@ -122,7 +129,8 @@ public class MailFoldersThread extends Thread {
                                     if (fc!=null) {
                                         ArrayList<FolderCache> children=fc.getChildren();
                                         if (children!=null && !abort) {
-                                            for(FolderCache inbox: children) inbox.checkFolder();
+                                            //skip idle-managed folders: kept current by idle events
+                                            for(FolderCache inbox: children) if (!inbox.isIdling()) inbox.checkFolder();
                                         }
                                     }
                                 }
@@ -130,8 +138,8 @@ public class MailFoldersThread extends Thread {
 							
 							//Check favorite folders for unread messages
 							ArrayList<FolderCache> favoriteCaches = account.getFavoritesFoldersCache();
-							 for(FolderCache favorite: favoriteCaches) 
-								 if (!abort) favorite.checkFolder();
+							 for(FolderCache favorite: favoriteCaches)
+								 if (!abort && !favorite.isIdling()) favorite.checkFolder();
 									
                         }
                         else {
