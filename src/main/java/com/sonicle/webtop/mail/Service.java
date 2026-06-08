@@ -2463,6 +2463,8 @@ public class Service extends BaseService {
 			account.cleanup();
 		}
 		fcProvided=null;
+		if (mailManager != null) mailManager.cleanup();
+		
 		logger.trace("exiting cleanup");
 	}
 	

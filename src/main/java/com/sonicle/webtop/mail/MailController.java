@@ -80,12 +80,14 @@ public class MailController extends BaseController implements IControllerService
 		if (current.compareTo(V_5_0_14)>=0 && !profileLastSeen.isUndefined() && profileLastSeen.compareTo(V_5_0_14)<0) {
 			MailManager manager = new MailManager(true, profileId);
 			manager.addOldBuiltinTags();
+			manager.cleanup();
 		}
 		
 		if (current.compareTo(V_5_7_9)>=0 && !profileLastSeen.isUndefined() && profileLastSeen.compareTo(V_5_7_9)<0) {
 			MailManager manager = new MailManager(true, profileId);
 			// Starting from v.5.7.9 tags are managed directly by WebTop platform, let's migrate OLD tags data!
 			manager.convertToCoreTags();
+			manager.cleanup();
 		}
 	}
 	
@@ -298,7 +300,7 @@ public class MailController extends BaseController implements IControllerService
 				MailManager mailMgr = (MailManager)WT.getServiceManager(SERVICE_ID, true, profileId);
 				mailMgr.setSieveConfiguration(mss.getDefaultHost(), mss.getSievePort(), mss.getAdminUser(), mss.getAdminPassword(), mailboxUser);
 				mailMgr.initDefaultSieveScript();
-
+				mailMgr.cleanup();
 			} catch (Exception ex) {
 				throw new WTOperationException("SIEVE", ex, "Error initializing sieve");
 			}

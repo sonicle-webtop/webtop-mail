@@ -57,8 +57,8 @@ public class MeIdentities extends MeIdentitiesApi {
 	@Override
 	public Response listIdentities() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			List<Identity> identities = mmgr.listIdentities();
 			ArrayList<ApiIdentity> items = new ArrayList<>();
 			for(Identity i: identities) {
@@ -84,6 +84,8 @@ public class MeIdentities extends MeIdentitiesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getFavorites()", targetPid, ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	

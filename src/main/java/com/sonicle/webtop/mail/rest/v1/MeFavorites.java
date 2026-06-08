@@ -55,8 +55,8 @@ public class MeFavorites extends MeFavoritesApi {
 	@Override
 	public Response listFavorites() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			ArrayList<MailManager.Favorite> ff = mmgr.getFavorites();
 			ArrayList<ApiFolder> items = new ArrayList<>();
 			for(MailManager.Favorite favorite: ff) {
@@ -74,6 +74,8 @@ public class MeFavorites extends MeFavoritesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getFavorites()", targetPid, ex);
 			return respError(ex);
+		} finally {
+			if (mmgr!=null) mmgr.cleanup();
 		}
 	}
 	

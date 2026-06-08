@@ -90,11 +90,11 @@ public class MeMessages extends MeMessagesApi {
 	
 	@Override
 	public Response listMessages(String folderId, Integer pageNo, Integer pageSize, String filter, String orderBy, Boolean returnCount) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		final MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);;
 		try {
 			boolean returnFullCount = returnCount == null ? false : returnCount;
 			ArrayList<ApiMessage> items = new ArrayList<>();
-			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			int ipageNo = pageNo!=null ? pageNo.intValue() : -1;
 			int ipageSize = pageSize!=null ? pageSize.intValue() : 50;
@@ -191,15 +191,17 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getMessages()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
 	@Override
 	public Response getMessage(String folderId, String suid, Boolean setSeen) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
 			ApiMessage am = new ApiMessage();
-			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			long uid = Long.parseLong(suid);
 			boolean setseen = setSeen != null ? setSeen : false;
@@ -310,15 +312,17 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getMessage()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
 	@Override
 	public Response getMessageNote(String folderId, String suid) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
 			ApiNote an = new ApiNote();
-			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			long uid = Long.parseLong(suid);
 			String text = mmgr.getMessageNote(folderId, uid);
 			an.setFolderId(folderId);
@@ -329,29 +333,33 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getMessageNote()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
 	@Override
 	public Response setMessageNote(ApiNote an) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
-			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			mmgr.setMessageNote(an.getFolderId(), Long.parseLong(an.getUid()), an.getText());
 			return respOk();
 			
 		} catch(Exception ex) {
 			logger.error("[{}] setMessageNote()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	
 	@Override
 	public Response getMessageAttachmentBytes(String folderId, String suid, String sindex) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
 			ApiMessage am = new ApiMessage();
-			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			long uid = Long.parseLong(suid);
 			int index = Integer.parseInt(sindex);
 			MimeMessageParser.ParsedMimeMessageComponents parsed = mmgr.getParsedMimeMessageComponents(folderId, uid);
@@ -368,15 +376,17 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getMessageAttachmentBytes()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	
 	@Override
 	public Response getMessageCidBytes(String folderId, String suid, String cidName) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
 			ApiMessage am = new ApiMessage();
-			UserProfileId targetPid = RunContext.getRunProfileId();
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			long uid = Long.parseLong(suid);
 			MimeMessageParser.ParsedMimeMessageComponents parsed = mmgr.getParsedMimeMessageComponents(folderId, uid);
 			String contentType = parsed.getContentType(cidName);
@@ -392,6 +402,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getMessageAttachmentBytes()", RunContext.getRunProfileId(), ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
@@ -445,6 +457,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception exc) {
 			logger.error("Error during sendMessage", exc);
 			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
@@ -492,6 +506,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception exc) {
 			logger.error("Error during getReplyMessage", exc);
 			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
@@ -527,6 +543,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception exc) {
 			logger.error("Error during getForwardMessage", exc);
 			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
@@ -541,6 +559,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception exc) {
 			logger.error("Error during getMessageSeenState", exc);
 			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
@@ -555,6 +575,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception exc) {
 			logger.error("Error during getMessageSeenState", exc);
 			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
@@ -569,6 +591,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception exc) {
 			logger.error("Error during getMessageSeenState", exc);
 			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
@@ -588,6 +612,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception exc) {
 			logger.error("Error during setMessageFlag", exc);
 			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
@@ -607,6 +633,8 @@ public class MeMessages extends MeMessagesApi {
 		} catch(Exception exc) {
 			logger.error("Error during setMessageTags", exc);
 			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	

@@ -325,6 +325,10 @@ public class MailManager extends BaseManager implements IMailManager {
 		return mailbox;
 	}
 	
+	public void cleanup() {
+		if (mailbox != null) mailbox.disconnect();
+	}
+	
 	public class Favorite {
 		public String id;
 		public String name;
@@ -346,7 +350,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		} catch(MessagingException|WTException exc) {
 			logger.error("Error listing favorites", exc);
 		} finally {
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return favorites;
 	}
@@ -362,7 +366,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		} catch(MessagingException|WTException exc) {
 			logger.error("Error listing folders", exc);
 		} finally {
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return folders;
 	}
@@ -378,7 +382,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		} catch(MessagingException|WTException exc) {
 			logger.error("Error listing folders", exc);
 		} finally {
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return folders;
 	}
@@ -392,7 +396,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		} catch(MessagingException|WTException exc) {
 			logger.error("Error getting folder", exc);
 		} finally {
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return folder;
 	}
@@ -448,7 +452,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error listing folders", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}	
 	
@@ -465,7 +469,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error getting message", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return msg;
 	}*/
@@ -576,7 +580,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error listing folders", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}	
 	
@@ -611,7 +615,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		} finally {
 			DbUtils.closeQuietly(con);
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return text;
 	}	
@@ -641,7 +645,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		} finally {
 			DbUtils.closeQuietly(con);
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}	
 
@@ -662,7 +666,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error in getMessageAttachmentContentType", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return contentType;
 	}	
@@ -682,7 +686,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error on getParsedMimeMessageComponents", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return parsed;
 	}	
@@ -703,7 +707,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error in streamMessageAttachmentData", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}	
 	
@@ -721,7 +725,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error in streamMessageAttachmentData", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}	
 	
@@ -741,7 +745,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error in streamMessageCidData", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}	
 	
@@ -759,7 +763,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error in streamMessageCidData", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}	
 	
@@ -1266,7 +1270,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			} catch (Exception exc) {
 				logger.error("Error detectomg sent folder on main folder {}/{}", profile.getUserId(), mainFolder, exc);
 			} finally {
-				mailbox.disconnect();
+				//mailbox.disconnect();
 			}
 		}
 		return sentFolder;
@@ -1289,7 +1293,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			} catch (Exception exc) {
 				logger.error("Error detectomg trash folder on main folder {}/{}", profile.getUserId(), mainFolder, exc);
 			} finally {
-				mailbox.disconnect();
+				//mailbox.disconnect();
 			}
 		}
 		return trashFolder;
@@ -1594,7 +1598,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error getting message", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return emsg;
 	}
@@ -1745,7 +1749,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error getting message", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return emsg;
 	}
@@ -1994,7 +1998,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error getting message", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 		return seen;
 	}
@@ -2012,7 +2016,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error getting message", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}
 	
@@ -2041,7 +2045,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error on setMessageFlag", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}
 	
@@ -2065,7 +2069,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error on setMessageFlag", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}
 	
@@ -2098,7 +2102,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			StoreUtils.closeQuietly(toFolder, false);
-			mailbox.disconnect();
+			//mailbox.disconnect();
 		}
 	}
 
@@ -2387,7 +2391,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
-			if (mailbox!=null) mailbox.disconnect();
+			//if (mailbox!=null) mailbox.disconnect();
 			DbUtils.closeQuietly(con);
 		}
 		return idents;

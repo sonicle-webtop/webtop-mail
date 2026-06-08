@@ -69,11 +69,6 @@ public class Accounts extends AccountsApi {
 	private static final Logger logger = LoggerFactory.getLogger(Accounts.class);
 	
 	private MailUserProfile getMailUserProfile(CoreManager coreMgr, UserProfileId pid) {
-		logger.debug("getMailUserProfile - Start");
-		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, pid.getDomainId());
-		MailUserSettings mus = new MailUserSettings(pid, mss);
-		MailManager mailMgr = (MailManager)WT.getServiceManager(SERVICE_ID, pid);
-		
 		String authDirScheme;
 		try {
 			authDirScheme = coreMgr.getAuthDirectoryScheme();
@@ -81,9 +76,15 @@ public class Accounts extends AccountsApi {
 			return null;
 		}
 		
+		logger.debug("getMailUserProfile - Start");
+		MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, pid.getDomainId());
+		MailUserSettings mus = new MailUserSettings(pid, mss);
+		MailManager mailMgr = (MailManager)WT.getServiceManager(SERVICE_ID, pid);
+		
 		logger.debug("Building profile");
 		MailUserProfile mailProfile = new MailUserProfile(mailMgr, mss, mus, authDirScheme);
 		logger.debug("getMailUserProfile - End");
+		mailMgr.cleanup();
 		return mailProfile;
 	}
 	

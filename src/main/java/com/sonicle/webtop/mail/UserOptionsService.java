@@ -224,10 +224,10 @@ public class UserOptionsService extends BaseUserOptionsService {
 	}
 
 	public void processListIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 		try {
 			String type = ServletUtils.getStringParameter(request, "type", true);
 			boolean any = type.equals("any");
-			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId()); // new MailManager(getTargetProfileId());
 			List<Identity> idents = mman.listIdentities();
 			List<Identity> jsidents = new ArrayList<>();
 			for (Identity ident : idents) {
@@ -242,13 +242,15 @@ public class UserOptionsService extends BaseUserOptionsService {
 		} catch (Exception ex) {
 			logger.error("Error listing identities", ex);
 			new JsonResult(false, ex.getMessage()).printTo(out);
+		} finally {
+			if (mman != null) mman.cleanup();
 		}
 	}
 
 	public void processManageIdentities(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String crud = null;
+		MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 		try {
-			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 			crud = ServletUtils.getStringParameter(request, "crud", true);
 			if (crud.equals(Crud.READ)) {
 				processListIdentities(request, response, out);
@@ -273,12 +275,14 @@ public class UserOptionsService extends BaseUserOptionsService {
 		} catch (Exception ex) {
 			logger.error("Error managing quickparts", ex);
 			new JsonResult(false, "Error managing quickparts").printTo(out);
+		} finally {
+			if (mman != null) mman.cleanup();
 		}
 	}
 	
 	public void processManageExternalAccountsGrid(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailManager mailMgr = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 		try {
-			MailManager mailMgr = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 			
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if (crud.equals(Crud.READ)) {
@@ -294,13 +298,15 @@ public class UserOptionsService extends BaseUserOptionsService {
 		} catch (Throwable t) {
 			logger.error("Error in ManageExternalAccountsGrid", t);
 			new JsonResult(t).printTo(out);
-		} 
+		} finally {
+			if (mailMgr != null) mailMgr.cleanup();
+		}
 	}
 	
 	public void processManageExternalAccounts(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailManager mailMgr = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 		try {
 			MailServiceSettings mss = new MailServiceSettings(SERVICE_ID, getTargetDomainId());
-			MailManager mailMgr = (MailManager) WT.getServiceManager(SERVICE_ID, true, getTargetProfileId());
 			
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			if (crud.equals(Crud.READ)) {
@@ -338,6 +344,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 		} catch (Throwable t) {
 			logger.error("Error in ManageExternalAccounts", t);
 			new JsonResult(t).printTo(out);
+		} finally {
+			if (mailMgr != null) mailMgr.cleanup();
 		}
 	}
 	
@@ -379,13 +387,12 @@ public class UserOptionsService extends BaseUserOptionsService {
 	}
 	
 	public void processManageMailcard(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-
+		UserProfileId profileId=getTargetProfileId();
+		MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, profileId);
 		try {
-			UserProfileId profileId=getTargetProfileId();
 			String domainId=profileId.getDomainId();
 			String userId=profileId.getUserId();
 			String emailAddress=WT.getProfileData(profileId).getPersonalEmailAddress();
-			MailManager mman = (MailManager) WT.getServiceManager(SERVICE_ID, true, profileId);
 			String crud = ServletUtils.getStringParameter(request, "crud", true);
 			String mailcardId = ServletUtils.getStringParameter(request, "mailcardId", true);
 			PersonalInfo ppi=null;
@@ -462,6 +469,8 @@ public class UserOptionsService extends BaseUserOptionsService {
 		} catch (Exception ex) {
 			logger.error("Error managing mailcard.", ex);
 			new JsonResult(false, "Unable to manage mailcard.").printTo(out);
+		} finally {
+			if (mman != null) mman.cleanup();
 		}
 	}
 

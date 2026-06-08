@@ -57,8 +57,8 @@ public class MeFolders extends MeFoldersApi {
 	@Override
 	public Response listRootFolders() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			ArrayList<Folder> folders = mmgr.getRootFolders();
 			ArrayList<ApiFolder> items = new ArrayList<>();
 			for(Folder folder: folders) {
@@ -77,14 +77,16 @@ public class MeFolders extends MeFoldersApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getRootFolders()", targetPid, ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	
 	@Override
 	public Response listChildrenFolders(String folderId) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			ArrayList<Folder> folders = mmgr.getFolders(folderId);
 			ArrayList<ApiFolder> items = new ArrayList<>();
 			for(Folder folder: folders) {
@@ -103,14 +105,16 @@ public class MeFolders extends MeFoldersApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getFolders()", targetPid, folderId, ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
 	@Override
 	public Response getFolderInfo(String folderId) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
-			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			Folder folder = mmgr.getFolder(folderId);
 			ApiFolderInfo afi = new ApiFolderInfo();
 			afi.setId(folder.getFullName());
@@ -124,6 +128,8 @@ public class MeFolders extends MeFoldersApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getFolderInfo()", targetPid, folderId, ex);
 			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	
