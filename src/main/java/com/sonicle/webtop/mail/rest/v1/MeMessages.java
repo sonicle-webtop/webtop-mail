@@ -89,15 +89,16 @@ public class MeMessages extends MeMessagesApi {
 	
 	
 	@Override
-	public Response listMessages(String folderId, Integer pageNo, Integer pageSize) {
+	public Response listMessages(String folderId, Integer pageNo, Integer pageSize, String filter, String orderBy, Boolean returnCount) {
 		try {
+			boolean returnFullCount = returnCount == null ? false : returnCount;
 			ArrayList<ApiMessage> items = new ArrayList<>();
 			UserProfileId targetPid = RunContext.getRunProfileId();
 			MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			int ipageNo = pageNo!=null ? pageNo.intValue() : -1;
 			int ipageSize = pageSize!=null ? pageSize.intValue() : 50;
-			mmgr.consumeMessages(folderId, ipageNo, ipageSize, new MailManager.MessagesConsumer() {
+			mmgr.consumeMessages(folderId, ipageNo, ipageSize, filter, orderBy, returnFullCount, new MailManager.MessagesConsumer() {
 				@Override
 				public void consume(Message msg, long uid) throws MessagingException, IOException {
 					MimeMessage mmsg = (MimeMessage) msg;

@@ -18,7 +18,7 @@ import javax.validation.Valid;
 
 @Path("/me/messages")
 @Api(description = "the MeMessages API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T14:28:08.246+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-04T17:12:25.224+02:00[Europe/Rome]")
 public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
@@ -176,7 +176,7 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiMessage.class, responseContainer = "List")
     })
-    public Response listMessages(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("page_no")  @ApiParam("The page number to return, providing a value actually activates pagination. Optional.")  Integer pageNo,@QueryParam("page_size")  @ApiParam("How many items to return when paginating. Defaults to 50.")  Integer pageSize) {
+    public Response listMessages(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("page_no")  @ApiParam("The page number to return, providing a value actually activates pagination. Optional.")  Integer pageNo,@QueryParam("page_size")  @ApiParam("How many items to return when paginating. Defaults to 50.")  Integer pageSize,@QueryParam("filter")  @ApiParam("A RSQL filter query to filter out resulting items. Optional.")  String filter,@QueryParam("orderBy")  @ApiParam("Field namee and direction (ASC or DESC) to sort resulting items. Optional.")  String orderBy,@QueryParam("returnCount")  @ApiParam("Specifies whether to compute and return the full count of a list of items. Useful when dealing with paginated data. Optional.")  Boolean returnCount) {
         return Response.ok().entity("magic!").build();
     }
 

@@ -42,6 +42,11 @@ import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.rsql.parser.Operator;
+import com.sonicle.commons.rsql.parser.RSQLParser;
+import com.sonicle.commons.rsql.parser.ast.ComparisonOperator;
+import com.sonicle.commons.rsql.parser.ast.Node;
+import com.sonicle.commons.rsql.parser.ast.RSQLOperators;
 import com.sonicle.commons.time.JavaTimeUtils;
 import com.sonicle.mail.Mailbox;
 import com.sonicle.mail.StoreHostParams;
@@ -396,10 +401,19 @@ public class MailManager extends BaseManager implements IMailManager {
 		return xmsgs;
     }
 	
-	public void consumeMessages(String folderId, int pageNo, int pageSize, MessagesConsumer mc) {
+	private static Node parseRSQL(final String s) {
+		java.util.Set<ComparisonOperator> ops = new java.util.HashSet<>();
+		ops.addAll(RSQLOperators.defaultOperators());
+		ops.addAll(Operator.extendedOperators());
+		return new RSQLParser(ops).parse(s);
+	}
+	
+	public void consumeMessages(String folderId, int pageNo, int pageSize, String filterQuery, String orderBy, boolean fullReturnCount, MessagesConsumer mc) {
 		Folder folder = null;
 		Mailbox mailbox = null;
 		try {
+			//Condition condition = StringUtils.isBlank(filterQuery) ? null : parseRSQL(filterQuery).accept(visitor);
+			
 			mailbox = getMailbox();
 			folder = mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);

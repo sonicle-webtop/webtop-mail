@@ -268,6 +268,15 @@
           },
           {
             "$ref": "#/components/parameters/pageSize"
+          },
+          {
+            "$ref": "#/components/parameters/filter"
+          },
+          {
+            "$ref": "#/components/parameters/orderBy"
+          },
+          {
+            "$ref": "#/components/parameters/returnCount"
           }
         ],
         "tags": [
@@ -1360,6 +1369,33 @@
           "type": "string"
         },
         "description": "The Content-ID name of an inline attachment"
+      },
+      "filter": {
+        "name": "filter",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "A RSQL filter query to filter out resulting items. Optional."
+      },
+      "orderBy": {
+        "name": "orderBy",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string"
+        },
+        "description": "Field namee and direction (ASC or DESC) to sort resulting items. Optional."
+      },
+      "returnCount": {
+        "name": "returnCount",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "boolean"
+        },
+        "description": "Specifies whether to compute and return the full count of a list of items. Useful when dealing with paginated data. Optional."
       }
     }
   }

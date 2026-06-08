@@ -16,7 +16,7 @@ import javax.validation.Valid;
 
 @Path("/me/folders")
 @Api(description = "the MeFolders API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-04-15T14:28:08.246+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-04T17:12:25.224+02:00[Europe/Rome]")
 public abstract class MeFoldersApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
