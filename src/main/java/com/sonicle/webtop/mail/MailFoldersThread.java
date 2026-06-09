@@ -129,8 +129,7 @@ public class MailFoldersThread extends Thread {
                                     if (fc!=null) {
                                         ArrayList<FolderCache> children=fc.getChildren();
                                         if (children!=null && !abort) {
-                                            //skip idle-managed folders: kept current by idle events
-                                            for(FolderCache inbox: children) if (!inbox.isIdling()) inbox.checkFolder();
+                                            for(FolderCache inbox: children) inbox.checkFolder();
                                         }
                                     }
                                 }
@@ -139,7 +138,7 @@ public class MailFoldersThread extends Thread {
 							//Check favorite folders for unread messages
 							ArrayList<FolderCache> favoriteCaches = account.getFavoritesFoldersCache();
 							 for(FolderCache favorite: favoriteCaches)
-								 if (!abort && !favorite.isIdling()) favorite.checkFolder();
+								 if (!abort) favorite.checkFolder();
 									
                         }
                         else {

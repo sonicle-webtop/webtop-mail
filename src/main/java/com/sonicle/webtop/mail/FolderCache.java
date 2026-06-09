@@ -296,33 +296,40 @@ public class FolderCache {
     }
 	
 	boolean goidle=true;
-	//True once this folder is maintained by an IDLE thread (INBOX, idle-enabled shared
-	//inboxes/favorites). The periodic MailFoldersThread sweep skips these: their unread/
-	//recent state is kept current by idle events, so re-running STATUS/SEARCH here would
-	//only contend with the interactive message-list on the same IMAPFolder.
-	private volatile boolean idling=false;
-	protected boolean isIdling() { return idling; }
+	private IdleThread idleThread=null;
+	//Idle delivers only CHANGE events, never the initial state, so the periodic
+	//MailFoldersThread sweep still polls idle folders too (otherwise their pre-existing
+	//unread counts would never appear until the next change). Idle just adds instant push
+	//(recent/grid-refresh) on top of that polling.
 	class IdleThread extends Thread {
 		@Override
 		public void run() {
 			//MailService.logger.debug("Starting idle thread");
-			try {
-				while(goidle) {
+			long backoff=0;
+			while(goidle) {
+				try {
 					IMAPFolder folder=((IMAPFolder)FolderCache.this.getFolder());
 					if (!folder.isOpen()) folder.open(Folder.READ_WRITE);
+					backoff=0;
 					//Service.logger.debug("Entering idle mode on {}",foldername);
 					folder.idle();
 					//Service.logger.debug("Exiting idle mode on {}",foldername);
+				} catch(Throwable exc) {
+					//Idle dropped (connection error, server idle timeout, server restart, or
+					//folder closed on shutdown). The OLD code exited the loop here, killing idle
+					//permanently so instant push stopped until logout. Instead back off and try
+					//to re-establish idle. On shutdown goidle is already false -> exit.
+					if (!goidle) break;
+					backoff = (backoff==0) ? 5000 : Math.min(backoff*2, 60000);
+					Service.logger.debug("Idle interrupted on {}, retrying in {}ms",foldername,backoff,exc);
+					try { Thread.sleep(backoff); } catch(InterruptedException ie) { if (!goidle) break; }
 				}
-				Service.logger.debug("Exiting idle loop: goidle is {}",goidle);
-			} catch(MessagingException exc) {
-				Service.logger.debug("Error during idle",exc);
 			}
+			Service.logger.debug("Exiting idle loop on {}: goidle={}",foldername,goidle);
 		}
 	}
 	
 	public void startIdle() {
-		idling=true;
 		folder.addMessageChangedListener(
 			new MessageChangedListener() {
 
@@ -350,8 +357,8 @@ public class FolderCache {
 				}
 			}
 		);
-		IdleThread ithread=new IdleThread();
-		ithread.start();
+		idleThread=new IdleThread();
+		idleThread.start();
 	}
 	
 	protected boolean isSharedToSomeone() throws MessagingException, WTException {
@@ -715,11 +722,10 @@ public class FolderCache {
 			if (mft.isAborted()) break;
             if (fcchild.isScanForcedOff()) continue;
             boolean hasUnread=false;
-            if (!fcchild.isIdling() && (all || fcchild.scanNeverDone || fcchild.isScanForcedOn() || fcchild.isScanEnabled())) {
+            if (all || fcchild.scanNeverDone || fcchild.isScanForcedOn() || fcchild.isScanEnabled()) {
                 fcchild.scanNeverDone=false;
                 hasUnread=fcchild.checkFolder();
             } else {
-				//idle-managed folders are kept current by idle events: read cached counts
 				hasUnread=fcchild.getUnreadMessagesCount()>0||fcchild.hasUnreadChildren;
 			}
             if (fcchild.children!=null) {
@@ -979,7 +985,10 @@ public class FolderCache {
 		synchronized(cacheLock) {
 			if (endOfSession) {
 				goidle=false;
+				//close() unblocks a thread parked in folder.idle(); interrupt() wakes one
+				//sitting in the reconnect backoff so it sees goidle=false and exits promptly.
 				try {  folder.close(false); } catch(Exception exc) {}
+				if (idleThread!=null) idleThread.interrupt();
 				this.ms=null;
 				//this.comparator=null;
 			}
@@ -2647,26 +2656,35 @@ public class FolderCache {
 		public void handle(MailEvent event) {
 			try {
 				MessageCountEvent mce = (MessageCountEvent)event;
-				int count = mce.getMessages().length;
-				if (count > 0) {
-					Message m = mce.getMessages()[count-1];
+				//Scan the WHOLE batch but send only ONE 'recent' push for it. Scanning all
+				//messages (instead of only the last, as the old code did) means we still notify
+				//when the last message isn't RECENT or was already seen - and we mark every new
+				//RECENT message as notified. But a single push is enough: it triggers one client
+				//grid-refresh + one desktop notification, so a burst of N new messages (e.g. a
+				//1000-message initial sync) must NOT become N pushes or the client floods.
+				//The latest new message is used for the displayed from/subject.
+				Message recentMsg=null;
+				for (Message m : mce.getMessages()) {
 					String id=((IMAPMessage)m).getMessageID();
 					if (m.getFlags().contains(Flag.RECENT) && !recentNotified.contains(id)) {
 						recentNotified.add(id);
-						String fromName="";
-						Address as[]=m.getFrom();
-						if (as!=null && as.length>0) {
-							InternetAddress ia=(InternetAddress)as[0];
-							fromName = ia.getPersonal();
-							String fromEmail = ms.adjustEmail(ia.getAddress());
-							if (fromName == null) {
-								fromName = fromEmail;
-							} else {
-								fromName = fromName+" <"+fromEmail+">";
-							}
-						}
-						sendRecentMessage(fromName,m.getSubject());
+						recentMsg=m;
 					}
+				}
+				if (recentMsg!=null) {
+					String fromName="";
+					Address as[]=recentMsg.getFrom();
+					if (as!=null && as.length>0) {
+						InternetAddress ia=(InternetAddress)as[0];
+						fromName = ia.getPersonal();
+						String fromEmail = ms.adjustEmail(ia.getAddress());
+						if (fromName == null) {
+							fromName = fromEmail;
+						} else {
+							fromName = fromName+" <"+fromEmail+">";
+						}
+					}
+					sendRecentMessage(fromName,recentMsg.getSubject());
 				}
 
 			} catch(MessagingException ex) { /* Do nothing... */ }
