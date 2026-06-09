@@ -9154,7 +9154,8 @@ public class Service extends BaseService {
 				new JsonResult(instanceId).printTo(out);
 
 			} else if (pcalaction.equals("import")) {
-				cm.addEventObject(calendarId, null, iCal);
+				//TODO : duplicate insert here, which one is correct?
+				//cm.addEventObject(calendarId,  null, iCal);
 				Event ev = cm.addEvent(calendarId, iCal);
 				
 				EventInstanceId iid = EventInstanceId.buildMaster(ev.getEventId());
