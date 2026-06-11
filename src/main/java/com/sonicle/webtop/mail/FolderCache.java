@@ -738,19 +738,24 @@ public class FolderCache {
     }
     
     protected boolean checkFolder() {
-        synchronized(cacheLock) {
-            try {
-                if (checkUnreads || scanForcedOn || scanEnabled) refreshUnreadMessagesCount();
-            } catch(MessagingException exc) {
-                Service.logger.debug("Exception on folder "+foldername,exc);
-            }
-            try {
-                if (checkRecents /*|| scanForcedOn || scanEnabled*/) refreshRecentMessagesCount();
-            } catch(MessagingException exc) {
-                Service.logger.debug("Exception on folder "+foldername,exc);
-            }
-            return (unread>0);
+        //Deliberately NOT synchronized on cacheLock. This only refreshes count state
+        //(unread/recent/recentNotified) via IMAP STATUS/SEARCH, which is DISJOINT from the
+        //message-list cache (msgs/dhash/sort fields) that cacheLock guards. checkFolder is called
+        //only by the single MailFoldersThread, and the idle handlers already refresh these same
+        //counts lock-free - so this lock never protected anything here. It only stalled the
+        //interactive list for the whole STATUS+SEARCH round-trip whenever the sweep happened to
+        //hit the folder being viewed (the residual 5-10s list hang).
+        try {
+            if (checkUnreads || scanForcedOn || scanEnabled) refreshUnreadMessagesCount();
+        } catch(MessagingException exc) {
+            Service.logger.debug("Exception on folder "+foldername,exc);
         }
+        try {
+            if (checkRecents /*|| scanForcedOn || scanEnabled*/) refreshRecentMessagesCount();
+        } catch(MessagingException exc) {
+            Service.logger.debug("Exception on folder "+foldername,exc);
+        }
+        return (unread>0);
     }
 
     protected void updateUnreads() {

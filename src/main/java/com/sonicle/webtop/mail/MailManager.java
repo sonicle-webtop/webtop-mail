@@ -133,6 +133,7 @@ import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeUtility;
+import jakarta.mail.search.SearchTerm;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -202,6 +203,12 @@ public class MailManager extends BaseManager implements IMailManager {
 		FP.add("Message-ID");
 		FP.add("X-Priority");
 	}
+	
+	private static FetchProfile FP_BS = new FetchProfile();
+
+    static {
+		FP_BS.add(FetchProfile.Item.CONTENT_INFO);
+    }
 	
 	static class WebtopFlag {
 		String label;
@@ -421,12 +428,15 @@ public class MailManager extends BaseManager implements IMailManager {
 		Folder folder = null;
 		Mailbox mailbox = null;
 		try {
-			//Condition condition = StringUtils.isBlank(filterQuery) ? null : parseRSQL(filterQuery).accept(visitor);
+			UserProfile.Data pdata = WT.getProfileData(getTargetProfileId());
+			SearchTermBuildingVisitor visitor = new SearchTermBuildingVisitor();
+			visitor.setTimeZone(pdata.getTimeZone());
+			SearchTerm searchTerm = StringUtils.isBlank(filterQuery) ? null : parseRSQL(filterQuery).accept(visitor);
 			
 			mailbox = getMailbox();
 			folder = mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
-			Message fmsgs[] = ((SonicleIMAPFolder)folder).sort(new DateSortTerm(true), null);
+			Message fmsgs[] = ((SonicleIMAPFolder)folder).sort(new DateSortTerm(true), searchTerm);
 			if (pageNo<0) {
 				((SonicleIMAPFolder)folder).uid_fetch(fmsgs, FP);
 			} else {
@@ -445,6 +455,8 @@ public class MailManager extends BaseManager implements IMailManager {
 					mc.consume(msg, ((UIDFolder)folder).getUID(msg));
 				}*/
 			}
+			if (visitor.hasAttachment()) fmsgs = applyHasAttachmentFilter(folder, fmsgs, visitor.getAttachmentName());
+			if (visitor.hasNotePattern()) fmsgs = applyHasNoteFilter(folder, fmsgs, visitor.getNotePattern());
 			for(Message msg: fmsgs) {
 				mc.consume(msg, ((UIDFolder)folder).getUID(msg));
 			}
@@ -944,6 +956,44 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 		return cidname;
 	}
+	
+	private Message[] applyHasAttachmentFilter(Folder folder, Message msgs[], String name) throws MessagingException, IOException {
+		Message rmsgs[]=msgs;
+		
+		ArrayList<Message> amsgs=new ArrayList<Message>();
+		//ensure BODYSTRUCTURE has been loaded
+		((SonicleIMAPFolder)folder).uid_fetch(msgs, FP_BS);
+		for(Message m: msgs) {
+			if (hasAttachments(m, name)) amsgs.add(m);
+		}
+		rmsgs=new SonicleIMAPMessage[amsgs.size()];
+		amsgs.toArray(rmsgs);
+		
+		return rmsgs;
+	}
+		
+	private Message[] applyHasNoteFilter(Folder folder, Message msgs[], String notePattern) throws MessagingException, IOException {
+		Message rmsgs[]=msgs;
+		if (!StringUtils.isEmpty(notePattern)) {
+			try {
+				ArrayList<String> msgIds=searchNotes(notePattern);
+				ArrayList<Message> amsgs=new ArrayList<Message>();
+				for(Message m: msgs) {
+					String hdrs[]=m.getHeader("Message-ID");
+					if (hdrs!=null) {
+						if (msgIds.contains(hdrs[0])) amsgs.add(m);
+					}
+				}
+				rmsgs=new SonicleIMAPMessage[amsgs.size()];
+				amsgs.toArray(rmsgs);
+			} catch(WTException exc) {
+				Service.logger.error("Error during note search",exc);
+			}
+		}
+		
+		return rmsgs;
+	}
+	
 	
 	public boolean isAttachamentDetectUseBodyStructure() {
 		return attachmentDetectUseBodyStructure;
