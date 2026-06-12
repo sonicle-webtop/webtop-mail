@@ -7028,11 +7028,11 @@ public class Service extends BaseService {
 
 				//In threaded mode a collapsed thread's displayed representative (xm=messageToShow) can be
 				//a child sitting OUTSIDE the [start,max] page slice fetched below, so its BODYSTRUCTURE
-				//isn't loaded (we dropped CONTENT_INFO from the whole-folder threaded fetch). Defer the
-				//bodystructure-dependent outputs (attachments icon, and invitation inside the status) and
-				//patch them after a single batch fetch of exactly the displayed representatives. Only
-				//engaged when bodystructure-based detection is on; otherwise hasAttachments/hasInvitation
-				//lazily load the body themselves.
+				//isn't loaded (we dropped CONTENT_INFO from the whole-folder threaded fetch) and the
+				//body-structure based has* checks would silently return false. Those out-of-range
+				//representatives (detected per-row via bsMissing below) get their attachments/invitation
+				//deferred and patched after a single batch fetch; in-range ones resolve inline. Only
+				//engaged when bodystructure-based detection is on.
 				boolean deferBS = !devmode && sgi.threaded && mailManager.isAttachamentDetectUseBodyStructure();
 				ArrayList<SonicleIMAPMessage> bsMsgs = deferBS ? new ArrayList<>() : null;
 				ArrayList<JsListedMessage> bsItems = deferBS ? new ArrayList<>() : null;
@@ -7251,10 +7251,14 @@ public class Service extends BaseService {
 								}
 							}*/
 
-							//When deferBS, bodystructure for this representative may not be loaded yet; compute
-							//false now and patch after the post-loop batch fetch (see below).
-							boolean hasAttachments = (devmode || deferBS) ? false : mailManager.hasAttachments(xm, null);
-							boolean hasInvitation = (devmode || deferBS) ? false : mailManager.hasInvitation(xm);
+							//In threaded mode the chosen representative can sit outside the [start,max] page
+							//slice fetched above, so its BODYSTRUCTURE isn't loaded (null) and the body-structure
+							//based has* checks would silently return false. Detect exactly those (loaded == in
+							//range; null == out of range) and defer ONLY them to the post-loop batch fetch; loaded
+							//representatives are resolved inline as usual.
+							boolean bsMissing = deferBS && xm.getBodyStructure()==null;
+							boolean hasAttachments = (devmode || bsMissing) ? false : mailManager.hasAttachments(xm, null);
+							boolean hasInvitation = (devmode || bsMissing) ? false : mailManager.hasInvitation(xm);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
@@ -7397,9 +7401,9 @@ public class Service extends BaseService {
 
 							JsListedMessage jlm=new JsListedMessage(nuid, priority, status, to, toemail, from, fromemail, StringEscapeUtils.escapeHtml4(subject), msgtext, tId, tIndent, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), gdate, sdate, xdate, unread, msgsize, svtags, pecstatus, cflag, hasNote, archived, isToday, hasAttachments, schedDate, threadOpen, threadHasChildren, threadUnseenChildren, fmtd, fromFolder);
 							items.add(jlm);
-							if (deferBS) {
-								//record the displayed representative and the context needed to recompute
-								//its bodystructure-dependent fields once we've batch-fetched it
+							if (bsMissing) {
+								//record only the out-of-range representatives and the context needed to
+								//recompute their bodystructure-dependent fields once we've batch-fetched them
 								bsMsgs.add(xm);
 								bsItems.add(jlm);
 								bsFlags.add(flags);
