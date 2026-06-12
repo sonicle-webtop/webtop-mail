@@ -7026,6 +7026,20 @@ public class Service extends BaseService {
 				if (xmsgs!=null && max>xmsgs.length) max=xmsgs.length;
 				ArrayList<Long> autoeditList=new ArrayList<Long>();
 
+				//In threaded mode a collapsed thread's displayed representative (xm=messageToShow) can be
+				//a child sitting OUTSIDE the [start,max] page slice fetched below, so its BODYSTRUCTURE
+				//isn't loaded (we dropped CONTENT_INFO from the whole-folder threaded fetch). Defer the
+				//bodystructure-dependent outputs (attachments icon, and invitation inside the status) and
+				//patch them after a single batch fetch of exactly the displayed representatives. Only
+				//engaged when bodystructure-based detection is on; otherwise hasAttachments/hasInvitation
+				//lazily load the body themselves.
+				boolean deferBS = !devmode && sgi.threaded && mailManager.isAttachamentDetectUseBodyStructure();
+				ArrayList<SonicleIMAPMessage> bsMsgs = deferBS ? new ArrayList<>() : null;
+				ArrayList<JsListedMessage> bsItems = deferBS ? new ArrayList<>() : null;
+				ArrayList<Flags> bsFlags = deferBS ? new ArrayList<>() : null;
+				ArrayList<Boolean> bsIsToday = deferBS ? new ArrayList<>() : null;
+				ArrayList<Boolean> bsScheduled = deferBS ? new ArrayList<>() : null;
+
 				if (xmsgs!=null) {
 					int total=0;
 					int expunged=0;
@@ -7237,8 +7251,10 @@ public class Service extends BaseService {
 								}
 							}*/
 
-							boolean hasAttachments = devmode ? false : mailManager.hasAttachments(xm, null);
-							boolean hasInvitation = devmode ? false : mailManager.hasInvitation(xm);
+							//When deferBS, bodystructure for this representative may not be loaded yet; compute
+							//false now and patch after the post-loop batch fetch (see below).
+							boolean hasAttachments = (devmode || deferBS) ? false : mailManager.hasAttachments(xm, null);
+							boolean hasInvitation = (devmode || deferBS) ? false : mailManager.hasInvitation(xm);
 
 							//Unread
 							boolean unread=!xm.isSet(Flags.Flag.SEEN);
@@ -7379,7 +7395,17 @@ public class Service extends BaseService {
 								if (!xmfoldername.equals(folder.getFullName())) fromFolder = xmfoldername;
 							}
 
-							items.add(new JsListedMessage(nuid, priority, status, to, toemail, from, fromemail, StringEscapeUtils.escapeHtml4(subject), msgtext, tId, tIndent, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), gdate, sdate, xdate, unread, msgsize, svtags, pecstatus, cflag, hasNote, archived, isToday, hasAttachments, schedDate, threadOpen, threadHasChildren, threadUnseenChildren, fmtd, fromFolder));
+							JsListedMessage jlm=new JsListedMessage(nuid, priority, status, to, toemail, from, fromemail, StringEscapeUtils.escapeHtml4(subject), msgtext, tId, tIndent, formatCalendarDate(yyyy, mm, dd, hhh, mmm, sss), gdate, sdate, xdate, unread, msgsize, svtags, pecstatus, cflag, hasNote, archived, isToday, hasAttachments, schedDate, threadOpen, threadHasChildren, threadUnseenChildren, fmtd, fromFolder);
+							items.add(jlm);
+							if (deferBS) {
+								//record the displayed representative and the context needed to recompute
+								//its bodystructure-dependent fields once we've batch-fetched it
+								bsMsgs.add(xm);
+								bsItems.add(jlm);
+								bsFlags.add(flags);
+								bsIsToday.add(isToday);
+								bsScheduled.add(issched);
+							}
 
 							if (autoedit) {
 								autoeditList.add(nuid);
@@ -7389,6 +7415,27 @@ public class Service extends BaseService {
 						}
 
 						if (openedsent) fsent.close(false);
+
+						//Now that the displayed representatives are known, load their BODYSTRUCTURE in a
+						//single batch (instead of for the whole folder) and fill the deferred fields. This
+						//covers representatives that fell outside the [start,max] page slice fetched above.
+						if (deferBS && !bsMsgs.isEmpty()) {
+							try {
+								FetchProfile bsfp=new FetchProfile();
+								bsfp.add(FetchProfile.Item.CONTENT_INFO);
+								mcache.fetch(bsMsgs.toArray(new Message[0]), bsfp);
+								for (int bi=0; bi<bsMsgs.size(); ++bi) {
+									SonicleIMAPMessage bxm=bsMsgs.get(bi);
+									JsListedMessage bjlm=bsItems.get(bi);
+									bjlm.atts=mailManager.hasAttachments(bxm, null);
+									//keep the scheduled-draft status override; otherwise recompute with invitation
+									if (!bsScheduled.get(bi))
+										bjlm.status=mailManager.getStatusString(bsFlags.get(bi), mailManager.hasInvitation(bxm), bsIsToday.get(bi));
+								}
+							} catch(Exception bsexc) {
+								logger.error("Error loading bodystructure for threaded representatives", bsexc);
+							}
+						}
 					}
 					/*                if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
 					 //if (max<msgs.length) mcache.fetch(msgs,FolderCache.flagsFP,max,msgs.length);
