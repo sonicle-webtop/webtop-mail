@@ -6698,7 +6698,13 @@ public class Service extends BaseService {
 		MessageListThread mlt = null;
 		synchronized(mlThreads) {
 			mlt = mlThreads.get(key);
-			if (mlt == null || (mlt.lastRequest!=timestamp && refresh)) {
+			//Replace an existing mlt only if it FINISHED: replacing one still running
+			//orphans a thread that keeps holding the FolderCache cacheLock through its
+			//whole IMAP job, so the new one just queues behind it and the user waits
+			//twice (typical on refresh-after-delete). Waiting on the in-flight run is
+			//correct: the display loop skips expunged messages, and the next refresh
+			//rebuilds fresh.
+			if (mlt == null || (mlt.finished && mlt.lastRequest!=timestamp && refresh)) {
 				//if (mlt!=null)
 				//	System.out.println(page+": same time stamp ="+(mlt.lastRequest!=timestamp)+" - refresh = "+refresh);
 				//else
@@ -6735,18 +6741,28 @@ public class Service extends BaseService {
 		Message xmsgs[]=null;
 		synchronized (mlt.lock) {
 			if (!mlt.started) {
-				//System.out.println(page+": starting list thread");
+				//the STARTER flags started under lock BEFORE start(): run() may not be
+				//scheduled yet when the next request checks, and a duplicate thread
+				//would run the same IMAP job twice back to back
+				mlt.started = true;
 				Thread t = new Thread(mlt);
 				t.start();
 			}
-			if (!mlt.finished) {
-				//System.out.println(page+": waiting list thread to finish");
+			//guarded loop: wait() can wake spuriously, and a worker dying before
+			//notifyAll() must not hang the request forever (sanity timeout)
+			long deadline = System.currentTimeMillis() + 120000;
+			while (!mlt.finished) {
+				long left = deadline - System.currentTimeMillis();
+				if (left <= 0) {
+					Service.logger.warn("Timed out waiting message list on {}", key);
+					break;
+				}
 				try {
-					mlt.lock.wait();
+					mlt.lock.wait(left);
 				} catch (InterruptedException exc) {
 					Service.logger.error("Exception",exc);
+					break;
 				}
-				//mlThreads.remove(key);
 			}
 			//TODO: see if we can check first request from buffered store
 			//if (mlt.lastRequest==timestamp) {
@@ -7751,8 +7767,11 @@ public class Service extends BaseService {
 		boolean threaded=false;
 		
 		Message msgs[] = null;
-		boolean started = false;
-		boolean finished = false;
+		//volatile: started/finished are also read outside synchronized(lock)
+		//(listMessages checks finished under synchronized(mlThreads) to decide
+		//whether a still-running mlt may be replaced)
+		volatile boolean started = false;
+		volatile boolean finished = false;
 		final Object lock = new Object();
 		long lastRequest = 0;
 		
@@ -7768,8 +7787,10 @@ public class Service extends BaseService {
 		}
 		
 		public void run() {
-			started = true;
-			finished = false;
+			//note: 'started' is set by the STARTER in listMessages (under lock, before
+			//Thread.start()): setting it here would leave a scheduling gap during which
+			//another request could see started=false and spawn a duplicate thread
+			//running the same IMAP job. 'finished' starts false from field init.
 			synchronized (lock) {
 				try {
 					this.millis = System.currentTimeMillis();

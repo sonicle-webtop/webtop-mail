@@ -184,8 +184,15 @@ public class FolderCache {
 
 	private static FetchProfile FP_BS = new FetchProfile();
 
+	//Used by refreshRecentMessagesCount to batch-load what its loop reads:
+	//ENVELOPE for from/subject, plus the Message-ID header (ENVELOPE alone does
+	//not populate MimeMessage header reads).
+	private static FetchProfile FP_RECENT = new FetchProfile();
+
     static {
 		FP_BS.add(FetchProfile.Item.CONTENT_INFO);
+		FP_RECENT.add(FetchProfile.Item.ENVELOPE);
+		FP_RECENT.add("Message-ID");
     }
 
 	//private static void addHashMonths(String language, String vmonths[]) {
@@ -682,7 +689,13 @@ public class FolderCache {
             AndTerm term=new AndTerm(new SearchTerm[] {sterm, dterm});
             Message umsgs[]=folder.search(term);
             //Message umsgs[]=folder.search(recentSearchTerm);
+            //Batch-prefetch what the loop reads (Message-ID/from/subject) in ONE round trip:
+            //without this each getMessageID/getFrom/getSubject below lazily fetches per
+            //message, serializing N round trips on the same connection the interactive
+            //list uses. ENVELOPE covers from/subject; Message-ID is read as a header.
+            if (umsgs.length>0) folder.fetch(umsgs, FP_RECENT);
             recent=0;
+            Message recentMsg=null;
             for(Message m: umsgs) {
                 IMAPMessage im=(IMAPMessage)m;
                 String id=im.getMessageID();
@@ -692,21 +705,27 @@ public class FolderCache {
                     if (!recentNotified.contains(id)) {
                         ++recent;
                         recentNotified.add(id);
-						String fromName="";
-						Address as[]=m.getFrom();
-						if (as!=null && as.length>0) {
-							InternetAddress ia = (InternetAddress) as[0];
-							fromName = ia.getPersonal();
-							String fromEmail = ms.adjustEmail(ia.getAddress());
-							if (fromName == null) {
-								fromName = fromEmail;
-							} else {
-								fromName = fromName+" <"+fromEmail+">";
-							}
-						}
-						sendRecentMessage(fromName,m.getSubject());
+                        recentMsg=m;
                     }
 //                }
+            }
+            //Send ONE recent push per sweep (the latest new message), never one per
+            //message, or the client goes crazy when many messages arrive at once.
+            //Same rule as the idle-path batch handling in MessagesAddedHandler.
+            if (recentMsg!=null) {
+                String fromName="";
+                Address as[]=recentMsg.getFrom();
+                if (as!=null && as.length>0) {
+                    InternetAddress ia = (InternetAddress) as[0];
+                    fromName = ia.getPersonal();
+                    String fromEmail = ms.adjustEmail(ia.getAddress());
+                    if (fromName == null) {
+                        fromName = fromEmail;
+                    } else {
+                        fromName = fromName+" <"+fromEmail+">";
+                    }
+                }
+                sendRecentMessage(fromName,recentMsg.getSubject());
             }
             if (!wasOpen) folder.close(false);
             //if (!(oldrecent==0 && recent==0)) recentChanged=true;
