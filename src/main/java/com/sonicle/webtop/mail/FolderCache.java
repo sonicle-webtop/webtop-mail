@@ -1738,7 +1738,12 @@ public class FolderCache {
 			
 			boolean hasrefs=((IMAPStore)folder.getStore()).hasCapability("THREAD=REFS");
 			String method=hasrefs?"REFS":"REFERENCES";
-			FetchProfile fp=ms.getMessageFetchProfile();
+			//Light profile (no CONTENT_INFO): threading must materialize every message up front
+			//to collapse threads and pick representatives, but that only needs dates/flags/headers.
+			//BODYSTRUCTURE is parsed per message by JavaMail and is only needed for the
+			//attachment/invitation icons on the visible page, which processListMessages fetches
+			//per-page. Loading it for the whole folder here is wasted wire + parse time.
+			FetchProfile fp=ms.getThreadMessageFetchProfile();
 			try {
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,iq.getSearchTerm(),fp);
 			} catch(Exception exc) {

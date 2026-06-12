@@ -111,6 +111,25 @@ public class MeFolders extends MeFoldersApi {
 	}
 
 	@Override
+	public Response listAllFolders() {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		try {
+			ArrayList<Folder> folders = mmgr.getAllFolders();
+			ArrayList<String> items = new ArrayList<>();
+			for(Folder folder: folders) {
+				items.add(folder.getFullName());
+			}
+			return respOk(items);
+		} catch(Exception ex) {
+			logger.error("[{}] getAllFolders()", targetPid, ex);
+			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
+		}
+	}
+
+	@Override
 	public Response getFolderInfo(String folderId) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);

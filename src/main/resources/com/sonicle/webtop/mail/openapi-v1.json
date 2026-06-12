@@ -175,6 +175,35 @@
       },
       "parameters": []
     },
+    "/me/folders/all": {
+      "get": {
+        "summary": "Lists root folders",
+        "operationId": "listAllFolders",
+        "description": "returns an unordered list of all full ids of the folders tree",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "x-stoplight": {
+                      "id": "urk0gwtby5656"
+                    },
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "me_folders"
+        ]
+      },
+      "parameters": []
+    },
     "/me/folders/info": {
       "get": {
         "summary": "Get folder info",

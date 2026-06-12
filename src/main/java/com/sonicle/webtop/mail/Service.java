@@ -235,6 +235,9 @@ public class Service extends BaseService {
 //	protected HashMap<String,Tag> htags=new HashMap<>();
 	
 	private FetchProfile FP = new FetchProfile();
+	//Same as FP but WITHOUT CONTENT_INFO: used for the initial whole-folder fetch in threaded
+	//mode, where bodystructure isn't needed (it's loaded per-page later). See getThreadMessageFetchProfile().
+	private FetchProfile threadFP = new FetchProfile();
 	private FetchProfile draftsFP=new FetchProfile();
 	private FetchProfile pecFP=new FetchProfile();
 	
@@ -384,6 +387,13 @@ public class Service extends BaseService {
 		FP.add("Message-ID");
 		FP.add("X-Priority");
 		FP.add("Resent-Date");
+		//Mirror of FP minus CONTENT_INFO (bodystructure is fetched per-page, not for the whole folder)
+		threadFP.add(FetchProfile.Item.ENVELOPE);
+		threadFP.add(FetchProfile.Item.FLAGS);
+		threadFP.add(UIDFolder.FetchProfileItem.UID);
+		threadFP.add("Message-ID");
+		threadFP.add("X-Priority");
+		threadFP.add("Resent-Date");
 		draftsFP.add(FetchProfile.Item.ENVELOPE);
 		draftsFP.add(FetchProfile.Item.FLAGS);
 		draftsFP.add(FetchProfile.Item.CONTENT_INFO);
@@ -394,6 +404,7 @@ public class Service extends BaseService {
 		draftsFP.add(HEADER_SONICLE_FROM_DRAFTER);
 		if (hasDmsDocumentArchiving()) {
 			FP.add("X-WT-Archived");
+			threadFP.add("X-WT-Archived");
 			draftsFP.add("X-WT-Archived");
 		}
 		pecFP.add(FetchProfile.Item.ENVELOPE);
@@ -640,6 +651,12 @@ public class Service extends BaseService {
 	
 	public FetchProfile getMessageFetchProfile() {
 		return FP;
+	}
+
+	//Threaded-mode initial fetch profile: same as getMessageFetchProfile() but without
+	//CONTENT_INFO (bodystructure), which is only needed for the visible page and is loaded there.
+	public FetchProfile getThreadMessageFetchProfile() {
+		return threadFP;
 	}
 
 	public MailFoldersThread getMailFoldersThread() {

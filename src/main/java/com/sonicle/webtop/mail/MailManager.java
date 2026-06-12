@@ -362,6 +362,22 @@ public class MailManager extends BaseManager implements IMailManager {
 		return favorites;
 	}
 	
+	public ArrayList<Folder> getAllFolders() {
+		ArrayList<Folder> folders = new ArrayList<>();
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			Folder root = mailbox.getRootFolder();
+			Folder flist[] = root.list("*");
+			for(Folder folder: flist) folders.add(folder);
+		} catch(MessagingException|WTException exc) {
+			logger.error("Error listing folders", exc);
+		} finally {
+			//mailbox.disconnect();
+		}
+		return folders;
+	}
+	
 	public ArrayList<Folder> getRootFolders() {
 		ArrayList<Folder> folders = new ArrayList<>();
 		Mailbox mailbox = null;

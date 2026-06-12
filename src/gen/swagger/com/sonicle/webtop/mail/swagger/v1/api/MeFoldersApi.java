@@ -16,7 +16,7 @@ import javax.validation.Valid;
 
 @Path("/me/folders")
 @Api(description = "the MeFolders API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-04T17:12:25.224+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-12T11:56:47.695+02:00[Europe/Rome]")
 public abstract class MeFoldersApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @GET
@@ -32,6 +32,22 @@ public abstract class MeFoldersApi extends com.sonicle.webtop.core.sdk.BaseRestA
         @ApiResponse(code = 200, message = "Success", response = ApiFolderInfo.class)
     })
     public Response getFolderInfo(@QueryParam("folder_id")   String folderId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @GET
+    @Path("/all")
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Lists root folders", notes = "returns an unordered list of all full ids of the folders tree", response = String.class, responseContainer = "List", authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_folders" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Success", response = String.class, responseContainer = "List")
+    })
+    public Response listAllFolders() {
         return Response.ok().entity("magic!").build();
     }
 
