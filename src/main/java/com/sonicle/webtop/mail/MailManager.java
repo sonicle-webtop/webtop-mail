@@ -306,7 +306,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	private void createMailboxObject() throws GeneralSecurityException {
 		String user = WT.buildDomainInternetAddress(getTargetProfileId().getDomainId(), getTargetProfileId().getUserId(), null).getAddress();
-		final StoreHostParams hostParams = mus.getMailboxHostParams(user, PasswordUtils.asString(WT.lookupSecretStoreValue(getTargetProfileId(), WebTopManager.PSVKEY_PPW)), false);
+		final StoreHostParams hostParams = mus.getMailboxHostParams(user, PasswordUtils.asString(WT.lookupSecretStoreValue(getTargetProfileId(), WebTopManager.PSVKEY_PPW)), true);
 		mailbox = new Mailbox(hostParams, ManagerUtils.createMailboxConfig(mus), ManagerUtils.createMailboxProperties(hostParams.getProtocol()));
 	}
 	
