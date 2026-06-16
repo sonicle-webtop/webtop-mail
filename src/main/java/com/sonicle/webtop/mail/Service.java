@@ -659,6 +659,30 @@ public class Service extends BaseService {
 		return threadFP;
 	}
 
+	//--- message-list timing instrumentation ---------------------------------------
+	//Gated on the per-session JS-debug flag so it can be turned on for one live session
+	//(via the client) without flooding logs for every other session. Reused by
+	//processListMessages, MessageListThread.run and FolderCache (via 'ms').
+	public boolean isListDebugEnabled() {
+		try {
+			return environment!=null && environment.getSession()!=null && environment.getSession().isJsDebugEnabled();
+		} catch(Exception exc) {
+			return false;
+		}
+	}
+
+	//Logs one timing checkpoint: delta since the previous checkpoint and cumulative time
+	//since t0, with the running thread name (so lock waits and the cross-thread handoff to
+	//MessageListThread are visible). Returns 'now' to feed as the next call's tprev.
+	//All times in ms; nanoTime base avoids wall-clock jumps. No-op unless dbg is true.
+	public static long listMark(boolean dbg, String id, String label, long t0, long tprev) {
+		if (!dbg) return tprev;
+		long now=System.nanoTime();
+		logger.info("[LISTDBG {}] {}: +{}ms (total {}ms) <{}>", id, label,
+				(now-tprev)/1000000L, (now-t0)/1000000L, Thread.currentThread().getName());
+		return now;
+	}
+
 	public MailFoldersThread getMailFoldersThread() {
 		return mft;
 	}
@@ -6695,6 +6719,9 @@ public class Service extends BaseService {
 	}
 	
 	private MessagesInfo listMessages(FolderCache mcache, String key, boolean refresh, SortGroupInfo sgi, long timestamp, ImapQuery iq) throws MessagingException {
+		boolean dbg=isListDebugEnabled();
+		long t0=System.nanoTime(), tprev=t0;
+		boolean createdNew=false;
 		MessageListThread mlt = null;
 		synchronized(mlThreads) {
 			mlt = mlThreads.get(key);
@@ -6712,6 +6739,7 @@ public class Service extends BaseService {
 				mlt = new MessageListThread(mcache, sgi.sortby, sgi.sortascending, refresh, sgi.sortgroup, sgi.groupascending, sgi.threaded, iq);
 				mlt.lastRequest = timestamp;
 				mlThreads.put(key, mlt);
+				createdNew=true;
 			}
 			//else System.out.println(page+": reusing list thread");
 
@@ -6737,14 +6765,18 @@ public class Service extends BaseService {
 
 			//System.out.println("mlThreads size is now "+mlThreads.size());
 		}
+		tprev=listMark(dbg,"listMessages "+key,"mlThreads section (createdNew="+createdNew+")",t0,tprev);
 
 		Message xmsgs[]=null;
+		boolean wasStarter=false;
 		synchronized (mlt.lock) {
+			tprev=listMark(dbg,"listMessages "+key,"acquired mlt.lock (finished="+mlt.finished+")",t0,tprev);
 			if (!mlt.started) {
 				//the STARTER flags started under lock BEFORE start(): run() may not be
 				//scheduled yet when the next request checks, and a duplicate thread
 				//would run the same IMAP job twice back to back
 				mlt.started = true;
+				wasStarter=true;
 				Thread t = new Thread(mlt);
 				t.start();
 			}
@@ -6770,6 +6802,9 @@ public class Service extends BaseService {
 				xmsgs=mlt.msgs;
 			//}
 		}
+		//If wasStarter, this delta == the build it ran inline; otherwise == time blocked
+		//waiting for another request's build to finish.
+		tprev=listMark(dbg,"listMessages "+key,"got result (wasStarter="+wasStarter+")",t0,tprev);
 
 		return new MessagesInfo(xmsgs,mlt);
 	}
@@ -6845,6 +6880,11 @@ public class Service extends BaseService {
 	}
 	
 	public void processListMessages(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		//Timing instrumentation, active only when the session has JS-debug enabled.
+		boolean dbg=isListDebugEnabled();
+		long t0=System.nanoTime();
+		long tprev=t0;
+		String dbgId="folder="+request.getParameter("folder")+" page="+request.getParameter("page");
 		UserProfile profile = environment.getProfile();
 		Locale locale = profile.getLocale();
 		java.util.Calendar cal = java.util.Calendar.getInstance(locale);
@@ -6963,15 +7003,18 @@ public class Service extends BaseService {
 		boolean connected=false;
 		try {
 			connected=account.checkStoreConnected();
+			tprev=listMark(dbg,dbgId,"checkStoreConnected (connectLock + IMAP connect/NOOP)",t0,tprev);
 			if (!connected) throw new Exception("Mail account authentication error");
 
 			Map<String, Tag> tagsMap=WT.getCoreManager().listTags();
+			tprev=listMark(dbg,dbgId,"listTags (core DB)",t0,tprev);
 			int funread = 0;
 			if (pfoldername == null) {
 				folder = account.getDefaultFolder();
 			} else {
 				folder = account.getFolder(pfoldername);
 			}
+			tprev=listMark(dbg,dbgId,"getFolder ("+pfoldername+")",t0,tprev);
 			boolean issent = account.isSentFolder(folder.getFullName());
 			boolean isdrafts = account.isDraftsFolder(folder.getFullName());
 			boolean isundershared=account.isUnderSharedFolder(pfoldername);
@@ -6984,7 +7027,8 @@ public class Service extends BaseService {
 					}
 				}
 			}
-			
+			tprev=listMark(dbg,dbgId,"sent/drafts/shared flags",t0,tprev);
+
 			String key = folder.getFullName();
 			JsonResult jsRes;
 			ArrayList<JsListedMessage> items = new ArrayList<>();
@@ -7002,8 +7046,13 @@ public class Service extends BaseService {
 				if (iq.hasAttachment() || iq.hasAttachmentName() || iq.hasNotePattern()) sgi.threaded = false;
 
 				if(queryObj != null) refresh = true;
+				tprev=listMark(dbg,dbgId,"pre-listMessages (refresh="+refresh+" threaded="+sgi.threaded+")",t0,tprev);
 				MessagesInfo messagesInfo = listMessages(mcache, key, refresh, sgi, timestamp, iq);
+				tprev=listMark(dbg,dbgId,"listMessages returned (MLT wait+SORT/THREAD build)",t0,tprev);
 				Message xmsgs[] = messagesInfo.messages;
+				//xmsgs==null (vs empty array) means the worker's build failed/aborted: the grid
+				//will render BLANK. Flag it explicitly so the blank-list case is visible.
+				if (xmsgs==null) listMark(dbg,dbgId,"!! xmsgs==NULL -> BLANK list (build failed/aborted)",t0,tprev);
 
 				if (pthreadaction!=null && pthreadaction.trim().length()>0) {
 					long actuid=Long.parseLong(pthreadactionuid);
@@ -7082,12 +7131,16 @@ public class Service extends BaseService {
 						boolean openedsent=false;
 						//Fetch others for these messages
 						mailManager.fetch(mcache.getFolder(),xmsgs,(isdrafts?draftsFP:messagesInfo.isPEC()?pecFP:FP), start, max - start);
+						tprev=listMark(dbg,dbgId,"page fetch (FP for rows "+start+".."+max+")",t0,tprev);
 						long tId=0;
 						boolean tIsOpen = false;
 						boolean tChildren = false;
 						int tUnseenChildren = 0;
 						SonicleIMAPMessage oldestUnseenMsg = null;
 						SonicleIMAPMessage mostRecentMsg = null;
+						//peek timing probe: counts per-row preview body downloads (the suspected
+						//per-row IMAP cost of the display loop over high-latency links)
+						long peekMs=0; int peekN=0;
 
 						for (int i = 0, ni = 0; i < limit; ++ni, ++i) {
 							int ix = start + i;
@@ -7368,7 +7421,9 @@ public class Service extends BaseService {
 							String msgtext=null;
 							if (showMessagePreviewOnRow && isToday && unread) {
 								try {
+									long pk0=System.nanoTime();
 									msgtext=MailUtils.peekText(xm);
+									peekMs+=(System.nanoTime()-pk0)/1000000L; peekN++;
 									if (msgtext!=null) {
 										msgtext=msgtext.trim();
 										if (msgtext.length()>100) msgtext=msgtext.substring(0,100);
@@ -7435,6 +7490,7 @@ public class Service extends BaseService {
 						}
 
 						if (openedsent) fsent.close(false);
+						tprev=listMark(dbg,dbgId,"display loop ("+items.size()+" rows built, peekText x"+peekN+" = "+peekMs+"ms)",t0,tprev);
 
 						//Now that the displayed representatives are known, load their BODYSTRUCTURE in a
 						//single batch (instead of for the whole folder) and fill the deferred fields. This
@@ -7455,6 +7511,7 @@ public class Service extends BaseService {
 							} catch(Exception bsexc) {
 								logger.error("Error loading bodystructure for threaded representatives", bsexc);
 							}
+							tprev=listMark(dbg,dbgId,"deferred BS batch fetch ("+bsMsgs.size()+" reps)",t0,tprev);
 						}
 					}
 					/*                if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
@@ -7475,6 +7532,7 @@ public class Service extends BaseService {
 						funread=mcache.getUnreadMessagesCount();
 					//}
 					//else if (funread==0) funread=mcache.getUnreadMessagesCount();
+					tprev=listMark(dbg,dbgId,"refreshUnreads/unreadCount (IMAP STATUS)",t0,tprev);
 
 					long qlimit=-1;
 					long qusage=-1;
@@ -7494,6 +7552,7 @@ public class Service extends BaseService {
 					} catch(MessagingException exc) {
 						logger.debug("Error on QUOTA",exc);
 					}
+					tprev=listMark(dbg,dbgId,"getQuota (IMAP GETQUOTA)",t0,tprev);
 
 					jsRes = new JsonResult("messages", items)
 							.setTotal(total - expunged)
@@ -7582,6 +7641,8 @@ public class Service extends BaseService {
 						.set("issent", false);
 			}
 			jsRes.printTo(out, false);
+			tprev=listMark(dbg,dbgId,"serialize+write response",t0,tprev);
+			listMark(dbg,dbgId,"=== TOTAL processListMessages ===",t0,t0);
 		} catch (Throwable t) {
 			new JsonResult(t).printTo(out);
 			Service.logger.error("Exception", t);
@@ -7794,7 +7855,10 @@ public class Service extends BaseService {
 			synchronized (lock) {
 				try {
 					this.millis = System.currentTimeMillis();
+					boolean dbg=isListDebugEnabled();
+					long t0=System.nanoTime();
 					msgs = fc.getMessages(sortby, ascending, refresh, sort_group, groupascending, threaded, imapQuery);
+					listMark(dbg,"MLT "+fc.getFolderName(),"fc.getMessages (cacheLock + SORT/THREAD + page fetch)",t0,t0);
 
 					/*
 					UserProfileId profileId=getEnv().getProfileId();
@@ -7822,6 +7886,10 @@ public class Service extends BaseService {
 					}*/
 				} catch (Exception exc) {
 					Service.logger.error("Exception",exc);
+					//Leaves msgs=null -> the request renders a BLANK list. Surface it in the
+					//LISTDBG stream too (the plain error log is often filtered out), tagged so a
+					//"grep LISTDBG" still catches the cause of an empty grid.
+					Service.logger.warn("[LISTDBG MLT {}] getMessages FAILED -> msgs=null (blank list): {}", fc.getFolderName(), String.valueOf(exc));
 				} finally {
 					finished = true;
 					lock.notifyAll();

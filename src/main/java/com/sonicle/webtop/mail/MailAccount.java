@@ -775,8 +775,24 @@ public class MailAccount {
 		return foldersCache.keySet();
 	}
 	
+	//Quota changes slowly but the message list asks for it on every page; over a high-latency
+	//link a GETQUOTA round trip can cost hundreds of ms (observed up to ~880ms). Cache it per
+	//folder root for a short TTL so the list footer still always gets a value, but the actual
+	//IMAP command runs at most once per TTL. Value objects (not tied to the store) so they
+	//survive a reconnect; staleness is bounded by the TTL.
+	private static final long QUOTA_TTL_MS = 60000;
+	private final java.util.concurrent.ConcurrentHashMap<String,Quota[]> quotaCache = new java.util.concurrent.ConcurrentHashMap<>();
+	private final java.util.concurrent.ConcurrentHashMap<String,Long> quotaCacheAt = new java.util.concurrent.ConcurrentHashMap<>();
+
 	public Quota[] getQuota(String foldername) throws MessagingException {
-		return ((IMAPStore)store).getQuota(foldername);
+		long now=System.currentTimeMillis();
+		Long at=quotaCacheAt.get(foldername);
+		Quota[] cached=quotaCache.get(foldername);
+		if (cached!=null && at!=null && (now-at)<QUOTA_TTL_MS) return cached;
+		Quota[] q=((IMAPStore)store).getQuota(foldername);
+		quotaCache.put(foldername, q);
+		quotaCacheAt.put(foldername, now);
+		return q;
 	}
 	
 	public FolderCache getFolderCache(String foldername) throws MessagingException {

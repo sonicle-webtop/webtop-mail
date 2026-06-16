@@ -810,12 +810,19 @@ public class FolderCache {
     }
     
     public void refresh(ImapQuery iq) throws MessagingException, IOException {
+        boolean dbg=(ms!=null && ms.isListDebugEnabled());
+        long t0=System.nanoTime(), tprev=t0;
         synchronized(cacheLock) {
+            //delta here = time spent BLOCKED on cacheLock (contention with another
+            //refresh/getMessages on the same folder); a big value means lock contention,
+            //not slow IMAP.
+            tprev=Service.listMark(dbg,"refresh "+foldername,"acquired cacheLock",t0,tprev);
             cleanup(false);
             if (!threaded)
                 msgs=_getMessages("", "",sort_by,ascending,sort_group,groupascending, iq);
             else
                 msgs=_getThreadedMessages("", "", iq);
+            tprev=Service.listMark(dbg,"refresh "+foldername,(threaded?"_getThreadedMessages (THREAD+fetch)":"_getMessages (SORT)"),t0,tprev);
 
             if (iq.hasNotePattern()) {
 
@@ -920,8 +927,13 @@ public class FolderCache {
         Message xmsgs[]=null;
         MessageSearchResult msr=null;
         //MessageComparator mcomp=null;
+        boolean dbg=(ms!=null && ms.isListDebugEnabled());
+        long t0=System.nanoTime();
 
         synchronized(cacheLock) {
+            //delta here = time BLOCKED acquiring this folder's cacheLock. Big value =>
+            //another thread (a concurrent getMessages/refresh on this folder) held it.
+            Service.listMark(dbg,"getMessages "+foldername,"acquired cacheLock",t0,t0);
 			if (this.sort_by!=sort_by || this.ascending!=ascending || this.sort_group!=sort_group || this.groupascending!=groupascending || this.threaded!=threaded) {
                 this.sort_by=sort_by;
                 this.ascending=ascending;
@@ -1745,7 +1757,7 @@ public class FolderCache {
 		xmsgs=applyImapQuerySecondaryFilters(xmsgs,iq);
 		return xmsgs;
 	}
-	
+
 	private Message[] _getThreadedMessages(String patterns, String searchfields, ImapQuery iq) throws MessagingException, IOException {
 		Message[] tmsgs=null;
 		open();
@@ -1771,7 +1783,7 @@ public class FolderCache {
 				open();
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,iq.getSearchTerm(),fp);
 			}
-			
+
 			//recalculate open threads and total open children
 			if (tmsgs!=null) {
 				totalOpenThreadChildren=0;
