@@ -2164,7 +2164,52 @@ public class MailManager extends BaseManager implements IMailManager {
 			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
 			fromFolder.expunge();
 		} catch(Exception exc) {
-			logger.error("Error getting message", exc);
+			logger.error("Error trashing messages", exc);
+		} finally {
+			StoreUtils.closeQuietly(fromFolder, false);
+			StoreUtils.closeQuietly(toFolder, false);
+			//mailbox.disconnect();
+		}
+	}
+
+	public void deleteMessage(String folderId, long uid) {	
+		IMAPFolder fromFolder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			fromFolder = (IMAPFolder) mailbox.getFolder(folderId);
+			
+			fromFolder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) fromFolder.getMessageByUID(uid);
+			Message amsg[] = new Message[] { msg };
+			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
+			fromFolder.expunge();
+		} catch(Exception exc) {
+			logger.error("Error deleting messages", exc);
+		} finally {
+			StoreUtils.closeQuietly(fromFolder, false);
+			//mailbox.disconnect();
+		}
+	}
+
+	public void moveMessage(String fromFolderId, String toFolderId, long uid) {	
+		IMAPFolder fromFolder = null;
+		IMAPFolder toFolder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			fromFolder = (IMAPFolder) mailbox.getFolder(fromFolderId);
+			toFolder = (IMAPFolder) mailbox.getFolder(toFolderId);
+			
+			fromFolder.open(Folder.READ_WRITE);
+			toFolder.open(Folder.READ_WRITE);
+			Message msg = (MimeMessage) fromFolder.getMessageByUID(uid);
+			Message amsg[] = new Message[] { msg };
+			fromFolder.copyMessages(amsg, toFolder);
+			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
+			fromFolder.expunge();
+		} catch(Exception exc) {
+			logger.error("Error moving messages", exc);
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			StoreUtils.closeQuietly(toFolder, false);

@@ -18,8 +18,22 @@ import javax.validation.Valid;
 
 @Path("/me/messages")
 @Api(description = "the MeMessages API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-12T11:56:47.695+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-18T16:00:13.341+02:00[Europe/Rome]")
 public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
+
+    @DELETE
+    @ApiOperation(value = "Trash message by folder and uid", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response deleteMessage(@QueryParam("folder_id")   String folderId,@QueryParam("uid")   String uid,@QueryParam("trash")   Boolean trash) {
+        return Response.ok().entity("magic!").build();
+    }
 
     @GET
     @Path("/forward")
@@ -180,6 +194,20 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
         return Response.ok().entity("magic!").build();
     }
 
+    @PUT
+    @ApiOperation(value = "", notes = "Move message to another folder", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response moveMessage(@QueryParam("from_folder_id")   String fromFolderId,@QueryParam("to_folder_id")   String toFolderId,@QueryParam("uid")   String uid) {
+        return Response.ok().entity("magic!").build();
+    }
+
     @POST
     @Path("/send")
     @Consumes({ "application/json" })
@@ -257,20 +285,6 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
         @ApiResponse(code = 200, message = "OK", response = Void.class)
     })
     public Response setMessageTags(@QueryParam("folder_id")   String folderId,@QueryParam("uid")   String uid,@Valid List<String> requestBody) {
-        return Response.ok().entity("magic!").build();
-    }
-
-    @DELETE
-    @ApiOperation(value = "Trash message by folder and uid", notes = "", response = Void.class, authorizations = {
-        
-        @Authorization(value = "basicAuth"),
-        
-        @Authorization(value = "bearerAuth")
-         }, tags={ "me_messages" })
-    @ApiResponses(value = { 
-        @ApiResponse(code = 200, message = "OK", response = Void.class)
-    })
-    public Response trashMessage(@QueryParam("folder_id")   String folderId,@QueryParam("uid")   String uid) {
         return Response.ok().entity("magic!").build();
     }
 }

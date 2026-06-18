@@ -378,7 +378,7 @@
       },
       "delete": {
         "summary": "Trash message by folder and uid",
-        "operationId": "trashMessage",
+        "operationId": "deleteMessage",
         "responses": {
           "200": {
             "description": "OK"
@@ -392,6 +392,49 @@
             },
             "in": "query",
             "name": "folder_id"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "uid"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "trash"
+          }
+        ],
+        "tags": [
+          "me_messages"
+        ]
+      },
+      "put": {
+        "summary": "",
+        "operationId": "moveMessage",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "description": "Move message to another folder",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "from_folder_id"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "to_folder_id"
           },
           {
             "schema": {

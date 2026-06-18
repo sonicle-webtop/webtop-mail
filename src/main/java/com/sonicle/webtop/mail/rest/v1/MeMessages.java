@@ -581,15 +581,32 @@ public class MeMessages extends MeMessagesApi {
 	}
 
 	@Override
-	public Response trashMessage(String folderId, String suid) {
+	public Response deleteMessage(String folderId, String suid, Boolean trash) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		long uid = Long.parseLong(suid);
 		try {
-			mmgr.trashMessage(folderId, uid);
+			if (trash) mmgr.trashMessage(folderId, uid);
+			else mmgr.deleteMessage(folderId, uid);
 			return respOk();
 		} catch(Exception exc) {
-			logger.error("Error during getMessageSeenState", exc);
+			logger.error("Error during deleteMessage", exc);
+			return respError(exc);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
+		}
+	}
+
+	@Override
+	public Response moveMessage(String fromFolderId, String toFolderId, String suid) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		long uid = Long.parseLong(suid);
+		try {
+			mmgr.moveMessage(fromFolderId, toFolderId, uid);
+			return respOk();
+		} catch(Exception exc) {
+			logger.error("Error during moveMessage", exc);
 			return respError(exc);
 		} finally {
 			if (mmgr != null) mmgr.cleanup();
