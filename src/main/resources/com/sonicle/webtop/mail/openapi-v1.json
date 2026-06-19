@@ -370,6 +370,14 @@
             "in": "query",
             "name": "set_seen",
             "description": "Set message as seen"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "index",
+            "description": "Attachment index for inner eml"
           }
         ],
         "tags": [

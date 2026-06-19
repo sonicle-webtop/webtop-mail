@@ -18,7 +18,7 @@ import javax.validation.Valid;
 
 @Path("/me/messages")
 @Api(description = "the MeMessages API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-18T16:00:13.341+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-19T11:30:26.347+02:00[Europe/Rome]")
 public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @DELETE
@@ -62,7 +62,7 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
     @ApiResponses(value = { 
         @ApiResponse(code = 200, message = "Success", response = ApiMessage.class)
     })
-    public Response getMessage(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid,@QueryParam("set_seen")  @ApiParam("Set message as seen")  Boolean setSeen) {
+    public Response getMessage(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid,@QueryParam("set_seen")  @ApiParam("Set message as seen")  Boolean setSeen,@QueryParam("index")  @ApiParam("Attachment index for inner eml")  String index) {
         return Response.ok().entity("magic!").build();
     }
 

@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("Message")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-18T16:00:13.341+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-19T11:30:26.347+02:00[Europe/Rome]")
 public class ApiMessage   {
   private @Valid String id;
   private @Valid Integer uid;

@@ -197,18 +197,20 @@ public class MeMessages extends MeMessagesApi {
 	}
 
 	@Override
-	public Response getMessage(String folderId, String suid, Boolean setSeen) {
+	public Response getMessage(String folderId, String suid, Boolean setSeen, String sindex) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
 		try {
 			ApiMessage am = new ApiMessage();
 			Map<String, Tag> tagsMap = WT.getCoreManager().listTags();
 			long uid = Long.parseLong(suid);
+			final int index = !StringUtils.isBlank(sindex) ? Integer.parseInt(sindex) : -1;
 			boolean setseen = setSeen != null ? setSeen : false;
-			mmgr.consumeMessage(folderId, uid, setseen, new MailManager.MessageConsumer() {
+			mmgr.consumeMessage(folderId, uid, setseen, index, new MailManager.MessageConsumer() {
 				@Override
 				public void consume(Message msg, long uid, MimeMessageParser.ParsedMimeMessageComponents parsed) throws MessagingException, IOException {
 					IMAPMessage mmsg = (IMAPMessage) msg;
+					int baseIndex = index >= 0 ? index + 1 : 0;
 					String hmid[] = mmsg.getHeader("Message-ID");
 					if (hmid!=null && hmid.length>0) {
 						am.setId(hmid[0]);
@@ -294,7 +296,7 @@ public class MeMessages extends MeMessagesApi {
 							ApiAttachment attachment = new ApiAttachment();
 							attachment.setFileName(mmgr.getPartName(part));
 							attachment.setCidName(mmgr.getCidName(part));
-							attachment.setId(""+ix);
+							attachment.setId(""+(baseIndex+ix));
 							attachment.setMimeType(part.getContentType());
 							int size = part.getSize();
 							int lines = (size / 76);

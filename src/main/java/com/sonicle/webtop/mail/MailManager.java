@@ -60,6 +60,7 @@ import com.sonicle.mail.imap.DateSortTerm;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
 import com.sonicle.mail.imap.SonicleIMAPMessage;
 import com.sonicle.mail.parser.MimeMessageParser;
+import com.sonicle.mail.parser.MimeMessageParser.ParsedMimeMessageComponents;
 import com.sonicle.security.PasswordUtils;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
@@ -502,7 +503,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		return msg;
 	}*/
 	
-	public void consumeMessage(String folderId, long uid, boolean setSeen, MessageConsumer mc) {
+	public void consumeMessage(String folderId, long uid, boolean setSeen, int index, MessageConsumer mc) {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		try {
@@ -510,6 +511,10 @@ public class MailManager extends BaseManager implements IMailManager {
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(setSeen ? Folder.READ_WRITE : Folder.READ_ONLY);
 			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			if (index >= 0) {
+				ParsedMimeMessageComponents parsed = getParsedMimeMessageComponents(mmsg);
+				mmsg = (MimeMessage)parsed.getAttachmentParts().get(index).getContent();
+			}
 			MimeMessageParser mmp = new MimeMessageParser().withProcessDisplayParts(false, new MimeMessageParser.DisplayPartEvaluator() {
 				
 				private boolean icalhtmlview = false;
@@ -602,7 +607,7 @@ public class MailManager extends BaseManager implements IMailManager {
 
 			MimeMessageParser.ParsedMimeMessageComponents parsed = mmp.parse(mmsg, false);
 			
-			mc.consume(mmsg, ((UIDFolder)folder).getUID(mmsg), parsed);
+			mc.consume(mmsg, uid, parsed);
 			
 		} catch(Exception exc) {
 			logger.error("Error listing folders", exc);
@@ -714,6 +719,19 @@ public class MailManager extends BaseManager implements IMailManager {
 			logger.error("Error on getParsedMimeMessageComponents", exc);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
+			//mailbox.disconnect();
+		}
+		return parsed;
+	}	
+	
+	public MimeMessageParser.ParsedMimeMessageComponents getParsedMimeMessageComponents(MimeMessage mmsg) {
+		MimeMessageParser.ParsedMimeMessageComponents parsed=null;
+		try {
+			MimeMessageParser mmp = new MimeMessageParser();
+			parsed = mmp.parse(mmsg, false);
+		} catch(Exception exc) {
+			logger.error("Error on getParsedMimeMessageComponents", exc);
+		} finally {
 			//mailbox.disconnect();
 		}
 		return parsed;
