@@ -918,6 +918,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("removefavorite",{ handler: me.actionRemoveFavorite, scope: me, iconCls: 'wt-icon-remove' });
 
         me.addAct("scanfolder",{ handler: null, iconCls: '', tooltip: null });
+        me.addAct("usearrivaldate",{ handler: null, iconCls: '', tooltip: null });
 		
         me.addAct("hidefolder",{ handler: me.actionFolderHide, scope: me, iconCls: 'wtmail-icon-hidefolder' });
         me.addAct("managehiddenfolders",{ handler: me.actionManageHiddenFolders, scope: me, iconCls: 'wtmail-icon-managehiddenfolders' });
@@ -1031,7 +1032,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 			}
 		});
 		//imap tree menu
-		var mscan,mshowsharings,mshowarchive;
+		var mscan,marrival,mshowsharings,mshowarchive;
 		
 		me.addRef('cxmTreeRootNode', Ext.create({
 			xtype: 'menu',
@@ -1090,6 +1091,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				mshowarchive=Ext.create('Ext.menu.CheckItem',me.getAct('showarchive')),
 				'-',
 				mscan=Ext.create('Ext.menu.CheckItem',me.getAct('scanfolder')),
+				marrival=Ext.create('Ext.menu.CheckItem',me.getAct('usearrivaldate')),
                 '-',
                 me.getAct('downloadmails'),
 				Ext.create({
@@ -1146,6 +1148,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}));
 		mscan.on('click',me.actionScanFolder,me);
 		me.addRef("mnuScan",mscan);
+		marrival.on('click',me.actionUseArrivalDate,me);
+		me.addRef("mnuUseArrivalDate",marrival);
 		mshowsharings.on('click',me.actionShowSharings,me);
 		me.addRef("mnuShowSharings",mshowsharings);
 		if (!me.getVar("isArchivingExternal")) mshowarchive.setHidden(true);
@@ -1967,6 +1971,16 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 	},
 	
+	actionUseArrivalDate: function(mi,e) {
+		var me=this,
+		n=me.getCtxNode(e),
+		folder=n.get("id"),
+		acct=me.getAccount(n);
+		v=mi.checked;
+	
+		me.setUseArrivalDate(acct,folder,v);
+	},
+
 	actionFolderHide: function(s,e) {
 		var me=this,
 			n=me.getCtxNode(e),
@@ -2428,6 +2442,29 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		});					
 	},	
 	
+    setUseArrivalDate: function(acct,folder,v) {
+		var me=this;
+		WT.ajaxReq(me.ID, 'SetUseArrivalDate', {
+			params: {
+				account: acct,
+				folder: folder,
+				value: (v?"1":"0")
+			},
+			callback: function(success,json) {
+				var tr=me.imapTree,
+				s=tr.getStore(),
+				n=s.getById(folder);
+			
+				if (json.success) {
+					n.set("useArrivalDate",v);
+					me.refreshFolder(n);
+				} else {
+					WT.error(json.message);
+				}
+			}
+		});					
+	},	
+	
 	selectChildNode: function(acct, parentNode, childId) {
 		var me=this,
 			tr=me.acctTrees[acct];
@@ -2554,6 +2591,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.getAct('scanfolder').setHidden(!ismain);
 		me.getAct('managehiddenfolders').setHidden(!ismain);
 		me.getAct('hidefolder').setHidden(!ismain);
+		me.getAct('usearrivaldate').setHidden(!ismain);
 		
 		if (ismain) {
 			me.getAct('sharing').setHidden(d.isUnderShared||d.isSharedRoot);
@@ -2567,6 +2605,11 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				if (r.get("scanEnabled")) mi.setChecked(true,true);
 				else mi.setChecked(false,true);
 			}
+			
+			mi=me.getRef("mnuUseArrivalDate");
+			if (r.get("useArrivalDate")) mi.setChecked(true,true);
+			else mi.setChecked(false,true);
+			
 			/*var as=this.aScan;
 			var mi=this.miScan;
 			if (a.scanOff) {as.setDisabled(true);mi.setChecked(false,true);}

@@ -371,6 +371,7 @@ public class MailSettings {
 	public static final String DEFAULT_FOLDER = "defaultfolder";
 	public static final String ALWAYS_CC = "always.cc";
 	public static final String ALWAYS_BCC = "always.bcc";
+	public static final String FOLDER_USE_ARRIVAL_DATE = "folder.use.arrival.date@{0}"; // was : "messagelist-group-{0}"
 	
 	/**
 	 * @deprecated

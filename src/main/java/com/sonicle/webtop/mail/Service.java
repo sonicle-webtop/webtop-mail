@@ -3097,6 +3097,7 @@ public class Service extends BaseService {
 			jsFolder.scanEnabled = false;
 			jsFolder.scanOn = true;
 		}
+		jsFolder.useArrivalDate=fc.isUseArrivalDate();
 
 		boolean canRename=true;
 		//check both isShared and not underShared because of the different structure on NethServer,
@@ -3841,6 +3842,25 @@ public class Service extends BaseService {
 		} catch(Exception exc) {
 			logger.debug("Cannot restore hidden folders",exc);
 			new JsonResult("Cannot restore hidden folders", exc).printTo(out);
+		}
+	}
+	
+	public void processSetUseArrivalDate(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		MailAccount account=getAccount(request);
+		String folder = request.getParameter("folder");
+		boolean value = false;
+		String svalue = request.getParameter("value");
+		if (svalue != null) {
+			value = svalue.equals("1");
+		}
+		try {
+			FolderCache fc = account.getFolderCache(folder);
+			fc.setUseArrivalDate(value);
+			us.setUseArrivalDate(folder, value);
+			new JsonResult().printTo(out);
+		} catch (Throwable t) {
+			new JsonResult(t).printTo(out);
+			Service.logger.error("Exception", t);
 		}
 	}
 	
@@ -7257,7 +7277,7 @@ public class Service extends BaseService {
 							Flags flags=xm.getFlags();
 
 							//Date
-							java.util.Date d=xm.getSentDate();
+							java.util.Date d=mcache.isUseArrivalDate() ? xm.getReceivedDate() : xm.getSentDate();
 							java.util.Date rd = xm.getResentDate();
 							if (rd != null) d = rd;
 							if (d==null) d=xm.getReceivedDate();
@@ -8034,7 +8054,8 @@ public class Service extends BaseService {
 			}
 			if (listUnsubscribe!=null) items.add(new JsMessageDetails("listUnsubscribe", listUnsubscribe));
 			
-			java.util.Date d = m.getSentDate();
+			java.util.Date d = mcache.isUseArrivalDate() ? m.getReceivedDate() : m.getSentDate();
+
 			if (d == null) {
 				d = m.getReceivedDate();
 			}
@@ -8414,7 +8435,8 @@ public class Service extends BaseService {
 				subject = MimeUtility.decodeText(subject);
 			}
 			
-			java.util.Date d = m.getSentDate();
+			java.util.Date d = mcache.isUseArrivalDate() ? m.getReceivedDate() : m.getSentDate();
+
 			if (d == null) {
 				d = m.getReceivedDate();
 			}

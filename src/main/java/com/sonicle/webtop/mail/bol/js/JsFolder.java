@@ -61,6 +61,7 @@ public class JsFolder {
 	public Boolean scanOff;
 	public Boolean scanOn;
 	public Boolean scanEnabled;
+	public Boolean useArrivalDate;
 	public Boolean canRename;
 	public Boolean isPEC;
 	public String account;

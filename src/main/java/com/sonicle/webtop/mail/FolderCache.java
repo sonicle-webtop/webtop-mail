@@ -155,6 +155,7 @@ public class FolderCache {
     private boolean scanForcedOff=false;
     private boolean scanForcedOn=false;
     private boolean scanEnabled=false;
+	private boolean useArrivalDate=false;
     private String description=null;
     private String wtuser=null;
     private ArrayList<String> recentNotified=new ArrayList<>();
@@ -312,6 +313,9 @@ public class FolderCache {
             wtuser=sharedInboxPrincipal.getUserId();
         }
         updateScanFlags();
+		
+		MailUserSettings mus=ms.getMailUserSettings();
+		useArrivalDate = mus.isUseArrivalDate(foldername);
 		
 		boolean idle = isInbox
 			|| (isSharedInbox && ms.getMailServiceSettings().isIdleSharedInboxFolderEnabled())
@@ -523,6 +527,14 @@ public class FolderCache {
 		}
         return sp;
     }
+	
+	public void setUseArrivalDate(boolean b) {
+		useArrivalDate = b;
+	}
+	
+	public boolean isUseArrivalDate() {
+		return useArrivalDate;
+	}
 	
     public void setScanForcedOff(boolean b) {
         scanForcedOff=b;
@@ -1770,14 +1782,17 @@ public class FolderCache {
         return newfolder;
     }
 	
+	private EnvelopeSortTerm createDateSortTerm(boolean ascending) {
+		if (!ms.getMailUserSettings().isUseArrivalDate(foldername)) return new DateSortTerm(!ascending);
+		else return new ArrivalSortTerm(!ascending);
+	}
 	
 	private SonicleSortTerm _prepareSortTerm(int sort_by, boolean ascending, int sort_group, boolean groupascending) {
 		SonicleSortTerm gsort=null;
       
 		switch(sort_group) {
 			case SORT_BY_DATE:
-				gsort=new DateSortTerm(!groupascending);
-				//gsort=new ArrivalSortTerm(!groupascending);
+				gsort = createDateSortTerm(groupascending);
 				break;
 			case SORT_BY_FLAG:
 				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
@@ -1810,19 +1825,19 @@ public class FolderCache {
 
 		switch(sort_by) {
 			case SORT_BY_DATE:
-				sort=new DateSortTerm(!ascending);
+				sort=createDateSortTerm(ascending);
 				break;
 			case SORT_BY_FLAG:
 				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
 				sort=new FlagSortTerm(ms.allFlagStrings, !ascending);
-				sort.append(new DateSortTerm(true));
+				sort.append(createDateSortTerm(false));
 				break;
 			case SORT_BY_MSGIDX:
 				sort=new MessageIDSortTerm(!ascending);
 				break;
 			case SORT_BY_PRIORITY:
 				sort=new PrioritySortTerm(!ascending);
-				sort.append(new DateSortTerm(true));
+				sort.append(createDateSortTerm(false));
 				break;
 			case SORT_BY_RCPT:
 				sort=new ToSortTerm(!ascending);
@@ -1835,11 +1850,11 @@ public class FolderCache {
 				break;
 			case SORT_BY_STATUS:
 				sort=new StatusSortTerm(!ascending);
-				sort.append(new DateSortTerm(true));
+				sort.append(createDateSortTerm(false));
 				break;
 			case SORT_BY_SEEN:
 				sort=new SeenSortTerm(!ascending);
-				sort.append(new DateSortTerm(true));
+				sort.append(createDateSortTerm(false));
 				break;
 			case SORT_BY_SUBJECT:
 				sort=new SubjectSortTerm(!ascending);
@@ -2084,7 +2099,7 @@ public class FolderCache {
       SonicleSortTerm sort=null;
       switch(sort_by) {
           case SORT_BY_DATE:
-              sort=new DateSortTerm(!ascending);
+              sort=createDateSortTerm(ascending);
               break;
           case SORT_BY_FLAG:
               //<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>

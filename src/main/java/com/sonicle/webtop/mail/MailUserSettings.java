@@ -147,6 +147,14 @@ public class MailUserSettings extends BaseUserSettings {
 		return setString(MessageFormat.format(MESSAGE_LIST_GROUP, foldername),group);
 	}
 	
+	public Boolean isUseArrivalDate(String foldername) {
+		return getBoolean(MessageFormat.format(FOLDER_USE_ARRIVAL_DATE, foldername), false);
+	}
+	
+	public void setUseArrivalDate(String foldername, boolean b) {
+		setBoolean(MessageFormat.format(FOLDER_USE_ARRIVAL_DATE, foldername), b);
+	}
+	
 	public int getColumnSize(String name) {
 		return getInteger(MessageFormat.format(COLUMN_SIZE,name),100);
 	}
