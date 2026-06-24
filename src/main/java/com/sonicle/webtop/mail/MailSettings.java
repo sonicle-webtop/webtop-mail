@@ -248,7 +248,17 @@ public class MailSettings {
 	 * Defaults to true;
 	 */
 	public static final String ATTACHMENT_DETECT_USE_BODYSTRUCTURE = "attachment.detect.use.bodystucture";
-	
+
+	/**
+	 * [system+domain]
+	 * [boolean]
+	 * true (default) to maintain the message list incrementally: reuse the cached
+	 * sorted list when the mailbox is unchanged and splice out deleted/moved messages
+	 * instead of re-running a full server-side SORT on every request. Avoids multi-second
+	 * SORTs on very large mailboxes. Set false to always re-SORT (legacy behaviour).
+	 */
+	public static final String MESSAGELIST_INCREMENTAL_ENABLED = "messagelist.incremental.enabled";
+
 	/**
 	 * [system+domain]
 	 * [string]

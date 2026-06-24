@@ -111,6 +111,27 @@ public class FolderCache {
     private Message msgs[]=null;
     private boolean modified=false;
     private boolean forceRefresh=true;
+
+    //--- Incremental message-list maintenance ------------------------------------
+    //The interactive list re-runs a full server-side SORT/THREAD on every request
+    //(client always sends refresh=true). On huge mailboxes (100k+) that SORT costs
+    //seconds, and it is re-paid on every delete and every folder-return even when
+    //nothing relevant changed. To avoid it we keep the sorted `msgs` array and:
+    //  - on a self delete/move-out, SPLICE the removed UIDs out of `msgs` (removal
+    //    is order-independent, so it is safe for any sort/group mode);
+    //  - on a list request with the SAME plain query and no mailbox change, REUSE
+    //    `msgs` instead of re-sorting;
+    //  - fall back to a full SORT for additions (new mail / move-in / copy-in),
+    //    sort/group/search changes, threaded mode, or any detected drift.
+    //The mailbox-change detector is UIDVALIDITY/UIDNEXT/MESSAGES captured at the
+    //last full SORT: UIDNEXT only advances on append/copy (catches a back-dated
+    //drag-in too), MESSAGES catches net count changes, UIDVALIDITY catches a
+    //mailbox reset. Any uncertainty -> full SORT. Toggle: MailServiceSettings
+    //MESSAGELIST_INCREMENTAL_ENABLED (default true) restores always-resort when false.
+    private long cachedUidValidity=-1;
+    private long cachedUidNext=-1;
+    private int cachedMessageCount=-1;
+    private boolean cachedPlainQuery=false; //was the cached `msgs` built for an unfiltered list?
     private int unread=0;
     private int recent=0;
     private boolean hasUnreadChildren=false;
@@ -832,6 +853,89 @@ public class FolderCache {
             //add(msgs);
             modified=false;
             forceRefresh=false;
+            captureMailboxState(iq);
+        }
+    }
+
+    //Snapshot the mailbox identity used to decide later whether `msgs` can be
+    //reused without a re-SORT. Called under cacheLock right after a full SORT.
+    private void captureMailboxState(ImapQuery iq) {
+        try {
+            cachedUidValidity=((IMAPFolder)folder).getUIDValidity();
+            cachedUidNext=((IMAPFolder)folder).getUIDNext();
+            cachedMessageCount=folder.getMessageCount();
+        } catch(Exception exc) {
+            //unknown -> force a resort next time
+            cachedUidValidity=-1; cachedUidNext=-1; cachedMessageCount=-1;
+        }
+        cachedPlainQuery=isPlainQuery(iq);
+    }
+
+    //Returns the toggle cached on MailManager (read once from MailServiceSettings at
+    //service init, like attachmentDetectUseBodyStructure). A setting change therefore
+    //takes effect on next login. Defaults to legacy (always resort) if unavailable.
+    private boolean incrementalListEnabled() {
+        try {
+            return mailManager!=null && mailManager.isMessageListIncrementalEnabled();
+        } catch(Exception exc) {
+            return false;
+        }
+    }
+
+    //An unfiltered list: no search term and no note/attachment filter. Only these
+    //are eligible for reuse/splice; any active search always does a full SORT.
+    private boolean isPlainQuery(ImapQuery iq) {
+        return iq!=null && iq.getSearchTerm()==null
+            && !iq.hasNotePattern() && !iq.hasAttachment() && !iq.hasAttachmentName();
+    }
+
+    //True if the mailbox changed since the last full SORT (append/copy advanced
+    //UIDNEXT, net count differs, or the mailbox was reset). Errs on the safe side:
+    //any failure to read the state returns true -> caller does a full SORT.
+    private boolean mailboxChangedSinceSort() {
+        if (cachedUidValidity<0 || cachedUidNext<0 || cachedMessageCount<0) return true;
+        if (!folder.isOpen()) return true; //can't cheaply verify -> resort (also reopens)
+        try {
+            //getMessageCount() is the live cached EXISTS on an open folder (no round
+            //trip, kept current by the IDLE listeners): check it first.
+            if (folder.getMessageCount()!=cachedMessageCount) return true;
+            //Equal count can still hide an add+expunge that nets to zero; UIDNEXT only
+            //ever advances on append/copy, so it catches that (and a back-dated drag-in).
+            if (((IMAPFolder)folder).getUIDNext()!=cachedUidNext) return true;
+            if (((IMAPFolder)folder).getUIDValidity()!=cachedUidValidity) return true;
+            return false;
+        } catch(Exception exc) {
+            return true;
+        }
+    }
+
+    //Remove the given UIDs from the cached sorted `msgs` in place. Removal preserves
+    //the existing order and grouping, so this is valid for every (non-threaded) sort
+    //mode. cachedMessageCount is decremented to stay in sync with the folder so the
+    //drift check above does not then falsely fire. Must run under cacheLock.
+    private void spliceFromCache(Collection<Long> uids) {
+        if (msgs==null || uids==null || uids.isEmpty()) return;
+        HashSet<Long> rm=new HashSet<>(uids);
+        ArrayList<Message> kept=new ArrayList<>(msgs.length);
+        for (Message m: msgs) {
+            long u=-1;
+            try { u=((SonicleIMAPMessage)m).getUID(); } catch(Exception exc) { /* keep if unknown */ }
+            if (u<0 || !rm.contains(u)) kept.add(m);
+        }
+        int removed=msgs.length-kept.size();
+        msgs=kept.toArray(new Message[kept.size()]);
+        if (cachedMessageCount>=0) cachedMessageCount-=removed;
+    }
+
+    //Source-side handling of a move-out: it is a pure removal, so splice the moved
+    //UIDs from the cached sorted list when eligible, otherwise force a resort.
+    private void spliceMovedOut(long uids[]) {
+        if (incrementalListEnabled() && !threaded && msgs!=null && cachedPlainQuery && uids!=null && uids.length>0) {
+            ArrayList<Long> ul=new ArrayList<>(uids.length);
+            for (long u: uids) ul.add(u);
+            synchronized(cacheLock) { spliceFromCache(ul); }
+        } else {
+            setForceRefresh();
         }
     }
     
@@ -942,7 +1046,18 @@ public class FolderCache {
 				this.threaded=threaded;
                 sortchanged=true;
             }
-            if (refresh || forceRefresh || sortchanged) {
+            //A full SORT is mandatory on first build, a sort/group change, or a pending
+            //forceRefresh (set by additions we could not splice). Otherwise, when the
+            //client asks to refresh, we may REUSE the cached sorted array instead of
+            //re-sorting - but only for an unfiltered list whose mailbox is unchanged
+            //since the last sort. Anything else (active search, detected drift) resorts.
+            boolean needSort = sortchanged || forceRefresh || msgs==null;
+            if (!needSort && refresh) {
+                boolean canReuse = incrementalListEnabled() && isPlainQuery(iq) && cachedPlainQuery
+                                   && !mailboxChangedSinceSort();
+                if (!canReuse) needSort=true;
+            }
+            if (needSort) {
                 refresh(iq);
                 rebuilt=true;
             }
@@ -1174,8 +1289,8 @@ public class FolderCache {
 			folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
 			removeDHash(uids);
 			folder.expunge();
-			setForceRefresh();
-			to.setForceRefresh();
+			spliceMovedOut(uids);     //source: removal -> splice when eligible
+			to.setForceRefresh();     //destination: gained messages -> full SORT
 			modified=true;
 			to.modified=true;
 			refreshUnreads();
@@ -1286,7 +1401,7 @@ public class FolderCache {
 			folder.setFlags(mmsgs, new Flags(Flags.Flag.DELETED), true);
 			removeDHash(uids);
 			folder.expunge();
-			setForceRefresh();
+			spliceMovedOut(uids);     //source: removal -> splice when eligible
 			modified=true;
 		}
 		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
@@ -1366,9 +1481,12 @@ public class FolderCache {
 	private void _deleteMessages(Message mmsgs[]) throws MessagingException {
         AuditLogManager.Batch auditBatch = mailManager.auditLogGetBatch(MailManager.AuditContext.MAIL, MailManager.AuditAction.DELETE);
 		
+		ArrayList<Long> delUids=new ArrayList<>();
 		for(Message dmsg: mmsgs) {
 			if (dmsg!=null) {
 				dmsg.setFlag(Flags.Flag.DELETED, true);
+				//capture the UID while the message is still valid (before expunge)
+				try { delUids.add(((SonicleIMAPMessage)dmsg).getUID()); } catch(Exception exc) {}
 				String messageId = ms.getMessageID(dmsg);
 				if (auditBatch != null && StringUtils.isNotEmpty(messageId)) {
 					auditBatch.write(
@@ -1381,7 +1499,15 @@ public class FolderCache {
 		if (auditBatch != null) auditBatch.flush();
 		
         folder.expunge();
-        setForceRefresh();
+        //A delete is a pure removal: splice the UIDs out of the cached sorted list
+        //(order-independent, so valid for any sort/group mode) instead of paying a
+        //full re-SORT. Only when the cached list is an unfiltered, non-threaded one;
+        //otherwise fall back to forcing a resort.
+        if (incrementalListEnabled() && !threaded && msgs!=null && cachedPlainQuery && !delUids.isEmpty()) {
+            synchronized(cacheLock) { spliceFromCache(delUids); }
+        } else {
+            setForceRefresh();
+        }
         modified=true;
 	refreshUnreads();
     }

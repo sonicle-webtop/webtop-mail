@@ -109,6 +109,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 	public boolean isAttachmentDetectUseBodyStructure() {
 		return getBoolean(ATTACHMENT_DETECT_USE_BODYSTRUCTURE, true);
 	}
+
+	public boolean isMessageListIncrementalEnabled() {
+		return getBoolean(MESSAGELIST_INCREMENTAL_ENABLED, true);
+	}
 	
 	public String getPasDangerousExtensions() {
 		return getString(PAS_DANGEROUS_EXTENSIONS,"exe,bat,dll,com,cmd,bin,cab,js,jar");

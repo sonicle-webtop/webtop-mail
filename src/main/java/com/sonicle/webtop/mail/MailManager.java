@@ -251,6 +251,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	public static String STATUS_INVITATION = "invitation";
 	
 	private boolean attachmentDetectUseBodyStructure = true;
+	private boolean messageListIncremental = true;
 	private ArrayList<String> inlineableMimes = new ArrayList<String>();
 	
 	private MailUserSettings mus = null;
@@ -264,6 +265,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		
 		if (!fastInit) {
 			attachmentDetectUseBodyStructure = mss.isAttachmentDetectUseBodyStructure();
+			messageListIncremental = mss.isMessageListIncrementalEnabled();
 			String mtypes=mss.getInlineableMimeTypes();
 			if (StringUtils.isBlank(mtypes)) {
 				inlineableMimes.add("image/gif");
@@ -1031,6 +1033,10 @@ public class MailManager extends BaseManager implements IMailManager {
 	
 	public boolean isAttachamentDetectUseBodyStructure() {
 		return attachmentDetectUseBodyStructure;
+	}
+
+	public boolean isMessageListIncrementalEnabled() {
+		return messageListIncremental;
 	}
 	
 	public boolean isInlineableMime(String contenttype) {

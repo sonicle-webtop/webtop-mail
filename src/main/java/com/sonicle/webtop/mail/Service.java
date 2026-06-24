@@ -7889,7 +7889,7 @@ public class Service extends BaseService {
 					//Leaves msgs=null -> the request renders a BLANK list. Surface it in the
 					//LISTDBG stream too (the plain error log is often filtered out), tagged so a
 					//"grep LISTDBG" still catches the cause of an empty grid.
-					Service.logger.warn("[LISTDBG MLT {}] getMessages FAILED -> msgs=null (blank list): {}", fc.getFolderName(), String.valueOf(exc));
+					//Service.logger.warn("[LISTDBG MLT {}] getMessages FAILED -> msgs=null (blank list): {}", fc.getFolderName(), String.valueOf(exc));
 				} finally {
 					finished = true;
 					lock.notifyAll();
