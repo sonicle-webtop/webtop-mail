@@ -38,13 +38,43 @@ package com.sonicle.webtop.mail.bol.js;
  * @author gbulfon
  */
 public class JsFlagsChangedMessage {
-	
+
 	String accountid;
 	String foldername;
-	
+	//null/absent -> client does a full grid refresh (legacy behavior). When present, each
+	//item lets the client patch a single visible row in place instead of reloading.
+	java.util.List<Item> items;
+
 	public JsFlagsChangedMessage(String accountid, String foldername) {
+		this(accountid, foldername, null);
+	}
+
+	public JsFlagsChangedMessage(String accountid, String foldername, java.util.List<Item> items) {
 		this.accountid=accountid;
 		this.foldername=foldername;
+		this.items=items;
 	}
-	
+
+	//Per-message flag-derived state. 'uid' matches the grid row id (idmessage). 'seen' drives
+	//the read/unread transition; 'answered'/'forwarded' drive the replied/forwarded status
+	//icon (client mirrors getStatusString's priority); 'flag' is the colored flag label;
+	//'note' the note marker.
+	public static class Item {
+		public long uid;
+		public boolean seen;
+		public boolean answered;
+		public boolean forwarded;
+		public String flag;
+		public boolean note;
+
+		public Item(long uid, boolean seen, boolean answered, boolean forwarded, String flag, boolean note) {
+			this.uid=uid;
+			this.seen=seen;
+			this.answered=answered;
+			this.forwarded=forwarded;
+			this.flag=flag;
+			this.note=note;
+		}
+	}
+
 }

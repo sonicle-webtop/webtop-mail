@@ -1277,7 +1277,15 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		//do this if no user recent action changed flags
 		if ((Date.now()-me.messagesPanel.folderList.lastFlagsChangedTS)>1000) {
 			if (!me.messagesPanel.hasFilterQuery() && me.currentAccount===pl.accountid && me.currentFolder===pl.foldername ) {
-				me.messagesPanel.refreshGridWhenIdle(pl.foldername);
+				//If the push carries per-uid items, patch only the affected visible rows in
+				//place (seen/flag) instead of reloading the whole list - in threaded mode too
+				//(uids not currently visible are skipped). applyFlagChanges returns false only
+				//for the multifolder layout -> full refresh.
+				if (pl.items && pl.items.length && me.messagesPanel.folderList.applyFlagChanges(pl.items)) {
+					//handled in place, no reload needed
+				} else {
+					me.messagesPanel.refreshGridWhenIdle(pl.foldername);
+				}
 			}
 		}
 	},

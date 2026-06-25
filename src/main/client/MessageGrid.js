@@ -2324,7 +2324,51 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			me.lastFlagsChangedTS = Date.now();
 		}
 	},
-	
+
+	//Apply per-uid flag changes pushed from the server (another session changed seen/answered/
+	//forwarded/flag state). Patches only the rows currently loaded in the store, in place, with no reload -
+	//in threaded mode too: a matching visible row (a plain message, an open-thread child, or
+	//the visible representative of a closed thread) is patched; a uid not in the store is
+	//simply skipped - it becomes correct when its thread is opened or a real refresh (new
+	//messages) happens. A closed thread's +N badge / representative may therefore be briefly
+	//stale, which is the accepted tradeoff for never reloading on a flag change. Multifolder
+	//still bails (rows are keyed by folder|uid, not uid) so the caller does a full refresh.
+	applyFlagChanges: function(items) {
+		var me=this, store=me.getStore(), view=me.getView();
+		if (me.multifolder || !store || !view || !items) return false;
+		Ext.suspendLayouts();
+		Ext.each(items, function(it) {
+			//buffered store: getById is unreliable (sparse page cache) - scan the loaded
+			//records by idmessage (== uid), '==' to tolerate number/string id coercion
+			var rix=store.findBy(function(r){ return r.get("idmessage")==it.uid; });
+			if (rix<0) return; //not in a loaded page -> nothing visible to update
+			var rec=store.getAt(rix);
+			if (!rec) return;
+			var changed=false;
+			//seen drives the read/unread boolean (eye/bold), independent of the status icon
+			if (rec.get("unread")===it.seen) { rec.set("unread", !it.seen); changed=true; }
+			//status icon: mirror server getStatusString priority (replied/forwarded win over
+			//seen). Leave server-special statuses we can't recompute from flags alone
+			//(invitation always wins server-side; scheduled is set elsewhere).
+			var st=rec.get("status");
+			if (st!=="invitation" && st!=="scheduled") {
+				var ns;
+				if (it.answered && it.forwarded) ns="repfwd";
+				else if (it.answered) ns="replied";
+				else if (it.forwarded) ns="forwarded";
+				else if (it.seen) ns="read";
+				else ns=(st==="new")?"new":"unread"; //preserve new-ness; isToday unknown client-side
+				if (ns!==st) { rec.set("status", ns); changed=true; }
+			}
+			//colored flag (contrassegno); '' clears it
+			var nflag=it.flag||"";
+			if (rec.get("flag")!==nflag) { rec.set("flag", nflag); changed=true; }
+			if (changed) view.refreshNode(rec);
+		});
+		Ext.resumeLayouts(true);
+		return true;
+	},
+
 	_setRecordTag: function(r, tagId) {
 		var tags=r.get("tags"),
 			ix=-1;

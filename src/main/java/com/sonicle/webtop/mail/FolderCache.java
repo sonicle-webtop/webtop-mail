@@ -49,6 +49,7 @@ import com.sun.mail.imap.*;
 import java.io.*;
 //import com.sonicle.webtop.util.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import jakarta.mail.*;
 import jakarta.mail.Flags;
 import jakarta.mail.Flags.Flag;
@@ -71,6 +72,7 @@ import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.ws.FlagsChangedMessage;
+import com.sonicle.webtop.mail.bol.js.JsFlagsChangedMessage;
 import com.sun.mail.imap.protocol.BODYSTRUCTURE;
 import jakarta.mail.event.MailEvent;
 import java.nio.charset.Charset;
@@ -159,7 +161,12 @@ public class FolderCache {
     private String description=null;
     private String wtuser=null;
     private ArrayList<String> recentNotified=new ArrayList<>();
-    
+    //Per-UID new flag set captured from the IDLE messageChanged listener (fires once per
+    //message, BEFORE the event queue coalesces them by foldername|mchange). Drained in
+    //sendFlagsChangedMessage so the 'flags' push can carry the exact UIDs+state changed,
+    //letting the client patch only the visible grid rows instead of reloading the list.
+    private final ConcurrentHashMap<Long,Flags> pendingFlagChanges = new ConcurrentHashMap<>();
+
     private int sort_by=0;
     private boolean ascending=true;
     private int sort_group=0;
@@ -368,6 +375,13 @@ public class FolderCache {
 				@Override
 				public void messageChanged(MessageChangedEvent mce) {
 					if (mce.getMessageChangeType() == MessageChangedEvent.FLAGS_CHANGED) {
+						//capture uid+new flags here (one event per message) before the queue
+						//coalesces; the coalesced handler drains the accumulated set into one push
+						try {
+							Message cm=mce.getMessage();
+							long uid=((SonicleIMAPMessage)cm).getUID();
+							if (uid>=0) pendingFlagChanges.put(uid, cm.getFlags());
+						} catch(Exception exc) { /* fall back: handler still sends folder-level signal */ }
 						account.queueFolderMailEvent(foldername + "|mchange", mce, messageChangedHandler);
 					}
 				}
@@ -672,8 +686,32 @@ public class FolderCache {
 	}
 
 	private void sendFlagsChangedMessage() {
+		//Drain the per-UID flag changes accumulated since the last push into one message.
+		//Each item carries only flag-derived state (no IO, no date/invitation parsing): the
+		//client patches the matching visible rows (seen->read/unread transition + flag/note)
+		//exactly as its own local toggle does. If the set is empty (e.g. an expunge-driven
+		//change), items stays null and the client falls back to a grid refresh.
+		ArrayList<JsFlagsChangedMessage.Item> items=null;
+		if (mailManager!=null && !pendingFlagChanges.isEmpty()) {
+			items=new ArrayList<>();
+			for (Iterator<Map.Entry<Long,Flags>> it=pendingFlagChanges.entrySet().iterator(); it.hasNext();) {
+				Map.Entry<Long,Flags> e=it.next();
+				it.remove();
+				Flags fl=e.getValue();
+				if (fl==null) continue;
+				items.add(new JsFlagsChangedMessage.Item(
+					e.getKey(),
+					fl.contains(Flags.Flag.SEEN),
+					fl.contains(Flags.Flag.ANSWERED),
+					fl.contains("$Forwarded"),
+					mailManager.getFlagString(fl),
+					mailManager.hasNote(fl)
+				));
+			}
+			if (items.isEmpty()) items=null;
+		}
 		this.environment.notify(
-			new FlagsChangedMessage(account.getId(),foldername)
+			new FlagsChangedMessage(account.getId(),foldername,items)
 		);
 	}
 

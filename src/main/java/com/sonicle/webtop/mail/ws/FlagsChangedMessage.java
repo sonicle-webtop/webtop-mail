@@ -49,5 +49,9 @@ public class FlagsChangedMessage extends ServiceMessage {
 	public FlagsChangedMessage(String accountid, String foldername) {
 		super(WT.findServiceId(Service.class),ACTION_FLAGS,new JsFlagsChangedMessage(accountid,foldername));
 	}
-	
+
+	public FlagsChangedMessage(String accountid, String foldername, java.util.List<JsFlagsChangedMessage.Item> items) {
+		super(WT.findServiceId(Service.class),ACTION_FLAGS,new JsFlagsChangedMessage(accountid,foldername,items));
+	}
+
 }
