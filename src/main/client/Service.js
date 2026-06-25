@@ -392,7 +392,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.acctTrees[me.imapTree.acct]=me.imapTree;
 		
 		var extacc=me.getVar("externalAccounts");
-		if (extacc.length>0) {
+		if (extacc && extacc.length>0) {
 			var extids=extacc.split(",");
 			Ext.each(extids,function(extid) {
 				var tree=Ext.create('Sonicle.webtop.mail.ExternalAccountTree',{
