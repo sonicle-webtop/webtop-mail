@@ -543,6 +543,11 @@ public class FolderCache {
     }
 	
 	public void setUseArrivalDate(boolean b) {
+		//the sort field stays nominally "date" so getMessages' sortchanged check won't
+		//catch this, but the SORT term flips received<->sent (getSortTerm) and the
+		//ordering changes: force a full re-SORT so the next refresh doesn't reuse the
+		//stale cached order via the incremental path
+		if (useArrivalDate != b) setForceRefresh();
 		useArrivalDate = b;
 	}
 	
