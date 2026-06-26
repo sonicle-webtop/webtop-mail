@@ -120,6 +120,8 @@ import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.model.AutoResponder;
 import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.MailEditFormat;
+import com.sonicle.webtop.mail.model.ItipAction;
+import com.sonicle.webtop.mail.model.ItipApplyResult;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
 //import com.sonicle.webtop.mail.model.Tag;
@@ -9271,143 +9273,44 @@ public class Service extends BaseService {
 	}
 	
 	public void processCalendarRequest(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		MailAccount account=getAccount(request);
 		String pcalaction = request.getParameter("calaction");
 		String pfoldername = request.getParameter("folder");
 		String puidmessage = request.getParameter("idmessage");
 		String pidattach = request.getParameter("idattach");
-		UserProfile.Data pdata = WT.getProfileData(environment.getProfileId());
-		
+
 		try {
-			account.checkStoreConnected();
-			FolderCache mcache = account.getFolderCache(pfoldername);
-            long newmsguid = Long.parseLong(puidmessage);
-            Message m = mcache.getMessage(newmsguid);
-            HTMLMailData mailData = mcache.getMailData((MimeMessage)m);
-			
-			//CalendarMethod calendarMethod = mailData.getParsedMimeMessageComponents().getCalendarMethod();
-			ICalendarManager cm = (ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
-			
-			// Parse Calendar content
-			net.fortuna.ical4j.model.Calendar iCal = null;
-			try {
-				Part part = mailData.getAttachmentPart(Integer.parseInt(pidattach));
-				if (part != null) {
-					try (InputStream is = part.getInputStream()) {
-						iCal = ICalendarUtils.parse(is);
-					}
-				}
-			} catch (IOException | ParserException ex) {
-				throw new WTException(ex);
-			}
-			
-			// For actions evaluation related to invitations, the above impl. bases
-			// its logic on the presence of an attachment equal to the invitation part 
-			// in message structure: if the attachment is not present, accept/cancel/update
-			// operations will not work! Fortunately adding the attachment is a common practice in invitation requests.
-			// Vice-versa, for imports, the attachment part will be enought; the action is done a specific attachment.
-			// Maybe in future we should separate these paths in two handling methods.
-			/*
-			try {
-				String calendarContent = mailData.getParsedMimeMessageComponents().getCalendarContent();
-				if (!StringUtils.isBlank(calendarContent)) {
-					iCal = ICalendarUtils.parse(mailData.getParsedMimeMessageComponents().getCalendarContent());
-				}
-			} catch (IOException | ParserException ex) {}
-			*/
-			///////////////////////////////////////////////////////////////
-
-			Integer calendarId = cm.getDefaultCalendarId();
-			// Overrides default calendar if shared: this kind of events needs to
-			// be saved into personal calendars.
-			if (!cm.listMyCalendarIds().contains(calendarId)) {
-				calendarId = cm.getBuiltInCalendarId();
+			ItipAction action;
+			switch (pcalaction) {
+				case "accept": action = ItipAction.ACCEPT; break;
+				case "import": action = ItipAction.IMPORT; break;
+				case "cancel":
+				case "update": action = ItipAction.APPLY; break;
+				default:
+					throw new Exception("Unsupported calendar request action : " + pcalaction);
 			}
 
-			if (pcalaction.equals("accept")) {
-				final BitFlags<ICalendarManager.HandleICalInviationOption> options = BitFlags.with(
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS,
-					ICalendarManager.HandleICalInviationOption.EVENT_LOOKUP_SCOPE_STRICT
-				);
-				Event ev = cm.handleInvitationFromICal(iCal, calendarId, options);
-				EventInstanceId instanceId = EventInstanceId.buildMaster(ev.getEventId());
+			ItipApplyResult result = mailManager.applyICalendar(
+					pfoldername,
+					Long.parseLong(puidmessage),
+					Integer.parseInt(pidattach),
+					action,
+					null, // target calendar — let MailManager auto-resolve like the legacy path
+					true, // notify (REPLY) — preserves the legacy accept-sends-reply behavior
+					null  // comment
+			);
 
-				final List<InternetAddress> tos = MimeMessageParser.parseToAddresses((MimeMessage)m, true);
-				// in case mail was sent as ccn we don't have any recipient, so we don't send any reply
-				if (!tos.isEmpty()) {
-					final String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
-					final InternetAddress iaOrganizer = ICalendarUtils.getOrganizerAddress(ICalendarUtils.getVEvent(iCal));
-					final EmailMessage email = ICalendarHelper.prepareICalendarReply(prodId, iCal, tos.get(0), iaOrganizer, PartStat.ACCEPTED, pdata.getLocale());
-					final String sentFolder = getSentFolder(tos.get(0));
-					WT.sendEmailMessage(environment.getProfileId(), email, sentFolder);
-				}
-				new JsonResult(instanceId).printTo(out);
-
-			} else if (pcalaction.equals("import")) {
-				//TODO : duplicate insert here, which one is correct?
-				//cm.addEventObject(calendarId,  null, iCal);
-				Event ev = cm.addEvent(calendarId, iCal);
-				
-				EventInstanceId iid = EventInstanceId.buildMaster(ev.getEventId());
-				//String ekey = cm.getEventInstanceKey(ev.getEventId());
-				new JsonResult(iid).printTo(out);
-
-			} else if (pcalaction.equals("cancel") || pcalaction.equals("update")) {
-				final BitFlags<ICalendarManager.HandleICalInviationOption> options = BitFlags.with(
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS,
-					ICalendarManager.HandleICalInviationOption.EVENT_LOOKUP_SCOPE_STRICT
-				);
-				Event ev = cm.handleInvitationFromICal(iCal, calendarId, options);
-				new JsonResult().printTo(out);
-
+			// json.data carries the EventInstanceId in its serialized String form
+			// (e.g. "eventId.00000000") so the web client's editEvent({ekey: ...})
+			// flow round-trips it back into ManageEvents' id= param. Passing the
+			// EventInstanceId object directly would gson-serialize to
+			// {separator, tokens[]} and break EventInstanceId.parse(id) on the
+			// calendar side.
+			if (result.getEventInstanceId() != null
+					&& (action == ItipAction.ACCEPT || action == ItipAction.IMPORT)) {
+				new JsonResult(result.getEventInstanceId()).printTo(out);
 			} else {
-				throw new Exception("Unsupported calendar request action : " + pcalaction);
-			}
-			
-			/*
-			account.checkStoreConnected();
-			FolderCache mcache = account.getFolderCache(pfoldername);
-			long newmsguid = Long.parseLong(puidmessage);
-			Message m = mcache.getMessage(newmsguid);
-			HTMLMailData mailData = mcache.getMailData((MimeMessage)m);
-			Part part = mailData.getAttachmentPart(Integer.parseInt(pidattach));
-
-			ICalendarRequest ir = new ICalendarRequest(part.getInputStream());
-			ICalendarManager cm = (ICalendarManager)WT.getServiceManager("com.sonicle.webtop.calendar", true, environment.getProfileId());
-			
-			Integer calendarId = cm.getDefaultCalendarId();
-			// Overrides default calendar if shared: this kind of events needs to
-			// be saved into personal calendars.
-			if (!cm.listMyCalendarIds().contains(calendarId)) {
-				calendarId = cm.getBuiltInCalendarId();
-			}
-			
-			if (pcalaction.equals("accept")) {
-				Event ev = cm.addEventFromICal(calendarId, ir.getCalendar());
-				String ekey = cm.getEventInstanceKey(ev.getEventId());
-				// in case mail was sent as ccn we don't have any recipient
-				// so we don't send any reply
-				if (m.getRecipients(RecipientType.TO)!=null)
-					sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.ACCEPTED);
-				new JsonResult(ekey).printTo(out);
-				
-			} else if (pcalaction.equals("import")) {
-				Event ev = cm.addEventFromICal(calendarId, ir.getCalendar());
-				String ekey = cm.getEventInstanceKey(ev.getEventId());
-				new JsonResult(ekey).printTo(out);
-				
-			} else if (pcalaction.equals("cancel") || pcalaction.equals("update")) {
-				cm.updateEventFromICal(ir.getCalendar());
 				new JsonResult().printTo(out);
-				
-			} else {
-				throw new Exception("Unsupported calendar request action : " + pcalaction);
 			}
-			*/
 		} catch (Exception exc) {
 			new JsonResult(exc).printTo(out);
 			logger.error("Error sending " + pcalaction, exc);
@@ -9415,49 +9318,23 @@ public class Service extends BaseService {
 	}
 	
     public void processDeclineInvitation(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		MailAccount account=getAccount(request);
-        String pfoldername=request.getParameter("folder");
-        String puidmessage=request.getParameter("idmessage");
-        String pidattach=request.getParameter("idattach");
-		UserProfile.Data pdata = WT.getProfileData(environment.getProfileId());
-		
-        try {
-            account.checkStoreConnected();
-            FolderCache mcache = account.getFolderCache(pfoldername);
-            long newmsguid = Long.parseLong(puidmessage);
-            Message m = mcache.getMessage(newmsguid);
-            HTMLMailData mailData = mcache.getMailData((MimeMessage)m);
-			
-			CalendarMethod calendarMethod = mailData.getParsedMimeMessageComponents().getCalendarMethod();
-			if (CalendarMethod.REQUEST.equals(calendarMethod)) {
-				// Parse Calendar content
-				final net.fortuna.ical4j.model.Calendar iCal;
-				try {
-					iCal = ICalendarUtils.parse(mailData.getParsedMimeMessageComponents().getCalendarContent());
-				} catch (IOException | ParserException ex) {
-					throw new WTException(ex);
-				}
-				
-				final String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
-				final List<InternetAddress> tos = MimeMessageParser.parseToAddresses((MimeMessage)m, true);
-				final InternetAddress iaOrganizer = ICalendarUtils.getOrganizerAddress(ICalendarUtils.getVEvent(iCal));
-				final EmailMessage email = ICalendarHelper.prepareICalendarReply(prodId, iCal, tos.get(0), iaOrganizer, PartStat.DECLINED, pdata.getLocale());
-				final String sentFolder = getSentFolder(tos.get(0));
-				WT.sendEmailMessage(environment.getProfileId(), email, sentFolder);
-				
-			} else {
-				throw new WTException("Cannod decline a NON request");
-			}
-			
-            //Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
-			//ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			//sendICalendarReply(account, ir, ((InternetAddress)m.getRecipients(RecipientType.TO)[0]), PartStat.DECLINED);
+		String pfoldername = request.getParameter("folder");
+		String puidmessage = request.getParameter("idmessage");
+		String pidattach = request.getParameter("idattach");
+		try {
+			mailManager.applyICalendar(
+					pfoldername,
+					Long.parseLong(puidmessage),
+					Integer.parseInt(pidattach),
+					ItipAction.DECLINE,
+					null,
+					true, // notify — legacy decline always emitted a REPLY
+					null);
 			new JsonResult().printTo(out);
-        } catch(Exception exc) {
-            new JsonResult(false,exc.getMessage()).printTo(out);
+		} catch (Exception exc) {
+			new JsonResult(false, exc.getMessage()).printTo(out);
 			logger.error("Error sending decline", exc);
-        }        
-        
+		}
 	}
 	
 /*	private void sendICalendarReply(InternetAddress forAddress, PartStat response, net.fortuna.ical4j.model.Calendar cal, String summary, String organizerAddress) throws Exception {
@@ -9551,32 +9428,27 @@ public class Service extends BaseService {
 	}	
 	
     public void processUpdateCalendarReply(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
-		MailAccount account=getAccount(request);
-        String pfoldername=request.getParameter("folder");
-        String puidmessage=request.getParameter("idmessage");
-        String pidattach=request.getParameter("idattach");
-        //UserProfile profile=environment.getUserProfile();
-        try {
-            account.checkStoreConnected();
-            FolderCache mcache=account.getFolderCache(pfoldername);
-            long newmsguid=Long.parseLong(puidmessage);
-            Message m=mcache.getMessage(newmsguid);
-            HTMLMailData mailData=mcache.getMailData((MimeMessage)m);
-            Part part=mailData.getAttachmentPart(Integer.parseInt(pidattach));
-            
-            ICalendarRequest ir=new ICalendarRequest(part.getInputStream());
-			String event_id=null;
-			//TODO: String event_id=((CalendarService)wts.getServiceByName("calendar")).updateFromReply(ir);
-			if (event_id!=null) {
-				new JsonResult(event_id).printTo(out);
+		String pfoldername = request.getParameter("folder");
+		String puidmessage = request.getParameter("idmessage");
+		String pidattach = request.getParameter("idattach");
+		try {
+			ItipApplyResult result = mailManager.applyICalendar(
+					pfoldername,
+					Long.parseLong(puidmessage),
+					Integer.parseInt(pidattach),
+					ItipAction.APPLY, // REPLY + APPLY → organizer applies attendee's PARTSTAT
+					null,
+					false, // no outgoing REPLY for the organizer-side apply
+					null);
+			if (result.getEventInstanceId() != null) {
+				new JsonResult(result.getEventInstanceId()).printTo(out);
 			} else {
 				throw new Exception("Event not found");
 			}
-        } catch(Exception exc) {
-            //sout="{\nresult: false, text:'"+Utils.jsEscape(exc.getMessage())+"'\n}";
+		} catch (Exception exc) {
 			new JsonResult(false, exc.getMessage()).printTo(out);
-			logger.error("Error getting calendar events", exc);
-        }
+			logger.error("Error applying calendar reply", exc);
+		}
 	}
 	
 	boolean checkFileRules(String foldername) {

@@ -2029,7 +2029,7 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 						if (trashAfterAction) me.mys.messagesPanel.folderList.actionDelete();
 					}
 					else if (act==="cancel") {
-						//canceled
+						if (trashAfterAction) me.mys.messagesPanel.folderList.actionDelete();
 					}
 					else if (act==="update") {
 						//updated

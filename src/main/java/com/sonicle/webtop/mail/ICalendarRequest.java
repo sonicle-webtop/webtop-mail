@@ -49,8 +49,6 @@ import net.fortuna.ical4j.model.property.*;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
-import sun.awt.windows.ThemeReader;
-
 /**
  *
  * @author gabriele.bulfon
@@ -88,7 +86,11 @@ public class ICalendarRequest {
 	
 	private final String method;
 	private final String uid;
+	private final int sequence;
 	private final Date lastmodified;
+	private final boolean allDay;
+	private final String timezone;
+	private final String comment;
 	
 	public ICalendarRequest(InputStream istream) throws IOException, ParserException {
 		ical=ICalendarUtils.parse(istream);
@@ -106,7 +108,10 @@ public class ICalendarRequest {
 		UtcProperty d=vevent.getLastModified();
 		if (d==null) d=vevent.getDateStamp();
 		lastmodified=d==null?null:d.getDate();
-		
+
+		Sequence seqProp=vevent.getSequence();
+		sequence=seqProp==null?0:seqProp.getSequenceNo();
+
 		icalSummary=vevent.getSummary();
 		icalLocation=vevent.getLocation();
 		icalDateStart=vevent.getStartDate();
@@ -148,6 +153,18 @@ public class ICalendarRequest {
 		organizerEmail=getEmail(icalOrganizer);
 		organizer=organizerCN+" ("+organizerEmail+")";
 		description=getValue(icalDescription);
+
+		// All-day events carry a VALUE=DATE parameter on DTSTART (vs the default
+		// DATE-TIME). Use it as the authoritative signal — the date parsed above
+		// then represents local midnight on the all-day date.
+		Parameter valueParam=icalDateStart==null?null:icalDateStart.getParameter("VALUE");
+		allDay=valueParam!=null && "DATE".equalsIgnoreCase(valueParam.getValue());
+
+		Parameter tzidParam=icalDateStart==null?null:icalDateStart.getParameter("TZID");
+		timezone=tzidParam==null?null:tzidParam.getValue();
+
+		Property commentProp=vevent.getProperty(Property.COMMENT);
+		comment=commentProp==null?null:commentProp.getValue();
 	}
 	
 	public Calendar getCalendar() {
@@ -168,6 +185,22 @@ public class ICalendarRequest {
 	
 	public Date getLastModified() {
 		return lastmodified;
+	}
+
+	public int getSequence() {
+		return sequence;
+	}
+
+	public boolean isAllDay() {
+		return allDay;
+	}
+
+	public String getTimezone() {
+		return timezone;
+	}
+
+	public String getComment() {
+		return comment;
 	}
 	
 	public int getAttendees() {

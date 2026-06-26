@@ -42,6 +42,7 @@ import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.PathUtils;
 import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.db.DbUtils;
+import com.sonicle.commons.flags.BitFlags;
 import com.sonicle.commons.rsql.parser.Operator;
 import com.sonicle.commons.rsql.parser.RSQLParser;
 import com.sonicle.commons.rsql.parser.ast.ComparisonOperator;
@@ -64,6 +65,9 @@ import com.sonicle.mail.parser.MimeMessageParser.ParsedMimeMessageComponents;
 import com.sonicle.security.PasswordUtils;
 import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
+import com.sonicle.webtop.calendar.ICalendarManager;
+import com.sonicle.webtop.calendar.model.Event;
+import com.sonicle.webtop.calendar.model.EventInstanceId;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.WT;
@@ -93,6 +97,8 @@ import com.sonicle.webtop.core.app.sdk.WTEmailSendException;
 import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
+import com.sonicle.webtop.core.util.ICalendarHelper;
+import com.sonicle.webtop.core.util.ICalendarUtils;
 import com.sonicle.webtop.core.util.IdentifierUtils;
 import com.sonicle.webtop.mail.MailUserSettings.FavoriteFolder;
 import com.sonicle.webtop.mail.MailUserSettings.FavoriteFolders;
@@ -106,6 +112,8 @@ import com.sonicle.webtop.mail.dal.TagDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.FolderShareParameters;
+import com.sonicle.webtop.mail.model.ItipAction;
+import com.sonicle.webtop.mail.model.ItipApplyResult;
 import com.sonicle.webtop.mail.model.Tag;
 import com.sun.mail.imap.IMAPFolder;
 import jakarta.mail.Address;
@@ -153,6 +161,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringTokenizer;
 import net.fortuna.ical4j.data.ParserException;
+import net.fortuna.ical4j.model.parameter.PartStat;
+import net.fortuna.ical4j.model.property.Method;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -777,6 +787,174 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}	
 	
+	/**
+	 * Apply an iTIP action (Accept / Tentative / Decline / Apply / Import / Ignore)
+	 * to a {@code text/calendar} (or {@code application/ics}) attachment carried
+	 * by the given mail message.
+	 *
+	 * <p>Server-side single entry point for iTIP handling — replaces the
+	 * legacy {@code Service.processCalendarRequest},
+	 * {@code Service.processDeclineInvitation} and
+	 * {@code Service.processUpdateCalendarReply} bodies. Both the web
+	 * action-dispatcher and the REST controllers call into this method so
+	 * behavior cannot drift between the two surfaces.
+	 *
+	 * <p>The caller-supplied {@link ItipAction} crosses with the iTIP METHOD
+	 * carried by the ICS to pick the actual server effect. {@code REQUEST}+
+	 * {@code ACCEPT}/{@code TENTATIVE} adds or updates the event and emits a
+	 * REPLY; {@code REQUEST}+{@code DECLINE} emits a REPLY without persisting;
+	 * {@code CANCEL}+{@code APPLY} removes the event; {@code REPLY}+{@code APPLY}
+	 * updates the matching attendee's PARTSTAT (organizer flow); {@code IMPORT}
+	 * stores a standalone copy without emitting a REPLY.
+	 *
+	 * <p>When {@code targetCalendarId} is null the calendar is auto-resolved
+	 * to the user's default — or to the built-in calendar if the default is
+	 * shared. {@code notify=false} suppresses the outgoing REPLY mail.
+	 */
+	public ItipApplyResult applyICalendar(
+			String folderId, long uid, int attachmentIndex,
+			ItipAction action, Integer targetCalendarId,
+			boolean notify, String comment) throws WTException {
+		if (action == ItipAction.IGNORE) {
+			return new ItipApplyResult(ItipApplyResult.Outcome.IGNORED, null, null, false);
+		}
+
+		IMAPFolder folder = null;
+		try {
+			Mailbox mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser.ParsedMimeMessageComponents parsed =
+					new MimeMessageParser().parse(mmsg, false);
+
+			net.fortuna.ical4j.model.Calendar iCal;
+			try {
+				Part part = parsed.getAttachmentParts().get(attachmentIndex);
+				try (InputStream is = part.getInputStream()) {
+					iCal = ICalendarUtils.parse(is);
+				}
+			} catch (IOException | ParserException ex) {
+				throw new WTException("Failed to parse calendar attachment", ex);
+			}
+
+			ICalendarManager cm = (ICalendarManager) WT.getServiceManager(
+					"com.sonicle.webtop.calendar", true, getTargetProfileId());
+
+			Integer calendarId = targetCalendarId;
+			if (calendarId == null) {
+				calendarId = cm.getDefaultCalendarId();
+				// Promote to built-in calendar if default is shared — events
+				// landing from email belong in personal calendars.
+				if (calendarId != null && !cm.listMyCalendarIds().contains(calendarId)) {
+					calendarId = cm.getBuiltInCalendarId();
+				}
+			}
+
+			Method ical4jMethod = iCal.getMethod();
+			String method = (ical4jMethod == null) ? "REQUEST" : ical4jMethod.getValue();
+
+			BitFlags<ICalendarManager.HandleICalInviationOption> handleOptions = BitFlags.with(
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
+					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS,
+					ICalendarManager.HandleICalInviationOption.EVENT_LOOKUP_SCOPE_STRICT);
+
+			switch (action) {
+				case IMPORT: {
+					Event ev = cm.addEvent(calendarId, iCal);
+					String iid = EventInstanceId.buildMaster(ev.getEventId()).toString();
+					return new ItipApplyResult(
+							ItipApplyResult.Outcome.CREATED, iid, calendarId, false);
+				}
+
+				case ACCEPT:
+				case TENTATIVE: {
+					if (!"REQUEST".equals(method)) {
+						throw new WTException(action + " not valid for METHOD:" + method);
+					}
+					Event ev = cm.handleInvitationFromICal(iCal, calendarId, handleOptions);
+					String iid = (ev != null)
+							? EventInstanceId.buildMaster(ev.getEventId()).toString()
+							: null;
+					PartStat ps = (action == ItipAction.ACCEPT)
+							? PartStat.ACCEPTED : PartStat.TENTATIVE;
+					boolean replySent = notify && sendItipReply(mmsg, iCal, ps);
+					return new ItipApplyResult(
+							ItipApplyResult.Outcome.CREATED, iid, calendarId, replySent);
+				}
+
+				case DECLINE: {
+					if (!"REQUEST".equals(method)) {
+						throw new WTException("DECLINE not valid for METHOD:" + method);
+					}
+					boolean replySent = notify && sendItipReply(mmsg, iCal, PartStat.DECLINED);
+					return new ItipApplyResult(
+							ItipApplyResult.Outcome.RSVP_RECORDED, null, null, replySent);
+				}
+
+				case APPLY: {
+					if ("CANCEL".equals(method)) {
+						cm.handleInvitationFromICal(iCal, calendarId, handleOptions);
+						return new ItipApplyResult(
+								ItipApplyResult.Outcome.REMOVED, null, calendarId, false);
+					}
+					if ("REPLY".equals(method)) {
+						// handleInvitationFromICal covers METHOD:REPLY internally
+						// by routing through doEventAttendeeUpdateResponseByRecipient.
+						Event ev = cm.handleInvitationFromICal(iCal, calendarId, handleOptions);
+						String iid = (ev != null)
+								? EventInstanceId.buildMaster(ev.getEventId()).toString()
+								: null;
+						return new ItipApplyResult(
+								ItipApplyResult.Outcome.RSVP_RECORDED, iid, calendarId, false);
+					}
+					if ("REQUEST".equals(method)) {
+						// APPLY on a REQUEST = "apply the update without changing my PARTSTAT"
+						// — matches the legacy "update" action in Service.processCalendarRequest.
+						Event ev = cm.handleInvitationFromICal(iCal, calendarId, handleOptions);
+						String iid = (ev != null)
+								? EventInstanceId.buildMaster(ev.getEventId()).toString()
+								: null;
+						return new ItipApplyResult(
+								ItipApplyResult.Outcome.UPDATED, iid, calendarId, false);
+					}
+					throw new WTException("APPLY not valid for METHOD:" + method);
+				}
+
+				default:
+					throw new WTException("Unsupported ItipAction: " + action);
+			}
+		} catch (MessagingException ex) {
+			throw new WTException("IMAP error in applyICalendar", ex);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+		}
+	}
+
+	/**
+	 * Build and send an iTIP REPLY to the event's organizer using the
+	 * recipient address found on the inbound message (or the first TO when
+	 * multiple). Returns false when no usable TO address can be resolved
+	 * (e.g. the message reached the mailbox via BCC), in which case the
+	 * caller reports {@code replySent=false} without raising.
+	 */
+	private boolean sendItipReply(
+			MimeMessage mmsg,
+			net.fortuna.ical4j.model.Calendar iCal,
+			PartStat partStat) throws WTException, MessagingException {
+		List<InternetAddress> tos = MimeMessageParser.parseToAddresses(mmsg, true);
+		if (tos.isEmpty()) return false;
+		UserProfile.Data pdata = WT.getProfileData(getTargetProfileId());
+		String prodId = ICalendarUtils.buildProdId(WT.getPlatformName() + " Mail");
+		InternetAddress iaOrganizer = ICalendarUtils.getOrganizerAddress(
+				ICalendarUtils.getVEvent(iCal));
+		EmailMessage email = ICalendarHelper.prepareICalendarReply(
+				prodId, iCal, tos.get(0), iaOrganizer, partStat, pdata.getLocale());
+		WT.sendEmailMessage(getTargetProfileId(), email, getFolderSent());
+		return true;
+	}
+
 	public void streamMessageCidData(String folderId, long uid, String cidName, OutputStream os) {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
