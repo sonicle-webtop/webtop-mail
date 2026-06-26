@@ -121,6 +121,7 @@ Ext.define('Sonicle.webtop.mail.SimpleImapTree', {
 		if (!cfg.hideEllipsisMenu) {
 			citems[citems.length]={
 				xtype: 'soactioncolumn',
+				stopSelection: true,
 				showOnSelection: function(r) { return !r.isRoot(); },
 				showOnOver: function(r) { return !r.isRoot(); },
 				hideDataIndex: me.hideEllipsisMenuDataIndex,

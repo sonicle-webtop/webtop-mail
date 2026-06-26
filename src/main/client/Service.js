@@ -172,9 +172,13 @@ Ext.define('Sonicle.webtop.mail.Service', {
 	 * same as the clicked one: in this case we know a select event won't be sent
 	 * and force the _onFolderSelect anyway.
 	 */
-	_onFolderRowMouseDown: function(t, r) {
+	_onFolderRowMouseDown: function(t, r, e) {
 		var me = this;
-		if (t.getSelection()[0] === r) me._onFolderSelect(t, r); 
+		//ignore mousedowns landing on the ellipsis/action column (its cell/icon carry
+		//Ext's action-col classes): it opens its own menu and must not reselect/reload
+		//the already-selected folder
+		if (e && e.getTarget('.x-grid-cell-inner-action-col, .x-action-col-icon')) return;
+		if (t.getSelection()[0] === r) me._onFolderSelect(t, r);
 	},
 	
 	init: function() {
@@ -267,7 +271,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				containercontextmenu: function(v, e, eopts) {
 					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { }, {shownBy: Ext.fly(itm)});
 				},
-				rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.favoritesTree, r); },
+				rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.favoritesTree, r, e); },
 				select: function(t, r) { me._onFolderSelect(me.favoritesTree, r); }
 			}
 			
@@ -296,7 +300,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 					containercontextmenu: function(v, e, eopts) {
 						Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { }, {shownBy: Ext.fly(itm)});
 					},
-					rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.archiveTree, r); },
+					rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.archiveTree, r, e); },
 					select: function(t, r) { me._onFolderSelect(me.archiveTree, r); }
 				}
 
@@ -336,7 +340,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				containercontextmenu: function(v, e, eopts) {
 					Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 				},
-				rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.imapTree, r); },
+				rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(me.imapTree, r, e); },
 				select: function(t, r) { me._onFolderSelect(me.imapTree, r); },
 				load: function(t,records,s,o,n) {
 					if (n.id==='/') {
@@ -429,7 +433,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 						containercontextmenu: function(v, e, eopts) {
 							Sonicle.Utils.showContextMenu(e, me.getRef('cxmBackTree'), { });
 						},
-						rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(tree, r); },
+						rowmousedown: function(t, r, tr, rix, e) { if (e.button === 0) me._onFolderRowMouseDown(tree, r, e); },
 						select: function(t, r) { me._onFolderSelect(tree, r); },
 						load: function(t,records,s,o,n) {
 							if (n.id==='/') {
