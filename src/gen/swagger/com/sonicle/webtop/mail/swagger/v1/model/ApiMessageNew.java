@@ -3,6 +3,7 @@ package com.sonicle.webtop.mail.swagger.v1.model;
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachment;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachmentNew;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiCalendarPart;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiContact;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
 import io.swagger.annotations.ApiModel;
@@ -22,7 +23,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("MessageNew")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-19T11:30:26.347+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-26T16:48:08.944+02:00[Europe/Rome]")
 public class ApiMessageNew extends ApiMessage  {
   private @Valid String folderId;
   private @Valid Boolean receipt;

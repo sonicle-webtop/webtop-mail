@@ -67,6 +67,7 @@ import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
+import com.sonicle.webtop.calendar.model.EventInstance;
 import com.sonicle.webtop.calendar.model.EventInstanceId;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.webtop.core.CoreManager;
@@ -110,10 +111,12 @@ import com.sonicle.webtop.mail.dal.ExternalAccountDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
 import com.sonicle.webtop.mail.dal.TagDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
+import com.sonicle.webtop.mail.model.CalendarPartInfo;
 import com.sonicle.webtop.mail.model.ExternalAccount;
 import com.sonicle.webtop.mail.model.FolderShareParameters;
 import com.sonicle.webtop.mail.model.ItipAction;
 import com.sonicle.webtop.mail.model.ItipApplyResult;
+import com.sonicle.webtop.mail.model.MatchedEventInfo;
 import com.sonicle.webtop.mail.model.Tag;
 import com.sun.mail.imap.IMAPFolder;
 import jakarta.mail.Address;
@@ -953,6 +956,167 @@ public class MailManager extends BaseManager implements IMailManager {
 				prodId, iCal, tos.get(0), iaOrganizer, partStat, pdata.getLocale());
 		WT.sendEmailMessage(getTargetProfileId(), email, getFolderSent());
 		return true;
+	}
+
+	/**
+	 * Parse every {@code text/calendar} / {@code application/ics} attachment
+	 * on the given message and return one {@link CalendarPartInfo} per part.
+	 * Used to populate {@code Message.calendarParts} during REST {@code getMessage}
+	 * so the client can render the iTIP banner without fetching the ICS bytes.
+	 *
+	 * <p>Population is best-effort: a part that fails to parse is skipped
+	 * (logged at WARN). {@code matchExistingEvent} is null when no event with
+	 * the same UID exists in the user's calendars, or when the calendar
+	 * service is unreachable. Returns an empty list when the message has no
+	 * calendar parts.
+	 */
+	public List<CalendarPartInfo> readCalendarParts(String folderId, long uid) throws WTException {
+		IMAPFolder folder = null;
+		try {
+			Mailbox mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessageParser.ParsedMimeMessageComponents parsed =
+					new MimeMessageParser().parse(mmsg, false);
+			return readCalendarParts(parsed);
+		} catch (MessagingException ex) {
+			throw new WTException("IMAP error in readCalendarParts", ex);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+		}
+	}
+
+	/**
+	 * Variant of {@link #readCalendarParts(String, long)} that reuses an
+	 * already-parsed message. Call this from inside a {@code consumeMessage}
+	 * callback to avoid re-opening the folder.
+	 */
+	public List<CalendarPartInfo> readCalendarParts(
+			MimeMessageParser.ParsedMimeMessageComponents parsed) {
+		List<CalendarPartInfo> out = new ArrayList<>();
+		if (parsed == null || !parsed.hasICalAttachment) return out;
+
+		final String userEmail = WT.getProfileData(getTargetProfileId()).getPersonalEmailAddress();
+		ICalendarManager cm;
+		try {
+			cm = (ICalendarManager) WT.getServiceManager(
+					"com.sonicle.webtop.calendar", true, getTargetProfileId());
+		} catch (Exception ex) {
+			cm = null;
+			logger.warn("Calendar service unavailable for readCalendarParts UID lookup", ex);
+		}
+
+		// Gmail (and other clients) emit the same VEVENT twice: once as a
+		// text/calendar inline part with METHOD=REQUEST, and once as an
+		// application/ics attachment. Dedupe by (UID, method, sequence) so the
+		// banner renders once per event, not once per MIME part.
+		Set<String> seen = new HashSet<>();
+		List<Part> attachments = parsed.getAttachmentParts();
+		for (int i = 0; i < attachments.size(); i++) {
+			Part part = attachments.get(i);
+			try {
+				if (!isCalendarPart(part)) continue;
+			} catch (MessagingException ex) {
+				logger.warn("Cannot read MIME type for attachment at index " + i, ex);
+				continue;
+			}
+			try (InputStream is = part.getInputStream()) {
+				ICalendarRequest ir = new ICalendarRequest(is);
+				String dedupeKey = (ir.getUID() == null ? "" : ir.getUID())
+						+ "|" + ir.getMethod()
+						+ "|" + ir.getSequence();
+				if (!seen.add(dedupeKey)) continue;
+				out.add(toCalendarPartInfo(i, ir, userEmail, cm));
+			} catch (ParserException | IOException | MessagingException ex) {
+				logger.warn("Skipping calendar attachment at index " + i + ": parse failed", ex);
+			}
+		}
+		return out;
+	}
+
+	private CalendarPartInfo toCalendarPartInfo(int attachmentIndex, ICalendarRequest ir,
+			String userEmail, ICalendarManager cm) {
+		String method = ir.getMethod();
+		String eventUid = ir.getUID();
+
+		boolean userIsAttendee = false;
+		String userPartStat = null;
+		if (userEmail != null) {
+			int n = ir.getAttendees();
+			for (int j = 0; j < n; j++) {
+				if (userEmail.equalsIgnoreCase(ir.getAttendeeEmail(j))) {
+					userIsAttendee = true;
+					userPartStat = toShortPartStat(ir.getAttendeeAnswer(j));
+					break;
+				}
+			}
+		}
+
+		String replyCN = null, replyEmail = null, replyStatus = null;
+		if ("REPLY".equals(method) && ir.getAttendees() > 0) {
+			replyCN = ir.getAttendeeCN(0);
+			replyEmail = ir.getAttendeeEmail(0);
+			replyStatus = toShortPartStat(ir.getAttendeeAnswer(0));
+		}
+
+		MatchedEventInfo match = null;
+		if (cm != null && eventUid != null && !eventUid.isEmpty()) {
+			try {
+				String eventId = cm.findEventId(eventUid);
+				if (eventId != null) {
+					EventInstanceId iid = EventInstanceId.buildMaster(eventId);
+					Integer calId = null;
+					String calName = null;
+					boolean isOrganizer = false;
+					try {
+						EventInstance evt = cm.getEventInstance(iid);
+						if (evt != null) {
+							calId = evt.getCalendarId();
+							if (userEmail != null && evt.getOrganizerAddress() != null) {
+								isOrganizer = userEmail.equalsIgnoreCase(evt.getOrganizerAddress());
+							}
+							if (calId != null) {
+								try {
+									com.sonicle.webtop.calendar.model.Calendar cal = cm.getCalendar(calId);
+									calName = (cal != null) ? cal.getName() : null;
+								} catch (Exception ignore) { /* leave calName null */ }
+							}
+						}
+					} catch (Exception ignore) { /* event vanished between lookup and fetch */ }
+					match = new MatchedEventInfo(iid.toString(), calId, calName, null, isOrganizer);
+				}
+			} catch (Exception ex) {
+				logger.debug("findEventId failed for UID " + eventUid, ex);
+			}
+		}
+
+		return new CalendarPartInfo(
+				attachmentIndex, method, eventUid, ir.getSequence(),
+				ir.getSummary(), ir.getLocation(),
+				ir.getStartDate(), ir.getEndDate(),
+				ir.isAllDay(), ir.getTimezone(),
+				ir.getOrganizerCN(), ir.getOrganizerEmail(),
+				userIsAttendee, userPartStat,
+				match,
+				replyCN, replyEmail, replyStatus,
+				ir.getComment());
+	}
+
+	private static boolean isCalendarPart(Part part) throws MessagingException {
+		return part.isMimeType("text/calendar") || part.isMimeType("application/ics");
+	}
+
+	/** Short PARTSTAT code used by the wire DTO. Maps ical4j's long form to NA/AC/DE/TE. */
+	private static String toShortPartStat(String partStat) {
+		if (partStat == null) return null;
+		switch (partStat) {
+			case "ACCEPTED": return "AC";
+			case "DECLINED": return "DE";
+			case "TENTATIVE": return "TE";
+			case "NEEDS-ACTION": return "NA";
+			default: return "NA";
+		}
 	}
 
 	public void streamMessageCidData(String folderId, long uid, String cidName, OutputStream os) {

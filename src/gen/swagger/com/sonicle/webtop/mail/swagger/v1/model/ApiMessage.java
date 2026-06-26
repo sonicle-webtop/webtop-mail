@@ -2,6 +2,7 @@ package com.sonicle.webtop.mail.swagger.v1.model;
 
 import com.fasterxml.jackson.annotation.JsonTypeName;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachment;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiCalendarPart;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiContact;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -20,7 +21,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
 
 
 @JsonTypeName("Message")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-19T11:30:26.347+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-26T16:48:08.944+02:00[Europe/Rome]")
 public class ApiMessage   {
   private @Valid String id;
   private @Valid Integer uid;
@@ -37,6 +38,7 @@ public class ApiMessage   {
   private @Valid String flag;
   private @Valid List<String> tags;
   private @Valid Boolean hasNote;
+  private @Valid List<ApiCalendarPart> calendarParts;
 
   /**
    **/
@@ -403,6 +405,42 @@ public class ApiMessage   {
     this.hasNote = hasNote;
   }
 
+  /**
+   * Populated when one or more text/calendar attachments are present. Empty or omitted otherwise. Each entry corresponds to one ICS attachment carried by the message.
+   **/
+  public ApiMessage calendarParts(List<ApiCalendarPart> calendarParts) {
+    this.calendarParts = calendarParts;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "Populated when one or more text/calendar attachments are present. Empty or omitted otherwise. Each entry corresponds to one ICS attachment carried by the message.")
+  @JsonProperty("calendarParts")
+  public List<ApiCalendarPart> getCalendarParts() {
+    return calendarParts;
+  }
+
+  @JsonProperty("calendarParts")
+  public void setCalendarParts(List<ApiCalendarPart> calendarParts) {
+    this.calendarParts = calendarParts;
+  }
+
+  public ApiMessage addCalendarPartsItem(ApiCalendarPart calendarPartsItem) {
+    if (this.calendarParts == null) {
+      this.calendarParts = new ArrayList<>();
+    }
+
+    this.calendarParts.add(calendarPartsItem);
+    return this;
+  }
+
+  public ApiMessage removeCalendarPartsItem(ApiCalendarPart calendarPartsItem) {
+    if (calendarPartsItem != null && this.calendarParts != null) {
+      this.calendarParts.remove(calendarPartsItem);
+    }
+
+    return this;
+  }
 
   @Override
   public boolean equals(Object o) {
@@ -427,12 +465,13 @@ public class ApiMessage   {
         Objects.equals(this.status, message.status) &&
         Objects.equals(this.flag, message.flag) &&
         Objects.equals(this.tags, message.tags) &&
-        Objects.equals(this.hasNote, message.hasNote);
+        Objects.equals(this.hasNote, message.hasNote) &&
+        Objects.equals(this.calendarParts, message.calendarParts);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(id, uid, subject, body, sender, recipients, cc, bcc, date, isRead, attachments, status, flag, tags, hasNote);
+    return Objects.hash(id, uid, subject, body, sender, recipients, cc, bcc, date, isRead, attachments, status, flag, tags, hasNote, calendarParts);
   }
 
   @Override
@@ -455,6 +494,7 @@ public class ApiMessage   {
     sb.append("    flag: ").append(toIndentedString(flag)).append("\n");
     sb.append("    tags: ").append(toIndentedString(tags)).append("\n");
     sb.append("    hasNote: ").append(toIndentedString(hasNote)).append("\n");
+    sb.append("    calendarParts: ").append(toIndentedString(calendarParts)).append("\n");
     sb.append("}");
     return sb.toString();
   }

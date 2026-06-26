@@ -1,5 +1,7 @@
 package com.sonicle.webtop.mail.swagger.v1.api;
 
+import com.sonicle.webtop.mail.swagger.v1.model.ApiItipApplyRequest;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiItipApplyResult;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessageNew;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiNote;
@@ -18,8 +20,25 @@ import javax.validation.Valid;
 
 @Path("/me/messages")
 @Api(description = "the MeMessages API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-19T11:30:26.347+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-26T16:48:08.944+02:00[Europe/Rome]")
 public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
+
+    @POST
+    @Path("/calendar/apply")
+    @Consumes({ "application/json" })
+    @Produces({ "application/json" })
+    @ApiOperation(value = "Apply an iTIP action to a calendar attachment", notes = "Crosses the caller-supplied action with the iTIP METHOD on the referenced text/calendar attachment and performs the appropriate calendar mutation (create/update/delete) plus, when notify=true, emits an iTIP REPLY mail to the organizer. Single entry point for Accept / Tentative / Decline of REQUEST; Apply update on UPDATE; Remove on CANCEL; Apply attendee response on REPLY; Import on PUBLISH.", response = ApiItipApplyResult.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "Success", response = ApiItipApplyResult.class)
+    })
+    public Response applyCalendarPart(@Valid ApiItipApplyRequest apiItipApplyRequest) {
+        return Response.ok().entity("magic!").build();
+    }
 
     @DELETE
     @ApiOperation(value = "Trash message by folder and uid", notes = "", response = Void.class, authorizations = {

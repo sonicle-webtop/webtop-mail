@@ -885,6 +885,37 @@
         },
         "description": ""
       }
+    },
+    "/me/messages/calendar/apply": {
+      "post": {
+        "summary": "Apply an iTIP action to a calendar attachment",
+        "operationId": "applyCalendarPart",
+        "description": "Crosses the caller-supplied action with the iTIP METHOD on the referenced text/calendar attachment and performs the appropriate calendar mutation (create/update/delete) plus, when notify=true, emits an iTIP REPLY mail to the organizer. Single entry point for Accept / Tentative / Decline of REQUEST; Apply update on UPDATE; Remove on CANCEL; Apply attendee response on REPLY; Import on PUBLISH.",
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ItipApplyResult"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ItipApplyRequest"
+              }
+            }
+          }
+        },
+        "tags": [
+          "me_messages"
+        ]
+      }
     }
   },
   "components": {
@@ -1258,6 +1289,163 @@
             "x-stoplight": {
               "id": "ehuxy7g25h8t9"
             }
+          },
+          "calendarParts": {
+            "description": "Populated when one or more text/calendar attachments are present. Empty or omitted otherwise. Each entry corresponds to one ICS attachment carried by the message.",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalendarPart"
+            }
+          }
+        }
+      },
+      "CalendarPart": {
+        "title": "CalendarPart",
+        "description": "Parsed view of a text/calendar (or application/ics) attachment carrying an iTIP payload.",
+        "type": "object",
+        "properties": {
+          "attachmentIndex": {
+            "description": "Zero-based index into the message's attachments array. Use this when calling /me/messages/calendar/apply.",
+            "type": "integer"
+          },
+          "method": {
+            "description": "iTIP METHOD value.",
+            "type": "string",
+            "enum": ["REQUEST", "REPLY", "CANCEL", "COUNTER", "PUBLISH", "REFRESH"]
+          },
+          "eventUid": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "startsAt": {
+            "description": "ISO 8601 timestamp. For all-day events represents local midnight on the start date.",
+            "type": "string"
+          },
+          "endsAt": {
+            "type": "string"
+          },
+          "allDay": {
+            "type": "boolean"
+          },
+          "timezone": {
+            "description": "TZID from DTSTART, when present.",
+            "type": "string"
+          },
+          "organizer": {
+            "$ref": "#/components/schemas/Contact"
+          },
+          "userIsAttendee": {
+            "description": "True when the current user's personal email matches an ATTENDEE on the iTIP payload.",
+            "type": "boolean"
+          },
+          "userResponseStatus": {
+            "description": "Short PARTSTAT code for the current user. Present iff userIsAttendee.",
+            "type": "string",
+            "enum": ["NA", "AC", "DE", "TE"]
+          },
+          "matchExistingEvent": {
+            "description": "Pointer to an existing event with the same UID, when one exists in the user's calendars. Null otherwise.",
+            "$ref": "#/components/schemas/MatchedEvent"
+          },
+          "replyAttendee": {
+            "description": "For method=REPLY only: the attendee whose response this REPLY carries.",
+            "$ref": "#/components/schemas/Contact"
+          },
+          "replyStatus": {
+            "description": "For method=REPLY only: short PARTSTAT code (NA/AC/DE/TE) carried by the REPLY.",
+            "type": "string",
+            "enum": ["NA", "AC", "DE", "TE"]
+          },
+          "comment": {
+            "description": "Optional COMMENT property value from the VEVENT.",
+            "type": "string"
+          }
+        }
+      },
+      "MatchedEvent": {
+        "title": "MatchedEvent",
+        "description": "Pointer to an existing calendar event matched by UID. Carried inside CalendarPart.",
+        "type": "object",
+        "properties": {
+          "eventInstanceId": {
+            "type": "string"
+          },
+          "calendarId": {
+            "type": "integer"
+          },
+          "calendarName": {
+            "type": "string"
+          },
+          "currentSequence": {
+            "description": "iCalendar SEQUENCE of the matched event, when known. Null otherwise.",
+            "type": "integer"
+          },
+          "isOrganizer": {
+            "description": "True when the current user is the organizer of the matched event.",
+            "type": "boolean"
+          }
+        }
+      },
+      "ItipApplyRequest": {
+        "title": "ItipApplyRequest",
+        "description": "Body for POST /me/messages/calendar/apply.",
+        "type": "object",
+        "required": ["folderId", "uid", "attachmentIndex", "action"],
+        "properties": {
+          "folderId": {
+            "type": "string"
+          },
+          "uid": {
+            "type": "integer"
+          },
+          "attachmentIndex": {
+            "type": "integer"
+          },
+          "action": {
+            "description": "Caller-supplied verb. The server crosses it with the iTIP METHOD on the payload to compute the actual effect.",
+            "type": "string",
+            "enum": ["accept", "tentative", "decline", "apply", "import", "ignore"]
+          },
+          "targetCalendarId": {
+            "description": "Optional. Required for REQUEST + accept/tentative when no existing match. When omitted, the server picks the user's default calendar (or built-in if default is shared).",
+            "type": "string"
+          },
+          "notify": {
+            "description": "When true (default), the server emits an iTIP REPLY mail back to the organizer. Set false to suppress.",
+            "type": "boolean",
+            "default": true
+          },
+          "comment": {
+            "description": "Optional RSVP comment included in the outgoing REPLY.",
+            "type": "string"
+          }
+        }
+      },
+      "ItipApplyResult": {
+        "title": "ItipApplyResult",
+        "type": "object",
+        "properties": {
+          "outcome": {
+            "type": "string",
+            "enum": ["created", "updated", "removed", "rsvp_recorded", "ignored", "no_match"]
+          },
+          "eventInstanceId": {
+            "description": "Present for outcomes created/updated/rsvp_recorded.",
+            "type": "string"
+          },
+          "calendarId": {
+            "type": "integer"
+          },
+          "replySent": {
+            "type": "boolean"
           }
         }
       },

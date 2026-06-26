@@ -48,11 +48,19 @@ import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.mail.MailManager;
 import com.sonicle.webtop.mail.bol.model.Identity;
+import com.sonicle.webtop.mail.model.CalendarPartInfo;
+import com.sonicle.webtop.mail.model.ItipAction;
+import com.sonicle.webtop.mail.model.ItipApplyResult;
+import com.sonicle.webtop.mail.model.MatchedEventInfo;
 import com.sonicle.webtop.mail.swagger.v1.api.MeMessagesApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachment;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiAttachmentNew;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiCalendarPart;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiContact;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiItipApplyRequest;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiItipApplyResult;
+import com.sonicle.webtop.mail.swagger.v1.model.ApiMatchedEvent;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessage;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiMessageNew;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiNote;
@@ -306,6 +314,17 @@ public class MeMessages extends MeMessagesApi {
 							++ix;
 						}
 						am.setAttachments(attachments);
+
+						// Populate calendarParts when iTIP attachments are present.
+						// Re-uses the already-parsed components so no second IMAP fetch.
+						if (parsed.hasICalAttachment) {
+							List<CalendarPartInfo> cps = mmgr.readCalendarParts(parsed);
+							if (!cps.isEmpty()) {
+								List<ApiCalendarPart> apiCps = new ArrayList<>(cps.size());
+								for (CalendarPartInfo cp : cps) apiCps.add(toApiCalendarPart(cp));
+								am.setCalendarParts(apiCps);
+							}
+						}
 					}
 				}
 			});
@@ -658,10 +677,135 @@ public class MeMessages extends MeMessagesApi {
 	}
 	
 	@Override
+	public Response applyCalendarPart(ApiItipApplyRequest body) {
+		if (body == null) {
+			return respError(new WTException("Missing request body"));
+		}
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		try {
+			ItipAction action = parseItipAction(
+					body.getAction() == null ? null : body.getAction().toString());
+			Integer targetCalId = StringUtils.isBlank(body.getTargetCalendarId())
+					? null
+					: Integer.parseInt(body.getTargetCalendarId());
+			boolean notify = (body.getNotify() == null) || body.getNotify();
+			ItipApplyResult r = mmgr.applyICalendar(
+					body.getFolderId(),
+					body.getUid().longValue(),
+					body.getAttachmentIndex(),
+					action,
+					targetCalId,
+					notify,
+					body.getComment());
+			return respOk(toApiItipApplyResult(r));
+		} catch (Exception ex) {
+			logger.error("[{}] applyCalendarPart()", RunContext.getRunProfileId(), ex);
+			return respError(ex);
+		} finally {
+			if (mmgr != null) mmgr.cleanup();
+		}
+	}
+
+	@Override
 	protected Object createErrorEntity(Response.Status status, String message) {
 		return new ApiApiError()
 				.code(status.getStatusCode())
 				.description(message);
+	}
+
+	// ── iTIP mappers ──────────────────────────────────────────────────────────
+
+	private static ItipAction parseItipAction(String s) {
+		if (s == null) throw new IllegalArgumentException("action is required");
+		switch (s) {
+			case "accept": return ItipAction.ACCEPT;
+			case "tentative": return ItipAction.TENTATIVE;
+			case "decline": return ItipAction.DECLINE;
+			case "apply": return ItipAction.APPLY;
+			case "import": return ItipAction.IMPORT;
+			case "ignore": return ItipAction.IGNORE;
+			default: throw new IllegalArgumentException("Unknown action: " + s);
+		}
+	}
+
+	private static ApiItipApplyResult toApiItipApplyResult(ItipApplyResult r) {
+		ApiItipApplyResult out = new ApiItipApplyResult();
+		if (r.getOutcome() != null) {
+			out.setOutcome(ApiItipApplyResult.OutcomeEnum.fromValue(
+					r.getOutcome().name().toLowerCase()));
+		}
+		out.setEventInstanceId(r.getEventInstanceId());
+		out.setCalendarId(r.getCalendarId());
+		out.setReplySent(r.isReplySent());
+		return out;
+	}
+
+	private static ApiCalendarPart toApiCalendarPart(CalendarPartInfo c) {
+		ApiCalendarPart out = new ApiCalendarPart();
+		out.setAttachmentIndex(c.getAttachmentIndex());
+		if (c.getMethod() != null) {
+			try {
+				out.setMethod(ApiCalendarPart.MethodEnum.fromValue(c.getMethod()));
+			} catch (IllegalArgumentException ignore) { /* leave null on unknown method */ }
+		}
+		out.setEventUid(c.getEventUid());
+		out.setSequence(c.getSequence());
+		out.setSummary(c.getSummary());
+		out.setLocation(c.getLocation());
+		out.setStartsAt(formatIsoUtc(c.getStartsAt()));
+		out.setEndsAt(formatIsoUtc(c.getEndsAt()));
+		out.setAllDay(c.isAllDay());
+		out.setTimezone(c.getTimezone());
+		if (c.getOrganizerEmail() != null || c.getOrganizerCN() != null) {
+			ApiContact organizer = new ApiContact();
+			organizer.setName(c.getOrganizerCN());
+			organizer.setEmail(c.getOrganizerEmail());
+			out.setOrganizer(organizer);
+		}
+		out.setUserIsAttendee(c.isUserIsAttendee());
+		if (c.getUserResponseStatus() != null) {
+			try {
+				out.setUserResponseStatus(
+						ApiCalendarPart.UserResponseStatusEnum.fromValue(c.getUserResponseStatus()));
+			} catch (IllegalArgumentException ignore) { /* leave null on unknown PARTSTAT */ }
+		}
+		if (c.getMatchExistingEvent() != null) {
+			out.setMatchExistingEvent(toApiMatchedEvent(c.getMatchExistingEvent()));
+		}
+		if (c.getReplyAttendeeEmail() != null || c.getReplyAttendeeCN() != null) {
+			ApiContact replyAtt = new ApiContact();
+			replyAtt.setName(c.getReplyAttendeeCN());
+			replyAtt.setEmail(c.getReplyAttendeeEmail());
+			out.setReplyAttendee(replyAtt);
+		}
+		if (c.getReplyStatus() != null) {
+			try {
+				out.setReplyStatus(
+						ApiCalendarPart.ReplyStatusEnum.fromValue(c.getReplyStatus()));
+			} catch (IllegalArgumentException ignore) { /* leave null on unknown PARTSTAT */ }
+		}
+		out.setComment(c.getComment());
+		return out;
+	}
+
+	/** ISO 8601 UTC string the Dart side parses with {@code DateTime.tryParse}. */
+	private static String formatIsoUtc(java.util.Date d) {
+		if (d == null) return null;
+		java.text.SimpleDateFormat fmt =
+				new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
+		fmt.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+		return fmt.format(d);
+	}
+
+	private static ApiMatchedEvent toApiMatchedEvent(MatchedEventInfo m) {
+		ApiMatchedEvent out = new ApiMatchedEvent();
+		out.setEventInstanceId(m.getEventInstanceId());
+		out.setCalendarId(m.getCalendarId());
+		out.setCalendarName(m.getCalendarName());
+		out.setCurrentSequence(m.getCurrentSequence());
+		out.setIsOrganizer(m.isOrganizer());
+		return out;
 	}
 
 }
