@@ -831,15 +831,32 @@ public class MailManager extends BaseManager implements IMailManager {
 			MimeMessageParser.ParsedMimeMessageComponents parsed =
 					new MimeMessageParser().parse(mmsg, false);
 
-			net.fortuna.ical4j.model.Calendar iCal;
+			net.fortuna.ical4j.model.Calendar iCal = null;
 			try {
-				Part part = parsed.getAttachmentParts().get(attachmentIndex);
-				try (InputStream is = part.getInputStream()) {
-					iCal = ICalendarUtils.parse(is);
+				ArrayList<Part> aparts = parsed.getAttachmentParts();
+				if (aparts != null && attachmentIndex < aparts.size()) {
+					Part part = aparts.get(attachmentIndex);
+					try (InputStream is = part.getInputStream()) {
+						iCal = ICalendarUtils.parse(is);
+					}
 				}
 			} catch (IOException | ParserException ex) {
 				throw new WTException("Failed to parse calendar attachment", ex);
 			}
+			
+			//If attachment did not work, let's try with part method
+			if (iCal == null) {
+				try {
+					String calendarContent = parsed.getCalendarContent();
+					if (!StringUtils.isBlank(calendarContent)) {
+						iCal = ICalendarUtils.parse(calendarContent);
+					}
+				} catch (IOException | ParserException ex) {
+					throw new WTException("Failed to parse calendar part", ex);
+				}
+			}
+			
+			if (iCal == null) throw new WTException("No calendar part");
 
 			ICalendarManager cm = (ICalendarManager) WT.getServiceManager(
 					"com.sonicle.webtop.calendar", true, getTargetProfileId());
