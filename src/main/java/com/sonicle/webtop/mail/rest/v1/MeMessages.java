@@ -805,6 +805,7 @@ public class MeMessages extends MeMessagesApi {
 		out.setCalendarName(m.getCalendarName());
 		out.setCurrentSequence(m.getCurrentSequence());
 		out.setIsOrganizer(m.isOrganizer());
+		out.setIsOwner(m.isOwner());
 		return out;
 	}
 

@@ -18,13 +18,14 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  **/
 @ApiModel(description = "Pointer to an existing calendar event matched by UID. Carried inside CalendarPart.")
 @JsonTypeName("MatchedEvent")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-26T16:48:08.944+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-29T14:51:59.285+02:00[Europe/Rome]")
 public class ApiMatchedEvent   {
   private @Valid String eventInstanceId;
   private @Valid Integer calendarId;
   private @Valid String calendarName;
   private @Valid Integer currentSequence;
   private @Valid Boolean isOrganizer;
+  private @Valid Boolean isOwner;
 
   /**
    **/
@@ -123,6 +124,26 @@ public class ApiMatchedEvent   {
     this.isOrganizer = isOrganizer;
   }
 
+  /**
+   * True when the matched event lives in a calendar owned by the current user (not a shared/incoming one).
+   **/
+  public ApiMatchedEvent isOwner(Boolean isOwner) {
+    this.isOwner = isOwner;
+    return this;
+  }
+
+  
+  @ApiModelProperty(value = "True when the matched event lives in a calendar owned by the current user (not a shared/incoming one).")
+  @JsonProperty("isOwner")
+  public Boolean getIsOwner() {
+    return isOwner;
+  }
+
+  @JsonProperty("isOwner")
+  public void setIsOwner(Boolean isOwner) {
+    this.isOwner = isOwner;
+  }
+
 
   @Override
   public boolean equals(Object o) {
@@ -137,12 +158,13 @@ public class ApiMatchedEvent   {
         Objects.equals(this.calendarId, matchedEvent.calendarId) &&
         Objects.equals(this.calendarName, matchedEvent.calendarName) &&
         Objects.equals(this.currentSequence, matchedEvent.currentSequence) &&
-        Objects.equals(this.isOrganizer, matchedEvent.isOrganizer);
+        Objects.equals(this.isOrganizer, matchedEvent.isOrganizer) &&
+        Objects.equals(this.isOwner, matchedEvent.isOwner);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(eventInstanceId, calendarId, calendarName, currentSequence, isOrganizer);
+    return Objects.hash(eventInstanceId, calendarId, calendarName, currentSequence, isOrganizer, isOwner);
   }
 
   @Override
@@ -155,6 +177,7 @@ public class ApiMatchedEvent   {
     sb.append("    calendarName: ").append(toIndentedString(calendarName)).append("\n");
     sb.append("    currentSequence: ").append(toIndentedString(currentSequence)).append("\n");
     sb.append("    isOrganizer: ").append(toIndentedString(isOrganizer)).append("\n");
+    sb.append("    isOwner: ").append(toIndentedString(isOwner)).append("\n");
     sb.append("}");
     return sb.toString();
   }

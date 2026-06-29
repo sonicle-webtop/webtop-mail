@@ -20,7 +20,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  **/
 @ApiModel(description = "Parsed view of a text/calendar (or application/ics) attachment carrying an iTIP payload.")
 @JsonTypeName("CalendarPart")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-26T16:48:08.944+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-29T14:51:59.285+02:00[Europe/Rome]")
 public class ApiCalendarPart   {
   private @Valid Integer attachmentIndex;
   public enum MethodEnum {

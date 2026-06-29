@@ -1391,6 +1391,10 @@
           "isOrganizer": {
             "description": "True when the current user is the organizer of the matched event.",
             "type": "boolean"
+          },
+          "isOwner": {
+            "description": "True when the matched event lives in a calendar owned by the current user (not a shared/incoming one).",
+            "type": "boolean"
           }
         }
       },

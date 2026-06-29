@@ -67,6 +67,7 @@ import com.sonicle.security.Principal;
 import com.sonicle.security.auth.directory.LdapNethDirectory;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.model.Event;
+import com.sonicle.webtop.calendar.model.EventAttendee;
 import com.sonicle.webtop.calendar.model.EventInstance;
 import com.sonicle.webtop.calendar.model.EventInstanceId;
 import com.sonicle.webtop.contacts.ContactsUtils;
@@ -899,6 +900,25 @@ public class MailManager extends BaseManager implements IMailManager {
 							: null;
 					PartStat ps = (action == ItipAction.ACCEPT)
 							? PartStat.ACCEPTED : PartStat.TENTATIVE;
+					// handleInvitationFromICal imports the event copying attendees
+					// as-is from the iCal, which leaves the responder's PARTSTAT at
+					// NEEDS-ACTION even after they clicked Accept. Flip our own
+					// attendee row on the just-imported copy so the calendar UI
+					// shows the correct state. notifyOrganizer=false because the
+					// outbound REPLY is sent below via sendItipReply.
+					if (ev != null) {
+						try {
+							EventAttendee.ResponseStatus rs = (action == ItipAction.ACCEPT)
+									? EventAttendee.ResponseStatus.ACCEPTED
+									: EventAttendee.ResponseStatus.TENTATIVE;
+							cm.updateEventInstanceAttendeeResponse(
+									EventInstanceId.buildMaster(ev.getEventId()),
+									rs, comment, false);
+						} catch (Exception ex) {
+							logger.warn("Failed to set responder PARTSTAT on imported event "
+									+ ev.getEventId(), ex);
+						}
+					}
 					boolean replySent = notify && sendItipReply(mmsg, iCal, ps);
 					return new ItipApplyResult(
 							ItipApplyResult.Outcome.CREATED, iid, calendarId, replySent);
@@ -1086,6 +1106,7 @@ public class MailManager extends BaseManager implements IMailManager {
 					Integer calId = null;
 					String calName = null;
 					boolean isOrganizer = false;
+					boolean isOwner = false;
 					try {
 						EventInstance evt = cm.getEventInstance(iid);
 						if (evt != null) {
@@ -1094,6 +1115,14 @@ public class MailManager extends BaseManager implements IMailManager {
 								isOrganizer = userEmail.equalsIgnoreCase(evt.getOrganizerAddress());
 							}
 							if (calId != null) {
+								// Mirror web Service logic (8354-8381): the user is "owner" only
+								// when the calendar holding the matched event belongs to them.
+								// Otherwise the match is in a shared/incoming calendar and the
+								// invite should still be actionable as if no match existed.
+								try {
+									UserProfileId calOwner = cm.getCalendarOwner(calId);
+									isOwner = calOwner != null && calOwner.equals(getTargetProfileId());
+								} catch (Exception ignore) { /* leave isOwner=false */ }
 								try {
 									com.sonicle.webtop.calendar.model.Calendar cal = cm.getCalendar(calId);
 									calName = (cal != null) ? cal.getName() : null;
@@ -1101,7 +1130,7 @@ public class MailManager extends BaseManager implements IMailManager {
 							}
 						}
 					} catch (Exception ignore) { /* event vanished between lookup and fetch */ }
-					match = new MatchedEventInfo(iid.toString(), calId, calName, null, isOrganizer);
+					match = new MatchedEventInfo(iid.toString(), calId, calName, null, isOrganizer, isOwner);
 				}
 			} catch (Exception ex) {
 				logger.debug("findEventId failed for UID " + eventUid, ex);
