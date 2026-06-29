@@ -623,6 +623,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		me.onPushMessage('unread',me.onUnreadChanged,me);
 		me.onPushMessage('recent',me.onRecentMessage,me);
 		me.onPushMessage('flags',me.onFlagsChanged,me);
+		me.onPushMessage('mdel',me.onMessagesDeleted,me);
 		me.onPushMessage('addContact', me.onAddContact, me);
 		
         var xb=new Array();
@@ -1294,6 +1295,25 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 	},
 	
+	onMessagesDeleted: function(msg,pl) {
+		var me=this,
+			fl=me.messagesPanel.folderList;
+		//skip our own just-issued delete (its IDLE expunge echoes back here): the row was
+		//already removed locally - same 1s guard onFlagsChanged uses
+		if ((Date.now()-fl.lastFlagsChangedTS)>1000) {
+			if (!me.messagesPanel.hasFilterQuery() && me.currentAccount===pl.accountid && me.currentFolder===pl.foldername) {
+				//if the push carries uids and the layout can key rows by uid (not multifolder,
+				//not threaded), drop just those rows in place - exactly the path a local delete
+				//uses; otherwise (no uids, threaded, multifolder) fall back to a full refresh
+				if (pl.uids && pl.uids.length && !fl.multifolder && !fl.threaded) {
+					fl.removeRecords(pl.uids);
+				} else {
+					me.messagesPanel.refreshGridWhenIdle(pl.foldername);
+				}
+			}
+		}
+	},
+
 	onUnreadChanged: function(msg,pl) {
 		this.unreadChanged(pl,false);
 	},

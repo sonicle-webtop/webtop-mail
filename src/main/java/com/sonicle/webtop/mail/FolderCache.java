@@ -73,6 +73,7 @@ import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.ws.FlagsChangedMessage;
 import com.sonicle.webtop.mail.bol.js.JsFlagsChangedMessage;
+import com.sonicle.webtop.mail.ws.MessagesDeletedMessage;
 import com.sun.mail.imap.protocol.BODYSTRUCTURE;
 import jakarta.mail.event.MailEvent;
 import java.nio.charset.Charset;
@@ -166,6 +167,14 @@ public class FolderCache {
     //sendFlagsChangedMessage so the 'flags' push can carry the exact UIDs+state changed,
     //letting the client patch only the visible grid rows instead of reloading the list.
     private final ConcurrentHashMap<Long,Flags> pendingFlagChanges = new ConcurrentHashMap<>();
+    //UIDs expunged by another session/user, captured from the IDLE messagesRemoved
+    //listener (fires per message, BEFORE the event queue coalesces them by
+    //foldername|mremove). Drained in MessagesRemovedHandler into one 'mdel' push so the
+    //client can remove just those visible rows. removedNeedsRefresh is set when a UID
+    //could not be resolved (expunged before it was ever fetched) -> push null uids so
+    //the client falls back to a full grid refresh.
+    private final Set<Long> pendingRemovedUids = Collections.synchronizedSet(new LinkedHashSet<Long>());
+    private volatile boolean removedNeedsRefresh=false;
 
     private int sort_by=0;
     private boolean ascending=true;
@@ -210,6 +219,7 @@ public class FolderCache {
     private MessageChangedHandler messageChangedHandler = new MessageChangedHandler();
 	private MessagesAddedHandler messagesAddedHandler = new MessagesAddedHandler();
 	private MessageCountHandler messageCountHandler = new MessageCountHandler();
+	private MessagesRemovedHandler messagesRemovedHandler = new MessagesRemovedHandler();
 
 	private static FetchProfile FP_BS = new FetchProfile();
 
@@ -399,7 +409,19 @@ public class FolderCache {
 
 				@Override
 				public void messagesRemoved(MessageCountEvent mce) {
+					//capture the expunged UIDs here (one event per batch) before the queue
+					//coalesces by foldername|mremove; the coalesced handler drains them into
+					//one 'mdel' push. A UID unresolvable on an already-expunged message flags
+					//a refresh fallback for the whole push.
+					for (Message m : mce.getMessages()) {
+						try {
+							long uid=((SonicleIMAPMessage)m).getUID();
+							if (uid>=0) pendingRemovedUids.add(uid);
+							else removedNeedsRefresh=true;
+						} catch(Exception exc) { removedNeedsRefresh=true; }
+					}
 					account.queueFolderMailEvent(foldername + "|mcount", mce, messageCountHandler);
+					account.queueFolderMailEvent(foldername + "|mremove", mce, messagesRemovedHandler);
 				}
 			}
 		);
@@ -717,6 +739,28 @@ public class FolderCache {
 		}
 		this.environment.notify(
 			new FlagsChangedMessage(account.getId(),foldername,items)
+		);
+	}
+
+	//Drain the UIDs expunged by another session/user into one 'mdel' push. Splice them
+	//from the cached sorted list (when eligible) so a client-side reload does not re-SORT.
+	//If any UID could not be resolved, push null uids -> the client does a full refresh.
+	private void sendMessagesDeletedMessage() {
+		ArrayList<Long> uids=null;
+		boolean needsRefresh=removedNeedsRefresh;
+		removedNeedsRefresh=false;
+		synchronized(pendingRemovedUids) {
+			if (!pendingRemovedUids.isEmpty()) {
+				uids=new ArrayList<>(pendingRemovedUids);
+				pendingRemovedUids.clear();
+			}
+		}
+		if (!needsRefresh && uids!=null && incrementalListEnabled() && !threaded && msgs!=null && cachedPlainQuery) {
+			synchronized(cacheLock) { spliceFromCache(uids); }
+		}
+		//null uids tells the client to fall back to a full grid refresh
+		this.environment.notify(
+			new MessagesDeletedMessage(account.getId(), foldername, needsRefresh ? null : uids)
 		);
 	}
 
@@ -2923,6 +2967,15 @@ public class FolderCache {
 				refreshUnreads();
 
 			} catch(MessagingException ex) { /* Do nothing... */ }
+		}
+	}
+
+	private class MessagesRemovedHandler implements IdleMailEventHandler {
+		@Override
+		public void handle(MailEvent event) {
+			//external expunge (e.g. another user on a shared folder): push the removed UIDs
+			//so the client drops just those rows, mirroring a local delete
+			sendMessagesDeletedMessage();
 		}
 	}
 }
