@@ -390,7 +390,12 @@ public class FolderCache {
 						try {
 							Message cm=mce.getMessage();
 							long uid=((SonicleIMAPMessage)cm).getUID();
-							if (uid>=0) pendingFlagChanges.put(uid, cm.getFlags());
+							if (uid>=0) {
+								Flags flags = cm.getFlags();
+								pendingFlagChanges.put(uid, flags);
+								if (sort_by == SORT_BY_SEEN)
+									forceRefresh = true;
+							}
 						} catch(Exception exc) { /* fall back: handler still sends folder-level signal */ }
 						account.queueFolderMailEvent(foldername + "|mchange", mce, messageChangedHandler);
 					}
