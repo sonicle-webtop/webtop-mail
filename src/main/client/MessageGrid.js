@@ -2046,7 +2046,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
     moveMessages: function(acctfrom,from,acctto,to,data,selection,isdd) {
 		var me=this;
 		
-        me.fireEvent('moving', selection.length);
+        me.fireEvent('moving', selection ? selection.length : me);
 		
         me.operateMessages("MoveMessages",acctfrom,from,acctto,to,data,selection,isdd);
 		me.lastFlagsChangedTS=Date.now();
