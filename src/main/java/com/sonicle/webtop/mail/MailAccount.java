@@ -36,6 +36,10 @@ package com.sonicle.webtop.mail;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.concurrent.ThreadFactoryBuilder;
 import com.sonicle.commons.web.json.JsonResult;
+import com.sonicle.mail.Mailbox;
+import com.sonicle.mail.MailboxConfig;
+import com.sonicle.mail.StoreHostParams;
+import com.sonicle.mail.StoreProtocol;
 import com.sonicle.mail.StoreUtils;
 import com.sonicle.mail.imap.SonicleIMAPStore;
 import com.sonicle.mail.imap.SonicleIMAPFolder;
@@ -46,7 +50,6 @@ import com.sonicle.security.PasswordUtils;
 import com.sonicle.security.Principal;
 import com.sonicle.webtop.core.CoreServiceSettings;
 import com.sonicle.webtop.core.app.CoreManifest;
-import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.app.WebTopManager;
@@ -61,6 +64,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -90,8 +94,12 @@ import org.slf4j.LoggerFactory;
 public class MailAccount {
 	private final static Logger logger = (Logger) LoggerFactory.getLogger(MailAccount.class);
 	private String id;
-	private Service ms;
-	private PrivateEnvironment environment;
+	//The (soon shared) per-user manager: settings/identity/util calls and the
+	//event fan-out all route through here — no per-session Service reference.
+	private MailManager mailManager;
+	//Set by cleanup(): late calls (isValid/checkStoreConnected) on a torn-down
+	//account bail out instead of touching released resources.
+	private volatile boolean disposed=false;
 
 	private int port;
 	private String mailHost;
@@ -100,20 +108,20 @@ public class MailAccount {
 	private String authorizationId=null;
 	private boolean isImpersonated=false;
 	private String vmailSecret=null;
+	private String impersonatedUser=null; //raw user for VMAIL impersonation (mailUsername gets the *vmail suffix)
 	private String replyTo=null;
 	private boolean readonly=false;
 
 	private Session session;
-	//volatile: read by checkStoreConnected()'s lock-free fast path; reassigned by connect()
-	private volatile Store store;
 	//Dedicated reconnect lock: serializes connect()/reconnect WITHOUT holding the account
 	//'this' monitor, so the multi-round-trip connect() no longer blocks createFolderCache /
 	//addSingleFoldersCache or any other synchronized(this) work on the account.
 	private final Object connectLock = new Object();
 	private String storeProtocol;
-	SonicleIMAPSocketTracker socketTracker;
-	private boolean disconnecting = false;
-	private String sharedPrefixes[] = null;
+	private volatile boolean disconnecting = false;
+	//volatile + build-then-publish in connect(): iterated lock-free on request/MFT/idle
+	//threads (isUnderSharedFolder & co.) while a reconnect rebuilds it
+	private volatile String sharedPrefixes[] = null;
 	private char folderSeparator = 0;
 	private String folderPrefix = null;
 	private String folderSent = null;
@@ -128,28 +136,30 @@ public class MailAccount {
 	private boolean isCyrus=false;
 	private boolean hasDifferentDefaultFolder=false;
 	private String defaultFolderName= null;
-	private HashMap<String, FolderCache> foldersCache = new HashMap<String, FolderCache>();
-	private FolderCache fcRoot = null;
-	private FolderCache[] fcShared = null;
+	//ConcurrentHashMap: written by createFolderCache (request threads / cache-load
+	//thread), removed by destroyFolderCache, read lock-free by REST warm paths, MFT
+	//and idle handlers — a plain HashMap here corrupts under concurrent put/get
+	private volatile ConcurrentHashMap<String, FolderCache> foldersCache = new ConcurrentHashMap<String, FolderCache>();
+	private volatile FolderCache fcRoot = null;
+	private volatile FolderCache[] fcShared = null;
 	private String skipReplyFolders[] = new String[]{};
 	private String skipForwardFolders[] = new String[]{};
 	private MailFoldersThread mft=null;
 	private Thread cacheLoadThread;
 	private IdleMailEventQueue mailEventQueue = null;
 	
-	public MailAccount(String id, Service mailService, PrivateEnvironment environment) {
+	public MailAccount(String id, MailManager mailManager) {
 		this.id=id;
-		this.ms=mailService;
-		this.environment=environment;
+		this.mailManager=mailManager;
 		ThreadFactory tf = new ThreadFactoryBuilder()
 			.setDaemon(true)
-			.withNamePrefix("eventqueue-"+environment.getProfileId()+":"+id)
+			.withNamePrefix("eventqueue-"+mailManager.getTargetProfileId()+":"+id)
 			.build();
-		long ttl = mailService.getMailServiceSettings().getImapEventMessageBufferTTL();
+		long ttl = mailManager.getMailServiceSettings().getImapEventMessageBufferTTL();
 		this.mailEventQueue = new IdleMailEventQueue(tf, ttl, TimeUnit.MILLISECONDS, (items) -> {
 			for (IdleMailEventQueue.Entry item : items) {
 				try {
-					if (logger.isTraceEnabled()) logger.trace("[{}] handling '{}'", environment.getProfileId()+":"+id, item.getKey());
+					if (logger.isTraceEnabled()) logger.trace("[{}] handling '{}'", mailManager.getTargetProfileId()+":"+id, item.getKey());
 					item.getHandler().handle(item.getMailEvent());
 				} catch (Exception ex) { /* Do nothing... */ }
 			}
@@ -158,9 +168,13 @@ public class MailAccount {
 		prepareMailSession();
 	}
 	
+	//Step B: this session is SMTP-ONLY now (message composition + Transport.send via
+	//getMailSession()). All IMAP traffic rides the account Mailbox (pooled store +
+	//dedicated idle connections) — the legacy self-built IMAP store, its Sonicle
+	//providers, socket factories/tracker and pool tuning are gone.
 	private void prepareMailSession() {
 		WebTopApp wta = WebTopApp.getInstance();
-		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, environment.getProfile().getDomainId());
+		CoreServiceSettings css = new CoreServiceSettings(CoreManifest.ID, mailManager.getTargetProfileId().getDomainId());
 		String smtphost=css.getSMTPHost();
 		int smtpport=css.getSMTPPort();
 		boolean starttls=css.isSMTPStartTLS();
@@ -173,17 +187,6 @@ public class MailAccount {
 			props.put("mail.smtp.ssl.trust","*");
 			props.put("mail.smtp.ssl.checkserveridentity", "false");
 		}
-		props.setProperty("mail.imaps.ssl.trust", "*");
-		StoreUtils.useExtendedFolderClasses(props);
-		props.setProperty("mail.imap.enableimapevents", "true"); // Support idle events
-		//Connection pool: JavaMail defaults to a single store connection, which serializes
-		//the periodic MailFoldersThread STATUS/SEARCH sweep against interactive message-list
-		//requests on the same store. Give the pool a few connections (honour any override
-		//inherited from the global properties).
-		if (props.getProperty("mail.imap.connectionpoolsize") == null)
-			props.setProperty("mail.imap.connectionpoolsize", "5");
-		if (props.getProperty("mail.imaps.connectionpoolsize") == null)
-			props.setProperty("mail.imaps.connectionpoolsize", "5");
 		Authenticator authenticator=null;
 		if (auth) {
 			props.setProperty("mail.smtp.auth", "true");
@@ -199,22 +202,83 @@ public class MailAccount {
 			};
 		}
 
-		//track sockets to force close before imap store close
-		StoreUtils.useSonicleIMAPSocketFactories(props, socketTracker = new SonicleIMAPSocketTracker());
-
 		session = jakarta.mail.Session.getInstance(props, authenticator);
-		try {
-			session.setProvider(new Provider(Provider.Type.STORE,"imap","com.sonicle.mail.imap.SonicleIMAPStore","Sonicle","1.0"));
-			session.setProvider(new Provider(Provider.Type.STORE,"imaps","com.sonicle.mail.imap.SonicleIMAPSSLStore","Sonicle","1.0"));
-		} catch (NoSuchProviderException exc) {
-			logger.error("Error setting imap providers to Sonicle providers", exc);
-		}
-				
 	}
 	
+	// --- Account Mailbox (Step B) -------------------------------------------
+	// A sonicle-mail Mailbox built from this account's own connection/auth config.
+	// Step B increment 2: used ONLY to open DEDICATED idle connections (via
+	// openDedicatedIdleFolder), so IMAP IDLE stops occupying/reopening pooled
+	// interactive connections. Interactive ops still ride the legacy store; a
+	// later increment migrates them here and retires prepareMailSession's IMAP half.
+
+	private volatile Mailbox accountMailbox=null;
+
+	private StoreHostParams buildMailboxHostParams() {
+		StoreHostParams params = new StoreHostParams(mailHost, port, StoreProtocol.parse(storeProtocol, false));
+		if (vmailSecret != null) {
+			params.withUsername(impersonatedUser).withVMAILImpersonate(vmailSecret);
+		} else if (authorizationId != null) {
+			//SASL: login as admin, authorize as the target user
+			params.withUsername(authorizationId).withSASLImpersonate(mailUsername, mailPassword);
+		} else {
+			params.withUsername(mailUsername).withPassword(mailPassword);
+		}
+		params.withTrustHost(true); //mirrors legacy mail.imaps.ssl.trust=*
+		return params;
+	}
+
+	private Properties buildMailboxProperties() {
+		Properties props = new Properties(WebTopApp.getInstance().getProperties());
+		//the dedicated sessions inherit these: extended folder classes so event
+		//messages are SonicleIMAPMessage (idle listeners cast for UID/flags), and
+		//imap events enabled for idle()
+		StoreUtils.useExtendedFolderClasses(props);
+		props.setProperty("mail.imap.enableimapevents", "true");
+		props.setProperty("mail.imaps.enableimapevents", "true");
+		return props;
+	}
+
+	private Mailbox getAccountMailbox() throws MessagingException {
+		Mailbox mb = accountMailbox;
+		if (mb == null) {
+			synchronized (connectLock) {
+				if (disposed) throw new MessagingException("Account has been cleaned up");
+				if (accountMailbox == null) {
+					try {
+						//NO usesocketchannels here: channels bypass the tracked socket
+						//factories and the pooled-store tracker would be inert
+						accountMailbox = new Mailbox(buildMailboxHostParams(),
+							new MailboxConfig.Builder().withPoolSize(5).build(),
+							buildMailboxProperties(),
+							new SonicleIMAPSocketTracker());
+					} catch (java.security.GeneralSecurityException exc) {
+						throw new MessagingException("Cannot create account mailbox", exc);
+					}
+				}
+				mb = accountMailbox;
+			}
+		}
+		return mb;
+	}
+
+	/**
+	 * Opens {@code foldername} on a dedicated IMAP connection meant to be parked
+	 * in {@code idle()}. The handle owns its own store/session/socket-tracker and
+	 * is force-closable without touching the interactive store; all live handles
+	 * are also closed by {@link #disconnect()}.
+	 */
+	public Mailbox.DedicatedFolder openDedicatedIdleFolder(String foldername) throws MessagingException {
+		try {
+			return getAccountMailbox().openDedicatedFolder(foldername, true);
+		} catch (java.security.GeneralSecurityException exc) {
+			throw new MessagingException("Cannot open dedicated idle connection", exc);
+		}
+	}
+
 	public void queueFolderMailEvent(String eventId, MailEvent event, IdleMailEventHandler handler) {
 		this.mailEventQueue.push(eventId, event, handler);
-		if (logger.isTraceEnabled()) logger.trace("[{}] queued '{}'", environment.getProfileId()+":"+id, eventId);
+		if (logger.isTraceEnabled()) logger.trace("[{}] queued '{}'", mailManager.getTargetProfileId()+":"+id, eventId);
 	}
 
 	public String getId() {
@@ -330,6 +394,7 @@ public class MailAccount {
 	
 	public void setSaslRFCImpersonate(String authorizationId, String adminUser, String adminPassword) {
 		isImpersonated=true;
+		this.authorizationId=authorizationId;
 		session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
 		mailUsername=adminUser;
 		mailPassword=adminPassword;
@@ -337,6 +402,7 @@ public class MailAccount {
 
 	public void setNethImpersonate(String username, String vmailSecret) {
 		isImpersonated=true;
+		this.impersonatedUser=username;
 		this.mailUsername=username+"*vmail";
 		this.mailPassword=vmailSecret;
 		this.vmailSecret=vmailSecret;
@@ -415,26 +481,32 @@ public class MailAccount {
 	}
 
 	protected Folder getDefaultFolder() throws MessagingException {
-		if (hasDifferentDefaultFolder) return store.getFolder(defaultFolderName);
-		else return store.getDefaultFolder();
+		//getRootFolder().getFolder(name) keeps legacy handle semantics: a Folder is
+		//returned whether or not it exists (callers exists()-check or create)
+		if (hasDifferentDefaultFolder) return getAccountMailbox().getRootFolder().getFolder(defaultFolderName);
+		else return getAccountMailbox().getRootFolder();
 	}
-	
+
 	protected Folder getRealDefaultFolder() throws MessagingException {
-		return store.getDefaultFolder();
+		return getAccountMailbox().getRootFolder();
 	}
 
 	public boolean isValid() throws MessagingException {
 		if (!validated) {
-			if (environment == null) {
-				return false;
+			//same serialization as checkStoreConnected: connect() swaps the store and
+			//rebuilds shared state — two unserialized connects leak a store
+			synchronized (connectLock) {
+				if (disposed) {
+					return false;
+				}
+				if (!validated) validateUser();
 			}
-			validateUser();
 		}
 		return validated;
 	}
-	
+
 	public boolean checkStoreConnected() throws MessagingException {
-		if (environment == null) {
+		if (disposed) {
 			return false;
 		}
 		//Fast path: already connected -> no locking, so a concurrent reconnect can't
@@ -446,6 +518,12 @@ public class MailAccount {
 		//Double-checked so only the first thread reconnects; the rest wait here and then
 		//observe the freshly-connected store.
 		synchronized (connectLock) {
+			//re-check disposed: a sweeper-thread cleanup() may have torn the account
+			//down while we waited for the lock — reconnecting now would resurrect a
+			//disposed account with a store nobody will ever close
+			if (disposed) {
+				return false;
+			}
 			if (isConnected()) {
 				return true;
 			}
@@ -454,86 +532,54 @@ public class MailAccount {
 	}
 	
 	private boolean connect() {
-		try {
-			if (store!=null && store.isConnected()) {
-				disconnect();
-			}
-			
-			store=session.getStore(storeProtocol);
-		} catch (Exception exc) {
-			logger.error("Exception",exc);
-		}
+		//Step B: the account Mailbox owns the pooled store. ensureConnected()
+		//reconnects the SAME Store instance on drops, so Folder objects held by
+		//the folder caches stay valid across reconnects (the legacy path built a
+		//fresh Store each time, orphaning every cached Folder).
 		boolean sucess = true;
 		disconnecting = false;
 		try {
-			
-			//warning: trace mode shows credentials
-			logger.trace("  accessing "+storeProtocol+"://"+mailUsername+":"+mailPassword+"@"+mailHost+":"+port);
 			if (isImpersonated)
-				logger.info(" impersonating "+authorizationId);
-			
-			if (port > 0) {
-				store.connect(mailHost, port, mailUsername, mailPassword);
-			} else {
-				store.connect(mailHost, mailUsername, mailPassword);
-			}
-			folderSeparator = getDefaultFolder().getSeparator();
-			Folder un[] = store.getUserNamespaces("");
-			sharedPrefixes = new String[un.length];
-			int ix = 0;
-			for (Folder sp : un) {
-				String s = sp.getFullName();
-				//if (s.endsWith(""+folderSeparator)) s=s.substring(0,s.length()-1);
-				sharedPrefixes[ix] = s;
-				++ix;
-			}
-			hasAnnotations=((IMAPStore)store).hasCapability("ANNOTATEMORE");
-			if (((IMAPStore)store).hasCapability("ID")) {
-				Map<String,String> map=((IMAPStore)store).id(null);
-				if (map!=null && map.containsKey("name")) {
-					String idname=map.get("name").toLowerCase();
-					isDovecot=idname.equals("dovecot");
-					isCyrus=idname.startsWith("cyrus");
-				}
-				//leave hasInboxFolder as it was set in case it's not Dovecot
-				if (isDovecot) hasInboxFolder=true;
-			}
-					
+				logger.info(" impersonating "+(authorizationId!=null?authorizationId:impersonatedUser));
+			Mailbox mb = getAccountMailbox();
+			mb.ensureConnected();
+			folderSeparator = mb.getFolderSeparator();
+			//build fully, then publish: the volatile field is iterated lock-free on
+			//request/MFT/idle threads while a reconnect rebuilds it
+			java.util.Set<String> prefixSet = mb.getSharedPrefixes();
+			sharedPrefixes = prefixSet.toArray(new String[prefixSet.size()]);
+			fcShared = null; //stale against the new prefixes; rebuilt lazily
+			hasAnnotations = mb.hasOption(Mailbox.StoreOption.ANNOTATIONS);
+			isDovecot = mb.isDovecot();
+			isCyrus = mb.isCyrus();
+			//leave hasInboxFolder as it was set in case it's not Dovecot
+			if (isDovecot) hasInboxFolder=true;
+
 		} catch (MessagingException exc) {
 			logger.error("Error connecting to the mail server "+mailHost, exc);
 			sucess = false;
 		}
-		
+
 		return sucess;
-		
+
 	}
-	
+
 	private boolean isConnected() {
-		if (store == null) {
-			return false;
-		}
-		return store.isConnected();
+		Mailbox mb = accountMailbox;
+		return mb != null && mb.isConnected();
 	}
-	
+
 	public boolean disconnect() {
-
-		try {
-			if (store!=null) {
-				disconnecting = true;
-				// hard-kill underlying sockets so any thread stuck in idle()/read/write
-				// unwinds immediately and store.close() can't hang on a broken VPN socket
-				if (socketTracker != null) {
-					try { socketTracker.closeAll(); } catch (Exception ignore) {}
-				}
-				store.close();
-			}
-
-		} catch (MessagingException ex) {
-			logger.error("Exception",ex);
+		disconnecting = true;
+		//Mailbox.disconnect() hard-closes every dedicated idle connection first
+		//(tracker.closeAll unblocks parked idle() reads), then force-closes the
+		//pooled store's tracked sockets before store.close() — can't hang on a
+		//broken VPN socket
+		Mailbox mb = accountMailbox;
+		if (mb != null) {
+			try { mb.disconnect(); } catch (Exception ignore) {}
 		}
-
 		return true;
-
 	}
 
 	/**
@@ -561,11 +607,13 @@ public class MailAccount {
 	protected FolderCache createFolderCache(Folder f, boolean volatileInstance) throws MessagingException {
 		FolderCache fc;
 		synchronized(this) {
-			fc=foldersCache.get(f.getFullName());
+			ConcurrentHashMap<String, FolderCache> fcs = foldersCache;
+			if (fcs == null) throw new MessagingException("Account has been cleaned up");
+			fc=fcs.get(f.getFullName());
 			if (fc==null) {
-				fc = new FolderCache(this, f, ms, environment);
+				fc = new FolderCache(this, f, mailManager, volatileInstance);
 				String fname = fc.getFolderName();
-				if (!volatileInstance) foldersCache.put(fname, fc);
+				if (!volatileInstance) fcs.put(fname, fc);
 			}
 		}
 		return fc;
@@ -601,7 +649,8 @@ public class MailAccount {
 		if (fcp != null) {
 			fcp.removeChild(fc);
 		}
-		foldersCache.remove(fc.getFolderName());
+		ConcurrentHashMap<String, FolderCache> fcs = foldersCache;
+		if (fcs != null) fcs.remove(fc.getFolderName());
 		fc.cleanup(true);
 		try {
 			fc.close();
@@ -614,50 +663,64 @@ public class MailAccount {
 	}
 	
 	public void loadFoldersCache(final Object lock, boolean waitLoad) throws MessagingException {
-        Folder froot=getDefaultFolder();
-        fcRoot=createFolderCache(froot);
-		fcRoot.setIsRoot(true);
-		Folder children[] = fcRoot.getFolder().list();
-		final ArrayList<FolderCache> rootParents = new ArrayList<FolderCache>();
-		for (Folder child : children) {
-			if (ms.isFolderHidden(this,child.getFullName())) continue;
-			if (!fcRoot.hasChild(child.getName())) {
-				FolderCache fcc=addSingleFoldersCache(fcRoot,child);
-				if (!fcc.isStartupLeaf()) rootParents.add(fcc);
-			}
-		}
-		
-		if (hasDifferentDefaultFolder) {
-			//check for other shared folders to be added
-			Folder rfolders[]=store.getDefaultFolder().list();
-			for(int i=0;i<sharedPrefixes.length;++i) {
-				for(int j=0;j<rfolders.length;++j) {
-					if (rfolders[j].getFullName().equals(sharedPrefixes[i])) {
-						FolderCache fcc=addSingleFoldersCache(fcRoot,rfolders[j]);
-						rootParents.add(fcc);
+		//Idempotent under concurrency: callers use a check-then-act guard
+		//(!hasFolderCache() -> load), so two sessions showing e.g. the archive at
+		//once used to double-build the tree and start two loader threads. The
+		//monitor makes the guard atomic; a late caller just waits on the existing
+		//loader when it asked to wait.
+		Thread loader;
+		synchronized (this) {
+			if (fcRoot == null) {
+				Folder froot=getDefaultFolder();
+				fcRoot=createFolderCache(froot);
+				fcRoot.setIsRoot(true);
+				Folder children[] = fcRoot.getFolder().list();
+				final ArrayList<FolderCache> rootParents = new ArrayList<FolderCache>();
+				for (Folder child : children) {
+					if (mailManager.isFolderHidden(this,child.getFullName())) continue;
+					if (!fcRoot.hasChild(child.getName())) {
+						FolderCache fcc=addSingleFoldersCache(fcRoot,child);
+						if (!fcc.isStartupLeaf()) rootParents.add(fcc);
 					}
 				}
-			}
-		}
-		
-		cacheLoadThread = new Thread(
-				new Runnable() {
-					public void run() {
-						synchronized (lock) {
-							try {
-								for (FolderCache fc : rootParents) {
-									_loadFoldersCache(fc);
+
+				if (hasDifferentDefaultFolder) {
+					//check for other shared folders to be added
+					Folder rfolders[]=getRealDefaultFolder().list();
+					String prefixes[]=sharedPrefixes;
+					if (prefixes!=null) {
+						for(int i=0;i<prefixes.length;++i) {
+							for(int j=0;j<rfolders.length;++j) {
+								if (rfolders[j].getFullName().equals(prefixes[i])) {
+									FolderCache fcc=addSingleFoldersCache(fcRoot,rfolders[j]);
+									rootParents.add(fcc);
 								}
-							} catch (MessagingException exc) {
-								logger.error("Exception",exc);
 							}
 						}
 					}
 				}
-		);
-		cacheLoadThread.start();
+
+				cacheLoadThread = new Thread(
+						new Runnable() {
+							public void run() {
+								synchronized (lock) {
+									try {
+										for (FolderCache fc : rootParents) {
+											_loadFoldersCache(fc);
+										}
+									} catch (MessagingException exc) {
+										logger.error("Exception",exc);
+									}
+								}
+							}
+						}
+				);
+				cacheLoadThread.start();
+			}
+			loader = cacheLoadThread;
+		}
 		try {
-			if (waitLoad) cacheLoadThread.join();
+			if (waitLoad && loader != null) loader.join();
 		} catch(InterruptedException exc) {
 			logger.error("Error waiting folder cache load",exc);
 		}
@@ -668,7 +731,7 @@ public class MailAccount {
 		Folder children[] = f.list();
 		for (Folder child : children) {
 			String cname=child.getFullName();
-			if (ms.isFolderHidden(this,cname)) continue;
+			if (mailManager.isFolderHidden(this,cname)) continue;
 			if (hasDifferentDefaultFolder && cname.equals(fcRoot.getFolderName())) continue;
 			FolderCache fcc = addFoldersCache(fc, child);
 		}
@@ -718,21 +781,25 @@ public class MailAccount {
 	
 	
 	public FolderCache[] getSharedFoldersCache() throws MessagingException {
-		if (fcShared == null) {
-			if (sharedPrefixes != null) {
-				String sf[] = sharedPrefixes;
-				fcShared = new FolderCache[sf.length];
+		//build fully, then publish (volatile): a concurrent reader must never see a
+		//half-filled array. A duplicate build under contention is benign.
+		FolderCache[] shared = fcShared;
+		if (shared == null) {
+			String sf[] = sharedPrefixes;
+			if (sf != null) {
+				shared = new FolderCache[sf.length];
 				for (int i = 0; i < sf.length; ++i) {
-					fcShared[i] = getFolderCache(sf[i]);
+					shared[i] = getFolderCache(sf[i]);
 				}
+				fcShared = shared;
 			}
 		}
-		return fcShared;
+		return shared;
 	}
 	
 	public ArrayList<FolderCache> getFavoritesFoldersCache() throws MessagingException {
 		 ArrayList<FolderCache> caches = new ArrayList<>();
-		MailUserSettings mailUserSettings = ms.getMailUserSettings();
+		MailUserSettings mailUserSettings = mailManager.getMailUserSettings();
 		MailUserSettings.FavoriteFolders favorites = mailUserSettings.getFavoriteFolders();
 		
 		for(int i =0; i < favorites.size(); i++) {
@@ -749,7 +816,7 @@ public class MailAccount {
 	}
 	
 	public boolean isFavoriteFolder(String folderName) {
-			MailUserSettings mailUserSettings = ms.getMailUserSettings();
+			MailUserSettings mailUserSettings = mailManager.getMailUserSettings();
 			MailUserSettings.FavoriteFolders favorites = mailUserSettings.getFavoriteFolders();
 			boolean contains = favorites.contains(this.id, folderName);
 			return contains;
@@ -763,16 +830,22 @@ public class MailAccount {
 		return fcRoot!=null && fc==fcRoot;
 	}
 	
+	//Bulk accessors capture the volatile field once and degrade to empty views when
+	//cleanup() has nulled it — late REST/MFT iterations must not NPE. The returned
+	//ConcurrentHashMap views are weakly consistent: safe to iterate during puts/removes.
 	public Set<Map.Entry<String, FolderCache>> getFolderCacheEntries() {
-		return foldersCache.entrySet();
+		ConcurrentHashMap<String, FolderCache> fcs = foldersCache;
+		return (fcs != null) ? fcs.entrySet() : java.util.Collections.<String, FolderCache>emptyMap().entrySet();
 	}
-	
+
 	public Collection<FolderCache> getFolderCacheValues() {
-		return foldersCache.values();
+		ConcurrentHashMap<String, FolderCache> fcs = foldersCache;
+		return (fcs != null) ? fcs.values() : java.util.Collections.<FolderCache>emptyList();
 	}
-	
+
 	public Set<String> getFolderCacheKeys() {
-		return foldersCache.keySet();
+		ConcurrentHashMap<String, FolderCache> fcs = foldersCache;
+		return (fcs != null) ? fcs.keySet() : java.util.Collections.<String>emptySet();
 	}
 	
 	//Quota changes slowly but the message list asks for it on every page; over a high-latency
@@ -789,14 +862,29 @@ public class MailAccount {
 		Long at=quotaCacheAt.get(foldername);
 		Quota[] cached=quotaCache.get(foldername);
 		if (cached!=null && at!=null && (now-at)<QUOTA_TTL_MS) return cached;
-		Quota[] q=((IMAPStore)store).getQuota(foldername);
+		Quota[] q=getAccountMailbox().getQuota(foldername);
 		quotaCache.put(foldername, q);
 		quotaCacheAt.put(foldername, now);
 		return q;
 	}
 	
+	/**
+	 * True if this account has been torn down by {@link #cleanup()} (its folder
+	 * cache released). Late requests arriving during/after session teardown must
+	 * not touch it.
+	 * @return
+	 */
+	public boolean isCleanedUp() {
+		return foldersCache == null;
+	}
+
 	public FolderCache getFolderCache(String foldername) throws MessagingException {
-		return foldersCache.get(foldername);
+		// The account may have been cleaned up (foldersCache nulled) while a late
+		// request (e.g. an imap-tree poll) is still in flight; degrade to null
+		// rather than NPE. Single capture of the volatile field: it can be nulled
+		// between a check and a second read.
+		ConcurrentHashMap<String, FolderCache> fcs = foldersCache;
+		return (fcs != null) ? fcs.get(foldername) : null;
 	}
 	
 	public String getShortFolderName(String fullname) {
@@ -829,11 +917,11 @@ public class MailAccount {
   
 
 	protected Folder getFolder(String foldername) throws MessagingException {
-		return store.getFolder(foldername);
+		return getAccountMailbox().getRootFolder().getFolder(foldername);
 	}
 	
 	public Folder checkCreateFolder(String foldername) throws MessagingException {
-		Folder folder = store.getFolder(foldername);
+		Folder folder = getAccountMailbox().getRootFolder().getFolder(foldername);
 		if (!folder.exists()) {
 			folder.create(Folder.HOLDS_MESSAGES | Folder.HOLDS_FOLDERS);
 		}
@@ -863,7 +951,7 @@ public class MailAccount {
 	}
   
 	public boolean checkFolder(String foldername) throws MessagingException {
-		Folder folder=store.getFolder(foldername);
+		Folder folder=getAccountMailbox().getRootFolder().getFolder(foldername);
 		return folder.exists();
 	}	
 
@@ -901,7 +989,7 @@ public class MailAccount {
 	}
 	
 	public boolean isSentFolder(String fullname) {
-		MailManager mailManager = this.ms.getManager();
+		MailManager mailManager = this.mailManager;
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(folderSent);
 		
@@ -921,7 +1009,7 @@ public class MailAccount {
 	}
 	
 	public boolean isTrashFolder(String fullname) {
-		MailManager mailManager = this.ms.getManager();
+		MailManager mailManager = this.mailManager;
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(folderTrash);
 		
@@ -941,7 +1029,7 @@ public class MailAccount {
 	}
 	
 	public boolean isDraftsFolder(String fullname) {
-		MailManager mailManager = this.ms.getManager();
+		MailManager mailManager = this.mailManager;
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(folderDrafts);
 		
@@ -962,7 +1050,7 @@ public class MailAccount {
 	
 	public boolean isArchiveFolder(String fullname) {
 		if (folderArchive != null) {
-			MailManager mailManager = this.ms.getManager();
+			MailManager mailManager = this.mailManager;
 			String lastname = getLastFolderName(fullname);
 			String plastname = getLastFolderName(folderArchive);
 			
@@ -983,7 +1071,7 @@ public class MailAccount {
 	}
 	
 	public boolean isSpamFolder(String fullname) {
-		MailManager mailManager = this.ms.getManager();
+		MailManager mailManager = this.mailManager;
 		String lastname = getLastFolderName(fullname);
 		String plastname = getLastFolderName(folderSpam);
 		
@@ -1214,8 +1302,7 @@ public class MailAccount {
 		//trick for Dovecot on NethServer: under shared folders, create and destroy a fake folder
 		//or rename will not work correctly
 		if (isUnderSharedFolder(newfolder.getFullName())) {
-			Map<String,String> map=((IMAPStore)store).id(null);
-			if (map!=null && map.containsKey("name") && map.get("name").equalsIgnoreCase("dovecot")) {
+			if (isDovecot) {
 				String trickName="_________"+System.currentTimeMillis();
 				Folder trickFolder=fcparent.getFolder().getFolder(trickName);
 				try {
@@ -1229,18 +1316,28 @@ public class MailAccount {
 	}
 	
 	public void cleanup() {
+		//Gate FIRST: checkStoreConnected/isValid observe disposed (re-checked under
+		//connectLock) and refuse to reconnect. Setting it last (as before) let a
+		//request thread pass the check mid-teardown and reconnect a brand-new store
+		//on a disposed account — a leaked live IMAP connection.
+		disposed = true;
+		validated = false;
 		logger.trace("clean up mailEventQueue "+id);
 		mailEventQueue.stop();
 		logger.trace("clean up account "+id);
+		ConcurrentHashMap<String, FolderCache> fcs = foldersCache;
+		foldersCache = null;
+		fcShared = null;
 		if (fcRoot != null) {
 			fcRoot.cleanup(true);
 		}
 		fcRoot = null;
-		for (FolderCache fc : foldersCache.values()) {
-			fc.cleanup(true);
+		if (fcs != null) {
+			for (FolderCache fc : fcs.values()) {
+				fc.cleanup(true);
+			}
+			fcs.clear();
 		}
-		foldersCache.clear();
-		foldersCache=null;
 		try {
 			logger.trace("-disconnecting imap");
 			disconnect();
@@ -1248,8 +1345,6 @@ public class MailAccount {
 		} catch (Exception e) {
 			logger.error("Exception",e);
 		}
-		this.ms=null;
-		validated = false;
 	}
 	
 	public String normalizeName(String name) throws MessagingException {

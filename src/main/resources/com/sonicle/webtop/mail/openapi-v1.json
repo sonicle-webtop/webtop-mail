@@ -3,7 +3,7 @@
   "info": {
     "version": "v1",
     "title": "WebTop Mail",
-    "description": "https://github.com/OpenAPITools/openapi-generator/issues/10010\nhttps://github.com/stoplightio/prism/discussions/523\nhttps://github.com/OpenAPITools/openapi-generator/issues/3172",
+    "description": "## Request header: X-WT-Mail-Machinery\nAny `/me/*` request may include the header `X-WT-Mail-Machinery: full` to declare that the caller (e.g. a mobile mail app) needs the user's full mail machinery (accounts, folder caches, IMAP idle) running server-side. With it, folder listings and unread counts are served from the live folder cache (the same values the WebTop web client shows) and message listings ride the warm cached paths. The first call bearing the header may take a few seconds while the machinery starts; subsequent calls are fast. The machinery is torn down automatically after ~15 minutes without any call for that user; the next call bearing the header transparently restarts it, so clients should simply send the header on every request and need no eviction handling. Callers that do not need live data (bulk integrations, occasional automation) should omit the header: they are served through per-call paths and never spin up per-user machinery.\n\n---\nGenerator notes:\nhttps://github.com/OpenAPITools/openapi-generator/issues/10010\nhttps://github.com/stoplightio/prism/discussions/523\nhttps://github.com/OpenAPITools/openapi-generator/issues/3172",
     "contact": {
       "email": "dev-team@sonicle.com"
     }
@@ -1190,11 +1190,20 @@
           "name": {
             "type": "string"
           },
+          "type": {
+            "type": "string",
+            "enum": ["inbox", "sent", "drafts", "trash", "spam", "archive", "shared", "other"],
+            "description": "Machine-readable folder classification: the special-folder role (inbox/sent/drafts/trash/spam/archive, matching the user's configuration, including the same roles under shared mailboxes), 'shared' for other folders under a shared-namespace prefix, 'other' for regular folders."
+          },
           "unreadCount": {
             "type": "integer"
           },
           "totalCount": {
             "type": "integer"
+          },
+          "hasChildren": {
+            "type": "boolean",
+            "description": "True when the folder has at least one subfolder: clients can render an expand handle without fetching children."
           },
           "children": {
             "type": "array",
@@ -1216,11 +1225,20 @@
           "name": {
             "type": "string"
           },
+          "type": {
+            "type": "string",
+            "enum": ["inbox", "sent", "drafts", "trash", "spam", "archive", "shared", "other"],
+            "description": "Machine-readable folder classification: the special-folder role (inbox/sent/drafts/trash/spam/archive, matching the user's configuration, including the same roles under shared mailboxes), 'shared' for other folders under a shared-namespace prefix, 'other' for regular folders."
+          },
           "unreadCount": {
             "type": "integer"
           },
           "totalCount": {
             "type": "integer"
+          },
+          "hasChildren": {
+            "type": "boolean",
+            "description": "True when the folder has at least one subfolder: clients can render an expand handle without fetching children."
           }
         }
       },

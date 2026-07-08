@@ -31,46 +31,35 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.rest.v1;
+package com.sonicle.webtop.mail;
 
-import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sonicle.webtop.core.sdk.UserProfileId;
-import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.Service;
-import javax.ws.rs.core.HttpHeaders;
+import java.util.Set;
 
 /**
+ * Outbound seam for mobile push delivery. {@link MailPushManager} translates
+ * the shared MailManager's fan-out events into calls on this interface for
+ * every user with at least one registered device; a real implementation (e.g.
+ * a bridge to an external nodejs gateway doing FCM/APNs) is plugged in via
+ * {@link MailPushManager#setGateway}. The default implementation only logs.
  *
- * @author gabriele.bulfon
+ * <p>Called from idle/scan background threads: implementations must be
+ * thread-safe, must not block and must not throw — hand the event off to
+ * their own delivery machinery (queue, http client, ...) and return.</p>
+ *
+ * @author gbulfon
  */
-public class MailRestApiUtils {
+public interface MailPushGateway {
 
 	/**
-	 * Request header a REST caller sets (value "full") to declare it needs the
-	 * full account machinery (accounts, folder caches, idle) running — e.g. a
-	 * mobile app polling folders/messages. Without it, REST is served through
-	 * the cold pooled-mailbox paths and never spins up per-user idle stacks
-	 * (so bulk integrations sweeping many users stay cheap). Self-healing: the
-	 * registry may idle-evict the manager; the next call bearing the header
-	 * simply re-warms it.
+	 * @param profileId The user the event belongs to.
+	 * @param deviceIds Snapshot of the user's registered device ids.
+	 * @param accountId The mail account the event belongs to.
+	 * @param foldername The full folder name the event belongs to.
+	 * @param type The kind of event; RECENT signals new mail, UNREAD a badge
+	 * count change — FLAGS/MDEL are forwarded too and may be ignored.
+	 * @param msg The pre-built service message (same payload web clients get).
 	 */
-	public static final String HEADER_MACHINERY = "X-WT-Mail-Machinery";
-	public static final String HEADER_MACHINERY_FULL = "full";
-
-	public static MailManager getMailManager(UserProfileId targetPid) {
-		//Resolve through the shared-manager registry: REST reuses the same warm
-		//per-user instance as web sessions instead of building a throwaway.
-		return (MailManager)WT.getServiceManager(WT.findServiceId(Service.class), false, targetPid);
-	}
-
-	public static MailManager getMailManager(UserProfileId targetPid, HttpHeaders headers) {
-		MailManager mmgr = getMailManager(targetPid);
-		if (mmgr != null && headers != null
-				&& HEADER_MACHINERY_FULL.equalsIgnoreCase(headers.getHeaderString(HEADER_MACHINERY))) {
-			//async: the header KICKS the warm-up, it must not hold this response
-			//for the full IMAP start-up (seconds); cold paths have fallbacks
-			mmgr.ensureAccountsStartedAsync();
-		}
-		return mmgr;
-	}
+	void pushMailEvent(UserProfileId profileId, Set<String> deviceIds, String accountId, String foldername, MailEventType type, ServiceMessage msg);
 }

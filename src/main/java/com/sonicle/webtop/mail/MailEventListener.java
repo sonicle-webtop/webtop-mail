@@ -31,46 +31,32 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.rest.v1;
+package com.sonicle.webtop.mail;
 
-import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.sdk.UserProfileId;
-import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.Service;
-import javax.ws.rs.core.HttpHeaders;
+import com.sonicle.webtop.core.sdk.ServiceMessage;
 
 /**
+ * A subscriber to the (shared) MailManager's folder-level mail events. The
+ * MailManager is deliberately session-agnostic: it builds the outbound
+ * {@link ServiceMessage} once and hands every event to every registered
+ * listener, unconditionally. Each listener (a per-session web {@code Service},
+ * or, in future, a mobile-push gateway) decides on its own whether and how to
+ * deliver the event to its target — e.g. a web Service forwards tree/unread
+ * events to its client always, but grid events (FLAGS/MDEL) only when its
+ * session is currently viewing that folder.
  *
- * @author gabriele.bulfon
+ * <p>Called from idle/scan background threads; implementations must be
+ * thread-safe and must not block.</p>
+ *
+ * @author gbulfon
  */
-public class MailRestApiUtils {
+public interface MailEventListener {
 
 	/**
-	 * Request header a REST caller sets (value "full") to declare it needs the
-	 * full account machinery (accounts, folder caches, idle) running — e.g. a
-	 * mobile app polling folders/messages. Without it, REST is served through
-	 * the cold pooled-mailbox paths and never spins up per-user idle stacks
-	 * (so bulk integrations sweeping many users stay cheap). Self-healing: the
-	 * registry may idle-evict the manager; the next call bearing the header
-	 * simply re-warms it.
+	 * @param accountId The mail account the event belongs to.
+	 * @param foldername The full folder name the event belongs to.
+	 * @param type The kind of event.
+	 * @param msg The pre-built service message ready to be delivered to a client.
 	 */
-	public static final String HEADER_MACHINERY = "X-WT-Mail-Machinery";
-	public static final String HEADER_MACHINERY_FULL = "full";
-
-	public static MailManager getMailManager(UserProfileId targetPid) {
-		//Resolve through the shared-manager registry: REST reuses the same warm
-		//per-user instance as web sessions instead of building a throwaway.
-		return (MailManager)WT.getServiceManager(WT.findServiceId(Service.class), false, targetPid);
-	}
-
-	public static MailManager getMailManager(UserProfileId targetPid, HttpHeaders headers) {
-		MailManager mmgr = getMailManager(targetPid);
-		if (mmgr != null && headers != null
-				&& HEADER_MACHINERY_FULL.equalsIgnoreCase(headers.getHeaderString(HEADER_MACHINERY))) {
-			//async: the header KICKS the warm-up, it must not hold this response
-			//for the full IMAP start-up (seconds); cold paths have fallbacks
-			mmgr.ensureAccountsStartedAsync();
-		}
-		return mmgr;
-	}
+	void onMailEvent(String accountId, String foldername, MailEventType type, ServiceMessage msg);
 }

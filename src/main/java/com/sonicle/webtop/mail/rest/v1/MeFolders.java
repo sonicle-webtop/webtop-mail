@@ -43,6 +43,8 @@ import com.sonicle.webtop.mail.swagger.v1.model.ApiFolderInfo;
 import jakarta.mail.Folder;
 import jakarta.mail.MessagingException;
 import java.util.ArrayList;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,11 +55,12 @@ import org.slf4j.LoggerFactory;
  */
 public class MeFolders extends MeFoldersApi {
 	private static final Logger logger = LoggerFactory.getLogger(MeFolders.class);
+	@Context private HttpHeaders httpHeaders;
 	
 	@Override
 	public Response listRootFolders() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
-		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
 			ArrayList<Folder> folders = mmgr.getRootFolders();
 			ArrayList<ApiFolder> items = new ArrayList<>();
@@ -65,8 +68,11 @@ public class MeFolders extends MeFoldersApi {
 				ApiFolder af = new ApiFolder();
 				af.setId(folder.getFullName());
 				af.setName(folder.getName());
+				af.setType(ApiFolder.TypeEnum.fromValue(mmgr.getFolderType(folder.getFullName())));
+				af.setHasChildren(mmgr.folderHasChildren(folder));
 				try {
-					af.setUnreadCount(folder.getUnreadMessageCount());
+					int unread = mmgr.getWarmUnreadCount(folder.getFullName());
+					af.setUnreadCount(unread >= 0 ? unread : folder.getUnreadMessageCount());
 					af.setTotalCount(folder.getMessageCount());
 				} catch(MessagingException exc) {}
 				af.setChildren(new ArrayList<>());
@@ -77,15 +83,13 @@ public class MeFolders extends MeFoldersApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getRootFolders()", targetPid, ex);
 			return respError(ex);
-		} finally {
-			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	
 	@Override
 	public Response listChildrenFolders(String folderId) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
-		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
 			ArrayList<Folder> folders = mmgr.getFolders(folderId);
 			ArrayList<ApiFolder> items = new ArrayList<>();
@@ -93,8 +97,11 @@ public class MeFolders extends MeFoldersApi {
 				ApiFolder af = new ApiFolder();
 				af.setId(folder.getFullName());
 				af.setName(folder.getName());
+				af.setType(ApiFolder.TypeEnum.fromValue(mmgr.getFolderType(folder.getFullName())));
+				af.setHasChildren(mmgr.folderHasChildren(folder));
 				try {
-					af.setUnreadCount(folder.getUnreadMessageCount());
+					int unread = mmgr.getWarmUnreadCount(folder.getFullName());
+					af.setUnreadCount(unread >= 0 ? unread : folder.getUnreadMessageCount());
 					af.setTotalCount(folder.getMessageCount());
 				} catch(MessagingException exc) {}
 				af.setChildren(new ArrayList<>());
@@ -105,15 +112,13 @@ public class MeFolders extends MeFoldersApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getFolders()", targetPid, folderId, ex);
 			return respError(ex);
-		} finally {
-			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
 	@Override
 	public Response listAllFolders() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
-		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
 			ArrayList<Folder> folders = mmgr.getAllFolders();
 			ArrayList<String> items = new ArrayList<>();
@@ -124,22 +129,23 @@ public class MeFolders extends MeFoldersApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getAllFolders()", targetPid, ex);
 			return respError(ex);
-		} finally {
-			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 
 	@Override
 	public Response getFolderInfo(String folderId) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
-		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
 			Folder folder = mmgr.getFolder(folderId);
 			ApiFolderInfo afi = new ApiFolderInfo();
 			afi.setId(folder.getFullName());
 			afi.setName(folder.getName());
+			afi.setType(ApiFolderInfo.TypeEnum.fromValue(mmgr.getFolderType(folder.getFullName())));
+			afi.setHasChildren(mmgr.folderHasChildren(folder));
 			try {
-				afi.setUnreadCount(folder.getUnreadMessageCount());
+				int unread = mmgr.getWarmUnreadCount(folder.getFullName());
+				afi.setUnreadCount(unread >= 0 ? unread : folder.getUnreadMessageCount());
 				afi.setTotalCount(folder.getMessageCount());
 			} catch(MessagingException exc) {}
 			return respOk(afi);
@@ -147,8 +153,6 @@ public class MeFolders extends MeFoldersApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getFolderInfo()", targetPid, folderId, ex);
 			return respError(ex);
-		} finally {
-			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	

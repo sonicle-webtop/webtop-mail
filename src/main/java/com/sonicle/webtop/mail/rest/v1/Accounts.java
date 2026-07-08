@@ -84,7 +84,7 @@ public class Accounts extends AccountsApi {
 		logger.debug("Building profile");
 		MailUserProfile mailProfile = new MailUserProfile(mailMgr, mss, mus, authDirScheme);
 		logger.debug("getMailUserProfile - End");
-		mailMgr.cleanup();
+		//no cleanup: the manager is the SHARED per-user instance (registry-owned lifecycle)
 		return mailProfile;
 	}
 	

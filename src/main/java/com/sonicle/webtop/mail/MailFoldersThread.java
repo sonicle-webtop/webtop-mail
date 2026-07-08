@@ -33,17 +33,17 @@
  */
 package com.sonicle.webtop.mail;
 
-import com.sonicle.webtop.core.app.PrivateEnvironment;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  *
  * @author gbulfon
  */
 public class MailFoldersThread extends Thread {
-    
+
     private int threadCountMailFolders=1;
-    Service ms;
 	MailAccount account;
     boolean abort=false;
     boolean failed=false;
@@ -63,10 +63,23 @@ public class MailFoldersThread extends Thread {
 	private final Object cacheLoadLock=new Object();
 	public Object getCacheLoadLock() { return cacheLoadLock; }
 
-    public MailFoldersThread(Service ms, PrivateEnvironment env, MailAccount account) {
+	//Released after the first full folder sweep since startup (every folder gets
+	//checked once on that pass via scanNeverDone), or on thread failure/exit, so
+	//callers can wait for warm unread counts to be fully populated.
+	private final CountDownLatch firstScanLatch=new CountDownLatch(1);
+
+	public boolean awaitFirstScan(long timeout, TimeUnit unit) {
+		try {
+			return firstScanLatch.await(timeout, unit);
+		} catch(InterruptedException exc) {
+			Thread.currentThread().interrupt();
+			return false;
+		}
+	}
+
+    public MailFoldersThread(MailManager mailManager, MailAccount account) {
         super();
-        this.setName("MFT"+(threadCountMailFolders++)+"-"+env.getProfile().getUserId()+"-"+account);
-        this.ms=ms;
+        this.setName("MFT"+(threadCountMailFolders++)+"-"+mailManager.getTargetProfileId().getUserId()+"-"+account);
 		this.account=account;
     }
 
@@ -150,6 +163,7 @@ public class MailFoldersThread extends Thread {
                             }
                         }
                     //Service.logger.debug("MailFolderThread: Sleeping....");
+                    firstScanLatch.countDown(); //first full pass done: counts are populated
                     if (sleepCount<=0) sleepCount=sleepOthers;
                     sleep(1000*sleepInbox);
                     sleepCount-=sleepInbox;
@@ -159,6 +173,8 @@ public class MailFoldersThread extends Thread {
             abort=true;
             failed=true;
             failMessage=exc.getMessage();
+        } finally {
+            firstScanLatch.countDown(); //never leave waiters hanging on failure/abort/inboxOnly
         }
         //Service.logger.debug("Exiting MFT");
     }

@@ -43,6 +43,8 @@ import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiIdentity;
 import java.util.ArrayList;
 import java.util.List;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,11 +55,12 @@ import org.slf4j.LoggerFactory;
  */
 public class MeIdentities extends MeIdentitiesApi {
 	private static final Logger logger = LoggerFactory.getLogger(MeIdentities.class);
+	@Context private HttpHeaders httpHeaders;
 	
 	@Override
 	public Response listIdentities() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
-		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
 			List<Identity> identities = mmgr.listIdentities();
 			ArrayList<ApiIdentity> items = new ArrayList<>();
@@ -84,8 +87,6 @@ public class MeIdentities extends MeIdentitiesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getFavorites()", targetPid, ex);
 			return respError(ex);
-		} finally {
-			if (mmgr != null) mmgr.cleanup();
 		}
 	}
 	

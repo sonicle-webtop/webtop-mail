@@ -34,9 +34,9 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.commons.LangUtils;
-import com.sonicle.webtop.core.app.PrivateEnvironment;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.RegexUtils;
+import com.sonicle.mail.Mailbox;
 import com.sonicle.mail.imap.*;
 import com.sonicle.mail.tnef.internet.*;
 import com.sonicle.webtop.core.CoreManager;
@@ -100,20 +100,21 @@ public class FolderCache {
     public static final int SORT_BY_FLAG=8;
     public static final int SORT_BY_SEEN=9;
 
-	private PrivateEnvironment environment=null;
-    //private WebTopDomain wtd=null;
-    private Service ms=null;
 	private MailManager mailManager=null;
     private boolean externalProvider=false;
+    private boolean volatileInstance=false;
     
     private String foldername=null;
     private Folder folder=null;
     //private HashMap<Long, HTMLMailData> dhash=new HashMap<Long, HTMLMailData>();
+	//Guarded by synchronized(dhash) at EVERY access: it was mutated under the 'this'
+	//monitor (getMailData) but cleared under cacheLock (cleanup) and lock-free
+	//(open/close/removeDHash) — different monitors = no exclusion at all.
 	private FifoMap<Long, HTMLMailData> dhash=new FifoMap<>(100);
     private final HashMap<String, MessageSearchResult> msrs=new HashMap<>();
     private Message msgs[]=null;
-    private boolean modified=false;
-    private boolean forceRefresh=true;
+    private volatile boolean modified=false;
+    private volatile boolean forceRefresh=true;
 
     //--- Incremental message-list maintenance ------------------------------------
     //The interactive list re-runs a full server-side SORT/THREAD on every request
@@ -135,7 +136,62 @@ public class FolderCache {
     private long cachedUidNext=-1;
     private int cachedMessageCount=-1;
     private boolean cachedPlainQuery=false; //was the cached `msgs` built for an unfiltered list?
+
+	//Shelf of additional cached sorted lists, keyed by sort combination, so different
+	//consumers of the SHARED cache (web sessions with different sort prefs, REST's
+	//fixed date-desc, plain vs search) do not clobber each other's list and re-SORT on
+	//every alternation. Only PLAIN (unfiltered) lists are shelved; searches stay
+	//transient as before. Bounded LRU (+1 active slot); mutations under cacheLock.
+	private static final int MAX_SHELVED_LISTS=2;
+	private final LinkedHashMap<String,ShelvedList> shelvedLists=new LinkedHashMap<>(4,0.75f,true);
+
+	private static final class ShelvedList {
+		Message[] msgs;
+		long uidValidity;
+		long uidNext;
+		int messageCount;
+		boolean threaded;
+	}
+
+	private String currentListKey() {
+		return sort_by+"|"+ascending+"|"+sort_group+"|"+groupascending+"|"+threaded;
+	}
+
+	//Park the ACTIVE cached list on the shelf (LRU-evicting beyond the cap) so a
+	//different sort/search can take the active slot without losing it. No-op unless
+	//the active list is a plain, drift-checkable one. Must run under cacheLock.
+	private void shelveCurrentIfPlain() {
+		if (msgs==null || !cachedPlainQuery || cachedUidValidity<0) return;
+		ShelvedList sh=new ShelvedList();
+		sh.msgs=msgs;
+		sh.uidValidity=cachedUidValidity;
+		sh.uidNext=cachedUidNext;
+		sh.messageCount=cachedMessageCount;
+		sh.threaded=threaded;
+		shelvedLists.put(currentListKey(), sh);
+		while (shelvedLists.size()>MAX_SHELVED_LISTS) {
+			Iterator<String> it=shelvedLists.keySet().iterator();
+			it.next(); it.remove(); //eldest = least recently used (access-order map)
+		}
+	}
+
+	//Restore a shelved list matching the CURRENT sort fields into the active slot.
+	//Returns true on success; the normal reuse checks (drift etc.) then apply to it.
+	//Must run under cacheLock.
+	private boolean unshelveCurrent() {
+		ShelvedList sh=shelvedLists.remove(currentListKey());
+		if (sh==null) return false;
+		msgs=sh.msgs;
+		cachedUidValidity=sh.uidValidity;
+		cachedUidNext=sh.uidNext;
+		cachedMessageCount=sh.messageCount;
+		cachedPlainQuery=true;
+		return true;
+	}
     private int unread=0;
+	//false until 'unread' is first computed from IMAP: lets warm-count readers
+	//distinguish "really 0 unread" from "scan has not reached this folder yet"
+	private volatile boolean unreadInitialized=false;
     private int recent=0;
     private boolean hasUnreadChildren=false;
     private boolean unreadChanged=false;
@@ -161,7 +217,9 @@ public class FolderCache {
 	private boolean useArrivalDate=false;
     private String description=null;
     private String wtuser=null;
-    private ArrayList<String> recentNotified=new ArrayList<>();
+    //Guarded by synchronized(recentNotified): hit by BOTH the MailFoldersThread sweep
+    //and the idle-event queue thread on idle folders (contains+add must be atomic).
+    private final ArrayList<String> recentNotified=new ArrayList<>();
     //Per-UID new flag set captured from the IDLE messageChanged listener (fires once per
     //message, BEFORE the event queue coalesces them by foldername|mchange). Drained in
     //sendFlagsChangedMessage so the 'flags' push can carry the exact UIDs+state changed,
@@ -182,14 +240,20 @@ public class FolderCache {
     private boolean groupascending=true;
 	private boolean threaded=false;
     //private MessageComparator comparator;
-    private UserProfile profile;
-    
+
     private FolderCache parent=null;
-    private ArrayList<FolderCache> children=null;
-	private HashMap<String,FolderCache> childrenMap=null;
-	
-	private HashMap<Long,Integer> openThreads=new HashMap<>();
-	private int totalOpenThreadChildren=0;
+    //volatile + copy-on-write (addChild/removeChild replace the list): mutated rarely
+    //(tree build, folder destroy) but iterated constantly by the MFT sweep, idle
+    //handlers and request threads — in-place mutation under iteration CMEs and can
+    //kill the MailFoldersThread. Iterators see an immutable snapshot.
+    private volatile ArrayList<FolderCache> children=null;
+	private volatile HashMap<String,FolderCache> childrenMap=null;
+
+	//Guarded by synchronized(openThreads): mutated by setThreadOpen (request threads,
+	//formerly under 'this') AND rebuilt by _getThreadedMessages (under cacheLock) —
+	//different monitors gave no exclusion.
+	private final HashMap<Long,Integer> openThreads=new HashMap<>();
+	private volatile int totalOpenThreadChildren=0;
     
     private boolean startupLeaf=true;
 
@@ -215,7 +279,9 @@ public class FolderCache {
 
     //private static final HashMap<String,HashMap<String,Integer>> months=new HashMap<>();
 
-    private HashMap<String,MessageEntry> providedMessages=new HashMap<>();
+    //ConcurrentHashMap: put/get from web AND REST threads; the purge iterates values()
+    //and removes inline, which on a plain HashMap CMEs even single-threaded.
+    private final ConcurrentHashMap<String,MessageEntry> providedMessages=new ConcurrentHashMap<>();
     private MessageChangedHandler messageChangedHandler = new MessageChangedHandler();
 	private MessagesAddedHandler messagesAddedHandler = new MessagesAddedHandler();
 	private MessageCountHandler messageCountHandler = new MessageCountHandler();
@@ -260,22 +326,26 @@ public class FolderCache {
     }
 
     //Special constructor for externally provided messages
-    public FolderCache(Service ms, PrivateEnvironment env) {
-        this.ms=ms;
-		//comparator=new MessageComparator(ms);
+    public FolderCache(MailManager mailManager) {
         externalProvider=true;
-        environment=env;
-//        wtd=environment.getWebTopDomain();
-        profile=env.getProfile();
 		account=null;
-		mailManager=ms.getManager();
+		this.mailManager=mailManager;
     }
-    
-    public FolderCache(MailAccount account, Folder folder, Service ms, PrivateEnvironment env) throws MessagingException {
-        this(ms,env);
+
+    public FolderCache(MailAccount account, Folder folder, MailManager mailManager) throws MessagingException {
+		this(account, folder, mailManager, false);
+	}
+
+	//volatileInstance = throwaway cache NOT registered in the account's foldersCache
+	//map (e.g. rendering a favorites-tree node whose cache isn't loaded). It must
+	//never own machinery: an idle thread started here would be orphaned at teardown
+	//(account.cleanup only stops threads of registered caches) and leak per call.
+	public FolderCache(MailAccount account, Folder folder, MailManager mailManager, boolean volatileInstance) throws MessagingException {
+        this(mailManager);
+		this.volatileInstance=volatileInstance;
 		this.account=account;
         foldername=folder.getFullName();
-		MailUserSettings mailUserSettings = ms.getMailUserSettings();
+		MailUserSettings mailUserSettings = mailManager.getMailUserSettings();
         this.folder=folder;
         String shortfoldername=account.getShortFolderName(foldername);
         isInbox=account.isInboxFolder(foldername);
@@ -284,7 +354,7 @@ public class FolderCache {
         isTrash=account.isTrashFolder(shortfoldername);
         isSpam=account.isSpamFolder(shortfoldername);
         isArchive=account.isArchiveFolder(shortfoldername);
-        isDms=ms.isDmsFolder(account,shortfoldername);
+        isDms=mailManager.isDmsFolder(account,shortfoldername);
         isSharedFolder=account.isSharedFolder(foldername);
         /*if (isDrafts||isSent||isTrash||isSpam||isArchive) {
             setCheckUnreads(false);
@@ -303,7 +373,7 @@ public class FolderCache {
 			int isep=subname.indexOf(sep);
             if (isep<0) {
                 isSharedInbox=true;
-                sharedInboxPrincipal=ms.getSharedPrincipal(environment.getProfile().getDomainId(),subname);
+                sharedInboxPrincipal=mailManager.getSharedPrincipal(mailManager.getTargetProfileId().getDomainId(),subname);
 				//Cyrus has shared/user = inbox
 				//Dovecot has shared/user no messages, then INBOX under
 				if ((folder.getType()&IMAPFolder.HOLDS_MESSAGES)==0) {
@@ -319,7 +389,7 @@ public class FolderCache {
 				}
 			}
         }
-        if (sharedInboxPrincipal==null) description=ms.getInternationalFolderName(this);
+        if (sharedInboxPrincipal==null) description=mailManager.getInternationalFolderName(this);
         else {
 			String changedName = mailUserSettings.getSharedFolderName(foldername);
 			if(changedName == null)
@@ -331,13 +401,13 @@ public class FolderCache {
         }
         updateScanFlags();
 		
-		MailUserSettings mus=ms.getMailUserSettings();
+		MailUserSettings mus=mailManager.getMailUserSettings();
 		useArrivalDate = mus.isUseArrivalDate(foldername);
 		
-		boolean idle = isInbox
-			|| (isSharedInbox && ms.getMailServiceSettings().isIdleSharedInboxFolderEnabled())
-			|| (account.isFavoriteFolder(foldername) && ms.getMailServiceSettings().isIdleFavoriteFolderEnabled());
-		
+		boolean idle = !volatileInstance && (isInbox
+			|| (isSharedInbox && mailManager.getMailServiceSettings().isIdleSharedInboxFolderEnabled())
+			|| (account.isFavoriteFolder(foldername) && mailManager.getMailServiceSettings().isIdleFavoriteFolderEnabled()));
+
 		if (idle) startIdle();
 		
 		//check recents only in important folders (idle mode ones)
@@ -346,22 +416,38 @@ public class FolderCache {
 	
 	boolean goidle=true;
 	private IdleThread idleThread=null;
+	//Step B: idle runs on a DEDICATED connection (own store/session/tracker) from the
+	//account's Mailbox, so it no longer occupies a pooled interactive connection and
+	//teardown can hard-close it without touching the interactive store. Null = legacy
+	//fallback (idle on the pooled folder) when the dedicated open failed.
+	private volatile Mailbox.DedicatedFolder dedicatedIdleFolder=null;
 	//Idle delivers only CHANGE events, never the initial state, so the periodic
 	//MailFoldersThread sweep still polls idle folders too (otherwise their pre-existing
 	//unread counts would never appear until the next change). Idle just adds instant push
 	//(recent/grid-refresh) on top of that polling.
 	class IdleThread extends Thread {
+		IdleThread() {
+			super("IDLE-"+mailManager.getTargetProfileId()+":"+account.getId()+"-"+foldername);
+		}
 		@Override
 		public void run() {
 			//MailService.logger.debug("Starting idle thread");
 			long backoff=0;
 			while(goidle) {
 				try {
-					IMAPFolder folder=((IMAPFolder)FolderCache.this.getFolder());
-					if (!folder.isOpen()) folder.open(Folder.READ_WRITE);
+					Mailbox.DedicatedFolder dedicated=dedicatedIdleFolder;
+					IMAPFolder ifolder;
+					if (dedicated!=null) {
+						if (dedicated.isClosed()) break;
+						dedicated.ensureOpen();
+						ifolder=dedicated.getFolder();
+					} else {
+						ifolder=((IMAPFolder)FolderCache.this.getFolder());
+						if (!ifolder.isOpen()) ifolder.open(Folder.READ_WRITE);
+					}
 					backoff=0;
 					//Service.logger.debug("Entering idle mode on {}",foldername);
-					folder.idle();
+					ifolder.idle();
 					//Service.logger.debug("Exiting idle mode on {}",foldername);
 				} catch(Throwable exc) {
 					//Idle dropped (connection error, server idle timeout, server restart, or
@@ -369,6 +455,8 @@ public class FolderCache {
 					//permanently so instant push stopped until logout. Instead back off and try
 					//to re-establish idle. On shutdown goidle is already false -> exit.
 					if (!goidle) break;
+					Mailbox.DedicatedFolder dedicated=dedicatedIdleFolder;
+					if (dedicated!=null && dedicated.isClosed()) break;
 					backoff = (backoff==0) ? 5000 : Math.min(backoff*2, 60000);
 					Service.logger.debug("Idle interrupted on {}, retrying in {}ms",foldername,backoff,exc);
 					try { Thread.sleep(backoff); } catch(InterruptedException ie) { if (!goidle) break; }
@@ -378,8 +466,23 @@ public class FolderCache {
 		}
 	}
 	
+	public boolean hasActiveIdle() {
+		IdleThread it=idleThread;
+		return it!=null && it.isAlive();
+	}
+
 	public void startIdle() {
-		folder.addMessageChangedListener(
+		//Listeners must attach to the folder instance the idling CONNECTION owns:
+		//untagged updates arrive there, not on the pooled interactive folder.
+		IMAPFolder target=(IMAPFolder)folder;
+		try {
+			dedicatedIdleFolder=account.openDedicatedIdleFolder(foldername);
+			target=dedicatedIdleFolder.getFolder();
+		} catch(Exception exc) {
+			Service.logger.warn("Cannot open dedicated idle connection on {}, falling back to pooled-store idle", foldername, exc);
+			dedicatedIdleFolder=null;
+		}
+		target.addMessageChangedListener(
 			new MessageChangedListener() {
 
 				@Override
@@ -390,7 +493,12 @@ public class FolderCache {
 						try {
 							Message cm=mce.getMessage();
 							long uid=((SonicleIMAPMessage)cm).getUID();
-							if (uid>=0) pendingFlagChanges.put(uid, cm.getFlags());
+							if (uid>=0) {
+								Flags flags = cm.getFlags();
+								pendingFlagChanges.put(uid, flags);
+								if (sort_by == SORT_BY_SEEN)
+									forceRefresh = true;
+							}
 						} catch(Exception exc) { /* fall back: handler still sends folder-level signal */ }
 						account.queueFolderMailEvent(foldername + "|mchange", mce, messageChangedHandler);
 					}
@@ -398,7 +506,7 @@ public class FolderCache {
 
 			}
 		);
-		folder.addMessageCountListener(
+		target.addMessageCountListener(
 			new MessageCountListener() {
 
 				@Override
@@ -435,12 +543,12 @@ public class FolderCache {
 		boolean retval=false;
 		for(ACL acl : ((IMAPFolder)folder).getACL()) {
 			String aclUserId=acl.getName();
-			UserProfileId pid=ms.aclUserIdToUserId(aclUserId);
+			UserProfileId pid=mailManager.aclUserIdToUserId(aclUserId);
 			if (pid==null) continue;
 			CoreManager core=WT.getCoreManager();
 			String roleUid=core.lookupUserSid(pid);
 			if (roleUid==null) { 
-				if (!RunContext.isPermitted(true, ms.SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
+				if (!RunContext.isPermitted(true, mailManager.SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 			}
 			retval=true;
 			break;
@@ -467,10 +575,10 @@ public class FolderCache {
 			setScanForcedOff(false);
         }
         else {
-            setScanForcedOn(ms.checkFileRules(foldername));
+            setScanForcedOn(mailManager.checkFileRules(foldername));
             setScanForcedOff(false); 
         }
-        setScanEnabled(ms.checkScanRules(foldername));
+        setScanEnabled(mailManager.checkScanRules(foldername));
     }
 	
 	public MailAccount getAccount() {
@@ -612,16 +720,17 @@ public class FolderCache {
 	
 	public boolean hasChildWithScanForcedOrEnabled() {
 		boolean retval=false;
-		
-		if (children!=null) {
+
+		ArrayList<FolderCache> snapshot=children;
+		if (snapshot!=null) {
 			//look for a possible direct child with scan enabled
-			for (FolderCache child: children) {
+			for (FolderCache child: snapshot) {
 				retval=child.isScanForcedOrEnabled();
 				if (retval) break;
 			}
 			if (!retval) {
 				//look in subchildren
-				for (FolderCache child: children) {
+				for (FolderCache child: snapshot) {
 					retval=child.hasChildWithScanForcedOrEnabled();
 					if (retval) break;
 				}
@@ -679,6 +788,10 @@ public class FolderCache {
     public int getUnreadMessagesCount() {
         return unread;
     }
+
+    public boolean isUnreadCountInitialized() {
+        return unreadInitialized;
+    }
     
     public int getRecentMessagesCount() {
         return recent;
@@ -707,7 +820,7 @@ public class FolderCache {
 	private void sendUnreadChangedMessage() {
 		//NO MORE send ws message only if it's not special or has "scan forced on" active
 		//if (/*!isSpecial() || */ isScanForcedOrEnabled())
-			this.environment.notify(
+			mailManager.dispatchMailEvent(account.getId(), foldername, MailEventType.UNREAD,
 				new UnreadChangedMessage(account.getId(),foldername, unread, hasUnreadChildren)
 			);
 	}
@@ -737,7 +850,7 @@ public class FolderCache {
 			}
 			if (items.isEmpty()) items=null;
 		}
-		this.environment.notify(
+		mailManager.dispatchMailEvent(account.getId(), foldername, MailEventType.FLAGS,
 			new FlagsChangedMessage(account.getId(),foldername,items)
 		);
 	}
@@ -759,19 +872,20 @@ public class FolderCache {
 			synchronized(cacheLock) { spliceFromCache(uids); }
 		}
 		//null uids tells the client to fall back to a full grid refresh
-		this.environment.notify(
+		mailManager.dispatchMailEvent(account.getId(), foldername, MailEventType.MDEL,
 			new MessagesDeletedMessage(account.getId(), foldername, needsRefresh ? null : uids)
 		);
 	}
 
 	private void sendClearUnreadChangedMessage() {
-		this.environment.notify(
+		mailManager.dispatchMailEvent(account.getId(), foldername, MailEventType.UNREAD,
 			new UnreadChangedMessage(account.getId(),foldername, 0, false)
 		);
 	}
 	
 	private void sendRecentMessage(String from, String subject) {
-		this.environment.notify(new RecentMessage(account.getId(),foldername, from, subject, account.isFavoriteFolder(foldername))
+		mailManager.dispatchMailEvent(account.getId(), foldername, MailEventType.RECENT,
+			new RecentMessage(account.getId(),foldername, from, subject, account.isFavoriteFolder(foldername))
 		);
 	}
 	
@@ -787,6 +901,7 @@ public class FolderCache {
                 Message umsgs[]=folder.search(unseenSearchTerm);
                 unread=umsgs.length;
             } else */unread=folder.getUnreadMessageCount();
+			unreadInitialized=true;
 			//Service.logger.debug("refreshing count on "+foldername+" oldunread="+oldunread+", unread="+unread);
             if (oldunread!=unread) {
 				unreadChanged=true;
@@ -822,9 +937,13 @@ public class FolderCache {
 //                if (isInbox) {
 //                    ++recent;
 //                } else {
-                    if (!recentNotified.contains(id)) {
+                    boolean fresh;
+                    synchronized(recentNotified) {
+                        fresh=!recentNotified.contains(id);
+                        if (fresh) recentNotified.add(id);
+                    }
+                    if (fresh) {
                         ++recent;
-                        recentNotified.add(id);
                         recentMsg=m;
                     }
 //                }
@@ -838,7 +957,7 @@ public class FolderCache {
                 if (as!=null && as.length>0) {
                     InternetAddress ia = (InternetAddress) as[0];
                     fromName = ia.getPersonal();
-                    String fromEmail = ms.adjustEmail(ia.getAddress());
+                    String fromEmail = mailManager.adjustEmail(ia.getAddress());
                     if (fromName == null) {
                         fromName = fromEmail;
                     } else {
@@ -867,7 +986,7 @@ public class FolderCache {
             } else {
 				hasUnread=fcchild.getUnreadMessagesCount()>0||fcchild.hasUnreadChildren;
 			}
-            if (fcchild.children!=null) {
+            if (fcchild.children!=null) { //volatile snapshot; recursion re-reads safely
                 hasUnread|=fcchild.checkSubfolders(all,mft);
             }
             //fcchild.setHasUnreadChildren(hasUnread);
@@ -909,8 +1028,9 @@ public class FolderCache {
 	protected boolean updateUnreadChildren() {
 		boolean oldHasUnreadChildren=hasUnreadChildren;
 		hasUnreadChildren=false;
-		if (children!=null) {
-			for(FolderCache child: children) {
+		ArrayList<FolderCache> snapshot=children;
+		if (snapshot!=null) {
+			for(FolderCache child: snapshot) {
 				hasUnreadChildren|=(child.unread>0 || child.hasUnreadChildren);
 			}
 		}
@@ -927,10 +1047,14 @@ public class FolderCache {
     
     public void setForceRefresh() {
         this.forceRefresh=true;
+        //something changed that the incremental logic could not track (untracked
+        //additions, arrival-date toggle changing the date-sort meaning, pool
+        //eviction): every shelved list is stale by the same token
+        synchronized(cacheLock) { shelvedLists.clear(); }
     }
     
     public void refresh(ImapQuery iq) throws MessagingException, IOException {
-        boolean dbg=(ms!=null && ms.isListDebugEnabled());
+        boolean dbg=(mailManager!=null && mailManager.isListDebugEnabled());
         long t0=System.nanoTime(), tprev=t0;
         synchronized(cacheLock) {
             //delta here = time spent BLOCKED on cacheLock (contention with another
@@ -1013,6 +1137,12 @@ public class FolderCache {
     //mode. cachedMessageCount is decremented to stay in sync with the folder so the
     //drift check above does not then falsely fire. Must run under cacheLock.
     private void spliceFromCache(Collection<Long> uids) {
+        //Authoritative eligibility re-check (we hold cacheLock): callers pre-check
+        //threaded/cachedPlainQuery OUTSIDE the lock as a fast path, but another
+        //thread may have switched the active slot to a search/threaded list since —
+        //splicing that would silently drop rows from an unrelated view. Marking
+        //forceRefresh keeps freshness; stale shelves self-heal via the drift check.
+        if (threaded || !cachedPlainQuery) { forceRefresh=true; return; }
         if (msgs==null || uids==null || uids.isEmpty()) return;
         HashSet<Long> rm=new HashSet<>(uids);
         ArrayList<Message> kept=new ArrayList<>(msgs.length);
@@ -1024,6 +1154,21 @@ public class FolderCache {
         int removed=msgs.length-kept.size();
         msgs=kept.toArray(new Message[kept.size()]);
         if (cachedMessageCount>=0) cachedMessageCount-=removed;
+        //keep the shelved lists consistent too: removal preserves order for every
+        //non-threaded sort. Threaded shelves are left alone - their unchanged
+        //snapshot fails the drift check on restore, forcing a clean rebuild.
+        for (ShelvedList sh: shelvedLists.values()) {
+            if (sh.threaded || sh.msgs==null) continue;
+            ArrayList<Message> skept=new ArrayList<>(sh.msgs.length);
+            for (Message m: sh.msgs) {
+                long u=-1;
+                try { u=((SonicleIMAPMessage)m).getUID(); } catch(Exception exc) { /* keep if unknown */ }
+                if (u<0 || !rm.contains(u)) skept.add(m);
+            }
+            int sremoved=sh.msgs.length-skept.size();
+            sh.msgs=skept.toArray(new Message[skept.size()]);
+            if (sh.messageCount>=0) sh.messageCount-=sremoved;
+        }
     }
 
     //Source-side handling of a move-out: it is a pure removal, so splice the moved
@@ -1067,7 +1212,7 @@ public class FolderCache {
     }
     
     public void remove(String id) throws MessagingException {
-        dhash.remove(id);
+        synchronized(dhash) { dhash.remove(id); }
         Message m=hash.remove(id);
         if (m!=null) {
             list.remove(m);
@@ -1084,9 +1229,11 @@ public class FolderCache {
     }*/
 
     public void removeDHash(long uids[]) {
-        for(long uid: uids) {
-            dhash.remove(new Long(uid));
-         }
+        synchronized(dhash) {
+            for(long uid: uids) {
+                dhash.remove(new Long(uid));
+             }
+        }
      }
 	
 	public long getUID(Message m) throws MessagingException {
@@ -1100,8 +1247,8 @@ public class FolderCache {
     public Message getMessage(long uid) throws MessagingException {
         open();
 		Message m = ((UIDFolder)folder).getMessageByUID(uid);
-		if (m==null) throw new MessagingException(ms.lookupResource(MailLocaleKey.ERROR_MESSAGE_NOT_FOUND));
-		if (m.isExpunged()) throw new MessagingException(ms.lookupResource(MailLocaleKey.ERROR_MESSAGE_EXPUNGED));
+		if (m==null) throw new MessagingException(mailManager.lookupResource(MailLocaleKey.ERROR_MESSAGE_NOT_FOUND));
+		if (m.isExpunged()) throw new MessagingException(mailManager.lookupResource(MailLocaleKey.ERROR_MESSAGE_EXPUNGED));
 		return m;
     }
 
@@ -1130,7 +1277,7 @@ public class FolderCache {
         Message xmsgs[]=null;
         MessageSearchResult msr=null;
         //MessageComparator mcomp=null;
-        boolean dbg=(ms!=null && ms.isListDebugEnabled());
+        boolean dbg=(mailManager!=null && mailManager.isListDebugEnabled());
         long t0=System.nanoTime();
 
         synchronized(cacheLock) {
@@ -1138,12 +1285,22 @@ public class FolderCache {
             //another thread (a concurrent getMessages/refresh on this folder) held it.
             Service.listMark(dbg,"getMessages "+foldername,"acquired cacheLock",t0,t0);
 			if (this.sort_by!=sort_by || this.ascending!=ascending || this.sort_group!=sort_group || this.groupascending!=groupascending || this.threaded!=threaded) {
+                //a different sort combination takes the active slot: park the current
+                //plain list on the shelf instead of losing it (another session/REST may
+                //come back to it on its next refresh)
+                shelveCurrentIfPlain();
                 this.sort_by=sort_by;
                 this.ascending=ascending;
                 this.sort_group=sort_group;
                 this.groupascending=groupascending;
 				this.threaded=threaded;
                 sortchanged=true;
+            }
+            boolean plainReq=isPlainQuery(iq);
+            //a plain request the active slot can't serve may be served by a shelved
+            //list built earlier for this same sort combination (drift still checked below)
+            if (plainReq && !forceRefresh && (sortchanged || msgs==null || !cachedPlainQuery)) {
+                if (unshelveCurrent()) sortchanged=false;
             }
             //A full SORT is mandatory on first build, a sort/group change, or a pending
             //forceRefresh (set by additions we could not splice). Otherwise, when the
@@ -1157,6 +1314,10 @@ public class FolderCache {
                 if (!canReuse) needSort=true;
             }
             if (needSort) {
+                //a search is about to overwrite the active slot: park the still-valid
+                //plain list first so the post-search plain refresh restores it instead
+                //of paying a full re-SORT
+                if (!plainReq) shelveCurrentIfPlain();
                 refresh(iq);
                 rebuilt=true;
             }
@@ -1232,28 +1393,47 @@ public class FolderCache {
     }*/
 	
     protected void cleanup(boolean endOfSession) {
+		IdleThread it=null;
 		synchronized(cacheLock) {
 			if (endOfSession) {
 				goidle=false;
-				//close() unblocks a thread parked in folder.idle(); interrupt() wakes one
+				//hardClose() force-closes the dedicated connection's sockets, unblocking a
+				//thread parked in idle() (or aborting an in-flight reconnect); the legacy
+				//fallback still relies on folder.close(). interrupt() wakes a thread
 				//sitting in the reconnect backoff so it sees goidle=false and exits promptly.
+				Mailbox.DedicatedFolder dedicated=dedicatedIdleFolder;
+				if (dedicated!=null) {
+					try { dedicated.hardClose(); } catch(Exception ignore) {}
+				}
 				try {  folder.close(false); } catch(Exception exc) {}
-				if (idleThread!=null) idleThread.interrupt();
-				this.ms=null;
+				if (idleThread!=null) {
+					idleThread.interrupt();
+					it=idleThread;
+					idleThread=null;
+				}
+				shelvedLists.clear();
 				//this.comparator=null;
 			}
-			dhash.clear();
+			synchronized(dhash) { dhash.clear(); }
 //			hash.clear();
 //			list.clear();
 			//unread=0;
 			//recent=0;
 			msgs=null;
 		}
+		//Join OUTSIDE cacheLock (the exiting thread doesn't need it, but event
+		//handlers do — don't hold it for up to the timeout). Bounded so a socket
+		//stuck in open() can't stall teardown; the account's socketTracker
+		//force-close will reap it right after.
+		if (it!=null) {
+			try { it.join(2000); } catch(InterruptedException exc) { Thread.currentThread().interrupt(); }
+			if (it.isAlive()) Service.logger.warn("Idle thread on {} still alive after teardown join", foldername);
+		}
     }
 
     public void close() {
         try { folder.close(true); } catch(Exception exc) {}
-        dhash.clear();
+        synchronized(dhash) { dhash.clear(); }
     }
     
     public void open() throws MessagingException {
@@ -1268,16 +1448,18 @@ public class FolderCache {
             } else {
               folder.open(Folder.READ_ONLY);
             }
-            dhash.clear();
-            ms.poolOpened(this);
+            synchronized(dhash) { dhash.clear(); }
+            mailManager.poolOpened(this);
 
         }
     }
 	
 	public int getTreeMessageCacheCount() {
-		int n=msgs==null?0:msgs.length;
-		if (hasChildren()) {
-			for(FolderCache fc: children) {
+		Message[] m=msgs;
+		int n=(m==null)?0:m.length;
+		ArrayList<FolderCache> snapshot=children;
+		if (snapshot!=null) {
+			for(FolderCache fc: snapshot) {
 				n+=fc.getTreeMessageCacheCount();
 			}
 		}
@@ -1361,7 +1543,7 @@ public class FolderCache {
     public void moveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException {
 		if (canDelete()) {
 			Message mmsgs[]=getMessages(uids,fullthreads);
-			if (mmsgs==null || arrayHasNull(mmsgs)) throw new MessagingException(ms.lookupResource(MailLocaleKey.ERROR_MESSAGE_NOT_FOUND));
+			if (mmsgs==null || arrayHasNull(mmsgs)) throw new MessagingException(mailManager.lookupResource(MailLocaleKey.ERROR_MESSAGE_NOT_FOUND));
 			folder.copyMessages(mmsgs, to.folder);
 			Boolean moveIsTrash = account.isTrashFolder(to.folder.getFullName());
 			
@@ -1369,7 +1551,7 @@ public class FolderCache {
 				AuditLogManager.Batch auditBatch = mailManager.auditLogGetBatch(MailManager.AuditContext.MAIL, moveIsTrash ? MailManager.AuditAction.TRASH : MailManager.AuditAction.MOVE);
 				if (auditBatch != null) {
 					for (Message m : mmsgs) {
-						String messageId = ms.getMessageID(m);
+						String messageId = mailManager.getMessageID(m);
 						if (StringUtils.isEmpty(messageId)) continue;
 
 						HashMap<String, String> auditMoveMessage = new HashMap<>();
@@ -1395,15 +1577,15 @@ public class FolderCache {
 			refreshUnreads();
 			to.refreshUnreads();
 		}
-		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
+		else throw new MessagingException(mailManager.lookupResource(MailLocaleKey.PERMISSION_DENIED));
     }
 
     public void copyMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
 		
-        if (ms.hasDmsDocumentArchiving() &&
-                ms.isDmsSimpleArchiving() &&
-                ms.getDmsSimpleArchivingMailFolder()!=null &&
-                ms.getDmsSimpleArchivingMailFolder().equals(to.foldername)) {
+        if (mailManager.hasDmsDocumentArchiving() &&
+                mailManager.isDmsSimpleArchiving() &&
+                mailManager.getDmsSimpleArchivingMailFolder()!=null &&
+                mailManager.getDmsSimpleArchivingMailFolder().equals(to.foldername)) {
 				dmsArchiveMessages(uids, to, fullthreads);
         } else {
             Message mmsgs[]=getMessages(uids,fullthreads);
@@ -1416,7 +1598,7 @@ public class FolderCache {
 				AuditLogManager.Batch auditBatch = mailManager.auditLogGetBatch(MailManager.AuditContext.MAIL, MailManager.AuditAction.COPY);
 				if (auditBatch != null) {
 					for (Message m : mmsgs) {
-						String messageId = ms.getMessageID(m);
+						String messageId = mailManager.getMessageID(m);
 						if (StringUtils.isEmpty(messageId)) continue;
 
 						HashMap<String, String> auditCopyMessage = new HashMap<>();
@@ -1443,7 +1625,7 @@ public class FolderCache {
     public void archiveMessages(long uids[], String folderarchive, boolean fullthreads) throws MessagingException {
 		if (canDelete()) {
 			Message mmsgs[]=getMessages(uids,fullthreads);
-			MailUserSettings mus=ms.getMailUserSettings();
+			MailUserSettings mus=mailManager.getMailUserSettings();
 			String sep=""+account.getFolderSeparator();
 			String xfolderarchive=folderarchive;
 			Message xmmsg[]=new Message[1];
@@ -1482,7 +1664,7 @@ public class FolderCache {
 				folder.copyMessages(xmmsg, fcto.folder);
 				fcto.setForceRefresh();
 				fcto.modified=true;
-				String messageId = ms.getMessageID(mmsg);
+				String messageId = mailManager.getMessageID(mmsg);
 
 				if (auditBatch != null && StringUtils.isNotEmpty(messageId)) {
 					HashMap<String, String> auditArchiveMessage = new HashMap<>();
@@ -1503,7 +1685,7 @@ public class FolderCache {
 			spliceMovedOut(uids);     //source: removal -> splice when eligible
 			modified=true;
 		}
-		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
+		else throw new MessagingException(mailManager.lookupResource(MailLocaleKey.PERMISSION_DENIED));
     }
 
     public void dmsArchiveMessages(long uids[], FolderCache to, boolean fullthreads) throws MessagingException, IOException {
@@ -1562,7 +1744,7 @@ public class FolderCache {
 			if (mmsgs!=null && mmsgs.length>0) _deleteMessages(mmsgs);
 			removeDHash(uids);
 		}
-		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
+		else throw new MessagingException(mailManager.lookupResource(MailLocaleKey.PERMISSION_DENIED));
     }
 	
     public void deleteMessage(long uid) throws MessagingException {
@@ -1574,7 +1756,7 @@ public class FolderCache {
                         }
 			removeDHash(new long[] {uid});
 		}
-		else throw new MessagingException(ms.lookupResource(MailLocaleKey.PERMISSION_DENIED));
+		else throw new MessagingException(mailManager.lookupResource(MailLocaleKey.PERMISSION_DENIED));
     }
     
 	private void _deleteMessages(Message mmsgs[]) throws MessagingException {
@@ -1586,7 +1768,7 @@ public class FolderCache {
 				dmsg.setFlag(Flags.Flag.DELETED, true);
 				//capture the UID while the message is still valid (before expunge)
 				try { delUids.add(((SonicleIMAPMessage)dmsg).getUID()); } catch(Exception exc) {}
-				String messageId = ms.getMessageID(dmsg);
+				String messageId = mailManager.getMessageID(dmsg);
 				if (auditBatch != null && StringUtils.isNotEmpty(messageId)) {
 					auditBatch.write(
 						messageId,
@@ -1642,7 +1824,7 @@ public class FolderCache {
 			
 			for(Message fmsg: mmsgs) {
 				fmsg.setFlags(new Flags(flag), true);
-				String messageId = ms.getMessageID(fmsg);
+				String messageId = mailManager.getMessageID(fmsg);
 				if (auditBatch != null && StringUtils.isNotEmpty(messageId)) {
 					HashMap<String, ArrayList<String>> auditTag = new HashMap<>();
 					ArrayList<String> tags = new ArrayList<>();
@@ -1676,7 +1858,7 @@ public class FolderCache {
 			
 			for (Message fmsg: mmsgs) {
 				fmsg.setFlags(new Flags(flag), false);
-				String messageId = ms.getMessageID(fmsg);
+				String messageId = mailManager.getMessageID(fmsg);
 				if (auditBatch != null && StringUtils.isNotEmpty(messageId)) {
 					HashMap<String, ArrayList<String>> auditTag = new HashMap<>();
 					ArrayList<String> tags = new ArrayList<>();
@@ -1712,7 +1894,7 @@ public class FolderCache {
 				if(attachedFlags.contains(oldFlag)) {
 					fmsg.setFlags(oldFlag, false);
 					fmsg.setFlags(new Flags(newTagId), true);
-					if (mailManager.isAuditEnabled()) updated.add(new AuditMailUpdateTagObj(ms.getMessageID(fmsg), oldTagId, newTagId));
+					if (mailManager.isAuditEnabled()) updated.add(new AuditMailUpdateTagObj(mailManager.getMessageID(fmsg), oldTagId, newTagId));
 				}
 			}
 		} catch(MessagingException exc) {
@@ -1756,7 +1938,7 @@ public class FolderCache {
 				fmsg.setFlags(allFlags, false);
 				fmsg.setFlags(newFlags, true);
 
-				String messageId = ms.getMessageID(fmsg);
+				String messageId = mailManager.getMessageID(fmsg);
 				if (auditBatch != null && StringUtils.isNotEmpty(messageId)) {
 					HashMap<String, List<String>> auditTag = WT.getCoreManager().compareTags(msgOldFlags, msgNewFlags);
 
@@ -1820,6 +2002,7 @@ public class FolderCache {
             Message umsgs[]=folder.search(unseenSearchTerm);
             folder.setFlags(umsgs, seenFlags, true);
             unread=0;
+			unreadInitialized=true;
 			if (!updateUnreadChildren()) sendUnreadChangedMessage();
         } else {
 			updateUnreadChildren();
@@ -1838,6 +2021,7 @@ public class FolderCache {
         Message umsgs[]=folder.search(seenSearchTerm);
         folder.setFlags(umsgs, seenFlags, false);
         unread=n;
+		unreadInitialized=true;
 		if (!updateUnreadChildren()) sendUnreadChangedMessage();
         if (updateParents && parent!=null && !parent.isRoot()) parent.updateUnreads();
     }
@@ -1870,7 +2054,7 @@ public class FolderCache {
     }
 	
 	private EnvelopeSortTerm createDateSortTerm(boolean ascending) {
-		if (!ms.getMailUserSettings().isUseArrivalDate(foldername)) return new DateSortTerm(!ascending);
+		if (!mailManager.getMailUserSettings().isUseArrivalDate(foldername)) return new DateSortTerm(!ascending);
 		else return new ArrivalSortTerm(!ascending);
 	}
 	
@@ -1883,7 +2067,7 @@ public class FolderCache {
 				break;
 			case SORT_BY_FLAG:
 				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-				gsort=new FlagSortTerm(ms.allFlagStrings, !groupascending);
+				gsort=new FlagSortTerm(mailManager.allFlagStrings, !groupascending);
 				break;
 			case SORT_BY_MSGIDX:
 				gsort=new MessageIDSortTerm(!groupascending);
@@ -1916,7 +2100,7 @@ public class FolderCache {
 				break;
 			case SORT_BY_FLAG:
 				//<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-				sort=new FlagSortTerm(ms.allFlagStrings, !ascending);
+				sort=new FlagSortTerm(mailManager.allFlagStrings, !ascending);
 				sort.append(createDateSortTerm(false));
 				break;
 			case SORT_BY_MSGIDX:
@@ -2002,7 +2186,7 @@ public class FolderCache {
 			//BODYSTRUCTURE is parsed per message by JavaMail and is only needed for the
 			//attachment/invitation icons on the visible page, which processListMessages fetches
 			//per-page. Loading it for the whole folder here is wasted wire + parse time.
-			FetchProfile fp=ms.getThreadMessageFetchProfile();
+			FetchProfile fp=mailManager.getThreadMessageFetchProfile();
 			try {
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,iq.getSearchTerm(),fp);
 			} catch(Exception exc) {
@@ -2014,17 +2198,21 @@ public class FolderCache {
 
 			//recalculate open threads and total open children
 			if (tmsgs!=null) {
-				totalOpenThreadChildren=0;
-				HashMap<Long,Integer> newOpenThreads=new HashMap<>();
-				for(Message tmsg: tmsgs) {
-					long tuid=((SonicleIMAPMessage)tmsg).getUID();
-					int tchildren=((SonicleIMAPMessage)tmsg).getThreadChildren();
-					if (openThreads.containsKey(tuid)) {
-						newOpenThreads.put(tuid, tchildren);
-						totalOpenThreadChildren+=tchildren;
+				synchronized(openThreads) {
+					int total=0;
+					HashMap<Long,Integer> newOpenThreads=new HashMap<>();
+					for(Message tmsg: tmsgs) {
+						long tuid=((SonicleIMAPMessage)tmsg).getUID();
+						int tchildren=((SonicleIMAPMessage)tmsg).getThreadChildren();
+						if (openThreads.containsKey(tuid)) {
+							newOpenThreads.put(tuid, tchildren);
+							total+=tchildren;
+						}
 					}
+					openThreads.clear();
+					openThreads.putAll(newOpenThreads);
+					totalOpenThreadChildren=total;
 				}
-				openThreads=newOpenThreads;
 			}
 		}
 		tmsgs=applyImapQuerySecondaryFilters(tmsgs,iq);
@@ -2083,7 +2271,7 @@ public class FolderCache {
 	
   protected Message[] advancedSearchMessages(AdvancedSearchEntry entries[], boolean and, int sort_by, boolean ascending) throws MessagingException {
 
-    Locale locale=profile.getLocale();
+    Locale locale=mailManager.getLocale();
     Message[] xmsgs=null;
 
     if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
@@ -2190,7 +2378,7 @@ public class FolderCache {
               break;
           case SORT_BY_FLAG:
               //<SonicleMail>sort=new UserFlagSortTerm(MailService.flagStrings, !ascending);</SonicleMail>
-			  sort=new FlagSortTerm(ms.allFlagStrings, !ascending);
+			  sort=new FlagSortTerm(mailManager.allFlagStrings, !ascending);
               break;
           case SORT_BY_MSGIDX:
               sort=new MessageIDSortTerm(!ascending);
@@ -2228,7 +2416,7 @@ public class FolderCache {
     if(smonth.length()<3) {
       return-1;
     }
-    String language=profile.getLocale().getLanguage().toLowerCase();
+    String language=mailManager.getLocale().getLanguage().toLowerCase();
     HashMap<String,Integer> hash=months.get(language);
     if(hash==null) {
       return -1;
@@ -2244,16 +2432,16 @@ public class FolderCache {
     pattern=pattern.replace('-', '/');
     java.util.Date date=null;
     try {
-      date=java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT, profile.getLocale()).parse(pattern);
+      date=java.text.DateFormat.getDateInstance(java.text.DateFormat.SHORT, mailManager.getLocale()).parse(pattern);
     } catch(Exception exc) {}
     if(date==null) {
       try {
-        date=java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM, profile.getLocale()).parse(pattern);
+        date=java.text.DateFormat.getDateInstance(java.text.DateFormat.MEDIUM, mailManager.getLocale()).parse(pattern);
       } catch(Exception exc) {}
     }
     if(date==null) {
       try {
-        date=java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, profile.getLocale()).parse(pattern);
+        date=java.text.DateFormat.getDateInstance(java.text.DateFormat.LONG, mailManager.getLocale()).parse(pattern);
       } catch(Exception exc) {}
     }
     return date;
@@ -2275,22 +2463,33 @@ public class FolderCache {
         return (children!=null && children.size()>0);
     }
 
-    void addChild(FolderCache fc) {
-        if (children==null) children=new ArrayList<>();
-		if (childrenMap==null) childrenMap=new HashMap<String,FolderCache>();
-        children.add(fc);
-		childrenMap.put(fc.foldername, fc);
+    //copy-on-write, mutators serialized on 'this': concurrent iterators (MFT sweep,
+    //idle handlers) keep reading their immutable snapshot
+    synchronized void addChild(FolderCache fc) {
+        ArrayList<FolderCache> cur = (children==null) ? new ArrayList<FolderCache>() : new ArrayList<>(children);
+        cur.add(fc);
+        HashMap<String,FolderCache> map = (childrenMap==null) ? new HashMap<String,FolderCache>() : new HashMap<>(childrenMap);
+        map.put(fc.foldername, fc);
+        childrenMap=map;
+        children=cur;
     }
 
-    void removeChild(FolderCache fc) {
-        if (children!=null) children.remove(fc);
-		if (childrenMap!=null) childrenMap.remove(fc.foldername);
-        if (children!=null && children.size()==0) children=null;
+    synchronized void removeChild(FolderCache fc) {
+        if (children!=null) {
+            ArrayList<FolderCache> cur = new ArrayList<>(children);
+            cur.remove(fc);
+            children = cur.isEmpty() ? null : cur;
+        }
+        if (childrenMap!=null) {
+            HashMap<String,FolderCache> map = new HashMap<>(childrenMap);
+            map.remove(fc.foldername);
+            childrenMap=map;
+        }
     }
-    
+
 	public boolean hasChild(String name) {
-		if (childrenMap==null) return false;
-		return childrenMap.containsKey(name);
+		HashMap<String,FolderCache> map=childrenMap;
+		return map!=null && map.containsKey(name);
 	}
 
     public HTMLMailData getMailData(MimeMessage m) throws MessagingException, IOException {
@@ -2299,7 +2498,7 @@ public class FolderCache {
 			long muid=-1;
 			if (m instanceof SonicleIMAPMessage) {
 				muid=((SonicleIMAPMessage)m).getUID();
-				mailData=dhash.get(muid);
+				synchronized(dhash) { mailData=dhash.get(muid); }
 				if (mailData!=null && mailData.getMessage()!=m) {
 					Service.logger.debug("found wrong cached message, refreshing");
 					mailData=null;
@@ -2307,31 +2506,34 @@ public class FolderCache {
 			}
             if (mailData==null) {
                 mailData=prepareHTMLMailData(m);
-                if (muid>0) dhash.put(muid, mailData);
+                if (muid>0) synchronized(dhash) { dhash.put(muid, mailData); }
             }
         }
         return mailData;
     }
 	
-	public synchronized void setThreadOpen(long uid, boolean open) throws MessagingException {
-		int children=((SonicleIMAPMessage)getMessage(uid)).getThreadChildren();
-		if (open) {
-			if (!openThreads.containsKey(uid)) {
-				totalOpenThreadChildren+=children;
-				openThreads.put(uid, children);
+	public void setThreadOpen(long uid, boolean open) throws MessagingException {
+		int nchildren=((SonicleIMAPMessage)getMessage(uid)).getThreadChildren();
+		synchronized(openThreads) {
+			if (open) {
+				if (!openThreads.containsKey(uid)) {
+					totalOpenThreadChildren+=nchildren;
+					openThreads.put(uid, nchildren);
+				}
 			}
-		}
-		else {
-			if (openThreads.containsKey(uid)) {
-				totalOpenThreadChildren-=children;
-				openThreads.remove(uid);
+			else {
+				if (openThreads.containsKey(uid)) {
+					totalOpenThreadChildren-=nchildren;
+					openThreads.remove(uid);
+				}
 			}
 		}
 	}
-	
+
 	public boolean isThreadOpen(long uid) {
-		Integer children=openThreads.get(uid);
-		return children!=null;
+		synchronized(openThreads) {
+			return openThreads.get(uid)!=null;
+		}
 	}
 	
 	public int getThreadedCount() {
@@ -2365,7 +2567,6 @@ public class FolderCache {
       ArrayList<HTMLPart> htmlparts=new ArrayList<>();
       //WebTopApp webtopapp=environment.getWebTopApp();
       //Session wts=environment.get();
-      UserProfile profile=environment.getProfile();
       HTMLMailData mailData=getMailData(m);
       int objid=0;
       Part msgPart=null;
@@ -2374,8 +2575,8 @@ public class FolderCache {
       String msgDate;
       String msgTo;
       String msgCc;
-      Locale locale=profile.getLocale();
-	  String laf=ms.getCoreUserSettings().getUILookAndFeel();
+      Locale locale=mailManager.getLocale();
+	  String laf=mailManager.getCoreUserSettings().getUILookAndFeel();
 	  boolean icalhtmlview=false;
           
       //first cycle parts to get a possible default charset
@@ -2428,7 +2629,7 @@ public class FolderCache {
             StringBuffer xhtml=new StringBuffer();
             if (dispPart.isMimeType("text/html")) {
                 Object tlock=new Object();
-                String uri=environment.getSession().getRefererUri();
+                String uri=mailManager.getCurrentRefererUri();
                 HTMLMailParserThread parserThread=null;
                 if (provider==null) parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, msguid, forEdit, balanceTags, removeHeadStyle);
                 else parserThread=new HTMLMailParserThread(tlock, istream, charset, uri, provider, providerid, balanceTags, removeHeadStyle);
@@ -2455,7 +2656,7 @@ public class FolderCache {
 						ICalendarRequest ir=new ICalendarRequest(istream);
 						mailData.setICalRequest(ir);
 						if (!icalhtmlview) {
-							String irhtml=ir.getHtmlView(locale,ms.getManifest().getVersion().toString(),laf,java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
+							String irhtml=ir.getHtmlView(locale,mailManager.getManifest().getVersion().toString(),laf,java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
 							htmlparts.add(0,new HTMLPart(irhtml));
 							icalhtmlview=true;
 						}
@@ -2502,7 +2703,7 @@ public class FolderCache {
           if (msgSubject==null) msgSubject="";
           msgSubject=MailUtils.htmlescape(msgSubject);
           Address ad[]=xmsg.getFrom();
-          if (ad!=null) msgFrom=ms.getHTMLDecodedAddress(ad[0]);
+          if (ad!=null) msgFrom=mailManager.getHTMLDecodedAddress(ad[0]);
           else msgFrom="";
           java.util.Date dt=xmsg.getSentDate();
           if (dt!=null) msgDate=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.LONG,java.text.DateFormat.LONG, locale).format(dt);
@@ -2511,22 +2712,22 @@ public class FolderCache {
           msgTo=null;
           if (ad!=null) {
             msgTo="";
-            for(int j=0;j<ad.length;++j) msgTo+=ms.getHTMLDecodedAddress(ad[j])+" ";
+            for(int j=0;j<ad.length;++j) msgTo+=mailManager.getHTMLDecodedAddress(ad[j])+" ";
           }
           ad=xmsg.getRecipients(Message.RecipientType.CC);
           msgCc=null;
           if (ad!=null) {
             msgCc="";
-            for(int j=0;j<ad.length;++j) msgCc+=ms.getHTMLDecodedAddress(ad[j])+" ";
+            for(int j=0;j<ad.length;++j) msgCc+=mailManager.getHTMLDecodedAddress(ad[j])+" ";
           }
 
           xhtml.append("<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'></head><body>");
           xhtml.append("<font face='Arial, Helvetica, sans-serif' size=2><BR>");
-          xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_FROMTITLE)+":</B> "+msgFrom+"<BR>");
-          if (msgTo!=null) xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_TOTITLE)+":</B> "+msgTo+"<BR>");
-          if (msgCc!=null) xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_CCTITLE)+":</B> "+msgCc+"<BR>");
-          xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_DATETITLE)+":</B> "+msgDate+"<BR>");
-          xhtml.append("<B>"+ms.lookupResource(MailLocaleKey.MSG_SUBJECTTITLE)+":</B> "+msgSubject+"<BR>");
+          xhtml.append("<B>"+mailManager.lookupResource(MailLocaleKey.MSG_FROMTITLE)+":</B> "+msgFrom+"<BR>");
+          if (msgTo!=null) xhtml.append("<B>"+mailManager.lookupResource(MailLocaleKey.MSG_TOTITLE)+":</B> "+msgTo+"<BR>");
+          if (msgCc!=null) xhtml.append("<B>"+mailManager.lookupResource(MailLocaleKey.MSG_CCTITLE)+":</B> "+msgCc+"<BR>");
+          xhtml.append("<B>"+mailManager.lookupResource(MailLocaleKey.MSG_DATETITLE)+":</B> "+msgDate+"<BR>");
+          xhtml.append("<B>"+mailManager.lookupResource(MailLocaleKey.MSG_SUBJECTTITLE)+":</B> "+msgSubject+"<BR>");
           xhtml.append("</font><br></body></html>");
           htmlparts.add(new HTMLPart(xhtml.toString()));
         }
@@ -2768,7 +2969,7 @@ public class FolderCache {
         this.appUrl=appUrl;
 		this.balanceTags=balanceTags;
 		this.removeHeadStyle=removeHeadStyle;
-        this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),forEdit,msguid);
+        this.saxHTMLMailParser=new SaxHTMLMailParser(mailManager.getCurrentSecurityToken(),forEdit,msguid);
     }
     
     HTMLMailParserThread(Object tlock,InputStream istream, String charset, String appUrl, String provider, String providerid, boolean balanceTags, boolean removeHeadStyle) {
@@ -2778,7 +2979,7 @@ public class FolderCache {
         this.appUrl=appUrl;
 		this.balanceTags=balanceTags;
 		this.removeHeadStyle=removeHeadStyle;
-        this.saxHTMLMailParser=new SaxHTMLMailParser(environment.getSecurityToken(),provider,providerid);
+        this.saxHTMLMailParser=new SaxHTMLMailParser(mailManager.getCurrentSecurityToken(),provider,providerid);
     }
     
     public void initialize(HTMLMailData mailData, boolean justBody) throws SAXException {
@@ -2846,7 +3047,7 @@ public class FolderCache {
 	public boolean isPEC() {
 		boolean isPec=false;
 		try {
-			UserProfileId profileId=environment.getProfileId();
+			UserProfileId profileId=mailManager.getTargetProfileId();
 			String domainId=profileId.getDomainId();
 			if (isUnderSharedFolder()) {
 				SharedPrincipal sp=getSharedInboxPrincipal();
@@ -2935,9 +3136,13 @@ public class FolderCache {
 				Message recentMsg=null;
 				for (Message m : mce.getMessages()) {
 					String id=((IMAPMessage)m).getMessageID();
-					if (m.getFlags().contains(Flag.RECENT) && !recentNotified.contains(id)) {
-						recentNotified.add(id);
-						recentMsg=m;
+					if (m.getFlags().contains(Flag.RECENT)) {
+						boolean fresh;
+						synchronized(recentNotified) {
+							fresh=!recentNotified.contains(id);
+							if (fresh) recentNotified.add(id);
+						}
+						if (fresh) recentMsg=m;
 					}
 				}
 				if (recentMsg!=null) {
@@ -2946,7 +3151,7 @@ public class FolderCache {
 					if (as!=null && as.length>0) {
 						InternetAddress ia=(InternetAddress)as[0];
 						fromName = ia.getPersonal();
-						String fromEmail = ms.adjustEmail(ia.getAddress());
+						String fromEmail = mailManager.adjustEmail(ia.getAddress());
 						if (fromName == null) {
 							fromName = fromEmail;
 						} else {

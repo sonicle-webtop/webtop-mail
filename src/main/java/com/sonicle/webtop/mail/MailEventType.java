@@ -31,46 +31,22 @@
  * feasible for technical reasons, the Appropriate Legal Notices must display
  * the words "Powered by Sonicle WebTop".
  */
-package com.sonicle.webtop.mail.rest.v1;
-
-import com.sonicle.webtop.core.app.WT;
-import com.sonicle.webtop.core.sdk.UserProfileId;
-import com.sonicle.webtop.mail.MailManager;
-import com.sonicle.webtop.mail.Service;
-import javax.ws.rs.core.HttpHeaders;
+package com.sonicle.webtop.mail;
 
 /**
+ * Kind of folder-level mail event produced by the (shared) MailManager idle
+ * machinery and handed to every registered {@link MailEventListener}, so each
+ * listener can decide independently whether/how to deliver it to its target.
  *
- * @author gabriele.bulfon
+ * @author gbulfon
  */
-public class MailRestApiUtils {
-
-	/**
-	 * Request header a REST caller sets (value "full") to declare it needs the
-	 * full account machinery (accounts, folder caches, idle) running — e.g. a
-	 * mobile app polling folders/messages. Without it, REST is served through
-	 * the cold pooled-mailbox paths and never spins up per-user idle stacks
-	 * (so bulk integrations sweeping many users stay cheap). Self-healing: the
-	 * registry may idle-evict the manager; the next call bearing the header
-	 * simply re-warms it.
-	 */
-	public static final String HEADER_MACHINERY = "X-WT-Mail-Machinery";
-	public static final String HEADER_MACHINERY_FULL = "full";
-
-	public static MailManager getMailManager(UserProfileId targetPid) {
-		//Resolve through the shared-manager registry: REST reuses the same warm
-		//per-user instance as web sessions instead of building a throwaway.
-		return (MailManager)WT.getServiceManager(WT.findServiceId(Service.class), false, targetPid);
-	}
-
-	public static MailManager getMailManager(UserProfileId targetPid, HttpHeaders headers) {
-		MailManager mmgr = getMailManager(targetPid);
-		if (mmgr != null && headers != null
-				&& HEADER_MACHINERY_FULL.equalsIgnoreCase(headers.getHeaderString(HEADER_MACHINERY))) {
-			//async: the header KICKS the warm-up, it must not hold this response
-			//for the full IMAP start-up (seconds); cold paths have fallbacks
-			mmgr.ensureAccountsStartedAsync();
-		}
-		return mmgr;
-	}
+public enum MailEventType {
+	/** Folder unread count changed (tree/badge; always relevant to every session). */
+	UNREAD,
+	/** New message(s) arrived (desktop notification + tree; grid add only if viewing). */
+	RECENT,
+	/** Per-message flags changed (grid; relevant only to sessions viewing that folder). */
+	FLAGS,
+	/** Message(s) expunged (grid; relevant only to sessions viewing that folder). */
+	MDEL
 }

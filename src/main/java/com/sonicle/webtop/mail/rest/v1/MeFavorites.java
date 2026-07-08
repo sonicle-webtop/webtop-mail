@@ -41,6 +41,8 @@ import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiFolder;
 import jakarta.mail.MessagingException;
 import java.util.ArrayList;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,11 +53,12 @@ import org.slf4j.LoggerFactory;
  */
 public class MeFavorites extends MeFavoritesApi {
 	private static final Logger logger = LoggerFactory.getLogger(MeFavorites.class);
+	@Context private HttpHeaders httpHeaders;
 	
 	@Override
 	public Response listFavorites() {
 		UserProfileId targetPid = RunContext.getRunProfileId();
-		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid);
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
 			ArrayList<MailManager.Favorite> ff = mmgr.getFavorites();
 			ArrayList<ApiFolder> items = new ArrayList<>();
@@ -63,8 +66,10 @@ public class MeFavorites extends MeFavoritesApi {
 				ApiFolder af = new ApiFolder();
 				af.setId(favorite.id);
 				af.setName(favorite.name);
+				af.setType(ApiFolder.TypeEnum.fromValue(mmgr.getFolderType(favorite.id)));
 				try {
-					af.setUnreadCount(favorite.folder.getUnreadMessageCount());
+					int unread = mmgr.getWarmUnreadCount(favorite.id);
+					af.setUnreadCount(unread >= 0 ? unread : favorite.folder.getUnreadMessageCount());
 					af.setTotalCount(favorite.folder.getMessageCount());
 				} catch(MessagingException exc) {}
 				items.add(af);
@@ -74,8 +79,6 @@ public class MeFavorites extends MeFavoritesApi {
 		} catch(Exception ex) {
 			logger.error("[{}] getFavorites()", targetPid, ex);
 			return respError(ex);
-		} finally {
-			if (mmgr!=null) mmgr.cleanup();
 		}
 	}
 	

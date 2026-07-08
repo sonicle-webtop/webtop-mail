@@ -71,13 +71,23 @@ import com.sonicle.webtop.calendar.model.EventAttendee;
 import com.sonicle.webtop.calendar.model.EventInstance;
 import com.sonicle.webtop.calendar.model.EventInstanceId;
 import com.sonicle.webtop.contacts.ContactsUtils;
+import com.sonicle.commons.cache.AbstractPassiveExpiringBulkSet;
+import com.sonicle.mail.sieve.SieveAction;
+import com.sonicle.mail.sieve.SieveActionMethod;
+import com.sonicle.security.AuthContext;
 import com.sonicle.webtop.core.CoreManager;
+import com.sonicle.webtop.core.CoreUserSettings;
+import com.sonicle.webtop.core.sdk.ServiceMessage;
+import com.sonicle.webtop.core.sdk.SharedManager;
+import com.sonicle.webtop.core.bol.OUser;
+import com.sonicle.webtop.core.dal.UserDAO;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.dal.DAOException;
 import com.sonicle.webtop.core.sdk.BaseManager;
 import com.sonicle.webtop.core.sdk.UserProfile.Data;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.core.sdk.WTException;
+import com.sonicle.webtop.core.sdk.WTRuntimeException;
 import com.sonicle.webtop.mail.bol.OAutoResponder;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.OInFilter;
@@ -89,6 +99,11 @@ import com.sonicle.webtop.mail.model.AutoResponder;
 import com.sonicle.webtop.mail.model.MailFilter;
 import com.sonicle.webtop.mail.model.MailFiltersType;
 import com.sonicle.webtop.core.app.RunContext;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.subject.support.SubjectThreadState;
+import org.apache.shiro.util.ThreadState;
+import java.util.concurrent.atomic.AtomicBoolean;
 import com.sonicle.webtop.core.app.SessionContext;
 import com.sonicle.webtop.core.app.WebTopManager;
 import com.sonicle.webtop.core.app.WebTopSession;
@@ -96,6 +111,8 @@ import com.sonicle.webtop.core.app.model.EnabledCond;
 import com.sonicle.webtop.core.app.model.ShareOrigin;
 import com.sonicle.webtop.core.app.model.Sharing;
 import com.sonicle.webtop.core.app.sdk.WTEmailSendException;
+import com.sonicle.webtop.core.app.sdk.WTNotFoundException;
+import com.sonicle.webtop.core.app.sdk.WTParseException;
 import com.sonicle.webtop.core.app.util.ExceptionUtils;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
@@ -108,8 +125,10 @@ import com.sonicle.webtop.mail.bol.OExternalAccount;
 import com.sonicle.webtop.mail.bol.ONote;
 import com.sonicle.webtop.mail.bol.OTag;
 import com.sonicle.webtop.mail.bol.OUserMap;
+import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.dal.ExternalAccountDAO;
 import com.sonicle.webtop.mail.dal.NoteDAO;
+import com.sonicle.webtop.mail.dal.ScanDAO;
 import com.sonicle.webtop.mail.dal.TagDAO;
 import com.sonicle.webtop.mail.dal.UserMapDAO;
 import com.sonicle.webtop.mail.model.CalendarPartInfo;
@@ -163,6 +182,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.TimeUnit;
 import java.util.StringTokenizer;
 import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.parameter.PartStat;
@@ -178,7 +199,7 @@ import org.slf4j.Logger;
  *
  * @author gabriele.bulfon
  */
-public class MailManager extends BaseManager implements IMailManager {
+public class MailManager extends BaseManager implements SharedManager, IMailManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
 	public static final String IDENTITY_SHARING_CONTEXT = "IDENTITY@FOLDER";
@@ -349,6 +370,721 @@ public class MailManager extends BaseManager implements IMailManager {
 		return mailbox;
 	}
 	
+	/**
+	 * Per-user mail user settings. Exposed so the (soon shared) account/folder
+	 * machinery can read settings from this manager instead of the per-session
+	 * {@code Service}.
+	 * @return
+	 */
+	public MailUserSettings getMailUserSettings() {
+		return mus;
+	}
+
+	/**
+	 * Per-domain mail service settings. See {@link #getMailUserSettings()}.
+	 * @return
+	 */
+	public MailServiceSettings getMailServiceSettings() {
+		return mss;
+	}
+
+	/**
+	 * Convenience single-arg resource lookup using this manager's (per-user)
+	 * locale, mirroring {@code BaseService.lookupResource(String)} so the shared
+	 * account/folder machinery can resolve i18n strings without a session Service.
+	 * @param key The resource key.
+	 * @return The translated string, or null if not found.
+	 */
+	public String lookupResource(String key) {
+		return lookupResource(getLocale(), key);
+	}
+
+	// --- Helpers relocated from Service so the (soon shared) account/folder
+	// --- machinery can call them without a per-session Service reference.
+	// --- All are per-user or stateless; RunContext-based checks read the
+	// --- current thread's subject exactly as the Service versions did.
+	// --- (getMessageID / getDecodedAddress / getHTMLDecodedAddress already
+	// --- exist on this manager and are reused as-is.)
+
+	/**
+	 * Whether the CURRENT session has JS-debug enabled (per-session message-list
+	 * timing instrumentation gate). Resolves the current session per-call so it
+	 * behaves correctly whether this manager is per-session or shared; returns
+	 * false when there is no current session (e.g. background idle/scan threads).
+	 * @return
+	 */
+	public boolean isListDebugEnabled() {
+		try {
+			WebTopSession wts = SessionContext.getCurrent();
+			return wts != null && wts.isJsDebugEnabled();
+		} catch(Exception exc) {
+			return false;
+		}
+	}
+
+	public boolean hasDmsDocumentArchiving() {
+		return RunContext.isPermitted(true, SERVICE_ID, "DMS_DOCUMENT_ARCHIVING");
+	}
+
+	public String getDmsSimpleArchivingMailFolder() {
+		return mus.getSimpleDMSArchivingMailFolder();
+	}
+
+	public boolean isDmsSimpleArchiving() {
+		return mus.getDMSMethod().equals(MailSettings.ARCHIVING_DMS_METHOD_SIMPLE);
+	}
+
+	public boolean isDmsFolder(MailAccount account, String foldername) {
+		if (!hasDmsDocumentArchiving()) return false;
+		boolean b = false;
+		String df = mus.getSimpleDMSArchivingMailFolder();
+		if (df != null && df.trim().length() > 0) {
+			String lfn = account.getLastFolderName(foldername);
+			String dfn = account.getLastFolderName(df);
+			if (lfn.equals(dfn)) b = true;
+		}
+		return b;
+	}
+
+	public String getInternationalFolderName(FolderCache fc) {
+		Folder folder = fc.getFolder();
+		String desc = folder.getName();
+		if (fc.isInbox()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_INBOX);
+		} else if (fc.isSharedFolder()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_SHARED);
+		} else if (fc.isDrafts()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_DRAFTS);
+		} else if (fc.isTrash()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_TRASH);
+		} else if (fc.isArchive()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_ARCHIVE);
+		} else if (fc.isSent()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_SENT);
+		} else if (fc.isSpam()) {
+			desc = lookupResource(MailLocaleKey.FOLDERS_SPAM);
+		}
+		return desc;
+	}
+
+	/**
+	 * Trims surrounding whitespace and a single pair of wrapping single-quotes
+	 * from an email address (relocated from Service; pure/stateless).
+	 * @param email
+	 * @return
+	 */
+	public String adjustEmail(String email) {
+		if (email != null) {
+			email = email.trim();
+			if (email.startsWith("'")) {
+				email = email.substring(1);
+			}
+			if (email.endsWith("'")) {
+				email = email.substring(0, email.length() - 1);
+			}
+			email = email.trim();
+		}
+		return email;
+	}
+
+	private CoreUserSettings cus = null;
+
+	/**
+	 * Per-user core settings (look-and-feel etc.), built lazily against the target
+	 * profile. Relocated from Service.getCoreUserSettings() which returned the
+	 * session user's settings; identical for the same user.
+	 * @return
+	 */
+	public CoreUserSettings getCoreUserSettings() {
+		if (cus == null) cus = new CoreUserSettings(getTargetProfileId());
+		return cus;
+	}
+
+	/**
+	 * Whether the given folder is enabled for rule-driven scanning for this user.
+	 * Relocated from Service.checkScanRules() (uses the target profile instead of
+	 * the session environment).
+	 * @param foldername
+	 * @return
+	 */
+	public boolean checkScanRules(String foldername) {
+		boolean b = false;
+		Connection con = null;
+		try {
+			UserProfileId pid = getTargetProfileId();
+			con = WT.getConnection(SERVICE_ID);
+			b = ScanDAO.getInstance().isScanFolder(con, pid.getDomainId(), pid.getUserId(), foldername);
+		} catch (SQLException exc) {
+			logger.error("Error checking Scan rules on folder {}", foldername, exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+		return b;
+	}
+
+	/**
+	 * Maps an IMAP ACL user id (which may carry a domain suffix depending on the
+	 * auth backend) to a WebTop {@link UserProfileId}, applying the same
+	 * unknown-role permission gate as before. Relocated from Service; uses the
+	 * target profile's domain instead of the session environment.
+	 * @param aclUserId
+	 * @return
+	 */
+	public UserProfileId aclUserIdToUserId(String aclUserId) {
+		String userId = aclUserId;
+		//imap user includes domain only if ldap or AD, not including nethserver 6
+		//strip domain if needed
+		final AuthContext acontext = WT.getCoreManager().getAuthenticationContext();
+		if (MailUserProfile.appendDomainSuffix(mss, acontext)) {
+			int ix = aclUserId.indexOf("@");
+			if (ix > 0) {
+				String domain = aclUserId.substring(ix + 1).toLowerCase();
+				if (acontext.getInternetName().toLowerCase().equals(domain)) userId = aclUserId.substring(0, ix);
+				else {
+					//skip if non domain users not permitted
+					if (!isSharingUnknownRolesPermitted()) userId = null;
+				}
+			} else {
+				if (!isSharingUnknownRolesPermitted()) userId = null;
+			}
+		}
+		//Exclude the mailbox OWNER (this manager's target), not the calling subject:
+		//they were the same when the manager was per-session, but on the shared
+		//manager the caller may be a cross-profile admin (REST) or absent entirely
+		//(background threads) — the "not shared to yourself" rule is about the owner.
+		if (getTargetProfileId().getUserId().equals(userId)) userId = null;
+
+		UserProfileId pid = null;
+		if (userId != null) pid = new UserProfileId(getTargetProfileId().getDomainId(), userId);
+		return pid;
+	}
+
+	//Permission of the CALLING subject; on a thread with no usable subject
+	//(idle/MFT/sweeper) deny rather than throw — callers just skip the ACL entry.
+	private boolean isSharingUnknownRolesPermitted() {
+		try {
+			return RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES", "SHOW");
+		} catch(Throwable t) {
+			return false;
+		}
+	}
+
+	private FetchProfile threadFP = null;
+
+	/**
+	 * Threaded-mode initial fetch profile: like the standard message fetch profile
+	 * but WITHOUT CONTENT_INFO (bodystructure is fetched per visible page). Built
+	 * lazily and cached; the conditional X-WT-Archived header depends on the
+	 * (per-user) DMS-archiving permission. Relocated from Service.
+	 * @return
+	 */
+	public FetchProfile getThreadMessageFetchProfile() {
+		if (threadFP == null) {
+			FetchProfile fp = new FetchProfile();
+			fp.add(FetchProfile.Item.ENVELOPE);
+			fp.add(FetchProfile.Item.FLAGS);
+			fp.add(UIDFolder.FetchProfileItem.UID);
+			fp.add("Message-ID");
+			fp.add("X-Priority");
+			fp.add("Resent-Date");
+			if (hasDmsDocumentArchiving()) fp.add("X-WT-Archived");
+			threadFP = fp;
+		}
+		return threadFP;
+	}
+
+	/**
+	 * Resolves a shared-folder IMAP user id to a {@link SharedPrincipal} carrying a
+	 * display name (via the user-map, then a matching WebTop user, then a personal
+	 * address guess). Relocated from Service; uses no session state.
+	 * @param domainId
+	 * @param mailUserId
+	 * @return
+	 */
+	public SharedPrincipal getSharedPrincipal(String domainId, String mailUserId) {
+		SharedPrincipal p = null;
+		Connection con = null;
+		try {
+			con = WT.getConnection(SERVICE_ID);
+			logger.debug("looking for shared folder map on {}@{}", mailUserId, domainId);
+			OUserMap omap = UserMapDAO.getInstance().selectFirstByMailUser(con, domainId, mailUserId);
+			OUser ouser;
+			if (omap != null) {
+				logger.debug("found mapping : {}", omap.getUserId());
+				//get mapped webtop user
+				ouser = UserDAO.getInstance().selectByDomainUser(con, domainId, omap.getUserId());
+			} else {
+				//remove @domain if present
+				mailUserId = StringUtils.substringBefore(mailUserId, "@");
+				logger.debug("mapping not found, looking for a webtop user with id = {}", mailUserId);
+				//try looking for a webtop user with userId=mailUserId
+				ouser = UserDAO.getInstance().selectByDomainUser(con, domainId, mailUserId);
+			}
+
+			String desc = null;
+			if (ouser != null) {
+				desc = LangUtils.value(ouser.getDisplayName(), "");
+			} else {
+				String email = mailUserId;
+				if (email.indexOf("@") < 0) email += "@" + WT.getPrimaryDomainName(domainId);
+				UserProfile.Data pdata = WT.guessProfileDataByPersonalAddress(email);
+				if (pdata != null) desc = LangUtils.value(pdata.getDisplayName(), "");
+			}
+
+			if (desc != null) {
+				logger.debug("webtop user found, desc={}", desc);
+				p = new SharedPrincipal(mailUserId, desc.trim());
+			} else {
+				logger.debug("webtop user not found, creating unmapped principal");
+				p = new SharedPrincipal(mailUserId, mailUserId);
+			}
+
+		} catch (SQLException exc) {
+			logger.error("Error finding principal for {}@{}", mailUserId, domainId, exc);
+		} finally {
+			DbUtils.closeQuietly(con);
+		}
+		return p;
+	}
+
+	/**
+	 * Whether the given folder is hidden from the tree for this user. Relocated
+	 * from Service; the original compared {@code account==mainAccount}, equivalent
+	 * to the account id being the main-account id (only one main account exists).
+	 * @param account
+	 * @param foldername
+	 * @return
+	 */
+	public boolean isFolderHidden(MailAccount account, String foldername) {
+		if (Service.MAIN_ACCOUNT_ID.equals(account.getId())) {
+			return mus.isFolderHidden(foldername);
+		} else {
+			//account-scoped key; legacy entries were saved under the main-account
+			//prefix for EVERY external account (collided across accounts) — keep
+			//honoring them so already-hidden folders stay hidden
+			return mus.isFolderHidden(account.getId() + "_" + foldername)
+				|| mus.isFolderHidden(Service.MAIN_ACCOUNT_ID + "_" + foldername);
+		}
+	}
+
+	/**
+	 * Referer URI of the CURRENT session (used by the HTML mail sanitizer to
+	 * resolve relative links). Resolved per-call so it is correct whether this
+	 * manager is per-session or shared; null when there is no current session.
+	 * @return
+	 */
+	public String getCurrentRefererUri() {
+		WebTopSession wts = SessionContext.getCurrentWTSession();
+		return (wts != null) ? wts.getRefererUri() : null;
+	}
+
+	/**
+	 * CSRF/security token of the CURRENT session (used by the HTML mail sanitizer).
+	 * Resolved per-call; null when there is no current session.
+	 * @return
+	 */
+	public String getCurrentSecurityToken() {
+		WebTopSession wts = SessionContext.getCurrentWTSession();
+		return (wts != null) ? wts.getCSRFToken() : null;
+	}
+
+	// --- Folder-level mail-event fan-out (observer pattern) --------------------
+	// The idle/scan machinery produces events; per-session Services (and, later, a
+	// mobile-push gateway) register as listeners. This manager is session-agnostic:
+	// it builds the ServiceMessage once and hands every event to every listener,
+	// which each decide independently whether/how to deliver it (see MailEventListener).
+
+	private final Set<MailEventListener> mailEventListeners = new CopyOnWriteArraySet<>();
+
+	public void registerMailEventListener(MailEventListener listener) {
+		if (listener != null) mailEventListeners.add(listener);
+	}
+
+	public void unregisterMailEventListener(MailEventListener listener) {
+		if (listener != null) mailEventListeners.remove(listener);
+	}
+
+	/**
+	 * Hands a pre-built event to every registered listener, unconditionally. Called
+	 * from idle/scan background threads; never throws (listener errors are logged).
+	 */
+	public void dispatchMailEvent(String accountId, String foldername, MailEventType type, ServiceMessage msg) {
+		for (MailEventListener listener : mailEventListeners) {
+			try {
+				listener.onMailEvent(accountId, foldername, type, msg);
+			} catch (Throwable t) {
+				logger.error("Mail event listener threw for {} on {}/{}", type, accountId, foldername, t);
+			}
+		}
+	}
+
+	// --- Open-folder LRU pool (relocated from Service) --------------------------
+	// Caps the number of concurrently-open IMAP folders for this user: opening one
+	// past the cap closes the least-recently-opened. Synchronized because, once this
+	// manager is shared, folders are opened from concurrent request/idle threads.
+
+	private final ArrayList<FolderCache> openedFolders = new ArrayList<>();
+	private static final int FOLDER_CACHE_POOL_SIZE = 5; //default 5
+
+	protected void poolOpened(FolderCache fc) {
+		//Idle-owning caches keep their folder open by design and never join the
+		//pool: evicting one would close(true) (expunge!) a folder its idle thread
+		//immediately reopens, wasting a slot and corrupting the bookkeeping.
+		if (fc.hasActiveIdle()) return;
+		//Lock ONLY the list: the eviction callbacks below take the evicted folder's
+		//cacheLock, and FolderCache calls back into this method while holding its
+		//own cacheLock (refresh->open->poolOpened) - holding a manager-wide monitor
+		//across both directions would be an ABBA deadlock.
+		FolderCache rfc = null;
+		synchronized (openedFolders) {
+			if (openedFolders.size() >= FOLDER_CACHE_POOL_SIZE) {
+				//oldest first, but never a cache whose idle started after insertion
+				for (int i = 0; i < openedFolders.size(); i++) {
+					if (!openedFolders.get(i).hasActiveIdle()) {
+						rfc = openedFolders.remove(i);
+						break;
+					}
+				}
+			}
+			openedFolders.add(fc);
+		}
+		if (rfc != null && rfc != fc) {
+			rfc.cleanup(false);
+			rfc.close();
+			rfc.setForceRefresh();
+		}
+	}
+
+	// --- Incoming file-into filter folders cache (relocated from Service) -------
+	// Folder names targeted by enabled incoming FILE_INTO sieve filters, cached with
+	// a 5-minute TTL; used to force-enable scan on those folders.
+
+	private final FoldersNamesInByFileFiltersCache cacheFoldersNamesInByFileFilters = new FoldersNamesInByFileFiltersCache(5, TimeUnit.MINUTES);
+
+	boolean checkFileRules(String foldername) {
+		return cacheFoldersNamesInByFileFilters.contains(foldername);
+	}
+
+	private class FoldersNamesInByFileFiltersCache extends AbstractPassiveExpiringBulkSet<String> {
+
+		public FoldersNamesInByFileFiltersCache(final long timeToLive, final TimeUnit timeUnit) {
+			super(timeToLive, timeUnit);
+		}
+
+		@Override
+		protected Set<String> internalGetSet() {
+			try {
+				Set<String> folders = new HashSet<>();
+				List<MailFilter> filters = getMailFilters(MailFiltersType.INCOMING, EnabledCond.ENABLED_ONLY);
+				for (MailFilter filter : filters) {
+					for (SieveAction action : filter.getSieveActions()) {
+						if (action.getMethod() == SieveActionMethod.FILE_INTO) {
+							folders.add(action.getArgument());
+						}
+					}
+				}
+				return folders;
+
+			} catch(Exception ex) {
+				logger.error("[FoldersNamesInByFileFiltersCache] Unable to build cache", ex);
+				throw new UnsupportedOperationException();
+			}
+		}
+	}
+
+	// --- Per-user mail accounts + folder-scan threads (relocated from Service) --
+	// This manager owns the live machinery ONCE per user: the main/archive/external
+	// MailAccounts, their FolderCaches (via the accounts), and the MailFoldersThread
+	// sweeps. Sessions alias these through the getters below; at the SharedManager
+	// flip this whole block starts on first acquire and stops at registry eviction.
+
+	private MailUserProfile mprofile = null;
+	private MailAccount mainAccount = null;
+	private MailAccount archiveAccount = null;
+	private final ArrayList<MailAccount> externalAccounts = new ArrayList<>();
+	private final HashMap<String, MailAccount> accounts = new HashMap<>();
+	private final HashMap<String, ExternalAccount> externalAccountsMap = new HashMap<>();
+	private MailFoldersThread mft = null;
+	private volatile boolean accountsStarted = false;
+
+	public MailUserProfile getMailUserProfile() { return mprofile; }
+	public MailAccount getMainAccount() { return mainAccount; }
+	public MailAccount getArchiveAccount() { return archiveAccount; }
+	public ArrayList<MailAccount> getExternalAccountsList() { return externalAccounts; }
+	public HashMap<String, MailAccount> getAccountsMap() { return accounts; }
+	public HashMap<String, ExternalAccount> getExternalAccountsModelMap() { return externalAccountsMap; }
+	public MailFoldersThread getMailFoldersThread() { return mft; }
+
+	/**
+	 * Waits (bounded) for the folder-scan thread to complete its first full sweep
+	 * since machinery startup, after which warm unread counts are fully populated.
+	 * Returns immediately when the machinery is not running: there is no scan to
+	 * wait for and callers fall back to direct IMAP counts anyway.
+	 * @return true when the first sweep is done, false on timeout or not running.
+	 */
+	public boolean awaitFirstFolderScan(long timeout, TimeUnit unit) {
+		if (!accountsStarted) return false;
+		MailFoldersThread t = mft;
+		if (t == null) return false;
+		return t.awaitFirstScan(timeout, unit);
+	}
+
+	private MailAccount createAccount(String id) {
+		MailAccount account = new MailAccount(id, this);
+		accounts.put(id, account);
+		return account;
+	}
+
+	/**
+	 * SharedManager lifecycle: created once per user by the registry on first
+	 * web/REST touch. Deliberately does NOT start the account machinery here —
+	 * that stays lazy via {@link #ensureAccountsStarted()} (called by the web
+	 * Service at login, or by a future mobile-push subscription), so a transient
+	 * sessionless REST touch does not spin up an IMAP idle stack for the user.
+	 */
+	@Override
+	public void onSharedStartup() {
+		logger.info("[{}] shared MailManager created", getTargetProfileId());
+	}
+
+	/**
+	 * SharedManager lifecycle: runs at registry eviction (no more session refs +
+	 * idle grace elapsed) or application shutdown. Tears down the whole per-user
+	 * machinery (idle threads, scan threads, event queues, IMAP stores).
+	 */
+	@Override
+	public void onSharedShutdown() {
+		logger.info("[{}] shared MailManager shutting down", getTargetProfileId());
+		teardownAccounts();
+		cleanup();
+	}
+
+	//Machinery start/stop mutex. Deliberately NOT 'this': ensureIdentities() is
+	//synchronized(this) and the machinery start takes seconds of IMAP work, so
+	//holding the same monitor would stall unrelated calls (e.g. a REST identities
+	//request) behind the whole warm-up.
+	private final Object accountsLock = new Object();
+	private final AtomicBoolean machineryWarmupSpawned = new AtomicBoolean(false);
+
+	/**
+	 * Builds and starts the per-user account machinery once (idempotent). Must be
+	 * RESILIENT: a per-account IMAP hiccup is logged, never thrown, so the caller's
+	 * login/REST request cannot fail on a mail-server problem (same contract as the
+	 * original Service.initialize block this was moved from).
+	 */
+	public void ensureAccountsStarted() {
+		synchronized (accountsLock) {
+			if (accountsStarted) return;
+			initAccounts();
+			accountsStarted = true;
+		}
+	}
+
+	/**
+	 * Non-blocking variant for REST callers: kicks the machinery warm-up on a
+	 * background thread (spawned once) so an API response is never held for the
+	 * full IMAP start-up (connect, folder listing, idle threads). Until the
+	 * warm-up completes, warm paths (folder caches, unread counts) simply report
+	 * cold and callers use their direct fallbacks.
+	 */
+	public void ensureAccountsStartedAsync() {
+		if (accountsStarted) return;
+		if (!machineryWarmupSpawned.compareAndSet(false, true)) return;
+		//capture the caller's authenticated Subject: initAccounts resolves profile
+		//data through RunContext/WT, which need it bound to the running thread
+		Subject subject = null;
+		try { subject = SecurityUtils.getSubject(); } catch (Throwable t) {}
+		final Subject boundSubject = subject;
+		Thread t = new Thread("mailMachineryWarmup-" + getTargetProfileId()) {
+			@Override
+			public void run() {
+				ThreadState threadState = (boundSubject != null) ? new SubjectThreadState(boundSubject) : null;
+				if (threadState != null) threadState.bind();
+				try {
+					ensureAccountsStarted();
+				} catch (Throwable th) {
+					logger.error("[{}] background machinery warm-up failed", getTargetProfileId(), th);
+				} finally {
+					if (threadState != null) threadState.clear();
+					//failed warm-up: allow a later REST call to retry the spawn
+					if (!accountsStarted) machineryWarmupSpawned.set(false);
+				}
+			}
+		};
+		t.setDaemon(true);
+		t.start();
+	}
+
+	private void initAccounts() {
+		UserProfile profile = getUserProfile();
+
+		mprofile = new MailUserProfile(this, mss, mus, profile);
+		String mailUsername = mprofile.getMailUsername();
+		String mailPassword = mprofile.getMailPassword();
+		boolean isImpersonated = profile.getPrincipal().isImpersonated();
+		String vmailSecret = StringUtils.defaultIfBlank(mss.getNethTopVmailSecret(), null);
+		//With remember-me token logins the user's IMAP password is not available
+		//after a Tomcat restart, so per-user password auth cannot be relied upon:
+		//impersonate whenever the domain provides vmail/SASL admin credentials,
+		//like the REST mailbox does (getMailboxHostParams with impersonate=true).
+		boolean useImpersonation = isImpersonated || vmailSecret != null || !StringUtils.isBlank(mss.getAdminUser());
+		if (useImpersonation || StringUtils.isBlank(mailPassword)) {
+			//use sasl rfc impersonate if no vmailSecret
+			if (vmailSecret == null) {
+				//TODO: implement sasl rfc authorization id if possible
+				setSieveConfiguration(mprofile.getMailHost(), mss.getSievePort(), mss.getAdminUser(), mss.getAdminPassword(), mailUsername);
+			} else {
+				mailUsername += "*vmail";
+				mailPassword = vmailSecret;
+				setSieveConfiguration(mprofile.getMailHost(), mss.getSievePort(), mailUsername, mailPassword, null);
+			}
+		} else {
+			setSieveConfiguration(mprofile.getMailHost(), mss.getSievePort(), mailUsername, mailPassword, null);
+		}
+
+		mainAccount = createAccount(Service.MAIN_ACCOUNT_ID);
+		mainAccount.setFolderPrefix(mprofile.getFolderPrefix());
+		mainAccount.setProtocol(mprofile.getMailProtocol());
+
+		mainAccount.setDifferentDefaultFolder(mus.getDefaultFolder());
+
+		mainAccount.setPort(mprofile.getMailPort());
+		mainAccount.setHost(mprofile.getMailHost());
+		mainAccount.setUsername(mprofile.getMailUsername());
+		mainAccount.setPassword(mprofile.getMailPassword());
+		mainAccount.setReplyTo(mprofile.getReplyTo());
+
+		if (useImpersonation) {
+			if (vmailSecret == null) mainAccount.setSaslRFCImpersonate(mprofile.getMailUsername(), mss.getAdminUser(), mss.getAdminPassword());
+			else mainAccount.setNethImpersonate(mprofile.getMailUsername(), vmailSecret);
+		}
+		mainAccount.setFolderSent(mprofile.getFolderSent());
+		mainAccount.setFolderDrafts(mprofile.getFolderDrafts());
+		mainAccount.setFolderSpam(mprofile.getFolderSpam());
+		mainAccount.setFolderTrash(mprofile.getFolderTrash());
+		mainAccount.setFolderArchive(mprofile.getFolderArchive());
+
+		mft = new MailFoldersThread(this, mainAccount);
+		mft.setCheckAll(mprofile.isScanAll());
+		mft.setSleepInbox(mprofile.getScanSeconds());
+		mft.setSleepCycles(mprofile.getScanCycles());
+		try {
+			mft.abort();
+			mainAccount.checkStoreConnected();
+
+			//prepare special folders if not existant
+			if (mss.isAutocreateSpecialFolders()) {
+				mainAccount.createSpecialFolders();
+			}
+
+			mainAccount.setSkipReplyFolders(new String[]{
+				mainAccount.getFolderDrafts(),
+				mainAccount.getFolderSent(),
+				mainAccount.getFolderSpam(),
+				mainAccount.getFolderTrash(),
+				mainAccount.getFolderArchive()
+			});
+			mainAccount.setSkipForwardFolders(new String[]{
+				mainAccount.getFolderSpam(),
+				mainAccount.getFolderTrash(),
+			});
+
+			mainAccount.loadFoldersCache(mft.getCacheLoadLock(), false);
+			mft.start();
+
+			//if external archive, initialize account
+			if (mss.isArchivingExternal()) {
+				archiveAccount = createAccount(Service.ARCHIVE_ACCOUNT_ID);
+
+				//defaults to WebTop External Archive
+				archiveAccount.setHasInboxFolder(true); //archive copy creates INBOX folder under user archive
+				String defaultFolder = mus.getArchiveExternalUserFolder();
+				if (defaultFolder == null || defaultFolder.trim().length() == 0)
+					defaultFolder = getTargetProfileId().getUserId();
+				archiveAccount.setDifferentDefaultFolder(defaultFolder);
+
+				archiveAccount.setFolderPrefix(mss.getArchivingExternalFolderPrefix());
+				archiveAccount.setProtocol(mss.getArchivingExternalProtocol());
+
+				archiveAccount.setPort(mss.getArchivingExternalPort());
+				archiveAccount.setHost(mss.getArchivingExternalHost());
+				archiveAccount.setUsername(mss.getArchivingExternalUsername());
+				archiveAccount.setPassword(mss.getArchivingExternalPassword());
+
+				archiveAccount.setFolderSent(mprofile.getFolderSent());
+				archiveAccount.setFolderDrafts(mprofile.getFolderDrafts());
+				archiveAccount.setFolderSpam(mprofile.getFolderSpam());
+				archiveAccount.setFolderTrash(mprofile.getFolderTrash());
+				archiveAccount.setFolderArchive(mprofile.getFolderArchive());
+			}
+
+			//add any configured external account
+			for (ExternalAccount extacc : listExternalAccounts()) {
+				String id = extacc.getExternalAccountId().toString();
+				externalAccountsMap.put(id, extacc);
+
+				MailAccount acct = createAccount(id);
+				acct.setFolderPrefix(extacc.getFolderPrefix());
+				acct.setProtocol(extacc.getProtocol());
+
+				acct.setPort(extacc.getPort());
+				acct.setHost(extacc.getHost());
+				acct.setUsername(extacc.getUserName());
+				acct.setPassword(extacc.getPassword());
+
+				acct.setFolderSent(extacc.getFolderSent());
+				acct.setFolderDrafts(extacc.getFolderDrafts());
+				acct.setFolderSpam(extacc.getFolderSpam());
+				acct.setFolderTrash(extacc.getFolderTrash());
+				acct.setFolderArchive(extacc.getFolderArchive());
+				acct.setReadOnly(extacc.isReadOnly());
+
+				externalAccounts.add(acct);
+
+				MailFoldersThread xmft = new MailFoldersThread(this, acct);
+				xmft.setInboxOnly(true);
+
+				acct.setFoldersThread(xmft);
+				acct.checkStoreConnected();
+				acct.loadFoldersCache(xmft.getCacheLoadLock(), false);
+
+				//MFT start postponed to first processGetFavoritesTree
+			}
+
+		} catch (Exception exc) {
+			logger.error("Exception initializing mail accounts", exc);
+		}
+	}
+
+	/**
+	 * Stops the folder-scan thread and tears down every account (idle threads,
+	 * event queues, IMAP stores). At the SharedManager flip this runs at registry
+	 * eviction/app shutdown instead of session end.
+	 */
+	public void teardownAccounts() {
+		synchronized (accountsLock) {
+			if (!accountsStarted) return;
+			if (mft != null) {
+				mft.abort();
+				mft = null;
+			}
+			for (MailAccount account : accounts.values()) {
+				try {
+					account.cleanup();
+				} catch (Throwable t) {
+					logger.error("Error tearing down account", t);
+				}
+			}
+			accounts.clear();
+			externalAccounts.clear();
+			externalAccountsMap.clear();
+			mainAccount = null;
+			archiveAccount = null;
+			accountsStarted = false;
+			machineryWarmupSpawned.set(false);
+		}
+	}
+
 	public void cleanup() {
 		if (mailbox != null) mailbox.disconnect();
 	}
@@ -358,28 +1094,45 @@ public class MailManager extends BaseManager implements IMailManager {
 		public String name;
 		public Folder folder;
 	}
-	public ArrayList<Favorite> getFavorites() {
+	public ArrayList<Favorite> getFavorites() throws WTException {
 		FavoriteFolders ffs = mus.getFavoriteFolders();
 		ArrayList<Favorite> favorites = new ArrayList<>();
-		Mailbox mailbox = null;
-		try {
-			mailbox = getMailbox();
-			for(FavoriteFolder ff: ffs) {
+		//mailbox unavailable is thrown to the caller: an empty 200 would make
+		//clients believe the user has no favorites
+		Mailbox mailbox = getMailbox();
+		for(FavoriteFolder ff: ffs) {
+			try {
 				Favorite f = new Favorite();
 				f.id = ff.folderId;
 				f.name = ff.description;
 				f.folder = mailbox.getFolder(f.id);
 				favorites.add(f);
+			} catch(MessagingException exc) {
+				//skip only this favorite (e.g. stale entry for a deleted folder)
+				logger.error("Error resolving favorite {}", ff.folderId, exc);
 			}
-		} catch(MessagingException|WTException exc) {
-			logger.error("Error listing favorites", exc);
-		} finally {
-			//mailbox.disconnect();
 		}
 		return favorites;
 	}
 	
+	//Warm folder-tree paths: when the shared account machinery is running, the
+	//folder tree is served from the account's folder caches (no IMAP LIST round
+	//trips, same Folder instances the web tree uses). Any miss falls back to the
+	//raw per-call listing on the pooled mailbox.
+
 	public ArrayList<Folder> getAllFolders() {
+		if (accountsStarted && mainAccount != null) {
+			try {
+				ArrayList<Folder> folders = new ArrayList<>();
+				for (FolderCache fc : mainAccount.getFolderCacheValues()) {
+					if (fc.isRoot() || fc.getFolder() == null) continue;
+					folders.add(fc.getFolder());
+				}
+				if (!folders.isEmpty()) return folders;
+			} catch (Exception exc) {
+				logger.debug("Warm folder tree unavailable, using direct path", exc);
+			}
+		}
 		ArrayList<Folder> folders = new ArrayList<>();
 		Mailbox mailbox = null;
 		try {
@@ -394,8 +1147,22 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 		return folders;
 	}
-	
+
 	public ArrayList<Folder> getRootFolders() {
+		if (accountsStarted && mainAccount != null) {
+			try {
+				FolderCache root = mainAccount.getRootFolderCache();
+				if (root != null && root.getChildren() != null) {
+					ArrayList<Folder> folders = new ArrayList<>();
+					for (FolderCache child : root.getChildren()) {
+						if (child.getFolder() != null) folders.add(child.getFolder());
+					}
+					if (!folders.isEmpty()) return folders;
+				}
+			} catch (Exception exc) {
+				logger.debug("Warm folder tree unavailable, using direct path", exc);
+			}
+		}
 		ArrayList<Folder> folders = new ArrayList<>();
 		Mailbox mailbox = null;
 		try {
@@ -410,8 +1177,26 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 		return folders;
 	}
-	
+
 	public ArrayList<Folder> getFolders(String id) {
+		if (accountsStarted && mainAccount != null) {
+			try {
+				FolderCache fc = mainAccount.getFolderCache(id);
+				if (fc != null) {
+					ArrayList<Folder> folders = new ArrayList<>();
+					if (fc.getChildren() != null) {
+						for (FolderCache child : fc.getChildren()) {
+							if (child.getFolder() != null) folders.add(child.getFolder());
+						}
+					}
+					//children==null means a leaf here (the cache tree is fully built
+					//at startup): an empty list is the correct answer, not a miss
+					return folders;
+				}
+			} catch (Exception exc) {
+				logger.debug("Warm folder tree unavailable, using direct path", exc);
+			}
+		}
 		ArrayList<Folder> folders = new ArrayList<>();
 		Mailbox mailbox = null;
 		try {
@@ -441,9 +1226,126 @@ public class MailManager extends BaseManager implements IMailManager {
 		return folder;
 	}
 
+	/**
+	 * Unread count as maintained by the shared folder cache (idle/MFT), i.e. the
+	 * same number the web tree badge shows. Avoids the per-call SEARCH UNSEEN
+	 * that Folder.getUnreadMessageCount() issues on an open folder.
+	 * @return the cached unread count, or -1 when the machinery is not running
+	 * or the folder is unknown (caller falls back to the direct IMAP path)
+	 */
+	/**
+	 * Machine-readable folder classification for API payloads: one of "inbox",
+	 * "sent", "drafts", "trash", "spam", "archive" (the user's configured special
+	 * roles, also recognized under shared mailboxes), "shared" (any other folder
+	 * under a shared-namespace prefix) or "other". When the account machinery is
+	 * running the account's exact predicates answer; otherwise a cold heuristic
+	 * applies the same last-segment matching against the user's settings.
+	 */
+	public String getFolderType(String foldername) {
+		if (accountsStarted && mainAccount != null) {
+			try {
+				MailAccount acct = mainAccount;
+				if (acct.isInboxFolder(foldername)) return "inbox";
+				if (acct.isSentFolder(foldername)) return "sent";
+				if (acct.isDraftsFolder(foldername)) return "drafts";
+				if (acct.isTrashFolder(foldername)) return "trash";
+				if (acct.isSpamFolder(foldername)) return "spam";
+				if (acct.isArchiveFolder(foldername)) return "archive";
+				if (acct.isUnderSharedFolder(foldername)) return "shared";
+				return "other";
+			} catch (Exception exc) {
+				logger.debug("Warm folder type unavailable for {}", foldername, exc);
+			}
+		}
+		try {
+			Mailbox mb = getMailbox();
+			char sep = mb.getFolderSeparator();
+			String last = lastFolderSegment(foldername, sep);
+			if (last.equals("INBOX")) return "inbox"; //also shared INBOXes
+			if (sameLastSegment(last, mus.getFolderSent(), sep)) return "sent";
+			if (sameLastSegment(last, mus.getFolderDrafts(), sep)) return "drafts";
+			if (sameLastSegment(last, mus.getFolderTrash(), sep)) return "trash";
+			if (sameLastSegment(last, mus.getFolderSpam(), sep)) return "spam";
+			if (sameLastSegment(last, mus.getFolderArchive(), sep)) return "archive";
+			if (mb.isUnderSharedFolder(foldername)) return "shared";
+		} catch (Exception exc) {
+			logger.debug("Cold folder type unavailable for {}", foldername, exc);
+		}
+		return "other";
+	}
+
+	private static String lastFolderSegment(String foldername, char sep) {
+		int ix = foldername.lastIndexOf(sep);
+		return (ix >= 0) ? foldername.substring(ix+1) : foldername;
+	}
+
+	private static boolean sameLastSegment(String last, String configuredName, char sep) {
+		return configuredName != null && last.equals(lastFolderSegment(configuredName, sep));
+	}
+
+	/**
+	 * Tells whether a folder has at least one subfolder, as cheaply as possible:
+	 * warm folder cache first, then the \HasChildren / \HasNoChildren attributes
+	 * the folder already carries from its originating LIST (RFC 3348, no round
+	 * trip), and only as a last resort an explicit listing.
+	 */
+	public boolean folderHasChildren(Folder folder) {
+		if (accountsStarted && mainAccount != null) {
+			try {
+				FolderCache fc = mainAccount.getFolderCache(folder.getFullName());
+				if (fc != null) {
+					ArrayList<FolderCache> children = fc.getChildren();
+					//only a POSITIVE warm answer is authoritative: an empty children
+					//list may just be a lazily-populated subtree (e.g. shared roots),
+					//so negatives fall through to the LIST attributes below
+					if (children != null && !children.isEmpty()) return true;
+				}
+			} catch (Exception exc) {
+				logger.debug("Warm hasChildren unavailable for {}", folder.getFullName(), exc);
+			}
+		}
+		try {
+			if (folder instanceof IMAPFolder) {
+				String[] attrs = ((IMAPFolder)folder).getAttributes();
+				if (attrs != null) {
+					for (String attr : attrs) {
+						if ("\\HasChildren".equalsIgnoreCase(attr)) return true;
+						if ("\\HasNoChildren".equalsIgnoreCase(attr)) return false;
+					}
+				}
+			}
+		} catch (MessagingException exc) {
+			logger.debug("LIST attributes unavailable for {}", folder.getFullName(), exc);
+		}
+		try {
+			return (folder.getType() & Folder.HOLDS_FOLDERS) > 0 && folder.list().length > 0;
+		} catch (MessagingException exc) {
+			return false;
+		}
+	}
+
+	public int getWarmUnreadCount(String foldername) {
+		if (accountsStarted && mainAccount != null) {
+			try {
+				FolderCache fc = mainAccount.getFolderCache(foldername);
+				//uninitialized cache (scan not there yet) must NOT read as "0 unread":
+				//report -1 so the caller falls back to a direct IMAP count
+				if (fc != null && fc.isUnreadCountInitialized()) return fc.getUnreadMessagesCount();
+			} catch (Exception exc) {
+				logger.debug("Warm unread count unavailable for {}", foldername, exc);
+			}
+		}
+		return -1;
+	}
+
 	public Message[] fetch(Folder folder, Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
         int n=fmsgs.length;
+        //a page beyond the (possibly filtered) result set must yield an empty
+        //page, not a negative-sized array
+        if (start<0) start=0;
+        if (start>n) start=n;
         if (length>(n-start)) length=n-start;
+        if (length<0) length=0;
         Message xmsgs[]=new Message[length];
         System.arraycopy(fmsgs, start, xmsgs, 0, length);
         folder.fetch(xmsgs, fp);
@@ -457,7 +1359,45 @@ public class MailManager extends BaseManager implements IMailManager {
 		return new RSQLParser(ops).parse(s);
 	}
 	
-	public void consumeMessages(String folderId, int pageNo, int pageSize, String filterQuery, String orderBy, boolean fullReturnCount, MessagesConsumer mc) {
+	public void consumeMessages(String folderId, int pageNo, int pageSize, String filterQuery, String orderBy, boolean fullReturnCount, MessagesConsumer mc) throws WTException {
+		//Warm path: when the shared account machinery is running and no filter is
+		//requested, serve from the incrementally-maintained FolderCache list. REST's
+		//fixed date-desc order is the same slot as the web grid's default view, so
+		//this usually reuses an already-sorted list instead of paying a full IMAP
+		//SORT per call. Read-mostly and drift-checked; any miss falls back below.
+		if (StringUtils.isBlank(filterQuery) && accountsStarted && mainAccount != null) {
+			Message warm[] = null;
+			Folder wfolder = null;
+			try {
+				FolderCache fc = mainAccount.getFolderCache(folderId);
+				if (fc != null && mainAccount.checkStoreConnected()) {
+					wfolder = fc.getFolder();
+					warm = fc.getMessages(MessageComparator.SORT_BY_DATE, false, true,
+							MessageComparator.SORT_BY_NONE, true, false, new ImapQuery(false));
+					if (warm != null) {
+						if (pageNo >= 0) {
+							warm = fetch(wfolder, warm, FP, pageNo * pageSize, pageSize);
+						} else {
+							((SonicleIMAPFolder)wfolder).uid_fetch(warm, FP);
+						}
+					}
+				}
+			} catch (Exception exc) {
+				logger.debug("Warm list unavailable for {}, using direct path", folderId, exc);
+				warm = null;
+			}
+			if (warm != null) {
+				try {
+					for (Message msg : warm) {
+						mc.consume(msg, ((UIDFolder)wfolder).getUID(msg));
+					}
+				} catch (Exception exc) {
+					logger.error("Error listing messages", exc);
+					throw new WTException(exc, "Error listing messages in folder [{}]", folderId);
+				}
+				return;
+			}
+		}
 		Folder folder = null;
 		Mailbox mailbox = null;
 		try {
@@ -493,13 +1433,16 @@ public class MailManager extends BaseManager implements IMailManager {
 			for(Message msg: fmsgs) {
 				mc.consume(msg, ((UIDFolder)folder).getUID(msg));
 			}
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
-			logger.error("Error listing folders", exc);
+			logger.error("Error listing messages", exc);
+			throw new WTException(exc, "Error listing messages in folder [{}]", folderId);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
-	}	
+	}
 	
 /*	public MimeMessage getMessage(String folderId, long uid) {
 		IMAPFolder folder = null;
@@ -641,7 +1584,7 @@ public class MailManager extends BaseManager implements IMailManager {
 		return ids[0];
 	}
 	
-	public String getMessageNote(String folderId, long uid) {
+	public String getMessageNote(String folderId, long uid) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		Connection con = null;
@@ -651,25 +1594,28 @@ public class MailManager extends BaseManager implements IMailManager {
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
-			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			MimeMessage mmsg = (MimeMessage) getMessageByUID(folder, uid);
 			mid = getMessageID(mmsg);
 			con = WT.getConnection(SERVICE_ID);
 			ONote onote=NoteDAO.getInstance().selectById(con, getUserProfile().getDomainId(), mid);
 			if (onote!=null) {
 				text = onote.getText();
 			}
-			
+
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error in getMessageNote", exc);
+			throw new WTException(exc, "Error getting message note [{}, {}]", folderId, uid);
 		} finally {
 			DbUtils.closeQuietly(con);
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
 		return text;
-	}	
+	}
 
-	public void setMessageNote(String folderId, long uid, String text) {
+	public void setMessageNote(String folderId, long uid, String text) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		Connection con = null;
@@ -677,8 +1623,9 @@ public class MailManager extends BaseManager implements IMailManager {
 			UserProfile profile = getUserProfile();
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
-			folder.open(Folder.READ_ONLY);
-			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
+			//READ_WRITE: this method also toggles the note flag on the message
+			folder.open(Folder.READ_WRITE);
+			MimeMessage mmsg = (MimeMessage) getMessageByUID(folder, uid);
 			String mid = getMessageID(mmsg);
 			con = WT.getConnection(SERVICE_ID);
 			NoteDAO.getInstance().deleteById(con, profile.getDomainId(), mid);
@@ -689,14 +1636,17 @@ public class MailManager extends BaseManager implements IMailManager {
 			} else {
 				mmsg.setFlags(MailManager.getFlagNote(), false);
 			}
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
-			logger.error("Error in getMessageNote", exc);
+			logger.error("Error in setMessageNote", exc);
+			throw new WTException(exc, "Error setting message note [{}, {}]", folderId, uid);
 		} finally {
 			DbUtils.closeQuietly(con);
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
-	}	
+	}
 
 	public String getMessageAttachmentContentType(String folderId, long uid, int index) {
 		IMAPFolder folder = null;
@@ -2062,23 +3012,26 @@ public class MailManager extends BaseManager implements IMailManager {
 		return sb.toString();
 	}
 	
-	public EmailMessage getReplyMessage(String folderId, long uid, boolean replyAll, boolean fromSent, boolean richContent, boolean includeOriginal, boolean attachMessageParts) {	
+	public EmailMessage getReplyMessage(String folderId, long uid, boolean replyAll, boolean fromSent, boolean richContent, boolean includeOriginal, boolean attachMessageParts) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
-		EmailMessage emsg = null;
 		try {
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
-			Message msg = (MimeMessage) folder.getMessageByUID(uid);
-			emsg = getReplyMessage(msg, replyAll, fromSent, richContent, includeOriginal, attachMessageParts);
+			Message msg = getMessageByUID(folder, uid);
+			EmailMessage emsg = getReplyMessage(msg, replyAll, fromSent, richContent, includeOriginal, attachMessageParts);
+			if (emsg == null) throw new WTException("Error building reply message [{}, {}]", folderId, uid);
+			return emsg;
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error getting message", exc);
+			throw new WTException(exc, "Error building reply message [{}, {}]", folderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
-		return emsg;
 	}
 	
 	public EmailMessage getReplyMessage(Message msg, boolean replyAll, boolean fromSent, boolean richContent, boolean includeOriginal, boolean attachMessageParts) {	
@@ -2213,23 +3166,26 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	
-	public EmailMessage getForwardMessage(String folderId, long uid, boolean richContent, boolean attachMessageParts) {	
+	public EmailMessage getForwardMessage(String folderId, long uid, boolean richContent, boolean attachMessageParts) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
-		EmailMessage emsg = null;
 		try {
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
-			Message msg = (MimeMessage) folder.getMessageByUID(uid);
-			emsg = getForwardMessage(msg, richContent, attachMessageParts);
+			Message msg = getMessageByUID(folder, uid);
+			EmailMessage emsg = getForwardMessage(msg, richContent, attachMessageParts);
+			if (emsg == null) throw new WTException("Error building forward message [{}, {}]", folderId, uid);
+			return emsg;
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error getting message", exc);
+			throw new WTException(exc, "Error building forward message [{}, {}]", folderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
-		return emsg;
 	}
 	
 	public EmailMessage getForwardMessage(Message msg, boolean richContent, boolean attachMessageParts) {
@@ -2462,51 +3418,90 @@ public class MailManager extends BaseManager implements IMailManager {
 		return sb.toString();
 	}
 
-	public boolean getMessageSeenState(String folderId, long uid) {	
+	public boolean getMessageSeenState(String folderId, long uid) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
-		boolean seen = true;
 		try {
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
-			Message msg = (MimeMessage) folder.getMessageByUID(uid);
-			seen = msg.isSet(Flags.Flag.SEEN);
+			Message msg = getMessageByUID(folder, uid);
+			return msg.isSet(Flags.Flag.SEEN);
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
-			logger.error("Error getting message", exc);
+			logger.error("Error getting message seen state", exc);
+			throw new WTException(exc, "Error getting message seen state [{}, {}]", folderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
-		return seen;
 	}
-	
-	public void setMessageSeenState(String folderId, long uid, boolean seen) {	
+
+	public void setMessageSeenState(String folderId, long uid, boolean seen) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		try {
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_WRITE);
-			Message msg = (MimeMessage) folder.getMessageByUID(uid);
+			Message msg = getMessageByUID(folder, uid);
 			msg.setFlag(Flags.Flag.SEEN, seen);
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
-			logger.error("Error getting message", exc);
+			logger.error("Error setting message seen state", exc);
+			throw new WTException(exc, "Error setting message seen state [{}, {}]", folderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
 	}
-	
-	public void setMessageFlag(String folderId, long uid, String flag) {	
+
+	/**
+	 * Reads the current flags of a message (for the REST flag/tags getters).
+	 */
+	public Flags getMessageFlags(String folderId, long uid) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		try {
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_ONLY);
+			Message msg = getMessageByUID(folder, uid);
+			return msg.getFlags();
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error getting message flags", exc);
+			throw new WTException(exc, "Error getting message flags [{}, {}]", folderId, uid);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			//mailbox.disconnect();
+		}
+	}
+
+	private static Message getMessageByUID(IMAPFolder folder, long uid) throws MessagingException, WTException {
+		Message msg = folder.getMessageByUID(uid);
+		if (msg == null) throw new WTNotFoundException("Message not found [{}, {}]", folder.getFullName(), uid);
+		return msg;
+	}
+
+	public void setMessageFlag(String folderId, long uid, String flag) throws WTException {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			if (flag == null) throw new WTParseException("Missing flag");
+			Flags newFlags = null;
+			if (!flag.equals("special")) {
+				newFlags = flagsHash.get(flag);
+				if (newFlags == null) throw new WTParseException("Unknown flag [{}]", flag);
+			}
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_WRITE);
-			Message msg = (MimeMessage) folder.getMessageByUID(uid);			
-			
+			Message msg = getMessageByUID(folder, uid);
+
 			if (flag.equals("special")) {
 				boolean wasspecial=msg.getFlags().contains(getFlagFlagged());
 				msg.setFlags(getFlagFlagged(),!wasspecial);
@@ -2516,42 +3511,48 @@ public class MailManager extends BaseManager implements IMailManager {
 					msg.setFlags(flagsAll, false);
 					msg.setFlags(oldFlagsAll, false);
 				}
-				msg.setFlags(flagsHash.get(flag), true);
+				msg.setFlags(newFlags, true);
 			}
-			
+
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error on setMessageFlag", exc);
+			throw new WTException(exc, "Error setting message flag [{}, {}]", folderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
 	}
-	
-	public void setMessageTags(String folderId, long uid, List<String> tags) {	
+
+	public void setMessageTags(String folderId, long uid, List<String> tags) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		try {
+			Flags flags = new Flags();
+			for(String tagId: tags) {
+				com.sonicle.webtop.core.model.Tag tag = WT.getCoreManager().getTag(tagId);
+				if (tag == null) throw new WTParseException("Unknown tag [{}]", tagId);
+				flags.add(TagsHelper.tagIdToFlagString(tag));
+			}
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_WRITE);
-			Message msg = (MimeMessage) folder.getMessageByUID(uid);			
-
-			Flags flags = new Flags();
-			for(String tagId: tags) {
-				String flag = TagsHelper.tagIdToFlagString(WT.getCoreManager().getTag(tagId));
-				flags.add(flag);
-			}
+			Message msg = getMessageByUID(folder, uid);
 			msg.setFlags(flags, true);
-			
+
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
-			logger.error("Error on setMessageFlag", exc);
+			logger.error("Error on setMessageTags", exc);
+			throw new WTException(exc, "Error setting message tags [{}, {}]", folderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
 		}
 	}
-	
-	public void trashMessage(String folderId, long uid) {	
+
+	public void trashMessage(String folderId, long uid) throws WTException {
 		IMAPFolder fromFolder = null;
 		IMAPFolder toFolder = null;
 		Mailbox mailbox = null;
@@ -2570,13 +3571,16 @@ public class MailManager extends BaseManager implements IMailManager {
 			
 			fromFolder.open(Folder.READ_WRITE);
 			toFolder.open(Folder.READ_WRITE);
-			Message msg = (MimeMessage) fromFolder.getMessageByUID(uid);
+			Message msg = getMessageByUID(fromFolder, uid);
 			Message amsg[] = new Message[] { msg };
 			fromFolder.copyMessages(amsg, toFolder);
 			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
 			fromFolder.expunge();
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error trashing messages", exc);
+			throw new WTException(exc, "Error trashing message [{}, {}]", folderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			StoreUtils.closeQuietly(toFolder, false);
@@ -2584,27 +3588,30 @@ public class MailManager extends BaseManager implements IMailManager {
 		}
 	}
 
-	public void deleteMessage(String folderId, long uid) {	
+	public void deleteMessage(String folderId, long uid) throws WTException {
 		IMAPFolder fromFolder = null;
 		Mailbox mailbox = null;
 		try {
 			mailbox = getMailbox();
 			fromFolder = (IMAPFolder) mailbox.getFolder(folderId);
-			
+
 			fromFolder.open(Folder.READ_WRITE);
-			Message msg = (MimeMessage) fromFolder.getMessageByUID(uid);
+			Message msg = getMessageByUID(fromFolder, uid);
 			Message amsg[] = new Message[] { msg };
 			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
 			fromFolder.expunge();
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error deleting messages", exc);
+			throw new WTException(exc, "Error deleting message [{}, {}]", folderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			//mailbox.disconnect();
 		}
 	}
 
-	public void moveMessage(String fromFolderId, String toFolderId, long uid) {	
+	public void moveMessage(String fromFolderId, String toFolderId, long uid) throws WTException {
 		IMAPFolder fromFolder = null;
 		IMAPFolder toFolder = null;
 		Mailbox mailbox = null;
@@ -2612,16 +3619,19 @@ public class MailManager extends BaseManager implements IMailManager {
 			mailbox = getMailbox();
 			fromFolder = (IMAPFolder) mailbox.getFolder(fromFolderId);
 			toFolder = (IMAPFolder) mailbox.getFolder(toFolderId);
-			
+
 			fromFolder.open(Folder.READ_WRITE);
 			toFolder.open(Folder.READ_WRITE);
-			Message msg = (MimeMessage) fromFolder.getMessageByUID(uid);
+			Message msg = getMessageByUID(fromFolder, uid);
 			Message amsg[] = new Message[] { msg };
 			fromFolder.copyMessages(amsg, toFolder);
 			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
 			fromFolder.expunge();
+		} catch(WTException exc) {
+			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error moving messages", exc);
+			throw new WTException(exc, "Error moving message [{}, {}]", fromFolderId, uid);
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			StoreUtils.closeQuietly(toFolder, false);
@@ -2721,11 +3731,23 @@ public class MailManager extends BaseManager implements IMailManager {
 		return msgIds;
 	}
 	
-	public List<Identity> listIdentities() throws WTException {
-		if (identities==null)
-			identities=buildIdentities();
-		
+	/**
+	 * Lazily builds (once) and returns the per-user identities list. Synchronized
+	 * because {@link #buildIdentities()} also populates the shared {@code identHash}
+	 * map: with this manager shared across sessions/REST, two concurrent first-loads
+	 * would otherwise race on that non-thread-safe map. {@code identHash} is cleared
+	 * before each (re)build to avoid accumulating stale entries.
+	 */
+	private synchronized List<Identity> ensureIdentities() throws WTException {
+		if (identities == null) {
+			identHash.clear();
+			identities = buildIdentities();
+		}
 		return identities;
+	}
+
+	public List<Identity> listIdentities() throws WTException {
+		return ensureIdentities();
 	}
     
 	public List<Identity> listAllPersonalIdentities(String domainId) throws WTException {
@@ -2738,12 +3760,14 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
     public Identity getMainIdentity() {
-		if (identities==null) {
-            try {
-                identities=buildIdentities();
-            } catch(WTException exc) {}
-        }
-        return identities.get(0);
+		List<Identity> idents;
+		try {
+			idents = ensureIdentities();
+		} catch(WTException exc) {
+			//was: swallow + NPE on the null list right below — surface the real cause
+			throw new WTRuntimeException(exc, "Identities unavailable for {}", getTargetProfileId());
+		}
+        return (idents == null || idents.isEmpty()) ? null : idents.get(0);
     }
 	
 	public Identity folderHasIdentity(String folder) {
@@ -2830,10 +3854,7 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	public Identity findIdentity(int id) throws WTException {
-                if (identities==null)
-                    identities=buildIdentities();
-                
-		for(Identity ident: identities) {
+		for(Identity ident: ensureIdentities()) {
 			if (ident.getIdentityId()==id) 
 				return ident;
 		}
@@ -2872,7 +3893,7 @@ public class MailManager extends BaseManager implements IMailManager {
 			id.setIsMainIdentity(true);
 			loadMainIdentityMailcard(id);
 			idents.add(id);
-			
+
 			//add configured additional identities
 			con=WT.getConnection(SERVICE_ID);
 			IdentityDAO idao=IdentityDAO.getInstance();
@@ -2883,12 +3904,14 @@ public class MailManager extends BaseManager implements IMailManager {
 				idents.add(ident);
 				identHash.put(ident.getMainFolder(), ident);
 			}
-			
+
 			//add automatic shared identities
 			int autoid=-1;
+			ArrayList<Identity> autoIdents = new ArrayList<>();
 			CoreManager core=WT.getCoreManager(pid);
-			for(ShareOrigin origin: core.listShareOrigins(SERVICE_ID, IDENTITY_SHARING_CONTEXT, Arrays.asList(IDENTITY_PERMISSION_KEY))) {
-				UserProfileId opid=origin.getProfileId(); 
+			List<ShareOrigin> origins = core.listShareOrigins(SERVICE_ID, IDENTITY_SHARING_CONTEXT, Arrays.asList(IDENTITY_PERMISSION_KEY));
+			for(ShareOrigin origin: origins) {
+				UserProfileId opid=origin.getProfileId();
 				UserProfile.Data opdata=WT.getProfileData(opid);
 				Map<String, Sharing.SubjectConfiguration> sconfigurations = core.getShareSubjectConfiguration(SERVICE_ID, IDENTITY_SHARING_CONTEXT, opid, "*", IDENTITY_PERMISSION_KEY, LangUtils.asSet(pid), FolderShareParameters.class);
 				if (sconfigurations.isEmpty()) continue;
@@ -2906,9 +3929,26 @@ public class MailManager extends BaseManager implements IMailManager {
 							fsp.forceMailcard,
 							fsp.alwaysCc,
 							fsp.alwaysCcEmail);
-					id.setOriginPid(opid);					
-					loadIdentityMailcard(mailbox, id);
-					idents.add(id);
+					id.setOriginPid(opid);
+					autoIdents.add(id);
+				}
+			}
+
+			//resolve every shared folder name with a single LIST per shared prefix
+			//(one IMAP round-trip) instead of one lookup per identity
+			if (!autoIdents.isEmpty()) {
+				LinkedHashSet<String> mailUsers = new LinkedHashSet<>();
+				for(Identity aid: autoIdents) mailUsers.add(getMailUsername(aid.getOriginPid()));
+				Map<String, String> sharedNames = null;
+				try {
+					sharedNames = mailbox.getSharedFolderNames(mailUsers);
+				} catch(MessagingException exc) {
+					//null map: loadIdentityMailcard falls back to per-identity lookups
+					logger.error("Bulk shared folder resolution failed, falling back to per-identity lookups", exc);
+				}
+				for(Identity aid: autoIdents) {
+					loadIdentityMailcard(mailbox, aid, sharedNames);
+					idents.add(aid);
 				}
 			}
 		} catch(SQLException | DAOException ex) {
@@ -2949,6 +3989,10 @@ public class MailManager extends BaseManager implements IMailManager {
 	}
 	
 	private void loadIdentityMailcard(Mailbox mailbox, Identity id) {
+		loadIdentityMailcard(mailbox, id, null);
+	}
+
+	private void loadIdentityMailcard(Mailbox mailbox, Identity id, Map<String, String> sharedFolderNames) {
 		Mailcard mc = getMailcard(id);
 		if (mc!=null) {
 			if(id.isType(Identity.TYPE_AUTO)) {
@@ -2956,7 +4000,11 @@ public class MailManager extends BaseManager implements IMailManager {
 				// In case of auto identities we need to build real mainfolder
 				try {
 					String mailUser = getMailUsername(opid);
-					String mainfolder = mailbox.getSharedFolderName(mailUser);
+					//prefer the bulk-resolved name (one LIST for all identities);
+					//fall back to the single-user IMAP lookup when not prefetched
+					String mainfolder = (sharedFolderNames != null)
+						? sharedFolderNames.get(mailUser)
+						: mailbox.getSharedFolderName(mailUser);
 					id.setMainFolder(mainfolder);
 					if(mainfolder == null) throw new Exception(MessageFormat.format("Shared folderName is null [{0}, {1}]", mailUser, id.getMainFolder()));
 				} catch (Exception ex) {

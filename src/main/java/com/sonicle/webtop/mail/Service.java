@@ -213,11 +213,12 @@ import jakarta.mail.search.FlagTerm;
 import jakarta.mail.search.OrTerm;
 import jakarta.mail.search.SearchTerm;
 import java.net.URL;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import net.fortuna.ical4j.data.ParserException;
 import org.slf4j.Logger;
 
-public class Service extends BaseService {
+public class Service extends BaseService implements MailEventListener {
 	
 	public final static Logger logger = WT.getLogger(Service.class);
 	public static final String META_CONTEXT_SEARCH = "mainsearch";
@@ -268,16 +269,55 @@ public class Service extends BaseService {
 	protected static final String ARCHIVE_ACCOUNT_ID="archive";
 	
 	private MailManager mailManager;
+	//Aliases of the MailManager-owned (shared per-user) account machinery,
+	//assigned in initialize() so the request handlers keep working unchanged.
 	private MailAccount mainAccount=null;
 	private MailAccount archiveAccount=null;
-	private ArrayList<MailAccount> externalAccounts=new ArrayList<MailAccount>();
-	private HashMap<String,MailAccount> accounts=new HashMap<>();
-	private HashMap<String,ExternalAccount> externalAccountsMap=new HashMap<>();
+	private ArrayList<MailAccount> externalAccounts=null;
+	private HashMap<String,MailAccount> accounts=null;
+	private HashMap<String,ExternalAccount> externalAccountsMap=null;
 	
 	private PrivateEnvironment environment = null;
 	private MailUserProfile mprofile;
 	private MailServiceSettings ss = null;
 	private MailUserSettings us = null;
+	//The plain single-folder this session is currently viewing (set from
+	//processListMessages), used to drop grid mail-events (FLAGS/MDEL) for folders
+	//this session isn't showing. Null when the view is not a discriminable plain
+	//folder (multifolder / no folder) -> forward all and let the client filter.
+	//Written on request threads, read on idle threads -> volatile.
+	private volatile String currentAccount = null;
+	private volatile String currentFolder = null;
+	//Session-sticky sort fallback: folder -> "field|dir". The shared per-user sort
+	//preference is read ONCE per session per folder, so another session of the same
+	//user saving a new sort does not silently re-sort this session's grid (the new
+	//preference still applies from the next login). Kept in sync with this
+	//session's own explicit sorts. ConcurrentHashMap: parallel page requests.
+	private final ConcurrentHashMap<String,String> sessionListSorts = new ConcurrentHashMap<>();
+
+	private String getSessionListSort(String foldername) {
+		String s = sessionListSorts.get(foldername);
+		if (s == null) {
+			s = us.getMessageListSort(foldername);
+			if (s != null) sessionListSorts.put(foldername, s);
+		}
+		return s;
+	}
+
+	//Session-sticky grouping, same contract as sessionListSorts: the shared per-user
+	//grouping preference is read once per session per folder ("" = ungrouped, never
+	//null) and then follows only THIS session's own changes.
+	private final ConcurrentHashMap<String,String> sessionListGroups = new ConcurrentHashMap<>();
+
+	private String getSessionListGroup(String foldername) {
+		String g = sessionListGroups.get(foldername);
+		if (g == null) {
+			g = us.getMessageListGroup(foldername);
+			if (g == null) g = "";
+			sessionListGroups.put(foldername, g);
+		}
+		return g;
+	}
 	private CoreUserSettings cus = null;
 	private int newMessageID = 0;
 	private MailFoldersThread mft;
@@ -301,7 +341,7 @@ public class Service extends BaseService {
 	private ArrayList<String> pasDangerousExtensions=new ArrayList<>();
 	private float pasDefaultSpamThreshold;
 	private Pattern pasDomainsWhiteListRegexPattern;
-	private final FoldersNamesInByFileFiltersCache cacheFoldersNamesInByFileFilters = new FoldersNamesInByFileFiltersCache(5, TimeUnit.MINUTES);
+	//incoming file-into filter folders cache relocated to MailManager (shared per user)
 	
 	private List<String> previewRemoveHeadStyleDomains = null;
 	private List<String> previewRemoveHeadStyleBrowsers = null;
@@ -338,7 +378,10 @@ public class Service extends BaseService {
 
 		this.environment = getEnv();
 		
-		mailManager=(MailManager)WT.getServiceManager(SERVICE_ID);
+		mailManager=(MailManager)WT.getServiceManager(SERVICE_ID, environment.getProfileId());
+		//Subscribe this session to folder-level mail events as early as possible
+		//(before folder caches / idle threads start) so no push is missed.
+		mailManager.registerMailEventListener(this);
 		cus = new CoreUserSettings(getEnv().getProfileId());
 
 		UserProfile profile = getEnv().getProfile();
@@ -350,38 +393,23 @@ public class Service extends BaseService {
 		browserWantsRemoveHeadStyle = previewRemoveHeadStyleBrowsers != null && previewRemoveHeadStyleBrowsers.contains(browserFamily);
 		
 		us = new MailUserSettings(profile.getId(),ss);
-		mprofile = new MailUserProfile(mailManager,ss,us,profile);
-		String mailUsername = mprofile.getMailUsername();
-		String mailPassword = mprofile.getMailPassword();
-		boolean isImpersonated=profile.getPrincipal().isImpersonated();
-		String vmailSecret=ss.getNethTopVmailSecret();
-		if (isImpersonated || StringUtils.isBlank(mailPassword)) {
-			//use sasl rfc impersonate if no vmailSecret
-			if (vmailSecret==null) {
-				//TODO: implement sasl rfc authorization id if possible
-				//session.getProperties().setProperty("mail.imap.sasl.authorizationid", authorizationId);
-				//mailUsername=ss.getAdminUser();
-				//mailPassword=ss.getAdminPassword();
-				mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), ss.getAdminUser(), ss.getAdminPassword(), mailUsername);
-				
-			} else {
-				mailUsername+="*vmail";
-				mailPassword=vmailSecret;
-				mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword, null);
-			}
-			
-		} else {
-			mailManager.setSieveConfiguration(mprofile.getMailHost(), ss.getSievePort(), mailUsername, mailPassword, null);
-		}
-		
-		fcProvided = new FolderCache(this, environment);
-		
+
+		//Per-user account machinery (sieve config, accounts, folder caches, scan
+		//threads) is now built and owned by the MailManager — started once here
+		//and aliased below so the request handlers keep working unchanged.
+		mailManager.ensureAccountsStarted();
+		mprofile = mailManager.getMailUserProfile();
+		mainAccount = mailManager.getMainAccount();
+		archiveAccount = mailManager.getArchiveAccount();
+		externalAccounts = mailManager.getExternalAccountsList();
+		accounts = mailManager.getAccountsMap();
+		externalAccountsMap = mailManager.getExternalAccountsModelMap();
+		mft = mailManager.getMailFoldersThread();
+
+		fcProvided = new FolderCache(mailManager);
+
 		previewBalanceTags=ss.isPreviewBalanceTags();
-		
-		mainAccount=createAccount(MAIN_ACCOUNT_ID);
-		mainAccount.setFolderPrefix(mprofile.getFolderPrefix());
-		mainAccount.setProtocol(mprofile.getMailProtocol());
-		
+
 		FP.add(FetchProfile.Item.ENVELOPE);
 		FP.add(FetchProfile.Item.FLAGS);
 		FP.add(FetchProfile.Item.CONTENT_INFO);
@@ -423,128 +451,11 @@ public class Service extends BaseService {
 		pecFP.add(HDR_PEC_TIPORICEVUTA);
 
 		sortfolders=ss.isSortFolder();
-		
-		mainAccount.setDifferentDefaultFolder(us.getDefaultFolder());
-		
-		mainAccount.setPort(mprofile.getMailPort());
-		mainAccount.setHost(mprofile.getMailHost());
-		mainAccount.setUsername(mprofile.getMailUsername());
-		mainAccount.setPassword(mprofile.getMailPassword());
-		mainAccount.setReplyTo(mprofile.getReplyTo());
-		
-		if (isImpersonated) {
-			if (vmailSecret==null) mainAccount.setSaslRFCImpersonate(mprofile.getMailUsername(), ss.getAdminUser(), ss.getAdminPassword());
-			else mainAccount.setNethImpersonate(mprofile.getMailUsername(),vmailSecret);
-		}
-		mainAccount.setFolderSent(mprofile.getFolderSent());
-		mainAccount.setFolderDrafts(mprofile.getFolderDrafts());
-		mainAccount.setFolderSpam(mprofile.getFolderSpam());
-		mainAccount.setFolderTrash(mprofile.getFolderTrash());
-		mainAccount.setFolderArchive(mprofile.getFolderArchive());
-		
-		//TODO initialize user for first time use
-		//SettingsManager sm = wta.getSettingsManager();
-		//boolean initUser = LangUtils.value(sm.getUserSetting(profile, "mail", com.sonicle.webtop.Settings.INITIALIZE), false);
-		//if(initUser) initializeUser(profile);
 
-		mft = new MailFoldersThread(this, environment, mainAccount);
-		mft.setCheckAll(mprofile.isScanAll());
-		mft.setSleepInbox(mprofile.getScanSeconds());
-		mft.setSleepCycles(mprofile.getScanCycles());
-		try {
-			//loadTags();
-		
-			mft.abort();
-			mainAccount.checkStoreConnected();
-			
-			//prepare special folders if not existant
-			if (ss.isAutocreateSpecialFolders()) {
-				mainAccount.createSpecialFolders();
-			}
-			
-			mainAccount.setSkipReplyFolders(new String[]{
-				mainAccount.getFolderDrafts(),
-				mainAccount.getFolderSent(),
-				mainAccount.getFolderSpam(),
-				mainAccount.getFolderTrash(),
-				mainAccount.getFolderArchive()
-			});
-			mainAccount.setSkipForwardFolders(new String[]{
-				mainAccount.getFolderSpam(),
-				mainAccount.getFolderTrash(),
-			});
-			
-			mainAccount.loadFoldersCache(mft.getCacheLoadLock(),false);
-			//if (!mainAccount.getMailSession().getDebug())
-			mft.start();
-			
-			vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs");
-			//cloud uploads goes here
-			registerUploadListener("UploadCloudFile", new OnUploadCloudFile());
-			
-			//if external archive, initialize account
-			if (ss.isArchivingExternal()) {
-				archiveAccount=createAccount(ARCHIVE_ACCOUNT_ID);
-				
-				//defaults to WebTop External Archive
-				archiveAccount.setHasInboxFolder(true); //archive copy creates INBOX folder under user archive
-				String defaultFolder=us.getArchiveExternalUserFolder();
-				if (defaultFolder==null || defaultFolder.trim().length()==0)
-					defaultFolder=profile.getUserId();
-				archiveAccount.setDifferentDefaultFolder(defaultFolder);
-				
-				archiveAccount.setFolderPrefix(ss.getArchivingExternalFolderPrefix());
-				archiveAccount.setProtocol(ss.getArchivingExternalProtocol());
+		vfsmanager=(IVfsManager)WT.getServiceManager("com.sonicle.webtop.vfs", environment.getProfileId());
+		//cloud uploads goes here
+		registerUploadListener("UploadCloudFile", new OnUploadCloudFile());
 
-				archiveAccount.setPort(ss.getArchivingExternalPort());
-				archiveAccount.setHost(ss.getArchivingExternalHost());
-				archiveAccount.setUsername(ss.getArchivingExternalUsername());
-				archiveAccount.setPassword(ss.getArchivingExternalPassword());
-				
-				archiveAccount.setFolderSent(mprofile.getFolderSent());
-				archiveAccount.setFolderDrafts(mprofile.getFolderDrafts());
-				archiveAccount.setFolderSpam(mprofile.getFolderSpam());
-				archiveAccount.setFolderTrash(mprofile.getFolderTrash());
-				archiveAccount.setFolderArchive(mprofile.getFolderArchive());				
-			}
-			
-			//add any configured external account
-			for(ExternalAccount extacc: mailManager.listExternalAccounts()) {
-				String id=extacc.getExternalAccountId().toString();
-				externalAccountsMap.put(id,extacc);
-				
-				MailAccount acct=createAccount(id);
-				acct.setFolderPrefix(extacc.getFolderPrefix());
-				acct.setProtocol(extacc.getProtocol());
-
-				acct.setPort(extacc.getPort());
-				acct.setHost(extacc.getHost());
-				acct.setUsername(extacc.getUserName());
-				acct.setPassword(extacc.getPassword());
-				
-				acct.setFolderSent(extacc.getFolderSent());
-				acct.setFolderDrafts(extacc.getFolderDrafts());
-				acct.setFolderSpam(extacc.getFolderSpam());
-				acct.setFolderTrash(extacc.getFolderTrash());
-				acct.setFolderArchive(extacc.getFolderArchive());
-				acct.setReadOnly(extacc.isReadOnly());
-				
-				externalAccounts.add(acct);
-
-				MailFoldersThread xmft = new MailFoldersThread(this, environment, acct);
-				xmft.setInboxOnly(true);
-				
-				acct.setFoldersThread(xmft);
-				acct.checkStoreConnected();
-				acct.loadFoldersCache(xmft.getCacheLoadLock(),false);
-				
-				//MFT start postponed to first processGetFavoritesTree
-			}
-
-			
-		} catch (Exception exc) {
-			Service.logger.error("Exception",exc);
-		}
 		refwSanitizeDownlevelRevealedComments = ss.isReFwSanitizeDownlevelRevealedComments();
 		
 		//PAS
@@ -615,11 +526,7 @@ public class Service extends BaseService {
 		}
 	}
 
-	private MailAccount createAccount(String id) {
-		MailAccount account=new MailAccount(id,this,environment);
-		accounts.put(id, account);
-		return account;
-	}
+	//account creation relocated to MailManager.createAccount (shared per user)
 	
 	public MailAccount getMainAccount() {
 		return mainAccount;
@@ -904,13 +811,14 @@ public class Service extends BaseService {
 		Folder folder=account.getFolder(foldername);
 		try { folder.close(false); } catch(Throwable exc) {}
 		account.destroyFolderCache(foldername);
+		//non-main folders are hidden under an account-scoped key (the old
+		//main-account prefix collided across external accounts)
 		if (account==mainAccount) us.setFolderHidden(foldername, true);
-		else us.setFolderHidden(mainAccount.getId()+"_"+foldername, true);
+		else us.setFolderHidden(account.getId()+"_"+foldername, true);
 	}
-	
+
 	public boolean isFolderHidden(MailAccount account, String foldername) {
-		if (account==mainAccount) return us.isFolderHidden(foldername);
-		else return us.isFolderHidden(mainAccount.getId()+"_"+foldername);
+		return getManager().isFolderHidden(account, foldername);
 	}
 	
 	private InternetAddress getInternetAddress(String email) throws UnsupportedEncodingException, AddressException {
@@ -2493,24 +2401,51 @@ public class Service extends BaseService {
 	}
 	
 	public void cleanup() {
-		if (mft != null) {
-			mft.abort();
-			mft=null;
-		}
+		//Stop receiving folder-level mail events before tearing anything down.
+		if (mailManager != null) mailManager.unregisterMailEventListener(this);
 		if (ast != null && ast.isRunning()) {
 			ast.cancel();
 			ast=null;
 		}
-		
-		for(MailAccount account: accounts.values()) {
-			account.cleanup();
-		}
 		fcProvided=null;
-		if (mailManager != null) mailManager.cleanup();
-		
+		mft=null;
+		//The account machinery is owned by the SHARED MailManager: it is NOT torn
+		//down at session end. The registry evicts the instance (running
+		//MailManager.onSharedShutdown) once no session references remain and the
+		//idle grace elapses, or at application shutdown.
+
 		logger.trace("exiting cleanup");
 	}
 	
+	/**
+	 * Receives a folder-level mail event from the (shared) MailManager and decides
+	 * whether to deliver it to THIS session's client. The MailManager broadcasts
+	 * every event to every session; the per-session discrimination lives here.
+	 * <ul>
+	 *   <li>UNREAD / RECENT (tree badge, new-mail notification) → always forwarded;
+	 *       the folder tree is visible regardless of the grid's current folder.</li>
+	 *   <li>FLAGS / MDEL (grid row updates) → forwarded only when this session is
+	 *       viewing that account+folder in a plain single-folder listing; dropped
+	 *       when it is definitely showing a different folder. When the current view
+	 *       isn't discriminable (multifolder / none) it is forwarded and the client
+	 *       filters as before.</li>
+	 * </ul>
+	 * The client keeps its own current-folder filter as a safety net.
+	 */
+	@Override
+	public void onMailEvent(String accountId, String foldername, MailEventType type, ServiceMessage msg) {
+		final PrivateEnvironment env = this.environment;
+		if (env == null) return;
+		if (type == MailEventType.FLAGS || type == MailEventType.MDEL) {
+			final String ca = this.currentAccount;
+			final String cf = this.currentFolder;
+			if (ca != null && cf != null && (!ca.equals(accountId) || !cf.equals(foldername))) {
+				return; // this session isn't showing that folder: skip the push
+			}
+		}
+		env.notify(msg);
+	}
+
 	protected void clearAllCloudAttachments() {
 		msgcloudattach.clear();
 	}
@@ -2731,21 +2666,8 @@ public class Service extends BaseService {
 		return html;
 	}
 	
-	private ArrayList<FolderCache> opened = new ArrayList<FolderCache>();
+	//open-folder LRU pool relocated to MailManager.poolOpened (shared per user)
 
-	private static final int FOLDER_CACHE_POOL_SIZE=5; //default 5
-	
-	protected void poolOpened(FolderCache fc) {
-		
-		if (opened.size() >= FOLDER_CACHE_POOL_SIZE) {
-			FolderCache rfc = opened.remove(0);
-			rfc.cleanup(false);
-			rfc.close();
-			rfc.setForceRefresh();
-		}
-		opened.add(fc);
-	}
-	
 	private MailAccount getAccount(HttpServletRequest request) {
 		String account=request.getParameter("account");
 		if (account!=null) return accounts.get(account);
@@ -2807,6 +2729,10 @@ public class Service extends BaseService {
 	}
 	
 	private void outputFolders(MailAccount account, Folder parent, Folder folders[], boolean level1, boolean favorites, ArrayList<JsFolder> jsFolders) throws Exception {
+		// Bail if the account was torn down (session cleanup) between the request
+		// arriving and now: its folder caches are gone and there is nothing to
+		// render. Avoids a NPE cascade through getFolderCache/addSingleFoldersCache.
+		if (account.isCleanedUp()) return;
 		boolean hasPrefix=!StringUtils.isBlank(account.getFolderPrefix());
 		String prefixMatch=StringUtils.stripEnd(account.getFolderPrefix(),account.getFolderSeparator()+"");
 		ArrayList<Folder> postPrefixList=new ArrayList<Folder>();
@@ -2931,10 +2857,7 @@ public class Service extends BaseService {
 					hasUnread = mc.hasUnreadChildren();
 				}
 				String text = mc.getDescription();
-				String group = us.getMessageListGroup(foldername);
-				if (group == null) {
-					group = "";
-				}
+				String group = getSessionListGroup(foldername);
 
 				String ss = "{id:'" + StringEscapeUtils.escapeEcmaScript(foldername)
 						+ "',text:'" + StringEscapeUtils.escapeEcmaScript(description)
@@ -3041,10 +2964,7 @@ public class Service extends BaseService {
 			hasUnread = fc.hasUnreadChildren();
 		}
 		String text = fc.getDescription();
-		String group = us.getMessageListGroup(foldername);
-		if (group == null) {
-			group = "";
-		}
+		String group = getSessionListGroup(foldername);
 		
 		JsFolder jsFolder=new JsFolder();
 		jsFolder.id=foldername;
@@ -3292,7 +3212,16 @@ public class Service extends BaseService {
 		//first call runs external checks
 		if (!getFavoritesTreeDone) {
 			for(MailAccount extacc: externalAccounts) {
-				extacc.getFoldersThread().start();
+				//guarded: with the shared manager another session may have already
+				//started (or run to completion) this one-shot sweep thread; the
+				//monitor makes the NEW-check + start atomic (a Thread can only be
+				//started once, the losing racer would get IllegalThreadStateException)
+				MailFoldersThread xmft = extacc.getFoldersThread();
+				if (xmft != null) {
+					synchronized (xmft) {
+						if (xmft.getState() == Thread.State.NEW) xmft.start();
+					}
+				}
 			}
 			getFavoritesTreeDone=true;
 		}
@@ -3609,10 +3538,7 @@ public class Service extends BaseService {
 		}
 		boolean ascending = psortdir.equals("ASC");
 		
-		String group = us.getMessageListGroup(mcache.getFolderName());
-		if (group == null) {
-			group = "";
-		}
+		String group = getSessionListGroup(mcache.getFolderName());
 		
 		int sort_group = 0;
 		boolean groupascending = true;
@@ -6683,7 +6609,11 @@ public class Service extends BaseService {
 		String group=request.getParameter("group");
 		String folder=request.getParameter("folder");
 		us.setMessageListGroup(folder, group);
-		if (!group.equals("")) us.setMessageListSort(folder, "date|DESC");
+		sessionListGroups.put(folder, group);
+		if (!group.equals("")) {
+			us.setMessageListSort(folder, "date|DESC");
+			sessionListSorts.put(folder, "date|DESC");
+		}
 		new JsonResult(true).printTo(out);
 	}
 	
@@ -6916,6 +6846,19 @@ public class Service extends BaseService {
 		java.util.Calendar cal = java.util.Calendar.getInstance(locale);
 		MailAccount account=getAccount(request);
 		String pfoldername = request.getParameter("folder");
+		//Record this session's current view for mail-event discrimination: only a
+		//plain single-folder listing is discriminable; multifolder (or no folder)
+		//clears it so grid events are forwarded and the client filters them.
+		{
+			boolean pmultifolder = "true".equals(request.getParameter("multifolder"));
+			if (!pmultifolder && account!=null && !StringUtils.isBlank(pfoldername)) {
+				this.currentAccount = account.getId();
+				this.currentFolder = pfoldername;
+			} else {
+				this.currentAccount = null;
+				this.currentFolder = null;
+			}
+		}
 		//String psortfield = request.getParameter("sort");
 		//String psortdir = request.getParameter("dir");
 		String pstart = request.getParameter("start");
@@ -6963,10 +6906,7 @@ public class Service extends BaseService {
 			refresh=true;
 		}
 
-		String group = us.getMessageListGroup(pfoldername);
-		if (group == null) {
-			group = "";
-		}
+		String group = getSessionListGroup(pfoldername);
 		
 
 		String psortfield = "date";
@@ -6976,7 +6916,7 @@ public class Service extends BaseService {
 			JsSort.List sortList=ServletUtils.getObjectParameter(request,"sort",null,JsSort.List.class);
 			if (sortList==null) {
 				if (nogroup) {
-					String s = us.getMessageListSort(pfoldername);
+					String s = getSessionListSort(pfoldername);
 					int ix = s.indexOf("|");
 					psortfield = s.substring(0, ix);
 					psortdir = s.substring(ix + 1);
@@ -6992,7 +6932,9 @@ public class Service extends BaseService {
 					group = "";
 				}
 				us.setMessageListGroup(pfoldername, group);
+				sessionListGroups.put(pfoldername, group);
 				us.setMessageListSort(pfoldername, psortfield, psortdir);
+				sessionListSorts.put(pfoldername, psortfield+"|"+psortdir);
 			}
 		} catch(Exception exc) {
 			logger.error("Exception",exc);
@@ -7698,17 +7640,15 @@ public class Service extends BaseService {
 		long uid=Long.parseLong(puid);		
 		long rowsperpage=Long.parseLong(prowsperpage);		
 		
-		String group = us.getMessageListGroup(pfoldername);
-		if (group == null) {
-			group = "";
-		}
+		String group = getSessionListGroup(pfoldername);
 
 		String psortfield = "date";
 		String psortdir = "DESC";
 		try {
 			boolean nogroup=group.equals("");
 			if (nogroup) {
-				String s = us.getMessageListSort(pfoldername);
+				//session-sticky: must match the ordering this session's grid used
+				String s = getSessionListSort(pfoldername);
 				int ix = s.indexOf("|");
 				psortfield = s.substring(0, ix);
 				psortdir = s.substring(ix + 1);
@@ -7719,7 +7659,7 @@ public class Service extends BaseService {
 		} catch(Exception exc) {
 			logger.error("Exception",exc);
 		}
-		
+
 		SortGroupInfo sgi=getSortGroupInfo(psortfield,psortdir,group);
 		
 		Folder folder = null;
@@ -9451,10 +9391,6 @@ public class Service extends BaseService {
 		}
 	}
 	
-	boolean checkFileRules(String foldername) {
-		return cacheFoldersNamesInByFileFilters.contains(foldername);
-	}
-	
 	boolean checkScanRules(String foldername) {
 		boolean b = false;
 		Connection con = null;
@@ -10794,33 +10730,6 @@ public class Service extends BaseService {
 		return year + "-" + String.format("%02d", month + 1) + "-" + String.format("%02d", day) + " " + String.format("%02d", hours) + ":" + String.format("%02d", minutes) + ":" + String.format("%02d", seconds);
 	}
 	
-	private class FoldersNamesInByFileFiltersCache extends AbstractPassiveExpiringBulkSet<String> {
-		
-		public FoldersNamesInByFileFiltersCache(final long timeToLive, final TimeUnit timeUnit) {
-			super(timeToLive, timeUnit);
-		}
-		
-		@Override
-		protected Set<String> internalGetSet() {
-			try {
-				Set<String> folders = new HashSet<>();
-				List<MailFilter> filters = mailManager.getMailFilters(MailFiltersType.INCOMING, EnabledCond.ENABLED_ONLY);
-				for (MailFilter filter : filters) {
-					for (SieveAction action : filter.getSieveActions()) {
-						if (action.getMethod() == SieveActionMethod.FILE_INTO) {
-							folders.add(action.getArgument());
-						}
-					}
-				}
-				return folders;
-				
-			} catch(Exception ex) {
-				logger.error("[FoldersNamesInByFileFiltersCache] Unable to build cache", ex);
-				throw new UnsupportedOperationException();
-			}
-		}
-	}
-        
     class SentMessageNotSavedSM extends MessageBoxSM {
 
             public SentMessageNotSavedSM(Exception exc) {

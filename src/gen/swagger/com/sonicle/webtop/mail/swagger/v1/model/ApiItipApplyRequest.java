@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  **/
 @ApiModel(description = "Body for POST /me/messages/calendar/apply.")
 @JsonTypeName("ItipApplyRequest")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-06-29T14:51:59.285+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-07-03T14:22:13.645+02:00[Europe/Rome]")
 public class ApiItipApplyRequest   {
   private @Valid String folderId;
   private @Valid Integer uid;
