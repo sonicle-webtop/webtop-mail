@@ -10573,8 +10573,23 @@ public class Service extends BaseService implements MailEventListener {
 			}
 
 			retexc = saveSentOrFallbackToMainSent(null, dst, ident, retexc);
+			if (retexc == null) new JsonResult(true).printTo(out);
+			else {
+				logger.error("Error in ForwardRedirect", retexc);
+				new JsonResult(retexc).printTo(out);
+			}
 		} catch(Exception ex) {
 			logger.error("Error in ForwardRedirect", ex);
+			new JsonResult(ex).printTo(out);
+		}
+	}
+	public void processLookupLastForwardRedirectTo(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
+		try {
+			String pfoldername = request.getParameter("folder");
+			JsonResult json=new JsonResult().set("to", us.getFolderForwardRedirectTo(pfoldername));
+			json.printTo(out);
+		} catch(Exception ex) {
+			logger.error("Error in LookupLastForwardRedirectTo", ex);
 			new JsonResult(ex).printTo(out);
 		}
 	}
@@ -10592,8 +10607,10 @@ public class Service extends BaseService implements MailEventListener {
 			MimeMessage src = (MimeMessage) mcache.getMessage(Long.parseLong(messageId)); 
 			if (src.isExpunged()) throw new MessagingException("Message expunged");
 			
-			MimeMessage dst = new MimeMessage(src);
-			
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+			src.writeTo(bos);
+			MimeMessage dst = new MimeMessage(account.getMailSession(), new ByteArrayInputStream(bos.toByteArray()));
+
 			dst.addRecipient(RecipientType.TO, iato);
 			dst.setSentDate(new java.util.Date());
 			
@@ -10603,6 +10620,7 @@ public class Service extends BaseService implements MailEventListener {
 			try {
 				Transport.send(dst, new InternetAddress[] { iato });
 				src.setFlags(FolderCache.forwardedFlags, true);
+				us.setFolderForwardRedirectTo(pfoldername, to);
 			} catch (Exception ex) {
 				Service.logger.error("Exception",ex);
 				String exmsg = ex.getMessage();
@@ -10612,6 +10630,11 @@ public class Service extends BaseService implements MailEventListener {
 			}
 
 			retexc = saveSentOrFallbackToMainSent(null, dst, ident, retexc);
+			if (retexc == null) new JsonResult(true).printTo(out);
+			else {
+				logger.error("Error in ForwardRedirect", retexc);
+				new JsonResult(retexc).printTo(out);
+			}
 		} catch(Exception ex) {
 			logger.error("Error in ForwardRedirect", ex);
 			new JsonResult(ex).printTo(out);

@@ -1547,31 +1547,43 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			rec = sel[0];
 		}
 		
-		WT.confirm(me.mys.res('confirmBox.contactChoose.lbl'), function(bid, value) {
-			if (bid === 'ok') {
-				WT.ajaxReq(me.mys.ID, 'ForwardRedirectAsNew', {
-					params: {
-						account: me.currentAccount,
-						folder: rec.get('folder')||me.currentFolder,
-						messageId: rec.get('idmessage'),
-						to: value
-					},
-					callback: function(success,json) {
-						if (json.success) {
-						} else {
-							WT.error(json.message);
-						}
+		WT.ajaxReq(me.mys.ID, 'LookupLastForwardRedirectTo', {
+			params: {
+				account: me.currentAccount,
+				folder: rec.get('folder')||me.currentFolder
+			},
+			callback: function(success,json) {
+				var to = (json.success) ? json.to : '';
+				WT.confirm(me.mys.res('confirmBox.contactChoose.lbl'), function(bid, value) {
+					if (bid === 'ok') {
+						WT.ajaxReq(me.mys.ID, 'ForwardRedirectAsNew', {
+							params: {
+								account: me.currentAccount,
+								folder: rec.get('folder')||me.currentFolder,
+								messageId: rec.get('idmessage'),
+								to: value
+							},
+							callback: function(success,json) {
+								if (json.success) {
+								} else {
+									WT.error(json.message);
+								}
+							}
+						});			
 					}
-				});			
+				}, me, {
+					buttons: Ext.Msg.OKCANCEL,
+					title: me.mys.res('act-forwardRedirectAsNew.confirm.tit'),
+					instClass: 'Sonicle.webtop.mail.ux.ChooseContactConfirmBox',
+					instConfig: {
+						emptyText: me.mys.res('confirmBox.contactChoose.emp'),
+					},
+					config: {
+						value: to
+					}
+				});
 			}
-		}, me, {
-			buttons: Ext.Msg.OKCANCEL,
-			title: me.mys.res('act-forwardRedirectAsNew.confirm.tit'),
-			instClass: 'Sonicle.webtop.mail.ux.ChooseContactConfirmBox',
-			instConfig: {
-				emptyText: me.mys.res('confirmBox.contactChoose.emp')
-			}
-		});
+		});			
     },
 	
     _actionForward: function(rowIndex,eml) {

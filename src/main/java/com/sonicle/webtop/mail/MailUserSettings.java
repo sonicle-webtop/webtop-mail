@@ -206,6 +206,14 @@ public class MailUserSettings extends BaseUserSettings {
 		return clear(MessageFormat.format(MESSAGE_QUICKPART, name));
 	}
 	
+	public String getFolderForwardRedirectTo(String foldername) {
+		return getString(FOLDER_FORWARD_REDIRECT_TO,"");
+	}
+	
+	public boolean setFolderForwardRedirectTo(String foldername, String to) {
+		return setString(FOLDER_FORWARD_REDIRECT_TO, to);
+	}
+	
 	public String getMessageListSort(String foldername) {
 		return getString(MessageFormat.format(MESSAGE_LIST_SORT, foldername),"date|DESC");
 	}
