@@ -66,6 +66,38 @@
         }
       }
     },
+    "/me/user-setting": {
+      "get": {
+        "summary": "Get user setting",
+        "operationId": "getUserSetting",
+        "parameters": [
+          {
+            "name": "key",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "me_user_setting"
+        ]
+      },
+      "parameters": []
+    },
     "/accounts": {
       "get": {
         "tags": [
@@ -336,6 +368,45 @@
           "me_messages"
         ],
         "description": ""
+      }
+    },
+    "/me/messages/redirectnew": {
+      "parameters": [],
+      "post": {
+        "summary": "Redirect message as new",
+        "operationId": "redirectMessageAsNew",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "me_messages"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "to",
+            "description": "The recipient"
+          },
+          {
+            "schema": {
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "identity_id"
+          }
+        ]
       }
     },
     "/me/messages": {
@@ -1192,7 +1263,16 @@
           },
           "type": {
             "type": "string",
-            "enum": ["inbox", "sent", "drafts", "trash", "spam", "archive", "shared", "other"],
+            "enum": [
+              "inbox",
+              "sent",
+              "drafts",
+              "trash",
+              "spam",
+              "archive",
+              "shared",
+              "other"
+            ],
             "description": "Machine-readable folder classification: the special-folder role (inbox/sent/drafts/trash/spam/archive, matching the user's configuration, including the same roles under shared mailboxes), 'shared' for other folders under a shared-namespace prefix, 'other' for regular folders."
           },
           "unreadCount": {
@@ -1227,7 +1307,16 @@
           },
           "type": {
             "type": "string",
-            "enum": ["inbox", "sent", "drafts", "trash", "spam", "archive", "shared", "other"],
+            "enum": [
+              "inbox",
+              "sent",
+              "drafts",
+              "trash",
+              "spam",
+              "archive",
+              "shared",
+              "other"
+            ],
             "description": "Machine-readable folder classification: the special-folder role (inbox/sent/drafts/trash/spam/archive, matching the user's configuration, including the same roles under shared mailboxes), 'shared' for other folders under a shared-namespace prefix, 'other' for regular folders."
           },
           "unreadCount": {
@@ -1329,7 +1418,14 @@
           "method": {
             "description": "iTIP METHOD value.",
             "type": "string",
-            "enum": ["REQUEST", "REPLY", "CANCEL", "COUNTER", "PUBLISH", "REFRESH"]
+            "enum": [
+              "REQUEST",
+              "REPLY",
+              "CANCEL",
+              "COUNTER",
+              "PUBLISH",
+              "REFRESH"
+            ]
           },
           "eventUid": {
             "type": "string"
@@ -1367,7 +1463,12 @@
           "userResponseStatus": {
             "description": "Short PARTSTAT code for the current user. Present iff userIsAttendee.",
             "type": "string",
-            "enum": ["NA", "AC", "DE", "TE"]
+            "enum": [
+              "NA",
+              "AC",
+              "DE",
+              "TE"
+            ]
           },
           "matchExistingEvent": {
             "description": "Pointer to an existing event with the same UID, when one exists in the user's calendars. Null otherwise.",
@@ -1380,7 +1481,12 @@
           "replyStatus": {
             "description": "For method=REPLY only: short PARTSTAT code (NA/AC/DE/TE) carried by the REPLY.",
             "type": "string",
-            "enum": ["NA", "AC", "DE", "TE"]
+            "enum": [
+              "NA",
+              "AC",
+              "DE",
+              "TE"
+            ]
           },
           "comment": {
             "description": "Optional COMMENT property value from the VEVENT.",
@@ -1420,7 +1526,12 @@
         "title": "ItipApplyRequest",
         "description": "Body for POST /me/messages/calendar/apply.",
         "type": "object",
-        "required": ["folderId", "uid", "attachmentIndex", "action"],
+        "required": [
+          "folderId",
+          "uid",
+          "attachmentIndex",
+          "action"
+        ],
         "properties": {
           "folderId": {
             "type": "string"
@@ -1434,7 +1545,14 @@
           "action": {
             "description": "Caller-supplied verb. The server crosses it with the iTIP METHOD on the payload to compute the actual effect.",
             "type": "string",
-            "enum": ["accept", "tentative", "decline", "apply", "import", "ignore"]
+            "enum": [
+              "accept",
+              "tentative",
+              "decline",
+              "apply",
+              "import",
+              "ignore"
+            ]
           },
           "targetCalendarId": {
             "description": "Optional. Required for REQUEST + accept/tentative when no existing match. When omitted, the server picks the user's default calendar (or built-in if default is shared).",
@@ -1457,7 +1575,14 @@
         "properties": {
           "outcome": {
             "type": "string",
-            "enum": ["created", "updated", "removed", "rsvp_recorded", "ignored", "no_match"]
+            "enum": [
+              "created",
+              "updated",
+              "removed",
+              "rsvp_recorded",
+              "ignored",
+              "no_match"
+            ]
           },
           "eventInstanceId": {
             "description": "Present for outcomes created/updated/rsvp_recorded.",

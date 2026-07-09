@@ -239,7 +239,7 @@ public class MailAccount {
 		return props;
 	}
 
-	private Mailbox getAccountMailbox() throws MessagingException {
+	protected Mailbox getAccountMailbox() throws MessagingException {
 		Mailbox mb = accountMailbox;
 		if (mb == null) {
 			synchronized (connectLock) {

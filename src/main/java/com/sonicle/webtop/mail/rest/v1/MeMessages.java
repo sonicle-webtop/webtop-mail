@@ -473,6 +473,20 @@ public class MeMessages extends MeMessagesApi {
 	}
 
 	@Override
+	public Response redirectMessageAsNew(String folderId, String suid, String to, Integer identityId) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
+		long uid = Long.parseLong(suid);
+		try {
+			mmgr.forwardRedirectAsNew(targetPid, folderId, suid, to, mmgr.findIdentity(identityId));
+			return respOk();
+		} catch(Exception exc) {
+			logger.error("Error during sendMessage", exc);
+			return respError(exc);
+		}
+	}
+
+	@Override
 	public Response getReplyMessage(String folderId, String suid, Boolean replyAll, Boolean includeAttachments) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);

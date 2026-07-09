@@ -10596,12 +10596,15 @@ public class Service extends BaseService implements MailEventListener {
 	
 	public void processForwardRedirectAsNew(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {
 		String pfoldername = request.getParameter("folder");
-		String messageId = request.getParameter("messageId");
+		String uid = request.getParameter("messageId");
 		String to = request.getParameter("to");
 		Identity ident=mprofile.getIdentity(pfoldername);
 		MailAccount account=getAccount(ident);
 		try {
-			InternetAddress iato = new InternetAddress(to);
+			mailManager.forwardRedirectAsNew(getEnv().getProfileId(), account, pfoldername, uid, to, ident);
+			new JsonResult(true).printTo(out);
+			
+/*			InternetAddress iato = new InternetAddress(to);
 			account.checkStoreConnected();
 			FolderCache mcache = account.getFolderCache(pfoldername);
 			MimeMessage src = (MimeMessage) mcache.getMessage(Long.parseLong(messageId)); 
@@ -10634,7 +10637,7 @@ public class Service extends BaseService implements MailEventListener {
 			else {
 				logger.error("Error in ForwardRedirect", retexc);
 				new JsonResult(retexc).printTo(out);
-			}
+			}*/
 		} catch(Exception ex) {
 			logger.error("Error in ForwardRedirect", ex);
 			new JsonResult(ex).printTo(out);

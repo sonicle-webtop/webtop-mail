@@ -72,6 +72,7 @@ import com.sonicle.webtop.calendar.model.EventInstance;
 import com.sonicle.webtop.calendar.model.EventInstanceId;
 import com.sonicle.webtop.contacts.ContactsUtils;
 import com.sonicle.commons.cache.AbstractPassiveExpiringBulkSet;
+import com.sonicle.mail.UniqueValue;
 import com.sonicle.mail.sieve.SieveAction;
 import com.sonicle.mail.sieve.SieveActionMethod;
 import com.sonicle.security.AuthContext;
@@ -166,6 +167,7 @@ import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeUtility;
 import jakarta.mail.search.SearchTerm;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -1389,7 +1391,8 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			if (warm != null) {
 				try {
 					for (Message msg : warm) {
-						mc.consume(msg, ((UIDFolder)wfolder).getUID(msg));
+						if (!msg.isExpunged())
+							mc.consume(msg, ((UIDFolder)wfolder).getUID(msg));
 					}
 				} catch (Exception exc) {
 					logger.error("Error listing messages", exc);
@@ -1671,11 +1674,15 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	}	
 	
 	public MimeMessageParser.ParsedMimeMessageComponents getParsedMimeMessageComponents(String folderId, long uid) {
+		return getParsedMimeMessageComponents(mainAccount, folderId, uid);
+	}	
+	
+	public MimeMessageParser.ParsedMimeMessageComponents getParsedMimeMessageComponents(MailAccount account, String folderId, long uid) {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		MimeMessageParser.ParsedMimeMessageComponents parsed=null;
 		try {
-			mailbox = getMailbox();
+			mailbox = account.getAccountMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_ONLY);
 			MimeMessage mmsg = (MimeMessage) folder.getMessageByUID(uid);
@@ -3647,6 +3654,51 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		return lasttname;
 	}
 	
+	public void forwardRedirectAsNew(final UserProfileId sendingProfileId, String foldername, String uid, String to, int identityId) throws WTException {
+		List<Identity> identities = listIdentities();
+		Identity identity = identities.get(identityId);
+		forwardRedirectAsNew(sendingProfileId, mainAccount, foldername, uid, to, identity);
+	}
+	
+	public void forwardRedirectAsNew(final UserProfileId sendingProfileId, String foldername, String uid, String to, Identity identity) throws WTException {
+		forwardRedirectAsNew(sendingProfileId, mainAccount, foldername, uid, to, identity);
+	}
+	
+	public void forwardRedirectAsNew(final UserProfileId sendingProfileId, MailAccount account, String foldername, String uid, String to, Identity ident) throws WTException {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = account.getAccountMailbox();
+			
+			InternetAddress iato = new InternetAddress(to);
+			folder = (IMAPFolder) mailbox.getFolder(foldername);
+			folder.open(Folder.READ_WRITE);
+			MimeMessage src = (MimeMessage) getMessageByUID(folder, Long.parseLong(uid));
+			if (src.isExpunged()) throw new MessagingException("Message expunged");
+
+			MimeMessage dst = new MimeMessage(src);
+
+			dst.addRecipient(RecipientType.TO, iato);
+			dst.setSentDate(new java.util.Date());
+			
+			dst.setHeader("Message-ID", "<"+UniqueValue.getUniqueMessageIDValue(account.getMailSession())+">");
+
+			WT.sendEmailMessage(sendingProfileId, dst, getFolderSent(ident));
+			src.setFlags(FolderCache.forwardedFlags, true);
+			mus.setFolderForwardRedirectTo(foldername, to);
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error forwardRedirectAsNew", exc);
+			throw new WTException(exc, "Error forwardRedirectAsNew [{}, {}]", foldername, uid);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			//mailbox.disconnect();
+		}
+
+	}
+	
+	
 	public void sendMessage(final UserProfileId sendingProfileId, final EmailPopulatingBuilder epb, int identityId) throws WTEmailSendException, WTException {
 		List<Identity> identities = listIdentities();
 		Identity identity = identities.get(identityId);
@@ -3692,7 +3744,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			WT.getCoreManager().saveMetaEntry(SERVICE_ID, "subject", subject, subject, true);
 	}
 	
-	@Override
+/*	@Override
 	public boolean sendMessage(InternetAddress from, Collection<InternetAddress> to, Collection<InternetAddress> cc, Collection<InternetAddress> bcc, String subject, MimeMultipart part) throws WTException {
 		com.sonicle.webtop.mail.Service mail = findMailService();
 		return mail.sendMsg(from, to, cc, bcc, subject, part);
@@ -3704,12 +3756,13 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		com.sonicle.webtop.mail.Service mail = (com.sonicle.webtop.mail.Service)wts.getPrivateServiceById(SERVICE_ID);
 		if (mail == null) throw new WTException("Unable to get service");
 		return mail;
-	}
+	}*/
 	
 	public InputStream getAttachmentInputStream(String accountId, String foldername, long uidmessage, int idattach) throws WTException {
+		MailAccount account = accounts.get(accountId);
+		MimeMessageParser.ParsedMimeMessageComponents parsed = getParsedMimeMessageComponents(account, foldername, uidmessage);
 		try {
-			Service s=findMailService();
-			return s.getAttachmentInputStream(accountId, foldername, uidmessage, idattach);
+			return parsed.getAttachmentParts().get(idattach).getInputStream();
 		} catch(Exception exc) {
 			throw new WTException(exc);
 		}
