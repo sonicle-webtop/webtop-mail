@@ -1832,11 +1832,12 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			Method ical4jMethod = iCal.getMethod();
 			String method = (ical4jMethod == null) ? "REQUEST" : ical4jMethod.getValue();
 
-			BitFlags<ICalendarManager.HandleICalInviationOption> handleOptions = BitFlags.with(
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
-					ICalendarManager.HandleICalInviationOption.IGNORE_ICAL_ALARMS,
-					ICalendarManager.HandleICalInviationOption.EVENT_LOOKUP_SCOPE_STRICT);
+			BitFlags<ICalendarManager.HandleITIPRequestOption> handleOptions = BitFlags.with(
+					ICalendarManager.HandleITIPRequestOption.IGNORE_ICAL_CLASSIFICATION,
+					ICalendarManager.HandleITIPRequestOption.IGNORE_ICAL_TRASPARENCY,
+					ICalendarManager.HandleITIPRequestOption.IGNORE_ICAL_ALARMS,
+					ICalendarManager.HandleITIPRequestOption.EVENT_LOOKUP_SCOPE_STRICT
+				);
 
 			switch (action) {
 				case IMPORT: {
@@ -1851,13 +1852,13 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 					if (!"REQUEST".equals(method)) {
 						throw new WTException(action + " not valid for METHOD:" + method);
 					}
-					Event ev = cm.handleInvitationFromICal(iCal, calendarId, handleOptions);
+					Event ev = cm.handleITIPRequest(calendarId, iCal, handleOptions);
 					String iid = (ev != null)
 							? EventInstanceId.buildMaster(ev.getEventId()).toString()
 							: null;
 					PartStat ps = (action == ItipAction.ACCEPT)
 							? PartStat.ACCEPTED : PartStat.TENTATIVE;
-					// handleInvitationFromICal imports the event copying attendees
+					// handleITIPRequest imports the event copying attendees
 					// as-is from the iCal, which leaves the responder's PARTSTAT at
 					// NEEDS-ACTION even after they clicked Accept. Flip our own
 					// attendee row on the just-imported copy so the calendar UI
@@ -1866,11 +1867,10 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 					if (ev != null) {
 						try {
 							EventAttendee.ResponseStatus rs = (action == ItipAction.ACCEPT)
-									? EventAttendee.ResponseStatus.ACCEPTED
-									: EventAttendee.ResponseStatus.TENTATIVE;
-							cm.updateEventInstanceAttendeeResponse(
-									EventInstanceId.buildMaster(ev.getEventId()),
-									rs, comment, false);
+								? EventAttendee.ResponseStatus.ACCEPTED
+								: EventAttendee.ResponseStatus.TENTATIVE;
+							ICalendarManager.UpdateAttendeeResponseResult result = cm.updateEventInstanceAttendeeResponse(EventInstanceId.buildMaster(ev.getEventId()), rs, comment, false);
+							
 						} catch (Exception ex) {
 							logger.warn("Failed to set responder PARTSTAT on imported event "
 									+ ev.getEventId(), ex);
@@ -1892,14 +1892,14 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 
 				case APPLY: {
 					if ("CANCEL".equals(method)) {
-						cm.handleInvitationFromICal(iCal, calendarId, handleOptions);
+						cm.handleITIPRequest(calendarId, iCal, handleOptions);
 						return new ItipApplyResult(
 								ItipApplyResult.Outcome.REMOVED, null, calendarId, false);
 					}
 					if ("REPLY".equals(method)) {
-						// handleInvitationFromICal covers METHOD:REPLY internally
+						// handleITIPRequest covers METHOD:REPLY internally
 						// by routing through doEventAttendeeUpdateResponseByRecipient.
-						Event ev = cm.handleInvitationFromICal(iCal, calendarId, handleOptions);
+						Event ev = cm.handleITIPRequest(calendarId, iCal, handleOptions);
 						String iid = (ev != null)
 								? EventInstanceId.buildMaster(ev.getEventId()).toString()
 								: null;
@@ -1909,7 +1909,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 					if ("REQUEST".equals(method)) {
 						// APPLY on a REQUEST = "apply the update without changing my PARTSTAT"
 						// — matches the legacy "update" action in Service.processCalendarRequest.
-						Event ev = cm.handleInvitationFromICal(iCal, calendarId, handleOptions);
+						Event ev = cm.handleITIPRequest(calendarId, iCal, handleOptions);
 						String iid = (ev != null)
 								? EventInstanceId.buildMaster(ev.getEventId()).toString()
 								: null;

@@ -54,7 +54,7 @@ import com.sonicle.mail.parser.MimeMessageParseException;
 import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.ICalendarManager.EventNotifyOption;
-import com.sonicle.webtop.calendar.ICalendarManager.HandleICalInviationOption;
+import com.sonicle.webtop.calendar.ICalendarManager.HandleITIPRequestOption;
 import com.sonicle.webtop.calendar.model.Event;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.CoreManifest;
@@ -496,14 +496,14 @@ public class ResourcesAutoresponderManager {
 					// Prepares reply before actually inserting the event, this allows a clever management in case of errors!
 					reply = ICalendarHelper.prepareICalendarReply(prodId, iCal, resourceIa, iaOrganizer, response, getProfileLocale(resourceProfileId));
 					
-					final BitFlags<HandleICalInviationOption> options = BitFlags.with(
-							HandleICalInviationOption.CONSTRAIN_AVAILABILITY,
-							HandleICalInviationOption.EVENT_LOOKUP_SCOPE_STRICT,
-							HandleICalInviationOption.IGNORE_ICAL_CLASSIFICATION,
-							HandleICalInviationOption.IGNORE_ICAL_TRASPARENCY,
-							HandleICalInviationOption.IGNORE_ICAL_ALARMS
+					final BitFlags<HandleITIPRequestOption> options = BitFlags.with(
+							HandleITIPRequestOption.CONSTRAIN_AVAILABILITY,
+							HandleITIPRequestOption.EVENT_LOOKUP_SCOPE_STRICT,
+							HandleITIPRequestOption.IGNORE_ICAL_CLASSIFICATION,
+							HandleITIPRequestOption.IGNORE_ICAL_TRASPARENCY,
+							HandleITIPRequestOption.IGNORE_ICAL_ALARMS
 						);
-					final Event event = calMgr.handleInvitationFromICal(iCal, calendarId, options);
+					final Event event = calMgr.handleITIPRequest(calendarId, iCal, options);
 					
 				} catch (WTConstraintException ex1) {
 					try {
@@ -543,8 +543,8 @@ public class ResourcesAutoresponderManager {
 				}
 				
 			} else if (CalendarMethod.CANCEL.equals(calendarMethod)) {
-				final BitFlags<HandleICalInviationOption> options = BitFlags.with(
-						HandleICalInviationOption.EVENT_LOOKUP_SCOPE_STRICT
+				final BitFlags<HandleITIPRequestOption> options = BitFlags.with(
+						HandleITIPRequestOption.EVENT_LOOKUP_SCOPE_STRICT
 					);
 				calMgr.handleInvitationFromICal(iCal, null, options);
 				return MessageOperation.ARCHIVE;
