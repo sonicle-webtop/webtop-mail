@@ -39,12 +39,10 @@ import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.sonicle.commons.InternetAddressUtils;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.LangUtils.ChangeSet;
-import com.sonicle.commons.LangUtils.CollectionChangeSet;
 import com.sonicle.commons.concurrent.KeyedReentrantLocks;
 import com.sonicle.commons.flags.BitFlags;
 import com.sonicle.commons.web.json.CId;
 import com.sonicle.mail.Mailbox;
-import com.sonicle.mail.MailboxConfig;
 import com.sonicle.mail.StoreHostParams;
 import com.sonicle.mail.StoreProtocol;
 import com.sonicle.mail.StoreUtils;
@@ -55,7 +53,7 @@ import com.sonicle.mail.parser.MimeMessageParser;
 import com.sonicle.webtop.calendar.ICalendarManager;
 import com.sonicle.webtop.calendar.ICalendarManager.EventNotifyOption;
 import com.sonicle.webtop.calendar.ICalendarManager.HandleITIPRequestOption;
-import com.sonicle.webtop.calendar.model.Event;
+import com.sonicle.webtop.calendar.ICalendarManager.HandleITIPRequestResult;
 import com.sonicle.webtop.core.CoreManager;
 import com.sonicle.webtop.core.app.CoreManifest;
 import com.sonicle.webtop.core.app.WT;
@@ -503,7 +501,7 @@ public class ResourcesAutoresponderManager {
 							HandleITIPRequestOption.IGNORE_ICAL_TRASPARENCY,
 							HandleITIPRequestOption.IGNORE_ICAL_ALARMS
 						);
-					final Event event = calMgr.handleITIPRequest(calendarId, iCal, options);
+					final HandleITIPRequestResult result = calMgr.handleITIPRequest(calendarId, iCal, options);
 					
 				} catch (WTConstraintException ex1) {
 					try {
@@ -546,7 +544,7 @@ public class ResourcesAutoresponderManager {
 				final BitFlags<HandleITIPRequestOption> options = BitFlags.with(
 						HandleITIPRequestOption.EVENT_LOOKUP_SCOPE_STRICT
 					);
-				calMgr.handleInvitationFromICal(iCal, null, options);
+				calMgr.handleITIPRequest(null, iCal, options);
 				return MessageOperation.ARCHIVE;
 				
 			} else {
