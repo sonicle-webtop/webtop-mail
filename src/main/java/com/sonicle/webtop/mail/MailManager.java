@@ -1853,8 +1853,8 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 						throw new WTException(action + " not valid for METHOD:" + method);
 					}
 					ICalendarManager.HandleITIPRequestResult itipResult = cm.handleITIPRequest(calendarId, iCal, handleOptions);
-					String iid = (itipResult.getAddedEvent() != null)
-							? EventInstanceId.buildMaster(itipResult.getAddedEvent().getEventId()).toString()
+					String iid = (itipResult.getEvent() != null)
+							? EventInstanceId.buildMaster(itipResult.getEvent().getEventId()).toString()
 							: null;
 					PartStat ps = (action == ItipAction.ACCEPT)
 							? PartStat.ACCEPTED : PartStat.TENTATIVE;
@@ -1864,16 +1864,16 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 					// attendee row on the just-imported copy so the calendar UI
 					// shows the correct state. notifyOrganizer=false because the
 					// outbound REPLY is sent below via sendItipReply.
-					if (itipResult.getAddedEvent() != null) {
+					if (itipResult.getEvent() != null) {
 						try {
 							EventAttendee.ResponseStatus rs = (action == ItipAction.ACCEPT)
 								? EventAttendee.ResponseStatus.ACCEPTED
 								: EventAttendee.ResponseStatus.TENTATIVE;
-							ICalendarManager.UpdateAttendeeResponseResult result = cm.updateEventInstanceAttendeeResponse(EventInstanceId.buildMaster(itipResult.getAddedEvent().getEventId()), rs, comment, false);
+							ICalendarManager.UpdateAttendeeResponseResult result = cm.updateEventInstanceAttendeeResponse(EventInstanceId.buildMaster(itipResult.getEvent().getEventId()), rs, comment, false);
 							
 						} catch (Exception ex) {
 							logger.warn("Failed to set responder PARTSTAT on imported event "
-									+ itipResult.getAddedEvent().getEventId(), ex);
+									+ itipResult.getEvent().getEventId(), ex);
 						}
 					}
 					boolean replySent = notify && sendItipReply(mmsg, iCal, ps);
@@ -1900,8 +1900,8 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 						// handleITIPRequest covers METHOD:REPLY internally
 						// by routing through doEventAttendeeUpdateResponseByRecipient.
 						ICalendarManager.HandleITIPRequestResult itipResult = cm.handleITIPRequest(calendarId, iCal, handleOptions);
-						String iid = (itipResult.getAddedEvent() != null)
-								? EventInstanceId.buildMaster(itipResult.getAddedEvent().getEventId()).toString()
+						String iid = (itipResult.getEvent() != null)
+								? EventInstanceId.buildMaster(itipResult.getEvent().getEventId()).toString()
 								: null;
 						return new ItipApplyResult(
 								ItipApplyResult.Outcome.RSVP_RECORDED, iid, calendarId, false);
@@ -1910,8 +1910,8 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 						// APPLY on a REQUEST = "apply the update without changing my PARTSTAT"
 						// — matches the legacy "update" action in Service.processCalendarRequest.
 						ICalendarManager.HandleITIPRequestResult itipResult = cm.handleITIPRequest(calendarId, iCal, handleOptions);
-						String iid = (itipResult.getAddedEvent() != null)
-								? EventInstanceId.buildMaster(itipResult.getAddedEvent().getEventId()).toString()
+						String iid = (itipResult.getEvent() != null)
+								? EventInstanceId.buildMaster(itipResult.getEvent().getEventId()).toString()
 								: null;
 						return new ItipApplyResult(
 								ItipApplyResult.Outcome.UPDATED, iid, calendarId, false);
