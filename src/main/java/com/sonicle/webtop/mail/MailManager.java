@@ -3683,7 +3683,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			
 			dst.setHeader("Message-ID", "<"+UniqueValue.getUniqueMessageIDValue(account.getMailSession())+">");
 
-			WT.sendEmailMessage(sendingProfileId, dst, getFolderSent(ident));
+			WT.sendEmailMessage(sendingProfileId, dst, new InternetAddress[] { iato }, getFolderSent(ident));
 			src.setFlags(FolderCache.forwardedFlags, true);
 			mus.setFolderForwardRedirectTo(foldername, to);
 		} catch(WTException exc) {
