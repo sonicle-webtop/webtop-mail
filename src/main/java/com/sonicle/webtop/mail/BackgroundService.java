@@ -35,30 +35,74 @@ package com.sonicle.webtop.mail;
 
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.mail.bg.ResourcesAutoresponderManager;
 import com.sonicle.webtop.core.sdk.BaseBackgroundService;
 import com.sonicle.webtop.mail.bg.LegacyScheduledSendTask;
 import com.sonicle.webtop.mail.bg.ResourcesAutoresponderReloadTask;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Properties;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.TriggerBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author malbinola
  */
 public class BackgroundService extends BaseBackgroundService {
+	private static final Logger LOGGER = LoggerFactory.getLogger(BackgroundService.class);
+
+	// Properties consumed by the mobile-push shim. All three must be set for
+	// the shim to boot; if webtop.push-gateway.enabled=false (default) the
+	// shim never starts and MailPushManager keeps its logging no-op gateway.
+	private static final String PROP_PUSH_GATEWAY_ENABLED = "webtop.push-gateway.enabled";
+	private static final String PROP_PUSH_GATEWAY_URL = "webtop.push-gateway.url";
+	private static final String PROP_PUSH_GATEWAY_SERVER_ID = "webtop.push-gateway.server-id";
+	private static final String PROP_PUSH_GATEWAY_SHARED_SECRET = "webtop.push-gateway.shared-secret";
+
 	private ResourcesAutoresponderManager resourceAutoresponderMgr;
-	
+	private NodejsMailPushGateway pushGateway;
+
 	@Override
 	public void initialize() throws Exception {
 		resourceAutoresponderMgr = new ResourcesAutoresponderManager(this);
+		bootPushGatewayIfConfigured();
 	}
 
 	@Override
 	public void cleanup() throws Exception {
 		if (resourceAutoresponderMgr != null) resourceAutoresponderMgr.cleanup();
+		if (pushGateway != null) {
+			try { pushGateway.shutdown(); } catch (Throwable t) { LOGGER.warn("push gateway shutdown", t); }
+		}
+	}
+
+	private void bootPushGatewayIfConfigured() {
+		Properties props = WebTopApp.getInstanceProperties();
+		if (!Boolean.parseBoolean(props.getProperty(PROP_PUSH_GATEWAY_ENABLED, "false"))) {
+			LOGGER.debug("push gateway disabled ({}=false)", PROP_PUSH_GATEWAY_ENABLED);
+			return;
+		}
+		String url = props.getProperty(PROP_PUSH_GATEWAY_URL);
+		String serverId = props.getProperty(PROP_PUSH_GATEWAY_SERVER_ID);
+		String secret = props.getProperty(PROP_PUSH_GATEWAY_SHARED_SECRET);
+		if (url == null || url.isEmpty() || serverId == null || serverId.isEmpty() || secret == null || secret.isEmpty()) {
+			LOGGER.error("push gateway enabled but {} / {} / {} missing", PROP_PUSH_GATEWAY_URL, PROP_PUSH_GATEWAY_SERVER_ID, PROP_PUSH_GATEWAY_SHARED_SECRET);
+			return;
+		}
+		try {
+			pushGateway = new NodejsMailPushGateway(URI.create(url), serverId, secret);
+			MailPushManager.getInstance().setGateway(pushGateway);
+			pushGateway.start();
+			LOGGER.info("push gateway shim started (url={}, serverId={})", url, serverId);
+		} catch (Throwable t) {
+			LOGGER.error("push gateway shim failed to start", t);
+			pushGateway = null;
+		}
 	}
 
 	@Override
