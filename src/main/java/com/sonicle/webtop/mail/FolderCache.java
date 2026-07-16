@@ -150,7 +150,6 @@ public class FolderCache {
 		long uidValidity;
 		long uidNext;
 		int messageCount;
-		boolean threaded;
 	}
 
 	private String currentListKey() {
@@ -161,13 +160,17 @@ public class FolderCache {
 	//different sort/search can take the active slot without losing it. No-op unless
 	//the active list is a plain, drift-checkable one. Must run under cacheLock.
 	private void shelveCurrentIfPlain() {
-		if (msgs==null || !cachedPlainQuery || cachedUidValidity<0) return;
+		//threaded lists are NOT shelvable: thread structure lives on the folder
+		//(threadRoots) and inside the shared message items (indent/children), and
+		//every thread() call - e.g. a threaded SEARCH taking the active slot -
+		//rewrites both. Unshelving would restore the array but not that state,
+		//resurrecting the search's threading (wrong totals/representatives).
+		if (threaded || msgs==null || !cachedPlainQuery || cachedUidValidity<0) return;
 		ShelvedList sh=new ShelvedList();
 		sh.msgs=msgs;
 		sh.uidValidity=cachedUidValidity;
 		sh.uidNext=cachedUidNext;
 		sh.messageCount=cachedMessageCount;
-		sh.threaded=threaded;
 		shelvedLists.put(currentListKey(), sh);
 		while (shelvedLists.size()>MAX_SHELVED_LISTS) {
 			Iterator<String> it=shelvedLists.keySet().iterator();
@@ -179,6 +182,7 @@ public class FolderCache {
 	//Returns true on success; the normal reuse checks (drift etc.) then apply to it.
 	//Must run under cacheLock.
 	private boolean unshelveCurrent() {
+		if (threaded) return false; //see shelveCurrentIfPlain: threaded lists never shelved
 		ShelvedList sh=shelvedLists.remove(currentListKey());
 		if (sh==null) return false;
 		msgs=sh.msgs;
@@ -1155,10 +1159,9 @@ public class FolderCache {
         msgs=kept.toArray(new Message[kept.size()]);
         if (cachedMessageCount>=0) cachedMessageCount-=removed;
         //keep the shelved lists consistent too: removal preserves order for every
-        //non-threaded sort. Threaded shelves are left alone - their unchanged
-        //snapshot fails the drift check on restore, forcing a clean rebuild.
+        //non-threaded sort (only plain non-threaded lists are ever shelved)
         for (ShelvedList sh: shelvedLists.values()) {
-            if (sh.threaded || sh.msgs==null) continue;
+            if (sh.msgs==null) continue;
             ArrayList<Message> skept=new ArrayList<>(sh.msgs.length);
             for (Message m: sh.msgs) {
                 long u=-1;
