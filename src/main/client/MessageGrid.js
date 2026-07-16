@@ -390,6 +390,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 	skipViewOptionsCheckChange: 0,
 	cls: 'wtmail-message-grid',
 	lastFlagsChangedTS: 0,
+	lastMovedOrDeletedIds: null, //array of ids
 	
 	features: [
 		{
@@ -1959,6 +1960,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			}
 		});		
 		me.lastFlagsChangedTS=Date.now();
+		me.lastMovedOrDeletedIds = data.ids;
     },
 
     deleteMessage: function(acct,folder,idmessage,dview) {
@@ -2050,6 +2052,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 		
         me.operateMessages("MoveMessages",acctfrom,from,acctto,to,data,selection,isdd);
 		me.lastFlagsChangedTS=Date.now();
+		me.lastMovedOrDeletedIds = data.ids;
     },	
 	
     copyMessages: function(acctfrom,from,acctto,to,data,selection,isdd) {

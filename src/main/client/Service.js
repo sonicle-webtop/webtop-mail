@@ -1295,12 +1295,25 @@ Ext.define('Sonicle.webtop.mail.Service', {
 		}
 	},
 	
+	_checkIfLocallyDeleted: function(fl, pl) {
+		if (fl.lastMovedOrDeletedIds && fl.currentAccount == pl.accountid && fl.currentFolder == pl.foldername) {
+			var ld = true;
+			Ext.each(pl.uids, function(uid) {
+				if (!fl.lastMovedOrDeletedIds.includes(uid)) {
+					ld = false;
+					return false;
+				}
+			});
+			return ld;
+		}
+		return false;
+	},
+	
 	onMessagesDeleted: function(msg,pl) {
 		var me=this,
 			fl=me.messagesPanel.folderList;
-		//skip our own just-issued delete (its IDLE expunge echoes back here): the row was
-		//already removed locally - same 1s guard onFlagsChanged uses
-		if ((Date.now()-fl.lastFlagsChangedTS)>1000) {
+		//check last moved or deleted locally ids to guard from unwanted refresh
+		if (!me._checkIfLocallyDeleted(fl, pl)) {
 			if (!me.messagesPanel.hasFilterQuery() && me.currentAccount===pl.accountid && me.currentFolder===pl.foldername) {
 				//if the push carries uids and the layout can key rows by uid (not multifolder,
 				//not threaded), drop just those rows in place - exactly the path a local delete
