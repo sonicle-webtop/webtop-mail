@@ -24,6 +24,7 @@
 package com.sonicle.webtop.mail;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonNull;
@@ -81,6 +82,12 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	// Matches WebTopApp.webappVersionCheck cadence — no point polling faster
 	// than the value we're reading actually refreshes.
 	private static final long LATEST_CHECK_INTERVAL_MS = 60_000L;
+	// Hard caps on per-event UID/item counts we ship on the wire. Anything
+	// larger is omitted, which the mobile client interprets as "do a full
+	// folder refresh" — safer than blowing the ~4 KB APNs / FCM payload
+	// budget or the shim's outbound queue.
+	private static final int FLAGS_ITEMS_CAP = 30;
+	private static final int MDEL_UIDS_CAP = 200;
 
 	private final URI gatewayUri;
 	private final String serverId;
@@ -191,6 +198,12 @@ public class NodejsMailPushGateway implements MailPushGateway {
 			JsonObject alert = extractAlert(type, msg);
 			if (alert != null) frame.add("alert", alert);
 
+			JsonArray items = extractItems(type, msg);
+			if (items != null) frame.add("items", items);
+
+			JsonArray uids = extractUids(type, msg);
+			if (uids != null) frame.add("uids", uids);
+
 			if (!outbound.offer(frame)) {
 				logger.warn("[{}] outbound queue full ({}); dropping {} event", profileId, OUTBOUND_QUEUE_CAP, type);
 			}
@@ -217,6 +230,63 @@ public class NodejsMailPushGateway implements MailPushGateway {
 			return u.getAsInt();
 		} catch (Throwable t) {
 			logger.debug("could not extract unread count from {}", type, t);
+			return null;
+		}
+	}
+
+	/**
+	 * FLAGS payload: JsFlagsChangedMessage.items — a list of per-UID flag
+	 * snapshots the mobile client can apply in place without refetching.
+	 * If the list is larger than {@link #FLAGS_ITEMS_CAP} we drop it entirely;
+	 * the client interprets a missing items array as "unknown scope — refresh".
+	 * A null items on the source (server-side bulk operation) is the same
+	 * refresh signal.
+	 */
+	private JsonArray extractItems(MailEventType type, ServiceMessage msg) {
+		if (type != MailEventType.FLAGS) return null;
+		try {
+			Object payload = msg.getPayload();
+			if (payload == null) return null;
+			JsonElement el = GSON.toJsonTree(payload);
+			if (!el.isJsonObject()) return null;
+			JsonElement itemsEl = el.getAsJsonObject().get("items");
+			if (itemsEl == null || !itemsEl.isJsonArray()) return null;
+			JsonArray arr = itemsEl.getAsJsonArray();
+			if (arr.size() > FLAGS_ITEMS_CAP) return null;
+			JsonArray out = new JsonArray();
+			for (JsonElement e : arr) {
+				if (e.isJsonObject()) out.add(e.getAsJsonObject());
+			}
+			return out;
+		} catch (Throwable t) {
+			logger.debug("could not extract items from {}", type, t);
+			return null;
+		}
+	}
+
+	/**
+	 * MDEL payload: JsMessagesDeletedMessage.uids — a list of removed UIDs.
+	 * Capped at {@link #MDEL_UIDS_CAP}; larger deletions drop through as
+	 * "refresh" for the same reason as {@link #extractItems}.
+	 */
+	private JsonArray extractUids(MailEventType type, ServiceMessage msg) {
+		if (type != MailEventType.MDEL) return null;
+		try {
+			Object payload = msg.getPayload();
+			if (payload == null) return null;
+			JsonElement el = GSON.toJsonTree(payload);
+			if (!el.isJsonObject()) return null;
+			JsonElement uidsEl = el.getAsJsonObject().get("uids");
+			if (uidsEl == null || !uidsEl.isJsonArray()) return null;
+			JsonArray arr = uidsEl.getAsJsonArray();
+			if (arr.size() > MDEL_UIDS_CAP) return null;
+			JsonArray out = new JsonArray();
+			for (JsonElement e : arr) {
+				if (e.isJsonPrimitive() && e.getAsJsonPrimitive().isNumber()) out.add(e.getAsLong());
+			}
+			return out;
+		} catch (Throwable t) {
+			logger.debug("could not extract uids from {}", type, t);
 			return null;
 		}
 	}
