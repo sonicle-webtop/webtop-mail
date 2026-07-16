@@ -3139,7 +3139,14 @@ public class FolderCache {
 				Message recentMsg=null;
 				for (Message m : mce.getMessages()) {
 					String id=((IMAPMessage)m).getMessageID();
-					if (m.getFlags().contains(Flag.RECENT)) {
+					//Do NOT gate on \Recent: with the folder open on several connections at
+					//once (dedicated idle + interactive pool + raw/scan) RFC 3501 grants the
+					//flag to ONE undefined session - when another one wins it, this handler
+					//would silently drop the push and the grid only caught up on the next MFT
+					//sweep. messagesAdded on the idling connection already means newly
+					//arrived; skip only already-read additions (e.g. drag-in of read mail),
+					//the recentNotified dedup (shared with the sweep path) does the rest.
+					if (!m.getFlags().contains(Flag.SEEN)) {
 						boolean fresh;
 						synchronized(recentNotified) {
 							fresh=!recentNotified.contains(id);
