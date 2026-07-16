@@ -29,6 +29,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonNull;
 import com.google.gson.JsonPrimitive;
 import com.sonicle.webtop.core.app.RunContext;
+import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import java.net.URI;
@@ -77,6 +78,9 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	private static final int OUTBOUND_QUEUE_CAP = 4096;
 	private static final long RECONNECT_MIN_MS = 5_000L;
 	private static final long RECONNECT_MAX_MS = 60_000L;
+	// Matches WebTopApp.webappVersionCheck cadence — no point polling faster
+	// than the value we're reading actually refreshes.
+	private static final long LATEST_CHECK_INTERVAL_MS = 60_000L;
 
 	private final URI gatewayUri;
 	private final String serverId;
@@ -90,6 +94,7 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	private volatile WebSocketClient client;
 	private volatile Thread sender;
 	private volatile ScheduledFuture<?> reconnectFuture;
+	private volatile ScheduledFuture<?> isLatestCheckFuture;
 	private long backoffMs = RECONNECT_MIN_MS;
 
 	// Captured from the calling (webapp-startup) thread where Shiro's static
@@ -122,12 +127,35 @@ public class NodejsMailPushGateway implements MailPushGateway {
 			sender.setDaemon(true);
 			sender.start();
 		}
+		// Poll isLatest and self-terminate on the first flip to false. Under
+		// Tomcat parallel deployment the old webapp instance keeps running
+		// (draining browser sessions) but must stop touching the gateway —
+		// see the class-level comment on pushMailEvent for why.
+		isLatestCheckFuture = scheduler.scheduleAtFixedRate(
+			this::checkIsLatestAndMaybeShutdown,
+			LATEST_CHECK_INTERVAL_MS,
+			LATEST_CHECK_INTERVAL_MS,
+			TimeUnit.MILLISECONDS
+		);
 		connect();
+	}
+
+	private void checkIsLatestAndMaybeShutdown() {
+		if (shuttingDown.get()) return;
+		try {
+			if (!WT.isLatestWebApp()) {
+				logger.info("push shim: no longer the latest webapp instance — shutting down");
+				shutdown();
+			}
+		} catch (Throwable t) {
+			logger.warn("isLatest poll failed", t);
+		}
 	}
 
 	public synchronized void shutdown() {
 		shuttingDown.set(true);
 		if (reconnectFuture != null) reconnectFuture.cancel(false);
+		if (isLatestCheckFuture != null) isLatestCheckFuture.cancel(false);
 		if (client != null) {
 			try { client.close(); } catch (Throwable ignored) {}
 		}
@@ -138,6 +166,12 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	@Override
 	public void pushMailEvent(UserProfileId profileId, Set<String> deviceIds, String accountId,
 			String foldername, MailEventType type, ServiceMessage msg) {
+		// Tomcat parallel deployment: two webapp classloaders share
+		// webtop.properties and each boots its own shim with the same
+		// serverId. Only the "latest" instance owns push forwarding; the
+		// draining older instance still has warm IMAP IDLE (until Tomcat
+		// undeploys it) and would otherwise duplicate every event.
+		if (!WT.isLatestWebApp()) return;
 		// Forward every event we see: the gateway needs per-folder counts to
 		// keep in-app unseen indicators live, and the shim can't know which
 		// folders the client cares about. The gateway is the one authority on
@@ -215,6 +249,10 @@ public class NodejsMailPushGateway implements MailPushGateway {
 		while (!shuttingDown.get()) {
 			try {
 				JsonObject frame = outbound.take();
+				// Guard against a race: pushMailEvent may have enqueued this
+				// frame just before isLatest flipped. Drop it silently rather
+				// than forward a stale event from a draining instance.
+				if (!WT.isLatestWebApp()) continue;
 				WebSocketClient c;
 				while ((c = client) == null || !connected.get()) {
 					if (shuttingDown.get()) return;
@@ -346,6 +384,11 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	}
 
 	private void dispatchSubscribe(JsonObject frame, boolean isSubscribe) {
+		// Same isLatest gate as pushMailEvent: a draining old instance must
+		// not warm its MailPushManager (or acquire fresh ServiceManager
+		// subscription refcounts) in response to a subscribe frame the
+		// gateway may have sent before it noticed the new instance.
+		if (!WT.isLatestWebApp()) return;
 		String profileIdStr = frame.has("profileId") && frame.get("profileId").isJsonPrimitive()
 				? frame.get("profileId").getAsString() : null;
 		String deviceId = frame.has("deviceId") && frame.get("deviceId").isJsonPrimitive()
