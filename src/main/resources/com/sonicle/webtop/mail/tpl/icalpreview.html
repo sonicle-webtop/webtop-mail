@@ -1,0 +1,60 @@
+<#assign LangUtils=statics['com.sonicle.commons.LangUtils']>
+<div class="wtmail-icalpw">
+<table class="wtmail-icalpw-tableaction wtmail-icalpw-tableaction-${LangUtils.encodeForHTMLAttribute(action)}" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td class="wtmail-icalpw-action">${LangUtils.encodeForHTMLContent(i18n.action)}</td>
+        </tr>
+    </tbody>
+</table>
+<table class="wtmail-icalpw-tabledata<#if base.comment??>wtmail-icalpw-tabledata-with-comments</#if>" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td class="wtmail-icalpw-label">${LangUtils.encodeForHTMLContent(i18n.title)}</td>
+            <td class="wtmail-icalpw-data"><span class="">${LangUtils.encodeForHTMLContent(i18n.title)}</span></td>
+        </tr>
+        <#if base.location??>
+        <tr>
+            <td class="wtmail-icalpw-label">${LangUtils.encodeForHTMLContent(i18n.location)}</td>
+            <td class="wtmail-icalpw-data">${base.location}</td>
+        </tr>
+        </#if>
+        <tr>
+            <td class="wtmail-icalpw-label">${LangUtils.encodeForHTMLContent(i18n.when)}</td>
+            <td class="wtmail-icalpw-data">${LangUtils.encodeForHTMLContent(base.when)}<#if i18n.whenFirstInstance??> <span class="wtmail-icalpw-data-mutedtext">${LangUtils.encodeForHTMLContent(i18n.whenFirstInstance)}</span></#if><#if base.repeats??></br><span class="wtmail-icalpw-data-mutedtext">${base.repeats}</span></#if></td>
+        </tr>
+        <tr>
+            <td class="wtmail-icalpw-label">${LangUtils.encodeForHTMLContent(i18n.organizer)}</td>
+            <td class="wtmail-icalpw-data">${LangUtils.encodeForHTMLContent(base.organizer.cn)}<#if base.organizer.cn != base.organizer.address> <span class="wtmail-icalpw-data-mutedtext">(${LangUtils.encodeForHTMLContent(base.organizer.address)})</span></#if></td>
+        </tr>
+        <tr>
+            <td class="wtmail-icalpw-label">${LangUtils.encodeForHTMLContent(i18n.description)}</td>
+            <td class="wtmail-icalpw-data wtmail-icalpw-description">${base.description}</td>
+        </tr>
+        <tr>
+            <td class="wtmail-icalpw-label">${LangUtils.encodeForHTMLContent(i18n.attendees)}</td>
+            <td class="wtmail-icalpw-data">
+                <#list attendees as attendee>
+                <div class="wtmail-icalpw-attendee wtmail-icalpw-${LangUtils.encodeForHTMLAttribute(attendee.status)}">
+                    <span class="wtmail-icalpw-dot"></span>
+                    <span>${LangUtils.encodeForHTMLContent(attendee.cn)}<#if attendee.cn != attendee.address> <span class="wtmail-icalpw-attendee-email">(${LangUtils.encodeForHTMLContent(attendee.address)})</span></#if></span>
+                    <span class="wtmail-icalpw-attendee-status">${LangUtils.encodeForHTMLContent(attendee.statusText)}</span>
+                </div>
+                </#list>
+            </td>
+        </tr>
+    </tbody>
+</table>
+<#if base.comment??>
+<table class="wtmail-icalpw-comments" cellpadding="0" cellspacing="0">
+    <tbody>
+        <tr>
+            <td class="wtmail-icalpw-comments-header">${LangUtils.encodeForHTMLContent(i18n.comment)}</td>
+        </tr>
+        <tr>
+            <td class="wtmail-icalpw-comments-body">${LangUtils.encodeForHTMLContent(base.comment)}</td>
+        </tr>
+    </tbody>
+</table>
+</#if>
+</div>

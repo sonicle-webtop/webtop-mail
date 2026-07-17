@@ -1,0 +1,165 @@
+:root {
+    --wtmail-icalpw-font: var(--wt-theme-fontfamily);
+    --wtmail-icalpw-surface: var(--wt-theme-color-surface-l0);
+    --wtmail-icalpw-border: var(--wt-theme-color-surface-l4);
+    --wtmail-icalpw-border-radius: var(--wt-theme-dialog-radius);
+    --wtmail-icalpw-fontweight-normal: var(--wt-theme-fontweight-medium);
+    --wtmail-icalpw-label-fontsize: var(--wt-theme-fontsize-xs);
+    --wtmail-icalpw-data-fontsize: var(--wt-theme-fontsize-sm);
+    --wtmail-icalpw-row-lineheight: var(--wt-theme-lineheight-sm);
+    /*--wtmail-icalpw-row-border: var(--wt-theme-color-surface-l4);*/
+    --wtmail-icalpw-label-color: var(--wt-theme-color-n2);
+    --wtmail-icalpw-data-color: var(--wt-theme-color-n1);
+    --wtmail-icalpw-muted-color: var(--wt-theme-color-n3);
+    --wtmail-icalpw-link-color: var(--wt-theme-color-hyperlink);
+    --wtmail-icalpw-info-color: var(--wt-theme-color-info);
+    --wtmail-icalpw-info-bg-color: var(--wt-theme-color-info-ct);
+    --wtmail-icalpw-ok-color: var(--wt-theme-color-ok);
+    --wtmail-icalpw-warn-color: var(--wt-theme-color-warn);
+    --wtmail-icalpw-error-color: var(--wt-theme-color-error);
+    --wtmail-icalpw-error-bg-color: var(--wt-theme-color-error-ct);
+}
+.wtmail-icalpw {
+    font-family: var(--wtmail-icalpw-font);
+    max-width: 640px;
+    border: 1px solid var(--wtmail-icalpw-border);
+    border-radius: var(--wtmail-icalpw-border-radius);
+    overflow: hidden;
+    background: var(--wtmail-icalpw-surface);
+}
+.wtmail-icalpw-tableaction {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--wtmail-icalpw-info-bg-color);
+}
+.wtmail-icalpw-action {
+    padding: 12px 8px;
+    font-size: var(--wt-theme-fontsize-base);
+    font-weight: var(--wtmail-icalpw-fontweight-normal);
+    color: var(--wtmail-icalpw-info-color);
+    text-align: left;
+}
+.wtmail-icalpw-tableaction.wtmail-icalpw-tableaction-cancel {
+    background: var(--wtmail-icalpw-error-bg-color);
+}
+.wtmail-icalpw-tableaction.wtmail-icalpw-tableaction-cancel .wtmail-icalpw-action {
+    color: var(--wtmail-icalpw-error-color);
+}
+.wtmail-icalpw-tabledata {
+    width: 100%;
+    border-collapse: collapse;
+}
+.wtmail-icalpw-tabledata tr:not(:last-child) td {
+    border-bottom: 1px solid var(--wtmail-icalpw-row-border);
+}
+.wtmail-icalpw-label {
+    width: 100px;
+    padding: 6px 8px;
+    font-size: var(--wtmail-icalpw-label-fontsize);
+    font-weight: var(--wtmail-icalpw-fontweight-normal);
+    line-height: var(--wtmail-icalpw-row-lineheight);
+    color: var(--wtmail-icalpw-label-color);
+    text-align: left;
+    vertical-align: top;
+    white-space: nowrap;
+}
+.wtmail-icalpw-data {
+    padding: 6px 8px 6px 0;
+    font-size: var(--wtmail-icalpw-data-fontsize);
+    font-weight: var(--wtmail-icalpw-fontweight-normal);
+    line-height: var(--wtmail-icalpw-row-lineheight);
+    color: var(--wtmail-icalpw-data-color);
+    text-align: left;
+    vertical-align: top;
+}
+.wtmail-icalpw-data-mutedtext {
+    white-space: nowrap;
+    font-size: var(--wtmail-icalpw-label-fontsize);
+    color: var(--wtmail-icalpw-muted-color);
+}
+.wtmail-icalpw-data a {
+    color: var(--wtmail-icalpw-link-color);
+    text-decoration: none;
+}
+.wtmail-icalpw-data a:hover {
+    text-decoration: underline;
+}
+.wtmail-icalpw-strike {
+    text-decoration: line-through;
+    text-decoration-color: var(--wtmail-icalpw-error-color);
+}
+.wtmail-icalpw-description {
+    white-space: pre-line;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    font-size: var(--wtmail-icalpw-label-fontsize);
+    color: var(--wtmail-icalpw-muted-color);
+}
+.wtmail-icalpw-attendee {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 3px 0;
+}
+.wtmail-icalpw-attendee-email {
+    font-size: var(--wtmail-icalpw-label-fontsize);
+    color: var(--wtmail-icalpw-muted-color);
+}
+.wtmail-icalpw-attendee-status {
+    margin-left: auto;
+    font-size: var(--wtmail-icalpw-data-fontsize);
+    font-weight: var(--wtmail-icalpw-fontweight-normal);
+    padding-left: 8px;
+}
+.wtmail-icalpw-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+.wtmail-icalpw-accepted .wtmail-icalpw-dot {
+    background: var(--wtmail-icalpw-ok-color);
+}
+.wtmail-icalpw-accepted .wtmail-icalpw-attendee-status {
+    color: var(--wtmail-icalpw-ok-color);
+}
+.wtmail-icalpw-needs-action .wtmail-icalpw-dot {
+    background: var(--wtmail-icalpw-warn-color);
+}
+.wtmail-icalpw-needs-action .wtmail-icalpw-attendee-status {
+    color: var(--wtmail-icalpw-warn-color);
+}
+.wtmail-icalpw-tentative .wtmail-icalpw-dot {
+    background: var(--wtmail-icalpw-muted-color);
+}
+.wtmail-icalpw-tentative .wtmail-icalpw-attendee-status {
+    color: var(--wtmail-icalpw-muted-color);
+}
+.wtmail-icalpw-declined .wtmail-icalpw-dot {
+    background: var(--wtmail-icalpw-error-color);
+}
+.wtmail-icalpw-declined .wtmail-icalpw-attendee-status {
+    color: var(--wtmail-icalpw-error-color);
+}
+.wtmail-icalpw-comments {
+    width: 100%;
+    border-collapse: collapse;
+    border-top: 1px solid var(--wtmail-icalpw-border);
+}
+.wtmail-icalpw-comments-header {
+    padding: 10px 8px 0;
+    font-size: var(--wt-theme-fontsize-2xs);
+    font-weight: var(--wtmail-icalpw-fontweight-normal);
+    color: var(--wtmail-icalpw-label-color);
+    text-align: left;
+}
+.wtmail-icalpw-comments-body {
+    padding: 4px 8px 12px;
+    font-size: var(--wtmail-icalpw-label-fontsize);
+    font-weight: var(--wtmail-icalpw-fontweight-normal);
+    /*line-height: var(--wt-theme-lineheight-xs);*/
+    font-style: italic;
+    color: var(--wtmail-icalpw-data-color);
+    text-align: left;
+}
