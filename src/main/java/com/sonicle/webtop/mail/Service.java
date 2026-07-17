@@ -9329,7 +9329,7 @@ public class Service extends BaseService implements MailEventListener {
 	/*
 	private void sendICalendarReply(MailAccount account, ICalendarRequest request, InternetAddress forAddress, PartStat response) throws Exception {
 		InternetAddress organizerAddress = InternetAddressUtils.toInternetAddress(request.getOrganizerAddress());
-		sendICalendarReply(account, request.getCalendar(), organizerAddress, forAddress, response, request.getSummary());
+		sendICalendarReply(account, request.getCalendar(), organizerAddress, forAddress, response, request.getTitle());
 	}
 	
 	private void sendICalendarReply(MailAccount account, net.fortuna.ical4j.model.Calendar ical, InternetAddress organizerAddress, InternetAddress forAddress, PartStat response, String eventSummary) throws Exception {

@@ -85,7 +85,7 @@ public class ICalendarRequest {
 	private final int sequence;
 	private final InternetAddress organizer;
 	private final When when;
-	private final String summary;
+	private final String title;
 	private final String location;
 	private final String description;
 	private final String comment;
@@ -115,7 +115,7 @@ public class ICalendarRequest {
 		sequence = extractSequence(ve);
 		organizer = ICalendarUtils.getOrganizerAddress(ve);
 		when = extractWhen(ve);
-		summary = ICalendarUtils.getSummary(ve);
+		title = ICalendarUtils.getSummary(ve);
 		location = ICal4jUtils.getPropertyValue(ve.getLocation());
 		description = ICal4jUtils.getPropertyValue(ve.getDescription());
 		comment = ICal4jUtils.getPropertyValue(ve, Property.COMMENT);
@@ -155,8 +155,8 @@ public class ICalendarRequest {
 		return organizer;
 	}
 
-	public String getSummary() {
-		return summary;
+	public String getTitle() {
+		return title;
 	}
 
 	public String getLocation() {
@@ -191,7 +191,7 @@ public class ICalendarRequest {
 		i18n.put("comment", commentHeader(locale));
 		
 		MapItem base = new MapItem();
-		base.put("summary", StringUtils.defaultIfBlank(summary, ""));
+		base.put("title", StringUtils.defaultIfBlank(title, ""));
 		base.put("location", LangUtils.linkifyText(LangUtils.encodeForHTMLContent(StringUtils.defaultIfBlank(location, ""))));
 		
 		WhenValue whenValue = whenValue(locale, timezone);

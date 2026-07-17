@@ -10,7 +10,7 @@
     /*--wtmail-icalpw-row-border: var(--wt-theme-color-surface-l4);*/
     --wtmail-icalpw-label-color: var(--wt-theme-color-n2);
     --wtmail-icalpw-data-color: var(--wt-theme-color-n1);
-    --wtmail-icalpw-muted-color: var(--wt-theme-color-n3);
+    --wtmail-icalpw-muted-color: var(--wt-theme-color-off);
     --wtmail-icalpw-link-color: var(--wt-theme-color-hyperlink);
     --wtmail-icalpw-info-color: var(--wt-theme-color-info);
     --wtmail-icalpw-info-bg-color: var(--wt-theme-color-info-ct);

@@ -2099,7 +2099,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 
 		return new CalendarPartInfo(
 				attachmentIndex, method, eventUid, ir.getSequence(),
-				ir.getSummary(), ir.getLocation(),
+				ir.getTitle(), ir.getLocation(),
 				ir.getWhen().getStart().toDate(), ir.getWhen().getEnd().toDate(),
 				ir.getWhen().isAllDay(), ir.getWhen().getTimezone().getID(),
 				ir.getOrganizer().getPersonal(), ir.getOrganizer().getAddress(),
