@@ -33,9 +33,12 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.l4j.ProductLicense;
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopApp;
+import com.sonicle.webtop.core.app.model.EnabledCond;
+import com.sonicle.webtop.core.products.ConnectProduct;
 import com.sonicle.webtop.mail.bg.ResourcesAutoresponderManager;
 import com.sonicle.webtop.core.sdk.BaseBackgroundService;
 import com.sonicle.webtop.mail.bg.LegacyScheduledSendTask;
@@ -44,6 +47,10 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
@@ -56,52 +63,168 @@ import org.slf4j.LoggerFactory;
 public class BackgroundService extends BaseBackgroundService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BackgroundService.class);
 
-	// Properties consumed by the mobile-push shim. All three must be set for
-	// the shim to boot; if webtop.push-gateway.enabled=false (default) the
-	// shim never starts and MailPushManager keeps its logging no-op gateway.
+	// Properties consumed by the mobile-push shim. The shim requires
+	// webtop.push-gateway.enabled=true + webtop.push-gateway.url + EITHER
+	// the legacy pair (server-id + shared-secret) for a grandfathered
+	// pre-provisioned server, OR the new base-url for the license-only
+	// auto-provisioning path. Whichever it uses, the shim only boots when
+	// at least one domain on this instance holds an active "WebTop Connect"
+	// license — see reconcileLicense() below.
 	private static final String PROP_PUSH_GATEWAY_ENABLED = "webtop.push-gateway.enabled";
 	private static final String PROP_PUSH_GATEWAY_URL = "webtop.push-gateway.url";
 	private static final String PROP_PUSH_GATEWAY_SERVER_ID = "webtop.push-gateway.server-id";
 	private static final String PROP_PUSH_GATEWAY_SHARED_SECRET = "webtop.push-gateway.shared-secret";
+	private static final String PROP_PUSH_GATEWAY_BASE_URL = "webtop.push-gateway.base-url";
+
+	// Matches WebTopApp.webappVersionCheck and the shim's own isLatest poll —
+	// no reason to react faster than the underlying LicenseManager cache
+	// actually refreshes. Cloud revocations arrive silently via a daily job,
+	// so this poll is the only place we notice them.
+	private static final long LICENSE_POLL_MS = 60_000L;
 
 	private ResourcesAutoresponderManager resourceAutoresponderMgr;
-	private NodejsMailPushGateway pushGateway;
+	private volatile NodejsMailPushGateway pushGateway;
+	private ScheduledExecutorService licensePoller;
 
 	@Override
 	public void initialize() throws Exception {
 		resourceAutoresponderMgr = new ResourcesAutoresponderManager(this);
-		bootPushGatewayIfConfigured();
+		// License reconcile handles both cold-start (boot if licensed now)
+		// and runtime transitions — no explicit boot call needed here.
+		startLicensePoller();
 	}
 
 	@Override
 	public void cleanup() throws Exception {
 		if (resourceAutoresponderMgr != null) resourceAutoresponderMgr.cleanup();
-		if (pushGateway != null) {
-			try { pushGateway.shutdown(); } catch (Throwable t) { LOGGER.warn("push gateway shutdown", t); }
+		if (licensePoller != null) licensePoller.shutdownNow();
+		NodejsMailPushGateway shim = pushGateway;
+		pushGateway = null;
+		if (shim != null) {
+			try { shim.shutdown(); } catch (Throwable t) { LOGGER.warn("push gateway shutdown", t); }
 		}
 	}
 
-	private void bootPushGatewayIfConfigured() {
+	private void startLicensePoller() {
+		licensePoller = Executors.newSingleThreadScheduledExecutor(r -> {
+			Thread t = new Thread(r, "push-license-poller");
+			t.setDaemon(true);
+			return t;
+		});
+		// Immediate first tick so a licensed instance boots the shim without
+		// waiting a whole poll cycle after startup.
+		licensePoller.scheduleWithFixedDelay(this::reconcileLicense, 0, LICENSE_POLL_MS, TimeUnit.MILLISECONDS);
+	}
+
+	/**
+	 * Reconcile the shim's running state against the current license state.
+	 *  - Licensed + not running → boot (uses the freshest license token).
+	 *  - Not licensed + running → clean unregister (gateway drops the row).
+	 *  - Both already aligned → no-op.
+	 *
+	 * The shim self-terminates on its own isLatest transition; when that
+	 * happens `isShutDown()` is true and we treat it as not running. We do
+	 * NOT auto-reboot in that case (isLatest=false means this JVM is being
+	 * drained; the newer webapp instance owns the shim now).
+	 */
+	private synchronized void reconcileLicense() {
+		try {
+			LicenseSnapshot snap = checkConnectLicense();
+			NodejsMailPushGateway shim = pushGateway;
+			boolean running = shim != null && !shim.isShutDown();
+			if (snap.licensed && !running && WT.isLatestWebApp()) {
+				pushGateway = null;
+				bootPushGatewayIfConfigured(snap.licenseToken);
+			} else if (!snap.licensed && running) {
+				LOGGER.info("Connect license no longer active — unregistering push gateway shim");
+				pushGateway = null;
+				try { shim.unregister(); } catch (Throwable t) { LOGGER.warn("unregister failed", t); }
+			}
+		} catch (Throwable t) {
+			LOGGER.warn("push license reconcile failed", t);
+		}
+	}
+
+	private void bootPushGatewayIfConfigured(String licenseToken) {
 		Properties props = WebTopApp.getInstanceProperties();
 		if (!Boolean.parseBoolean(props.getProperty(PROP_PUSH_GATEWAY_ENABLED, "false"))) {
 			LOGGER.debug("push gateway disabled ({}=false)", PROP_PUSH_GATEWAY_ENABLED);
 			return;
 		}
-		String url = props.getProperty(PROP_PUSH_GATEWAY_URL);
-		String serverId = props.getProperty(PROP_PUSH_GATEWAY_SERVER_ID);
-		String secret = props.getProperty(PROP_PUSH_GATEWAY_SHARED_SECRET);
-		if (url == null || url.isEmpty() || serverId == null || serverId.isEmpty() || secret == null || secret.isEmpty()) {
-			LOGGER.error("push gateway enabled but {} / {} / {} missing", PROP_PUSH_GATEWAY_URL, PROP_PUSH_GATEWAY_SERVER_ID, PROP_PUSH_GATEWAY_SHARED_SECRET);
+		String url = trimToNull(props.getProperty(PROP_PUSH_GATEWAY_URL));
+		if (url == null) {
+			LOGGER.error("push gateway enabled but {} missing", PROP_PUSH_GATEWAY_URL);
+			return;
+		}
+		String serverId = trimToNull(props.getProperty(PROP_PUSH_GATEWAY_SERVER_ID));
+		String secret = trimToNull(props.getProperty(PROP_PUSH_GATEWAY_SHARED_SECRET));
+		String baseUrl = trimToNull(props.getProperty(PROP_PUSH_GATEWAY_BASE_URL));
+		if (serverId == null && baseUrl == null) {
+			LOGGER.error("push gateway needs either {} + {} (legacy) or {} (license-only)",
+				PROP_PUSH_GATEWAY_SERVER_ID, PROP_PUSH_GATEWAY_SHARED_SECRET, PROP_PUSH_GATEWAY_BASE_URL);
 			return;
 		}
 		try {
-			pushGateway = new NodejsMailPushGateway(URI.create(url), serverId, secret);
-			MailPushManager.getInstance().setGateway(pushGateway);
-			pushGateway.start();
-			LOGGER.info("push gateway shim started (url={}, serverId={})", url, serverId);
+			NodejsMailPushGateway shim = new NodejsMailPushGateway(
+				URI.create(url), serverId, secret, baseUrl, licenseToken);
+			MailPushManager.getInstance().setGateway(shim);
+			shim.start();
+			pushGateway = shim;
+			LOGGER.info("push gateway shim started (url={}, flavour={})",
+				url, serverId != null ? "legacy" : "license-only");
 		} catch (Throwable t) {
 			LOGGER.error("push gateway shim failed to start", t);
 			pushGateway = null;
+		}
+	}
+
+	/**
+	 * Snapshot of the instance-wide Connect licensing state: does ANY enabled
+	 * domain hold a valid Connect license, and if so, which raw license
+	 * string to hand to the gateway. First-licensed-domain wins for MVP —
+	 * mixed-license instances only need one valid license to keep the shim
+	 * running, and per-user gating (via the existing REST bearer flow) still
+	 * filters unlicensed users at registration time.
+	 */
+	private LicenseSnapshot checkConnectLicense() {
+		try {
+			Set<String> domains = WebTopApp.getInstance().getWebTopManager()
+				.listDomainIds(EnabledCond.ENABLED_ONLY);
+			if (domains == null) return LicenseSnapshot.UNLICENSED;
+			for (String d : domains) {
+				ConnectProduct p = new ConnectProduct(d);
+				if (!WT.isLicensed(p)) continue;
+				ProductLicense plic = WT.findProductLicense(p);
+				String token = null;
+				if (plic != null) {
+					try {
+						String act = plic.getActivatedLicenseString();
+						token = (act != null && !act.isEmpty()) ? act : plic.getLicenseString();
+					} catch (Throwable ignore) {
+						token = plic.getLicenseString();
+					}
+				}
+				return new LicenseSnapshot(true, token);
+			}
+		} catch (Throwable t) {
+			LOGGER.warn("connect license check failed", t);
+		}
+		return LicenseSnapshot.UNLICENSED;
+	}
+
+	private static String trimToNull(String s) {
+		if (s == null) return null;
+		String t = s.trim();
+		return t.isEmpty() ? null : t;
+	}
+
+	private static final class LicenseSnapshot {
+		static final LicenseSnapshot UNLICENSED = new LicenseSnapshot(false, null);
+		final boolean licensed;
+		final String licenseToken;
+		LicenseSnapshot(boolean licensed, String licenseToken) {
+			this.licensed = licensed;
+			this.licenseToken = licenseToken;
 		}
 	}
 

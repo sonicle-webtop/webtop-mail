@@ -90,8 +90,17 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	private static final int MDEL_UIDS_CAP = 200;
 
 	private final URI gatewayUri;
+	// Legacy handshake fields — kept for grandfathered pre-provisioned
+	// servers. Nullable on the license-only path.
 	private final String serverId;
 	private final String sharedSecret;
+	// License-only handshake fields — baseUrl identifies this instance to
+	// the gateway (must match the URL the mobile app registers against),
+	// licenseToken is the raw WebTop Connect license blob. baseUrl may also
+	// be set on the legacy path (harmless — gateway ignores it there);
+	// licenseToken should always be set once the license reconciler is up.
+	private final String baseUrl;
+	private final String licenseToken;
 	private final ScheduledExecutorService scheduler;
 	private final LinkedBlockingQueue<JsonObject> outbound = new LinkedBlockingQueue<>(OUTBOUND_QUEUE_CAP);
 	private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
@@ -111,15 +120,25 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	// dispatchSubscribe build a Subject from that thread.
 	private volatile SecurityManager securityManager;
 
-	public NodejsMailPushGateway(URI gatewayUri, String serverId, String sharedSecret) {
+	public NodejsMailPushGateway(URI gatewayUri, String serverId, String sharedSecret,
+			String baseUrl, String licenseToken) {
 		this.gatewayUri = gatewayUri;
 		this.serverId = serverId;
 		this.sharedSecret = sharedSecret;
+		this.baseUrl = baseUrl;
+		this.licenseToken = licenseToken;
 		this.scheduler = new ScheduledThreadPoolExecutor(1, r -> {
 			Thread t = new Thread(r, "push-shim-scheduler");
 			t.setDaemon(true);
 			return t;
 		});
+	}
+
+	/** True once shutdown() has been called (either by isLatest transition
+	 *  or the license reconciler). BackgroundService reads this to decide
+	 *  whether to re-boot on the next reconcile tick. */
+	public boolean isShutDown() {
+		return shuttingDown.get();
 	}
 
 	public synchronized void start() {
@@ -168,6 +187,29 @@ public class NodejsMailPushGateway implements MailPushGateway {
 		}
 		scheduler.shutdownNow();
 		if (sender != null) sender.interrupt();
+	}
+
+	/**
+	 * Best-effort send of an "unregister" frame followed by a full shutdown.
+	 * Called by {@link BackgroundService#reconcileLicense()} when Connect
+	 * transitions to inactive — tells the gateway to drop this server's row
+	 * (cascade removes devices) instead of just recording a passive close.
+	 * A stale/dead connection just falls through to shutdown; the gateway
+	 * will time out its own reference regardless.
+	 */
+	public synchronized void unregister() {
+		if (shuttingDown.get()) return;
+		try {
+			WebSocketClient c = client;
+			if (c != null && connected.get()) {
+				JsonObject frame = new JsonObject();
+				frame.addProperty("op", "unregister");
+				c.send(GSON.toJson(frame));
+			}
+		} catch (Throwable t) {
+			logger.warn("unregister frame send failed — proceeding with shutdown anyway", t);
+		}
+		shutdown();
 	}
 
 	@Override
@@ -347,7 +389,11 @@ public class NodejsMailPushGateway implements MailPushGateway {
 		if (client != null) return;
 		final long ts = System.currentTimeMillis();
 		final String nonce = randomNonce();
-		final String signature = signHex(sharedSecret, ts + ":" + nonce);
+		// Sign only when we have a shared secret (legacy grandfathered path).
+		// License-only handshakes omit signature; the gateway's license
+		// validator + TLS is the trust boundary.
+		final String signature = (sharedSecret != null && !sharedSecret.isEmpty())
+			? signHex(sharedSecret, ts + ":" + nonce) : null;
 
 		try {
 			client = new WebSocketClient(gatewayUri) {
@@ -355,10 +401,12 @@ public class NodejsMailPushGateway implements MailPushGateway {
 				public void onOpen(ServerHandshake handshake) {
 					JsonObject hello = new JsonObject();
 					hello.addProperty("op", "hello");
-					hello.addProperty("serverId", serverId);
 					hello.addProperty("timestamp", ts);
 					hello.addProperty("nonce", nonce);
-					hello.addProperty("signature", signature);
+					if (serverId != null) hello.addProperty("serverId", serverId);
+					if (signature != null) hello.addProperty("signature", signature);
+					if (baseUrl != null) hello.addProperty("baseUrl", baseUrl);
+					if (licenseToken != null) hello.addProperty("licenseToken", licenseToken);
 					send(GSON.toJson(hello));
 				}
 
