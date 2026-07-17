@@ -68,6 +68,12 @@
 			<artifactId>managesievej</artifactId>
 			<version>0.2.1</version>
 		</dependency>
+		<!-- Push gateway shim (WebSocket client to external Node.js gateway) -->
+		<dependency>
+			<groupId>org.java-websocket</groupId>
+			<artifactId>Java-WebSocket</artifactId>
+			<version>1.5.7</version>
+		</dependency>
 		<!--
 		<dependency>
 			<groupId>org.apache.james</groupId>
