@@ -63,18 +63,15 @@ import org.slf4j.LoggerFactory;
 public class BackgroundService extends BaseBackgroundService {
 	private static final Logger LOGGER = LoggerFactory.getLogger(BackgroundService.class);
 
-	// Properties consumed by the mobile-push shim. The shim requires
-	// webtop.push-gateway.enabled=true + webtop.push-gateway.url + EITHER
-	// the legacy pair (server-id + shared-secret) for a grandfathered
-	// pre-provisioned server, OR the new base-url for the license-only
-	// auto-provisioning path. Whichever it uses, the shim only boots when
-	// at least one domain on this instance holds an active "WebTop Connect"
+	// Properties consumed by the mobile-push shim. Only two are needed:
+	// webtop.push-gateway.enabled=true and webtop.push-gateway.url pointing
+	// at the wss:// endpoint. The shim's identity + credential is entirely
+	// derived at boot: baseUrl comes from WT.getPublicBaseUrl(<licensed
+	// domain>), licenseToken from LicenseManager. Shim only boots when at
+	// least one domain on this instance holds an active "WebTop Connect"
 	// license — see reconcileLicense() below.
 	private static final String PROP_PUSH_GATEWAY_ENABLED = "webtop.push-gateway.enabled";
 	private static final String PROP_PUSH_GATEWAY_URL = "webtop.push-gateway.url";
-	private static final String PROP_PUSH_GATEWAY_SERVER_ID = "webtop.push-gateway.server-id";
-	private static final String PROP_PUSH_GATEWAY_SHARED_SECRET = "webtop.push-gateway.shared-secret";
-	private static final String PROP_PUSH_GATEWAY_BASE_URL = "webtop.push-gateway.base-url";
 
 	// Matches WebTopApp.webappVersionCheck and the shim's own isLatest poll —
 	// no reason to react faster than the underlying LicenseManager cache
@@ -134,7 +131,7 @@ public class BackgroundService extends BaseBackgroundService {
 			boolean running = shim != null && !shim.isShutDown();
 			if (snap.licensed && !running && WT.isLatestWebApp()) {
 				pushGateway = null;
-				bootPushGatewayIfConfigured(snap.licenseToken);
+				bootPushGatewayIfConfigured(snap);
 			} else if (!snap.licensed && running) {
 				LOGGER.info("Connect license no longer active — unregistering push gateway shim");
 				pushGateway = null;
@@ -145,7 +142,7 @@ public class BackgroundService extends BaseBackgroundService {
 		}
 	}
 
-	private void bootPushGatewayIfConfigured(String licenseToken) {
+	private void bootPushGatewayIfConfigured(LicenseSnapshot snap) {
 		Properties props = WebTopApp.getInstanceProperties();
 		if (!Boolean.parseBoolean(props.getProperty(PROP_PUSH_GATEWAY_ENABLED, "false"))) {
 			LOGGER.debug("push gateway disabled ({}=false)", PROP_PUSH_GATEWAY_ENABLED);
@@ -156,22 +153,21 @@ public class BackgroundService extends BaseBackgroundService {
 			LOGGER.error("push gateway enabled but {} missing", PROP_PUSH_GATEWAY_URL);
 			return;
 		}
-		String serverId = trimToNull(props.getProperty(PROP_PUSH_GATEWAY_SERVER_ID));
-		String secret = trimToNull(props.getProperty(PROP_PUSH_GATEWAY_SHARED_SECRET));
-		String baseUrl = trimToNull(props.getProperty(PROP_PUSH_GATEWAY_BASE_URL));
-		if (serverId == null && baseUrl == null) {
-			LOGGER.error("push gateway needs either {} + {} (legacy) or {} (license-only)",
-				PROP_PUSH_GATEWAY_SERVER_ID, PROP_PUSH_GATEWAY_SHARED_SECRET, PROP_PUSH_GATEWAY_BASE_URL);
+		// baseUrl is derived from the licensed domain's public URL — same
+		// value the mobile app will register against. No operator-set
+		// property needed.
+		String baseUrl = trimToNull(WT.getPublicBaseUrl(snap.licensedDomainId));
+		if (baseUrl == null) {
+			LOGGER.error("push gateway: no public base URL for domain {}", snap.licensedDomainId);
 			return;
 		}
 		try {
 			NodejsMailPushGateway shim = new NodejsMailPushGateway(
-				URI.create(url), serverId, secret, baseUrl, licenseToken);
+				URI.create(url), baseUrl, snap.licenseToken);
 			MailPushManager.getInstance().setGateway(shim);
 			shim.start();
 			pushGateway = shim;
-			LOGGER.info("push gateway shim started (url={}, flavour={})",
-				url, serverId != null ? "legacy" : "license-only");
+			LOGGER.info("push gateway shim started (url={}, baseUrl={})", url, baseUrl);
 		} catch (Throwable t) {
 			LOGGER.error("push gateway shim failed to start", t);
 			pushGateway = null;
@@ -180,11 +176,12 @@ public class BackgroundService extends BaseBackgroundService {
 
 	/**
 	 * Snapshot of the instance-wide Connect licensing state: does ANY enabled
-	 * domain hold a valid Connect license, and if so, which raw license
-	 * string to hand to the gateway. First-licensed-domain wins for MVP —
-	 * mixed-license instances only need one valid license to keep the shim
-	 * running, and per-user gating (via the existing REST bearer flow) still
-	 * filters unlicensed users at registration time.
+	 * domain hold a valid Connect license? If so, capture the raw license
+	 * string to hand to the gateway AND the domainId — the domain's public
+	 * base URL is what the shim announces as its identity to the gateway,
+	 * and it must be the licensed one (otherwise a rogue unlicensed domain
+	 * could piggyback). First-licensed-domain wins for MVP; a multi-domain
+	 * instance with several licensed domains still only opens one shim.
 	 */
 	private LicenseSnapshot checkConnectLicense() {
 		try {
@@ -204,7 +201,7 @@ public class BackgroundService extends BaseBackgroundService {
 						token = plic.getLicenseString();
 					}
 				}
-				return new LicenseSnapshot(true, token);
+				return new LicenseSnapshot(true, d, token);
 			}
 		} catch (Throwable t) {
 			LOGGER.warn("connect license check failed", t);
@@ -219,11 +216,13 @@ public class BackgroundService extends BaseBackgroundService {
 	}
 
 	private static final class LicenseSnapshot {
-		static final LicenseSnapshot UNLICENSED = new LicenseSnapshot(false, null);
+		static final LicenseSnapshot UNLICENSED = new LicenseSnapshot(false, null, null);
 		final boolean licensed;
+		final String licensedDomainId;
 		final String licenseToken;
-		LicenseSnapshot(boolean licensed, String licenseToken) {
+		LicenseSnapshot(boolean licensed, String licensedDomainId, String licenseToken) {
 			this.licensed = licensed;
+			this.licensedDomainId = licensedDomainId;
 			this.licenseToken = licenseToken;
 		}
 	}

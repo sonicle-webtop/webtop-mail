@@ -45,8 +45,6 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.mgt.SecurityManager;
 import org.apache.shiro.subject.Subject;
@@ -90,15 +88,11 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	private static final int MDEL_UIDS_CAP = 200;
 
 	private final URI gatewayUri;
-	// Legacy handshake fields — kept for grandfathered pre-provisioned
-	// servers. Nullable on the license-only path.
-	private final String serverId;
-	private final String sharedSecret;
-	// License-only handshake fields — baseUrl identifies this instance to
-	// the gateway (must match the URL the mobile app registers against),
-	// licenseToken is the raw WebTop Connect license blob. baseUrl may also
-	// be set on the legacy path (harmless — gateway ignores it there);
-	// licenseToken should always be set once the license reconciler is up.
+	// License-only handshake: baseUrl identifies this instance to the
+	// gateway (must match the URL the mobile app registers against —
+	// derived at boot from WT.getPublicBaseUrl(<licensed domain>));
+	// licenseToken is the raw WebTop Connect license blob the gateway
+	// validates on every hello.
 	private final String baseUrl;
 	private final String licenseToken;
 	private final ScheduledExecutorService scheduler;
@@ -120,11 +114,8 @@ public class NodejsMailPushGateway implements MailPushGateway {
 	// dispatchSubscribe build a Subject from that thread.
 	private volatile SecurityManager securityManager;
 
-	public NodejsMailPushGateway(URI gatewayUri, String serverId, String sharedSecret,
-			String baseUrl, String licenseToken) {
+	public NodejsMailPushGateway(URI gatewayUri, String baseUrl, String licenseToken) {
 		this.gatewayUri = gatewayUri;
-		this.serverId = serverId;
-		this.sharedSecret = sharedSecret;
 		this.baseUrl = baseUrl;
 		this.licenseToken = licenseToken;
 		this.scheduler = new ScheduledThreadPoolExecutor(1, r -> {
@@ -389,11 +380,6 @@ public class NodejsMailPushGateway implements MailPushGateway {
 		if (client != null) return;
 		final long ts = System.currentTimeMillis();
 		final String nonce = randomNonce();
-		// Sign only when we have a shared secret (legacy grandfathered path).
-		// License-only handshakes omit signature; the gateway's license
-		// validator + TLS is the trust boundary.
-		final String signature = (sharedSecret != null && !sharedSecret.isEmpty())
-			? signHex(sharedSecret, ts + ":" + nonce) : null;
 
 		try {
 			client = new WebSocketClient(gatewayUri) {
@@ -403,10 +389,8 @@ public class NodejsMailPushGateway implements MailPushGateway {
 					hello.addProperty("op", "hello");
 					hello.addProperty("timestamp", ts);
 					hello.addProperty("nonce", nonce);
-					if (serverId != null) hello.addProperty("serverId", serverId);
-					if (signature != null) hello.addProperty("signature", signature);
-					if (baseUrl != null) hello.addProperty("baseUrl", baseUrl);
-					if (licenseToken != null) hello.addProperty("licenseToken", licenseToken);
+					hello.addProperty("baseUrl", baseUrl);
+					hello.addProperty("licenseToken", licenseToken);
 					send(GSON.toJson(hello));
 				}
 
@@ -551,19 +535,6 @@ public class NodejsMailPushGateway implements MailPushGateway {
 		int at = s.indexOf('@');
 		if (at <= 0 || at == s.length() - 1) return null;
 		return new UserProfileId(s.substring(at + 1), s.substring(0, at));
-	}
-
-	private static String signHex(String secret, String data) {
-		try {
-			Mac mac = Mac.getInstance("HmacSHA256");
-			mac.init(new SecretKeySpec(secret.getBytes("UTF-8"), "HmacSHA256"));
-			byte[] sig = mac.doFinal(data.getBytes("UTF-8"));
-			StringBuilder sb = new StringBuilder(sig.length * 2);
-			for (byte b : sig) sb.append(String.format("%02x", b));
-			return sb.toString();
-		} catch (Exception ex) {
-			throw new RuntimeException("HMAC failed", ex);
-		}
 	}
 
 	private static String randomNonce() {
