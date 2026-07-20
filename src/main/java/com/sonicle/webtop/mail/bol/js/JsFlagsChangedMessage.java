@@ -58,7 +58,8 @@ public class JsFlagsChangedMessage {
 	//Per-message flag-derived state. 'uid' matches the grid row id (idmessage). 'seen' drives
 	//the read/unread transition; 'answered'/'forwarded' drive the replied/forwarded status
 	//icon (client mirrors getStatusString's priority); 'flag' is the colored flag label;
-	//'note' the note marker.
+	//'note' the note marker; 'tags' is the list of user tag IDs applied to the message
+	//(derived from IMAP keywords via MailManager.flagsToTagsIds).
 	public static class Item {
 		public long uid;
 		public boolean seen;
@@ -66,14 +67,16 @@ public class JsFlagsChangedMessage {
 		public boolean forwarded;
 		public String flag;
 		public boolean note;
+		public java.util.List<String> tags;
 
-		public Item(long uid, boolean seen, boolean answered, boolean forwarded, String flag, boolean note) {
+		public Item(long uid, boolean seen, boolean answered, boolean forwarded, String flag, boolean note, java.util.List<String> tags) {
 			this.uid=uid;
 			this.seen=seen;
 			this.answered=answered;
 			this.forwarded=forwarded;
 			this.flag=flag;
 			this.note=note;
+			this.tags=tags;
 		}
 	}
 

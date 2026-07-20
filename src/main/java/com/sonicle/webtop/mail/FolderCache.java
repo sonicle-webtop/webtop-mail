@@ -499,13 +499,26 @@ public class FolderCache {
 						try {
 							Message cm=mce.getMessage();
 							long uid=((SonicleIMAPMessage)cm).getUID();
+							if (uid<0) {
+								//Some IMAP servers omit UID in the untagged FETCH response that fires
+								//FLAGS_CHANGED, so IMAPMessage's cached UID stays at -1. Resolve it
+								//explicitly via IMAPFolder.getUID(msg), which issues a UID FETCH.
+								Folder mf = cm.getFolder();
+								if (mf instanceof IMAPFolder) uid = ((IMAPFolder)mf).getUID(cm);
+							}
 							if (uid>=0) {
 								Flags flags = cm.getFlags();
 								pendingFlagChanges.put(uid, flags);
 								if (sort_by == SORT_BY_SEEN)
 									forceRefresh = true;
+							} else {
+								Service.logger.warn("FLAGS_CHANGED on {} skipped: uid unresolved even after IMAPFolder.getUID()", foldername);
 							}
-						} catch(Exception exc) { /* fall back: handler still sends folder-level signal */ }
+						} catch(Exception exc) {
+							//fall back: handler still sends folder-level signal, but with items=null
+							//the mobile push carries no per-UID delta and the client refreshes the grid
+							Service.logger.warn("FLAGS_CHANGED on {} could not capture uid/flags: {}", foldername, exc.toString());
+						}
 						account.queueFolderMailEvent(foldername + "|mchange", mce, messageChangedHandler);
 					}
 				}
@@ -834,11 +847,23 @@ public class FolderCache {
 	private void sendFlagsChangedMessage() {
 		//Drain the per-UID flag changes accumulated since the last push into one message.
 		//Each item carries only flag-derived state (no IO, no date/invitation parsing): the
-		//client patches the matching visible rows (seen->read/unread transition + flag/note)
-		//exactly as its own local toggle does. If the set is empty (e.g. an expunge-driven
-		//change), items stays null and the client falls back to a grid refresh.
+		//client patches the matching visible rows (seen->read/unread transition + flag/note
+		//+ tag membership) exactly as its own local toggle does. If the set is empty (e.g.
+		//an expunge-driven change), items stays null and the client falls back to a grid
+		//refresh.
 		ArrayList<JsFlagsChangedMessage.Item> items=null;
 		if (mailManager!=null && !pendingFlagChanges.isEmpty()) {
+			//Resolve tag definitions once for the whole drain: the map is used to translate
+			//IMAP-keyword-encoded tag flags on each Item into user-facing tag IDs. Fall back
+			//to an empty map if the CoreManager lookup errors — the client just sees empty
+			//tag lists per item, same as if no tags were applied.
+			java.util.Map<String, com.sonicle.webtop.core.model.Tag> tagMap;
+			try {
+				tagMap = WT.getCoreManager().listTags();
+			} catch (Exception exc) {
+				Service.logger.warn("could not list tags for FLAGS push on {}: {}", foldername, exc.toString());
+				tagMap = java.util.Collections.emptyMap();
+			}
 			items=new ArrayList<>();
 			for (Iterator<Map.Entry<Long,Flags>> it=pendingFlagChanges.entrySet().iterator(); it.hasNext();) {
 				Map.Entry<Long,Flags> e=it.next();
@@ -851,7 +876,8 @@ public class FolderCache {
 					fl.contains(Flags.Flag.ANSWERED),
 					fl.contains("$Forwarded"),
 					mailManager.getFlagString(fl),
-					mailManager.hasNote(fl)
+					mailManager.hasNote(fl),
+					mailManager.flagsToTagsIds(fl, tagMap)
 				));
 			}
 			if (items.isEmpty()) items=null;
