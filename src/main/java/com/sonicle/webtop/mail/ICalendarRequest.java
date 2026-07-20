@@ -1,6 +1,6 @@
 /*
  * webtop-mail is a WebTop Service developed by Sonicle S.r.l.
- * Copyright (C) 2014 Sonicle S.r.l.
+ * Copyright (C) 2026 Sonicle S.r.l.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by
@@ -19,7 +19,7 @@
  * the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  * MA 02110-1301 USA.
  *
- * You can contact Sonicle S.r.l. at email address sonicle@sonicle.com
+ * You can contact Sonicle S.r.l. at email internetAddress sonicle@sonicle.com
  *
  * The interactive user interfaces in modified source and object code versions
  * of this program must display Appropriate Legal Notices, as required under
@@ -33,474 +33,510 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.commons.Check;
+import com.sonicle.commons.EnumUtils;
 import com.sonicle.commons.IdentifierUtils;
+import com.sonicle.commons.LangUtils;
+import com.sonicle.commons.time.DateTimeWindow;
+import com.sonicle.commons.time.JodaTimeUtils;
+import com.sonicle.commons.web.json.MapItem;
+import com.sonicle.commons.web.json.MapItemList;
+import com.sonicle.webtop.calendar.CalendarUtils;
+import com.sonicle.webtop.core.app.UIBoot;
+import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.sdk.WTParseException;
+import com.sonicle.webtop.core.sdk.ServiceManifest;
+import com.sonicle.webtop.core.util.ICal4jUtils;
 import com.sonicle.webtop.core.util.ICalendarUtils;
+import com.sonicle.webtop.core.util.RRuleStringify;
+import freemarker.template.TemplateException;
+import jakarta.mail.internet.InternetAddress;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
-import java.util.ResourceBundle;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import net.fortuna.ical4j.data.*;
-import net.fortuna.ical4j.model.*;
-import net.fortuna.ical4j.model.component.*;
-import net.fortuna.ical4j.model.property.*;
+import net.fortuna.ical4j.data.ParserException;
+import net.fortuna.ical4j.model.Calendar;
+import net.fortuna.ical4j.model.Property;
+import net.fortuna.ical4j.model.PropertyList;
+import net.fortuna.ical4j.model.component.VEvent;
+import net.fortuna.ical4j.model.property.Attendee;
+import net.fortuna.ical4j.model.property.Method;
+import net.fortuna.ical4j.model.property.Sequence;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.LocalDate;
+
 /**
  *
- * @author gabriele.bulfon
+ * @author malbinola
  */
 public class ICalendarRequest {
-	
-	private final String UNSPECIFIED="(unspecified)";
-	private final String NOEMAIL="(no email)";
-	
-	private final Calendar ical;
-	
-	private final VEvent vevent;
-	private final Summary	icalSummary;
-	private final Location icalLocation;
-	private final DtStart icalDateStart;
-	private final DtEnd icalDateEnd;
-	private final Duration icalDuration;
-	private final Organizer icalOrganizer;
-	private final Description icalDescription;
-	private final Attendee[] icalAttendees;
-	
-	private final String summary;
-	private final String location;
-	private final Date dateStart;
-	private final Date dateEnd;
-	private final String duration;
-	private final String organizer;
-	private final String organizerCN;
-	private final String organizerEmail;
-	private final String description;
-	private final String[] attendees;
-	private final String[] attendeesCN;
-	private final String[] attendeesEmails;
-	private final String[] attendeesAnswers;
-	
+	private final InternetAddress requestFrom;
+	private final Calendar iCalendar;
 	private final String method;
+	private final Action action;
 	private final String uid;
+	private final DateTime lastModified;
 	private final int sequence;
-	private final Date lastmodified;
-	private final boolean allDay;
-	private final String timezone;
+	private final InternetAddress organizer;
+	private final When when;
+	private final String title;
+	private final String location;
+	private final String description;
 	private final String comment;
+	private final List<AttendeeItem> attendees;
 	
-	public ICalendarRequest(InputStream istream) throws IOException, ParserException {
-		ical=ICalendarUtils.parse(istream);
-		
-		Method icalMethod=ical.getMethod();
-		if (icalMethod==null) method="REQUEST";
-		else method=icalMethod.getValue();
-		vevent = (VEvent) ical.getComponent(Component.VEVENT);
-		
-		if (vevent.getUid()!=null) uid=vevent.getUid().getValue();
-		else uid=ICalendarUtils.buildUid(DigestUtils.md5Hex(
-			IdentifierUtils.getUUIDTimeBased(true)
-		), "nodomain.tld");
-		
-		UtcProperty d=vevent.getLastModified();
-		if (d==null) d=vevent.getDateStamp();
-		lastmodified=d==null?null:d.getDate();
-
-		Sequence seqProp=vevent.getSequence();
-		sequence=seqProp==null?0:seqProp.getSequenceNo();
-
-		icalSummary=vevent.getSummary();
-		icalLocation=vevent.getLocation();
-		icalDateStart=vevent.getStartDate();
-		icalDateEnd=vevent.getEndDate();
-		icalDuration=vevent.getDuration();
-		icalOrganizer=vevent.getOrganizer();
-		icalDescription=vevent.getDescription();
-		
-		PropertyList plist=vevent.getProperties(Property.ATTENDEE);
-		if (plist!=null) {
-			Object oAttendees[]=plist.toArray();
-			icalAttendees=new Attendee[oAttendees.length];
-			attendees=new String[oAttendees.length];
-			attendeesCN=new String[oAttendees.length];
-			attendeesEmails=new String[oAttendees.length];
-			attendeesAnswers=new String[oAttendees.length];
-			for(int i=0;i<oAttendees.length;++i) {
-				Attendee a=(Attendee)oAttendees[i];
-				icalAttendees[i]=a;
-				attendeesAnswers[i]=getParstat(a);
-				attendeesEmails[i]=getEmail(a);
-				attendeesCN[i]=getValue(a,"CN");
-				attendees[i]=attendeesCN[i]+" ("+attendeesEmails[i]+")";
-			}
-		} else {
-			icalAttendees=null;
-			attendees=null;
-			attendeesCN=null;
-			attendeesEmails=null;
-			attendeesAnswers=null;
+	private static final String SERVICE_ID = "com.sonicle.webtop.mail";
+	private static final String DAY_SKELETON = "yMMMMEEEEd";
+	private static final String TIMED_SKELETON = "yMMMMEEEEdHm";
+	
+	public ICalendarRequest(final InputStream is) throws WTParseException, IOException {
+		this(is, null);
+	}
+	
+	public ICalendarRequest(final InputStream is, final InternetAddress requestFrom) throws WTParseException, IOException {
+		try {
+			iCalendar = ICalendarUtils.parse(is);
+		} catch (ParserException ex) {
+			throw new WTParseException(ex);
 		}
+		this.requestFrom = requestFrom;
 		
-		summary=getValue(icalSummary);
-		location=getValue(icalLocation);
-		dateStart=getDate(icalDateStart);
-		dateEnd=getDate(icalDateEnd);
-		duration=getValue(icalDuration);
-		organizerCN=getValue(icalOrganizer,"CN");
-		organizerEmail=getEmail(icalOrganizer);
-		organizer=organizerCN+" ("+organizerEmail+")";
-		description=getValue(icalDescription);
-
-		// All-day events carry a VALUE=DATE parameter on DTSTART (vs the default
-		// DATE-TIME). Use it as the authoritative signal — the date parsed above
-		// then represents local midnight on the all-day date.
-		Parameter valueParam=icalDateStart==null?null:icalDateStart.getParameter("VALUE");
-		allDay=valueParam!=null && "DATE".equalsIgnoreCase(valueParam.getValue());
-
-		Parameter tzidParam=icalDateStart==null?null:icalDateStart.getParameter("TZID");
-		timezone=tzidParam==null?null:tzidParam.getValue();
-
-		Property commentProp=vevent.getProperty(Property.COMMENT);
-		comment=commentProp==null?null:commentProp.getValue();
+		method = extractMethod(iCalendar);
+		VEvent ve = ICalendarUtils.getVEvent(iCalendar);
+		
+		uid = extractUid(ve);
+		lastModified = extractLastModified(ve);
+		sequence = extractSequence(ve);
+		organizer = ICalendarUtils.getOrganizerAddress(ve);
+		when = extractWhen(ve);
+		title = ICalendarUtils.getSummary(ve);
+		location = ICal4jUtils.getPropertyValue(ve.getLocation());
+		description = ICal4jUtils.getPropertyValue(ve.getDescription());
+		comment = ICal4jUtils.getPropertyValue(ve, Property.COMMENT);
+		attendees = extractAttendees(ve);
+		action = computeAction();
 	}
-	
-	public Calendar getCalendar() {
-		return ical;
+
+	public InternetAddress getRequestFrom() {
+		return requestFrom;
 	}
-	
-	public VEvent getVEvent() {
-		return vevent;
+
+	public Calendar getiCalendar() {
+		return iCalendar;
 	}
 	
 	public String getMethod() {
 		return method;
 	}
-	
-	public String getUID() {
+
+	public Action getAction() {
+		return action;
+	}
+
+	public String getUid() {
 		return uid;
 	}
 	
-	public Date getLastModified() {
-		return lastmodified;
+	public DateTime getLastModified() {
+		return lastModified;
 	}
 
 	public int getSequence() {
 		return sequence;
 	}
 
-	public boolean isAllDay() {
-		return allDay;
+	public InternetAddress getOrganizer() {
+		return organizer;
 	}
 
-	public String getTimezone() {
-		return timezone;
+	public String getTitle() {
+		return title;
 	}
 
-	public String getComment() {
-		return comment;
+	public String getLocation() {
+		return location;
 	}
-	
-	public int getAttendees() {
-		return attendees!=null?attendees.length:0;
+
+	public When getWhen() {
+		return when;
 	}
-	
-	public String getAttendeeCN(int i) {
-		return attendeesCN!=null?attendeesCN[i]:null;
-	}
-	
-	public String getAttendeeEmail(int i) {
-		return attendeesEmails!=null?attendeesEmails[i]:null;
-	}
-	
-	public String getAttendeeAnswer(int i) {
-		return attendeesAnswers!=null?attendeesAnswers[i]:null;
-	}
-	
-	public String getSummary() {
-		return summary;
-	}
-	
+
 	public String getDescription() {
 		return description;
 	}
 	
-	public String getLocation() {
-		return location;
-	}
-	
-	public Date getStartDate() {
-		return dateStart;
-	}
-	
-	public Date getEndDate() {
-		return dateEnd;
-	}
-	
-	public String getOrganizer() {
-		return organizer;
-	}
-	
-	public String getOrganizerCN() {
-		return organizerCN;
-	}
-	
-	public String getOrganizerEmail() {
-		return organizerEmail;
-	}
-	
-	public String getOrganizerAddress() {
-		String CN=organizerCN!=null?organizerCN:organizerEmail;
-		return CN+" <"+organizerEmail+">";
-	}
-	
-	private String getValue(Property p) {
-		return (p==null?UNSPECIFIED:p.getValue());
-	}
-	
-	private Date getDate(DateProperty dp) {
-		return (dp==null?null:dp.getDate());
-	}
-	
-	private String getValue(Property prop, String paramname) {
-		if (prop==null) return UNSPECIFIED;
-		Parameter param=prop.getParameter(paramname);
-		return (param==null?UNSPECIFIED:param.getValue());
-	}
-	
-	private String getEmail(Property p) {
-		if (p==null) return NOEMAIL;
-		String value=p.getValue();
-		if (value==null) return NOEMAIL;
-		if (StringUtils.startsWithIgnoreCase(value, "MAILTO:")) return value.substring(7);
-		return NOEMAIL;
-	}
-	
-	private String getParstatClassName(Property p) {
-		if (p==null) return "";
-		Parameter param=p.getParameter("PARTSTAT");
-		if (param==null) return "wtmail-ical-tentative";
-		String v=param.getValue();
-		if (v.equals("ACCEPTED")) return "wtmail-ical-accepted"; 
-		else if (v.equals("DECLINED")) return "wtmail-ical-declined"; 
-		else if (v.equals("NEEDS-ACTION")) return "wtmail-ical-needaction"; 
-		return "wtmail-ical-tentative"; 
+	public String getComment() {
+		return comment;
 	}
 
-	private String getParstat(Property p) {
-		if (p==null) return "";
-		Parameter param=p.getParameter("PARTSTAT");
-		if (param==null) return "TENTATIVE";
-		String v=param.getValue();
-		if (v.equals("ACCEPTED")) return "ACCEPTED"; 
-		else if (v.equals("DECLINED")) return "DECLINED"; 
-		else if (v.equals("NEEDS-ACTION")) return "NEEDS-ACTION"; 
-		return "TENTATIVE"; 
+	public List<AttendeeItem> getAttendees() {
+		return Collections.unmodifiableList(attendees);
 	}
 	
-	public String getHtmlView(Locale locale, String serviceVersion, String laf, ResourceBundle bundle) {
-		String htmlmsg = "";
-		if (method.equals("REQUEST")) {
-			htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.invited"), StringEscapeUtils.escapeHtml4(organizerCN));
-		} else if (method.equals("REPLY")) {
-			Parameter param=icalAttendees[0].getParameter("PARTSTAT");
-			String v=param.getValue();
-			if (v.equals("ACCEPTED"))
-				htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.accepted"), StringEscapeUtils.escapeHtml4(attendeesCN[0]));
-			else if (v.equals("DECLINED"))
-				htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.declined"), StringEscapeUtils.escapeHtml4(attendeesCN[0]));
-			else
-				htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.answered"), StringEscapeUtils.escapeHtml4(attendeesCN[0]));
+	public String generatePreviewBody(final Locale locale, final DateTimeZone timezone) throws IOException, TemplateException {
+		MapItem i18n = new MapItem();
+		i18n.put("action", actionHeader(locale));
+		i18n.put("title", WT.lookupResource(SERVICE_ID, locale, "icalpreview.title"));
+		i18n.put("location", WT.lookupResource(SERVICE_ID, locale, "icalpreview.location"));
+		i18n.put("when", WT.lookupResource(SERVICE_ID, locale, "icalpreview.when"));
+		i18n.put("organizer", WT.lookupResource(SERVICE_ID, locale, "icalpreview.organizer"));
+		i18n.put("description", WT.lookupResource(SERVICE_ID, locale, "icalpreview.description"));
+		i18n.put("attendees", WT.lookupResource(SERVICE_ID, locale, "icalpreview.attendees"));
+		i18n.put("comment", commentHeader(locale));
+		
+		MapItem base = new MapItem();
+		base.put("title", StringUtils.defaultIfBlank(title, ""));
+		base.put("location", LangUtils.linkifyText(LangUtils.encodeForHTMLContent(StringUtils.defaultIfBlank(location, ""))));
+		
+		WhenValue whenValue = whenValue(locale, timezone);
+		base.put("when", StringUtils.defaultIfBlank(whenValue.value, ""));
+		i18n.put("whenFirstInstance", whenValue.isFirstInstance ? WT.lookupResource(SERVICE_ID, locale, "icalpreview.when.firstinstance") : null);
+		
+		base.put("repeats", repeatsValue(locale, timezone));
+		base.put("organizer", organizerValue());
+		base.put("description", StringUtils.defaultIfBlank(descriptionValue(), ""));
+		base.put("comment", StringUtils.defaultIfBlank(commentValue(), null));
+		
+		MapItemList atts = new MapItemList();
+		for (AttendeeItem entry : attendees) {
+			MapItem item = new MapItem();
+			item.put("cn", StringUtils.defaultIfBlank(entry.getInternetAddress().getPersonal(), entry.getInternetAddress().getAddress()));
+			item.put("address", StringUtils.defaultIfBlank(entry.getInternetAddress().getAddress(), ""));
+			item.put("status", StringUtils.lowerCase(entry.getStatus()));
+			item.put("statusText", WT.lookupResource(SERVICE_ID, locale, "icalpreview.attendee.status." + StringUtils.lowerCase(entry.getStatus())));
+			atts.add(item);
+		}
+		
+		MapItem vars = new MapItem();
+		vars.put("i18n", i18n);
+		vars.put("base", base);
+		vars.put("attendees", atts);
+		vars.put("action", StringUtils.lowerCase(EnumUtils.getName(action)));
+		
+		return WT.buildTemplate(SERVICE_ID, "tpl/icalpreview.html", vars);
+	}
+	
+	public static String htmlWrap(final String body, final String charset, final ServiceManifest manifest, final String theme, final String lookAndFeel) {
+		String html = "<html>";
+		html += "<head>";
+		html += "<meta charset=\"" + LangUtils.encodeForHTMLAttribute(charset) + "\">";
+		html += "<meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">";
+		html += "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=" + LangUtils.encodeForHTMLAttribute(charset) + "\">";
+		for (String href : UIBoot.getExtJsMinimalStylesheetUrls("classic", theme, false, false)) {
+			html += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + href + "\" />";
+		}
+		html += "<link rel=\"stylesheet\" type=\"text/css\" href=\"" + manifest.getPackageLookAndFeelUrl(lookAndFeel) + "/" + "icalpreview.css" + "\" />";
+		html += "</head>";
+		html += "<body>" + body + "</body>";
+		html += "</html>";
+		return html;
+	}
+	
+	private String actionHeader(final Locale locale) {
+		String who;
+		if (Action.REPLY.equals(action) || Action.PROPOSE.equals(action)) {
+			who = "";
+			AttendeeItem replyWho = getReplyingAttendee();
+			if (replyWho != null) {
+				who = StringUtils.defaultIfBlank(replyWho.getInternetAddress().getPersonal(), replyWho.getInternetAddress().getAddress());
+			}
+		} else {
+			who = organizer.getPersonal();
+		}
+		return WT.lookupFormattedResource(SERVICE_ID, locale, "icalpreview.action." + StringUtils.lowerCase(EnumUtils.getName(action)), who);
+	}
+	
+	private String commentHeader(final Locale locale) {
+		String who;
+		if (Action.REPLY.equals(action) || Action.PROPOSE.equals(action)) {
+			who = "";
+			AttendeeItem replyWho = getReplyingAttendee();
+			if (replyWho != null) {
+				who = StringUtils.defaultIfBlank(replyWho.getInternetAddress().getPersonal(), replyWho.getInternetAddress().getAddress());
+			}
+		} else {
+			who = organizer.getPersonal();
+		}
+		return WT.lookupFormattedResource(SERVICE_ID, locale, "icalpreview.comment", who);
+	}
+	
+	private MapItem organizerValue() {
+		MapItem item = new MapItem();
+		item.put("cn", organizer.getPersonal());
+		item.put("address", StringUtils.defaultIfBlank(organizer.getAddress(), ""));
+		return item;
+	}
+	
+	private String commentValue() {
+		AttendeeItem replyWho = null;
+		if (Action.REPLY.equals(action) || Action.PROPOSE.equals(action)) {
+			replyWho = getReplyingAttendee();
+		}
+		if (replyWho != null) {
+			if (!StringUtils.isBlank(replyWho.getComment())) return replyWho.getComment();
+		}
+		return comment;
+	}
+	
+	private String descriptionValue() {
+		return LangUtils.linkifyText(LangUtils.encodeLineBreaksForHTML(LangUtils.sanitizeHtml(description)));
+	}
+	
+	private static class WhenValue {
+		public final String value;
+		public final boolean isFirstInstance;
+		
+		public WhenValue(String value, boolean isFirstInstance) {
+			this.value = value;
+			this.isFirstInstance = isFirstInstance;
+		}
+	}
+	
+	private WhenValue whenValue(final Locale locale, final DateTimeZone timezone) {
+		String timezoneSuffix = " (" + timezone.getID() + ")";
+		String formatSkeleton;
+		DateTime start, end;
+		if (when.isAllDay()) {
+			formatSkeleton = DAY_SKELETON;
+			final int diffDays = JodaTimeUtils.calendarDaysBetween(when.getStart(), when.getEnd(), true, true);
+			if (diffDays == 0) {
+				start = end = when.getStart();
+			} else {
+				start = when.getStart();
+				end = when.getEnd();
+			}
 			
-		} else if (method.equals("CANCEL")) {
-			htmlmsg = MessageFormat.format(bundle.getString("tpl.ical.msg.canceled"), StringEscapeUtils.escapeHtml4(organizerCN));
+		} else {
+			formatSkeleton = TIMED_SKELETON;
+			start = when.getStart().withZone(timezone);
+			end = when.getEnd().withZone(timezone);
 		}
 		
-		String htmlorganizer="<span class='"+getParstatClassName(icalOrganizer)+"'></span>&nbsp;"+StringEscapeUtils.escapeHtml4(organizer);
-		StringBuilder htmlattendees=new StringBuilder();
-		if (attendees!=null) {
-			for(int i=0;i<attendees.length;++i) {
-				String s=attendees[i];
-				Attendee a=icalAttendees[i];
-				htmlattendees.append("<span class='"+getParstatClassName(a)+"'></span>&nbsp;");
-				htmlattendees.append(s); 
-				htmlattendees.append("<br>"); 
+		boolean isFirstInstance = false;
+		ICalendarUtils.RRInfo rrInfo = when.getRRInfo();
+		if (rrInfo != null) {
+			DateTimeWindow dtw = findFirstRRInstanceFrom(rrInfo, start, end, when.getTimezone(), JodaTimeUtils.now().withTimeAtStartOfDay());
+			if (dtw != null) {
+				isFirstInstance = true;
+				start = dtw.getStart();
+				end = dtw.getEnd();
 			}
 		}
-		return String.format(
-			locale,
-			"<html><head><meta content='text/html; charset=utf-8' http-equiv='Content-Type'>"+
-					"<link rel=\"stylesheet\" type=\"text/css\" href=\"resources/com.sonicle.webtop.mail/"+serviceVersion+"/laf/"+laf+"/service.css\" />"+
-			"</head><body>"+
-					
-			"<table border=0 cellpadding=4 class=wtmail-ical-tabletitle>"+
-			"<tr><td class=wtmail-ical-title>%s</td></tr>"+
-			"</table>"+
-
-			"<table border=0 cellpadding=4 class=wtmail-ical-tabledata>"+
-			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
-			//"<tr><td class=wtmail-ical-label>Quando:</td><td>"+sDtStart+"</td></tr>"+
-			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
-//			"<tr><td class=wtmail-ical-label>Durata:</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
-			"<tr><td class=wtmail-ical-label>%s</td><td class=wtmail-ical-data>%s</td></tr>"+
-
-			"</table>"+
-			"</body></html>",
-				htmlmsg,
-				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.summary")),
-				StringEscapeUtils.escapeHtml4(summary),
-				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.location")),
-				StringEscapeUtils.escapeHtml4(location),
-				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.start")),
-				StringEscapeUtils.escapeHtml4(String.format(locale,"%tc",dateStart)),
-				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.end")),
-				StringEscapeUtils.escapeHtml4(String.format(locale,"%tc",dateEnd)),
-//				htmlduration,
-				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.organizer")),
-				htmlorganizer,
-				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.description")),
-				hyperlinkText(description,"_new"),
-				StringEscapeUtils.escapeHtml4(bundle.getString("tpl.ical.event.attendees")),
-				htmlattendees
-		);
+		
+		return new WhenValue(JodaTimeUtils.formatDateTimeInterval(formatSkeleton, locale, start, end) + timezoneSuffix, isFirstInstance);
 	}
 	
-/*	public static void main(String args[]) throws Exception {
-		ICalendarRequest ir=new ICalendarRequest(
-				new FileInputStream(
-						"E:\\gabriele.bulfon\\Downloads\\ibuildings.ics"
-				)
-		);
-		Service.logger.debug("METHOD = "+ir.getMethod());
-		Service.logger.debug("UID    = "+ir.getUID());
-		String html=ir.getHtmlView(Locale.FRENCH,"win");
-		FileOutputStream fout=new FileOutputStream("E:\\gabriele.bulfon\\Downloads\\ibuildings.html");
-		IOUtils.copy(new ByteArrayInputStream(html.getBytes("UTF8")), fout);
-		fout.close();
-	}*/
+	private String repeatsValue(final Locale locale, final DateTimeZone timezone) {
+		if (when.getRRInfo() == null) {
+			return null;
+			
+		} else {
+			RRuleStringify.Strings strings = WT.getRRuleStringifyStrings(locale);
+			RRuleStringify rrs = new RRuleStringify(locale, strings);
+			rrs.setPrefixText(WT.lookupFormattedResource(SERVICE_ID, locale, "icalpreview.repeats", rrs.formatDate(when.getStart(), timezone)));
+			return rrs.toHumanReadableTextQuietly(when.getRRInfo().getRecur(), timezone);
+		}
+	}
 	
-	// NOTES:   1) \w includes 0-9, a-z, A-Z, _
-	//          2) The leading '-' is the '-' character. It must go first in character class expression
-	private static final String VALID_CHARS = "-\\w+&@#/%=~()|";
-	private static final String VALID_NON_TERMINAL = "?!:,.;";
-
-	// Notes on the expression:
-	//  1) Any number of leading '(' (left parenthesis) accepted.  Will be dealt with.  
-	//  2) s? ==> the s is optional so either [http, https] accepted as scheme
-	//  3) All valid chars accepted and then one or more
-	//  4) Case insensitive so that the scheme can be hTtPs (for example) if desired
-	private static final Pattern URI_FINDER_PATTERN = Pattern.compile("\\(*https?://["+ VALID_CHARS + VALID_NON_TERMINAL + "]*[" +VALID_CHARS + "]", Pattern.CASE_INSENSITIVE );
-		
-	/**
-	 * <p>
-	 * Finds all "URL"s in the given _rawText, wraps them in 
-	 * HTML link tags and returns the result (with the rest of the text
-	 * html encoded).
-	 * </p>
-	 * <p>
-	 * We employ the procedure described at:
-	 * http://www.codinghorror.com/blog/2008/10/the-problem-with-urls.html
-	 * which is a <b>must-read</b>.
-	 * </p>
-	 * Basically, we allow any number of left parenthesis (which will get stripped away)
-	 * followed by http:// or https://.  Then any number of permitted URL characters
-	 * (based on http://www.ietf.org/rfc/rfc1738.txt) followed by a single character
-	 * of that set (basically, those minus typical punctuation).  We remove all sets of 
-	 * matching left & right parentheses which surround the URL.
-	 *</p>
-	 * <p>
-	 * This method *must* be called from a tag/component which will NOT
-	 * end up escaping the output.  For example:
-	 * <PRE>
-	 * <h:outputText ... escape="false" value="#{core:hyperlinkText(textThatMayHaveURLs, '_blank')}"/>
-	 * </pre>
-	 * </p>
-	 * <p>
-	 * Reason: we are adding <code>&lt;a href="..."&gt;</code> tags to the output *and*
-	 * encoding the rest of the string.  So, encoding the outupt will result in
-	 * double-encoding data which was already encoded - and encoding the <code>a href</code>
-	 * (which will render it useless).
-	 * </p>
-	 * <p>
-	 * 
-	 * @param   _rawText  - if <code>null</code>, returns <code>""</code> (empty string).
-	 * @param   _target   - if not <code>null</code> or <code>""</code>, adds a target attributed to the generated link, using _target as the attribute value.
-	 */
-	public static final String hyperlinkText( final String _rawText, final String _target ) {
-
-		String returnValue = null;
-
-		if ( !StringUtils.isBlank( _rawText ) ) {
-
-			final Matcher matcher = URI_FINDER_PATTERN.matcher( _rawText );
-
-			if ( matcher.find() ) {
-
-				final int originalLength    =   _rawText.length();
-
-				final String targetText = ( StringUtils.isBlank( _target ) ) ? "" :  " target=\"" + _target.trim() + "\"";
-				final int targetLength      =   targetText.length();
-
-				// Counted 15 characters aside from the target + 2 of the URL (max if the whole string is URL)
-				// Rough guess, but should keep us from expanding the Builder too many times.
-				final StringBuilder returnBuffer = new StringBuilder( originalLength * 2 + targetLength + 15 );
-
-				int currentStart;
-				int currentEnd;
-				int lastEnd     = 0;
-
-				String currentURL;
-
-				do {
-					currentStart = matcher.start();
-					currentEnd = matcher.end();
-					currentURL = matcher.group();
-
-					// Adjust for URLs wrapped in ()'s ... move start/end markers
-					//      and substring the _rawText for new URL value.
-					while ( currentURL.startsWith( "(" ) && currentURL.endsWith( ")" ) ) {
-						currentStart = currentStart + 1;
-						currentEnd = currentEnd - 1;
-
-						currentURL = _rawText.substring( currentStart, currentEnd );
-					}
-
-					while ( currentURL.startsWith( "(" ) ) {
-						currentStart = currentStart + 1;
-
-						currentURL = _rawText.substring( currentStart, currentEnd );
-					}
-
-					// Text since last match
-					returnBuffer.append( StringEscapeUtils.escapeHtml4(_rawText.substring( lastEnd, currentStart ) ) );
-
-					// Wrap matched URL
-					returnBuffer.append( "<a href=\"" + currentURL + "\"" + targetText + ">" + currentURL + "</a>" );
-
-					lastEnd = currentEnd;
-
-				} while ( matcher.find() );
-
-				if ( lastEnd < originalLength ) {
-					returnBuffer.append( StringEscapeUtils.escapeHtml4( _rawText.substring( lastEnd ) ) );
+	private AttendeeItem getReplyingAttendee() {
+		if (requestFrom != null) {
+			for (AttendeeItem attendee : attendees) {
+				if (StringUtils.equalsIgnoreCase(attendee.getInternetAddress().getAddress(), requestFrom.getAddress())) {
+					return attendee;
 				}
-
-				returnValue = returnBuffer.toString();
 			}
-		} 
+		} else if (!attendees.isEmpty()) {
+			return attendees.get(0);
+		}
+		return null;
+	}
+	
+	private When extractWhen(final VEvent ve) throws WTParseException {
+		DateTime start, end;
+		DateTimeZone timezone;
+		
+		final boolean allDay = ICal4jUtils.isAllDay(ve);
+		if (allDay) {
+			LocalDate localStart = ICal4jUtils.toJodaLocalDate(ICal4jUtils.getDatePropertyValue(ve.getStartDate()), DateTimeZone.UTC);
+			if (localStart == null) throw new WTParseException("Invalid DTSTART [{}]", ve.getStartDate().toString());
+			LocalDate localEnd = ICal4jUtils.toJodaLocalDate(ICal4jUtils.getDatePropertyValue(ve.getEndDate()), DateTimeZone.UTC);
+			if (localEnd == null) throw new WTParseException("Invalid DTEND [{}]", ve.getEndDate().toString());
+			
+			start = localStart.toDateTimeAtStartOfDay();
+			end = localEnd.toDateTimeAtStartOfDay();
+			timezone = start.getZone();
+			
+		} else {
+			start = ICal4jUtils.toJodaDateTime((net.fortuna.ical4j.model.DateTime)ICal4jUtils.getDatePropertyValue(ve.getStartDate()), DateTimeZone.UTC);
+			if (start == null) throw new WTParseException("Invalid DTSTART [{}]", ve.getStartDate().toString());
+			end = ICal4jUtils.toJodaDateTime((net.fortuna.ical4j.model.DateTime)ICal4jUtils.getDatePropertyValue(ve.getEndDate()), DateTimeZone.UTC);
+			if (end == null) throw new WTParseException("Invalid DTEND [{}]", ve.getEndDate().toString());
+			timezone = start.getZone();
+		}
+		
+		ICalendarUtils.RRInfo recurInfo = ICalendarUtils.extractRRInfo(ve);
+		return new When(allDay, start, end, timezone, recurInfo);
+	}
+	
+	private ArrayList<AttendeeItem> extractAttendees(final VEvent ve) throws WTParseException {
+		ArrayList<AttendeeItem> items = new ArrayList<>();
+		PropertyList atts = ve.getProperties(Property.ATTENDEE);
+		if (!atts.isEmpty()) {
+			for (Object o: atts) {
+				items.add(extractAttendee(ICalendarUtils.toAttendeeItem((Attendee)o)));
+				//items.add(extractAttendee((Attendee)o));
+			}
+		}
+		return items;
+	}
+	
+	private AttendeeItem extractAttendee(final ICalendarUtils.AttendeeItem attendee) {
+		return new AttendeeItem(attendee.getRecipient(), attendee.getPartStat().getValue(), attendee.getResponseComment());
+	}
+	
+	/*
+	private AttendeeItem extractAttendee(final Attendee attendee) throws WTParseException {
+		// Evaluates attendee details
+		// Extract email and common name (CN)
+		// Eg: CN=Henry Cabot:MAILTO:hcabot@host2.com -> drop ":MAILTO:"
+		URI uri = attendee.getCalAddress();
+		Cn cn = (Cn)attendee.getParameter(Parameter.CN);
+		if (uri != null) {
+			String address = uri.getSchemeSpecificPart();
+			InternetAddress ia = InternetAddressUtils.toInternetAddress(address, (cn == null) ? address : cn.getValue());
+			
+			// Evaluates attendee response status
+			PartStat partstat = (PartStat)attendee.getParameter(Parameter.PARTSTAT);
+			if (partstat == null) partstat = PartStat.NEEDS_ACTION;
 
-		if ( returnValue == null ) {
-			returnValue = StringEscapeUtils.escapeHtml4( _rawText );
+			return new AttendeeItem(ia, partstat.getValue());
+			
+		} else {
+			throw new WTParseException("Invalid ATTENDEE [{}]", attendee.toString());
+		}
+	}
+	*/
+	
+	private String extractMethod(final Calendar ical) {
+		Method icMethod = ical.getMethod();
+		return (icMethod == null) ? Method.REQUEST.getValue() : icMethod.getValue();
+	}
+	
+	private Action computeAction() {
+		Check.notNull(method);
+		switch (method) {
+			case "REQUEST":
+				return sequence == 0 ? Action.INVITE : Action.MODIFY;
+			case "REPLY":
+				return Action.REPLY;
+			case "CANCEL":
+				return Action.CANCEL;
+			case "COUNTER":
+				return Action.PROPOSE;
+			case "DECLINECOUNTER":
+				return Action.PROPOSAL_DECLINE;
+		}
+		return null;
+	}
+	
+	private String extractUid(final VEvent ve) {
+		String veUid = ICalendarUtils.getUidValue(ve);
+		return (!StringUtils.isBlank(veUid)) ? veUid : ICalendarUtils.buildUid(DigestUtils.md5Hex(IdentifierUtils.getUUIDTimeBased(true)), "nodomain.tld");
+	}
+	
+	private DateTime extractLastModified(final VEvent ve) {
+		DateTime dt = ICalendarUtils.getPropertyValueAsDateTime(ve.getLastModified(), org.joda.time.DateTimeZone.UTC);
+		if (dt == null) dt = ICalendarUtils.getPropertyValueAsDateTime(ve.getDateStamp(), org.joda.time.DateTimeZone.UTC);
+		return dt;
+	}
+	
+	private int extractSequence(final VEvent ve) {
+		Sequence veSequence = ve.getSequence();
+		return (veSequence != null) ? veSequence.getSequenceNo() : 0;
+	}
+	
+	private static DateTimeWindow findFirstRRInstanceFrom(final ICalendarUtils.RRInfo rrInfo, final DateTime start, final DateTime end, final DateTimeZone timezone, final DateTime from) {
+		List<LocalDate> dates = ICal4jUtils.calculateRecurrenceSet(rrInfo.getRecur(), start, true, rrInfo.getExDates(), start, end, timezone, from, null, 1);
+		return (!dates.isEmpty()) ? CalendarUtils.computeStartEndForEventInstance(dates.get(0), start.toLocalDateTime(), end.toLocalDateTime(), timezone) : null;
+	}
+	
+	public static enum Action {
+		INVITE, // Invite attendees to an event
+		MODIFY, // Modify a previous invitation
+		CANCEL, // Cancel an event or remove attendees
+		REPLY, // Respond to a REQUEST with attendance status
+		PROPOSE, // Propose changes to an event (counter-offer)
+		PROPOSAL_DECLINE // Reject a counter-proposal
+		;
+	}
+	
+	public static class When {
+		private final boolean allDay;
+		private final DateTime start;
+		private final DateTime end;
+		private final DateTimeZone timezone;
+		private final ICalendarUtils.RRInfo rrInfo;
+		
+		public When(boolean allDay, DateTime start, DateTime end) {
+			this(allDay, start, end, null, null);
+		}
+		
+		public When(boolean allDay, DateTime start, DateTime end, DateTimeZone timezone, ICalendarUtils.RRInfo rrInfo) {
+			this.allDay = allDay;
+			this.start = Check.notNull(start, "start");
+			this.end = Check.notNull(end, "end");
+			this.timezone = (timezone == null) ? start.getZone() : timezone;
+			this.rrInfo = rrInfo;
 		}
 
-		return returnValue;
+		public boolean isAllDay() {
+			return allDay;
+		}
 
-	}	
+		public DateTime getStart() {
+			return start;
+		}
+
+		public DateTime getEnd() {
+			return end;
+		}
+
+		public DateTimeZone getTimezone() {
+			return timezone;
+		}
+		
+		public ICalendarUtils.RRInfo getRRInfo() {
+			return rrInfo;
+		}
+	}
 	
+	public static class AttendeeItem {
+		private final InternetAddress internetAddress;
+		private final String status;
+		private final String comment;
+		
+		public AttendeeItem(InternetAddress internetAddress, String status, String comment) {
+			this.internetAddress = Check.notNull(internetAddress, "internetAddress");
+			this.status = Check.notEmpty(status, "status");
+			this.comment = comment;
+		}
+
+		public InternetAddress getInternetAddress() {
+			return internetAddress;
+		}
+
+		public String getStatus() {
+			return status;
+		}
+
+		public String getComment() {
+			return comment;
+		}
+	}
 }

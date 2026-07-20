@@ -51,7 +51,7 @@ public class HTMLMailData {
   private Folder folder=null;
   private long nuid=0;
   
-  private ICalendarRequest icalRequest=null;
+  private ICalendarRequest iCalendarRequest = null;
   private boolean hasICalAttachment=false;
   
   private boolean isPec=false;
@@ -94,14 +94,14 @@ public class HTMLMailData {
   public MimeMessage getMessage() {
     return message;
   }
-  
-  public ICalendarRequest getICalRequest() {
-	  return icalRequest;
-  }
-  
-  public void setICalRequest(ICalendarRequest ir) {
-	  icalRequest=ir;
-  }  
+
+	public ICalendarRequest getICalendarRequest() {
+		return iCalendarRequest;
+	}
+
+	public void setICalendarRequest(ICalendarRequest iCalendarRequest) {
+		this.iCalendarRequest = iCalendarRequest;
+	}
 
   public void setHasICalAttachment(boolean b) {
 	  hasICalAttachment=b;

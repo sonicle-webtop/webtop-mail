@@ -115,6 +115,7 @@ import com.sonicle.webtop.core.app.sdk.WTEmailSendException;
 import com.sonicle.webtop.core.app.sdk.WTNotFoundException;
 import com.sonicle.webtop.core.app.sdk.WTParseException;
 import com.sonicle.webtop.core.app.util.ExceptionUtils;
+import com.sonicle.webtop.core.model.ProfileI18n;
 import com.sonicle.webtop.core.sdk.AuthException;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.util.ICalendarHelper;
@@ -194,6 +195,7 @@ import org.apache.commons.io.Charsets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTimeZone;
 import org.jooq.exception.DataAccessException;
 import org.slf4j.Logger;
 
@@ -1483,17 +1485,19 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 				
 				public void evaluateCalendar(MimeMessageParser.ParsedMimeMessageComponents parsed, Part part, InputStream istream, String charset) throws IOException, MessagingException {
 					try {
-						ICalendarRequest ir=new ICalendarRequest(istream);
+						ICalendarRequest ir = new ICalendarRequest(istream);
 						//mailData.setICalRequest(ir);
 						if (!icalhtmlview) {
-							UserProfile profile = getUserProfile();
-							Locale locale = profile.getLocale();
-							String irhtml=ir.getHtmlView(locale, "5.23.0", "default", java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
-							parsed.appendProcessedHTMLPart(0, irhtml);
+							ProfileI18n i18nInfo = getI18nInfo();
+							String laf = getCoreUserSettings().getUILookAndFeel();
+							String theme = getCoreUserSettings().getUITheme();
+							String pbody = ir.generatePreviewBody(i18nInfo.getLocale(), i18nInfo.getTimezone());
+							String phtml = ICalendarRequest.htmlWrap(pbody, charset, getManifest(), theme, laf);
+							parsed.appendProcessedHTMLPart(0, phtml);
 							icalhtmlview=true;
 						}
 						if (parsed.hasICalAttachment) parsed.appendAttachmentPart(part, 0);
-					} catch(ParserException exc) {
+					} catch (Exception ex) {
 						parsed.appendAttachmentPart(part, 0);
 					}
 				}
@@ -2017,41 +2021,40 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			}
 			try (InputStream is = part.getInputStream()) {
 				ICalendarRequest ir = new ICalendarRequest(is);
-				String dedupeKey = (ir.getUID() == null ? "" : ir.getUID())
+				String dedupeKey = (ir.getUid() == null ? "" : ir.getUid())
 						+ "|" + ir.getMethod()
 						+ "|" + ir.getSequence();
 				if (!seen.add(dedupeKey)) continue;
 				out.add(toCalendarPartInfo(i, ir, userEmail, cm));
-			} catch (ParserException | IOException | MessagingException ex) {
+			} catch (WTParseException | IOException | MessagingException ex) {
 				logger.warn("Skipping calendar attachment at index " + i + ": parse failed", ex);
 			}
 		}
 		return out;
 	}
 
-	private CalendarPartInfo toCalendarPartInfo(int attachmentIndex, ICalendarRequest ir,
-			String userEmail, ICalendarManager cm) {
+	private CalendarPartInfo toCalendarPartInfo(int attachmentIndex, ICalendarRequest ir, String userEmail, ICalendarManager cm) {
 		String method = ir.getMethod();
-		String eventUid = ir.getUID();
+		String eventUid = ir.getUid();
 
 		boolean userIsAttendee = false;
 		String userPartStat = null;
 		if (userEmail != null) {
-			int n = ir.getAttendees();
-			for (int j = 0; j < n; j++) {
-				if (userEmail.equalsIgnoreCase(ir.getAttendeeEmail(j))) {
+			for (ICalendarRequest.AttendeeItem attendee : ir.getAttendees()) {
+				if (userEmail.equalsIgnoreCase(attendee.getInternetAddress().getAddress())) {
 					userIsAttendee = true;
-					userPartStat = toShortPartStat(ir.getAttendeeAnswer(j));
+					userPartStat = toShortPartStat(attendee.getStatus());
 					break;
 				}
 			}
 		}
 
 		String replyCN = null, replyEmail = null, replyStatus = null;
-		if ("REPLY".equals(method) && ir.getAttendees() > 0) {
-			replyCN = ir.getAttendeeCN(0);
-			replyEmail = ir.getAttendeeEmail(0);
-			replyStatus = toShortPartStat(ir.getAttendeeAnswer(0));
+		if ("REPLY".equals(method) && !ir.getAttendees().isEmpty()) {
+			ICalendarRequest.AttendeeItem attendee = ir.getAttendees().get(0);
+			replyCN = attendee.getInternetAddress().getPersonal();
+			replyEmail = attendee.getInternetAddress().getAddress();
+			replyStatus = toShortPartStat(attendee.getStatus());
 		}
 
 		MatchedEventInfo match = null;
@@ -2096,10 +2099,10 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 
 		return new CalendarPartInfo(
 				attachmentIndex, method, eventUid, ir.getSequence(),
-				ir.getSummary(), ir.getLocation(),
-				ir.getStartDate(), ir.getEndDate(),
-				ir.isAllDay(), ir.getTimezone(),
-				ir.getOrganizerCN(), ir.getOrganizerEmail(),
+				ir.getTitle(), ir.getLocation(),
+				ir.getWhen().getStart().toDate(), ir.getWhen().getEnd().toDate(),
+				ir.getWhen().isAllDay(), ir.getWhen().getTimezone().getID(),
+				ir.getOrganizer().getPersonal(), ir.getOrganizer().getAddress(),
 				userIsAttendee, userPartStat,
 				match,
 				replyCN, replyEmail, replyStatus,
@@ -2603,8 +2606,8 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 
 					for (String toRecipient : toRecipients) {
 						InternetAddress ia = getInternetAddress(toRecipient);
-						if (!StringUtils.isBlank(ia.getAddress())) {
-							String email=ia.getAddress();
+						if (!StringUtils.isBlank(ia.getInternetAddress())) {
+							String email=ia.getInternetAddress();
 							Condition<ContactQuery> filterQuery = new ContactQuery().anyEmail().like(email);
 							if (!contactsManager.existAnyContact(cats, filterQuery)) {
 								boolean found=false;
@@ -2623,7 +2626,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 									}
 								}
 
-								if (!found) sendAddContactMessage(ia.getAddress(), ia.getPersonal());
+								if (!found) sendAddContactMessage(ia.getInternetAddress(), ia.getPersonal());
 								break;
 							}
 						}

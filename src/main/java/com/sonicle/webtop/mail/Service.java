@@ -8121,7 +8121,7 @@ public class Service extends BaseService implements MailEventListener {
 			}
 			
 			HTMLMailData mailData = mcache.getMailData((MimeMessage) m);
-			ICalendarRequest ir=mailData.getICalRequest();
+			ICalendarRequest ir=mailData.getICalendarRequest();
 			if (ir!=null) {
 			    if (htmlparts.size() > 0) {
 					FolderCache.HTMLPart htmlPart=htmlparts.get(0);
@@ -8286,9 +8286,9 @@ public class Service extends BaseService implements MailEventListener {
 					Event ev = null;
 					if (ir.getMethod().equals("REPLY")) {
 						// Previous impl. forced (forceOriginal == true)
-						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUID());
+						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUid());
 					} else {
-						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUID());
+						ev = cm.getEvent(GetEventScope.PERSONAL_AND_INCOMING, ir.getUid());
 					}
 					
 					if (ev != null) {
@@ -8320,7 +8320,7 @@ public class Service extends BaseService implements MailEventListener {
 							*/
 						}
 					}
-					items.add(new JsMessageDetails("ical", ir.getMethod(), ir.getUID(), eid));
+					items.add(new JsMessageDetails("ical", ir.getMethod(), ir.getUid(), eid));
 				}
 			}
 			
@@ -9329,7 +9329,7 @@ public class Service extends BaseService implements MailEventListener {
 	/*
 	private void sendICalendarReply(MailAccount account, ICalendarRequest request, InternetAddress forAddress, PartStat response) throws Exception {
 		InternetAddress organizerAddress = InternetAddressUtils.toInternetAddress(request.getOrganizerAddress());
-		sendICalendarReply(account, request.getCalendar(), organizerAddress, forAddress, response, request.getSummary());
+		sendICalendarReply(account, request.getCalendar(), organizerAddress, forAddress, response, request.getTitle());
 	}
 	
 	private void sendICalendarReply(MailAccount account, net.fortuna.ical4j.model.Calendar ical, InternetAddress organizerAddress, InternetAddress forAddress, PartStat response, String eventSummary) throws Exception {

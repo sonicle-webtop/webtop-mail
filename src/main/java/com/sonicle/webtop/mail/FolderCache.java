@@ -69,6 +69,7 @@ import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.commons.web.json.JsonUtils;
 import com.sonicle.webtop.core.app.AuditLogManager;
 import com.sonicle.webtop.core.app.sdk.AuditReferenceDataEntry;
+import com.sonicle.webtop.core.model.ProfileI18n;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.mail.bol.model.ImapQuery;
 import com.sonicle.webtop.mail.ws.FlagsChangedMessage;
@@ -81,6 +82,7 @@ import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import org.apache.commons.io.Charsets;
 import org.apache.commons.io.IOUtils;
+import org.joda.time.DateTimeZone;
 
 
 /**
@@ -2578,8 +2580,7 @@ public class FolderCache {
       String msgDate;
       String msgTo;
       String msgCc;
-      Locale locale=mailManager.getLocale();
-	  String laf=mailManager.getCoreUserSettings().getUILookAndFeel();
+	  ProfileI18n i18nInfo = mailManager.getI18nInfo();
 	  boolean icalhtmlview=false;
           
       //first cycle parts to get a possible default charset
@@ -2656,18 +2657,23 @@ public class FolderCache {
 			} else if (dispPart.isMimeType("text/calendar")||dispPart.isMimeType("application/ics")) {
 				if (dispPart.getContentType().contains("method=")) {
 					try {
-						ICalendarRequest ir=new ICalendarRequest(istream);
-						mailData.setICalRequest(ir);
+						ICalendarRequest ir = new ICalendarRequest(istream);
+						mailData.setICalendarRequest(ir);
 						if (!icalhtmlview) {
-							String irhtml=ir.getHtmlView(locale,mailManager.getManifest().getVersion().toString(),laf,java.util.ResourceBundle.getBundle("com/sonicle/webtop/mail/locale", locale));
-							htmlparts.add(0,new HTMLPart(irhtml));
-							icalhtmlview=true;
+							String laf = mailManager.getCoreUserSettings().getUILookAndFeel();
+							String theme = mailManager.getCoreUserSettings().getUITheme();
+							String pbody = ir.generatePreviewBody(i18nInfo.getLocale(), i18nInfo.getTimezone());
+							String phtml = ICalendarRequest.htmlWrap(pbody, charset, mailManager.getManifest(), theme, laf);
+							htmlparts.add(0, new HTMLPart(phtml));
+							icalhtmlview = true;
 						}
 						if (!mailData.hasICalAttachment()) mailData.addAttachmentPart(dispPart,0);
-					} catch(ParserException exc) {
+						
+					} catch (Exception ex) {
 						mailData.addAttachmentPart(dispPart,0);
 						//MailService.logger.error("Error parsing calendar part",exc);
 					}
+					
 				} else {
 					mailData.addAttachmentPart(dispPart,0);
 				}
@@ -2709,7 +2715,7 @@ public class FolderCache {
           if (ad!=null) msgFrom=mailManager.getHTMLDecodedAddress(ad[0]);
           else msgFrom="";
           java.util.Date dt=xmsg.getSentDate();
-          if (dt!=null) msgDate=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.LONG,java.text.DateFormat.LONG, locale).format(dt);
+          if (dt!=null) msgDate=java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.LONG,java.text.DateFormat.LONG, i18nInfo.getLocale()).format(dt);
           else msgDate="";
           ad=xmsg.getRecipients(Message.RecipientType.TO);
           msgTo=null;
