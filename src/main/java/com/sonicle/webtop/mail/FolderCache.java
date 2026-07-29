@@ -2218,6 +2218,7 @@ public class FolderCache {
 			//attachment/invitation icons on the visible page, which processListMessages fetches
 			//per-page. Loading it for the whole folder here is wasted wire + parse time.
 			FetchProfile fp=mailManager.getThreadMessageFetchProfile();
+			long tt0=System.currentTimeMillis();
 			try {
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,iq.getSearchTerm(),fp);
 			} catch(Exception exc) {
@@ -2225,6 +2226,21 @@ public class FolderCache {
 				close();
 				open();
 				tmsgs=((SonicleIMAPFolder)folder).thread(method,iq.getSearchTerm(),fp);
+			}
+			long ttel=System.currentTimeMillis()-tt0;
+			if (ttel>1000) {
+				//breakdown of a slow threaded build: monitor wait = another operation
+				//busy on this same folder object (e.g. new-mail scan SEARCH); cmd =
+				//server-side THREAD (cold index rebuild); fetch = bulk envelope FETCH
+				SonicleIMAPFolder sf=(SonicleIMAPFolder)folder;
+				Service.logger.info("[LISTDBG THREAD {}] SLOW {}ms: folder-monitor wait {}ms, cacheLock wait {}ms, THREAD cmd {}ms, bulk fetch ({} msgs) {}ms, parse/build {}ms",
+					foldername, ttel,
+					ttel-sf.getLastThreadBodyMs(),
+					sf.getLastThreadCacheLockWaitMs(),
+					sf.getLastThreadCmdMs(),
+					(tmsgs!=null?tmsgs.length:-1),
+					sf.getLastThreadFetchMs(),
+					sf.getLastThreadBodyMs()-sf.getLastThreadCacheLockWaitMs()-sf.getLastThreadCmdMs()-sf.getLastThreadFetchMs());
 			}
 
 			//recalculate open threads and total open children
