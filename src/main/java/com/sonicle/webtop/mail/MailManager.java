@@ -1479,7 +1479,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 				ParsedMimeMessageComponents parsed = getParsedMimeMessageComponents(mmsg);
 				mmsg = (MimeMessage)parsed.getAttachmentParts().get(index).getContent();
 			}
-			MimeMessageParser mmp = new MimeMessageParser().withProcessDisplayParts(false, new MimeMessageParser.DisplayPartEvaluator() {
+			MimeMessageParser mmp = new MimeMessageParser().withProcessDisplayParts(false, false, new MimeMessageParser.DisplayPartEvaluator() {
 				
 				private boolean icalhtmlview = false;
 				
