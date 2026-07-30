@@ -297,7 +297,11 @@ public class MailController extends BaseController implements IControllerService
 		// If enabled, initialize (create & activate) default Sieve script (eg. for SPAM rule)
 		if (options.has(MailboxCreateOption.CONFIGURE_SIEVE)) {
 			try {
-				MailManager mailMgr = (MailManager)WT.getServiceManager(SERVICE_ID, true, profileId);
+				//Private throwaway instance: WT.getServiceManager would return (and
+				//register) the REGISTRY-SHARED manager, and mutating its sieve config
+				//then cleanup()-ing it would poison the instance handed to the user's
+				//first login within the idle grace
+				MailManager mailMgr = new MailManager(true, profileId);
 				mailMgr.setSieveConfiguration(mss.getDefaultHost(), mss.getSievePort(), mss.getAdminUser(), mss.getAdminPassword(), mailboxUser);
 				mailMgr.initDefaultSieveScript();
 				mailMgr.cleanup();

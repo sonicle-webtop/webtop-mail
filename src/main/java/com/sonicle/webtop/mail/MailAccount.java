@@ -1322,6 +1322,14 @@ public class MailAccount {
 		//on a disposed account — a leaked live IMAP connection.
 		disposed = true;
 		validated = false;
+		//Stop this account's folder-scan thread: external accounts own one each
+		//and the manager's teardown aborts only the MAIN account's — without this
+		//the externals' non-daemon MFT threads survive eviction, looping over a
+		//disposed account and pinning the whole object graph
+		if (mft != null) {
+			mft.abort();
+			mft = null;
+		}
 		logger.trace("clean up mailEventQueue "+id);
 		mailEventQueue.stop();
 		logger.trace("clean up account "+id);

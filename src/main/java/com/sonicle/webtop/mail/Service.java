@@ -229,10 +229,13 @@ public class Service extends BaseService implements MailEventListener {
 		
 	public String allFlagStrings[];
 	
-	public static Flags flagsAll = new Flags();
-	public static Flags oldFlagsAll = new Flags();
-	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
-	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
+	//Aliases of MailManager's flag statics (built once in its static initializer):
+	//these were separate copies re-populated on EVERY login — an unsynchronized
+	//HashMap/Flags race, read concurrently by IMAP idle/scan threads (FolderCache)
+	public static final Flags flagsAll = MailManager.flagsAll;
+	public static final Flags oldFlagsAll = MailManager.oldFlagsAll;
+	public static final HashMap<String, Flags> flagsHash = MailManager.flagsHash;
+	public static final HashMap<String, Flags> oldFlagsHash = MailManager.oldFlagsHash;
 	
 //	protected List<Tag> atags=new ArrayList<>();
 //	protected HashMap<String,Tag> htags=new HashMap<>();
@@ -356,25 +359,8 @@ public class Service extends BaseService implements MailEventListener {
 		
 		devmode = WebTopProps.getDevMode(WebTopApp.getInstanceProperties());
 		
-		ArrayList<String> allFlagsArray=new ArrayList<String>();
-		//TODO: cleanup code here...make use of new MessageFlags enum!
-		for(MailManager.WebtopFlag fs: MailManager.webtopFlags) {
-			allFlagsArray.add(fs.label);
-			String oldfs="flag"+fs.label;
-			flagsAll.add(fs.label);
-			oldFlagsAll.add(oldfs);
-			Flags flags=new Flags();
-			flags.add(fs.label);
-			flagsHash.put(fs.label, flags);
-			flags=new Flags();
-			flags.add(oldfs);
-			oldFlagsHash.put(fs.label, flags);
-		}
-		for(MailManager.WebtopFlag fs: MailManager.webtopFlags) {
-			allFlagsArray.add("flag"+fs.label);
-		}	  
-		allFlagStrings=new String[allFlagsArray.size()];
-		allFlagsArray.toArray(allFlagStrings);
+		//Flag structures are static, built once by MailManager's static initializer
+		allFlagStrings = MailManager.ALL_FLAG_STRINGS;
 
 		this.environment = getEnv();
 		

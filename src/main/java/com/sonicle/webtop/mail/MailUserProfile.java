@@ -213,12 +213,18 @@ public class MailUserProfile {
     public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile) {
 		this(mman, mss, mus, profile, true);
 	}
-	
+
     public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile, boolean loadIdentities) {
+		this(mman, mss, mus, profile.getId(), loadIdentities);
+	}
+
+	/**
+	 * Profile-id based variant: use this on shared-manager paths, where the
+	 * calling thread's UserProfile/Principal may belong to a DIFFERENT user than
+	 * the mailbox owner (e.g. warm-up triggered by REST or push subscribe).
+	 */
+    public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfileId pid, boolean loadIdentities) {
         this.mss = mss;
-		//this.env=env;
-		//UserProfile profile=env.getProfile();
-		final UserProfileId pid = profile.getId();
 		CoreManager coreMgr = WT.getCoreManager(true, mman.getTargetProfileId());
 		Connection con=null;
 		try {
@@ -242,7 +248,7 @@ public class MailUserProfile {
 				mailUsername=ad.getProperty("mail.username",null);
 				mailPassword=ad.getProperty("mail.password",null);
 			} else {*/
-				OUserMap omap=UserMapDAO.getInstance().selectById(con, profile.getDomainId(), profile.getUserId());
+				OUserMap omap=UserMapDAO.getInstance().selectById(con, pid.getDomainId(), pid.getUserId());
 				if (omap!=null) {
 					mailProtocol=omap.getMailProtocol();
 					mailHost=omap.getMailHost();

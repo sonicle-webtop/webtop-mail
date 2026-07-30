@@ -275,11 +275,34 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
         new WebtopFlag("complete")
 	};
 	public String allFlagStrings[];
-	
-	public static Flags flagsAll = new Flags();
-	public static Flags oldFlagsAll = new Flags();
-	public static HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
-	public static HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
+
+	//Built ONCE below and read-only afterwards: these statics were previously
+	//mutated by every constructor (and by every Service login) — an unsynchronized
+	//HashMap/Flags race across concurrent user creations on the shared registry
+	public static final Flags flagsAll = new Flags();
+	public static final Flags oldFlagsAll = new Flags();
+	public static final HashMap<String, Flags> flagsHash = new HashMap<String, Flags>();
+	public static final HashMap<String, Flags> oldFlagsHash = new HashMap<String, Flags>();
+	public static final String[] ALL_FLAG_STRINGS;
+	static {
+		ArrayList<String> allFlagsArray = new ArrayList<>();
+		for (WebtopFlag fs : webtopFlags) {
+			allFlagsArray.add(fs.label);
+			String oldfs = "flag" + fs.label;
+			flagsAll.add(fs.label);
+			oldFlagsAll.add(oldfs);
+			Flags flags = new Flags();
+			flags.add(fs.label);
+			flagsHash.put(fs.label, flags);
+			flags = new Flags();
+			flags.add(oldfs);
+			oldFlagsHash.put(fs.label, flags);
+		}
+		for (WebtopFlag fs : webtopFlags) {
+			allFlagsArray.add("flag" + fs.label);
+		}
+		ALL_FLAG_STRINGS = allFlagsArray.toArray(new String[0]);
+	}
 
 	public static String STATUS_READ = "read";
 	public static String STATUS_UNREAD = "unead";
@@ -298,10 +321,11 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 
 	public MailManager(boolean fastInit, UserProfileId targetProfileId) {
 		super(fastInit, targetProfileId);
-		
+
 		mss = new MailServiceSettings(SERVICE_ID, targetProfileId.getDomainId());
 		mus = new MailUserSettings(targetProfileId, mss);
-		
+		allFlagStrings = ALL_FLAG_STRINGS;
+
 		if (!fastInit) {
 			attachmentDetectUseBodyStructure = mss.isAttachmentDetectUseBodyStructure();
 			messageListIncremental = mss.isMessageListIncrementalEnabled();
@@ -318,31 +342,9 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 					inlineableMimes.add(mtype.trim());
 			}
 			
-			ArrayList<String> allFlagsArray=new ArrayList<String>();
-			//TODO: cleanup code here...make use of new MessageFlags enum!
-			for(WebtopFlag fs: webtopFlags) {
-				allFlagsArray.add(fs.label);
-				String oldfs="flag"+fs.label;
-				flagsAll.add(fs.label);
-				oldFlagsAll.add(oldfs);
-				Flags flags=new Flags();
-				flags.add(fs.label);
-				flagsHash.put(fs.label, flags);
-				flags=new Flags();
-				flags.add(oldfs);
-				oldFlagsHash.put(fs.label, flags);
-			}
-			for(MailManager.WebtopFlag fs: MailManager.webtopFlags) {
-				allFlagsArray.add("flag"+fs.label);
-			}	  
-			allFlagStrings=new String[allFlagsArray.size()];
-			allFlagsArray.toArray(allFlagStrings);
-		
-			try {
-				createMailboxObject();
-			} catch(GeneralSecurityException exc) {
-				logger.error("Error creating Mailbox object", exc);
-			}
+			//NB: flags statics are now built once in the static initializer above;
+			//the Mailbox object is created lazily by getMailbox() — no secret-store
+			//lookup in the ctor, which the registry runs under its map bin lock
 		}
 	}
 	
@@ -802,13 +804,15 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	// sweeps. Sessions alias these through the getters below; at the SharedManager
 	// flip this whole block starts on first acquire and stops at registry eviction.
 
-	private MailUserProfile mprofile = null;
-	private MailAccount mainAccount = null;
-	private MailAccount archiveAccount = null;
+	//volatile: read via the accountsStarted-then-null idiom from threads that never
+	//took accountsLock (cold-tolerant readers, session getters)
+	private volatile MailUserProfile mprofile = null;
+	private volatile MailAccount mainAccount = null;
+	private volatile MailAccount archiveAccount = null;
 	private final ArrayList<MailAccount> externalAccounts = new ArrayList<>();
 	private final HashMap<String, MailAccount> accounts = new HashMap<>();
 	private final HashMap<String, ExternalAccount> externalAccountsMap = new HashMap<>();
-	private MailFoldersThread mft = null;
+	private volatile MailFoldersThread mft = null;
 	private volatile boolean accountsStarted = false;
 
 	public MailUserProfile getMailUserProfile() { return mprofile; }
@@ -859,6 +863,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	@Override
 	public void onSharedShutdown() {
 		logger.info("[{}] shared MailManager shutting down", getTargetProfileId());
+		shuttingDown = true;
 		teardownAccounts();
 		cleanup();
 	}
@@ -869,6 +874,9 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	//request) behind the whole warm-up.
 	private final Object accountsLock = new Object();
 	private final AtomicBoolean machineryWarmupSpawned = new AtomicBoolean(false);
+	//Set (only) by onSharedShutdown: prevents a late async warm-up from rebuilding
+	//the machinery on an instance the registry has already discarded
+	private volatile boolean shuttingDown = false;
 
 	/**
 	 * Builds and starts the per-user account machinery once (idempotent). Must be
@@ -878,7 +886,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	 */
 	public void ensureAccountsStarted() {
 		synchronized (accountsLock) {
-			if (accountsStarted) return;
+			if (shuttingDown || accountsStarted) return;
 			initAccounts();
 			accountsStarted = true;
 		}
@@ -892,12 +900,16 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	 * cold and callers use their direct fallbacks.
 	 */
 	public void ensureAccountsStartedAsync() {
-		if (accountsStarted) return;
+		if (accountsStarted || shuttingDown) return;
 		if (!machineryWarmupSpawned.compareAndSet(false, true)) return;
 		//capture the caller's authenticated Subject: initAccounts resolves profile
 		//data through RunContext/WT, which need it bound to the running thread
 		Subject subject = null;
-		try { subject = SecurityUtils.getSubject(); } catch (Throwable t) {}
+		try {
+			subject = SecurityUtils.getSubject();
+		} catch (Throwable t) {
+			logger.debug("[{}] no Subject available for warm-up thread", getTargetProfileId(), t);
+		}
 		final Subject boundSubject = subject;
 		Thread t = new Thread("mailMachineryWarmup-" + getTargetProfileId()) {
 			@Override
@@ -920,12 +932,13 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	}
 
 	private void initAccounts() {
-		UserProfile profile = getUserProfile();
-
-		mprofile = new MailUserProfile(this, mss, mus, profile);
+		//Machinery identity MUST derive from the TARGET profile: the first warm-up
+		//can run on a foreign thread (REST machinery header, push subscribe) and
+		//must never bind the caller's mailbox into this shared instance
+		mprofile = new MailUserProfile(this, mss, mus, getTargetProfileId(), true);
 		String mailUsername = mprofile.getMailUsername();
 		String mailPassword = mprofile.getMailPassword();
-		boolean isImpersonated = profile.getPrincipal().isImpersonated();
+		boolean isImpersonated = RunContext.isImpersonated();
 		String vmailSecret = StringUtils.defaultIfBlank(mss.getNethTopVmailSecret(), null);
 		//With remember-me token logins the user's IMAP password is not available
 		//after a Tomcat restart, so per-user password auth cannot be relied upon:
