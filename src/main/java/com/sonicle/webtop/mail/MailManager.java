@@ -866,6 +866,9 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		shuttingDown = true;
 		teardownAccounts();
 		cleanup();
+		//release cache memory: safe since AbstractBulkCache.clear() resets the
+		//builds-count, so a straggler thread would lazily rebuild, not see empty
+		cacheFoldersNamesInByFileFilters.clear();
 	}
 
 	//Machinery start/stop mutex. Deliberately NOT 'this': ensureIdentities() is
