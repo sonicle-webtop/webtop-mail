@@ -731,22 +731,32 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 
 	private final ArrayList<FolderCache> openedFolders = new ArrayList<>();
 	private static final int FOLDER_CACHE_POOL_SIZE = 5; //default 5
+	//A cache used within this window is considered live work of some session
+	//(this manager serves ALL of a user's sessions + the app) and is never the
+	//eviction victim
+	private static final long POOL_EVICT_MIN_IDLE_MS = 30 * 1000L;
 
 	protected void poolOpened(FolderCache fc) {
 		//Idle-owning caches keep their folder open by design and never join the
-		//pool: evicting one would close(true) (expunge!) a folder its idle thread
-		//immediately reopens, wasting a slot and corrupting the bookkeeping.
+		//pool: evicting one would close a folder its idle thread immediately
+		//reopens, wasting a slot and corrupting the bookkeeping.
 		if (fc.hasActiveIdle()) return;
-		//Lock ONLY the list: the eviction callbacks below take the evicted folder's
+		//Lock ONLY the list: the eviction callback below takes the evicted folder's
 		//cacheLock, and FolderCache calls back into this method while holding its
 		//own cacheLock (refresh->open->poolOpened) - holding a manager-wide monitor
 		//across both directions would be an ABBA deadlock.
 		FolderCache rfc = null;
 		synchronized (openedFolders) {
+			openedFolders.remove(fc); //a re-open refreshes its LRU position
 			if (openedFolders.size() >= FOLDER_CACHE_POOL_SIZE) {
-				//oldest first, but never a cache whose idle started after insertion
+				//oldest first, skipping idle-owning caches and caches some session
+				//used moments ago (closing those would land in the middle of live
+				//work). If EVERY candidate is hot, evict nothing: a temporary 6th
+				//open folder is cheaper than disturbing another session's
+				//operation - the pool re-shrinks on a later open.
 				for (int i = 0; i < openedFolders.size(); i++) {
-					if (!openedFolders.get(i).hasActiveIdle()) {
+					FolderCache c = openedFolders.get(i);
+					if (!c.hasActiveIdle() && !c.isRecentlyUsed(POOL_EVICT_MIN_IDLE_MS)) {
 						rfc = openedFolders.remove(i);
 						break;
 					}
@@ -755,9 +765,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			openedFolders.add(fc);
 		}
 		if (rfc != null && rfc != fc) {
-			rfc.cleanup(false);
-			rfc.close();
-			rfc.setForceRefresh();
+			rfc.evictClose();
 		}
 	}
 
