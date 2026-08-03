@@ -704,12 +704,24 @@ public class MailAccount {
 						new Runnable() {
 							public void run() {
 								synchronized (lock) {
-									try {
-										for (FolderCache fc : rootParents) {
+									//The wait on 'lock' (the MFT cache-load handshake) can last as
+									//long as a whole first sweep; the pooled store connection may be
+									//dropped by the server for inactivity meanwhile, and jakarta.mail
+									//never revives a dead Store by itself ("failed to create new
+									//store connection"). Revive it per parent, and never let one
+									//parent's failure abandon the rest of the tree (the old
+									//whole-loop catch left the tree silently incomplete until the
+									//next machinery start).
+									for (FolderCache fc : rootParents) {
+										try {
+											if (!checkStoreConnected()) {
+												logger.warn("Folder cache load aborted, account not reconnectable [{}]", id);
+												break;
+											}
 											_loadFoldersCache(fc);
+										} catch (MessagingException exc) {
+											logger.warn("Folder cache load failed on '{}' [{}]", fc.getFolderName(), id, exc);
 										}
-									} catch (MessagingException exc) {
-										logger.error("Exception",exc);
 									}
 								}
 							}

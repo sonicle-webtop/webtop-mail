@@ -915,9 +915,9 @@ public class FolderCache {
 		);
 	}
 	
-	private void sendRecentMessage(String from, String subject) {
+	private void sendRecentMessage(String from, String subject, long uid) {
 		mailManager.dispatchMailEvent(account.getId(), foldername, MailEventType.RECENT,
-			new RecentMessage(account.getId(),foldername, from, subject, account.isFavoriteFolder(foldername))
+			new RecentMessage(account.getId(),foldername, from, subject, account.isFavoriteFolder(foldername), uid)
 		);
 	}
 	
@@ -996,7 +996,21 @@ public class FolderCache {
                         fromName = fromName+" <"+fromEmail+">";
                     }
                 }
-                sendRecentMessage(fromName,recentMsg.getSubject());
+                // Best-effort UID resolve: mobile push consumers use it to open
+                // the tapped notification straight in the message preview. -1
+                // when unresolved so the app falls back to the folder list.
+                long uid = -1;
+                try {
+                    if (recentMsg instanceof SonicleIMAPMessage) {
+                        uid = ((SonicleIMAPMessage)recentMsg).getUID();
+                    }
+                    if (uid < 0 && folder instanceof IMAPFolder) {
+                        uid = ((IMAPFolder)folder).getUID(recentMsg);
+                    }
+                } catch (Exception ex) {
+                    Service.logger.warn("RECENT on {} could not resolve uid: {}", foldername, ex.toString());
+                }
+                sendRecentMessage(fromName, recentMsg.getSubject(), uid);
             }
             if (!wasOpen) folder.close(false);
             //if (!(oldrecent==0 && recent==0)) recentChanged=true;
@@ -3216,7 +3230,21 @@ public class FolderCache {
 							fromName = fromName+" <"+fromEmail+">";
 						}
 					}
-					sendRecentMessage(fromName,recentMsg.getSubject());
+					//Best-effort UID resolve, same contract as the MFT sweep path:
+					//push consumers open the tapped notification directly; -1 falls
+					//back to the folder list
+					long uid = -1;
+					try {
+						if (recentMsg instanceof SonicleIMAPMessage) {
+							uid = ((SonicleIMAPMessage)recentMsg).getUID();
+						}
+						if (uid < 0 && folder instanceof IMAPFolder) {
+							uid = ((IMAPFolder)folder).getUID(recentMsg);
+						}
+					} catch (Exception ex) {
+						Service.logger.warn("RECENT(idle) on {} could not resolve uid: {}", foldername, ex.toString());
+					}
+					sendRecentMessage(fromName, recentMsg.getSubject(), uid);
 				}
 
 			} catch(MessagingException ex) { /* Do nothing... */ }
