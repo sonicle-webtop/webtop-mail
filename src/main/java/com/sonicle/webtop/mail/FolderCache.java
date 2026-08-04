@@ -282,6 +282,10 @@ public class FolderCache {
 	//MailFoldersThread check can't interleave on the same FolderCache. Reentrant via
 	//the object monitor: getMessages -> refresh -> cleanup all re-acquire this lock.
 	private final Object cacheLock=new Object();
+	//Last time a session actually worked on this cache (open/refresh): the
+	//manager's open-folder pool skips recently-used caches at eviction so a
+	//folder is never closed in the middle of another session's activity
+	private volatile long lastUseTs=0;
 
     //private static final HashMap<String,HashMap<String,Integer>> months=new HashMap<>();
 
@@ -915,9 +919,9 @@ public class FolderCache {
 		);
 	}
 	
-	private void sendRecentMessage(String from, String subject) {
+	private void sendRecentMessage(String from, String subject, long uid) {
 		mailManager.dispatchMailEvent(account.getId(), foldername, MailEventType.RECENT,
-			new RecentMessage(account.getId(),foldername, from, subject, account.isFavoriteFolder(foldername))
+			new RecentMessage(account.getId(),foldername, from, subject, account.isFavoriteFolder(foldername), uid)
 		);
 	}
 	
@@ -996,7 +1000,21 @@ public class FolderCache {
                         fromName = fromName+" <"+fromEmail+">";
                     }
                 }
-                sendRecentMessage(fromName,recentMsg.getSubject());
+                // Best-effort UID resolve: mobile push consumers use it to open
+                // the tapped notification straight in the message preview. -1
+                // when unresolved so the app falls back to the folder list.
+                long uid = -1;
+                try {
+                    if (recentMsg instanceof SonicleIMAPMessage) {
+                        uid = ((SonicleIMAPMessage)recentMsg).getUID();
+                    }
+                    if (uid < 0 && folder instanceof IMAPFolder) {
+                        uid = ((IMAPFolder)folder).getUID(recentMsg);
+                    }
+                } catch (Exception ex) {
+                    Service.logger.warn("RECENT on {} could not resolve uid: {}", foldername, ex.toString());
+                }
+                sendRecentMessage(fromName, recentMsg.getSubject(), uid);
             }
             if (!wasOpen) folder.close(false);
             //if (!(oldrecent==0 && recent==0)) recentChanged=true;
@@ -1086,6 +1104,7 @@ public class FolderCache {
     }
     
     public void refresh(ImapQuery iq) throws MessagingException, IOException {
+        lastUseTs=System.currentTimeMillis();
         boolean dbg=(mailManager!=null && mailManager.isListDebugEnabled());
         long t0=System.nanoTime(), tprev=t0;
         synchronized(cacheLock) {
@@ -1466,8 +1485,30 @@ public class FolderCache {
         try { folder.close(true); } catch(Exception exc) {}
         synchronized(dhash) { dhash.clear(); }
     }
+
+	//Pool-eviction support for the manager's open-folder LRU
+	boolean isRecentlyUsed(long withinMs) {
+		return (System.currentTimeMillis() - lastUseTs) < withinMs;
+	}
+
+	//Eviction by the manager's open-folder pool. Serialized on cacheLock: if an
+	//operation slipped in after the recently-used check, the close runs strictly
+	//AFTER it completes — never in the middle of a session's work. No expunge:
+	//cache housekeeping must not have message-destroying side effects (only
+	//explicit user actions may expunge). setForceRefresh() guarantees the victim
+	//session's next access rebuilds the list from scratch, after open()
+	//transparently reopens the folder.
+	void evictClose() {
+		synchronized(cacheLock) {
+			cleanup(false);
+			try { folder.close(false); } catch(Exception exc) {}
+			synchronized(dhash) { dhash.clear(); }
+			setForceRefresh();
+		}
+	}
     
     public void open() throws MessagingException {
+		lastUseTs=System.currentTimeMillis();
 		account.checkStoreConnected();
         if(!folder.isOpen()) {
             if((folder.getType()&Folder.HOLDS_MESSAGES)>0) {
@@ -3216,7 +3257,21 @@ public class FolderCache {
 							fromName = fromName+" <"+fromEmail+">";
 						}
 					}
-					sendRecentMessage(fromName,recentMsg.getSubject());
+					//Best-effort UID resolve, same contract as the MFT sweep path:
+					//push consumers open the tapped notification directly; -1 falls
+					//back to the folder list
+					long uid = -1;
+					try {
+						if (recentMsg instanceof SonicleIMAPMessage) {
+							uid = ((SonicleIMAPMessage)recentMsg).getUID();
+						}
+						if (uid < 0 && folder instanceof IMAPFolder) {
+							uid = ((IMAPFolder)folder).getUID(recentMsg);
+						}
+					} catch (Exception ex) {
+						Service.logger.warn("RECENT(idle) on {} could not resolve uid: {}", foldername, ex.toString());
+					}
+					sendRecentMessage(fromName, recentMsg.getSubject(), uid);
 				}
 
 			} catch(MessagingException ex) { /* Do nothing... */ }

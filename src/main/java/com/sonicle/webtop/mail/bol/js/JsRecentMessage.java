@@ -44,13 +44,19 @@ public class JsRecentMessage {
 	String from;
 	String subject;
 	boolean isFavoriteFolder;
-	
-	public JsRecentMessage(String accountid, String foldername, String from, String subject, boolean isFavoriteFolder) {
+	// IMAP UID of the newly-arrived message. Consumed by the mobile push
+	// gateway to route a tapped notification straight to the message
+	// preview screen instead of the folder list. -1 when the caller
+	// couldn't resolve it (folder closed, transient IMAP error).
+	long uid;
+
+	public JsRecentMessage(String accountid, String foldername, String from, String subject, boolean isFavoriteFolder, long uid) {
 		this.accountid=accountid;
 		this.foldername=foldername;
 		this.from=from;
 		this.subject=subject;
 		this.isFavoriteFolder = isFavoriteFolder;
+		this.uid=uid;
 	}
 	
 }

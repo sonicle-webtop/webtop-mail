@@ -237,6 +237,9 @@ public class NodejsMailPushGateway implements MailPushGateway {
 			JsonArray uids = extractUids(type, msg);
 			if (uids != null) frame.add("uids", uids);
 
+			JsonObject openTo = extractOpenTo(type, foldername, msg);
+			if (openTo != null) frame.add("openTo", openTo);
+
 			if (!outbound.offer(frame)) {
 				logger.warn("[{}] outbound queue full ({}); dropping {} event", profileId, OUTBOUND_QUEUE_CAP, type);
 			}
@@ -320,6 +323,35 @@ public class NodejsMailPushGateway implements MailPushGateway {
 			return out;
 		} catch (Throwable t) {
 			logger.debug("could not extract uids from {}", type, t);
+			return null;
+		}
+	}
+
+	/**
+	 * Routing hint for a tappable notification: which folder + UID the mobile
+	 * client should open when the user taps the banner. Only meaningful for
+	 * RECENT (the only event type today that produces a user-visible push).
+	 * Returns null when we don't have a UID — the client then falls back to
+	 * the folder list. Absent field ≠ error; downstream layers just skip the
+	 * "open preview" branch.
+	 */
+	private JsonObject extractOpenTo(MailEventType type, String foldername, ServiceMessage msg) {
+		if (type != MailEventType.RECENT) return null;
+		try {
+			Object payload = msg.getPayload();
+			if (payload == null) return null;
+			JsonElement el = GSON.toJsonTree(payload);
+			if (!el.isJsonObject()) return null;
+			JsonElement u = el.getAsJsonObject().get("uid");
+			if (u == null || !u.isJsonPrimitive() || !u.getAsJsonPrimitive().isNumber()) return null;
+			long uid = u.getAsLong();
+			if (uid < 0) return null;
+			JsonObject out = new JsonObject();
+			out.addProperty("folder", foldername);
+			out.addProperty("uid", uid);
+			return out;
+		} catch (Throwable t) {
+			logger.debug("could not extract openTo from {}", type, t);
 			return null;
 		}
 	}
