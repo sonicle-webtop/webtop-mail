@@ -7063,11 +7063,6 @@ public class Service extends BaseService implements MailEventListener {
 					int total=0;
 					int expunged=0;
 
-					//calculate expunged
-					//for(Message xmsg: xmsgs) {
-					//	if (xmsg.isExpunged()) ++expunged;
-					//}
-
 					/*               if (ppattern==null && !isSpecialFolder(mcache.getFolderName())) {
 					 //mcache.fetch(msgs,FolderCache.flagsFP,0,start);
 					 for(int i=0;i<start;++i) {
@@ -7507,6 +7502,15 @@ public class Service extends BaseService implements MailEventListener {
 						logger.debug("Error on QUOTA",exc);
 					}
 					tprev=listMark(dbg,dbgId,"getQuota (IMAP GETQUOTA)",t0,tprev);
+
+					//count expunged AFTER the page fetch: a concurrent session's untagged
+					//EXPUNGE responses are typically processed during that fetch, so the
+					//entries the display loop skipped are flagged only now. total must match
+					//the rows actually deliverable or the client BufferedStore waits forever
+					//for records that will never arrive.
+					for (Message xmsg: xmsgs) {
+						if (xmsg==null || xmsg.isExpunged()) ++expunged;
+					}
 
 					jsRes = new JsonResult("messages", items)
 							.setTotal(total - expunged)
