@@ -8230,18 +8230,6 @@ public class Service extends BaseService implements MailEventListener {
 				}
 			}
 			
-			/*
-			String h = getSingleHeaderValue(m, "Sonicle-send-scheduled");
-			if (h != null && h.equals("true")) {
-				java.util.Calendar scal = parseScheduleHeader(getSingleHeaderValue(m, "Sonicle-send-date"), getSingleHeaderValue(m, "Sonicle-send-time"));
-				if (scal!=null) {
-					java.util.Date sd = scal.getTime();
-					String sdate = df.format(sd).replaceAll("\\.", ":");
-					items.add(new JsMessageDetails("scheddate", sdate));
-				}
-			}
-			*/
-			
 			if (ir!=null) {
 				
 				/*
