@@ -161,6 +161,7 @@ import com.sonicle.commons.web.json.bean.QueryObj;
 import com.sonicle.commons.web.json.extjs.FieldMeta;
 import com.sonicle.commons.web.json.extjs.GridMetadata;
 import com.sonicle.commons.web.json.extjs.SortMeta;
+import com.sonicle.mail.MimeUtils;
 import com.sonicle.mail.UniqueValue;
 import com.sonicle.mail.email.CalendarMethod;
 import com.sonicle.mail.email.EmailMessage;
@@ -192,6 +193,7 @@ import com.sonicle.webtop.core.bol.js.JsAuditMessageInfo;
 import com.sonicle.webtop.core.model.RecipientFieldType;
 import com.sonicle.webtop.core.model.Tag;
 import com.sonicle.webtop.core.util.ICalendarHelper;
+import com.sonicle.webtop.mail.bg.ScheduledSendTask;
 import com.sonicle.webtop.mail.bol.js.JsAdvSearchMessage;
 import com.sonicle.webtop.mail.bol.js.JsEnvelope;
 import com.sonicle.webtop.mail.bol.js.JsInMailAutoResponder;
@@ -1441,13 +1443,10 @@ public class Service extends BaseService implements MailEventListener {
 		return retexc;
 	}
 	
-	public Exception scheduleMessage(SimpleMessage msg, List<JsAttachment> attachments, FolderCache fc, String senddate, String sendtime, String sendnotify) {
+	public Exception scheduleMessage(SimpleMessage msg, List<JsAttachment> attachments, FolderCache fc, DateTime sendAt, boolean notifySender) {
 		Exception retexc = null;
 		try {
-			msg.addHeaderLine("Sonicle-send-scheduled: true");
-			msg.addHeaderLine("Sonicle-send-date: " + senddate);
-			msg.addHeaderLine("Sonicle-send-time: " + sendtime);
-			msg.addHeaderLine("Sonicle-notify-delivery: " + sendnotify);
+			ScheduledSendTask.applyScheduleHeaders(msg, sendAt, notifySender);
 			Message m = _saveMessage(msg, attachments, fc);
 			
 			if (mailManager.isAuditEnabled() && m != null) writeAuditCreateMessage(msg, m, fc.getFolderName(), true);
@@ -5717,7 +5716,10 @@ public class Service extends BaseService implements MailEventListener {
 			} else {
 				fc = account.getFolderCache(savefolder);
 			}
-			Exception exc = scheduleMessage(msg, jsmsg.attachments, fc, scheddate, schedtime, schednotify);
+			
+			DateTimeZone tz = environment.getProfile().getTimeZone();
+			DateTime sendAt = JodaTimeUtils.parseDateTime(JodaTimeUtils.createFormatter("dd/MM/yyyy HH:mm:ss", tz), scheddate + " " + schedtime + ":00");
+			Exception exc = scheduleMessage(msg, jsmsg.attachments, fc, sendAt, LangUtils.value(schednotify, false));
 			if (exc == null) {
 				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
 				
@@ -7331,30 +7333,20 @@ public class Service extends BaseService implements MailEventListener {
 							ArrayList<String> svtags = mailManager.flagsToTagsIds(flags,tagsMap);
 							boolean autoedit=false;
 							boolean issched=false;
-							int syyyy=0;
-							int smm=0;
-							int sdd=0;
-							int shhh=0;
-							int smmm=0;
-							int ssss=0;
+							String schedDate=null;
 
 							if (isdrafts) {
-								String h=getSingleHeaderValue(xm,"Sonicle-send-scheduled");
-								if (h!=null && h.equals("true")) {
-									java.util.Calendar scal=parseScheduleHeader(getSingleHeaderValue(xm,"Sonicle-send-date"),getSingleHeaderValue(xm,"Sonicle-send-time"));
-									if (scal!=null) {
-										syyyy=scal.get(java.util.Calendar.YEAR);
-										smm=scal.get(java.util.Calendar.MONTH);
-										sdd=scal.get(java.util.Calendar.DAY_OF_MONTH);
-										shhh=scal.get(java.util.Calendar.HOUR_OF_DAY);
-										smmm=scal.get(java.util.Calendar.MINUTE);
-										ssss=scal.get(java.util.Calendar.SECOND);
+								if (ScheduledSendTask.hasScheduledSendHeader(xm)) {
+									DateTime sendAt = ScheduledSendTask.getScheduleHeaderSendAt(xm);
+									if (sendAt != null) {
+										UserProfile.Data ud = WT.getProfileData(getEnv().getProfileId());
+										schedDate = JodaTimeUtils.printYMDHMS(ud.getTimeZone(), sendAt);
 										issched=true;
 										status="scheduled";
 									}
-								} 
+								}
 
-								h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
+								String h=getSingleHeaderValue(xm,HEADER_SONICLE_FROM_DRAFTER);
 								if (h!=null && h.equals("true")) {
 									autoedit=true;
 								}
@@ -7386,7 +7378,7 @@ public class Service extends BaseService implements MailEventListener {
 									msgtext = ex1.getMessage();
 								}
 							}
-
+							
 							String pecstatus=null;
 							if (messagesInfo.isPEC()) {
 								String hdrs[]=xm.getHeader(HDR_PEC_TRASPORTO);
@@ -7398,8 +7390,7 @@ public class Service extends BaseService implements MailEventListener {
 										pecstatus=hdrs[0];
 								}
 							}
-
-							String schedDate = issched ? formatCalendarDate(syyyy, smm, sdd, shhh, smmm, ssss) : null;
+							
 							Boolean threadOpen = false;
 							Boolean threadHasChildren = false;
 							Integer threadUnseenChildren = null;
@@ -8231,6 +8222,15 @@ public class Service extends BaseService implements MailEventListener {
 				}
 			}
 			
+			if (mcache.isDrafts() && ScheduledSendTask.hasScheduledSendHeader(m)) {
+				DateTime sendAt = ScheduledSendTask.getScheduleHeaderSendAt(m);
+				if (sendAt != null) {
+					UserProfile.Data ud = WT.getProfileData(getEnv().getProfileId());
+					items.add(new JsMessageDetails("scheddate", JodaTimeUtils.printYMDHMS(ud.getTimeZone(), sendAt)));
+				}
+			}
+			
+			/*
 			String h = getSingleHeaderValue(m, "Sonicle-send-scheduled");
 			if (h != null && h.equals("true")) {
 				java.util.Calendar scal = parseScheduleHeader(getSingleHeaderValue(m, "Sonicle-send-date"), getSingleHeaderValue(m, "Sonicle-send-time"));
@@ -8239,7 +8239,8 @@ public class Service extends BaseService implements MailEventListener {
 					String sdate = df.format(sd).replaceAll("\\.", ":");
 					items.add(new JsMessageDetails("scheddate", sdate));
 				}
-			}			
+			}
+			*/
 			
 			if (ir!=null) {
 				

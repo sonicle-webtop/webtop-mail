@@ -67,7 +67,7 @@ import org.slf4j.LoggerFactory;
  *
  * @author malbinola
  */
-public class LegacyScheduledSendTask extends BaseBackgroundServiceTask {
+@Deprecated public class LegacyScheduledSendTask extends BaseBackgroundServiceTask {
 	private static final Logger LOGGER = (Logger)LoggerFactory.getLogger(LegacyScheduledSendTask.class);
 	
 	private BackgroundService bs = null;
