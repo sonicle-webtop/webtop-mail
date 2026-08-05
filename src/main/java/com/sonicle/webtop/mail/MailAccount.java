@@ -38,6 +38,7 @@ import com.sonicle.commons.concurrent.ThreadFactoryBuilder;
 import com.sonicle.commons.web.json.JsonResult;
 import com.sonicle.mail.Mailbox;
 import com.sonicle.mail.MailboxConfig;
+import com.sonicle.mail.PropsBuilder;
 import com.sonicle.mail.StoreHostParams;
 import com.sonicle.mail.StoreProtocol;
 import com.sonicle.mail.StoreUtils;
@@ -233,9 +234,8 @@ public class MailAccount {
 		//the dedicated sessions inherit these: extended folder classes so event
 		//messages are SonicleIMAPMessage (idle listeners cast for UID/flags), and
 		//imap events enabled for idle()
-		StoreUtils.useExtendedFolderClasses(props);
-		props.setProperty("mail.imap.enableimapevents", "true");
-		props.setProperty("mail.imaps.enableimapevents", "true");
+		PropsBuilder.useCustomizedIMAPFolderClasses(props);
+		PropsBuilder.enableIMAPEvents(props, true);
 		return props;
 	}
 
