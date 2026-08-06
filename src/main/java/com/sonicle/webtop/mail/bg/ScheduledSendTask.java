@@ -143,7 +143,7 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 		try {
 			StoreHostParams hostParams = mus.getMailboxHostParams(user, null, true);
 			LOGGER.debug("[{}] Preparing mailbox...", userProfile);
-			mailbox = new Mailbox(hostParams, ManagerUtils.createMailboxConfig(mus), WT.getMailSessionPropsBuilder(false, true).withDebug().build());
+			mailbox = new Mailbox(hostParams, ManagerUtils.createMailboxConfig(mus), WT.getMailSessionPropsBuilder(false, true).build());
 			mailbox.connect();
 			
 			drafts = StoreUtils.openFolder(mailbox.getSpecialFolder(Mailbox.SpecialFolder.DRAFTS, true), true);
