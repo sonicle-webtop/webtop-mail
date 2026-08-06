@@ -946,7 +946,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		//Machinery identity MUST derive from the TARGET profile: the first warm-up
 		//can run on a foreign thread (REST machinery header, push subscribe) and
 		//must never bind the caller's mailbox into this shared instance
-		mprofile = new MailUserProfile(this, mss, mus, getTargetProfileId(), true);
+		mprofile = new MailUserProfile(this, mss, mus, getTargetProfileId());
 		String mailUsername = mprofile.getMailUsername();
 		String mailPassword = mprofile.getMailPassword();
 		boolean isImpersonated = RunContext.isImpersonated();
@@ -3850,6 +3850,79 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
         return (idents == null || idents.isEmpty()) ? null : idents.get(0);
     }
 	
+    public Identity getIdentityAt(int index) {
+		List<Identity> idents;
+		try {
+			idents = ensureIdentities();
+		} catch(WTException exc) {
+			//was: swallow + NPE on the null list right below — surface the real cause
+			throw new WTRuntimeException(exc, "Identities unavailable for {}", getTargetProfileId());
+		}
+        return (idents == null || index >= idents.size()) ? null : idents.get(index);
+    }
+
+	public Identity getIdentity(String displayName, String email) {
+		List<Identity> idents;
+		try {
+			idents = ensureIdentities();
+		} catch(WTException exc) {
+			//was: swallow + NPE on the null list right below — surface the real cause
+			throw new WTRuntimeException(exc, "Identities unavailable for {}", getTargetProfileId());
+		}
+		for(Identity ident: idents) {
+			if (ident.getDisplayName().equals(displayName) && ident.getEmail().equals(email))
+				return ident;
+		}
+		return null;
+	}
+
+	public Identity getIdentity(int identityId) {
+		List<Identity> idents;
+		try {
+			idents = ensureIdentities();
+		} catch(WTException exc) {
+			//was: swallow + NPE on the null list right below — surface the real cause
+			throw new WTRuntimeException(exc, "Identities unavailable for {}", getTargetProfileId());
+		}
+		for(Identity ident: idents) {
+			if (ident.getIdentityId()==identityId)
+				return ident;
+		}
+		return null;
+	}
+	
+	public Identity getIdentity(String foldername) {
+		List<Identity> idents;
+		try {
+			idents = ensureIdentities();
+		} catch(WTException exc) {
+			//was: swallow + NPE on the null list right below — surface the real cause
+			throw new WTRuntimeException(exc, "Identities unavailable for {}", getTargetProfileId());
+		}
+		for(Identity ident: idents) {
+			String mainFolder=ident.getMainFolder();
+			if (mainFolder!=null && mainFolder.length()>0 && mainFolder.equals(foldername)) {
+				return ident;
+		}
+	  }
+	  return getMainIdentity();
+	}
+		
+	public Identity findIdentity(InternetAddress fromAddr) {
+		List<Identity> idents;
+		try {
+			idents = ensureIdentities();
+		} catch(WTException exc) {
+			//was: swallow + NPE on the null list right below — surface the real cause
+			throw new WTRuntimeException(exc, "Identities unavailable for {}", getTargetProfileId());
+		}
+		for(Identity ident: idents) {
+			if (fromAddr.getAddress().equalsIgnoreCase(ident.getEmail()))
+				return ident;
+		}
+		return null;
+	}
+
 	public Identity folderHasIdentity(String folder) {
 		return identHash.get(folder);
 	}
@@ -3964,9 +4037,9 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		Connection con=null;
 		List<Identity> idents=new ArrayList();
 		Mailbox mailbox = null;
+		UserProfileId pid=getTargetProfileId();
 		try {
 			mailbox = getMailbox();
-			UserProfileId pid=getTargetProfileId();
 			//first add main identity
 			Data udata=WT.getProfileData(pid);
 			Identity id=new Identity(0,null,udata.getDisplayName(),udata.getPersonalEmail().getAddress(),null);
@@ -3984,59 +4057,60 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 				idents.add(ident);
 				identHash.put(ident.getMainFolder(), ident);
 			}
-
-			//add automatic shared identities
-			int autoid=-1;
-			ArrayList<Identity> autoIdents = new ArrayList<>();
-			CoreManager core=WT.getCoreManager(pid);
-			List<ShareOrigin> origins = core.listShareOrigins(SERVICE_ID, IDENTITY_SHARING_CONTEXT, Arrays.asList(IDENTITY_PERMISSION_KEY));
-			for(ShareOrigin origin: origins) {
-				UserProfileId opid=origin.getProfileId();
-				UserProfile.Data opdata=WT.getProfileData(opid);
-				Map<String, Sharing.SubjectConfiguration> sconfigurations = core.getShareSubjectConfiguration(SERVICE_ID, IDENTITY_SHARING_CONTEXT, opid, "*", IDENTITY_PERMISSION_KEY, LangUtils.asSet(pid), FolderShareParameters.class);
-				if (sconfigurations.isEmpty()) continue;
-				Entry<String, Sharing.SubjectConfiguration> entry = sconfigurations.entrySet().iterator().next();
-				FolderShareParameters fsp = entry.getValue().getTypedData(FolderShareParameters.class);
-				if (fsp!=null && fsp.shareIdentity) {
-					id = new Identity(
-							Identity.TYPE_AUTO,
-							autoid--,
-							null,
-							opdata.getDisplayName(),
-							opdata.getPersonalEmailAddress(),
-							null,
-							false,
-							fsp.forceMailcard,
-							fsp.alwaysCc,
-							fsp.alwaysCcEmail);
-					id.setOriginPid(opid);
-					autoIdents.add(id);
-				}
-			}
-
-			//resolve every shared folder name with a single LIST per shared prefix
-			//(one IMAP round-trip) instead of one lookup per identity
-			if (!autoIdents.isEmpty()) {
-				LinkedHashSet<String> mailUsers = new LinkedHashSet<>();
-				for(Identity aid: autoIdents) mailUsers.add(getMailUsername(aid.getOriginPid()));
-				Map<String, String> sharedNames = null;
-				try {
-					sharedNames = mailbox.getSharedFolderNames(mailUsers);
-				} catch(MessagingException exc) {
-					//null map: loadIdentityMailcard falls back to per-identity lookups
-					logger.error("Bulk shared folder resolution failed, falling back to per-identity lookups", exc);
-				}
-				for(Identity aid: autoIdents) {
-					loadIdentityMailcard(mailbox, aid, sharedNames);
-					idents.add(aid);
-				}
-			}
 		} catch(SQLException | DAOException ex) {
 			throw new WTException(ex, "DB error");
 		} finally {
 			//if (mailbox!=null) mailbox.disconnect();
 			DbUtils.closeQuietly(con);
 		}
+
+		//add automatic shared identities
+		int autoid=-1;
+		ArrayList<Identity> autoIdents = new ArrayList<>();
+		CoreManager core=WT.getCoreManager(pid);
+		List<ShareOrigin> origins = core.listShareOrigins(SERVICE_ID, IDENTITY_SHARING_CONTEXT, Arrays.asList(IDENTITY_PERMISSION_KEY));
+		for(ShareOrigin origin: origins) {
+			UserProfileId opid=origin.getProfileId();
+			UserProfile.Data opdata=WT.getProfileData(opid);
+			Map<String, Sharing.SubjectConfiguration> sconfigurations = core.getShareSubjectConfiguration(SERVICE_ID, IDENTITY_SHARING_CONTEXT, opid, "*", IDENTITY_PERMISSION_KEY, LangUtils.asSet(pid), FolderShareParameters.class);
+			if (sconfigurations.isEmpty()) continue;
+			Entry<String, Sharing.SubjectConfiguration> entry = sconfigurations.entrySet().iterator().next();
+			FolderShareParameters fsp = entry.getValue().getTypedData(FolderShareParameters.class);
+			if (fsp!=null && fsp.shareIdentity) {
+				Identity id = new Identity(
+						Identity.TYPE_AUTO,
+						autoid--,
+						null,
+						opdata.getDisplayName(),
+						opdata.getPersonalEmailAddress(),
+						null,
+						false,
+						fsp.forceMailcard,
+						fsp.alwaysCc,
+						fsp.alwaysCcEmail);
+				id.setOriginPid(opid);
+				autoIdents.add(id);
+			}
+		}
+
+		//resolve every shared folder name with a single LIST per shared prefix
+		//(one IMAP round-trip) instead of one lookup per identity
+		if (!autoIdents.isEmpty()) {
+			LinkedHashSet<String> mailUsers = new LinkedHashSet<>();
+			for(Identity aid: autoIdents) mailUsers.add(getMailUsername(aid.getOriginPid()));
+			Map<String, String> sharedNames = null;
+			try {
+				sharedNames = mailbox.getSharedFolderNames(mailUsers);
+			} catch(MessagingException exc) {
+				//null map: loadIdentityMailcard falls back to per-identity lookups
+				logger.error("Bulk shared folder resolution failed, falling back to per-identity lookups", exc);
+			}
+			for(Identity aid: autoIdents) {
+				loadIdentityMailcard(mailbox, aid, sharedNames);
+				idents.add(aid);
+			}
+		}
+			
 		return idents;
 	}
 	

@@ -34,11 +34,19 @@
 package com.sonicle.webtop.mail;
 
 import com.sonicle.webtop.core.app.WT;
+import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.sdk.ServiceMessage;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.shiro.SecurityUtils;
+import org.apache.shiro.subject.Subject;
+import org.apache.shiro.subject.support.SubjectThreadState;
+import org.apache.shiro.util.ThreadState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -85,7 +93,89 @@ public class MailPushManager {
 	private final ConcurrentHashMap<UserProfileId, UserSubscription> subscriptions = new ConcurrentHashMap<>();
 	private volatile String serviceId = null;
 
+	//Machinery warm-ups triggered by push subscriptions are THROTTLED through this
+	//bounded executor: at gateway boot a resubscribe-all frame can carry hundreds
+	//of devices, and the per-manager async warm-up (one thread each, DB settings +
+	//identities reads + IMAP connects) exhausted the JDBC pool when they all ran
+	//at once. Only WARMUP_CONCURRENCY machineries start concurrently; the rest
+	//queue and drain. Web logins do not pass through here (they warm on their own
+	//request thread) so interactive latency is unaffected.
+	private static final String PROP_PUSH_WARMUP_CONCURRENCY = "webtop.push-gateway.warmup-concurrency";
+	private static final int DEFAULT_WARMUP_CONCURRENCY = 2;
+	private final Object warmupLock = new Object();
+	private ExecutorService warmupExecutor = null;
+
 	private MailPushManager() {}
+
+	private ExecutorService getWarmupExecutor() {
+		synchronized (warmupLock) {
+			if (warmupExecutor == null || warmupExecutor.isShutdown()) {
+				int concurrency = DEFAULT_WARMUP_CONCURRENCY;
+				try {
+					concurrency = Integer.parseInt(WebTopApp.getInstanceProperties()
+						.getProperty(PROP_PUSH_WARMUP_CONCURRENCY, String.valueOf(DEFAULT_WARMUP_CONCURRENCY)));
+				} catch (Throwable t) {
+					logger.warn("Invalid {} value, using default {}", PROP_PUSH_WARMUP_CONCURRENCY, DEFAULT_WARMUP_CONCURRENCY);
+				}
+				if (concurrency < 1) concurrency = 1;
+				final AtomicInteger seq = new AtomicInteger(0);
+				warmupExecutor = Executors.newFixedThreadPool(concurrency, r -> {
+					Thread t = new Thread(r, "mailPushWarmup-" + seq.incrementAndGet());
+					t.setDaemon(true);
+					return t;
+				});
+				logger.info("push warm-up executor started (concurrency={})", concurrency);
+			}
+			return warmupExecutor;
+		}
+	}
+
+	/**
+	 * Stops the warm-up executor, dropping any still-queued warm-ups (their
+	 * machineries will lazily start on first real use). Called by the module's
+	 * BackgroundService cleanup so pool threads never outlive the webapp.
+	 */
+	public void stopWarmups() {
+		synchronized (warmupLock) {
+			if (warmupExecutor != null) {
+				warmupExecutor.shutdownNow();
+				warmupExecutor = null;
+			}
+		}
+	}
+
+	private void enqueueWarmup(UserProfileId profileId, MailManager mmgr) {
+		//capture the caller's authenticated Subject NOW (subscribe runs with the
+		//target user's Subject bound, see NodejsMailPushGateway.dispatchSubscribe)
+		//and re-bind it on the pool thread: initAccounts resolves profile data
+		//through RunContext/WT, which need it on the running thread
+		Subject subject = null;
+		try {
+			subject = SecurityUtils.getSubject();
+		} catch (Throwable t) {
+			logger.debug("[{}] no Subject available for queued warm-up", profileId, t);
+		}
+		final Subject boundSubject = subject;
+		try {
+			getWarmupExecutor().execute(() -> {
+				ThreadState threadState = (boundSubject != null) ? new SubjectThreadState(boundSubject) : null;
+				if (threadState != null) threadState.bind();
+				try {
+					//synchronous on purpose: running the warm-up on THIS pool thread
+					//is what bounds the number of machineries starting at once
+					//(idempotent + shuttingDown-gated inside)
+					mmgr.ensureAccountsStarted();
+				} catch (Throwable t) {
+					logger.error("[{}] queued machinery warm-up failed", profileId, t);
+				} finally {
+					if (threadState != null) threadState.clear();
+				}
+			});
+		} catch (Throwable t) {
+			//executor stopped mid-shutdown: machinery will start on first real use
+			logger.debug("[{}] warm-up enqueue rejected", profileId, t);
+		}
+	}
 
 	/**
 	 * Plugs in the real outbound gateway (null restores the logging no-op).
@@ -111,7 +201,7 @@ public class MailPushManager {
 		us.deviceIds.add(deviceId);
 		us.manager = mmgr;
 		mmgr.registerMailEventListener(us); //CopyOnWriteArraySet: re-add is a no-op
-		mmgr.ensureAccountsStartedAsync();
+		enqueueWarmup(profileId, mmgr); //throttled: see warm-up executor above
 		logger.info("[{}] push device '{}' subscribed ({} total)", profileId, deviceId, us.deviceIds.size());
 	}
 

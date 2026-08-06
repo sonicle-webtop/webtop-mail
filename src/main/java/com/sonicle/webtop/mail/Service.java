@@ -826,11 +826,7 @@ public class Service extends BaseService implements MailEventListener {
 	}
 	
 	public Identity findIdentity(InternetAddress fromAddr) {
-		for(Identity ident: mprofile.getIdentities()) {
-			if (fromAddr.getAddress().equalsIgnoreCase(ident.getEmail()))
-				return ident;
-		}
-		return null;
+		return mailManager.findIdentity(fromAddr);
 	}
 	
 	public Exception sendReceipt(Identity ident, String from, String to, String subject, String body) {
@@ -1924,7 +1920,7 @@ public class Service extends BaseService implements MailEventListener {
 				Set<InternetAddress> myAddresses = new LinkedHashSet<>();
 				myAddresses.add(myEmail);
 				if (ss.getMessageReplyAllStripMyIdentities()) {
-					for (Identity ident : mprofile.getIdentities()) {
+					for (Identity ident : mailManager.listIdentities()) {
 						myAddresses.add(InternetAddressUtils.toInternetAddress(ident.getEmail()));
 					}
 				}
@@ -1955,7 +1951,7 @@ public class Service extends BaseService implements MailEventListener {
 				
 				removeDestination(reply, myemail);
 				if (ss.getMessageReplyAllStripMyIdentities()) {
-					for (Identity ident : mprofile.getIdentities()) {
+					for (Identity ident : mailManager.listIdentities()) {
 						removeDestination(reply, ident.getEmail());
 					}
 				}
@@ -2009,7 +2005,7 @@ public class Service extends BaseService implements MailEventListener {
 				reply.setText("");
 			}
 			return new SimpleMessage(id, reply);
-		} catch (MessagingException e) {
+		} catch (MessagingException | WTException e) {
 			Service.logger.error("Exception",e);
 //      Service.logger.debug("*** SimpleMessage: " + e);
 			return null;

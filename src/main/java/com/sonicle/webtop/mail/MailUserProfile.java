@@ -47,6 +47,7 @@ import com.sonicle.webtop.core.app.WebTopManager;
 import com.sonicle.webtop.core.util.Encryption;
 import com.sonicle.webtop.core.sdk.UserProfile;
 import com.sonicle.webtop.core.sdk.UserProfileId;
+import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.mail.bol.OIdentity;
 import com.sonicle.webtop.mail.bol.OUserMap;
 import com.sonicle.webtop.mail.bol.model.Identity;
@@ -83,7 +84,6 @@ public class MailUserProfile {
 	private String mailUsername;
 	private String mailPassword;
 	private String replyTo;
-	private List<Identity> identities;
 	private String sharedSort;
 	private boolean includeMessageInReply;
 	private int numMessageList;
@@ -192,16 +192,6 @@ public class MailUserProfile {
 			includeMessageInReply=mus.isIncludeMessageInReply();
 			numMessageList=mus.getPageRows();
 			
-			//List<OIdentity> oids=IdentityDAO.getInstance().selectByDomainUser(con, profile.getDomainId(), profile.getUserId());
-			//identities=new Identity[oids.size()];
-			//int i=0;
-			//for(OIdentity oid: oids) {
-            //    Identity ident=new Identity(oid.getIdentityId(),oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
-			//	identities[i++]=ident;
-			//}
-			identities=mman.listIdentities();
-			
-			
 		} catch(Exception ex) {
 			logger.error("Error mapping mail user", ex);
 		} finally {
@@ -211,11 +201,7 @@ public class MailUserProfile {
 	
 	
     public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile) {
-		this(mman, mss, mus, profile, true);
-	}
-
-    public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfile profile, boolean loadIdentities) {
-		this(mman, mss, mus, profile.getId(), loadIdentities);
+		this(mman, mss, mus, profile.getId());
 	}
 
 	/**
@@ -223,7 +209,7 @@ public class MailUserProfile {
 	 * calling thread's UserProfile/Principal may belong to a DIFFERENT user than
 	 * the mailbox owner (e.g. warm-up triggered by REST or push subscribe).
 	 */
-    public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfileId pid, boolean loadIdentities) {
+    public MailUserProfile(MailManager mman, MailServiceSettings mss, MailUserSettings mus, UserProfileId pid) {
         this.mss = mss;
 		CoreManager coreMgr = WT.getCoreManager(true, mman.getTargetProfileId());
 		Connection con=null;
@@ -312,20 +298,12 @@ public class MailUserProfile {
 			includeMessageInReply=mus.isIncludeMessageInReply();
 			numMessageList=mus.getPageRows();
 			
-			//List<OIdentity> oids=IdentityDAO.getInstance().selectByDomainUser(con, profile.getDomainId(), profile.getUserId());
-			//identities=new Identity[oids.size()];
-			//int i=0;
-			//for(OIdentity oid: oids) {
-            //    Identity ident=new Identity(oid.getIdentityId(),oid.getDisplayName(),oid.getEmail(),oid.getMainFolder());
-			//	identities[i++]=ident;
-			//}
-			if (loadIdentities) identities=mman.listIdentities();
-			
 		} catch(Exception exc) {
 			logger.error("Error mapping mail user",exc);
 		} finally {
 			DbUtils.closeQuietly(con);
 		}
+		
     }
 	
     public String getFolderPrefix() {
@@ -408,38 +386,37 @@ public class MailUserProfile {
 		return replyTo;
 	}
 	
-	public Identity[] getIdentities() {
-		return identities.toArray(new Identity[0]);
+	private Identity[] noIdentities = new Identity[] { };
+	
+	/*private Identity[] listIdentities() {
+		Identity ids[] = null;
+		try {
+			List<Identity> list = mman.listIdentities();
+			ids = list.toArray(new Identity[0]);
+		} catch(Exception exc) {
+			ids = noIdentities;
+		}
+		return ids;
 	}
 	
+	public Identity[] getIdentities() {
+		return listIdentities();
+	}*/
+	
 	public Identity getIdentityAt(int index) {
-		return identities.get(index);
+		return mman.getIdentityAt(index);
 	}
 	
 	public Identity getIdentity(String displayName, String email) {
-		for(Identity ident: identities) {
-			if (ident.getDisplayName().equals(displayName) && ident.getEmail().equals(email))
-				return ident;
-		}
-		return null;
+		return mman.getIdentity(displayName, email);
 	}
     
 	public Identity getIdentity(int identityId) {
-		for(Identity ident: identities) {
-			if (ident.getIdentityId()==identityId)
-				return ident;
-		}
-		return null;
+		return mman.getIdentity(identityId);
 	}
 	
 	public Identity getIdentity(String foldername) {
-		for(Identity ident: identities) {
-			String mainFolder=ident.getMainFolder();
-			if (mainFolder!=null && mainFolder.length()>0 && mainFolder.equals(foldername)) {
-				return ident;
-		}
-	  }
-	  return mman.getMainIdentity();
+		return mman.getIdentity(foldername);
 	}
 		
 	public String getSharedSort() {
