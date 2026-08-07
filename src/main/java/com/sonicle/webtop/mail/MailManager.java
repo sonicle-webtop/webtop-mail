@@ -4922,19 +4922,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		logger.debug("Working on autoresponder...");
 		AutoResponder autoResp = getAutoResponder();
 		if (autoResp.getEnabled()) {
-			String profileEmail = StringUtils.lowerCase(pdata.getProfileEmailAddress());
-			String personalEmail = StringUtils.lowerCase(pdata.getPersonalEmailAddress());
-			String tokens[] = StringUtils.splitByWholeSeparator(StringUtils.lowerCase(StringUtils.replace(autoResp.getAddresses(), " ", "")), ",");
-			Set<String> addresses = Collections.<String>emptySet();
-			if (tokens != null) {
-				addresses = new HashSet(Arrays.asList(tokens));
-			}
-			
-			if (!profileEmail.equals(personalEmail) && !addresses.contains(personalEmail)) {
-				autoResp.setAddresses(LangUtils.joinStrings(",", autoResp.getAddresses(), personalEmail));
-			}
-			
-			ssb.setVacation(autoResp.toSieveVacation(pdata.getPersonalEmail(), pdata.getTimeZone()));
+			ssb.setVacation(autoResp.toSieveVacation(pdata.getProfileEmail(), pdata.getPersonalEmail(), null, pdata.getTimeZone()));
 		}
 		
 		logger.debug("Working on incoming filters...");
