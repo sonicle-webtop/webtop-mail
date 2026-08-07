@@ -9847,7 +9847,7 @@ public class Service extends BaseService implements MailEventListener {
 				description = folder.getName();
 			}
 			
-			Map<String, Sharing.SubjectConfiguration> sconfigurations=core.getShareSubjectConfiguration(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, FolderShareParameters.class);
+			Map<String, Sharing.SubjectConfiguration> sconfigurations=core.getShareSubjectConfigurations(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, FolderShareParameters.class);
 			for(ACL acl : folder.getACL()) {
 				String aclUserId=acl.getName();
 				UserProfileId pid=aclUserIdToUserId(aclUserId);
