@@ -56,10 +56,17 @@ public class MailRestApiUtils {
 	 */
 	public static final String HEADER_MACHINERY = "X-WT-Mail-Machinery";
 	public static final String HEADER_MACHINERY_FULL = "full";
+	//NB: the app-restart signal is NOT a mail header — it is the core-owned
+	//X-WT-App-Launch header, processed at the AUTH layer on ANY service's API
+	//call (see core AuthBearer / ServiceManager.onAppLaunch): core rebuilds all
+	//the user's app-side shared managers and MailPushManager re-attaches its
+	//push state via the eviction listener. This class only handles the
+	//machinery warm-up header.
 
 	public static MailManager getMailManager(UserProfileId targetPid) {
 		//Resolve through the shared-manager registry: REST reuses the same warm
-		//per-user instance as web sessions instead of building a throwaway.
+		//per-user instance across all the user's app devices instead of
+		//building a throwaway.
 		return (MailManager)WT.getServiceManager(WT.findServiceId(Service.class), false, targetPid);
 	}
 

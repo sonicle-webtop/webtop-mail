@@ -90,6 +90,10 @@ public class BackgroundService extends BaseBackgroundService {
 		// License reconcile handles both cold-start (boot if licensed now)
 		// and runtime transitions — no explicit boot call needed here.
 		startLicensePoller();
+		//hook into core's app-launch pipeline: when core rebuilds a user's
+		//sessionless managers, push refs/listener must be re-attached on the
+		//fresh mail instance
+		MailPushManager.getInstance().registerEvictionListener();
 	}
 
 	@Override
@@ -101,6 +105,7 @@ public class BackgroundService extends BaseBackgroundService {
 		if (shim != null) {
 			try { shim.shutdown(); } catch (Throwable t) { LOGGER.warn("push gateway shutdown", t); }
 		}
+		try { MailPushManager.getInstance().unregisterEvictionListener(); } catch (Throwable t) { LOGGER.warn("eviction listener unregister", t); }
 		//stop the throttled warm-up pool (queued warm-ups are dropped: machineries
 		//lazily start on first real use after the next boot)
 		try { MailPushManager.getInstance().stopWarmups(); } catch (Throwable t) { LOGGER.warn("push warm-up executor shutdown", t); }

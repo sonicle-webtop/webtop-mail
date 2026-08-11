@@ -193,7 +193,7 @@ public class AdvancedSearchThread extends Thread {
     private void addChildren(FolderCache fc) throws MessagingException {
 		Folder children[]=fc.getFolder().list();
 		if (children!=null) {
-			ArrayList<Folder> achildren=ms.sortFolders(account,children);
+			ArrayList<Folder> achildren=ms.getManager().sortFolders(account,children);
 			for(Folder folder: achildren) {
 				FolderCache fcc=account.getFolderCache(folder.getFullName());
 				if (fcc!=null) {
