@@ -33,6 +33,7 @@
  */
 package com.sonicle.webtop.mail;
 
+import com.sonicle.webtop.core.app.ServiceManager;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.WebTopApp;
 import com.sonicle.webtop.core.sdk.ServiceMessage;
@@ -104,6 +105,19 @@ public class MailPushManager {
 	private static final int DEFAULT_WARMUP_CONCURRENCY = 2;
 	private final Object warmupLock = new Object();
 	private ExecutorService warmupExecutor = null;
+
+	//The app-launch signal itself (X-WT-App-Launch header, dedupe, debounce,
+	//eviction of ALL sessionless-only managers) is CORE-OWNED: it is processed
+	//at the auth layer on any service's API call (see core AuthBearer /
+	//ServiceManager.onAppLaunch). This module only (a) forwards the equivalent
+	//signal when a KNOWN push device re-registers, and (b) listens for the
+	//evictions to re-attach its durable push state on the fresh mail instance.
+	private final ServiceManager.SessionlessEvictionListener evictionListener = new ServiceManager.SessionlessEvictionListener() {
+		@Override
+		public void onSessionlessManagersEvicted(UserProfileId profileId, java.util.List<String> evictedServiceIds) {
+			reattachPushState(profileId, evictedServiceIds);
+		}
+	};
 
 	private MailPushManager() {}
 
@@ -192,6 +206,14 @@ public class MailPushManager {
 	 * request): the background warm-up runs under that security context.
 	 */
 	public synchronized void subscribe(UserProfileId profileId, String deviceId) {
+		//NB: a re-subscribe of a known device is NOT an app-launch signal.
+		//Devices and the gateway re-send subscribe frames for housekeeping
+		//(reconnects, periodic token re-registration, gateway-boot
+		//resubscribe-all) — none of which mean the app restarted, and rebuilding
+		//here would mass-evict managers on every such event (observed in dev:
+		//re-subscribes ~30s apart force-rebuilt everything). The app-launch
+		//signal is EXCLUSIVELY the app-declared X-WT-App-Launch header,
+		//processed at the core auth layer.
 		MailManager mmgr = (MailManager)WT.acquireServiceManagerSubscription(getServiceId(), profileId, deviceId);
 		if (mmgr == null) {
 			logger.error("[{}] push subscribe failed: no shared manager available", profileId);
@@ -203,6 +225,49 @@ public class MailPushManager {
 		mmgr.registerMailEventListener(us); //CopyOnWriteArraySet: re-add is a no-op
 		enqueueWarmup(profileId, mmgr); //throttled: see warm-up executor above
 		logger.info("[{}] push device '{}' subscribed ({} total)", profileId, deviceId, us.deviceIds.size());
+	}
+
+	/**
+	 * Hooks this module into core's app-launch pipeline (registered by the
+	 * module's BackgroundService, unregistered at its cleanup).
+	 */
+	public void registerEvictionListener() {
+		WT.addSessionlessEvictionListener(evictionListener);
+	}
+
+	public void unregisterEvictionListener() {
+		WT.removeSessionlessEvictionListener(evictionListener);
+	}
+
+	/**
+	 * Core evicted the profile's sessionless-only managers (app-launch signal,
+	 * arriving on any service's API call or from a device re-registration). If
+	 * MAIL was among them, the old holder's m: refs and fan-out listener died
+	 * with it: re-acquire the subscription refs of ALL the user's devices,
+	 * re-hook the listener on the fresh instance and kick the throttled
+	 * machinery warm-up. No-push users need nothing here — their fresh
+	 * instance materializes and warms on the app's own (access-token
+	 * authenticated) next call; resolving it on THIS thread could yield a
+	 * throwaway (non-app auth) whose warm-up would leak an IMAP stack.
+	 */
+	private void reattachPushState(UserProfileId profileId, java.util.List<String> evictedServiceIds) {
+		String sid = getServiceId();
+		if (!evictedServiceIds.contains(sid)) return; //mail was young or absent: refs still valid
+		UserSubscription us = subscriptions.get(profileId);
+		if (us == null || us.deviceIds.isEmpty()) return;
+		synchronized (this) {
+			MailManager fresh = null;
+			for (String devId : us.deviceIds) {
+				MailManager m = (MailManager)WT.acquireServiceManagerSubscription(sid, profileId, devId);
+				if (m != null) fresh = m;
+			}
+			if (fresh != null) {
+				us.manager = fresh;
+				fresh.registerMailEventListener(us);
+				enqueueWarmup(profileId, fresh);
+				logger.info("[{}] push state re-attached on rebuilt manager ({} devices)", profileId, us.deviceIds.size());
+			}
+		}
 	}
 
 	/**

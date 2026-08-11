@@ -2390,10 +2390,18 @@ public class Service extends BaseService implements MailEventListener {
 		}
 		fcProvided=null;
 		mft=null;
-		//The account machinery is owned by the SHARED MailManager: it is NOT torn
-		//down at session end. The registry evicts the instance (running
-		//MailManager.onSharedShutdown) once no session references remain and the
-		//idle grace elapses, or at application shutdown.
+		//Hybrid scope: a PRIVATE per-session MailManager (registryHosted=false)
+		//owns machinery nobody else uses — this session must tear it down or the
+		//idle threads/IMAP stores leak past logout. A registry-hosted instance is
+		//NOT torn down here: the registry evicts it (onSharedShutdown) once no
+		//refs remain and the idle grace elapses, or at forced rebuild/shutdown.
+		if (mailManager != null && !mailManager.isRegistryHosted()) {
+			try {
+				mailManager.teardown();
+			} catch (Throwable t) {
+				logger.warn("private MailManager teardown failed", t);
+			}
+		}
 
 		logger.trace("exiting cleanup");
 	}

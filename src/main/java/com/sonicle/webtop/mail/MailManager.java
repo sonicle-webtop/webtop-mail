@@ -203,6 +203,12 @@ import org.slf4j.Logger;
  *
  * @author gabriele.bulfon
  */
+//Hybrid scope: web sessions build and own PRIVATE per-session MailManagers
+//(historical lifecycle — re-login yields fresh state, Service.cleanup tears the
+//machinery down at logout); only sessionless consumers (REST calls, mobile-push
+//subscriptions) share the registry instance, one per user across all devices.
+//Remove the annotation to restore the original everyone-shares-one model.
+@com.sonicle.webtop.core.sdk.SharedManagerScope(com.sonicle.webtop.core.sdk.SharedManagerScope.Scope.SESSIONLESS_ONLY)
 public class MailManager extends BaseManager implements SharedManager, IMailManager {
 
 	public static final Logger logger = WT.getLogger(MailManager.class);
@@ -861,16 +867,44 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	@Override
 	public void onSharedStartup() {
 		logger.info("[{}] shared MailManager created", getTargetProfileId());
+		//only the registry calls this: marks the instance as registry-hosted so
+		//session-owned code (Service.cleanup) knows NOT to tear it down — and
+		//vice versa, a private per-session instance (hybrid scope) reads false
+		//and gets torn down by its owning session at logout
+		registryHosted = true;
 	}
 
 	/**
 	 * SharedManager lifecycle: runs at registry eviction (no more session refs +
-	 * idle grace elapsed) or application shutdown. Tears down the whole per-user
-	 * machinery (idle threads, scan threads, event queues, IMAP stores).
+	 * idle grace elapsed), forced eviction (app-restart rebuild), or application
+	 * shutdown. Tears down the whole per-user machinery.
 	 */
 	@Override
 	public void onSharedShutdown() {
 		logger.info("[{}] shared MailManager shutting down", getTargetProfileId());
+		teardown();
+	}
+
+	private volatile boolean registryHosted = false;
+
+	/**
+	 * True when this instance lives in the shared-manager registry (its
+	 * lifecycle belongs to the sweeper/forced eviction). False for private
+	 * per-session instances (hybrid scope), whose owning session must call
+	 * {@link #teardown()} at logout.
+	 */
+	public boolean isRegistryHosted() {
+		return registryHosted;
+	}
+
+	/**
+	 * Idempotent full teardown of the per-user machinery (idle threads, scan
+	 * threads, event queues, IMAP stores) and cache memory. Called by
+	 * {@link #onSharedShutdown()} for registry instances and by the web
+	 * Service's cleanup for private per-session instances.
+	 */
+	public void teardown() {
+		logger.info("[{}] MailManager teardown ({})", getTargetProfileId(), registryHosted ? "registry" : "session-private");
 		shuttingDown = true;
 		teardownAccounts();
 		cleanup();
