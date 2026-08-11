@@ -85,6 +85,7 @@ public class BackgroundService extends BaseBackgroundService {
 
 	@Override
 	public void initialize() throws Exception {
+		scheduledSendTaskData = new ScheduledSendTask.Data();
 		resourceAutoresponderMgr = new ResourcesAutoresponderManager(this);
 		// License reconcile handles both cold-start (boot if licensed now)
 		// and runtime transitions — no explicit boot call needed here.
@@ -250,6 +251,12 @@ public class BackgroundService extends BaseBackgroundService {
 		} else {
 			return Arrays.asList();
 		}
+	}
+	
+	private volatile ScheduledSendTask.Data scheduledSendTaskData;
+	
+	public ScheduledSendTask.Data getScheduledSendTaskData() {
+		return scheduledSendTaskData;
 	}
 	
 	private boolean isCalendarServiceInstalled() {

@@ -33,6 +33,8 @@
  */
 package com.sonicle.webtop.mail.bg;
 
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.sonicle.commons.LangUtils;
 import com.sonicle.commons.MailUtils;
 import com.sonicle.commons.time.JodaTimeUtils;
@@ -76,6 +78,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.quartz.JobExecutionContext;
@@ -103,7 +106,7 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 
 	@Override
 	public void executeWork(JobExecutionContext jec, TaskContext context) throws Exception {
-		BackgroundService bs = ((BackgroundService)getBackgroundService(jec));
+		BackgroundService bs = context.getBackgroundService(BackgroundService.class);
 		
 		Map<String, MailServiceSettings> mssCache = new HashMap<>();
 		LinkedHashSet<UserProfileId> usersProfiles = new LinkedHashSet<>();
@@ -111,18 +114,27 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 			if (shouldStop()) break; // Speed-up shutdown process!
 			
 			LOGGER.debug("Processing domain '{}'... ", domainId);
-			MailServiceSettings mss = getMailServiceSettings(bs.SERVICE_ID, domainId);
+			MailServiceSettings mss = getMailServiceSettings(context.getBackgroundService().SERVICE_ID, domainId);
 			if (mss.isScheduledEmailsDisabled()) {
 				LOGGER.debug("Scheduled emails are disabled for '{}' domain, skipping... ");
 				continue;
 			}
 			mssCache.put(domainId, mss);
-			CoreManager coreMgr = WT.getCoreManager(RunContext.buildDomainAdminProfileId(domainId));
-			Set<String> userIds = coreMgr.listUserIds(EnabledCond.ENABLED_ONLY);
+			final CoreManager domainCoreMgr = WT.getCoreManager(RunContext.buildDomainAdminProfileId(domainId));
+			Set<String> userIds = domainCoreMgr.listUserIds(EnabledCond.ENABLED_ONLY);
 			List<String> consideredUsers = (LOGGER.isTraceEnabled()) ? new ArrayList(userIds.size()) : null;
 			for (String userId : userIds) {
 				if (shouldStop()) break; // Speed-up shutdown process!
-				usersProfiles.add(new UserProfileId(domainId, userId));
+				UserProfileId pid = new UserProfileId(domainId, userId);
+				if (bs.getScheduledSendTaskData().connectErrorPidCache.asMap().keySet().contains(pid)) {
+					LOGGER.debug("User '{}' keyed in connectError cache: skipping...", pid);
+					continue;
+				}
+				if (bs.getScheduledSendTaskData().missingDraftsPidCache.asMap().keySet().contains(pid)) {
+					LOGGER.debug("User '{}' keyed in missingDrafts cache: skipping...", pid);
+					continue;
+				}
+				usersProfiles.add(pid);
 				if (consideredUsers != null) consideredUsers.add(userId);
 			}
 			if (LOGGER.isTraceEnabled()) LOGGER.trace("Considering users: {}", LangUtils.joinStrings(", ", consideredUsers));
@@ -130,11 +142,11 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 		
 		for (UserProfileId userProfile : usersProfiles) {
 			if (shouldStop()) return; // Speed-up shutdown process!
-			checkScheduledMessagesForUser(userProfile, mssCache.get(userProfile.getDomainId()), context);
+			checkScheduledMessagesForUser(userProfile, mssCache.get(userProfile.getDomainId()), context, bs);
 		}
 	}
 	
-	private void checkScheduledMessagesForUser(UserProfileId userProfile, MailServiceSettings mss, TaskContext taskContext) {
+	private void checkScheduledMessagesForUser(final UserProfileId userProfile, final MailServiceSettings mss, final TaskContext taskContext, final BackgroundService bgService) {
 		MailUserSettings mus = getMailUserSettings(userProfile, mss);
 		String user = WT.buildDomainInternetAddress(userProfile.getDomainId(), userProfile.getUserId(), null).getAddress();
 		
@@ -151,11 +163,13 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 				checkForScheduledMessagesIntoUserFolder(drafts, userProfile, mus, taskContext);
 				
 			} else {
-				LOGGER.debug("[{}] Out folder ({}) does NOT exist, skipping...", userProfile, drafts.getFullName());
+				LOGGER.debug("[{}] Drafts folder ({}) does NOT exist, skipping...", userProfile, drafts.getFullName());
+				bgService.getScheduledSendTaskData().missingDraftsPidCache.put(userProfile, Boolean.TRUE);
 			}
 			
 		} catch (GeneralSecurityException | MessagingException ex) {
 			LOGGER.error("[{}] Unable to connect mailbox or opening INBOX", userProfile, ex);
+			bgService.getScheduledSendTaskData().connectErrorPidCache.put(userProfile, Boolean.TRUE);
 		} finally {
 			StoreUtils.closeQuietly(drafts, true);
 			if (mailbox != null) mailbox.disconnect();
@@ -362,5 +376,15 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 	
 	public static boolean getScheduleHeaderNotifySender(final Message message) throws MessagingException {
 		return StringUtils.equalsIgnoreCase(MimeUtils.getFirstHeaderValue(message, HEADER_X_NOTIFY_SENDER), "true");
+	}
+	
+	public static class Data {
+		public final Cache<UserProfileId, Boolean> connectErrorPidCache = Caffeine.newBuilder()
+			.expireAfterWrite(15, TimeUnit.MINUTES)
+			.build();
+		
+		public final Cache<UserProfileId, Boolean> missingDraftsPidCache = Caffeine.newBuilder()
+			.expireAfterWrite(1, TimeUnit.HOURS)
+			.build();
 	}
 }
