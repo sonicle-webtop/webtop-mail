@@ -9855,30 +9855,30 @@ public class Service extends BaseService implements MailEventListener {
 				description = folder.getName();
 			}
 			
-			Map<String, Sharing.SubjectConfiguration> sconfigurations=core.getShareSubjectConfiguration(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, FolderShareParameters.class);
+			Map<String, Sharing.SubjectConfiguration> sconfigurations=core.getShareSubjectConfigurations(SERVICE_ID, MailManager.IDENTITY_SHARING_CONTEXT, environment.getProfileId(), "*", MailManager.IDENTITY_PERMISSION_KEY, FolderShareParameters.class);
 			for(ACL acl : folder.getACL()) {
 				String aclUserId=acl.getName();
 				UserProfileId pid=aclUserIdToUserId(aclUserId);
 				if (pid==null) continue;
-				String userSid=null;
+				String userUid=null;
 				try {
-					userSid=core.lookupUserSid(pid);
+					userUid=core.lookupUserUid(pid);
 				} catch(WTException exc) {
 				}
 				String userDescription=null;
 				FolderShareParameters fsp=null;
-				if (userSid!=null) {
-					Sharing.SubjectConfiguration sconfiguration=sconfigurations.get(userSid);
+				if (userUid!=null) {
+					Sharing.SubjectConfiguration sconfiguration=sconfigurations.get(userUid);
 					if (sconfiguration!=null) fsp=sconfiguration.getTypedData(FolderShareParameters.class);
 				}
 				boolean shareIdentity=false;
 				boolean forceMailcard=false;
 				boolean alwaysCc=false;
 				String alwaysCcEmail=null;
-				if (userSid==null) { 
+				if (userUid==null) { 
 					if (!RunContext.isPermitted(true, SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
-					userSid=aclUserId; 
-					userDescription=userSid; 
+					userUid=aclUserId; 
+					userDescription=userUid; 
 				} else {
 					if (fsp!=null) {
 						shareIdentity=fsp.shareIdentity;
@@ -9895,7 +9895,7 @@ public class Service extends BaseService implements MailEventListener {
 
 				Rights ar = acl.getRights();
 				rights.add(new JsSharing.SharingRights(
-						userSid,
+						userUid,
 						userDescription,
 						aclUserId,
 						shareIdentity,
@@ -9925,7 +9925,7 @@ public class Service extends BaseService implements MailEventListener {
 				for(JsSharing.SharingRights sr: pl.data.rights) {
 					//try to fill in the imapId where empty
 					if (StringUtils.isEmpty(sr.imapId)) {
-						UserProfileId pid=core.lookupUserProfileIdBySid(sr.subjectSid);
+						UserProfileId pid=core.lookupUserProfileIdByUid(sr.subjectSid);
 						String imapId=null;
 						//look for any custom mail user
 						OUserMap userMap=UserMapDAO.getInstance().selectById(con, pid.getDomainId(), pid.getUserId());

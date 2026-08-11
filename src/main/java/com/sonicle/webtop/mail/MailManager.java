@@ -4106,7 +4106,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		for(ShareOrigin origin: origins) {
 			UserProfileId opid=origin.getProfileId();
 			UserProfile.Data opdata=WT.getProfileData(opid);
-			Map<String, Sharing.SubjectConfiguration> sconfigurations = core.getShareSubjectConfiguration(SERVICE_ID, IDENTITY_SHARING_CONTEXT, opid, "*", IDENTITY_PERMISSION_KEY, LangUtils.asSet(pid), FolderShareParameters.class);
+			Map<String, Sharing.SubjectConfiguration> sconfigurations = core.getShareSubjectConfigurations(SERVICE_ID, IDENTITY_SHARING_CONTEXT, opid, "*", IDENTITY_PERMISSION_KEY, LangUtils.asSet(pid), FolderShareParameters.class);
 			if (sconfigurations.isEmpty()) continue;
 			Entry<String, Sharing.SubjectConfiguration> entry = sconfigurations.entrySet().iterator().next();
 			FolderShareParameters fsp = entry.getValue().getTypedData(FolderShareParameters.class);

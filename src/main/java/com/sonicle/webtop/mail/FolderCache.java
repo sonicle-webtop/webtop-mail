@@ -569,7 +569,7 @@ public class FolderCache {
 			UserProfileId pid=mailManager.aclUserIdToUserId(aclUserId);
 			if (pid==null) continue;
 			CoreManager core=WT.getCoreManager();
-			String roleUid=core.lookupUserSid(pid);
+			String roleUid=core.lookupUserUid(pid);
 			if (roleUid==null) { 
 				if (!RunContext.isPermitted(true, mailManager.SERVICE_ID, "SHARING_UNKNOWN_ROLES","SHOW")) continue;
 			}
@@ -3147,7 +3147,7 @@ public class FolderCache {
 				else profileId=null;
 			}
 			if (profileId!=null)
-				isPec=RunContext.hasRole(profileId, WT.getGroupSidOfPecAccounts(profileId.getDomainId()));
+				isPec=RunContext.hasRole(profileId, WT.getGroupUidOfPecAccounts(profileId.getDomainId()));
 			
 		} catch(Throwable t) {
 			
