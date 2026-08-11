@@ -2726,7 +2726,7 @@ public class Service extends BaseService implements MailEventListener {
 		String prefixMatch=StringUtils.stripEnd(account.getFolderPrefix(),account.getFolderSeparator()+"");
 		ArrayList<Folder> postPrefixList=new ArrayList<Folder>();
 		ArrayList<Folder> afolders;
-		if (!favorites) afolders=sortFolders(account,folders);
+		if (!favorites) afolders=mailManager.sortFolders(account,folders);
 		else {
 			afolders=new ArrayList<Folder>();
 			for(Folder f: folders) {
@@ -2911,7 +2911,7 @@ public class Service extends BaseService implements MailEventListener {
 		//if we have a prefix folder output remaining folders
 		if (!favorites && prefixFolder!=null) {
 			for(Folder ff: prefixFolder.list()) postPrefixList.add(ff);					
-			ArrayList<Folder> sortedFolders=sortFolders(account,postPrefixList.toArray(new Folder[postPrefixList.size()]));
+			ArrayList<Folder> sortedFolders=mailManager.sortFolders(account,postPrefixList.toArray(new Folder[postPrefixList.size()]));
 			outputFolders(account, prefixFolder, sortedFolders.toArray(new Folder[sortedFolders.size()]), false, false, jsFolders);
 		}
 	}
@@ -3021,103 +3021,6 @@ public class Service extends BaseService implements MailEventListener {
 		jsFolder.account=account.getId();
 		 
 		return jsFolder;
-	}
-	
-	protected ArrayList<Folder> sortFolders(MailAccount account, Folder folders[]) {
-		ArrayList<Folder> afolders = new ArrayList<Folder>();
-		ArrayList<Folder> sfolders=new ArrayList<Folder>();
-		HashMap<String,Folder> mfolders=new HashMap<String,Folder>();
-		
-		if (account.isCyrus()) {
-			/* Hack for Cyrus bug :
-			 *  - when there are two subfolders with same initial name and second one longer
-			 *    continuing with space/dash etc (e.g "Test" and "Test 2"), first one is
-			 *    listed twice, with first instance always "\HasNoChildren"
-			 *  - in this case code is misleaded showing only first instance with no children
-			 *    even if second instance actually has children.
-			 *
-			 *  Detect this situation and get rid of first instance, keeping only last one.
-			 */
-			HashMap<String, Integer> hackMap=new HashMap<String,Integer>();
-			ArrayList<Folder> hackFolders=new ArrayList<>();
-			boolean bugfound=false;
-			for(Folder f: folders) {
-				String name=f.getName();
-				Integer ix=hackMap.get(name);
-				if (ix==null) {
-					ix=hackFolders.size();
-					hackFolders.add(f);
-					hackMap.put(name, ix);
-				} else {
-					hackFolders.set(ix, f);
-					bugfound=true;
-				}
-			}
-			if (bugfound) folders=hackFolders.toArray(new Folder[] {});
-			
-		}
-		
-		//add all non special fo the array and map special ones for later insert
-		Folder inbox = null;
-		Folder sent = null;
-		Folder drafts = null;
-		Folder trash = null;
-		Folder archive = null;
-		Folder spam = null;
-		for (Folder f : folders) {
-			String foldername = f.getFullName();
-			String shortfoldername = account.getShortFolderName(foldername);
-			if (!mfolders.containsKey(shortfoldername)) {
-				mfolders.put(shortfoldername, f);
-				if (account.isInboxFolder(shortfoldername)) inbox=f;
-				else if (account.isSentFolder(shortfoldername)) sent=f;
-				else if (account.isDraftsFolder(shortfoldername)) drafts=f;
-				else if (account.isTrashFolder(shortfoldername)) trash=f;
-				else if (account.isSpamFolder(shortfoldername)) spam=f;
-				else if (account.isArchiveFolder(shortfoldername)) archive=f;
-				else if (account.isSharedFolder(foldername)) sfolders.add(f);
-				else afolders.add(f);
-			}
-		}
-		
-		if (sortfolders) {
-			Collections.sort(afolders,new Comparator<Folder>() {
-				@Override
-				public int compare(Folder f1, Folder f2) {
-					return f1.getFullName().toLowerCase().compareTo(f2.getFullName().toLowerCase());
-				}		
-			});
-			Collections.sort(sfolders,new Comparator<Folder>() {
-				@Override
-				public int compare(Folder f1, Folder f2) {
-					return f1.getFullName().toLowerCase().compareTo(f2.getFullName().toLowerCase());
-				}		
-			});
-		}
-		
-		//add any mapped special folder in order on top
-		if (archive != null) {
-			afolders.add(0, archive);
-		}
-		if (trash != null) {
-			afolders.add(0, trash);
-		}
-		if (spam != null) {
-			afolders.add(0, spam);
-		}
-		if (sent != null) {
-			afolders.add(0, sent);
-		}
-		if (drafts != null) {
-			afolders.add(0, drafts);
-		}
-		if (inbox != null) {
-			afolders.add(0, inbox);
-		}
-		//add shared folders at the end
-		afolders.addAll(sfolders);
-		
-		return afolders;
 	}
 	
 	public void processShowArchive(HttpServletRequest request, HttpServletResponse response, PrintWriter out) {

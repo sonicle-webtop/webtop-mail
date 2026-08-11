@@ -178,6 +178,7 @@ import java.nio.charset.UnsupportedCharsetException;
 import java.security.GeneralSecurityException;
 import java.text.DateFormat;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -1259,21 +1260,118 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 				logger.debug("Warm folder tree unavailable, using direct path", exc);
 			}
 		}
-		ArrayList<Folder> folders = new ArrayList<>();
+		ArrayList<Folder> folders;
 		Mailbox mailbox = null;
 		try {
 			mailbox = getMailbox();
 			Folder parent = mailbox.getFolder(id);
 			Folder flist[] = parent.list();
-			for(Folder folder: flist) folders.add(folder);
+			folders = sortFolders(mainAccount, flist);
 		} catch(MessagingException|WTException exc) {
 			logger.error("Error listing folders", exc);
+			folders = new ArrayList<>();
 		} finally {
 			//mailbox.disconnect();
 		}
 		return folders;
 	}
 	
+	protected ArrayList<Folder> sortFolders(MailAccount account, Folder folders[]) {
+		ArrayList<Folder> afolders = new ArrayList<Folder>();
+		ArrayList<Folder> sfolders=new ArrayList<Folder>();
+		HashMap<String,Folder> mfolders=new HashMap<String,Folder>();
+		
+		if (account.isCyrus()) {
+			/* Hack for Cyrus bug :
+			 *  - when there are two subfolders with same initial name and second one longer
+			 *    continuing with space/dash etc (e.g "Test" and "Test 2"), first one is
+			 *    listed twice, with first instance always "\HasNoChildren"
+			 *  - in this case code is misleaded showing only first instance with no children
+			 *    even if second instance actually has children.
+			 *
+			 *  Detect this situation and get rid of first instance, keeping only last one.
+			 */
+			HashMap<String, Integer> hackMap=new HashMap<String,Integer>();
+			ArrayList<Folder> hackFolders=new ArrayList<>();
+			boolean bugfound=false;
+			for(Folder f: folders) {
+				String name=f.getName();
+				Integer ix=hackMap.get(name);
+				if (ix==null) {
+					ix=hackFolders.size();
+					hackFolders.add(f);
+					hackMap.put(name, ix);
+				} else {
+					hackFolders.set(ix, f);
+					bugfound=true;
+				}
+			}
+			if (bugfound) folders=hackFolders.toArray(new Folder[] {});
+			
+		}
+		
+		//add all non special fo the array and map special ones for later insert
+		Folder inbox = null;
+		Folder sent = null;
+		Folder drafts = null;
+		Folder trash = null;
+		Folder archive = null;
+		Folder spam = null;
+		for (Folder f : folders) {
+			String foldername = f.getFullName();
+			String shortfoldername = account.getShortFolderName(foldername);
+			if (!mfolders.containsKey(shortfoldername)) {
+				mfolders.put(shortfoldername, f);
+				if (account.isInboxFolder(shortfoldername)) inbox=f;
+				else if (account.isSentFolder(shortfoldername)) sent=f;
+				else if (account.isDraftsFolder(shortfoldername)) drafts=f;
+				else if (account.isTrashFolder(shortfoldername)) trash=f;
+				else if (account.isSpamFolder(shortfoldername)) spam=f;
+				else if (account.isArchiveFolder(shortfoldername)) archive=f;
+				else if (account.isSharedFolder(foldername)) sfolders.add(f);
+				else afolders.add(f);
+			}
+		}
+		if (mss.isSortFolder()) {
+			Collections.sort(afolders,new Comparator<Folder>() {
+				@Override
+				public int compare(Folder f1, Folder f2) {
+					return f1.getFullName().toLowerCase().compareTo(f2.getFullName().toLowerCase());
+				}		
+			});
+			Collections.sort(sfolders,new Comparator<Folder>() {
+				@Override
+				public int compare(Folder f1, Folder f2) {
+					return f1.getFullName().toLowerCase().compareTo(f2.getFullName().toLowerCase());
+				}		
+			});
+		}
+		
+		//add any mapped special folder in order on top
+		if (archive != null) {
+			afolders.add(0, archive);
+		}
+		if (trash != null) {
+			afolders.add(0, trash);
+		}
+		if (spam != null) {
+			afolders.add(0, spam);
+		}
+		if (sent != null) {
+			afolders.add(0, sent);
+		}
+		if (drafts != null) {
+			afolders.add(0, drafts);
+		}
+		if (inbox != null) {
+			afolders.add(0, inbox);
+		}
+		//add shared folders at the end
+		afolders.addAll(sfolders);
+		
+		return afolders;
+	}
+
 	public Folder getFolder(String id) {
 		Folder folder = null;
 		Mailbox mailbox = null;
