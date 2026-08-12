@@ -288,6 +288,7 @@ public class MailPushManager {
 	 * device that was never (or no longer is) subscribed.
 	 */
 	public synchronized void unsubscribe(UserProfileId profileId, String deviceId) {
+		boolean lastDeviceGone = false;
 		UserSubscription us = subscriptions.get(profileId);
 		if (us != null) {
 			us.deviceIds.remove(deviceId);
@@ -295,10 +296,21 @@ public class MailPushManager {
 				subscriptions.remove(profileId);
 				MailManager mmgr = us.manager;
 				if (mmgr != null) mmgr.unregisterMailEventListener(us);
+				lastDeviceGone = true;
 			}
 			logger.info("[{}] push device '{}' unsubscribed ({} remaining)", profileId, deviceId, us.deviceIds.size());
 		}
 		WT.releaseServiceManagerSubscription(getServiceId(), profileId, deviceId);
+		if (lastDeviceGone) {
+			//the app world logged out everywhere: free the machinery (IMAP idle
+			//stacks, stores) NOW instead of holding it through the idle grace —
+			//symmetric to web logout tearing down the session-private manager.
+			//Straggler-safe (evictNow contract): in-flight REST finishes on the
+			//orphan; any later call lazily rebuilds a fresh instance.
+			if (WT.evictSharedManager(getServiceId(), profileId)) {
+				logger.info("[{}] last push device gone: mail app-manager evicted immediately", profileId);
+			}
+		}
 	}
 
 	private String getServiceId() {
