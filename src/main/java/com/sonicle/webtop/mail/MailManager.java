@@ -1196,6 +1196,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 				logger.debug("Warm folder tree unavailable, using direct path", exc);
 			}
 		}
+		logColdPath("getAllFolders");
 		ArrayList<Folder> folders = new ArrayList<>();
 		Mailbox mailbox = null;
 		try {
@@ -1226,6 +1227,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 				logger.debug("Warm folder tree unavailable, using direct path", exc);
 			}
 		}
+		logColdPath("getRootFolders");
 		ArrayList<Folder> folders = new ArrayList<>();
 		Mailbox mailbox = null;
 		try {
@@ -1260,6 +1262,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 				logger.debug("Warm folder tree unavailable, using direct path", exc);
 			}
 		}
+		logColdPath("getFolders(" + id + ")");
 		ArrayList<Folder> folders;
 		Mailbox mailbox = null;
 		try {
@@ -1498,6 +1501,14 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		return -1;
 	}
 
+	//diagnostic: the silent warm-path fallback was invisible in logs — this names
+	//WHY a call rode the cold path (machinery never started vs main account
+	//init failed). DEBUG level: enable com.sonicle.webtop.mail.MailManager
+	//debug to trace whether app REST traffic is actually served warm.
+	private void logColdPath(String what) {
+		if (logger.isDebugEnabled()) logger.debug("[{}] cold path for {} (accountsStarted={}, mainAccount={})", getTargetProfileId(), what, accountsStarted, (mainAccount != null) ? "ok" : "null");
+	}
+
 	public Message[] fetch(Folder folder, Message fmsgs[], FetchProfile fp, int start, int length) throws MessagingException {
         int n=fmsgs.length;
         //a page beyond the (possibly filtered) result set must yield an empty
@@ -1559,6 +1570,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 				return;
 			}
 		}
+		logColdPath("consumeMessages(" + folderId + ")");
 		Folder folder = null;
 		Mailbox mailbox = null;
 		try {
