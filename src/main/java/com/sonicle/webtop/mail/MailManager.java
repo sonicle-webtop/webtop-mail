@@ -1221,7 +1221,12 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 					for (FolderCache child : root.getChildren()) {
 						if (child.getFolder() != null) folders.add(child.getFolder());
 					}
-					if (!folders.isEmpty()) return folders;
+					if (!folders.isEmpty()) {
+						Folder afolders[] = new Folder[folders.size()];
+						folders.toArray(afolders);
+						folders = sortFolders(mainAccount, afolders);
+						return folders;
+					}
 				}
 			} catch (Exception exc) {
 				logger.debug("Warm folder tree unavailable, using direct path", exc);
@@ -1253,6 +1258,11 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 						for (FolderCache child : fc.getChildren()) {
 							if (child.getFolder() != null) folders.add(child.getFolder());
 						}
+					}
+					if (!folders.isEmpty()) {
+						Folder afolders[] = new Folder[folders.size()];
+						folders.toArray(afolders);
+						folders = sortFolders(mainAccount, afolders);
 					}
 					//children==null means a leaf here (the cache tree is fully built
 					//at startup): an empty list is the correct answer, not a miss
