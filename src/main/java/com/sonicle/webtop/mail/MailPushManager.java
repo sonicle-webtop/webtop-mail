@@ -105,6 +105,10 @@ public class MailPushManager {
 	private static final int DEFAULT_WARMUP_CONCURRENCY = 2;
 	private final Object warmupLock = new Object();
 	private ExecutorService warmupExecutor = null;
+	//terminal flag: once stopWarmups() ran (module shutdown), a late gateway
+	//frame must NOT lazily resurrect the pool — in a stopping context that
+	//would pin the dying classloader with daemon threads and queued tasks
+	private boolean warmupsStopped = false;
 
 	//The app-launch signal itself (X-WT-App-Launch header, dedupe, debounce,
 	//eviction of ALL sessionless-only managers) is CORE-OWNED: it is processed
@@ -123,6 +127,7 @@ public class MailPushManager {
 
 	private ExecutorService getWarmupExecutor() {
 		synchronized (warmupLock) {
+			if (warmupsStopped) return null;
 			if (warmupExecutor == null || warmupExecutor.isShutdown()) {
 				int concurrency = DEFAULT_WARMUP_CONCURRENCY;
 				try {
@@ -151,6 +156,7 @@ public class MailPushManager {
 	 */
 	public void stopWarmups() {
 		synchronized (warmupLock) {
+			warmupsStopped = true;
 			if (warmupExecutor != null) {
 				warmupExecutor.shutdownNow();
 				warmupExecutor = null;
@@ -171,7 +177,12 @@ public class MailPushManager {
 		}
 		final Subject boundSubject = subject;
 		try {
-			getWarmupExecutor().execute(() -> {
+			ExecutorService executor = getWarmupExecutor();
+			if (executor == null) {
+				logger.debug("[{}] warm-up skipped: executor stopped (module shutting down)", profileId);
+				return;
+			}
+			executor.execute(() -> {
 				ThreadState threadState = (boundSubject != null) ? new SubjectThreadState(boundSubject) : null;
 				if (threadState != null) threadState.bind();
 				try {
@@ -277,6 +288,7 @@ public class MailPushManager {
 	 * device that was never (or no longer is) subscribed.
 	 */
 	public synchronized void unsubscribe(UserProfileId profileId, String deviceId) {
+		boolean lastDeviceGone = false;
 		UserSubscription us = subscriptions.get(profileId);
 		if (us != null) {
 			us.deviceIds.remove(deviceId);
@@ -284,10 +296,21 @@ public class MailPushManager {
 				subscriptions.remove(profileId);
 				MailManager mmgr = us.manager;
 				if (mmgr != null) mmgr.unregisterMailEventListener(us);
+				lastDeviceGone = true;
 			}
 			logger.info("[{}] push device '{}' unsubscribed ({} remaining)", profileId, deviceId, us.deviceIds.size());
 		}
 		WT.releaseServiceManagerSubscription(getServiceId(), profileId, deviceId);
+		if (lastDeviceGone) {
+			//the app world logged out everywhere: free the machinery (IMAP idle
+			//stacks, stores) NOW instead of holding it through the idle grace —
+			//symmetric to web logout tearing down the session-private manager.
+			//Straggler-safe (evictNow contract): in-flight REST finishes on the
+			//orphan; any later call lazily rebuilds a fresh instance.
+			if (WT.evictSharedManager(getServiceId(), profileId)) {
+				logger.info("[{}] last push device gone: mail app-manager evicted immediately", profileId);
+			}
+		}
 	}
 
 	private String getServiceId() {
