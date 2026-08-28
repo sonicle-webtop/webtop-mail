@@ -393,10 +393,14 @@ public class MailUserSettings extends BaseUserSettings {
 		return setInteger(PAGE_ROWS, rows);
 	}
 	
-	public StoreHostParams getMailboxHostParams(String username, String password, boolean impersonate) {
+	public StoreHostParams getMailboxHostParams(String username, String password, boolean shouldImpersonate) {
 		StoreHostParams shd = new StoreHostParams(getHost(), getPort(), StoreProtocol.parse(getProtocol(), false));
 		String finalPassword = LangUtils.coalesceStrings(getPassword(), password);
-		if (impersonate) {
+		
+		//if profile host is not empty and different from system host, cannot impersonate
+		if (!StringUtils.isEmpty(shd.getHost()) && !StringUtils.equalsIgnoreCase(mss.getDefaultHost(), shd.getHost())) shouldImpersonate = false;
+		
+		if (shouldImpersonate) {
 			if (!StringUtils.isBlank(mss.getNethTopVmailSecret())) {
 				shd.withUsername(LangUtils.coalesceStrings(getUsername(), StoreUtils.toPlainUser(username)));
 				shd.withVMAILImpersonate(mss.getNethTopVmailSecret());

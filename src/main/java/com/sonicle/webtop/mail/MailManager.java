@@ -986,11 +986,16 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		String mailPassword = mprofile.getMailPassword();
 		boolean isImpersonated = RunContext.isImpersonated();
 		String vmailSecret = StringUtils.defaultIfBlank(mss.getNethTopVmailSecret(), null);
+		
 		//With remember-me token logins the user's IMAP password is not available
 		//after a Tomcat restart, so per-user password auth cannot be relied upon:
 		//impersonate whenever the domain provides vmail/SASL admin credentials,
 		//like the REST mailbox does (getMailboxHostParams with impersonate=true).
 		boolean useImpersonation = isImpersonated || vmailSecret != null || !StringUtils.isBlank(mss.getAdminUser());
+
+		//if profile host is not empty and different from system default host, cannot use impersonate		
+		if (!StringUtils.isEmpty(mprofile.getMailHost()) && !StringUtils.equalsIgnoreCase(mprofile.getMailHost(), mss.getDefaultHost())) useImpersonation = false;
+		
 		if (useImpersonation || StringUtils.isBlank(mailPassword)) {
 			//use sasl rfc impersonate if no vmailSecret
 			if (vmailSecret == null) {

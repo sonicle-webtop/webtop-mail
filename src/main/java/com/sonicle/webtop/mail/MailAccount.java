@@ -778,14 +778,17 @@ public class MailAccount {
 	
 	protected synchronized FolderCache addSingleFoldersCache(FolderCache parent, Folder child) throws MessagingException {
 		String cname = child.getFullName();
-		FolderCache fcChild=foldersCache.get(cname);
-		if (fcChild==null) {
-			fcChild=createFolderCache(child);
-			if (parent!=null) {
-				fcChild.setParent(parent);
-				parent.addChild(fcChild);
+		FolderCache fcChild = null;
+		if (foldersCache != null) {
+			fcChild = foldersCache.get(cname);
+			if (fcChild==null) {
+				fcChild=createFolderCache(child);
+				if (parent!=null) {
+					fcChild.setParent(parent);
+					parent.addChild(fcChild);
+				}
+				fcChild.setStartupLeaf(isLeaf((IMAPFolder)child));
 			}
-			fcChild.setStartupLeaf(isLeaf((IMAPFolder)child));
 		}
 		
 		return fcChild;
