@@ -460,6 +460,17 @@ public class MailSettings {
 	
 	/**
 	 * [domain+system]
+	 * [boolean]
+	 * When true (default), the registry-hosted (app-dedicated) MailManager runs in
+	 * INBOX-only mode: dedicated idle connection on INBOX only (no favorites, no
+	 * shared inboxes) and no periodic folder sweep — the app refreshes other folders
+	 * itself while they are open. Set false to restore full idle/sweep behavior on
+	 * registry-hosted managers. Web-session private managers are unaffected.
+	 */
+	public static final String APP_MANAGER_INBOX_ONLY = "app.manager.inbox.only";
+
+	/**
+	 * [domain+system]
 	 * [int]
 	 * Override internal default value when buffering service messages generated from IMAP events.
 	 */

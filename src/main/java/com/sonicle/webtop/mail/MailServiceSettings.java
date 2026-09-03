@@ -420,6 +420,10 @@ public class MailServiceSettings extends BaseServiceSettings {
 		return getBoolean(IDLE_FAVORITE_ENABLED, true);
 	}
 	
+	public boolean isAppManagerInboxOnly() {
+		return getBoolean(APP_MANAGER_INBOX_ONLY, true);
+	}
+
 	public int getImapEventMessageBufferTTL() {
 		return getInteger(IMAP_EVENT_MESSAGE_BUFFERTTL, 500);
 	}

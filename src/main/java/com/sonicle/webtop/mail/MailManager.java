@@ -1033,6 +1033,11 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		mainAccount.setFolderArchive(mprofile.getFolderArchive());
 
 		mft = new MailFoldersThread(this, mainAccount);
+		//INBOX-only mode (app.manager.inbox.only, default true): the registry-hosted
+		//(app) manager primes INBOX once (idle keeps it live) and skips the periodic
+		//shared-inbox/favorites/subfolder sweep — the app updates those folders itself
+		//while they are open. See the matching idle gate in the FolderCache ctor.
+		if (isRegistryHosted() && mss.isAppManagerInboxOnly()) mft.setInboxOnly(true);
 		mft.setCheckAll(mprofile.isScanAll());
 		mft.setSleepInbox(mprofile.getScanSeconds());
 		mft.setSleepCycles(mprofile.getScanCycles());
