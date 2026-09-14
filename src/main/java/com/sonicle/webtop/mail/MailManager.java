@@ -367,6 +367,20 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	}
 	
 	private Mailbox getMailbox() throws WTException {
+		//App INBOX-only mode: serve REST from the account Mailbox (single store,
+		//pool capped at 1) instead of building the separate REST store — one
+		//working connection shared by machinery and REST; folder opens on it are
+		//transient (open→serve→close), nothing enters the per-user LRU. Store
+		//health/reconnect rides checkStoreConnected (same-Store reconnect keeps
+		//cached Folder objects valid). Falls through to the legacy REST store
+		//when the machinery is not running (nothing to share then).
+		if (isAppInboxOnlyMode() && accountsStarted && mainAccount != null) {
+			try {
+				if (mainAccount.checkStoreConnected()) return mainAccount.getAccountMailbox();
+			} catch(MessagingException exc) {
+				throw new WTException("Error while ensuring imap connection", exc);
+			}
+		}
 		if (mailbox == null) {
 			try {
 				createMailboxObject();
@@ -899,6 +913,29 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 	}
 
 	/**
+	 * True when this is the registry-hosted (app-dedicated) instance running in
+	 * slim INBOX-only mode (app.manager.inbox.only, default true). Connection
+	 * budget target: ONE dedicated idle on INBOX plus ONE working pool
+	 * connection — so: no favorites/shared idle, no MFT sweep (see the gates in
+	 * FolderCache ctor / initAccounts), account store pool capped at 1, REST
+	 * served from the account Mailbox with transient folder opens (nothing kept
+	 * open in the per-user LRU). Temporary: goes away when web and app managers
+	 * are unified into a single per-user instance.
+	 */
+	public boolean isAppInboxOnlyMode() {
+		//memoized: called on hot REST paths, and the behaviors it gates (idle set,
+		//MFT mode, pool size) are fixed at machinery startup anyway — a setting
+		//change takes effect on the next registry instance. registryHosted is
+		//settled before any consumer touches the instance (onSharedStartup).
+		Boolean mode = appInboxOnlyMode;
+		if (mode == null) {
+			mode = appInboxOnlyMode = registryHosted && mss.isAppManagerInboxOnly();
+		}
+		return mode;
+	}
+	private volatile Boolean appInboxOnlyMode = null;
+
+	/**
 	 * Idempotent full teardown of the per-user machinery (idle threads, scan
 	 * threads, event queues, IMAP stores) and cache memory. Called by
 	 * {@link #onSharedShutdown()} for registry instances and by the web
@@ -1033,11 +1070,11 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		mainAccount.setFolderArchive(mprofile.getFolderArchive());
 
 		mft = new MailFoldersThread(this, mainAccount);
-		//INBOX-only mode (app.manager.inbox.only, default true): the registry-hosted
-		//(app) manager primes INBOX once (idle keeps it live) and skips the periodic
-		//shared-inbox/favorites/subfolder sweep — the app updates those folders itself
-		//while they are open. See the matching idle gate in the FolderCache ctor.
-		if (isRegistryHosted() && mss.isAppManagerInboxOnly()) mft.setInboxOnly(true);
+		//INBOX-only mode: the registry-hosted (app) manager primes INBOX once
+		//(idle keeps it live) and skips the periodic shared-inbox/favorites/subfolder
+		//sweep — the app updates those folders itself while they are open. See the
+		//matching idle gate in the FolderCache ctor.
+		if (isAppInboxOnlyMode()) mft.setInboxOnly(true);
 		mft.setCheckAll(mprofile.isScanAll());
 		mft.setSleepInbox(mprofile.getScanSeconds());
 		mft.setSleepCycles(mprofile.getScanCycles());
@@ -1556,7 +1593,11 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		//fixed date-desc order is the same slot as the web grid's default view, so
 		//this usually reuses an already-sorted list instead of paying a full IMAP
 		//SORT per call. Read-mostly and drift-checked; any miss falls back below.
-		if (StringUtils.isBlank(filterQuery) && accountsStarted && mainAccount != null) {
+		//Skipped in app INBOX-only mode: FolderCache.getMessages opens the folder
+		//into the per-user LRU where it stays open (one IMAP conn per folder);
+		//the direct path below opens and closes per call instead, paying an IMAP
+		//SORT — the accepted trade for the 2-connection budget.
+		if (StringUtils.isBlank(filterQuery) && accountsStarted && mainAccount != null && !isAppInboxOnlyMode()) {
 			Message warm[] = null;
 			Folder wfolder = null;
 			try {

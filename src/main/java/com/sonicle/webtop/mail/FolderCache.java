@@ -414,12 +414,12 @@ public class FolderCache {
 		MailUserSettings mus=mailManager.getMailUserSettings();
 		useArrivalDate = mus.isUseArrivalDate(foldername);
 		
-		//INBOX-only mode (app.manager.inbox.only, default true): the registry-hosted
-		//(app-dedicated) manager keeps a dedicated idle connection ONLY on INBOX; the
-		//app refreshes unseen/message lists of other folders itself while they are
-		//open. Web-session private managers keep favorites + shared-inbox idle. See
-		//also the MFT inboxOnly gate in MailManager.initAccounts.
-		final boolean appInboxOnly = mailManager.isRegistryHosted() && mailManager.getMailServiceSettings().isAppManagerInboxOnly();
+		//INBOX-only mode: the registry-hosted (app-dedicated) manager keeps a
+		//dedicated idle connection ONLY on INBOX; the app refreshes unseen/message
+		//lists of other folders itself while they are open. Web-session private
+		//managers keep favorites + shared-inbox idle. See also the MFT inboxOnly
+		//gate in MailManager.initAccounts.
+		final boolean appInboxOnly = mailManager.isAppInboxOnlyMode();
 		boolean idle = !volatileInstance && (isInbox
 			|| (!appInboxOnly && isSharedInbox && mailManager.getMailServiceSettings().isIdleSharedInboxFolderEnabled())
 			|| (!appInboxOnly && account.isFavoriteFolder(foldername) && mailManager.getMailServiceSettings().isIdleFavoriteFolderEnabled()));

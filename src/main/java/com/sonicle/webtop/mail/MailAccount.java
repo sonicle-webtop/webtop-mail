@@ -247,9 +247,12 @@ public class MailAccount {
 				if (accountMailbox == null) {
 					try {
 						//NO usesocketchannels here: channels bypass the tracked socket
-						//factories and the pooled-store tracker would be inert
+						//factories and the pooled-store tracker would be inert.
+						//App INBOX-only mode caps the cached pool at 1: concurrent
+						//callers still get transient extra conns, but only one stays
+						//standing (the "working connection" of the 2-conn budget)
 						accountMailbox = new Mailbox(buildMailboxHostParams(),
-							new MailboxConfig.Builder().withPoolSize(5).build(),
+							new MailboxConfig.Builder().withPoolSize(mailManager.isAppInboxOnlyMode() ? 1 : 5).build(),
 							buildMailboxProperties(),
 							new SonicleIMAPSocketTracker());
 					} catch (java.security.GeneralSecurityException exc) {
