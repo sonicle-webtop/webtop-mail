@@ -115,85 +115,83 @@ public class MeMessages extends MeMessagesApi {
 					MimeMessage mmsg = (MimeMessage) msg;
 					ApiMessage am = new ApiMessage();
 					String hmid[] = mmsg.getHeader("Message-ID");
-					if (hmid!=null && hmid.length>0) {
-						am.setId(hmid[0]);
-						am.setUid((int)uid);
-						am.setSubject(mmsg.getSubject());
-						am.setBody("");
+					if (hmid != null && hmid.length > 0) am.setId(hmid[0]);
+					am.setUid((int)uid);
+					am.setSubject(mmsg.getSubject());
+					am.setBody("");
 
 	//sender
-						Address addrs[] = mmsg.getFrom();
-						ApiContact ac = new ApiContact();
-						if (addrs!=null & addrs.length>0) {
-							InternetAddress iaddr = (InternetAddress) addrs[0];
+					Address addrs[] = mmsg.getFrom();
+					ApiContact ac = new ApiContact();
+					if (addrs!=null & addrs.length>0) {
+						InternetAddress iaddr = (InternetAddress) addrs[0];
+						ac.setName(iaddr.getPersonal());
+						ac.setEmail(iaddr.getAddress());
+					}
+					am.setSender(ac);
+
+					//recipients
+					addrs = mmsg.getRecipients(Message.RecipientType.TO);
+					if (addrs!=null) {
+						for(Address addr: addrs) {
+							InternetAddress iaddr = (InternetAddress) addr;
+							ac = new ApiContact();
 							ac.setName(iaddr.getPersonal());
 							ac.setEmail(iaddr.getAddress());
+							am.addRecipientsItem(ac);
 						}
-						am.setSender(ac);
-
-						//recipients
-						addrs = mmsg.getRecipients(Message.RecipientType.TO);
-						if (addrs!=null) {
-							for(Address addr: addrs) {
-								InternetAddress iaddr = (InternetAddress) addr;
-								ac = new ApiContact();
-								ac.setName(iaddr.getPersonal());
-								ac.setEmail(iaddr.getAddress());
-								am.addRecipientsItem(ac);
-							}
-						}
-						else am.setRecipients(new ArrayList<ApiContact>());
-
-						//ccs
-						addrs = mmsg.getRecipients(Message.RecipientType.CC);
-						if (addrs!=null) {
-							for(Address addr: addrs) {
-								InternetAddress iaddr = (InternetAddress) addr;
-								ac = new ApiContact();
-								ac.setName(iaddr.getPersonal());
-								ac.setEmail(iaddr.getAddress());
-								am.addCcItem(ac);
-							}
-						}
-						else am.setCc(new ArrayList<ApiContact>());
-
-						//bccs
-						addrs = mmsg.getRecipients(Message.RecipientType.BCC);
-						if (addrs!=null) {
-							for(Address addr: addrs) {
-								InternetAddress iaddr = (InternetAddress) addr;
-								ac = new ApiContact();
-								ac.setName(iaddr.getPersonal());
-								ac.setEmail(iaddr.getAddress());
-								am.addBccItem(ac);
-							}
-						}
-						else am.setBcc(new ArrayList<ApiContact>());
-
-						Calendar cal = Calendar.getInstance();
-						Date date = mmsg.getReceivedDate();
-						if (date == null) date = new Date();
-						cal.setTime(date);
-						am.setDate(
-								cal.get(Calendar.YEAR)+"-"+
-								StringUtils.leftPad(""+(cal.get(Calendar.MONTH)+1), 2, '0')+"-"+
-								StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0')+" "+
-								StringUtils.leftPad(""+cal.get(Calendar.HOUR_OF_DAY), 2, '0')+":"+
-								StringUtils.leftPad(""+cal.get(Calendar.MINUTE), 2, '0'));
-
-						
-						am.setIsRead(mmsg.isSet(Flags.Flag.SEEN));
-						
-						Flags flags = mmsg.getFlags();
-						am.setFlag(mmgr.getFlagString(flags));
-						am.setStatus(mmgr.getStatusString(flags, false, false));
-						am.setHasNote(mmgr.hasNote(flags));
-						am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
-
-						ArrayList<ApiAttachment> attachments = new ArrayList<>();
-						if (mmgr.hasAttachments(msg)) attachments.add(new ApiAttachment());
-						am.setAttachments(attachments);
 					}
+					else am.setRecipients(new ArrayList<ApiContact>());
+
+					//ccs
+					addrs = mmsg.getRecipients(Message.RecipientType.CC);
+					if (addrs!=null) {
+						for(Address addr: addrs) {
+							InternetAddress iaddr = (InternetAddress) addr;
+							ac = new ApiContact();
+							ac.setName(iaddr.getPersonal());
+							ac.setEmail(iaddr.getAddress());
+							am.addCcItem(ac);
+						}
+					}
+					else am.setCc(new ArrayList<ApiContact>());
+
+					//bccs
+					addrs = mmsg.getRecipients(Message.RecipientType.BCC);
+					if (addrs!=null) {
+						for(Address addr: addrs) {
+							InternetAddress iaddr = (InternetAddress) addr;
+							ac = new ApiContact();
+							ac.setName(iaddr.getPersonal());
+							ac.setEmail(iaddr.getAddress());
+							am.addBccItem(ac);
+						}
+					}
+					else am.setBcc(new ArrayList<ApiContact>());
+
+					Calendar cal = Calendar.getInstance();
+					Date date = mmsg.getReceivedDate();
+					if (date == null) date = new Date();
+					cal.setTime(date);
+					am.setDate(
+							cal.get(Calendar.YEAR)+"-"+
+							StringUtils.leftPad(""+(cal.get(Calendar.MONTH)+1), 2, '0')+"-"+
+							StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0')+" "+
+							StringUtils.leftPad(""+cal.get(Calendar.HOUR_OF_DAY), 2, '0')+":"+
+							StringUtils.leftPad(""+cal.get(Calendar.MINUTE), 2, '0'));
+
+
+					am.setIsRead(mmsg.isSet(Flags.Flag.SEEN));
+
+					Flags flags = mmsg.getFlags();
+					am.setFlag(mmgr.getFlagString(flags));
+					am.setStatus(mmgr.getStatusString(flags, false, false));
+					am.setHasNote(mmgr.hasNote(flags));
+					am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
+
+					ArrayList<ApiAttachment> attachments = new ArrayList<>();
+					if (mmgr.hasAttachments(msg)) attachments.add(new ApiAttachment());
+					am.setAttachments(attachments);
 					items.add(am);
 				}
 			});
@@ -221,110 +219,109 @@ public class MeMessages extends MeMessagesApi {
 					IMAPMessage mmsg = (IMAPMessage) msg;
 					int baseIndex = index >= 0 ? index + 1 : 0;
 					String hmid[] = mmsg.getHeader("Message-ID");
-					if (hmid!=null && hmid.length>0) {
-						am.setId(hmid[0]);
-						am.setUid((int)uid);
-						am.setSubject(mmsg.getSubject());
-						
-						ArrayList<MimeMessageParser.ParsedMimeMessageComponents.HTMLPart> htmlparts = parsed.getProcessedHTMLParts();
-						String html = "<html><body></body><html>";
-						if (htmlparts.size()>0) html = htmlparts.get(0).html;
-						am.setBody(html);
+					if (hmid != null && hmid.length > 0) am.setId(hmid[0]);
+					am.setId(hmid[0]);
+					am.setUid((int)uid);
+					am.setSubject(mmsg.getSubject());
 
-						//sender
-						Address addrs[] = mmsg.getFrom();
-						ApiContact ac = new ApiContact();
-						if (addrs!=null & addrs.length>0) {
-							InternetAddress iaddr = (InternetAddress) addrs[0];
+					ArrayList<MimeMessageParser.ParsedMimeMessageComponents.HTMLPart> htmlparts = parsed.getProcessedHTMLParts();
+					String html = "<html><body></body><html>";
+					if (htmlparts.size()>0) html = htmlparts.get(0).html;
+					am.setBody(html);
+
+					//sender
+					Address addrs[] = mmsg.getFrom();
+					ApiContact ac = new ApiContact();
+					if (addrs!=null & addrs.length>0) {
+						InternetAddress iaddr = (InternetAddress) addrs[0];
+						ac.setName(iaddr.getPersonal());
+						ac.setEmail(iaddr.getAddress());
+					}
+					am.setSender(ac);
+
+					//recipients
+					addrs = mmsg.getRecipients(Message.RecipientType.TO);
+					if (addrs!=null) {
+						for(Address addr: addrs) {
+							InternetAddress iaddr = (InternetAddress) addr;
+							ac = new ApiContact();
 							ac.setName(iaddr.getPersonal());
 							ac.setEmail(iaddr.getAddress());
+							am.addRecipientsItem(ac);
 						}
-						am.setSender(ac);
+					}
+					else am.setRecipients(new ArrayList<ApiContact>());
 
-						//recipients
-						addrs = mmsg.getRecipients(Message.RecipientType.TO);
-						if (addrs!=null) {
-							for(Address addr: addrs) {
-								InternetAddress iaddr = (InternetAddress) addr;
-								ac = new ApiContact();
-								ac.setName(iaddr.getPersonal());
-								ac.setEmail(iaddr.getAddress());
-								am.addRecipientsItem(ac);
-							}
+					//ccs
+					addrs = mmsg.getRecipients(Message.RecipientType.CC);
+					if (addrs!=null) {
+						for(Address addr: addrs) {
+							InternetAddress iaddr = (InternetAddress) addr;
+							ac = new ApiContact();
+							ac.setName(iaddr.getPersonal());
+							ac.setEmail(iaddr.getAddress());
+							am.addCcItem(ac);
 						}
-						else am.setRecipients(new ArrayList<ApiContact>());
+					}
+					else am.setCc(new ArrayList<ApiContact>());
 
-						//ccs
-						addrs = mmsg.getRecipients(Message.RecipientType.CC);
-						if (addrs!=null) {
-							for(Address addr: addrs) {
-								InternetAddress iaddr = (InternetAddress) addr;
-								ac = new ApiContact();
-								ac.setName(iaddr.getPersonal());
-								ac.setEmail(iaddr.getAddress());
-								am.addCcItem(ac);
-							}
+					//bccs
+					addrs = mmsg.getRecipients(Message.RecipientType.BCC);
+					if (addrs!=null) {
+						for(Address addr: addrs) {
+							InternetAddress iaddr = (InternetAddress) addr;
+							ac = new ApiContact();
+							ac.setName(iaddr.getPersonal());
+							ac.setEmail(iaddr.getAddress());
+							am.addBccItem(ac);
 						}
-						else am.setCc(new ArrayList<ApiContact>());
+					}
+					else am.setBcc(new ArrayList<ApiContact>());
 
-						//bccs
-						addrs = mmsg.getRecipients(Message.RecipientType.BCC);
-						if (addrs!=null) {
-							for(Address addr: addrs) {
-								InternetAddress iaddr = (InternetAddress) addr;
-								ac = new ApiContact();
-								ac.setName(iaddr.getPersonal());
-								ac.setEmail(iaddr.getAddress());
-								am.addBccItem(ac);
-							}
-						}
-						else am.setBcc(new ArrayList<ApiContact>());
+					Calendar cal = Calendar.getInstance();
+					Date date = mmsg.getReceivedDate();
+					if (date == null) date = new Date();
+					cal.setTime(date);
+					am.setDate(
+							cal.get(Calendar.YEAR)+"-"+
+							StringUtils.leftPad(""+(cal.get(Calendar.MONTH)+1), 2, '0')+"-"+
+							StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0')+" "+
+							StringUtils.leftPad(""+cal.get(Calendar.HOUR_OF_DAY), 2, '0')+":"+
+							StringUtils.leftPad(""+cal.get(Calendar.MINUTE), 2, '0'));
 
-						Calendar cal = Calendar.getInstance();
-						Date date = mmsg.getReceivedDate();
-						if (date == null) date = new Date();
-						cal.setTime(date);
-						am.setDate(
-								cal.get(Calendar.YEAR)+"-"+
-								StringUtils.leftPad(""+(cal.get(Calendar.MONTH)+1), 2, '0')+"-"+
-								StringUtils.leftPad(""+cal.get(Calendar.DAY_OF_MONTH), 2, '0')+" "+
-								StringUtils.leftPad(""+cal.get(Calendar.HOUR_OF_DAY), 2, '0')+":"+
-								StringUtils.leftPad(""+cal.get(Calendar.MINUTE), 2, '0'));
+					am.setIsRead(mmsg.isSet(Flags.Flag.SEEN));
 
-						am.setIsRead(mmsg.isSet(Flags.Flag.SEEN));
+					Flags flags = mmsg.getFlags();
+					am.setFlag(mmgr.getFlagString(flags));
+					am.setStatus(mmgr.getStatusString(flags, false, false));
+					am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
 
-						Flags flags = mmsg.getFlags();
-						am.setFlag(mmgr.getFlagString(flags));
-						am.setStatus(mmgr.getStatusString(flags, false, false));
-						am.setTags(mmgr.flagsToTagsIds(flags,tagsMap));
+					ArrayList<Part> parts = parsed.getAttachmentParts();
+					ArrayList<ApiAttachment> attachments = new ArrayList<ApiAttachment>();
+					int ix=0;
+					for(Part part: parts) {
+						ApiAttachment attachment = new ApiAttachment();
+						attachment.setFileName(mmgr.getPartName(part));
+						attachment.setCidName(mmgr.getCidName(part));
+						attachment.setId(""+(baseIndex+ix));
+						attachment.setMimeType(part.getContentType());
+						int size = part.getSize();
+						int lines = (size / 76);
+						int rsize = size - (lines * 2);//(p.getSize()/4)*3;
+						attachment.setFileSize(rsize);
+						attachments.add(attachment);
+						++ix;
+					}
+					am.setAttachments(attachments);
 
-						ArrayList<Part> parts = parsed.getAttachmentParts();
-						ArrayList<ApiAttachment> attachments = new ArrayList<ApiAttachment>();
-						int ix=0;
-						for(Part part: parts) {
-							ApiAttachment attachment = new ApiAttachment();
-							attachment.setFileName(mmgr.getPartName(part));
-							attachment.setCidName(mmgr.getCidName(part));
-							attachment.setId(""+(baseIndex+ix));
-							attachment.setMimeType(part.getContentType());
-							int size = part.getSize();
-							int lines = (size / 76);
-							int rsize = size - (lines * 2);//(p.getSize()/4)*3;
-							attachment.setFileSize(rsize);
-							attachments.add(attachment);
-							++ix;
-						}
-						am.setAttachments(attachments);
-
-						// Populate calendarParts when iTIP attachments are present.
-						// Re-uses the already-parsed components so no second IMAP fetch.
-						if (parsed.hasICalAttachment) {
-							List<CalendarPartInfo> cps = mmgr.readCalendarParts(parsed);
-							if (!cps.isEmpty()) {
-								List<ApiCalendarPart> apiCps = new ArrayList<>(cps.size());
-								for (CalendarPartInfo cp : cps) apiCps.add(toApiCalendarPart(cp));
-								am.setCalendarParts(apiCps);
-							}
+					// Populate calendarParts when iTIP attachments are present.
+					// Re-uses the already-parsed components so no second IMAP fetch.
+					if (parsed.hasICalAttachment) {
+						List<CalendarPartInfo> cps = mmgr.readCalendarParts(parsed);
+						if (!cps.isEmpty()) {
+							List<ApiCalendarPart> apiCps = new ArrayList<>(cps.size());
+							for (CalendarPartInfo cp : cps) apiCps.add(toApiCalendarPart(cp));
+							am.setCalendarParts(apiCps);
 						}
 					}
 				}
