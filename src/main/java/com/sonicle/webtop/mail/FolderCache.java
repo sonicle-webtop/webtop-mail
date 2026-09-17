@@ -415,13 +415,20 @@ public class FolderCache {
 		useArrivalDate = mus.isUseArrivalDate(foldername);
 		
 		//INBOX-only mode: the registry-hosted (app-dedicated) manager keeps a
-		//dedicated idle connection ONLY on INBOX; the app refreshes unseen/message
-		//lists of other folders itself while they are open. Web-session private
-		//managers keep favorites + shared-inbox idle. See also the MFT inboxOnly
-		//gate in MailManager.initAccounts.
+		//dedicated idle connection ONLY on the account's OWN INBOX; the app
+		//refreshes unseen/message lists of other folders itself while they are
+		//open. Web-session private managers keep favorites + shared-inbox idle.
+		//NB: isInbox is TRUE also for a shared user's nested INBOX on Dovecot
+		//(Shared/<user>/INBOX — MailAccount.isInboxFolder), so the unconditional
+		//term must exclude anything under the shared namespace or slim mode idles
+		//every shared INBOX (found live 2026-09-17; Cyrus masked it because its
+		//shared roots hold messages and never match isInboxFolder). Those nested
+		//INBOXes ride the shared-inbox term instead, which also makes
+		//idle.sharedinbox.enabled effective for them on Dovecot (it was bypassed
+		//before). See also the MFT inboxOnly gate in MailManager.initAccounts.
 		final boolean appInboxOnly = mailManager.isAppInboxOnlyMode();
-		boolean idle = !volatileInstance && (isInbox
-			|| (!appInboxOnly && isSharedInbox && mailManager.getMailServiceSettings().isIdleSharedInboxFolderEnabled())
+		boolean idle = !volatileInstance && ((isInbox && !isUnderSharedFolder)
+			|| (!appInboxOnly && (isSharedInbox || (isInbox && isUnderSharedFolder)) && mailManager.getMailServiceSettings().isIdleSharedInboxFolderEnabled())
 			|| (!appInboxOnly && account.isFavoriteFolder(foldername) && mailManager.getMailServiceSettings().isIdleFavoriteFolderEnabled()));
 
 		if (idle) startIdle();
