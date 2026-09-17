@@ -2792,8 +2792,8 @@ public class FolderCache {
 				
 				content = content.replaceAll("(" + RegexUtils.MATCH_EMAIL_ADDRESS + ")", "<a target=_blank href=$1 onClick ='"+onEmailClick+"'>$1</a>");
 				content = content.replaceAll("(" + RegexUtils.MATCH_URL + ")", "<a target= _blank href=$1>$1</a>");
-				content = content.replaceAll("(" + RegexUtils.MATCH_WWW_URL + ")", "$2<a target=_blank href='http://$3'>$3</a>$4");
-
+				content = content.replaceAll(RegexUtils.MATCH_WWW_URL, "<a target=\"_blank\" href=\"http://$0\">$0</a>");
+				
 				xhtml.append(content);	
                 xhtml.append("<BR>");
                 xhtml.append("</pre><HR></body></html>");
