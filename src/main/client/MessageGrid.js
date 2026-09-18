@@ -3225,9 +3225,8 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				xtype: 'soavatarcolumn',
 				sortable: false,
 				groupable: false,
-				sentMode: actAsSent,
 				getName: function(v, rec) {
-					var fld = this.sentMode ? 'to' : 'from';
+					var fld = actAsSent ? 'to' : 'from';
 					return Ext.isEmpty(rec.get(fld)) ? rec.get(fld+'email') : rec.get(fld);
 				},
 				width: 50
