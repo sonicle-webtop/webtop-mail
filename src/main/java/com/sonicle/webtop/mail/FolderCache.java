@@ -300,13 +300,17 @@ public class FolderCache {
 	private static FetchProfile FP_BS = new FetchProfile();
 
 	//Used by refreshRecentMessagesCount to batch-load what its loop reads:
-	//ENVELOPE for from/subject, plus the Message-ID header (ENVELOPE alone does
-	//not populate MimeMessage header reads).
+	//ENVELOPE for from/subject, Message-ID header (ENVELOPE alone does
+	//not populate MimeMessage header reads), and UID (mobile push consumers
+	//deep-link the tapped notification into the message preview via the UID;
+	//without prefetch, SonicleIMAPMessage.getUID() must lazy-fetch and can
+	//silently return -1 depending on cache state, dropping openTo).
 	private static FetchProfile FP_RECENT = new FetchProfile();
 
     static {
 		FP_BS.add(FetchProfile.Item.CONTENT_INFO);
 		FP_RECENT.add(FetchProfile.Item.ENVELOPE);
+		FP_RECENT.add(UIDFolder.FetchProfileItem.UID);
 		FP_RECENT.add("Message-ID");
     }
 
@@ -1016,17 +1020,24 @@ public class FolderCache {
                 // Best-effort UID resolve: mobile push consumers use it to open
                 // the tapped notification straight in the message preview. -1
                 // when unresolved so the app falls back to the folder list.
+                // FP_RECENT now prefetches UID, so the SonicleIMAPMessage cast
+                // usually returns it directly; the IMAPFolder fallback keeps
+                // working when the cast fails or the server omits the UID.
+                // Always resolve via the message's OWN folder (getUID(Message)
+                // on an unrelated IMAPFolder instance returns -1).
                 long uid = -1;
                 try {
                     if (recentMsg instanceof SonicleIMAPMessage) {
                         uid = ((SonicleIMAPMessage)recentMsg).getUID();
                     }
-                    if (uid < 0 && folder instanceof IMAPFolder) {
-                        uid = ((IMAPFolder)folder).getUID(recentMsg);
+                    if (uid < 0) {
+                        Folder mf = recentMsg.getFolder();
+                        if (mf instanceof IMAPFolder) uid = ((IMAPFolder)mf).getUID(recentMsg);
                     }
                 } catch (Exception ex) {
                     Service.logger.warn("RECENT on {} could not resolve uid: {}", foldername, ex.toString());
                 }
+                if (uid < 0) Service.logger.warn("RECENT on {} unresolved uid (msgClass={})", foldername, recentMsg.getClass().getName());
                 sendRecentMessage(fromName, recentMsg.getSubject(), uid);
             }
             if (!wasOpen) folder.close(false);
@@ -3271,19 +3282,25 @@ public class FolderCache {
 						}
 					}
 					//Best-effort UID resolve, same contract as the MFT sweep path:
-					//push consumers open the tapped notification directly; -1 falls
-					//back to the folder list
+					//push consumers open the tapped notification directly; -1
+					//falls back to the folder list. Messages here belong to
+					//the DEDICATED idle folder (a different IMAPFolder instance
+					//than FolderCache.folder), so the fallback must go through
+					//recentMsg.getFolder() - getUID(Message) on an unrelated
+					//IMAPFolder returns -1.
 					long uid = -1;
 					try {
 						if (recentMsg instanceof SonicleIMAPMessage) {
 							uid = ((SonicleIMAPMessage)recentMsg).getUID();
 						}
-						if (uid < 0 && folder instanceof IMAPFolder) {
-							uid = ((IMAPFolder)folder).getUID(recentMsg);
+						if (uid < 0) {
+							Folder mf = recentMsg.getFolder();
+							if (mf instanceof IMAPFolder) uid = ((IMAPFolder)mf).getUID(recentMsg);
 						}
 					} catch (Exception ex) {
 						Service.logger.warn("RECENT(idle) on {} could not resolve uid: {}", foldername, ex.toString());
 					}
+					if (uid < 0) Service.logger.warn("RECENT(idle) on {} unresolved uid (msgClass={})", foldername, recentMsg.getClass().getName());
 					sendRecentMessage(fromName, recentMsg.getSubject(), uid);
 				}
 
