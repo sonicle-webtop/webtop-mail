@@ -3242,6 +3242,28 @@ public class FolderCache {
 		public void handle(MailEvent event) {
 			try {
 				MessageCountEvent mce = (MessageCountEvent)event;
+				Message[] added = mce.getMessages();
+				//Batch-prefetch UID on the WHOLE arrival before the loop reads
+				//Message-ID / flags / from / subject: SonicleIMAPMessage.getUID()
+				//falls through to Jakarta Mail's lazy fetch, which on the dedicated
+				//idle connection can silently return -1 (the fetch doesn't complete
+				//while another thread is parked in IDLE). Doing the fetch through
+				//the message's OWN folder — the dedicated idle IMAPFolder — with
+				//an explicit UID FetchProfile forces the round-trip synchronously
+				//and populates the cached UID for every message in one go, so the
+				//push-hint extraction later never has to lazy-fetch.
+				if (added.length > 0) {
+					try {
+						Folder mf = added[0].getFolder();
+						if (mf instanceof IMAPFolder) {
+							FetchProfile fp = new FetchProfile();
+							fp.add(UIDFolder.FetchProfileItem.UID);
+							((IMAPFolder)mf).fetch(added, fp);
+						}
+					} catch (Exception ex) {
+						Service.logger.warn("RECENT(idle) on {} UID prefetch failed: {}", foldername, ex.toString());
+					}
+				}
 				//Scan the WHOLE batch but send only ONE 'recent' push for it. Scanning all
 				//messages (instead of only the last, as the old code did) means we still notify
 				//when the last message isn't RECENT or was already seen - and we mark every new
@@ -3250,7 +3272,7 @@ public class FolderCache {
 				//1000-message initial sync) must NOT become N pushes or the client floods.
 				//The latest new message is used for the displayed from/subject.
 				Message recentMsg=null;
-				for (Message m : mce.getMessages()) {
+				for (Message m : added) {
 					String id=((IMAPMessage)m).getMessageID();
 					//Do NOT gate on \Recent: with the folder open on several connections at
 					//once (dedicated idle + interactive pool + raw/scan) RFC 3501 grants the
