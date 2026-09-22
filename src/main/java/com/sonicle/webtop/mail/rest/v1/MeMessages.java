@@ -77,6 +77,7 @@ import jakarta.mail.internet.MimeMessage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -595,9 +596,12 @@ public class MeMessages extends MeMessagesApi {
 	public Response setMessageSeenState(String folderId, String suid, Boolean seen) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
-		long uid = Long.parseLong(suid);
+		long[] uids = suid.contains(",")
+			? Arrays.stream(suid.split(",")).mapToLong(s -> Long.parseLong(s.trim())).toArray()
+			: new long[] { Long.parseLong(suid) };
 		try {
-			mmgr.setMessageSeenState(folderId, uid, seen == null || seen);
+			if (uids.length==1) mmgr.setMessageSeenState(folderId, uids[0], seen == null || seen);
+			else mmgr.setMessagesSeenState(folderId, uids, seen == null || seen);
 			return respOk();
 		} catch(Exception exc) {
 			logger.error("Error during setMessageSeenState", exc);
@@ -609,11 +613,13 @@ public class MeMessages extends MeMessagesApi {
 	public Response deleteMessage(String folderId, String suid, Boolean trash) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
-		long uid = Long.parseLong(suid);
+		long[] uids = suid.contains(",")
+			? Arrays.stream(suid.split(",")).mapToLong(s -> Long.parseLong(s.trim())).toArray()
+			: new long[] { Long.parseLong(suid) };
 		try {
 			//omitted trash param defaults to the safe choice: move to Trash
-			if (trash == null || trash) mmgr.trashMessage(folderId, uid);
-			else mmgr.deleteMessage(folderId, uid);
+			if (trash == null || trash) mmgr.trashMessages(folderId, uids);
+			else mmgr.deleteMessages(folderId, uids);
 			return respOk();
 		} catch(Exception exc) {
 			logger.error("Error during deleteMessage", exc);
@@ -625,9 +631,11 @@ public class MeMessages extends MeMessagesApi {
 	public Response moveMessage(String fromFolderId, String toFolderId, String suid) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
-		long uid = Long.parseLong(suid);
+		long[] uids = suid.contains(",")
+			? Arrays.stream(suid.split(",")).mapToLong(s -> Long.parseLong(s.trim())).toArray()
+			: new long[] { Long.parseLong(suid) };
 		try {
-			mmgr.moveMessage(fromFolderId, toFolderId, uid);
+			mmgr.moveMessages(fromFolderId, toFolderId, uids);
 			return respOk();
 		} catch(Exception exc) {
 			logger.error("Error during moveMessage", exc);
@@ -653,9 +661,12 @@ public class MeMessages extends MeMessagesApi {
 	public Response setMessageFlag(String folderId, String suid, String flag) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
-		long uid = Long.parseLong(suid);
+		long[] uids = suid.contains(",")
+			? Arrays.stream(suid.split(",")).mapToLong(s -> Long.parseLong(s.trim())).toArray()
+			: new long[] { Long.parseLong(suid) };
 		try {
-			mmgr.setMessageFlag(folderId, uid, flag);
+			if (uids.length==1) mmgr.setMessageFlag(folderId, uids[0], flag);
+			else mmgr.setMessagesFlag(folderId, uids, flag);
 			return respOk();
 		} catch(Exception exc) {
 			logger.error("Error during setMessageFlag", exc);
@@ -682,9 +693,12 @@ public class MeMessages extends MeMessagesApi {
 	public Response setMessageTags(String folderId, String suid, List<String> tags) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
-		long uid = Long.parseLong(suid);
+		long[] uids = suid.contains(",")
+			? Arrays.stream(suid.split(",")).mapToLong(s -> Long.parseLong(s.trim())).toArray()
+			: new long[] { Long.parseLong(suid) };
 		try {
-			mmgr.setMessageTags(folderId, uid, tags);
+			if (uids.length==1) mmgr.setMessageTags(folderId, uids[0], tags);
+			else mmgr.setMessagesTags(folderId, uids, tags);
 			return respOk();
 		} catch(Exception exc) {
 			logger.error("Error during setMessageTags", exc);

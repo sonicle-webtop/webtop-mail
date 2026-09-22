@@ -3677,6 +3677,11 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		}
 	}
 
+	private void _setMessageSeenState(IMAPFolder folder, long uid, boolean seen) throws MessagingException, WTException {
+		Message msg = getMessageByUID(folder, uid);
+		msg.setFlag(Flags.Flag.SEEN, seen);
+	}
+	
 	public void setMessageSeenState(String folderId, long uid, boolean seen) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
@@ -3684,13 +3689,31 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_WRITE);
-			Message msg = getMessageByUID(folder, uid);
-			msg.setFlag(Flags.Flag.SEEN, seen);
+			_setMessageSeenState(folder, uid, seen);
 		} catch(WTException exc) {
 			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error setting message seen state", exc);
 			throw new WTException(exc, "Error setting message seen state [{}, {}]", folderId, uid);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			//mailbox.disconnect();
+		}
+	}
+
+	public void setMessagesSeenState(String folderId, long[] uids, boolean seen) throws WTException {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			for(long uid: uids) _setMessageSeenState(folder, uid, seen);
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error setting message seen state", exc);
+			throw new WTException(exc, "Error setting message seen state [{}, {}]", folderId, StringUtils.join(uids,','));
 		} finally {
 			StoreUtils.closeQuietly(folder, false);
 			//mailbox.disconnect();
@@ -3726,6 +3749,28 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		return msg;
 	}
 
+	private static Message[] getMessagesByUID(IMAPFolder folder, long[] uids) throws MessagingException, WTException {
+		Message msgs[] = folder.getMessagesByUID(uids);
+		if (msgs == null) throw new WTNotFoundException("Messages not found [{}, {}]", folder.getFullName(), StringUtils.join(uids, ','));
+		return msgs;
+	}
+
+	private void _setMessageFlag(IMAPFolder folder, long uid, String flag, Flags newFlags) throws MessagingException, WTException {
+		Message msg = getMessageByUID(folder, uid);
+
+		if (flag.equals("special")) {
+			boolean wasspecial=msg.getFlags().contains(getFlagFlagged());
+			msg.setFlags(getFlagFlagged(),!wasspecial);
+		}
+		else {
+			if (!flag.equals("complete")) {
+				msg.setFlags(flagsAll, false);
+				msg.setFlags(oldFlagsAll, false);
+			}
+			msg.setFlags(newFlags, true);
+		}
+	}
+	
 	public void setMessageFlag(String folderId, long uid, String flag) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
@@ -3739,19 +3784,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_WRITE);
-			Message msg = getMessageByUID(folder, uid);
-
-			if (flag.equals("special")) {
-				boolean wasspecial=msg.getFlags().contains(getFlagFlagged());
-				msg.setFlags(getFlagFlagged(),!wasspecial);
-			}
-			else {
-				if (!flag.equals("complete")) {
-					msg.setFlags(flagsAll, false);
-					msg.setFlags(oldFlagsAll, false);
-				}
-				msg.setFlags(newFlags, true);
-			}
+			_setMessageFlag(folder, uid, flag, newFlags);
 
 		} catch(WTException exc) {
 			throw exc;
@@ -3764,21 +3797,56 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		}
 	}
 
-	public void setMessageTags(String folderId, long uid, List<String> tags) throws WTException {
+	public void setMessagesFlag(String folderId, long[] uids, String flag) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
 		try {
-			Flags flags = new Flags();
-			for(String tagId: tags) {
-				com.sonicle.webtop.core.model.Tag tag = WT.getCoreManager().getTag(tagId);
-				if (tag == null) throw new WTParseException("Unknown tag [{}]", tagId);
-				flags.add(TagsHelper.tagIdToFlagString(tag));
+			if (flag == null) throw new WTParseException("Missing flag");
+			Flags newFlags = null;
+			if (!flag.equals("special")) {
+				newFlags = flagsHash.get(flag);
+				if (newFlags == null) throw new WTParseException("Unknown flag [{}]", flag);
 			}
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_WRITE);
-			Message msg = getMessageByUID(folder, uid);
-			msg.setFlags(flags, true);
+			for(long uid: uids) _setMessageFlag(folder, uid, flag, newFlags);
+
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error on setMessageFlag", exc);
+			throw new WTException(exc, "Error setting message flag [{}, {}]", folderId, StringUtils.join(uids, ','));
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			//mailbox.disconnect();
+		}
+	}
+	
+	private Flags _tagsToFlags(List<String> tags) throws WTException {
+		Flags flags = new Flags();
+		for(String tagId: tags) {
+			com.sonicle.webtop.core.model.Tag tag = WT.getCoreManager().getTag(tagId);
+			if (tag == null) throw new WTParseException("Unknown tag [{}]", tagId);
+			flags.add(TagsHelper.tagIdToFlagString(tag));
+		}
+		return flags;
+	}
+	
+	private void _setMessageTags(IMAPFolder folder, long uid, Flags flags) throws MessagingException, WTException {
+		Message msg = getMessageByUID(folder, uid);
+		msg.setFlags(flags, true);
+	}
+	
+	public void setMessageTags(String folderId, long uid, List<String> tags) throws WTException {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			Flags flags = _tagsToFlags(tags);
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			_setMessageTags(folder, uid, flags);
 
 		} catch(WTException exc) {
 			throw exc;
@@ -3790,8 +3858,29 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			//mailbox.disconnect();
 		}
 	}
+	
+	public void setMessagesTags(String folderId, long[] uids, List<String> tags) throws WTException {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			Flags flags = _tagsToFlags(tags);
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
+			for(long uid: uids) _setMessageTags(folder, uid, flags);
 
-	public void trashMessage(String folderId, long uid) throws WTException {
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error on setMessageTags", exc);
+			throw new WTException(exc, "Error setting message tags [{}, {}]", folderId, StringUtils.join(uids, ','));
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			//mailbox.disconnect();
+		}
+	}
+
+	public void trashMessages(String folderId, long uids[]) throws WTException {
 		IMAPFolder fromFolder = null;
 		IMAPFolder toFolder = null;
 		Mailbox mailbox = null;
@@ -3805,21 +3894,12 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 					folderTrashId = mainfolder + sep + getLastFolderName(folderTrashId, sep);
 				}
 			}
-			fromFolder = (IMAPFolder) mailbox.getFolder(folderId);
-			toFolder = (IMAPFolder) mailbox.getFolder(folderTrashId);
-			
-			fromFolder.open(Folder.READ_WRITE);
-			toFolder.open(Folder.READ_WRITE);
-			Message msg = getMessageByUID(fromFolder, uid);
-			Message amsg[] = new Message[] { msg };
-			fromFolder.copyMessages(amsg, toFolder);
-			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
-			fromFolder.expunge();
+			moveMessages(folderId, folderTrashId, uids);
 		} catch(WTException exc) {
 			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error trashing messages", exc);
-			throw new WTException(exc, "Error trashing message [{}, {}]", folderId, uid);
+			throw new WTException(exc, "Error trashing message [{}, {}]", folderId, StringUtils.join(uids, ','));
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			StoreUtils.closeQuietly(toFolder, false);
@@ -3827,7 +3907,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		}
 	}
 
-	public void deleteMessage(String folderId, long uid) throws WTException {
+	public void deleteMessages(String folderId, long uids[]) throws WTException {
 		IMAPFolder fromFolder = null;
 		Mailbox mailbox = null;
 		try {
@@ -3835,22 +3915,21 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			fromFolder = (IMAPFolder) mailbox.getFolder(folderId);
 
 			fromFolder.open(Folder.READ_WRITE);
-			Message msg = getMessageByUID(fromFolder, uid);
-			Message amsg[] = new Message[] { msg };
+			Message amsg[] = getMessagesByUID(fromFolder, uids);
 			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
 			fromFolder.expunge();
 		} catch(WTException exc) {
 			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error deleting messages", exc);
-			throw new WTException(exc, "Error deleting message [{}, {}]", folderId, uid);
+			throw new WTException(exc, "Error deleting message [{}, {}]", folderId, StringUtils.join(uids, ','));
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			//mailbox.disconnect();
 		}
 	}
 
-	public void moveMessage(String fromFolderId, String toFolderId, long uid) throws WTException {
+	public void moveMessages(String fromFolderId, String toFolderId, long[] uids) throws WTException {
 		IMAPFolder fromFolder = null;
 		IMAPFolder toFolder = null;
 		Mailbox mailbox = null;
@@ -3861,8 +3940,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 
 			fromFolder.open(Folder.READ_WRITE);
 			toFolder.open(Folder.READ_WRITE);
-			Message msg = getMessageByUID(fromFolder, uid);
-			Message amsg[] = new Message[] { msg };
+			Message amsg[] = getMessagesByUID(fromFolder, uids);
 			fromFolder.copyMessages(amsg, toFolder);
 			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
 			fromFolder.expunge();
@@ -3870,7 +3948,7 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			throw exc;
 		} catch(Exception exc) {
 			logger.error("Error moving messages", exc);
-			throw new WTException(exc, "Error moving message [{}, {}]", fromFolderId, uid);
+			throw new WTException(exc, "Error moving message [{}, {}]", fromFolderId, StringUtils.join(uids, ','));
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			StoreUtils.closeQuietly(toFolder, false);
