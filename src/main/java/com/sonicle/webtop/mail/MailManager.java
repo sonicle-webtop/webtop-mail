@@ -3755,6 +3755,12 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		return msgs;
 	}
 
+	private static Message[] getAllMessages(IMAPFolder folder) throws MessagingException, WTException {
+		Message msgs[] = folder.getMessagesByUID(1,UIDFolder.LASTUID);
+		if (msgs == null) throw new WTNotFoundException("No messages found [{}]", folder.getFullName());
+		return msgs;
+	}
+	
 	private void _setMessageFlag(IMAPFolder folder, long uid, String flag, Flags newFlags) throws MessagingException, WTException {
 		Message msg = getMessageByUID(folder, uid);
 
@@ -3907,6 +3913,33 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		}
 	}
 
+	public void trashAllMessages(String folderId) throws WTException {
+		IMAPFolder fromFolder = null;
+		IMAPFolder toFolder = null;
+		Mailbox mailbox = null;
+		try {
+			String folderTrashId = getFolderTrash();
+			mailbox = getMailbox();
+			if (mailbox.isUnderSharedFolder(folderId)) {
+				String mainfolder=mailbox.getMainSharedFolder(folderId);
+				if (mainfolder!=null) {
+					char sep = mailbox.getFolderSeparator();
+					folderTrashId = mainfolder + sep + getLastFolderName(folderTrashId, sep);
+				}
+			}
+			moveAllMessages(folderId, folderTrashId);
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error trashing messages", exc);
+			throw new WTException(exc, "Error trashing all messages [{}, {}]", folderId);
+		} finally {
+			StoreUtils.closeQuietly(fromFolder, false);
+			StoreUtils.closeQuietly(toFolder, false);
+			//mailbox.disconnect();
+		}
+	}
+
 	public void deleteMessages(String folderId, long uids[]) throws WTException {
 		IMAPFolder fromFolder = null;
 		Mailbox mailbox = null;
@@ -3923,6 +3956,28 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		} catch(Exception exc) {
 			logger.error("Error deleting messages", exc);
 			throw new WTException(exc, "Error deleting message [{}, {}]", folderId, StringUtils.join(uids, ','));
+		} finally {
+			StoreUtils.closeQuietly(fromFolder, false);
+			//mailbox.disconnect();
+		}
+	}
+
+	public void deleteAllMessages(String folderId) throws WTException {
+		IMAPFolder fromFolder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			fromFolder = (IMAPFolder) mailbox.getFolder(folderId);
+
+			fromFolder.open(Folder.READ_WRITE);
+			Message amsg[] = getAllMessages(fromFolder);
+			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
+			fromFolder.expunge();
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error deleting messages", exc);
+			throw new WTException(exc, "Error deleting all messages [{}, {}]", folderId);
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			//mailbox.disconnect();
@@ -3949,6 +4004,33 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		} catch(Exception exc) {
 			logger.error("Error moving messages", exc);
 			throw new WTException(exc, "Error moving message [{}, {}]", fromFolderId, StringUtils.join(uids, ','));
+		} finally {
+			StoreUtils.closeQuietly(fromFolder, false);
+			StoreUtils.closeQuietly(toFolder, false);
+			//mailbox.disconnect();
+		}
+	}
+
+	public void moveAllMessages(String fromFolderId, String toFolderId) throws WTException {
+		IMAPFolder fromFolder = null;
+		IMAPFolder toFolder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = getMailbox();
+			fromFolder = (IMAPFolder) mailbox.getFolder(fromFolderId);
+			toFolder = (IMAPFolder) mailbox.getFolder(toFolderId);
+
+			fromFolder.open(Folder.READ_WRITE);
+			toFolder.open(Folder.READ_WRITE);
+			Message amsg[] = getAllMessages(fromFolder);
+			fromFolder.copyMessages(amsg, toFolder);
+			fromFolder.setFlags(amsg, new Flags(Flags.Flag.DELETED), true);
+			fromFolder.expunge();
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error moving messages", exc);
+			throw new WTException(exc, "Error moving all messages [{}, {}]", fromFolderId);
 		} finally {
 			StoreUtils.closeQuietly(fromFolder, false);
 			StoreUtils.closeQuietly(toFolder, false);

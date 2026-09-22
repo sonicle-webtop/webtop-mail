@@ -613,13 +613,19 @@ public class MeMessages extends MeMessagesApi {
 	public Response deleteMessage(String folderId, String suid, Boolean trash) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
-		long[] uids = suid.contains(",")
+		long[] uids = suid.equals("*") ? null : suid.contains(",")
 			? Arrays.stream(suid.split(",")).mapToLong(s -> Long.parseLong(s.trim())).toArray()
 			: new long[] { Long.parseLong(suid) };
 		try {
 			//omitted trash param defaults to the safe choice: move to Trash
-			if (trash == null || trash) mmgr.trashMessages(folderId, uids);
-			else mmgr.deleteMessages(folderId, uids);
+			if (trash == null || trash) {
+				if (uids != null) mmgr.trashMessages(folderId, uids);
+				else mmgr.trashAllMessages(folderId);
+			}
+			else {
+				if (uids != null) mmgr.deleteMessages(folderId, uids);
+				else mmgr.deleteAllMessages(folderId);
+			}
 			return respOk();
 		} catch(Exception exc) {
 			logger.error("Error during deleteMessage", exc);
@@ -631,11 +637,12 @@ public class MeMessages extends MeMessagesApi {
 	public Response moveMessage(String fromFolderId, String toFolderId, String suid) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
-		long[] uids = suid.contains(",")
+		long[] uids = suid.equals("*") ? null : suid.contains(",")
 			? Arrays.stream(suid.split(",")).mapToLong(s -> Long.parseLong(s.trim())).toArray()
 			: new long[] { Long.parseLong(suid) };
 		try {
-			mmgr.moveMessages(fromFolderId, toFolderId, uids);
+			if (uids != null) mmgr.moveMessages(fromFolderId, toFolderId, uids);
+			else mmgr.moveAllMessages(fromFolderId, toFolderId);
 			return respOk();
 		} catch(Exception exc) {
 			logger.error("Error during moveMessage", exc);
