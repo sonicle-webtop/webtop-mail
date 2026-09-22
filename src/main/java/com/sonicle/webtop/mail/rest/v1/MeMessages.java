@@ -218,10 +218,18 @@ public class MeMessages extends MeMessagesApi {
 				public void consume(Message msg, long uid, MimeMessageParser.ParsedMimeMessageComponents parsed) throws MessagingException, IOException {
 					IMAPMessage mmsg = (IMAPMessage) msg;
 					int baseIndex = index >= 0 ? index + 1 : 0;
-					String hmid[] = mmsg.getHeader("Message-ID");
-					if (hmid != null && hmid.length > 0) am.setId(hmid[0]);
-					am.setId(hmid[0]);
-					am.setUid((int)uid);
+                    // Some messages arrive without a Message-ID header (bounce
+                    // mailer daemons, forwarded reports, hand-crafted MUAs).
+                    // Fall back to a synthesised "uid:<n>" so the app still
+                    // has a stable id for display; every follow-up API call
+                    // uses uid anyway. Previously an unconditional
+                    // `am.setId(hmid[0])` threw NullPointerException /
+                    // ArrayIndexOutOfBoundsException on those messages, and
+                    // the outer catch turned it into an error response — the
+                    // mobile preview then rendered blank.
+                    String hmid[] = mmsg.getHeader("Message-ID");
+                    am.setId(hmid != null && hmid.length > 0 ? hmid[0] : ("uid:" + uid));
+                    am.setUid((int)uid);
 					am.setSubject(mmsg.getSubject());
 
 					ArrayList<MimeMessageParser.ParsedMimeMessageComponents.HTMLPart> htmlparts = parsed.getProcessedHTMLParts();

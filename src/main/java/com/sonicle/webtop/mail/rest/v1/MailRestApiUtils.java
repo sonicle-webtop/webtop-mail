@@ -37,6 +37,8 @@ import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.sdk.UserProfileId;
 import com.sonicle.webtop.mail.MailManager;
 import com.sonicle.webtop.mail.Service;
+import jakarta.mail.Folder;
+import jakarta.mail.MessagingException;
 import javax.ws.rs.core.HttpHeaders;
 
 /**
@@ -79,5 +81,20 @@ public class MailRestApiUtils {
 			mmgr.ensureAccountsStartedAsync();
 		}
 		return mmgr;
+	}
+	
+	public static int getUnreadMessageCount(MailManager mmgr, Folder folder) throws MessagingException {
+		int unread;
+		if (mmgr.isAppInboxOnlyMode() && !"INBOX".equalsIgnoreCase(folder.getFullName())) {
+			// App mode: MFT only sweeps INBOX and no IDLE watches other
+			// folders, so any warm-cache value from getWarmUnreadCount
+			// reflects the last folder-open (potentially days ago).
+			// Read the current count straight from IMAP instead.
+			unread = folder.getUnreadMessageCount();
+		} else {
+			int warm = mmgr.getWarmUnreadCount(folder.getFullName());
+			unread = warm >= 0 ? warm : folder.getUnreadMessageCount();
+		}
+		return unread;
 	}
 }

@@ -71,8 +71,8 @@ public class MeFolders extends MeFoldersApi {
 				af.setType(ApiFolder.TypeEnum.fromValue(mmgr.getFolderType(folder.getFullName())));
 				af.setHasChildren(mmgr.folderHasChildren(folder));
 				try {
-					int unread = mmgr.getWarmUnreadCount(folder.getFullName());
-					af.setUnreadCount(unread >= 0 ? unread : folder.getUnreadMessageCount());
+					int unread = MailRestApiUtils.getUnreadMessageCount(mmgr, folder);
+					af.setUnreadCount(unread);
 					af.setTotalCount(folder.getMessageCount());
 				} catch(MessagingException exc) {}
 				af.setChildren(new ArrayList<>());
@@ -100,8 +100,8 @@ public class MeFolders extends MeFoldersApi {
 				af.setType(ApiFolder.TypeEnum.fromValue(mmgr.getFolderType(folder.getFullName())));
 				af.setHasChildren(mmgr.folderHasChildren(folder));
 				try {
-					int unread = mmgr.getWarmUnreadCount(folder.getFullName());
-					af.setUnreadCount(unread >= 0 ? unread : folder.getUnreadMessageCount());
+					int unread = MailRestApiUtils.getUnreadMessageCount(mmgr, folder);
+					af.setUnreadCount(unread);
 					af.setTotalCount(folder.getMessageCount());
 				} catch(MessagingException exc) {}
 				af.setChildren(new ArrayList<>());
@@ -144,8 +144,8 @@ public class MeFolders extends MeFoldersApi {
 			afi.setType(ApiFolderInfo.TypeEnum.fromValue(mmgr.getFolderType(folder.getFullName())));
 			afi.setHasChildren(mmgr.folderHasChildren(folder));
 			try {
-				int unread = mmgr.getWarmUnreadCount(folder.getFullName());
-				afi.setUnreadCount(unread >= 0 ? unread : folder.getUnreadMessageCount());
+				int unread = MailRestApiUtils.getUnreadMessageCount(mmgr, folder);
+				afi.setUnreadCount(unread);
 				afi.setTotalCount(folder.getMessageCount());
 			} catch(MessagingException exc) {}
 			return respOk(afi);

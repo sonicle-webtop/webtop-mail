@@ -39,6 +39,7 @@ import com.sonicle.webtop.mail.MailManager;
 import com.sonicle.webtop.mail.swagger.v1.api.MeFavoritesApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiFolder;
+import jakarta.mail.Folder;
 import jakarta.mail.MessagingException;
 import java.util.ArrayList;
 import javax.ws.rs.core.Context;
@@ -68,9 +69,10 @@ public class MeFavorites extends MeFavoritesApi {
 				af.setName(favorite.name);
 				af.setType(ApiFolder.TypeEnum.fromValue(mmgr.getFolderType(favorite.id)));
 				try {
-					int unread = mmgr.getWarmUnreadCount(favorite.id);
-					af.setUnreadCount(unread >= 0 ? unread : favorite.folder.getUnreadMessageCount());
-					af.setTotalCount(favorite.folder.getMessageCount());
+					Folder folder = favorite.folder;
+					int unread = MailRestApiUtils.getUnreadMessageCount(mmgr, folder);
+					af.setUnreadCount(unread);
+					af.setTotalCount(folder.getMessageCount());
 				} catch(MessagingException exc) {}
 				items.add(af);
 			}
