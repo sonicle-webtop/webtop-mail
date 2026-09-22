@@ -228,7 +228,7 @@ public class MeMessages extends MeMessagesApi {
                     // the outer catch turned it into an error response — the
                     // mobile preview then rendered blank.
                     String hmid[] = mmsg.getHeader("Message-ID");
-                    am.setId(hmid != null && hmid.length > 0 ? hmid[0] : ("uid:" + uid));
+                    am.setId(hmid != null && hmid.length > 0 ? hmid[0] : ("uid:" + uid)); // set a synthesised id when null
                     am.setUid((int)uid);
 					am.setSubject(mmsg.getSubject());
 
