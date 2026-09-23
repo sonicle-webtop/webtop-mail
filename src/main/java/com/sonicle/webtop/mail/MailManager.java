@@ -3777,6 +3777,12 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		}
 	}
 	
+	private void _clearMessageFlag(IMAPFolder folder, long uid) throws MessagingException, WTException {
+		Message msg = getMessageByUID(folder, uid);
+		msg.setFlags(flagsAll, false);
+		msg.setFlags(oldFlagsAll, false);
+	}
+	
 	public void setMessageFlag(String folderId, long uid, String flag) throws WTException {
 		IMAPFolder folder = null;
 		Mailbox mailbox = null;
@@ -3808,16 +3814,20 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		Mailbox mailbox = null;
 		try {
 			if (flag == null) throw new WTParseException("Missing flag");
-			Flags newFlags = null;
-			if (!flag.equals("special")) {
-				newFlags = flagsHash.get(flag);
-				if (newFlags == null) throw new WTParseException("Unknown flag [{}]", flag);
+			if (flag.equals("clear")) {
+				for(long uid: uids) _clearMessageFlag(folder, uid);
 			}
-			mailbox = getMailbox();
-			folder = (IMAPFolder) mailbox.getFolder(folderId);
-			folder.open(Folder.READ_WRITE);
-			for(long uid: uids) _setMessageFlag(folder, uid, flag, newFlags);
-
+			else {
+				Flags newFlags = null;
+				if (!flag.equals("special")) {
+					newFlags = flagsHash.get(flag);
+					if (newFlags == null) throw new WTParseException("Unknown flag [{}]", flag);
+				}
+				mailbox = getMailbox();
+				folder = (IMAPFolder) mailbox.getFolder(folderId);
+				folder.open(Folder.READ_WRITE);
+				for(long uid: uids) _setMessageFlag(folder, uid, flag, newFlags);
+			}
 		} catch(WTException exc) {
 			throw exc;
 		} catch(Exception exc) {
