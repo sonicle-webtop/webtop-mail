@@ -3788,16 +3788,20 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		Mailbox mailbox = null;
 		try {
 			if (flag == null) throw new WTParseException("Missing flag");
-			Flags newFlags = null;
-			if (!flag.equals("special")) {
-				newFlags = flagsHash.get(flag);
-				if (newFlags == null) throw new WTParseException("Unknown flag [{}]", flag);
-			}
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_WRITE);
-			_setMessageFlag(folder, uid, flag, newFlags);
-
+			if (flag.equals("clear")) {
+				_clearMessageFlag(folder, uid);
+			}
+			else {
+				Flags newFlags = null;
+				if (!flag.equals("special")) {
+					newFlags = flagsHash.get(flag);
+					if (newFlags == null) throw new WTParseException("Unknown flag [{}]", flag);
+				}
+				_setMessageFlag(folder, uid, flag, newFlags);
+			}
 		} catch(WTException exc) {
 			throw exc;
 		} catch(Exception exc) {
@@ -3814,6 +3818,9 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		Mailbox mailbox = null;
 		try {
 			if (flag == null) throw new WTParseException("Missing flag");
+			mailbox = getMailbox();
+			folder = (IMAPFolder) mailbox.getFolder(folderId);
+			folder.open(Folder.READ_WRITE);
 			if (flag.equals("clear")) {
 				for(long uid: uids) _clearMessageFlag(folder, uid);
 			}
@@ -3823,9 +3830,6 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 					newFlags = flagsHash.get(flag);
 					if (newFlags == null) throw new WTParseException("Unknown flag [{}]", flag);
 				}
-				mailbox = getMailbox();
-				folder = (IMAPFolder) mailbox.getFolder(folderId);
-				folder.open(Folder.READ_WRITE);
 				for(long uid: uids) _setMessageFlag(folder, uid, flag, newFlags);
 			}
 		} catch(WTException exc) {
