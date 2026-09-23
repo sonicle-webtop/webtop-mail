@@ -3849,9 +3849,14 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		return flags;
 	}
 	
-	private void _setMessageTags(IMAPFolder folder, long uid, Flags flags) throws MessagingException, WTException {
+	private void _setMessageTags(IMAPFolder folder, long uid, Flags newFlags) throws MessagingException, WTException {
 		Message msg = getMessageByUID(folder, uid);
-		msg.setFlags(flags, true);
+		Flags allFlags=new Flags();
+		for(com.sonicle.webtop.core.model.Tag tag: WT.getCoreManager().listTags().values()) {
+			allFlags.add(TagsHelper.tagIdToFlagString(tag));
+		}
+		msg.setFlags(allFlags, false);
+		msg.setFlags(newFlags, true);
 	}
 	
 	public void setMessageTags(String folderId, long uid, List<String> tags) throws WTException {
