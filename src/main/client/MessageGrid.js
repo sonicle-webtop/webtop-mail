@@ -2378,6 +2378,22 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			//colored flag (contrassegno); '' clears it
 			var nflag=it.flag||"";
 			if (rec.get("flag")!==nflag) { rec.set("flag", nflag); changed=true; }
+            //tags: server pushes the FULL list of tag IDs currently on the message (see
+            //JsFlagsChangedMessage.Item#tags, populated via MailManager.flagsToTagsIds).
+            //Replace wholesale, mirroring the array-swap trick _setRecordTag /
+            //_unsetRecordTag already use so Ext repaints the tag column cell. Without
+            //this branch a peer session's tag change (mobile or another web tab) only
+            //became visible after a manual grid refresh, even though seen/flag/status
+            //from the same push were applied in place.
+            var newTags=it.tags||[],
+				oldTags=rec.get("tags")||[],
+				sameTags=newTags.length===oldTags.length &&
+                    newTags.every(function(t){ return Ext.Array.contains(oldTags,t); });
+            if (!sameTags) {
+                    rec.set("tags", null);
+                    rec.set("tags", newTags);
+                    changed=true;
+            }
 			if (changed) view.refreshNode(rec);
 		});
 		Ext.resumeLayouts(true);
