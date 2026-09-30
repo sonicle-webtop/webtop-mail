@@ -394,25 +394,26 @@ public class MailUserSettings extends BaseUserSettings {
 	}
 	
 	public StoreHostParams getMailboxHostParams(String username, String password, boolean shouldImpersonate) {
-		StoreHostParams shd = new StoreHostParams(getHost(), getPort(), StoreProtocol.parse(getProtocol(), false));
+		StoreHostParams shp = new StoreHostParams(getHost(), getPort(), StoreProtocol.parse(getProtocol(), false));
 		String finalPassword = LangUtils.coalesceStrings(getPassword(), password);
 		
 		//if profile host is not empty and different from system host, cannot impersonate
-		if (!StringUtils.isEmpty(shd.getHost()) && !StringUtils.equalsIgnoreCase(mss.getDefaultHost(), shd.getHost())) shouldImpersonate = false;
+		if (!StringUtils.isEmpty(shp.getHost()) && !StringUtils.equalsIgnoreCase(mss.getDefaultHost(), shp.getHost())) shouldImpersonate = false;
 		
 		if (shouldImpersonate) {
 			if (!StringUtils.isBlank(mss.getNethTopVmailSecret())) {
-				shd.withUsername(LangUtils.coalesceStrings(getUsername(), StoreUtils.toPlainUser(username)));
-				shd.withVMAILImpersonate(mss.getNethTopVmailSecret());
+				shp.withUsername(LangUtils.coalesceStrings(getUsername(), StoreUtils.toPlainUser(username)));
+				shp.withVMAILImpersonate(mss.getNethTopVmailSecret());
 			} else if (!StringUtils.isBlank(mss.getAdminUser())) {
-				shd.withUsername(LangUtils.coalesceStrings(getUsername(), username));
-				shd.withSASLImpersonate(mss.getAdminUser(), mss.getAdminPassword());
+				shp.withUsername(LangUtils.coalesceStrings(getUsername(), username));
+				shp.withSASLImpersonate(mss.getAdminUser(), mss.getAdminPassword());
 			}
 		} else {
-			shd.withUsername(LangUtils.coalesceStrings(getUsername(), username));
-			shd.withPassword(finalPassword);
+			shp.withUsername(LangUtils.coalesceStrings(getUsername(), username));
+			shp.withPassword(finalPassword);
 		}
-		return shd;
+		shp.withTrustHost(true);
+		return shp;
 	}
 	
 	public String getHost() {
