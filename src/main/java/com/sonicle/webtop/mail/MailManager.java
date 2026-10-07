@@ -164,6 +164,7 @@ import jakarta.mail.Multipart;
 import jakarta.mail.Part;
 import jakarta.mail.UIDFolder;
 import jakarta.mail.internet.InternetAddress;
+import jakarta.mail.internet.MailDateFormat;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeUtility;
@@ -4063,6 +4064,51 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			lasttname = lasttname.substring(lasttname.lastIndexOf(separator) + 1);
 		}
 		return lasttname;
+	}
+
+	public void forwardRedirectOriginal(final UserProfileId sendingProfileId, String foldername, String uid, String to, int identityId) throws WTException {
+		List<Identity> identities = listIdentities();
+		Identity identity = identities.get(identityId);
+		forwardRedirectOriginal(sendingProfileId, mainAccount, foldername, uid, to, identity);
+	}
+	
+	public void forwardRedirectOriginal(final UserProfileId sendingProfileId, String foldername, String uid, String to, Identity identity) throws WTException {
+		forwardRedirectOriginal(sendingProfileId, mainAccount, foldername, uid, to, identity);
+	}
+	
+	public void forwardRedirectOriginal(final UserProfileId sendingProfileId, MailAccount account, String foldername, String uid, String to, Identity ident) throws WTException {
+		IMAPFolder folder = null;
+		Mailbox mailbox = null;
+		try {
+			mailbox = account.getAccountMailbox();
+			
+			InternetAddress iato = new InternetAddress(to);
+			folder = (IMAPFolder) mailbox.getFolder(foldername);
+			folder.open(Folder.READ_WRITE);
+			MimeMessage src = (MimeMessage) getMessageByUID(folder, Long.parseLong(uid));
+			if (src.isExpunged()) throw new MessagingException("Message expunged");
+
+			MimeMessage dst = new MimeMessage(src);
+
+			dst.addHeader("Resent-From", ident.toString());
+			dst.addHeader("Resent-To", to);
+			dst.addHeader("Resent-Date", new MailDateFormat().format(new java.util.Date()));
+			
+			dst.setHeader("Message-ID", "<"+UniqueValue.getUniqueMessageIDValue(account.getMailSession())+">");
+
+			WT.sendEmailMessage(sendingProfileId, dst, new InternetAddress[] { iato }, getFolderSent(ident));
+			src.setFlags(FolderCache.forwardedFlags, true);
+			mus.setFolderForwardRedirectTo(foldername, to);
+		} catch(WTException exc) {
+			throw exc;
+		} catch(Exception exc) {
+			logger.error("Error forwardRedirectAsNew", exc);
+			throw new WTException(exc, "Error forwardRedirectAsNew [{}, {}]", foldername, uid);
+		} finally {
+			StoreUtils.closeQuietly(folder, false);
+			//mailbox.disconnect();
+		}
+
 	}
 	
 	public void forwardRedirectAsNew(final UserProfileId sendingProfileId, String foldername, String uid, String to, int identityId) throws WTException {
