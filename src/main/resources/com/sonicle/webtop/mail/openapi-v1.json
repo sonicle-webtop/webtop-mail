@@ -370,6 +370,45 @@
         "description": ""
       }
     },
+    "/me/messages/redirectoriginal": {
+      "parameters": [],
+      "post": {
+        "summary": "Redirect original message",
+        "operationId": "redirectOriginalMessage",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "me_messages"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/folderId"
+          },
+          {
+            "$ref": "#/components/parameters/uid"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "to",
+            "description": "The recipient"
+          },
+          {
+            "schema": {
+              "type": "integer"
+            },
+            "in": "query",
+            "name": "identity_id"
+          }
+        ]
+      }
+    },
     "/me/messages/redirectnew": {
       "parameters": [],
       "post": {

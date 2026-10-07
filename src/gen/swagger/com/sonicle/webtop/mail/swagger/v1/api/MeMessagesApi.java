@@ -20,7 +20,7 @@ import javax.validation.Valid;
 
 @Path("/me/messages")
 @Api(description = "the MeMessages API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-07-09T14:49:58.479+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-10-07T12:40:28.360+02:00[Europe/Rome]")
 public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
 
     @POST
@@ -239,6 +239,21 @@ public abstract class MeMessagesApi extends com.sonicle.webtop.core.sdk.BaseRest
         @ApiResponse(code = 200, message = "OK", response = Void.class)
     })
     public Response redirectMessageAsNew(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid,@QueryParam("to")  @ApiParam("The recipient")  String to,@QueryParam("identity_id")   Integer identityId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @POST
+    @Path("/redirectoriginal")
+    @ApiOperation(value = "Redirect original message", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_messages" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response redirectOriginalMessage(@QueryParam("folder_id")  @ApiParam("The full folder name")  String folderId,@QueryParam("uid")  @ApiParam("The message UID in a folder")  String uid,@QueryParam("to")  @ApiParam("The recipient")  String to,@QueryParam("identity_id")   Integer identityId) {
         return Response.ok().entity("magic!").build();
     }
 
