@@ -1071,7 +1071,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 					});
 					if (lastrec && focused) me.view.focusRow(lastrec);
 					delete me.selectOnLoad;
-				},200);
+				},300);
 			}
 		},me,{ single: true });
 	},
