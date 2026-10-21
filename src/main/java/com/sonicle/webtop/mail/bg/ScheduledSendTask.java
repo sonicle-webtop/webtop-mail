@@ -223,7 +223,7 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 	private void sendMessage(final UserProfileId sendingProfile, final String sentFolder, final Message scheduledMessage, final boolean notify, final TaskContext taskContext) throws MessagingException, WTEmailSendException {
 		MimeMessage mm = new MimeMessage((MimeMessage)scheduledMessage);
 		clearScheduleHeaders(mm);
-		
+		mm.setSentDate(new java.util.Date());
 		WT.sendEmailMessage(sendingProfile, mm, sentFolder);
 		scheduledMessage.setFlag(Flags.Flag.DELETED, true);
 		
@@ -269,7 +269,7 @@ public class ScheduledSendTask extends BaseBackgroundServiceTask {
 		mm.removeHeader("Sonicle-send-date");
 		mm.removeHeader("Sonicle-send-time");
 		mm.removeHeader("Sonicle-notify-delivery");
-		
+		mm.setSentDate(new java.util.Date());
 		WT.sendEmailMessage(sendingProfile, mm, sentFolder);
 		message.setFlag(Flags.Flag.DELETED, true);
 		
