@@ -51,6 +51,7 @@ import com.sonicle.commons.RegexUtils;
 import com.sonicle.commons.ResourceUtils;
 import com.sonicle.commons.URIUtils;
 import com.sonicle.commons.cache.AbstractPassiveExpiringBulkSet;
+import com.sonicle.commons.concurrent.KeyedReentrantLocks;
 import com.sonicle.commons.db.DbUtils;
 import com.sonicle.commons.flags.BitFlags;
 import com.sonicle.commons.http.HttpClientUtils;
@@ -299,6 +300,8 @@ public class Service extends BaseService implements MailEventListener {
 	//preference still applies from the next login). Kept in sync with this
 	//session's own explicit sorts. ConcurrentHashMap: parallel page requests.
 	private final ConcurrentHashMap<String,String> sessionListSorts = new ConcurrentHashMap<>();
+
+	private final KeyedReentrantLocks<String> autosaveDraftLocks = new KeyedReentrantLocks<>();
 
 	private String getSessionListSort(String foldername) {
 		String s = sessionListSorts.get(foldername);
@@ -690,54 +693,64 @@ public class Service extends BaseService implements MailEventListener {
 				CoreManager core = WT.getCoreManager();
 				String cid = getEnv().getClientTrackingID();
 				long msgId = Long.parseLong(key);
-				core.updateMyAutosaveData(cid, SERVICE_ID, cntx, key, pl.raw);
+				
+				//avoid concurrent send/save/discard/schedule
+				boolean locked = false;
+				try { locked = autosaveDraftLocks.tryLock(key, 30, TimeUnit.SECONDS); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
+				if (!locked) logger.warn("Autosave lock not acquired for msgId {}, deleting anyway", msgId);
 				
 				try {
-					Identity id=mailManager.findIdentity(pl.data.identityId);
-					MailAccount account=getAccount(id);
-					JsMessage jsmsg=new JsMessage();
-					jsmsg.content=pl.data.content;
-					jsmsg.folder=pl.data.folder;
-					jsmsg.format=pl.data.format;
-					jsmsg.forwardedfolder=pl.data.forwardedfolder;
-					jsmsg.forwardedfrom=pl.data.forwardedfrom;
-					jsmsg.from=id.getDisplayName()+" <"+id.getEmail()+">";
-					jsmsg.identityId=pl.data.identityId;
-					jsmsg.inreplyto=pl.data.inreplyto;
-					jsmsg.origuid=pl.data.origuid;
-					jsmsg.priority=pl.data.priority;
-					jsmsg.receipt=pl.data.receipt;			
-					jsmsg.torecipients=new ArrayList<>();
-					jsmsg.ccrecipients=new ArrayList<>();
-					jsmsg.bccrecipients=new ArrayList<>();
-					for(int r=0;r<pl.data.torecipients.size();++r) {
-						String email=pl.data.torecipients.get(r).email;
-						jsmsg.torecipients.add(new JsRecipient(email));
-					}
-					for(int r=0;r<pl.data.ccrecipients.size();++r) {
-						String email=pl.data.ccrecipients.get(r).email;
-						jsmsg.ccrecipients.add(new JsRecipient(email));
-					}
-					for(int r=0;r<pl.data.bccrecipients.size();++r) {
-						String email=pl.data.bccrecipients.get(r).email;
-						jsmsg.bccrecipients.add(new JsRecipient(email));
-					}
-					jsmsg.references=pl.data.references;
-					jsmsg.replyfolder=pl.data.replyfolder;
-					jsmsg.subject=pl.data.subject;
+					core.updateMyAutosaveData(cid, SERVICE_ID, cntx, key, pl.raw);
 
-					SimpleMessage msg = prepareMessage(jsmsg,msgId,true,false,true);
-					account.checkStoreConnected();
-					FolderCache fc = account.getFolderCache(account.getFolderDrafts());
-					
-					//find and delete old draft for this msgid
-					account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
+					try {
+						Identity id=mailManager.findIdentity(pl.data.identityId);
+						MailAccount account=getAccount(id);
+						JsMessage jsmsg=new JsMessage();
+						jsmsg.content=pl.data.content;
+						jsmsg.folder=pl.data.folder;
+						jsmsg.format=pl.data.format;
+						jsmsg.forwardedfolder=pl.data.forwardedfolder;
+						jsmsg.forwardedfrom=pl.data.forwardedfrom;
+						jsmsg.from=id.getDisplayName()+" <"+id.getEmail()+">";
+						jsmsg.identityId=pl.data.identityId;
+						jsmsg.inreplyto=pl.data.inreplyto;
+						jsmsg.origuid=pl.data.origuid;
+						jsmsg.priority=pl.data.priority;
+						jsmsg.receipt=pl.data.receipt;			
+						jsmsg.torecipients=new ArrayList<>();
+						jsmsg.ccrecipients=new ArrayList<>();
+						jsmsg.bccrecipients=new ArrayList<>();
+						for(int r=0;r<pl.data.torecipients.size();++r) {
+							String email=pl.data.torecipients.get(r).email;
+							jsmsg.torecipients.add(new JsRecipient(email));
+						}
+						for(int r=0;r<pl.data.ccrecipients.size();++r) {
+							String email=pl.data.ccrecipients.get(r).email;
+							jsmsg.ccrecipients.add(new JsRecipient(email));
+						}
+						for(int r=0;r<pl.data.bccrecipients.size();++r) {
+							String email=pl.data.bccrecipients.get(r).email;
+							jsmsg.bccrecipients.add(new JsRecipient(email));
+						}
+						jsmsg.references=pl.data.references;
+						jsmsg.replyfolder=pl.data.replyfolder;
+						jsmsg.subject=pl.data.subject;
 
-					msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
-					Exception exc = saveMessage(msg, null, fc, false);
-					
-				} catch(Exception exc) {
-					logger.debug("Error on autosave in drafts!",exc);
+						SimpleMessage msg = prepareMessage(jsmsg,msgId,true,false,true);
+						account.checkStoreConnected();
+						FolderCache fc = account.getFolderCache(account.getFolderDrafts());
+
+						//find and delete old draft for this msgid
+						account.deleteByHeaderValue(HEADER_X_WEBTOP_MSGID,""+msgId);
+
+						msg.addHeaderLine(HEADER_X_WEBTOP_MSGID+": "+msgId);
+						Exception exc = saveMessage(msg, null, fc, false);
+
+					} catch(Exception exc) {
+						logger.debug("Error on autosave in drafts!",exc);
+					}
+				} finally {
+					if (locked) autosaveDraftLocks.unlock(key);
 				}
 				new JsonResult().printTo(out);
 				
@@ -5162,10 +5175,19 @@ public class Service extends BaseService implements MailEventListener {
 				//Save subject for suggestions
 				if (jsmsg.subject!=null && jsmsg.subject.trim().length()>0)
 					WT.getCoreManager().addServiceStoreEntry(SERVICE_ID, "subject", jsmsg.subject.toUpperCase(),jsmsg.subject);
-
-				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+						
+				String key =  String.valueOf(msgId);
+				boolean locked = false;
+				try { locked = autosaveDraftLocks.tryLock(key, 30, TimeUnit.SECONDS); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
+				if (!locked) logger.warn("Autosave lock not acquired for msgId {}, deleting anyway", msgId);
+				try {
+					coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+					deleteAutosavedDraft(account,msgId);
+				} finally {
+					if (locked) autosaveDraftLocks.unlock(key);
+				}
 				
-				deleteAutosavedDraft(account,msgId);
+				
 				// TODO: Cloud integration!!! Destination emails added to share
 /*                if (vfs!=null && hashlinks!=null && hashlinks.size()>0) {
 				 for(String hash: hashlinks) {
@@ -5556,9 +5578,16 @@ public class Service extends BaseService implements MailEventListener {
 			}
 			Exception exc = saveMessage(msg, jsmsg.attachments, fc, true);
 			if (exc == null) {
-				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
-				
-				deleteAutosavedDraft(account,msgId);
+				String key =  String.valueOf(msgId);
+				boolean locked = false;
+				try { locked = autosaveDraftLocks.tryLock(key, 30, TimeUnit.SECONDS); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
+				if (!locked) logger.warn("Autosave lock not acquired for msgId {}, deleting anyway", msgId);
+				try {
+					coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+					deleteAutosavedDraft(account,msgId);
+				} finally {
+					if (locked) autosaveDraftLocks.unlock(key);
+				}
 				
 				if (pl.data.origuid>0 && pl.data.folder!=null && fc.getFolder().getFullName().equals(pl.data.folder)) {
 					fc.deleteMessage(pl.data.origuid);
@@ -5628,9 +5657,16 @@ public class Service extends BaseService implements MailEventListener {
 			DateTime sendAt = JodaTimeUtils.parseDateTime(JodaTimeUtils.createFormatter("dd/MM/yyyy HH:mm:ss", tz), scheddate + " " + schedtime + ":00");
 			Exception exc = scheduleMessage(msg, jsmsg.attachments, fc, sendAt, LangUtils.value(schednotify, false));
 			if (exc == null) {
-				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
-				
-				deleteAutosavedDraft(account,msgId);
+				String key =  String.valueOf(msgId);
+				boolean locked = false;
+				try { locked = autosaveDraftLocks.tryLock(key, 30, TimeUnit.SECONDS); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
+				if (!locked) logger.warn("Autosave lock not acquired for msgId {}, deleting anyway", msgId);
+				try {
+					coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+					deleteAutosavedDraft(account,msgId);
+				} finally {
+					if (locked) autosaveDraftLocks.unlock(key);
+				}
 				
 				fc.setForceRefresh();
                 json=new JsonResult()
@@ -5652,8 +5688,16 @@ public class Service extends BaseService implements MailEventListener {
 			MailAccount account=getAccount(request);
 			long msgId=ServletUtils.getLongParameter(request, "msgId", true);
 			deleteCloudAttachments(msgId);
-			coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
-			deleteAutosavedDraft(account,msgId);
+			String key =  String.valueOf(msgId);
+			boolean locked = false;
+			try { locked = autosaveDraftLocks.tryLock(key, 30, TimeUnit.SECONDS); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
+			if (!locked) logger.warn("Autosave lock not acquired for msgId {}, deleting anyway", msgId);
+			try {
+				coreMgr.deleteMyAutosaveData(getEnv().getClientTrackingID(), SERVICE_ID, "newmail", ""+msgId);
+				deleteAutosavedDraft(account,msgId);
+			} finally {
+				if (locked) autosaveDraftLocks.unlock(key);
+			}
 			json=new JsonResult();
 		} catch(Exception exc) {
 			Service.logger.error("Exception",exc);
