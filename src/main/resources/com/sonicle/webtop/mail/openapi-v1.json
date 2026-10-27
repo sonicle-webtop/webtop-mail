@@ -205,8 +205,87 @@
           "me_folders"
         ]
       },
-      "parameters": []
-    },
+      "parameters": [],
+      "post": {
+        "summary": "Create Folder",
+        "operationId": "createFolder",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "me_folders"
+        ],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "folder_id"
+          }
+        ]
+      },
+      "put": {
+        "summary": "Rename Folder",
+        "operationId": "renameFolder",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "folder_id"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "new_folder_id"
+          }
+        ],
+        "tags": [
+          "me_folders"
+        ],
+        "description": ""
+      },
+      "delete": {
+        "summary": "Delete Folder",
+        "operationId": "deleteFolder",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        },
+        "tags": [
+          "me_folders"
+        ],
+        "description": "",
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "in": "query",
+            "name": "folder_id"
+          },
+          {
+            "schema": {
+              "type": "boolean"
+            },
+            "in": "query",
+            "name": "trash"
+          }
+        ]
+      }
+	},
     "/me/folders/all": {
       "get": {
         "summary": "Lists root folders",

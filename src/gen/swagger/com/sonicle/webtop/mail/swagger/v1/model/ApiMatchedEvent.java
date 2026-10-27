@@ -18,7 +18,7 @@ import com.fasterxml.jackson.annotation.JsonTypeName;
  **/
 @ApiModel(description = "Pointer to an existing calendar event matched by UID. Carried inside CalendarPart.")
 @JsonTypeName("MatchedEvent")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-10-07T12:40:28.360+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-10-27T12:40:58.613+01:00[Europe/Rome]")
 public class ApiMatchedEvent   {
   private @Valid String eventInstanceId;
   private @Valid Integer calendarId;

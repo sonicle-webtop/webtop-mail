@@ -35,6 +35,7 @@ package com.sonicle.webtop.mail.rest.v1;
 
 import com.sonicle.webtop.core.app.RunContext;
 import com.sonicle.webtop.core.sdk.UserProfileId;
+import com.sonicle.webtop.core.sdk.WTException;
 import com.sonicle.webtop.mail.MailManager;
 import com.sonicle.webtop.mail.swagger.v1.api.MeFoldersApi;
 import com.sonicle.webtop.mail.swagger.v1.model.ApiApiError;
@@ -156,7 +157,65 @@ public class MeFolders extends MeFoldersApi {
 		}
 	}
 	
-	
+	@Override
+	public Response createFolder(String folderId) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
+		try {
+			Folder folder = mmgr.getFolder(folderId);
+			if (folder.create(Folder.HOLDS_MESSAGES))
+				return respOk();
+			else
+				throw new WTException();
+			
+		} catch(Exception ex) {
+			logger.error("[{}] createFolder()", targetPid, folderId, ex);
+			return respError(ex);
+		}
+	}
+
+	@Override
+	public Response deleteFolder(String folderId, Boolean trash) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
+		try {
+			Folder folder = mmgr.getFolder(folderId);
+			if (trash) {
+				String trashFolderName = mmgr.getFolderTrash();
+				Folder trashFolder = mmgr.getFolder(trashFolderName);
+				if (folder.renameTo(trashFolder))
+					return respOk();
+				else
+					throw new WTException();
+			} else {
+				if (folder.delete(true))
+					return respOk();
+				else
+					throw new WTException();
+			}
+		} catch(Exception ex) {
+			logger.error("[{}] renameFolder()", targetPid, folderId, ex);
+			return respError(ex);
+		}
+	}
+
+	@Override
+	public Response renameFolder(String folderId, String newFolderId) {
+		UserProfileId targetPid = RunContext.getRunProfileId();
+		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
+		try {
+			Folder folder = mmgr.getFolder(folderId);
+			Folder newfolder = mmgr.getFolder(newFolderId);
+			if (folder.renameTo(newfolder))
+				return respOk();
+			else
+				throw new WTException();
+			
+		} catch(Exception ex) {
+			logger.error("[{}] renameFolder()", targetPid, folderId, ex);
+			return respError(ex);
+		}
+	}	
 	
 	@Override
 	protected Object createErrorEntity(Response.Status status, String message) {

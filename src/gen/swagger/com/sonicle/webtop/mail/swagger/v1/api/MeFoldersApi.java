@@ -16,8 +16,36 @@ import javax.validation.Valid;
 
 @Path("/me/folders")
 @Api(description = "the MeFolders API")
-@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-10-07T12:40:28.360+02:00[Europe/Rome]")
+@javax.annotation.Generated(value = "org.openapitools.codegen.languages.JavaJAXRSSpecServerCodegen", date = "2026-10-27T12:40:58.613+01:00[Europe/Rome]")
 public abstract class MeFoldersApi extends com.sonicle.webtop.core.sdk.BaseRestApiResource {
+
+    @POST
+    @ApiOperation(value = "Create Folder", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_folders" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response createFolder(@QueryParam("folder_id")   String folderId) {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @DELETE
+    @ApiOperation(value = "Delete Folder", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_folders" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response deleteFolder(@QueryParam("folder_id")   String folderId,@QueryParam("trash")   Boolean trash) {
+        return Response.ok().entity("magic!").build();
+    }
 
     @GET
     @Path("/info")
@@ -79,6 +107,20 @@ public abstract class MeFoldersApi extends com.sonicle.webtop.core.sdk.BaseRestA
         @ApiResponse(code = 200, message = "Success", response = ApiFolder.class, responseContainer = "List")
     })
     public Response listRootFolders() {
+        return Response.ok().entity("magic!").build();
+    }
+
+    @PUT
+    @ApiOperation(value = "Rename Folder", notes = "", response = Void.class, authorizations = {
+        
+        @Authorization(value = "basicAuth"),
+        
+        @Authorization(value = "bearerAuth")
+         }, tags={ "me_folders" })
+    @ApiResponses(value = { 
+        @ApiResponse(code = 200, message = "OK", response = Void.class)
+    })
+    public Response renameFolder(@QueryParam("folder_id")   String folderId,@QueryParam("new_folder_id")   String newFolderId) {
         return Response.ok().entity("magic!").build();
     }
 }
