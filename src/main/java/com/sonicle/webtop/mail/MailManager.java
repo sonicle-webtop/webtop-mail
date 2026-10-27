@@ -168,6 +168,7 @@ import jakarta.mail.internet.MailDateFormat;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.internet.MimeMultipart;
 import jakarta.mail.internet.MimeUtility;
+import jakarta.mail.search.FlagTerm;
 import jakarta.mail.search.SearchTerm;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -3709,7 +3710,13 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 			mailbox = getMailbox();
 			folder = (IMAPFolder) mailbox.getFolder(folderId);
 			folder.open(Folder.READ_WRITE);
-			for(long uid: uids) _setMessageSeenState(folder, uid, seen);
+			if (uids == null) {
+				Flags seenFlags = new Flags(Flags.Flag.SEEN);
+				FlagTerm ft = new FlagTerm(seenFlags, !seen);
+				Message msgs[] = folder.search(ft);
+				folder.setFlags(msgs, seenFlags, seen);
+			}
+			else for(long uid: uids) _setMessageSeenState(folder, uid, seen);
 		} catch(WTException exc) {
 			throw exc;
 		} catch(Exception exc) {

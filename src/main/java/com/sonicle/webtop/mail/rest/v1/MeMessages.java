@@ -610,11 +610,11 @@ public class MeMessages extends MeMessagesApi {
 	public Response setMessageSeenState(String folderId, String suid, Boolean seen) {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
-		long[] uids = suid.contains(",")
+		long[] uids = suid.equals("*") ? null : suid.contains(",")
 			? Arrays.stream(suid.split(",")).mapToLong(s -> Long.parseLong(s.trim())).toArray()
 			: new long[] { Long.parseLong(suid) };
 		try {
-			if (uids.length==1) mmgr.setMessageSeenState(folderId, uids[0], seen == null || seen);
+			if (uids != null && uids.length==1) mmgr.setMessageSeenState(folderId, uids[0], seen == null || seen);
 			else mmgr.setMessagesSeenState(folderId, uids, seen == null || seen);
 			return respOk();
 		} catch(Exception exc) {
