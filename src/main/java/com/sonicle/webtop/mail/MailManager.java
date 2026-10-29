@@ -1433,13 +1433,41 @@ public class MailManager extends BaseManager implements SharedManager, IMailMana
 		
 		return afolders;
 	}
+	
+	public void createFolder(String id) {
+		try {
+			mainAccount.checkCreateAndCacheFolders(id);
+		} catch(MessagingException exc) {
+			logger.error("Error creating folder", exc);
+		} finally {
+		}
+	}
+	
+	public void deleteFolder(String id, boolean trash) {
+		try {
+			if (!trash) mainAccount.deleteFolder(id);
+			else mainAccount.trashFolder(id);
+		} catch(MessagingException exc) {
+			logger.error("Error deleting folder", exc);
+		} finally {
+		}
+	}	
+
+	public void renameFolder(String id, String newid) {
+		try {
+			mainAccount.renameFolderFull(id, newid);
+		} catch(MessagingException exc) {
+			logger.error("Error renaming folder", exc);
+		} finally {
+		}
+	}	
 
 	public Folder getFolder(String id) {
 		Folder folder = null;
 		Mailbox mailbox = null;
 		try {
 			mailbox = getMailbox();
-			folder = mailbox.getFolder(id);
+			folder = mailbox.getFolderInstance(id);
 		} catch(MessagingException|WTException exc) {
 			logger.error("Error getting folder", exc);
 		} finally {

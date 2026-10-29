@@ -1294,15 +1294,15 @@ public class MailAccount {
 		}
 	}
 	
-	public String renameFolder(String orig, String newname) throws MessagingException {
-		FolderCache fc = getFolderCache(orig);
-		if (fc.getFolder().getName().equals(newname)) return orig;
+	public String renameFolder(String srcFullId, String dstLastName) throws MessagingException {
+		FolderCache fc = getFolderCache(srcFullId);
+		if (fc.getFolder().getName().equals(dstLastName)) return srcFullId;
 		
 		FolderCache fcparent = fc.getParent();
 		Folder oldfolder = fc.getFolder();
 		//we need to close the source folder or exception will not be thrown in case of error
 		fc.close();
-		Folder newfolder = fcparent.getFolder().getFolder(newname);
+		Folder newfolder = fcparent.getFolder().getFolder(dstLastName);
 		boolean done = oldfolder.renameTo(newfolder);
 		if (!done) {
 			throw new MessagingException("Rename failed");
@@ -1314,6 +1314,24 @@ public class MailAccount {
 		
 		addFoldersCache(fcparent, newfolder);
 		return newfolder.getFullName();
+	}
+	
+	public void renameFolderFull(String source, String dest) throws MessagingException {
+		Folder oldfolder = getFolder(source);
+		Folder newfolder = getFolder(dest);
+		FolderCache fcsrc = getFolderCache(source);
+		boolean done = oldfolder.renameTo(newfolder);
+		if (!done) {
+			throw new MessagingException("Cannot rename "+source+" to "+dest);
+		} else {
+			if (fcsrc != null) destroyFolderCache(fcsrc);
+			FolderCache fcdst;
+			FolderCache tfc = getFolderCache(newfolder.getParent().getFullName());
+
+			dovecotRenameTrick(newfolder, tfc);
+
+			fcdst=addFoldersCache(tfc, newfolder);
+		}
 	}
 	
 	private void dovecotRenameTrick(Folder newfolder, FolderCache fcparent) throws MessagingException {

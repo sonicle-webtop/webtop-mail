@@ -162,11 +162,8 @@ public class MeFolders extends MeFoldersApi {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
-			Folder folder = mmgr.getFolder(folderId);
-			if (folder.create(Folder.HOLDS_MESSAGES))
-				return respOk();
-			else
-				throw new WTException();
+			mmgr.createFolder(folderId);
+			return respOk();
 			
 		} catch(Exception ex) {
 			logger.error("[{}] createFolder()", targetPid, folderId, ex);
@@ -179,20 +176,8 @@ public class MeFolders extends MeFoldersApi {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
-			Folder folder = mmgr.getFolder(folderId);
-			if (trash) {
-				String trashFolderName = mmgr.getFolderTrash();
-				Folder trashFolder = mmgr.getFolder(trashFolderName);
-				if (folder.renameTo(trashFolder))
-					return respOk();
-				else
-					throw new WTException();
-			} else {
-				if (folder.delete(true))
-					return respOk();
-				else
-					throw new WTException();
-			}
+			mmgr.deleteFolder(folderId, trash);
+			return respOk();
 		} catch(Exception ex) {
 			logger.error("[{}] renameFolder()", targetPid, folderId, ex);
 			return respError(ex);
@@ -204,15 +189,10 @@ public class MeFolders extends MeFoldersApi {
 		UserProfileId targetPid = RunContext.getRunProfileId();
 		MailManager mmgr = MailRestApiUtils.getMailManager(targetPid, httpHeaders);
 		try {
-			Folder folder = mmgr.getFolder(folderId);
-			Folder newfolder = mmgr.getFolder(newFolderId);
-			if (folder.renameTo(newfolder))
-				return respOk();
-			else
-				throw new WTException();
-			
+			mmgr.renameFolder(folderId, newFolderId);
+			return respOk();
 		} catch(Exception ex) {
-			logger.error("[{}] renameFolder()", targetPid, folderId, ex);
+			logger.error("[{}] renameFolder()", targetPid, folderId, newFolderId, ex);
 			return respError(ex);
 		}
 	}	
