@@ -801,6 +801,8 @@ Ext.define('Sonicle.webtop.mail.Service', {
         me.addAct("print",{ handler: function() { me.messagesPanel.printMessageView(); }, iconCls: 'wt-icon-print', hidden: !WT.plTags.desktop });
         me.addAct("reply",{ handler: me.gridAction(me,'Reply'), iconCls: 'wtmail-icon-reply'  });
         me.addAct("replyall",{ handler: me.gridAction(me,'ReplyAll'), iconCls: 'wtmail-icon-replyall' });
+		// NethVoice chat: the thread moves to the chat (colleagues directly, people outside with a link in a reply)
+		me.addAct("nvchatreply",{ handler: me.gridAction(me,'NVChatReply'), text: WT.res('act-nvChatReply.lbl'), tooltip: WT.res('act-nvChatReply.lbl'), iconCls: 'wt-icon-nvchat', hidden: WT.getVar('nvChatEnabled') !== true });
         me.addAct("forward",{ handler: me.gridAction(me,'Forward'), iconCls: 'wtmail-icon-forward'  });
         me.addAct("forwardeml",{ handler: me.gridAction(me,'ForwardEml'), iconCls: 'wtmail-icon-forwardeml' });
         me.addAct("forwardredirect",{ handler: me.gridAction(me,'ForwardRedirect'), iconCls: 'wtmail-icon-redirect' });
@@ -966,6 +968,7 @@ Ext.define('Sonicle.webtop.mail.Service', {
 				'-',				
 				me.getAct('reply'),
 				me.getAct('replyall'),
+				me.getAct('nvchatreply'),
 				me.getAct('forward'),
 				me.getAct('forwardeml'),
 				me.getAct('forwardredirect'),

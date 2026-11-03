@@ -371,6 +371,17 @@ Ext.define('Sonicle.webtop.mail.GridFeatureGrouping', {
 });
 
 Ext.define('Sonicle.webtop.mail.MessageGrid',{
+	statics: {
+		/**
+		 * Splits "Name <email>" (or a bare email) into {email, name}.
+		 */
+		parseAddress: function(value) {
+			var v = Ext.String.trim(String(value || '')), m = v.match(/^(.*)<([^>]+)>\s*$/);
+			if (m) return {email: Ext.String.trim(m[2]), name: Ext.String.trim(m[1]).replace(/^"|"$/g, '') || Ext.String.trim(m[2])};
+			return v ? {email: v, name: v} : null;
+		}
+	},
+	
 	extend: 'Ext.grid.Panel',
 	requires: [
 		'Sonicle.data.BufferedStore',
@@ -637,6 +648,7 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 			tbitems=tbitems.concat([
 				me.mys._TB("reply",null,'small'),
 				me.mys._TB("replyall",null,'small'),
+				me.mys._TB("nvchatreply",null,'small'),
 				me.mys._TB("forward",null,'small'),
 				'-',
 				//me.mys._TB("print",null,'small'),
@@ -1485,6 +1497,58 @@ Ext.define('Sonicle.webtop.mail.MessageGrid',{
 				}
 			}
 		});					
+	},
+	
+	/**
+	 * NethVoice chat: the thread goes on in the chat. Everyone in it but me, as Reply all would address them:
+	 * colleagues on the chat get a chat (direct or group); with anyone from outside, a chat link they open from
+	 * a Reply all prefilled with it, which the user reviews and sends.
+	 */
+	actionNVChatReply: function() {
+		var me = this,
+			recs = me.getSelection(),
+			r = recs && recs.length === 1 ? recs[0] : null,
+			idfolder, idmessage;
+		if (!r) {
+			WT.info(me.mys.res('act-no-selection'));
+			return;
+		}
+		idfolder = r.get('folder') || me.currentFolder;
+		idmessage = r.get('idmessage');
+		me.chatReplyById(me.currentAccount, idfolder, idmessage);
+	},
+	
+	/**
+	 * Reply in chat to everyone on the message (as Reply all): colleagues directly, people outside by a guest link sent in a reply.
+	 * Also used by the message window (DockableMessageView).
+	 */
+	chatReplyById: function(acct, idfolder, idmessage) {
+		var me = this;
+		WT.ajaxReq(me.mys.ID, 'GetReplyMessage', {
+			params: {
+				account: acct,
+				folder: idfolder,
+				idmessage: idmessage,
+				replyall: '1'
+			},
+			callback: function(success, json) {
+				if (!json || !json.success) {
+					WT.error(json ? json.message : '');
+					return;
+				}
+				var d = json.data, people = [];
+				Ext.each([].concat(d.torecipients || [], d.ccrecipients || []), function(rcpt) {
+					var p = Sonicle.webtop.mail.MessageGrid.parseAddress(rcpt.email);
+					if (p) people.push(p);
+				});
+				WT.handleNewChat(people, {
+					title: String(d.subject || '').replace(/^\s*(re|r|aw|fw|fwd|i)\s*:\s*/i, '').substring(0, 64),
+					onLink: function(link) {
+						me.replyMessageById(acct, idfolder, idmessage, true, Ext.String.format(WT.res('nvchat.invite.text'), '<a href="' + Ext.String.htmlEncode(link) + '">' + Ext.String.htmlEncode(link) + '</a>'));
+					}
+				});
+			}
+		});
 	},
 	
     actionForward: function(rowIndex) {

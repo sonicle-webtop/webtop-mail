@@ -338,6 +338,7 @@ Ext.define('Sonicle.webtop.mail.MessagesPanel', {
 							},
 							me.getAct("reply"),
 							me.getAct("replyall"),
+							me.getAct("nvchatreply"),
 							me.getAct("forward"),
 							me.getAct("delete"),
 							me.getAct("spam"),

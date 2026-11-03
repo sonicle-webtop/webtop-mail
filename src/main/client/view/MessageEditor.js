@@ -525,6 +525,16 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 				}
 			});
 		}
+		// NethVoice chat: as "Add meeting", inserts a link to a new chat with the recipients
+		tbitems[tbx++] = me.addAct('addNVChat', {
+			text: null,
+			tooltip: WT.res('act-nvChatLink.lbl'),
+			iconCls: 'wt-icon-nvchat',
+			hidden: WT.getVar('nvChatEnabled') !== true,
+			handler: function() {
+				me.addNVChatUI();
+			}
+		});
 		
 		if (!pbTR) {
 			me.addDocked(me.toolbar=Ext.create(me.createTopToolbarCfg({
@@ -1989,6 +1999,26 @@ Ext.define('Sonicle.webtop.mail.view.MessageEditor', {
 						}
 					});
 				}
+			}
+		});
+	},
+	
+	addNVChatUI: function() {
+		var me = this,
+			mo = me.getModel(),
+			people = [];
+		Ext.each(['torecipients', 'ccrecipients'], function(assoc) {
+			mo[assoc]().each(function(rcpt) {
+				var p = Sonicle.webtop.mail.MessageGrid.parseAddress(rcpt.get('email'));
+				if (p) people.push(p);
+			});
+		});
+		WT.handleNewChat(people, {
+			link: true,
+			title: String(mo.get('subject') || '').replace(/^\s*(re|r|aw|fw|fwd|i)\s*:\s*/i, '').substring(0, 64) || WT.res('nvchat.link.title'),
+			onLink: function(link) {
+				var text = Ext.String.format(WT.res('nvchat.invite.text'), '<a href="' + Ext.String.htmlEncode(link) + '">' + Ext.String.htmlEncode(link) + '</a>');
+				me.htmlEditor.insertContent('html' === me.contentFormat ? text : Ext.util.Format.stripTags(text.replace(/<br\s*\/?>/gi, '\n')) + ' ' + link);
 			}
 		});
 	},

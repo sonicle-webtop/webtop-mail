@@ -617,6 +617,20 @@ Ext.define('Sonicle.webtop.mail.MessageView',{
 				var el=me.emailMenu.activeElement;
 				me._startNewMessage(el.recDesc,el.recEmail);
 			}, iconCls: 'wtmail-icon-mailNew'});
+			if (WT.getVar('nvChatEnabled') === true) {
+				// NethVoice chat: a colleague gets a chat, someone outside an email with the chat link
+				actions[i++]=new Ext.Action({text: WT.res("act-nvChat.lbl"), handler: function() {
+					var el=me.emailMenu.activeElement,
+						email=el.recEmail,
+						name=(el.recDesc && el.recDesc!==el.recEmail) ? el.recDesc : email;
+					WT.handleNewChat([{email: email, name: name}], {
+						onLink: function(link) {
+							// handleNewMailMessage decodes its arguments (it serves mailto: links)
+							WT.handleNewMailMessage(encodeURIComponent(email), encodeURIComponent(me.subject || ''), encodeURIComponent(Ext.String.format(WT.res('nvchat.invite.text'), link)));
+						}
+					});
+				}, iconCls: 'wt-icon-nvchat'});
+			}
 			if (capi) {
 				actions[i++]=new Ext.Action({text: me.mys.res("emailmenu.addcontact"), handler: function() {
 					var el=me.emailMenu.activeElement,

@@ -91,6 +91,16 @@ Ext.define('Sonicle.webtop.mail.view.DockableMessageView', {
 						},
 						iconCls: 'wtmail-icon-replyall'
 					}),
+					// NethVoice chat: as in the message list toolbar
+					me.addAct("nvchatreply",{
+						handler: function() {
+							me.messageGrid.chatReplyById(me.acct,me.folder,me.idmessage);
+						},
+						text: WT.res('act-nvChatReply.lbl'),
+						tooltip: WT.res('act-nvChatReply.lbl'),
+						iconCls: 'wt-icon-nvchat',
+						hidden: WT.getVar('nvChatEnabled') !== true
+					}),
 					me.addAct("forward",{
 						handler: function() {
 							me.messageGrid.forwardMessageById(me.acct,me.folder,me.idmessage);
