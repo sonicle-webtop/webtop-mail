@@ -42,6 +42,7 @@ import com.sonicle.commons.time.JodaTimeUtils;
 import com.sonicle.commons.web.json.MapItem;
 import com.sonicle.commons.web.json.MapItemList;
 import com.sonicle.webtop.calendar.CalendarUtils;
+import com.sonicle.webtop.calendar.model.EventBounds;
 import com.sonicle.webtop.core.app.UIBoot;
 import com.sonicle.webtop.core.app.WT;
 import com.sonicle.webtop.core.app.sdk.WTParseException;
@@ -299,29 +300,17 @@ public class ICalendarRequest {
 	}
 	
 	private WhenValue whenValue(final Locale locale, final DateTimeZone timezone) {
-		String timezoneSuffix = " (" + timezone.getID() + ")";
 		String formatSkeleton;
-		DateTime start, end;
-		if (when.isAllDay()) {
-			formatSkeleton = DAY_SKELETON;
-			final int diffDays = JodaTimeUtils.calendarDaysBetween(when.getStart(), when.getEnd(), true, true);
-			if (diffDays == 0) {
-				start = end = when.getStart();
-			} else {
-				start = when.getStart();
-				end = when.getEnd();
-			}
-			
-		} else {
-			formatSkeleton = TIMED_SKELETON;
-			start = when.getStart().withZone(timezone);
-			end = when.getEnd().withZone(timezone);
-		}
+		// All-day dates are floating: read them in the zone they where anchored to,
+		// never in the viewer's one, otherwise they would shift by a day.
+		final DateTimeZone readTz = when.isAllDay() ? when.getTimezone() : timezone;
+		DateTime start = when.getStart(), end = when.getEnd();
+		formatSkeleton = when.isAllDay() ? DAY_SKELETON : TIMED_SKELETON;
 		
 		boolean isFirstInstance = false;
 		ICalendarUtils.RRInfo rrInfo = when.getRRInfo();
 		if (rrInfo != null) {
-			DateTimeWindow dtw = findFirstRRInstanceFrom(rrInfo, start, end, when.getTimezone(), JodaTimeUtils.now().withTimeAtStartOfDay());
+			DateTimeWindow dtw = findFirstRRInstanceFrom(rrInfo, start, end, when.getTimezone(), JodaTimeUtils.now().withZone(timezone).withTimeAtStartOfDay());
 			if (dtw != null) {
 				isFirstInstance = true;
 				start = dtw.getStart();
@@ -329,7 +318,10 @@ public class ICalendarRequest {
 			}
 		}
 		
-		return new WhenValue(JodaTimeUtils.formatDateTimeInterval(formatSkeleton, locale, start, end) + timezoneSuffix, isFirstInstance);
+		String timezoneSuffix = when.isAllDay() ? "" : " (" + timezone.getID() + ")";
+		// DTEND is exclusive: CalendarUtils turns it into the last day shown, inclusive
+		final EventBounds eb = CalendarUtils.toEventBoundsForUIRead(when.isAllDay(), start, end, readTz);
+		return new WhenValue(JodaTimeUtils.formatDateTimeInterval(formatSkeleton, locale, eb.getStart(), eb.getEnd()) + timezoneSuffix, isFirstInstance);	
 	}
 	
 	private String repeatsValue(final Locale locale, final DateTimeZone timezone) {
