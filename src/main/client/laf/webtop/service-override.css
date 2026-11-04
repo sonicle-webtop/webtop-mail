@@ -50,7 +50,7 @@
 .wtmail-tree-unread-cell {
     font-size: var(--wt-theme-fontsize-xs, inherit);
     font-weight: var(--wt-theme-fontweight-medium, normal);
-	background-color: var(--wt-theme-color-surface-l4) !important; 
+	background-color: var(--wt-theme-color-surface-l3) !important; 
 	border-radius: 4px;
 	padding-left: 6px;
 	padding-right: 6px;
